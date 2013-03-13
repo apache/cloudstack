@@ -29,10 +29,12 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -80,6 +82,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -303,14 +306,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
         // TODO Auto-generated method stub
         return null;
     }
-
-
-
-
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#createPhysicalNetwork(java.lang.Long, java.lang.String, java.lang.String, java.util.List, java.lang.String, java.lang.Long, java.util.List, java.lang.String)
@@ -1320,5 +1319,96 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     public Network getNetwork(String networkUuid) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+
+
+
+
+    @Override
+    public boolean isSecondaryIpSetForNic(long nicId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String allocateSecondaryGuestIP(Account account, long zoneId,
+            Long nicId, Long networkId, String ipaddress) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+
+
+    @Override
+    public boolean releaseSecondaryIpFromNic(long ipAddressId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+
+
+
+    @Override
+    public String allocateGuestIP(Account ipOwner, boolean isSystem,
+            long zoneId, Long networkId, String requestedIp)
+            throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+
+
+
+
+    @Override
+    public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+    @Override
+    public List<? extends Nic> listNics(ListNicsCmd listNicsCmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+    @Override
+    public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc,
+            Pod pod, Account caller, String requestedIp)
+            throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+
+
+
+
+    @Override
+    public boolean removeVmSecondaryIpsOfNic(long nicId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

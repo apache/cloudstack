@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -56,13 +57,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class AgentMonitor extends Thread implements Listener {
+public class AgentMonitor extends Thread implements AgentMonitorService {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
     @Inject private HostDao _hostDao;
     private boolean _stop;
-    @Inject private AgentManagerImpl _agentMgr;
+    @Inject private AgentManager _agentMgr;
     @Inject private VMInstanceDao _vmDao;
     @Inject private DataCenterDao _dcDao = null;
     @Inject private HostPodDao _podDao = null;
@@ -71,7 +72,7 @@ public class AgentMonitor extends Thread implements Listener {
     private ConnectionConcierge _concierge;
     @Inject ClusterDao _clusterDao;
     @Inject ResourceManager _resourceMgr;
-    
+
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
@@ -104,7 +105,7 @@ public class AgentMonitor extends Thread implements Listener {
 
     /**
      * Check if the agent is behind on ping
-     * 
+     *
      * @param agentId
      *            agent or host id.
      * @return null if the agent is not kept here. true if behind; false if not.
@@ -144,21 +145,29 @@ public class AgentMonitor extends Thread implements Listener {
                 	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                 	sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
                 	HostVO h = sc.find();
-                	ResourceState resourceState = h.getResourceState();
-                	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.ErrorInMaintenance) {
-                		/* Host is in non-operation state, so no investigation and direct put agent to Disconnected */
-                		status_Logger.debug("Ping timeout but host " + agentId + " is in resource state of " + resourceState + ", so no investigation");
-                		_agentMgr.disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
-                	} else {
-                		status_Logger.debug("Ping timeout for host " + agentId + ", do invstigation");
-                		_agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
+                    if (h != null) {
+                        ResourceState resourceState = h.getResourceState();
+                        if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance
+                                || resourceState == ResourceState.ErrorInMaintenance) {
+                            /*
+                             * Host is in non-operation state, so no
+                             * investigation and direct put agent to
+                             * Disconnected
+                             */
+                            status_Logger.debug("Ping timeout but host " + agentId + " is in resource state of "
+                                    + resourceState + ", so no investigation");
+                            _agentMgr.disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
+                        } else {
+                            status_Logger.debug("Ping timeout for host " + agentId + ", do invstigation");
+                            _agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
+                        }
                 	}
                 }
 
                 SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                 sc.addAnd(sc.getEntity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 List<HostVO> hosts = sc.list();
-                
+
                 for (HostVO host : hosts) {
                     long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
@@ -170,7 +179,7 @@ public class AgentMonitor extends Thread implements Listener {
                         List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
                         if (vos.isEmpty() && vosMigrating.isEmpty()) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
-                            _resourceMgr.resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _msId);   
+                            _resourceMgr.resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _msId);
                         }
                     }
                 }
@@ -288,4 +297,8 @@ public class AgentMonitor extends Thread implements Listener {
         return -1;
     }
 
+    public void startMonitoring() {
+    	start();
+    }
 }
+

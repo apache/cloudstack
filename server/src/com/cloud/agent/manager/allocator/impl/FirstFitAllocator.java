@@ -26,6 +26,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.org.Cluster;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +82,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
+    @Inject ClusterDao _clusterDao;
+    @Inject ClusterDetailsDao _clusterDetailsDao;
     float _factor = 1;
     boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
@@ -214,8 +220,14 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
             boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
     		int cpu_requested = offering.getCpu() * offering.getSpeed();
-    		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
-    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor, considerReservedCapacity);
+    		long ram_requested = offering.getRamSize() * 1024L * 1024L;
+            Cluster cluster = _clusterDao.findById(host.getClusterId());
+            ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
+            ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
+            Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
+            Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
+
+            boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false,cpuOvercommitRatio,memoryOvercommitRatio, considerReservedCapacity);
 
             if (numCpusGood && cpuFreqGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {

@@ -23,7 +23,14 @@
 -->
 <section id="guest-traffic">
 	<title>Guest Traffic</title>
-	<para>A network can carry guest traffic only between VMs within one zone. Virtual machines in different zones cannot communicate with each other using their IP addresses; they must communicate with each other by routing through a public IP address.</para>
+    <para>A network can carry guest traffic only between VMs within one zone. Virtual machines in different zones cannot communicate with each other using their IP addresses; they must communicate with each other by routing through a public IP address.</para>
+    <para>This figure illustrates a typical guest traffic setup:</para>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/guest-traffic-setup.png" />
+        </imageobject>
+        <textobject><phrase>Depicts a guest traffic setup.</phrase></textobject>
+    </mediaobject>
 	<para>The Management Server automatically creates a virtual router for each network. A virtual router is a special virtual machine that runs on the hosts. Each virtual router has three network interfaces. Its eth0 interface serves as the gateway for the guest traffic and has the IP address of 10.1.1.1. Its eth1 interface is used by the system to configure the virtual router. Its eth2 interface is assigned a public IP address for public traffic.</para>
 	<para>The virtual router provides DHCP and will automatically assign an IP address for each guest VM within the IP range assigned for the network. The user can manually reconfigure guest VMs to assume different IP addresses.</para>
 	<para>Source NAT is automatically configured in the virtual router to forward outbound traffic for all guest VMs</para>

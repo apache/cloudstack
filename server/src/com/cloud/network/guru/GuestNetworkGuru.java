@@ -27,7 +27,6 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -77,7 +76,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 
-@Component
 @Local(value = NetworkGuru.class)
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
@@ -314,7 +312,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+        
+       // physical network id can be null in Guest Network in Basic zone, so locate the physical network
+       if (physicalNetworkId == null) {        
+           physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+       }
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), 
                 network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,

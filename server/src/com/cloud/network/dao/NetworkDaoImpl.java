@@ -39,13 +39,11 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -76,13 +74,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     
     
     
-    @Inject ResourceTagsDaoImpl _tagsDao;
-    @Inject NetworkAccountDaoImpl _accountsDao;
-    @Inject NetworkDomainDaoImpl _domainsDao;
-    @Inject NetworkOpDaoImpl _opDao;
-    @Inject NetworkServiceMapDaoImpl _ntwkSvcMap;
-    @Inject NetworkOfferingDaoImpl _ntwkOffDao;
-    @Inject NetworkOpDaoImpl _ntwkOpDao;
+    @Inject ResourceTagDao _tagsDao;
+    @Inject NetworkAccountDao _accountsDao;
+    @Inject NetworkDomainDao _domainsDao;
+    @Inject NetworkOpDao _opDao;
+    @Inject NetworkServiceMapDao _ntwkSvcMap;
+    @Inject NetworkOfferingDao _ntwkOffDao;
+    @Inject NetworkOpDao _ntwkOpDao;
 
     TableGenerator _tgMacAddress;
 

@@ -113,6 +113,31 @@
                     validation: { required: true },
                     docID: 'helpAccountLastName'
                   },
+                  regionid: {
+                    label: 'label.region',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listRegions&listAll=true'),
+                        success: function(json) {
+                          var regions = json.listregionsresponse.region;
+                          var regionOptions;
+
+                          if (!regions) {
+                            regionOptions = [{ id: 0, description: '0 - Default' }];
+                          } else {
+                            regionOptions = $(regions).map(function(index, region) {
+                              return {
+                                id: region.id,
+                                description: region.id + ' - ' + region.name
+                              };
+                            });
+                          }
+
+                          args.response.success({ data: regionOptions });
+                        }
+                      });
+                    }
+                  },
                   domainid: {
                     label: 'label.domain',
                     docID: 'helpAccountDomain',
@@ -181,7 +206,7 @@
 
               action: function(args) {
                 var data = {
-								  username: args.data.username									
+								  username: args.data.username,
 								};															               
                
                 var password = args.data.password;
@@ -196,6 +221,7 @@
 								  email: args.data.email,
                   firstname: args.data.firstname,
                   lastname: args.data.lastname,
+                  regionid: args.data.regionid,
                   domainid: args.data.domainid									
 								});								              
 
@@ -290,7 +316,8 @@
 									  domainid: accountObj.domainid,
 										account: accountObj.name,
 										newname: args.data.name,
-										networkdomain: args.data.networkdomain
+										networkdomain: args.data.networkdomain,
+                    regionid: accountObj.regionid ? accountObj.regionid : 0
 									};
                 
                   $.ajax({
@@ -634,6 +661,7 @@
                         return cloudStack.converters.toRole(args);
                       }
                     },
+                    regionid: { label: 'label.region' },
                     domain: { label: 'label.domain' },
                     state: { label: 'label.state' },
                     networkdomain: {

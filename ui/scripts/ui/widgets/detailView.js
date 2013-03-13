@@ -338,6 +338,8 @@
 
       $detailView.find('.tagger').find('input[type=text]').val('');
 
+      $('div.container div.panel div.detail-group .details .main-groups').find('.cidr').toolTip({ docID:'helpIPReservationCidr' , mode:'hover' , tooltip:'.tooltip-box' });
+
       var convertInputs = function($inputs) {
         // Save and turn back into labels
         $inputs.each(function() {
@@ -489,7 +491,11 @@
 
         return true;
       });
-	    
+	   
+         $('div.container div.panel div.detail-group .details .main-groups').find('.reservediprange').toolTip({ docID:'helpReservedIPRange' , mode:'hover' , tooltip:'.tooltip-box' });
+          $('div.container div.panel div.detail-group .details .main-groups').find('.networkcidr').toolTip({ docID:'helpIPReservationNetworkCidr' , mode:'hover' , tooltip:'.tooltip-box' });
+
+ 
 	    $detailView.find('td.value span').each(function() {
         var name = $(this).closest('tr').data('detail-view-field');
         var $value = $(this);
@@ -578,7 +584,7 @@
     }
   };
 
-  var viewAll = function(viewAllID) {
+  var viewAll = function(viewAllID, options) {
     var $detailView = $('div.detail-view:last');
     var args = $detailView.data('view-args');
     var cloudStackArgs = $('[cloudstack-container]').data('cloudStack-args');
@@ -586,6 +592,7 @@
     var listViewArgs, viewAllPath;
     var $listView;
     var isCustom = $.isFunction(viewAllID.custom);
+    var updateContext = options.updateContext;
 
     if (isCustom) {
       $browser.cloudBrowser('addPanel', {
@@ -636,6 +643,10 @@
 
     // Load context data
     var context = $.extend(true, {}, $detailView.data('view-args').context);
+
+    if (updateContext) {
+      $.extend(context, updateContext({ context: context }));
+    }
 
     // Make panel
     var $panel = $browser.cloudBrowser('addPanel', {
@@ -823,16 +834,7 @@
 				 */
 				
         $name.html(_l(value.label));
-
-        if (!value.isExternalLink) {
-          $value.html(_s(content));
-        } else {
-          $value.html('').append(
-            $('<a>').attr({
-              href: _s(content)
-            }).html(_s(content))
-          );
-        }
+        $value.html(_s(content));
 
         // Set up validation metadata
         $value.data('validation-rules', value.validation);
@@ -901,32 +903,58 @@
         $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
       }
       if (detailViewArgs.viewAll && showViewAll) {
-       
-      if( !(detailViewArgs.viewAll instanceof Array)){
-       	detailViewArgs.viewAll = [detailViewArgs.viewAll];
-      }
-      $.each(detailViewArgs.viewAll, function(n, view){
-        $('<div>')
-          .addClass('view-all')
-          .append(
-            $('<a>')
-              .attr({ href: '#' })
-              .css('padding','0 1px')
-              .data('detail-view-link-view-all', view)
-              .append(
-                $('<span>').html(_l('label.view') + ' ' + _l(view.label))
-              )
-          )
-          .append(
-            $('<div>').addClass('end')
-          )
-          .appendTo(
-            $('<td>')
+        if (!$.isArray(detailViewArgs.viewAll)) {
+          $('<div>')
+            .addClass('view-all')
+            .append(
+              $('<a>')
+                .attr({ href: '#' })
+                .data('detail-view-link-view-all', detailViewArgs.viewAll)
+                .append(
+                  $('<span>').html(_l('label.view') + ' ' + _l(detailViewArgs.viewAll.label))
+                )
+            )
+            .append(
+              $('<div>').addClass('end')
+            )
+            .appendTo(
+              $('<td>')
+                .addClass('view-all')
+                .appendTo($actions.find('tr'))
+            );
+        } else {
+          $(detailViewArgs.viewAll).each(function() {
+            var viewAllItem = this;
+
+            if (viewAllItem.preFilter &&
+                !viewAllItem.preFilter({ context: context })) {
+              return true;
+            }
+
+            $('<div>')
               .addClass('view-all')
-              .css('padding','9px 3px 8px 0')
-              .appendTo($actions.find('tr'))
-          );
-        });
+              .append(
+                $('<a>')
+                  .attr({ href: '#' })
+                  .data('detail-view-link-view-all', viewAllItem)
+                  .append(
+                    $('<span>').html(_l('label.view') + ' ' + _l(viewAllItem.label))
+                  )
+              )
+              .append(
+                $('<div>').addClass('end')
+              )
+              .appendTo(
+                $('<td>')
+                  .addClass('view-all multiple')
+                  .appendTo($actions.find('tr'))
+              );
+
+            $actions.find('td.view-all:first').addClass('first');
+            $actions.find('td.view-all:last').addClass('last');
+            $actions.find('td.detail-actions').addClass('full-length');
+          });
+        }
       }
     }
 
@@ -1187,12 +1215,17 @@
   $('a').live('click', function(event) {
     var $target = $(event.target);
     var $viewAll = $target.closest('td.view-all a');
+    var viewAllArgs;
 
     if ($target.closest('div.detail-view').size() && $target.closest('td.view-all a').size()) {
+      viewAllArgs = $viewAll.data('detail-view-link-view-all');
       viewAll(
-        $viewAll.data('detail-view-link-view-all').custom ?
-          $viewAll.data('detail-view-link-view-all') :
-          $viewAll.data('detail-view-link-view-all').path
+        viewAllArgs.custom ?
+          viewAllArgs :
+          viewAllArgs.path,
+        {
+          updateContext: viewAllArgs.updateContext
+        }
       );
       return false;
     }

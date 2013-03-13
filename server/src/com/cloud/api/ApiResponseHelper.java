@@ -19,6 +19,7 @@ package com.cloud.api;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.*;
 import com.cloud.api.response.ApiResponseSerializer;
+
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
@@ -94,6 +96,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.response.S3Response;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.async.AsyncJob;
@@ -165,6 +168,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
@@ -178,10 +182,15 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.NicSecondaryIpVO;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -339,7 +348,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateOwner(snapshotResponse, snapshot);
 
         VolumeVO volume = findVolumeById(snapshot.getVolumeId());
-        String snapshotTypeStr = snapshot.getType().name();
+        String snapshotTypeStr = snapshot.getRecurringType().name();
         snapshotResponse.setSnapshotType(snapshotTypeStr);
         if (volume != null) {
             snapshotResponse.setVolumeId(volume.getUuid());
@@ -549,6 +558,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
         }
+        if (ipAddr.getVmIp() != null) {
+            ipResponse.setVirtualMachineIp(ipAddr.getVmIp());
+        }
 
         if (ipAddr.getAssociatedWithNetworkId() != null) {
             Network ntwk = ApiDBUtils.findNetworkById(ipAddr.getAssociatedWithNetworkId());
@@ -688,14 +700,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, pod.getId(), null);
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * cpuOverprovisioningFactor)));
+                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity())));
                 } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, pod.getId(), null);
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
@@ -825,12 +835,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
+        String cpuOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"cpuOvercommitRatio").getValue();
+        String memoryOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"memoryOvercommitRatio").getValue();
+        clusterResponse.setCpuovercommitratio(cpuOvercommitRatio);
+        clusterResponse.setRamovercommitratio(memoryOvercommitRatio);
 
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
 
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
@@ -838,8 +851,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
 
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * cpuOverprovisioningFactor)));
-                } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
+                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(cpuOvercommitRatio))));
+                }else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_MEMORY){
+                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(memoryOvercommitRatio))));
+                }
+                else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, null, cluster.getId());
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
                     capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
@@ -2151,12 +2167,47 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // FIXME - either set netmask or cidr
         response.setCidr(network.getCidr());
-        if (network.getCidr() != null) {
+        response.setNetworkCidr((network.getNetworkCidr()));
+        // If network has reservation its entire network cidr is defined by getNetworkCidr()
+        // if no reservation is present then getCidr() will define the entire network cidr
+        if (network.getNetworkCidr() != null) {
+            response.setNetmask(NetUtils.cidr2Netmask(network.getNetworkCidr()));
+        }
+        if (((network.getCidr()) != null) && (network.getNetworkCidr() == null)) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
         
         response.setIp6Gateway(network.getIp6Gateway());
         response.setIp6Cidr(network.getIp6Cidr());
+
+        // create response for reserved IP ranges that can be used for non-cloudstack purposes
+        String  reservation = null;
+        if ((network.getCidr() != null) && (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr()))) {
+                String[] guestVmCidrPair = network.getCidr().split("\\/");
+                String[] guestCidrPair = network.getNetworkCidr().split("\\/");
+
+                Long guestVmCidrSize = Long.valueOf(guestVmCidrPair[1]);
+                Long guestCidrSize = Long.valueOf(guestCidrPair[1]);
+
+                String[] guestVmIpRange = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], guestVmCidrSize);
+                String[] guestIpRange = NetUtils.getIpRangeFromCidr(guestCidrPair[0], guestCidrSize);
+                long startGuestIp = NetUtils.ip2Long(guestIpRange[0]);
+                long endGuestIp = NetUtils.ip2Long(guestIpRange[1]);
+                long startVmIp = NetUtils.ip2Long(guestVmIpRange[0]);
+                long endVmIp = NetUtils.ip2Long(guestVmIpRange[1]);
+
+                if (startVmIp == startGuestIp && endVmIp < endGuestIp -1) {
+                    reservation = (NetUtils.long2Ip(endVmIp + 1) + "-" + NetUtils.long2Ip(endGuestIp));
+                }
+                if (endVmIp == endGuestIp && startVmIp > startGuestIp + 1) {
+                    reservation = (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp-1));
+                }
+                if(startVmIp > startGuestIp + 1 && endVmIp < endGuestIp - 1) {
+                reservation = (NetUtils.long2Ip(startGuestIp) + "-" +  NetUtils.long2Ip(startVmIp-1) + " ,  " +
+                        NetUtils.long2Ip(endVmIp + 1) + "-"+  NetUtils.long2Ip(endGuestIp));
+            }
+        }
+        response.setReservedIpRange(reservation);
 
         //return vlan information only to Root admin
         if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
@@ -3392,6 +3443,55 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIpAddress(trafficMonitor.getPrivateIpAddress());
         response.setNumRetries(tmDetails.get("numRetries"));
         response.setTimeout(tmDetails.get("timeout"));
+        return response;
+    }
+
+    public NicSecondaryIpResponse createSecondaryIPToNicResponse(String ipAddr, Long nicId, Long networkId) {
+        NicSecondaryIpResponse response = new NicSecondaryIpResponse();
+        NicVO nic = _entityMgr.findById(NicVO.class, nicId);
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, networkId);
+        response.setIpAddr(ipAddr);
+        response.setNicId(nic.getUuid());
+        response.setNwId(network.getUuid());
+        response.setObjectName("nicsecondaryip");
+        return response;
+    }
+
+    public NicResponse createNicResponse(Nic result) {
+        NicResponse response = new NicResponse();
+        response.setId(result.getUuid());
+        response.setIpaddress(result.getIp4Address());
+
+        if (result.getSecondaryIp()) {
+            List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
+            if (secondaryIps != null) {
+                List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
+                for (NicSecondaryIpVO ip: secondaryIps) {
+                    NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
+                    ipRes.setId(ip.getUuid());
+                    ipRes.setIpAddr(ip.getIp4Address());
+                    ipList.add(ipRes);
+                }
+                response.setSecondaryIps(ipList);
+            }
+        }
+
+        response.setGateway(result.getGateway());
+        response.setId(result.getUuid());
+        response.setGateway(result.getGateway());
+        response.setNetmask(result.getNetmask());
+        response.setMacAddress(result.getMacAddress());
+        if (result.getBroadcastUri() != null) {
+            response.setBroadcastUri(result.getBroadcastUri().toString());
+        }
+        if (result.getIsolationUri() != null) {
+            response.setIsolationUri(result.getIsolationUri().toString());
+        }
+        if (result.getIp6Address() != null) {
+            response.setId(result.getIp6Address());
+        }
+
+        response.setIsDefault(result.isDefaultNic());
         return response;
     }
 }

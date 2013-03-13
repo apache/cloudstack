@@ -29,14 +29,11 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.Table;
 
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.offering.DiskOffering;
-import com.cloud.storage.dao.DiskOfferingDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -102,6 +99,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -114,13 +112,13 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -223,7 +221,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
-    StoragePoolDao _storagePoolDao;
+    PrimaryDataStoreDao _storagePoolDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
     @Inject
@@ -232,6 +230,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     NetworkDao _networkDao;
     @Inject
     RulesManager _rulesMgr;
+    @Inject
+    TemplateManager templateMgr;
     @Inject
     IPAddressDao _ipAddressDao;
 
@@ -1175,7 +1175,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(dataCenterId);
+            HostVO secondaryStorageHost = this.templateMgr.getSecondaryStorageHost(dataCenterId);
             boolean templateReady = false;
 
             if (template != null && secondaryStorageHost != null) {

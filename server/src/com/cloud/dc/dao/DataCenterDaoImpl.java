@@ -63,11 +63,11 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
 
-    @Inject protected DataCenterIpAddressDaoImpl _ipAllocDao = null;
-    @Inject protected DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = null;
-    @Inject protected DataCenterVnetDaoImpl _vnetAllocDao = null;
-    @Inject protected PodVlanDaoImpl _podVlanAllocDao = null;
-    @Inject protected DcDetailsDaoImpl _detailsDao = null;
+    @Inject protected DataCenterIpAddressDao _ipAllocDao = null;
+    @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao = null;
+    @Inject protected DataCenterVnetDao _vnetAllocDao = null;
+    @Inject protected PodVlanDao _podVlanAllocDao = null;
+    @Inject protected DcDetailsDao _detailsDao = null;
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());

@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -77,7 +78,7 @@ import com.google.gson.Gson;
  * server.
  * 
  */
-public abstract class ConsoleProxyResource extends ServerResourceBase implements
+public class ConsoleProxyResource extends ServerResourceBase implements
         ServerResource {
     static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);
 
@@ -489,4 +490,26 @@ public abstract class ConsoleProxyResource extends ServerResourceBase implements
             }
         }
     }
+
+	@Override
+	public void setName(String name) {
+	}
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		return new HashMap<String, Object>();
+	}
+
+	@Override
+	public int getRunLevel() {
+		return 0;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+	}
 }

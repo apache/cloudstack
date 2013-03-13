@@ -108,14 +108,17 @@ get_boot_params() {
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
-          # KVM needs to mount another disk, to get cmdline
-          mkdir -p $EXTRA_MOUNT
-          mount /dev/vdb $EXTRA_MOUNT
-          cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
-          cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
-          privkey=/var/cache/cloud/authorized_keys
-          umount $EXTRA_MOUNT
-          cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
+          while read line; do
+            if [[ $line == cmdline:* ]]; then
+              cmd=${line//cmdline:/}
+              echo $cmd > /var/cache/cloud/cmdline
+            elif [[ $line == pubkey:* ]]; then
+              pubkey=${line//pubkey:/}
+              echo $pubkey > /var/cache/cloud/authorized_keys
+              echo $pubkey > /root/.ssh/authorized_keys
+            fi
+          done < /dev/vport0p1
+          chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
@@ -363,6 +366,18 @@ setup_common() {
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
+
+  if [ -n "$IP6_NS1" ]
+  then
+    echo "nameserver $IP6_NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS1" >> /etc/resolv.conf
+  fi
+  if [ -n "$IP6_NS2" ]
+  then
+    echo "nameserver $IP6_NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS2" >> /etc/resolv.conf
+  fi
+
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
     ip route add $MGMTNET via $LOCAL_GW dev eth1
@@ -410,7 +425,6 @@ setup_dnsmasq() {
         sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
         #answer all local domain queries
         sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
-
   fi
   
   if [ -n  "$DNS_SEARCH_ORDER" ]
@@ -432,6 +446,9 @@ setup_dnsmasq() {
   if [ $DHCP_RANGE_IP6 ]
   then
     sed -i -e "s/^dhcp-range_ip6=.*$/dhcp-range=$DHCP_RANGE_IP6,static/" /etc/dnsmasq.conf
+    # For nondefault6 tagged host, don't send dns-server information
+    sed -i /nondefault6/d /etc/dnsmasq.conf
+    echo "dhcp-option=nondefault6,option6:dns-server" >> /etc/dnsmasq.conf
   else
     sed -i -e "s/^dhcp-range_ip6=.*$//" /etc/dnsmasq.conf
   fi
@@ -453,17 +470,23 @@ setup_dnsmasq() {
   fi
   sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
   [ $DEFAULT_GW ] && echo "dhcp-option=option:router,$DEFAULT_GW" >> /etc/dnsmasq.conf
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-    #for now set up ourself as the dns server as well
-  sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-  if [ "$USE_EXTERNAL_DNS" == "true" ]
+
+  [ $ETH0_IP ] && [ $NS1 ] && NS="$NS1,"
+  [ $ETH0_IP ] && [ $NS2 ] && NS="$NS$NS2,"
+  [ $ETH0_IP6 ] && [ $IP6_NS1 ] && NS6="[$IP6_NS1],"
+  [ $ETH0_IP6 ] && [ $IP6_NS2 ] && NS6="$NS6[$IP6_NS2],"
+  #for now set up ourself as the dns server as well
+  sed -i -e "/^[#]*dhcp-option=6,.*$/d" /etc/dnsmasq.conf
+  sed -i -e "/^[#]*dhcp-option=option6:dns-server,.*$/d" /etc/dnsmasq.conf
+  if [ "$USE_EXTERNAL_DNS" != "true" ]
   then
-    [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-  else
-    [ $ETH0_IP ] && echo "dhcp-option=6,$INTERNAL_DNS,$NS" >> /etc/dnsmasq.conf
+    [ $ETH0_IP ] && NS="$INTERNAL_DNS,$NS"
+    [ $ETH0_IP6 ] && NS6="[::],$NS6"
   fi
-  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,[::]" >> /etc/dnsmasq.conf
+  NS=${NS%?}
+  NS6=${NS6%?}
+  [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
 }
 
 setup_sshd(){
@@ -570,9 +593,20 @@ setup_redundant_router() {
     fi
 }
 
+setup_aesni() {
+  if [ `grep aes /proc/cpuinfo | wc -l` -gt 0 ]
+  then
+    modprobe aesni_intel
+    if [ `lsmod | grep aesni_intel | wc -l` -gt 0 ]
+    then
+      echo aesni_intel >> /etc/modules
+    fi
+  fi
+}
+
 setup_router() {
   log_it "Setting up virtual router system vm"
-  
+
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
   
@@ -620,10 +654,8 @@ setup_router() {
     fi
   fi
   
-  
-  
+  setup_aesni
   setup_dnsmasq
-  
   setup_apache2 $ETH0_IP
 
   sed -i  /gateway/d /etc/hosts
@@ -959,6 +991,12 @@ for i in $CMDLINE
           ;;
       dns2)
           NS2=$VALUE
+          ;;
+      ip6dns1)
+          IP6_NS1=$VALUE
+          ;;
+      ip6dns2)
+          IP6_NS2=$VALUE
           ;;
       domain)
           DOMAIN=$VALUE

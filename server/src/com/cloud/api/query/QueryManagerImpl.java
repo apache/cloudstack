@@ -397,6 +397,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();
         // building ACL condition
@@ -429,6 +430,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         } else if (endDate != null) {
             sc.setParameters("createDateL", endDate);
         }
+
+        sc.setParameters("archived", false);
 
         Pair<List<EventJoinVO>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so searchAndCount should be good enough.
@@ -1515,7 +1518,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // pagination
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
@@ -1552,7 +1555,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         sc.setParameters("systemUse", 1);
@@ -1996,7 +1999,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (domainIds != null ){
-            sc.setParameters("domainIdIn", domainIds);
+            sc.setParameters("domainIdIn", domainIds.toArray());
         }
 
         if (includePublicOfferings){
@@ -2102,7 +2105,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds);
+            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
 
             // include also public offering if no keyword, name and id specified
             if ( keyword == null && name == null && id == null ){
@@ -2190,12 +2193,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
+        String name = cmd.getName();
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        } else if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         } else {
             if (keyword != null) {
                 SearchCriteria<DataCenterJoinVO> ssc = _dcJoinDao.createSearchCriteria();
@@ -2232,7 +2238,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 }
                 // domainId == null (public zones) or domainId IN [all domain id up to root domain]
                 SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
-                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
                 sdc.addOr("domainId", SearchCriteria.Op.NULL);
                 sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
 
@@ -2262,7 +2268,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // domainId == null (public zones) or domainId IN [all domain id up to root domain]
                 SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
-                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
                 sdc.addOr("domainId", SearchCriteria.Op.NULL);
                 sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
 
@@ -2283,7 +2289,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                         return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);
                     }
                     else{
-                        sc.addAnd("idIn", SearchCriteria.Op.IN, dcIds);
+                        sc.addAnd("idIn", SearchCriteria.Op.IN, dcIds.toArray());
                     }
 
                 }

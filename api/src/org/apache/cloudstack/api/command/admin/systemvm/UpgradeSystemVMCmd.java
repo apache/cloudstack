@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.log4j.Logger;
 
@@ -48,7 +48,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
             required=true, description="The ID of the system vm")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             required=true, description="the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 

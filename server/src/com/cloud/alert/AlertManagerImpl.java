@@ -38,6 +38,8 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -69,8 +71,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -102,7 +102,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     @Inject private VolumeDao _volumeDao;
     @Inject private IPAddressDao _publicIPAddressDao;
     @Inject private DataCenterIpAddressDao _privateIPAddressDao;
-    @Inject private StoragePoolDao _storagePoolDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private ResourceManager _resourceMgr;
     @Inject private ConfigurationManager _configMgr;   

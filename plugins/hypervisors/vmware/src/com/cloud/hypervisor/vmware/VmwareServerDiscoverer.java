@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.vmware;
@@ -29,10 +29,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -41,17 +44,23 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -68,6 +77,7 @@ import com.cloud.utils.UriUtils;
 
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
+
 
 @Local(value = Discoverer.class)
 public class VmwareServerDiscoverer extends DiscovererBase implements
@@ -95,77 +105,158 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	CiscoNexusVSMDeviceDao _nexusDao;
 	@Inject
     NetworkModel _netmgr;
-	
+    @Inject
+    HypervisorCapabilitiesDao _hvCapabilitiesDao;
+    protected Map<String, String> _urlParams;
+    protected boolean useDVS = false;
+    protected boolean nexusDVS = false;
+
 	public VmwareServerDiscoverer() {
 		s_logger.info("VmwareServerDiscoverer is constructed");
 	}
 	
 	@Override
-	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
-			Long podId, Long clusterId, URI url, String username,
-			String password, List<String> hostTags) throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
+    	String username, String password, List<String> hostTags) throws DiscoveryException {
 
-		if (s_logger.isInfoEnabled())
-			s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId
-					+ ", cluster: " + clusterId + ", uri host: "
-					+ url.getHost());
+    	if(s_logger.isInfoEnabled())
+    		s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
 
-		if (podId == null) {
-			if (s_logger.isInfoEnabled())
+    	if(podId == null) {
+        	if(s_logger.isInfoEnabled())
 				s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
 			return null;
 		}
 
 		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (cluster == null
-				|| cluster.getHypervisorType() != HypervisorType.VMware) {
-			if (s_logger.isInfoEnabled())
+        if(cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
+        	if(s_logger.isInfoEnabled())
 				s_logger.info("invalid cluster id or cluster is not for VMware hypervisors");
 			return null;
 		}
 
 		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
-		if (hosts.size() >= _vmwareMgr.getMaxHostsPerCluster()) {
-			String msg = "VMware cluster "
-					+ cluster.getName()
-					+ " is too big to add new host now. (current configured cluster size: "
-					+ _vmwareMgr.getMaxHostsPerCluster() + ")";
+        if (hosts != null && hosts.size() > 0) {
+            int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(hosts.get(0).getHypervisorType(), hosts.get(0).getHypervisorVersion());
+            if (hosts.size() > maxHostsPerCluster) {
+                   String msg = "VMware cluster " + cluster.getName() + " is too big to add new host now. (current configured cluster size: " + maxHostsPerCluster + ")";
 			s_logger.error(msg);
 			throw new DiscoveredWithErrorException(msg);
 		}
+        }
 
 		String privateTrafficLabel = null;
 		String publicTrafficLabel = null;
 		String guestTrafficLabel = null;
 		Map<String, String> vsmCredentials = null;
 
-		privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId,
-				HypervisorType.VMware);
+        VirtualSwitchType defaultVirtualSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+
+        String paramGuestVswitchType = null;
+        String paramGuestVswitchName = null;
+        String paramPublicVswitchType = null;
+        String paramPublicVswitchName = null;
+
+        VmwareTrafficLabel guestTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Guest);
+        VmwareTrafficLabel publicTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Public);
+        Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
+        DataCenterVO zone = _dcDao.findById(dcId);
+        NetworkType zoneType = zone.getNetworkType();
+        _readGlobalConfigParameters();
+
+        // Set default physical network end points for public and guest traffic
+        // Private traffic will be only on standard vSwitch for now.
+        if (useDVS) {
+            // Parse url parameters for type of vswitch and name of vswitch specified at cluster level
+            paramGuestVswitchType = _urlParams.get(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC);
+            paramGuestVswitchName = _urlParams.get(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC);
+            paramPublicVswitchType = _urlParams.get(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC);
+            paramPublicVswitchName = _urlParams.get(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC);
+            defaultVirtualSwitchType = getDefaultVirtualSwitchType();
+        }
+
+        // Zone level vSwitch Type depends on zone level traffic labels
+        //
+        // User can override Zone wide vswitch type (for public and guest) by providing following optional parameters in addClusterCmd
+        // param "guestvswitchtype" with valid values vmwaredvs, vmwaresvs, nexusdvs
+        // param "publicvswitchtype" with valid values vmwaredvs, vmwaresvs, nexusdvs
+        //
+        // Format of label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
+        // If a field <VLANID> OR <VSWITCHTYPE> is not present leave it empty.
+        // Ex: 1) vswitch0
+        // 2) dvswitch0,200,vmwaredvs
+        // 3) nexusepp0,300,nexusdvs
+        // 4) vswitch1,400,vmwaresvs
+        // 5) vswitch0
+        // default vswitchtype is 'vmwaresvs'.
+        // <VSWITCHTYPE> 'vmwaresvs' is for vmware standard vswitch
+        // <VSWITCHTYPE> 'vmwaredvs' is for vmware distributed virtual switch
+        // <VSWITCHTYPE> 'nexusdvs' is for cisco nexus distributed virtual switch
+        // Get zone wide traffic labels for Guest traffic and Public traffic
+        guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
+
+        // Process traffic label information provided at zone level and cluster level
+        guestTrafficLabelObj = getTrafficInfo(TrafficType.Guest, guestTrafficLabel, defaultVirtualSwitchType, paramGuestVswitchType, paramGuestVswitchName, clusterId);
+
+        if (zoneType == NetworkType.Advanced) {
+            // Get zone wide traffic label for Public traffic
+            publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
+
+            // Process traffic label information provided at zone level and cluster level
+            publicTrafficLabelObj = getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
+
+        // Configuration Check: A physical network cannot be shared by different types of virtual switches.
+        //
+        // Check if different vswitch types are chosen for same physical network
+        // 1. Get physical network for guest traffic - multiple networks
+        // 2. Get physical network for public traffic - single network
+        // See if 2 is in 1
+        //  if no - pass
+        //  if yes - compare publicTrafficLabelObj.getVirtualSwitchType() == guestTrafficLabelObj.getVirtualSwitchType()
+        //      true  - pass
+        //      false - throw exception - fail cluster add operation
+
+        List<? extends PhysicalNetwork> pNetworkListGuestTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
+        List<? extends PhysicalNetwork> pNetworkListPublicTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Public);
+        // Public network would be on single physical network hence getting first object of the list would suffice.
+        PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
+        if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
+            if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
+                String msg = "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
+                        ". And virtual switch type chosen for each traffic is different" +
+                        ". A physical network cannot be shared by different types of virtual switches.";
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        } else {
+            // Distributed virtual switch is not supported in Basic zone for now.
+            // Private / Management network traffic is not yet supported over distributed virtual switch.
+            if (guestTrafficLabelObj.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+                String msg = "Detected that Guest traffic is over Distributed virtual switch in Basic zone. Only Standard vSwitch is supported in Basic zone.";
+                s_logger.error(msg);
+                throw new DiscoveredWithErrorException(msg);
+            }
+        }
+
+        privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
 		if (privateTrafficLabel != null) {
-			s_logger.info("Detected private network label : "
-					+ privateTrafficLabel);
+            s_logger.info("Detected private network label : " + privateTrafficLabel);
 		}
 
-		if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-			DataCenterVO zone = _dcDao.findById(dcId);
-			NetworkType zoneType = zone.getNetworkType();
+        if (nexusDVS) {
 			if (zoneType != NetworkType.Basic) {
-				publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId,
-						HypervisorType.VMware);
+                publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
 				if (publicTrafficLabel != null) {
-					s_logger.info("Detected public network label : "
-							+ publicTrafficLabel);
+                    s_logger.info("Detected public network label : " + publicTrafficLabel);
 				}
 			}
 			// Get physical network label
-			guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId,
-					HypervisorType.VMware);
+            guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
 			if (guestTrafficLabel != null) {
-				s_logger.info("Detected guest network label : "
-						+ guestTrafficLabel);
+                s_logger.info("Detected guest network label : " + guestTrafficLabel);
 			}
-			vsmCredentials = _vmwareMgr
-					.getNexusVSMCredentialsByClusterId(clusterId);
+            vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
 		}
 
 		VmwareContext context = null;
@@ -176,7 +267,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				context.registerStockObject("privateTrafficLabel",
 						privateTrafficLabel);
 
-			if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
+            if (nexusDVS) {
 				if (vsmCredentials != null) {
 					s_logger.info("Stocking credentials of Nexus VSM");
 					context.registerStockObject("vsmcredentials",
@@ -198,8 +289,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			}
 
 			ManagedObjectReference morCluster = null;
-			Map<String, String> clusterDetails = _clusterDetailsDao
-					.findDetails(clusterId);
+            clusterDetails = _clusterDetailsDao.findDetails(clusterId);
 			if (clusterDetails.get("url") != null) {
 				URI uriFromCluster = new URI(
 						UriUtils.encodeURIComponent(clusterDetails.get("url")));
@@ -215,8 +305,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				} else {
 					ClusterMO clusterMo = new ClusterMO(context, morCluster);
 					ClusterDasConfigInfo dasConfig = clusterMo.getDasConfig();
-					if (dasConfig != null && dasConfig.getEnabled() != null
-							&& dasConfig.getEnabled().booleanValue()) {
+					if (dasConfig != null && dasConfig.isEnabled() != null
+							&& dasConfig.isEnabled().booleanValue()) {
 						clusterDetails.put("NativeHA", "true");
 						_clusterDetailsDao.persist(clusterId, clusterDetails);
 					}
@@ -240,7 +330,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				details.put("url", hostMo.getHostName());
 				details.put("username", username);
 				details.put("password", password);
-				String guid = morHost.getType() + ":" + morHost.get_value()
+				String guid = morHost.getType() + ":" + morHost.getValue()
 						+ "@" + url.getHost();
 				details.put("guid", guid);
 
@@ -255,13 +345,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 					params.put("private.network.vswitch.name",
 							privateTrafficLabel);
 				}
-				if (publicTrafficLabel != null) {
-					params.put("public.network.vswitch.name",
-							publicTrafficLabel);
-				}
-				if (guestTrafficLabel != null) {
-					params.put("guest.network.vswitch.name", guestTrafficLabel);
-				}
+                params.put("guestTrafficInfo", guestTrafficLabelObj);
+                params.put("publicTrafficInfo", publicTrafficLabelObj);
 
 				VmwareResource resource = new VmwareResource();
 				try {
@@ -301,7 +386,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		if (morCluster == null) {
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
-						.getServiceUtil().getDynamicProperty(morHost, "parent");
+						.getVimClient().getDynamicProperty(morHost, "parent");
 				if (morParent.getType().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
@@ -309,12 +394,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		} else {
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
-						.getServiceUtil().getDynamicProperty(morHost, "parent");
+						.getVimClient().getDynamicProperty(morHost, "parent");
 				if (!morParent.getType().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
 
-				if (!morParent.get_value().equals(morCluster.get_value()))
+				if (!morParent.getValue().equals(morCluster.getValue()))
 					return false;
 			}
 		}
@@ -380,6 +465,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		}
 	}
 
+
 	@Override
 	public HostVO createHostVOForConnectedAgent(HostVO host,
 			StartupCommand[] cmd) {
@@ -415,6 +501,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
 		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
 		return new DeleteHostAnswer(true);
+
 	}
 
 	@Override
@@ -423,4 +510,158 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				.getSimpleName());
 		return super.stop();
 	}
+
+    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, VirtualSwitchType defaultVirtualSwitchType, String vSwitchType, String vSwitchName, Long clusterId) {
+        VmwareTrafficLabel trafficLabelObj = null;
+        Map<String, String> clusterDetails = null;
+        try {
+            trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defaultVirtualSwitchType);
+        } catch (InvalidParameterValueException e) {
+            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType +
+                           " traffic due to " + e.getMessage());
+            throw e;
+        }
+
+        if (defaultVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)|| (vSwitchType == null && vSwitchName == null)) {
+            // Case of no cluster level override configuration defined.
+            // Depend only on zone wide traffic label
+            // If global param for dvSwitch is false return default traffic info object with vmware standard vswitch
+            return trafficLabelObj;
+        } else {
+            // Need to persist cluster level override configuration to db
+            clusterDetails = _clusterDetailsDao.findDetails(clusterId);
+        }
+
+        if (vSwitchName != null) {
+            trafficLabelObj.setVirtualSwitchName(vSwitchName);
+            if (trafficType == TrafficType.Guest) {
+                clusterDetails.put(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, vSwitchName);
+            } else {
+                clusterDetails.put(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, vSwitchName);
+            }
+        }
+
+        if (vSwitchType != null) {
+            validateVswitchType(vSwitchType);
+            trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(vSwitchType));
+            if (trafficType == TrafficType.Guest) {
+                clusterDetails.put(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, vSwitchType);
+            } else {
+                clusterDetails.put(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, vSwitchType);
+            }
+        }
+
+        // Save cluster level override configuration to cluster details
+        _clusterDetailsDao.persist(clusterId, clusterDetails);
+
+        return trafficLabelObj;
+    }
+
+    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails, VirtualSwitchType defVirtualSwitchType) {
+        VmwareTrafficLabel trafficLabelObj = null;
+        try {
+            trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defVirtualSwitchType);
+        } catch (InvalidParameterValueException e) {
+            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType +
+                           " traffic due to " + e.getMessage());
+            throw e;
+        }
+
+        if(defVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)) {
+            return trafficLabelObj;
+        }
+
+        if (trafficType == TrafficType.Guest) {
+            if(clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC)) {
+                trafficLabelObj.setVirtualSwitchName(clusterDetails.get(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC));
+            }
+            if(clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC)) {
+                trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(clusterDetails.get(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC)));
+            }
+        } else if (trafficType == TrafficType.Public) {
+            if(clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC)) {
+                trafficLabelObj.setVirtualSwitchName(clusterDetails.get(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC));
+           }
+           if(clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)) {
+               trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(clusterDetails.get(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)));
+           }
+        }
+
+        return trafficLabelObj;
+    }
+
+    private void _readGlobalConfigParameters() {
+        String value;
+        if (_configDao != null) {
+            value = _configDao.getValue(Config.VmwareUseDVSwitch.key());
+            useDVS = Boolean.parseBoolean(value);
+            value = _configDao.getValue(Config.VmwareUseNexusVSwitch.key());
+            nexusDVS = Boolean.parseBoolean(value);
+        }
+    }
+
+    @Override
+    protected HashMap<String, Object> buildConfigParams(HostVO host) {
+        HashMap<String, Object> params = super.buildConfigParams(host);
+
+        Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(host.getClusterId());
+        // Get zone wide traffic labels from guest traffic and public traffic
+        String guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(host.getDataCenterId(), HypervisorType.VMware);
+        String publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(host.getDataCenterId(), HypervisorType.VMware);
+        _readGlobalConfigParameters();
+        VirtualSwitchType defaultVirtualSwitchType = getDefaultVirtualSwitchType();
+
+        params.put("guestTrafficInfo", getTrafficInfo(TrafficType.Guest, guestTrafficLabel, clusterDetails, defaultVirtualSwitchType));
+        params.put("publicTrafficInfo", getTrafficInfo(TrafficType.Public, publicTrafficLabel, clusterDetails, defaultVirtualSwitchType));
+
+        return params;
+    }
+
+    private VirtualSwitchType getDefaultVirtualSwitchType() {
+        if (nexusDVS)
+            return VirtualSwitchType.NexusDistributedVirtualSwitch;
+        else if(useDVS)
+            return VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        else 
+            return VirtualSwitchType.StandardVirtualSwitch;
+    }
+
+    @Override
+    public ServerResource reloadResource(HostVO host) {
+        String resourceName = host.getResource();
+        ServerResource resource = getResource(resourceName);
+
+        if (resource != null) {
+            _hostDao.loadDetails(host);
+
+            HashMap<String, Object> params = buildConfigParams(host);
+            try {
+                resource.configure(host.getName(), params);
+            } catch (ConfigurationException e) {
+                s_logger.warn("Unable to configure resource due to " + e.getMessage());
+                return null;
+            }
+            if (!resource.start()) {
+                s_logger.warn("Unable to start the resource");
+                return null;
+            }
+        }
+        return resource;
+    }
+
+    private void validateVswitchType(String inputVswitchType) {
+        VirtualSwitchType vSwitchType = VirtualSwitchType.getType(inputVswitchType);
+        if (vSwitchType == VirtualSwitchType.None) {
+            s_logger.error("Unable to resolve " + inputVswitchType + " to a valid virtual switch type in VMware environment.");
+            throw new InvalidParameterValueException("Invalid virtual switch type : " + inputVswitchType);
+        }
+    }
+
+    @Override
+    public void putParam(Map<String, String> params) {
+        if (_urlParams == null) {
+            _urlParams = new HashMap<String, String>();
+        }
+        _urlParams.putAll(params);
+    }
 }

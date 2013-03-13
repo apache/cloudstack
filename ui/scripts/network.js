@@ -628,7 +628,25 @@
 									  $.extend(data, {
 										  networkdomain: args.data.networkdomain
 										});
-									}
+									} 
+                                   
+                  var oldcidr;
+                   $.ajax({
+                    url: createURL("listNetworks&id=" + args.context.networks[0].id ),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                       oldcidr = json.listnetworksresponse.network[0].cidr;
+                 
+                                }
+                          });
+
+
+                 if(args.data.cidr !="" && args.data.cidr != oldcidr ){
+                                          $.extend(data, {
+                                                              guestvmcidr: args.data.cidr
+                                           });
+                                  }
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
@@ -1001,7 +1019,12 @@
                     gateway: { label: 'label.gateway' },
 
                     //netmask: { label: 'label.netmask' },
-                    cidr: { label: 'label.cidr' },
+                    cidr: { label: 'label.cidr', isEditable:true },
+
+                    networkcidr:{label:'Network CIDR'},
+
+                    reservediprange:{label:'Reserved IP Range'},
+
 
                     networkdomaintext: {
                       label: 'label.network.domain.text'
@@ -4436,6 +4459,11 @@
                     cidr: { label: 'label.cidr' },
                     networkdomain: { label: 'label.network.domain' },
                     state: { label: 'label.state' },
+                    ispersistent:{
+                      label:'Persistent ',
+                      converter:cloudStack.converters.toBooleanText
+
+                     },
                     restartrequired: {
                       label: 'label.restart.required',
                       converter: function(booleanValue) {

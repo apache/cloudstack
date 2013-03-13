@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -37,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-
+@APICommand(name="listBaremetalPxePingServer", description="list baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class)
 public class ListBaremetalPxePingServersCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalPxePingServersCmd.class);
     private static final String s_name = "listpingpxeserverresponse";

@@ -52,7 +52,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     private String hypervisor;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            description="list all isos by id")
+            description="list ISO by id")
     private Long id;
 
     @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if the ISO is publicly available to all users, false otherwise.")
@@ -61,11 +61,14 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.IS_READY, type=CommandType.BOOLEAN, description="true if this ISO is ready to be deployed")
     private Boolean ready;
 
-    @Parameter(name=ApiConstants.ISO_FILTER, type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"self-executable\",\"executable\", and \"community\". " +
-                                                            "* featured-ISOs that are featured and are publicself-ISOs that have been registered/created by the owner. " +
-                                                            "* selfexecutable-ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
-                                                            "* executable-all ISOs that can be used to deploy a new VM " +
-                                                            "* community-ISOs that are public.")
+    @Parameter(name=ApiConstants.ISO_FILTER, type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " +
+                                                             "* featured : templates that have been marked as featured and public. " +
+                                                             "* self : templates that have been registered or created by the calling user. " +
+                                                             "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. " +
+                                                             "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. " +
+                                                             "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. " +
+                                                             "* community : templates that have been marked as public but not featured. " +
+                                                             "* all : all templates (only usable by admins).")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")

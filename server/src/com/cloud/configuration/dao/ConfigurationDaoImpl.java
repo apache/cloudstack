@@ -65,15 +65,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return _premium;
     }
     
-    @PostConstruct
-    void initComponent() {
-    	try {
-			configure(this.getClass().getSimpleName(), this.getConfigParams());
-		} catch (ConfigurationException e) {
-			s_logger.warn("Self configuration failed", e);
-		}
-    }
-    
     @Override
     public void invalidateCache() {
     	_configs = null;

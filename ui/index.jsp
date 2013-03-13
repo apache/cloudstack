@@ -1656,6 +1656,8 @@ under the License.
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/regions.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/ipRules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/enableStaticNAT.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/securityRules.js?t=<%=now%>"></script>

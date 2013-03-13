@@ -40,6 +40,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
@@ -169,9 +170,19 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
             Map<PortAndProto, Set<String>> egressRules = generateRulesForVM(userVmId, SecurityRuleType.EgressRule);
             Long agentId = vm.getHostId();
             if (agentId != null) {
+                String privateIp = vm.getPrivateIpAddress();
+                NicVO nic = _nicDao.findByIp4AddressAndVmId(privateIp, vm.getId());
+                List<String> nicSecIps = null;
+                if (nic != null) {
+                    if (nic.getSecondaryIp()) {
+                        //get secondary ips of the vm
+                        long networkId = nic.getNetworkId();
+                        nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
+                    }
+                }
                 SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), null, 
-                        work.getLogsequenceNumber(), ingressRules, egressRules);
+                        work.getLogsequenceNumber(), ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 

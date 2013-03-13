@@ -40,13 +40,17 @@ import java.util.concurrent.Executors;
 public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     // details of AMQP server
-    private static String _amqpHost;
-    private static Integer _port;
-    private static String _username;
-    private static String _password;
+    private static String amqpHost;
+    private static Integer port;
+    private static String username;
+    private static String password;
 
     // AMQP exchange name where all CloudStack events will be published
-    private static String _amqpExchangeName;
+    private static String amqpExchangeName;
+
+    private String name;
+
+    private static Integer retryInterval;
 
     // hashmap to book keep the registered subscribers
     private static ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>> _subscribers;
@@ -58,57 +62,74 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static boolean _autoAck = true;
 
     private ExecutorService executorService;
-    private String _name;
     private static DisconnectHandler disconnectHandler;
-    private static Integer _retryInterval;
     private static final Logger s_logger = Logger.getLogger(RabbitMQEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        _amqpHost = (String) params.get("server");
-        if (_amqpHost == null || _amqpHost.isEmpty()) {
-            throw new ConfigurationException("Unable to get the AMQP server details");
-        }
-
-        _username = (String) params.get("username");
-        if (_username == null || _username.isEmpty()) {
-            throw new ConfigurationException("Unable to get the username details");
-        }
-
-        _password = (String) params.get("password");
-        if (_password == null || _password.isEmpty()) {
-            throw new ConfigurationException("Unable to get the password details");
-        }
-
-        _amqpExchangeName = (String) params.get("exchangename");
-        if (_amqpExchangeName == null || _amqpExchangeName.isEmpty()) {
-            throw new ConfigurationException("Unable to get the _exchange details on the AMQP server");
-        }
-
         try {
-            String portStr =  (String) params.get("port");
-            if (portStr == null || portStr.isEmpty()) {
+            if (amqpHost == null || amqpHost.isEmpty()) {
+                throw new ConfigurationException("Unable to get the AMQP server details");
+            }
+
+            if (username == null || username.isEmpty()) {
+                throw new ConfigurationException("Unable to get the username details");
+            }
+
+            if (password == null || password.isEmpty()) {
+                throw new ConfigurationException("Unable to get the password details");
+            }
+
+            if (amqpExchangeName == null || amqpExchangeName.isEmpty()) {
+                throw new ConfigurationException("Unable to get the _exchange details on the AMQP server");
+            }
+
+            if (port == null) {
                 throw new ConfigurationException("Unable to get the port details of AMQP server");
             }
-            _port = Integer.parseInt(portStr);
 
-            String retryIntervalStr = (String) params.get("retryinterval");
-            if (retryIntervalStr == null || retryIntervalStr.isEmpty()) {
-                // default to 10s to try out reconnect
-                retryIntervalStr = "10000";
+            if (retryInterval == null) {
+                retryInterval = 10000;// default to 10s to try out reconnect
             }
-            _retryInterval = Integer.parseInt(retryIntervalStr);
+
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Invalid port number/retry interval");
         }
 
         _subscribers = new ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>>();
-
         executorService = Executors.newCachedThreadPool();
         disconnectHandler = new DisconnectHandler();
-        _name = name;
+
         return true;
+    }
+
+    public void setServer(String amqpHost) {
+        this.amqpHost = amqpHost;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void  setExchange(String exchange) {
+        this.amqpExchangeName = exchange;
+    }
+
+    public void setRetryInterval(Integer retryInterval) {
+        this.retryInterval = retryInterval;
     }
 
     /** Call to subscribe to interested set of events
@@ -141,9 +162,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             Channel channel = createChannel(connection);
 
             // create a queue and bind it to the exchange with binding key formed from event topic
-            createExchange(channel, _amqpExchangeName);
+            createExchange(channel, amqpExchangeName);
             channel.queueDeclare(queueName, false, false, false, null);
-            channel.queueBind(queueName, _amqpExchangeName, bindingKey);
+            channel.queueBind(queueName, amqpExchangeName, bindingKey);
 
             // register a callback handler to receive the events that a subscriber subscribed to
             channel.basicConsume(queueName, _autoAck, queueName,
@@ -216,8 +237,8 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         try {
             Connection connection = getConnection();
             Channel channel = createChannel(connection);
-            createExchange(channel, _amqpExchangeName);
-            publishEventToExchange(channel, _amqpExchangeName, routingKey, eventDescription);
+            createExchange(channel, amqpExchangeName);
+            publishEventToExchange(channel, amqpExchangeName, routingKey, eventDescription);
             channel.close();
         } catch (AlreadyClosedException e) {
             closeConnection();
@@ -315,11 +336,11 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private synchronized Connection createConnection() throws Exception {
         try {
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setUsername(_username);
-            factory.setPassword(_password);
+            factory.setUsername(username);
+            factory.setPassword(password);
             factory.setVirtualHost("/");
-            factory.setHost(_amqpHost);
-            factory.setPort(_port);
+            factory.setHost(amqpHost);
+            factory.setPort(port);
             Connection connection = factory.newConnection();
             connection.addShutdownListener(disconnectHandler);
             _connection = connection;
@@ -481,7 +502,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
             while (!connected) {
                 try {
-                    Thread.sleep(_retryInterval);
+                    Thread.sleep(retryInterval);
                 } catch (InterruptedException ie) {
                     // ignore timer interrupts
                 }
@@ -504,9 +525,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                          *  with binding key formed from event topic
                          */
                         Channel channel = createChannel(connection);
-                        createExchange(channel, _amqpExchangeName);
+                        createExchange(channel, amqpExchangeName);
                         channel.queueDeclare(subscriberId, false, false, false, null);
-                        channel.queueBind(subscriberId, _amqpExchangeName, bindingKey);
+                        channel.queueBind(subscriberId, amqpExchangeName, bindingKey);
 
                         // register a callback handler to receive the events that a subscriber subscribed to
                         channel.basicConsume(subscriberId, _autoAck, subscriberId,

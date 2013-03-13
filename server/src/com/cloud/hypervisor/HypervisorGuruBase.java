@@ -34,6 +34,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
@@ -41,7 +42,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 	@Inject VMTemplateDetailsDao _templateDetailsDao;
     @Inject NicDao _nicDao;
     @Inject VMInstanceDao _virtualMachineDao;
-	
+    @Inject NicSecondaryIpDao _nicSecIpDao;
+
     protected HypervisorGuruBase() {
         super();
     }
@@ -68,6 +70,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());
         to.setUuid(nicVO.getUuid());
+        //check whether the this nic has secondary ip addresses set
+        //set nic secondary ip address in NicTO which are used for security group
+        // configuration. Use full when vm stop/start
+        List <String> secIps = null;
+        if (nicVO.getSecondaryIp()) {
+            secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
+        }
+        to.setNicSecIps(secIps);
         return to;
     }
 
@@ -76,9 +86,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         ServiceOffering offering = vmProfile.getServiceOffering();  
         VirtualMachine vm = vmProfile.getVirtualMachine();
-
-        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), 
-                offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
+        Long minMemory = (long) (offering.getRamSize()/vmProfile.getCpuOvercommitRatio());
+        int  minspeed= (int)(offering.getSpeed()/vmProfile.getMemoryOvercommitRatio());
+        int  maxspeed = (offering.getSpeed());
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed,
+                minMemory * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
         List<NicProfile> nicProfiles = vmProfile.getNics();

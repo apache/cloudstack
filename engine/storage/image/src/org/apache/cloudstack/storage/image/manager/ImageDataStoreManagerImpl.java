@@ -18,38 +18,48 @@
  */
 package org.apache.cloudstack.storage.image.manager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.provider.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.store.HttpDataStoreImpl;
+import org.apache.cloudstack.storage.image.store.DefaultImageDataStoreImpl;
 import org.springframework.stereotype.Component;
+
+import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
 public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
     @Inject
     ImageDataStoreDao dataStoreDao;
     @Inject
-    ImageDataDao imageDataDao;
+    VMTemplateDao imageDataDao;
     @Inject
     DataStoreProviderManager providerManager;
-    Map<String, ImageDataStoreDriver> driverMaps = new HashMap<String, ImageDataStoreDriver>();
+    Map<String, ImageDataStoreDriver> driverMaps;
 
+    @PostConstruct
+    public void config() {
+        driverMaps = new HashMap<String, ImageDataStoreDriver>();
+    }
+    
     @Override
     public ImageDataStore getImageDataStore(long dataStoreId) {
         ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         long providerId = dataStore.getProvider();
         ImageDataStoreProvider provider = (ImageDataStoreProvider)providerManager.getDataStoreProviderById(providerId);
-        ImageDataStore imgStore = HttpDataStoreImpl.getDataStore(dataStore, 
+        ImageDataStore imgStore = DefaultImageDataStoreImpl.getDataStore(dataStore, 
                 driverMaps.get(provider.getUuid()), provider
                 );
         // TODO Auto-generated method stub
@@ -63,6 +73,22 @@ public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
         }
         driverMaps.put(uuid, driver);
         return true;
+    }
+
+    @Override
+    public ImageDataStore getImageDataStore(String uuid) {
+        ImageDataStoreVO dataStore = dataStoreDao.findByUuid(uuid);
+        return getImageDataStore(dataStore.getId());
+    }
+
+    @Override
+    public List<DataStore> getList() {
+        List<ImageDataStoreVO> stores = dataStoreDao.listAll();
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageDataStoreVO store : stores) {
+            imageStores.add(getImageDataStore(store.getId()));
+        }
+        return imageStores;
     }
 
 }

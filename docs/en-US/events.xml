@@ -21,11 +21,17 @@
     specific language governing permissions and limitations
     under the License.
 -->
-
 <section id="events">
-    <title>Events</title>
-    <xi:include href="events-log.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="standard-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="long-running-job-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="event-log-queries.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <title>Events</title>
+  <para>An event is essentially a significant or meaningful change in the state of both virtual and
+    physical resources associated with a cloud environment. Events are used by monitoring systems,
+    usage and billing systems, or any other event-driven workflow systems to discern a pattern and
+    make the right business decision. In &PRODUCT; an event could be a state change of virtual or
+    psychical resources, an action performed by an user (action events), or policy based events
+    (alerts).</para>
+  <xi:include href="events-log.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="event-framework.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="standard-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="long-running-job-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="event-log-queries.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

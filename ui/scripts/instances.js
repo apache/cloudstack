@@ -34,15 +34,15 @@
           },
           label: 'state.Destroyed'
         }
-      },			
+      },
 			preFilter: function(args) {
 				var hiddenFields = [];
-				if(!isAdmin()) {				
+				if(!isAdmin()) {
 					hiddenFields.push('instancename');
-				}			
+				}
 				return hiddenFields;
-			},			
-      fields: {      
+			},
+      fields: {
 				name: { label: 'label.name' },
 				instancename: { label: 'label.internal.name' },
 				displayname: { label: 'label.display.name' },
@@ -57,18 +57,18 @@
           }
         }
       },
-			
+
 			advSearchFields: {
 				name: { label: 'Name' },
-				zoneid: { 
-					label: 'Zone',							
-					select: function(args) {							  					
+				zoneid: {
+					label: 'Zone',
+					select: function(args) {
 						$.ajax({
 							url: createURL('listZones'),
 							data: {
 								listAll: true
 							},
-							success: function(json) {									  
+							success: function(json) {
 								var zones = json.listzonesresponse.zone;
 
 								args.response.success({
@@ -81,16 +81,16 @@
 								});
 							}
 						});
-					}						
-				},	
-				
-				domainid: {					
-				  label: 'Domain',					
+					}
+				},
+
+				domainid: {
+				  label: 'Domain',
 					select: function(args) {
 					  if(isAdmin() || isDomainAdmin()) {
 							$.ajax({
 								url: createURL('listDomains'),
-								data: { 
+								data: {
 									listAll: true,
 									details: 'min'
 								},
@@ -120,21 +120,21 @@
 						else
 						  return true;
 					}
-				},		
-        account: { 
+				},
+        account: {
 				  label: 'Account',
           isHidden: function(args) {
 					  if(isAdmin() || isDomainAdmin())
 						  return false;
 						else
 						  return true;
-					}			
+					}
 				},
-				
+
 				tagKey: { label: 'Tag Key' },
-				tagValue: { label: 'Tag Value' }						
-			},						
-			
+				tagValue: { label: 'Tag Value' }
+			},
+
       // List view actions
       actions: {
         // Add instance wizard
@@ -145,250 +145,62 @@
             custom: cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard)
           },
 
-          messages: {            
-            notification: function(args) {              
-              return 'label.vm.add'; 
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        start: {
-          label: 'label.action.start.instance' ,
-          action: function(args) {
-            $.ajax({
-              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.startvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
           messages: {
-            confirm: function(args) {
-              return 'message.action.start.instance';
-            },
             notification: function(args) {
-              return 'label.action.start.instance';
-            },
-						complete: function(args) {						  
-							if(args.password != null) {
-								alert('Password of the VM is ' + args.password);
-							}
-							return 'label.action.start.instance';
-						}			
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        stop: {
-          label: 'label.action.stop.instance',
-          addRow: 'false',
-          createForm: {
-            title: 'label.action.stop.instance',
-            desc: 'message.action.stop.instance',
-            fields: {
-              forced: {
-                label: 'force.stop',
-                isBoolean: true,
-                isChecked: false
-              }
-            }
-          },
-          action: function(args) {
-            var array1 = [];
-            array1.push("&forced=" + (args.data.forced == "on"));
-            $.ajax({
-              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.stopvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.stop.instance';
-            },
-
-            notification: function(args) {
-              return 'label.action.stop.instance';
+              return 'label.vm.add';
             }
           },
           notification: {
             poll: pollAsyncJobResult
-          }
-        },
-        restart: {
-          label: 'instances.actions.reboot.label',
-          action: function(args) {
-            $.ajax({
-              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.rebootvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.reboot.instance';
-            },
-            notification: function(args) {
-              return 'instances.actions.reboot.label';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-
-        destroy: {
-          label: 'label.action.destroy.instance',
-          messages: {
-            confirm: function(args) {
-              return 'message.action.destroy.instance';
-            },            
-            notification: function(args) {
-              return 'label.action.destroy.instance';
-            }
-          },
-          action: function(args) {
-            $.ajax({
-              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.destroyvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restore: {     
-					label: 'label.action.restore.instance',
-					messages: {
-						confirm: function(args) {
-							return 'message.action.restore.instance';
-						},
-						notification: function(args) {
-							return 'label.action.restore.instance';
-						}
-					},					
-          action: function(args) {
-            $.ajax({
-              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var item = json.recovervirtualmachineresponse.virtualmachine;
-                args.response.success({data:item});
-              }
-            });
           }
         }
       },
 
       dataProvider: function(args) {
 			  var data = {};
-				listViewDataProvider(args, data);		
-				        				
+				listViewDataProvider(args, data);
+
 				if(args.filterBy != null) {	//filter dropdown
 					if(args.filterBy.kind != null) {
 						switch(args.filterBy.kind) {
-						case "all":						  						
+						case "all":
 							break;
 						case "mine":
 							if (!args.context.projects) {
 							  $.extend(data, {
-								  domainid: g_domainid, 
+								  domainid: g_domainid,
 									account: g_account
-								});		
-              }								
+								});
+              }
 							break;
 						case "running":
 						  $.extend(data, {
 							  state: 'Running'
-							});						
+							});
 							break;
 						case "stopped":
 						  $.extend(data, {
 							  state: 'Stopped'
-							});	
+							});
 							break;
 						case "destroyed":
 						  $.extend(data, {
 							  state: 'Destroyed'
-							});									
+							});
 							break;
 						}
-					}					
+					}
 				}
-								
-        if("hosts" in args.context) {          
+
+        if("hosts" in args.context) {
 					$.extend(data, {
 					  hostid: args.context.hosts[0].id
 					});
 				}
-					 							
+
         $.ajax({
           url: createURL('listVirtualMachines'),
-          data: data,          
+          data: data,
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
            // Code for hiding "Expunged VMs"
@@ -419,7 +231,34 @@
 
       detailView: {
         name: 'Instance details',
-        viewAll: [{ path: 'storage.volumes', label: 'label.volumes' }, { path: 'vmsnapshots', label: 'Snapshots' } ],
+        viewAll: [
+          { path: 'storage.volumes', label: 'label.volumes' },
+          { path: 'vmsnapshots', label: 'label.snapshots' },
+          {
+            path: '_zone.hosts',
+            label: 'label.hosts',
+            preFilter: function(args) {
+              return isAdmin();
+            },
+            updateContext: function(args) {
+              var instance = args.context.instances[0];
+              var zone;
+
+              $.ajax({
+                url: createURL('listZones'),
+                data: {
+                  id: instance.zoneid
+                },
+                async: false,
+                success: function(json) {
+                  zone = json.listzonesresponse.zone[0]
+                }
+              });
+
+              return { zones: [zone] };
+            }
+          }
+        ],
         tabFilter: function(args) {
           var hiddenTabs = [];
 					

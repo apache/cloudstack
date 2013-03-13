@@ -22,7 +22,7 @@
 -->
 <section id="Device-management">
     <title>Device-management</title>
-    <para>In CloudStack 4.0.x each Nicira NVP setup is considered a "device" that can be added and removed from a physical network. To complete the configuration of the Nicira NVP plugin a device needs to be added to the physical network using the "addNiciraNVPDevice" API call. The plugin is now enabled on the physical network and any guest networks created on that network will be provisioned using the Nicra NVP Controller.</para>
+    <para>In &PRODUCT; 4.0.x each Nicira NVP setup is considered a "device" that can be added and removed from a physical network. To complete the configuration of the Nicira NVP plugin a device needs to be added to the physical network using the "addNiciraNVPDevice" API call. The plugin is now enabled on the physical network and any guest networks created on that network will be provisioned using the Nicira NVP Controller.</para>
     <para>The plugin introduces a set of new API calls to manage the devices, see below or refer to the API reference.</para>
     <itemizedlist>
         <listitem><para>addNiciraNvpDevice</para></listitem>

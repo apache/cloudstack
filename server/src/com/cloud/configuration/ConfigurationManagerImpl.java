@@ -86,6 +86,7 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -249,19 +250,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     VpcManager _vpcMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
-    @Inject protected DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao;
+    @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
 
-    private int _maxVolumeSizeInGb;
-    private long _defaultPageSize;
+    private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
+    private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     protected Set<String> configValuesForValidation;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.key());
+        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 
+        	Integer.parseInt(Config.MaxVolumeSize.getDefaultValue()));
 
-        String defaultPageSizeString = _configDao.getValue("default.page.size");
-        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, 500L);
+        String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
+        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, 
+        	Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
 
         populateConfigValuesForValidationSet();
         return true;
@@ -1092,7 +1095,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     }
 
-    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr) {
+    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr,
+    								 String ip6Dns1, String ip6Dns2) {
         if (checkForDuplicates) {
             // Check if a zone with the specified name already exists
             if (validZone(zoneName)) {
@@ -1125,6 +1129,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (internalDns2 != null && internalDns2.length() > 0 && !NetUtils.isValidIp(internalDns2)) {
             throw new InvalidParameterValueException("Please enter a valid IP address for internal DNS2");
+        }
+
+        if (ip6Dns1 != null && ip6Dns1.length() > 0 && !NetUtils.isValidIpv6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS1");
+        }
+
+        if (ip6Dns2 != null && ip6Dns2.length() > 0 && !NetUtils.isValidIpv6(ip6Dns2)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
         }
 
         Grouping.AllocationState allocationState = null;
@@ -1246,6 +1258,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
+
+    @Override
+    @DB
+    public LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd) {
+        String hostname = _configDao.getValue(LDAPParams.hostname.toString());
+        cmd.setHostname(hostname == null ? "" : hostname);
+        String port = _configDao.getValue(LDAPParams.port.toString());
+        cmd.setPort(port == null ? 0 : Integer.valueOf(port));
+        String queryFilter = _configDao.getValue(LDAPParams.queryfilter.toString());
+        cmd.setQueryFilter(queryFilter == null ? "" : queryFilter);
+        String searchBase =  _configDao.getValue(LDAPParams.searchbase.toString());
+        cmd.setSearchBase(searchBase == null ? "" : searchBase);
+        String useSSL =  _configDao.getValue(LDAPParams.usessl.toString());
+        cmd.setUseSSL(useSSL == null ? Boolean.FALSE : Boolean.valueOf(useSSL));
+        String binddn =  _configDao.getValue(LDAPParams.dn.toString());
+        cmd.setBindDN(binddn == null ? "" : binddn);
+        String truststore =  _configDao.getValue(LDAPParams.truststore.toString());
+        cmd.setTrustStore(truststore == null ? "" : truststore);
+        return cmd;
+    }
+
     @Override
     @DB
     public boolean updateLDAP(LDAPConfigCmd cmd) {
@@ -1265,11 +1298,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("If you specify a bind name then you need to provide bind password too.");
             }
 
+            // check query filter if it contains valid substitution
+            if (!queryFilter.contains("%u") && !queryFilter.contains("%n") && !queryFilter.contains("%e")){
+                throw new InvalidParameterValueException("QueryFilter should contain at least one of the substitutions: %u, %n or %e: " + queryFilter);
+            }
+
             // check if the info is correct
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
             String protocol = "ldap://";
-            if (new Boolean(useSSL)) {
+            if (useSSL) {
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol = "ldaps://";
                 if (trustStore == null || trustStorePassword == null) {
@@ -1288,7 +1326,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             DirContext ctx = new InitialDirContext(env);
             ctx.close();
 
-            // store the result in DB COnfiguration
+            // store the result in DB Configuration
             ConfigurationVO cvo = _configDao.findByName(LDAPParams.hostname.toString());
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
@@ -1356,8 +1394,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             s_logger.debug("The ldap server is configured: " + hostname);
         } catch (NamingException ne) {
-            ne.printStackTrace();
-            throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ("Caused by:" + ne.getCause().getMessage()) : ""));
+            throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ("; Caused by:" + ne.getCause().getMessage()) : ""));
         }
         return true;
     }
@@ -1371,6 +1408,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
@@ -1448,6 +1487,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             dns2 = zone.getDns2();
         }
 
+        if (ip6Dns1 == null) {
+            ip6Dns1 = zone.getIp6Dns1();
+        }
+
+        if (ip6Dns2 == null) {
+            ip6Dns2 = zone.getIp6Dns2();
+        }
+
         if (internalDns1 == null) {
             internalDns1 = zone.getInternalDns1();
         }
@@ -1470,20 +1517,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean checkForDuplicates = !zoneName.equals(oldZoneName);
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr);// not
-        // allowing
-        // updating
-        // domain
-        // associated
-        // with
-        // a
-        // zone,
-        // once
-        // created
+        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr, ip6Dns1, ip6Dns2);// not allowing updating domain associated with a zone, once created
 
         zone.setName(zoneName);
         zone.setDns1(dns1);
         zone.setDns2(dns2);
+        zone.setIp6Dns1(ip6Dns1);
+        zone.setIp6Dns2(ip6Dns2);
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
@@ -1563,7 +1603,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled) {
+            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -1581,7 +1621,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr);
+        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr, ip6Dns1, ip6Dns2);
 
         byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
         String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
@@ -1589,7 +1629,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1661,6 +1701,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
@@ -1704,7 +1746,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
-                isSecurityGroupEnabled, isLocalStorageEnabled);
+                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
     }
 
     @Override
@@ -1752,14 +1794,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         Boolean offerHA = cmd.getOfferHa();
-        if (offerHA == null) {
-            offerHA = false;
-        }
-
         Boolean limitCpuUse = cmd.GetLimitCpuUse();
-        if (limitCpuUse == null) {
-            limitCpuUse = false;
-        }
+        Boolean volatileVm = cmd.getVolatileVm();
 
         String vmTypeString = cmd.getSystemVmType();
         VirtualMachine.Type vmType = null;
@@ -1786,15 +1822,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate) {
+            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type,
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
@@ -2296,10 +2332,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
                 endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
 
+        txn.commit();
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
         }
-        txn.commit();
 
         // Associate ips to the network
         if (associateIpRangeToAccount) {

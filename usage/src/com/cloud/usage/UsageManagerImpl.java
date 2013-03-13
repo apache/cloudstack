@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -79,6 +80,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={UsageManager.class})
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
     public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
@@ -1428,7 +1430,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             timeSinceJob = now - lastSuccess;
                         }
 
-                        if ((timeSinceJob > 0) && (timeSinceJob > aggregationDurationMillis)) {
+                        if ((timeSinceJob > 0) && (timeSinceJob > (aggregationDurationMillis - 100))) {
                             if (timeToJob > (aggregationDurationMillis/2)) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("it's been " + timeSinceJob + " ms since last usage job and " + timeToJob + " ms until next job, scheduling an immediate job to catch up (aggregation duration is " + m_aggregationDuration + " minutes)");

@@ -28,6 +28,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -61,11 +64,10 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -112,9 +114,10 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject HypervisorGuruManager _hvGuruMgr;
     @Inject AccountManager _accountMgr;
     @Inject GuestOSDao _guestOSDao;
-    @Inject StoragePoolDao _storagePoolDao;
+    @Inject PrimaryDataStoreDao _storagePoolDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject VirtualMachineManager _itMgr;
+    @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
     int _vmSnapshotMax;
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
@@ -393,7 +396,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         List<VolumeVO> volumeVos = _volumeDao.findByInstance(vmId);
         
         for (VolumeVO volume : volumeVos) {
-            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            StoragePool pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
             VolumeTO volumeTO = new VolumeTO(volume, pool);
             volumeTOs.add(volumeTO);
         }

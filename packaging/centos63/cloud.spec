@@ -78,7 +78,8 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-common = 4.1.0
+Requires: %{name}-common = %{_ver}
+Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-daemonize < 4.1.0
@@ -108,14 +109,15 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: java >= 1.6.0
+Requires: jna >= 3.2.4
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: jsvc
-Requires: jna
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Requires: perl
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-test < 4.1.0
@@ -143,13 +145,16 @@ Apache CloudStack command line interface
 
 %package awsapi
 Summary: Apache CloudStack AWS API compatibility wrapper
+Requires: %{name}-management = %{_ver}
+Obsoletes: cloud-aws-api < 4.1.0
+Provides: cloud-aws-api
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-%package docs
-Summary: Apache CloudStack documentation
-%description docs
-Apache CloudStack documentations
+#%package docs
+#Summary: Apache CloudStack documentation
+#%description docs
+#Apache CloudStack documentations
 
 %prep
 echo Doing CloudStack build
@@ -160,7 +165,7 @@ echo Doing CloudStack build
 cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
-mvn package -Dsystemvm
+mvn -P awsapi package -Dsystemvm
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -215,7 +220,7 @@ install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
+cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 
 # Don't package the scripts in the management webapp
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
@@ -226,6 +231,10 @@ for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf s
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
+
+ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
+    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
+
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
@@ -251,16 +260,18 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
-install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
+install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib
 install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
@@ -270,6 +281,14 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 # CLI
 cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
 install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudapis.py
+
+# AWS API
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
+cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-setup-bridge
+install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
+cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -300,16 +319,30 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
-if [ ! -f %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
-    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
-    echo %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
+if [ -d "%{_datadir}/%{name}-management" ] ; then
+   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
 fi
+
+if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
+    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
+    echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
+fi
+
+# change cloud user's home to 4.1+ version if needed. Would do this via 'usermod', but it
+# requires that cloud user not be in use, so RPM could not be installed while management is running
+if getent passwd cloud | grep -q /var/lib/cloud; then 
+    sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
+fi
+
+
+#%post awsapi
+#if [ -d "%{_datadir}/%{name}-management" ] ; then
+#   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+#fi
 
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
-%doc LICENSE
-%doc NOTICE
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -371,8 +404,8 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
-%attr(0644,root,root) %{_datadir}/%{name}-agent/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
+%dir %{_datadir}/%{name}-agent/plugins
 %doc LICENSE
 %doc NOTICE
 
@@ -393,6 +426,7 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir /var/log/%{name}/usage
+%dir %{_sysconfdir}/%{name}/usage
 %doc LICENSE
 %doc NOTICE
 
@@ -403,11 +437,16 @@ fi
 %doc LICENSE
 %doc NOTICE
 
-%files docs
-%doc LICENSE
-%doc NOTICE
+#%files docs
+#%doc LICENSE
+#%doc NOTICE
 
 %files awsapi
+%defattr(0644,cloud,cloud,0755)
+%{_datadir}/%{name}-bridge/webapps/bridge
+%attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
+%attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
+%attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
 %doc LICENSE
 %doc NOTICE
 

@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.*;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -44,6 +45,8 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -71,12 +74,6 @@ import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterIpAddressVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -116,13 +113,11 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.s3.S3Manager;
@@ -198,7 +193,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
     @Inject
-    protected StoragePoolDao                _storagePoolDao;
+    protected PrimaryDataStoreDao                _storagePoolDao;
     @Inject
     protected DataCenterIpAddressDao         _privateIPAddressDao;
     @Inject
@@ -460,6 +455,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 							+ cmd.getHypervisor());
         }
 
+        if (hypervisorType == HypervisorType.VMware) {
+            Map<String, String> allParams = cmd.getFullUrlParams();
+            discoverer.putParam(allParams);
+        }
+
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
         long clusterId = 0;
@@ -483,6 +483,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         clusterId = cluster.getId();
         result.add(cluster);
 
+           ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
+           ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRaito()));
+           _clusterDetailsDao.persist(cluster_detail_cpu);
+           _clusterDetailsDao.persist(cluster_detail_ram);
+
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             return result;
         }
@@ -493,6 +498,21 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("username", username);
         details.put("password", password);
         _clusterDetailsDao.persist(cluster.getId(), details);
+
+        _clusterDetailsDao.persist(cluster_detail_cpu);
+        _clusterDetailsDao.persist(cluster_detail_ram);
+        //create a new entry only if the overcommit ratios are greater than 1.
+        if(cmd.getCpuOvercommitRatio().compareTo(1f) > 0) {
+            cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
+            _clusterDetailsDao.persist(cluster_detail_cpu);
+        }
+
+
+        if(cmd.getMemoryOvercommitRaito().compareTo(1f) > 0) {
+             cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRaito()));
+            _clusterDetailsDao.persist(cluster_detail_ram);
+        }
+
 
         boolean success = false;
         try {
@@ -750,6 +770,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
             clusterId = cluster.getId();
+            if (_clusterDetailsDao.findDetail(clusterId,"cpuOvercommitRatio") == null) {
+            ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId,"cpuOvercommitRatio","1");
+            ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId,"memoryOvercommitRatio","1");
+            _clusterDetailsDao.persist(cluster_cpu_detail);
+            _clusterDetailsDao.persist(cluster_memory_detail);
+            }
+
         }
 
         try {
@@ -1061,7 +1088,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     @DB
 	public Cluster updateCluster(Cluster clusterToUpdate, String clusterType,
-			String hypervisor, String allocationState, String managedstate) {
+			String hypervisor, String allocationState, String managedstate,Float memoryovercommitratio, Float cpuovercommitratio) {
 
         ClusterVO cluster = (ClusterVO) clusterToUpdate;
         // Verify cluster information and update the cluster if needed
@@ -1143,6 +1170,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 doUpdate = true;
             }
         }
+
+       ClusterDetailsVO memory_detail = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
+       if( memory_detail == null){
+           if (memoryovercommitratio.compareTo(1f) > 0){
+               memory_detail = new ClusterDetailsVO(cluster.getId(),"memoryOvercommitRatio",Float.toString(memoryovercommitratio));
+               _clusterDetailsDao.persist(memory_detail);
+           }
+       }
+       else {
+           memory_detail.setValue(Float.toString(memoryovercommitratio));
+           _clusterDetailsDao.update(memory_detail.getId(),memory_detail);
+       }
+
+        ClusterDetailsVO cpu_detail = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
+        if( cpu_detail == null){
+            if (cpuovercommitratio.compareTo(1f) > 0){
+                cpu_detail = new ClusterDetailsVO(cluster.getId(),"cpuOvercommitRatio",Float.toString(cpuovercommitratio));
+                _clusterDetailsDao.persist(cpu_detail);
+            }
+        }
+        else {
+            cpu_detail.setValue(Float.toString(cpuovercommitratio));
+            _clusterDetailsDao.update(cpu_detail.getId(),cpu_detail);
+        }
+
 
         if (doUpdate) {
             Transaction txn = Transaction.currentTxn();
@@ -2223,20 +2275,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
 		User caller = _accountMgr.getActiveUser(UserContext.current()
 				.getCallerUserId());
-        if (forceDestroyStorage) {
-            // put local storage into mainenance mode, will set all the VMs on
-            // this local storage into stopped state
-			StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host
+
+		if (forceDestroyStorage) {
+			// put local storage into mainenance mode, will set all the VMs on
+			// this local storage into stopped state
+		    StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host
 					.getId());
             if (storagePool != null) {
 				if (storagePool.getStatus() == StoragePoolStatus.Up
 						|| storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
-                    try {
-						storagePool = _storageSvr
+					try {
+						StoragePool pool = _storageSvr
 								.preparePrimaryStorageForMaintenance(storagePool
 										.getId());
-                        if (storagePool == null) {
-                            s_logger.debug("Failed to set primary storage into maintenance mode");
+						if (pool == null) {
+							s_logger.debug("Failed to set primary storage into maintenance mode");
+
 							throw new UnableDeleteHostException(
 									"Failed to set primary storage into maintenance mode");
                         }
@@ -2780,4 +2834,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         return pcs;
     }
+
+	@Override
+	public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(
+			HypervisorType type, long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2
+				.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getHypervisorType(), Op.EQ, type);
+        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ,
+				ResourceState.Enabled);
+        return sc.list();
+	}
 }

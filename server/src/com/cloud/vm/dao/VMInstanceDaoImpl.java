@@ -35,12 +35,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
-
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -80,6 +77,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostIdTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostUpSearch;
+    protected SearchBuilder<VMInstanceVO> InstanceNameSearch;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
@@ -188,6 +186,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.IN);
         HostUpSearch.done();
         
+        InstanceNameSearch = createSearchBuilder();
+        InstanceNameSearch.and("instanceName", InstanceNameSearch.entity().getInstanceName(), Op.EQ);
+        InstanceNameSearch.done();
+
         CountVirtualRoutersByAccount = createSearchBuilder(Long.class);
         CountVirtualRoutersByAccount.select(null, Func.COUNT, null);
         CountVirtualRoutersByAccount.and("account", CountVirtualRoutersByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -340,6 +342,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    public VMInstanceVO findVMByInstanceName(String name) {
+        SearchCriteria<VMInstanceVO> sc = InstanceNameSearch.create();
+        sc.setParameters("instanceName", name);
+        return findOneBy(sc);
+    }
    
     @Override
     public void updateProxyId(long id, Long proxyId, Date time) {

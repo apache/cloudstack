@@ -122,7 +122,14 @@ class Distribution:
             if kernel.find("2.6.32") != -1:
                 self.release = "10.04"
             self.arch = bash("uname -m").getStdout()
-            
+        elif os.path.exists("/usr/bin/lsb_release"):
+            o = bash("/usr/bin/lsb_release -i")
+            distributor = o.getStdout().split(":\t")[1]
+            if "Debian" in distributor:
+                # This obviously needs a rewrite at some point
+                self.distro = "Ubuntu"
+            else:
+                raise UnknownSystemException(distributor)
         else: 
             raise UnknownSystemException
 

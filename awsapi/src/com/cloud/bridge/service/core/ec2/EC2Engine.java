@@ -25,9 +25,12 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -443,25 +446,35 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
     {
-        EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
         EC2SnapshotFilterSet sfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
         try { 
-            // -> query to get the volume size for each snapshot
             EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet(),
                     getResourceTags(tagKeyValueSet));
             if (response == null) {
                 return new EC2DescribeSnapshotsResponse();
             }
             EC2Snapshot[] snapshots = response.getSnapshotSet();
-            for (EC2Snapshot snap : snapshots) {
-                volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
-                EC2Volume[] volSet = volumes.getVolumeSet();
-                if (0 < volSet.length) snap.setVolumeSize(volSet[0].getSize());
-                volumes.reset();
+            // -> query to get the volume size for each snapshot
+            HashMap<String, Long> volumeIdSize = new HashMap<String, Long>();
+            for( EC2Snapshot snap : snapshots ) {
+                Boolean duplicateVolume = false;
+                Long size = null;
+                if ( volumeIdSize.containsKey(snap.getVolumeId()) ) {
+                    size = volumeIdSize.get(snap.getVolumeId());
+                    duplicateVolume = true;
+                    break;
+                }
+                if ( !duplicateVolume ) {
+                    EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
+                    volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
+                    EC2Volume[] volumeSet = volumes.getVolumeSet();
+                    if (volumeSet.length > 0) size = volumeSet[0].getSize();
+                    volumeIdSize.put(snap.getVolumeId(), size);
+                }
+                snap.setVolumeSize(size);
             }
-
             if ( null == sfs )
                 return response;
             else return sfs.evaluate( response );
@@ -1410,47 +1423,53 @@ public class EC2Engine extends ManagerBase {
 
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
-                CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
-                        request.getTemplateId(), zoneId, null, null, null, null, 
-                        null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
-                        null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
-                EC2Instance vm = new EC2Instance();
-                vm.setId(resp.getId().toString());
-                vm.setName(resp.getName());
-                vm.setZoneName(resp.getZoneName());
-                vm.setTemplateId(resp.getTemplateId().toString());
-                if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
-                    List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
-                    for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        EC2SecurityGroup param = new EC2SecurityGroup();
-                        param.setId(securityGroup.getId());
-                        param.setName(securityGroup.getName());
-                        vm.addGroupName(param);
+                try{
+                    CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
+                            request.getTemplateId(), zoneId, null, null, null, null, 
+                            null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
+                            null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
+                    EC2Instance vm = new EC2Instance();
+                    vm.setId(resp.getId().toString());
+                    vm.setName(resp.getName());
+                    vm.setZoneName(resp.getZoneName());
+                    vm.setTemplateId(resp.getTemplateId().toString());
+                    if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
+                        List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
+                        for (CloudStackSecurityGroup securityGroup : securityGroupList) {
+                            EC2SecurityGroup param = new EC2SecurityGroup();
+                            param.setId(securityGroup.getId());
+                            param.setName(securityGroup.getName());
+                            vm.addGroupName(param);
+                        }
                     }
-                }
-                vm.setState(resp.getState());
-                vm.setCreated(resp.getCreated());
-                List <CloudStackNic> nicList = resp.getNics();
-                for (CloudStackNic nic : nicList) {
-                    if (nic.getIsDefault()) {
-                        vm.setPrivateIpAddress(nic.getIpaddress());
-                        break;
+                    vm.setState(resp.getState());
+                    vm.setCreated(resp.getCreated());
+                    List <CloudStackNic> nicList = resp.getNics();
+                    for (CloudStackNic nic : nicList) {
+                        if (nic.getIsDefault()) {
+                            vm.setPrivateIpAddress(nic.getIpaddress());
+                            break;
+                        }
                     }
+                    vm.setIpAddress(resp.getIpAddress());
+                    vm.setAccountName(resp.getAccountName());
+                    vm.setDomainId(resp.getDomainId());
+                    vm.setHypervisor(resp.getHypervisor());
+                    vm.setServiceOffering( svcOffering.getName());
+                    vm.setKeyPairName(resp.getKeyPairName());
+                    instances.addInstance(vm);
+                    countCreated++;
+                }catch(Exception e){
+                    logger.error("Failed to deploy VM number: "+ (i+1) +" due to error: "+e.getMessage());
+                    break;
                 }
-                vm.setIpAddress(resp.getIpAddress());
-                vm.setAccountName(resp.getAccountName());
-                vm.setDomainId(resp.getDomainId());
-                vm.setHypervisor(resp.getHypervisor());
-                vm.setServiceOffering( svcOffering.getName());
-                vm.setKeyPairName(resp.getKeyPairName());
-                instances.addInstance(vm);
-                countCreated++;
             }    		
 
             if (0 == countCreated) {
                 // TODO, we actually need to destroy left-over VMs when the exception is thrown
-                throw new EC2ServiceException(ServerError.InsufficientInstanceCapacity, "Insufficient Instance Capacity" );
+                throw new EC2ServiceException(ServerError.InternalError, "Failed to deploy instances" );
             }
+            logger.debug("Could deploy "+ countCreated + " VM's successfully");
 
             return instances;
         } catch( Exception e ) {

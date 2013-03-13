@@ -45,7 +45,7 @@
     <title>AWS API User Registration</title>
     <para>Each user must perform a one-time registration.  The user follows these steps:</para>
     <orderedlist>
-      <listitem>
+      <listitem id="obtain-access-secret-keys">
           <para>Obtain the following by looking in the &PRODUCT; UI, using the API, or asking the cloud administrator:
           </para>
           <itemizedlist>
@@ -69,7 +69,7 @@
               <programlisting>wget -O cloudstack-aws-api-register <ulink url="https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD">"https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD"</ulink>
               </programlisting>
           </para>
-          <para> Then execute it, using the parameter values that were obtained in step 1. An example is shown below.</para>
+          <para> Then execute it, using the access and secret keys that were obtained in step <xref linkend="obtain-access-secret-keys"/>. An example is shown below.</para>
           <para>
               <programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi</programlisting>
           </para>

@@ -35,8 +35,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnConnectionVO, Long> implements Site2SiteVpnConnectionDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnConnectionDaoImpl.class);
 
-    @Inject protected IPAddressDaoImpl _addrDao;
-    @Inject protected Site2SiteVpnGatewayDaoImpl _vpnGatewayDao;
+    @Inject protected IPAddressDao _addrDao;
+    @Inject protected Site2SiteVpnGatewayDao _vpnGatewayDao;
 
     private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
     private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;

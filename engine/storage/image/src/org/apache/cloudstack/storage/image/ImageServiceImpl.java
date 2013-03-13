@@ -22,15 +22,21 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -41,21 +47,25 @@ public class ImageServiceImpl implements ImageService {
     private static final Logger s_logger = Logger.getLogger(ImageServiceImpl.class);
     @Inject
     ObjectInDataStoreManager objectInDataStoreMgr;
+    @Inject
+    DataObjectManager dataObjectMgr;
     
     class CreateTemplateContext<T> extends AsyncRpcConext<T> {
         final TemplateInfo srcTemplate;
-        final TemplateInfo templateOnStore;
+        final DataStore store;
         final AsyncCallFuture<CommandResult> future;
-        final ObjectInDataStoreVO obj;
+        final DataObject templateOnStore;
+
         public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo srcTemplate,
-                TemplateInfo templateOnStore,
                 AsyncCallFuture<CommandResult> future,
-                ObjectInDataStoreVO obj) {
+                DataStore store,
+                DataObject templateOnStore
+             ) {
             super(callback);
             this.srcTemplate = srcTemplate;
-            this.templateOnStore = templateOnStore;
             this.future = future;
-            this.obj = obj;
+            this.store = store;
+            this.templateOnStore = templateOnStore;
         }
     }
     
@@ -74,31 +84,15 @@ public class ImageServiceImpl implements ImageService {
             return future;
         }
         
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(template.getId(), template.getType(), store.getId(), store.getRole());
-        TemplateInfo templateOnStore = null;
-        if (obj == null) {
-            templateOnStore = (TemplateInfo)objectInDataStoreMgr.create(template, store);
-            obj = objectInDataStoreMgr.findObject(template.getId(), template.getType(), store.getId(), store.getRole());
-        } else {
-            CommandResult result = new CommandResult();
-            result.setResult("duplicate template on the storage");
-            future.complete(result);
-            return future;
-        }
+        DataObject templateOnStore = store.create(template);
+        templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
         
-        try {
-            objectInDataStoreMgr.update(obj, Event.CreateOnlyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("failed to transit", e);
-            CommandResult result = new CommandResult();
-            result.setResult(e.toString());
-            future.complete(result);
-            return future;
-        }
         CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(null, 
-                template, templateOnStore,
+                template,
                 future,
-                obj);
+                store,
+                templateOnStore
+               );
         AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> caller =  AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createTemplateCallback(null, null))
         .setContext(context);
@@ -108,42 +102,25 @@ public class ImageServiceImpl implements ImageService {
     
     protected Void createTemplateCallback(AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> callback, 
             CreateTemplateContext<CreateCmdResult> context) {
-        
-        TemplateInfo templateOnStore = context.templateOnStore;
         TemplateObject template = (TemplateObject)context.srcTemplate;
         AsyncCallFuture<CommandResult> future = context.future;
         CommandResult result = new CommandResult();
-        
+        DataObject templateOnStore = context.templateOnStore;
         CreateCmdResult callbackResult = callback.getResult();
         if (callbackResult.isFailed()) {
             try {
-                objectInDataStoreMgr.update(templateOnStore, Event.OperationFailed);
+                templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                template.stateTransit(TemplateEvent.OperationFailed);
             } catch (NoTransitionException e) {
-                s_logger.debug("failed to transit state", e);
+               s_logger.debug("Failed to update template state", e);
             }
             result.setResult(callbackResult.getResult());
             future.complete(result);
             return null;
         }
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(templateOnStore.getId(), templateOnStore.getType(), templateOnStore.getDataStore().getId(), templateOnStore.getDataStore().getRole());
-        obj.setInstallPath(callbackResult.getPath());
-        
-        if (callbackResult.getSize() != null) {
-            obj.setSize(callbackResult.getSize());
-        }
         
         try {
-            objectInDataStoreMgr.update(obj, Event.OperationSuccessed);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to transit state", e);
-            result.setResult(e.toString());
-            future.complete(result);
-            return null;
-        }
-        
-        template.setImageStoreId(templateOnStore.getDataStore().getId());
-        template.setSize(callbackResult.getSize());
-        try {
+            templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
             template.stateTransit(TemplateEvent.OperationSucceeded);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to transit state", e);
@@ -159,6 +136,20 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public AsyncCallFuture<CommandResult> deleteTemplateAsync(
             TemplateInfo template) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public AsyncCallFuture<CommandResult> createTemplateFromSnapshotAsync(
+            SnapshotInfo snapshot, TemplateInfo template, DataStore store) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public AsyncCallFuture<CommandResult> createTemplateFromVolumeAsync(
+            VolumeInfo volume, TemplateInfo template, DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.volume.db;
 
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;

@@ -17,27 +17,29 @@
 
 package com.cloud.storage.listener;
 
-import com.cloud.event.EventCategory;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Event;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.fsm.StateListener;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import java.util.Enumeration;
+import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.State;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.component.ComponentContext;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
+public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
-public class SnapshotStateListener implements StateListener<State, Event, Snapshot> {
-
-    // get the event bus provider if configured
-    @Inject protected EventBus _eventBus;
+    protected static EventBus _eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
@@ -46,21 +48,23 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Snapshot vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Snapshot vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
-        if (_eventBus == null) {
-            return;  // no provider is configured to provide events bus, so just return
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Snapshot.class.getName());

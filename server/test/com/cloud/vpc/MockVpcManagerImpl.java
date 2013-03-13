@@ -72,12 +72,8 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#createVpcOffering(java.lang.String, java.lang.String, java.util.List)
-     */
     @Override
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices) {
-        // TODO Auto-generated method stub
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders) {
         return null;
     }
 
@@ -320,11 +316,6 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcService#updateVpcGuestNetwork(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.user.User, java.lang.String, java.lang.Long, java.lang.Boolean)
      */
-    @Override
-    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcManager#validateNtkwOffForVpc(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.network.vpc.Vpc, java.lang.Long, java.lang.String)
@@ -362,12 +353,8 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#vpcProviderEnabledInZone(long)
-     */
     @Override
-    public boolean vpcProviderEnabledInZone(long zoneId) {
-        // TODO Auto-generated method stub
+    public boolean vpcProviderEnabledInZone(long zoneId, String provider) {
         return false;
     }
 
@@ -470,5 +457,12 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public Network updateVpcGuestNetwork(long networkId, String name,  String displayText, Account callerAccount, User callerUser,
+			String domainSuffix, Long ntwkOffId, Boolean changeCidr,	String guestVmCidr) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -42,6 +44,9 @@ public class ResetApiLimitCmd extends BaseCmd {
 
     @Inject
     ApiRateLimitService _apiLimitService;
+
+    @Inject
+    ConfigurationDao _configDao;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -89,6 +94,10 @@ public class ResetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
+        if ( !apiLimitEnabled ){
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
+        }
         boolean result = _apiLimitService.resetApiLimit(this.accountId);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+
 public interface ImageDataStoreProvider extends DataStoreProvider {
 
 }

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -11,9 +11,7 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
    http://www.apache.org/licenses/LICENSE-2.0
- 
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,16 +29,6 @@
   </note>
   <para>The &PRODUCT; Management server can be installed using either RPM or DEB packages. These
     packages will depend on everything you need to run the Management server.</para>
-  <section id="vhd-util">
-    <title>Downloading vhd-util</title>
-    <para>This procedure is required only for installations where XenServer is installed on the hypervisor hosts.</para>
-    <para>Before setting up the Management Server, download vhd-util from <ulink
-        url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>.</para>
-    <para>If the Management Server is RHEL or CentOS, copy vhd-util to
-      /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
-    <para>If the Management Server is Ubuntu, copy vhd-util to
-      /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.</para>
-  </section>
   <section id="management-server-install-rhel">
     <title>Install on CentOS/RHEL</title>
     <para>We start by installing the required packages:</para>
@@ -49,5 +37,17 @@
   <section id="management-server-install-ubuntu">
     <title>Install on Ubuntu</title>
     <programlisting language="Bash">apt-get install cloud-client</programlisting>
+  </section>
+
+  <section id="vhd-util">
+    <title>Downloading vhd-util</title>
+    <para>This procedure is required only for installations where XenServer is installed on the
+      hypervisor hosts.</para>
+    <para>Before setting up the Management Server, download vhd-util from <ulink
+        url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>.</para>
+    <para>If the Management Server is RHEL or CentOS, copy vhd-util to
+      /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
+    <para>If the Management Server is Ubuntu, copy vhd-util to
+      /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver.</para>
   </section>
 </section>

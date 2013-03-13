@@ -2427,6 +2427,10 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             id='person:patrick.debois'
             name='Patrick Debois'
             url='http://www.jedi.be/blog/' />
+        <organisation
+        	id='dojofoundation.org'
+        	name='The Dojo Foundation'
+        	url='http://dojofoundation.org/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
@@ -2508,6 +2512,14 @@ Copyright (c) 2009, John Resig
         </with-license>
     </within>
     <within dir='ui/lib'>
+    	<with-license id='MIT'>
+    		<copyright>
+Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
+    	    </copyright>
+    	    <by-organisation id='dojofoundation.org'>
+    	    	<resource name='require.js' source='http://github.com/jrburke/requirejs' />
+    	    </by-organisation>
+        </with-license>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
 Copyright (c) 2006 Google Inc.

@@ -62,6 +62,12 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("capacity")  @Param(description="the capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
+    @SerializedName("cpuovercommitratio") @Param(description = "The cpu overcommit ratio of the cluster")
+    private String cpuovercommitratio;
+
+    @SerializedName("memoryovercommitratio") @Param (description = "The ram overcommit ratio of the cluster")
+    private String memoryovercommitratio;
+
     public String getId() {
         return id;
     }
@@ -148,5 +154,19 @@ public class ClusterResponse extends BaseResponse {
 
     public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
         this.capacitites = arrayList;
+    }
+    public void setCpuovercommitratio(String cpuovercommitratio){
+        this.cpuovercommitratio= cpuovercommitratio;
+    }
+    public void setRamovercommitratio (String memoryOvercommitRatio){
+        this.memoryovercommitratio= memoryOvercommitRatio;
+    }
+
+    public String getCpuovercommitratio (){
+        return cpuovercommitratio;
+    }
+
+    public String getRamovercommitratio (){
+        return memoryovercommitratio;
     }
 }

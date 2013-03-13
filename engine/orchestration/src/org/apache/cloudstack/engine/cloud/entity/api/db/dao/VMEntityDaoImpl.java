@@ -49,13 +49,13 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
     public static final Logger s_logger = Logger.getLogger(VMEntityDaoImpl.class);
 
     
-    @Inject protected VMReservationDaoImpl _vmReservationDao;
+    @Inject protected VMReservationDao _vmReservationDao;
 
-    @Inject protected VMComputeTagDaoImpl _vmComputeTagDao;
+    @Inject protected VMComputeTagDao _vmComputeTagDao;
     
-    @Inject protected VMRootDiskTagDaoImpl _vmRootDiskTagsDao;
+    @Inject protected VMRootDiskTagDao _vmRootDiskTagsDao;
     
-    @Inject protected VMNetworkMapDaoImpl _vmNetworkMapDao;
+    @Inject protected VMNetworkMapDao _vmNetworkMapDao;
 
     
     @Inject

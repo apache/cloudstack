@@ -28,4 +28,5 @@ public interface DataObject {
     public DataObjectType getType();
     public DiskFormat getFormat();
     public String getUuid();
+    public void processEvent(ObjectInDataStoreStateMachine.Event event);
 }

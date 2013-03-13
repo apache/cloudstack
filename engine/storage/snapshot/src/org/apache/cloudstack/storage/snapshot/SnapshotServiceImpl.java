@@ -17,10 +17,15 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SnapshotServiceImpl implements SnapshotService {
+	
+	public SnapshotServiceImpl() {
+		
+	}
 
 	@Override
 	public SnapshotEntity getSnapshotEntity(long snapshotId) {
@@ -45,5 +50,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	
 
 }

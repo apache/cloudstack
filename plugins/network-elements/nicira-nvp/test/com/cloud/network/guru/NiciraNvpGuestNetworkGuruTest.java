@@ -252,6 +252,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		NetworkVO network = mock(NetworkVO.class);
 		when(network.getName()).thenReturn("testnetwork");
 		when(network.getState()).thenReturn(State.Implementing);
+		when(network.getPhysicalNetworkId()).thenReturn(42L);
 		
 		DeployDestination dest = mock(DeployDestination.class);
 		
@@ -308,7 +309,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		when(network.getState()).thenReturn(State.Implementing);
 		when(network.getGateway()).thenReturn("10.1.1.1");
 		when(network.getCidr()).thenReturn("10.1.1.0/24");
-		
+		when(network.getPhysicalNetworkId()).thenReturn(42L);
 		
 		DeployDestination dest = mock(DeployDestination.class);
 		
@@ -365,6 +366,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		NetworkVO network = mock(NetworkVO.class);
 		when(network.getName()).thenReturn("testnetwork");
 		when(network.getState()).thenReturn(State.Implementing);
+		when(network.getPhysicalNetworkId()).thenReturn(42L);
 		
 		DeployDestination dest = mock(DeployDestination.class);
 		

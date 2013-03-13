@@ -40,24 +40,24 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     private static final Logger s_logger = Logger.getLogger(HypervsiorHostEndPointRpcServer.class);
     
     @Inject
-    private RpcProvider _rpcProvider;
+    private RpcProvider rpcProvider;
     
     public HypervsiorHostEndPointRpcServer() {
     }
     
     public HypervsiorHostEndPointRpcServer(RpcProvider rpcProvider) {
-        _rpcProvider = rpcProvider;
-        _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
+        rpcProvider = rpcProvider;
+        rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
     
     @PostConstruct
     public void Initialize() {
-        _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
+        rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
     
     @Override
     public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
-        _rpcProvider.newCall(host.getHostAddr()).addCallbackListener(new RpcCallbackListener<Answer>() {
+        rpcProvider.newCall(host.getHostAddr()).addCallbackListener(new RpcCallbackListener<Answer>() {
             @Override
             public void onSuccess(Answer result) {
                 callback.complete(result);

@@ -31,13 +31,13 @@
   </dependencySets>
   <fileSets>
     <fileSet>
-      <directory>../scripts/storage/secondary/</directory>
+      <directory>../../../scripts/storage/secondary/</directory>
       <outputDirectory>scripts/storage/secondary</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
     </fileSet>
     <fileSet>
-      <directory>../scripts/storage/secondary/</directory>
+      <directory>../../../scripts/storage/secondary/</directory>
       <outputDirectory>scripts/storage/secondary</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
@@ -60,7 +60,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../console-proxy/images</directory>
+      <directory>images</directory>
       <outputDirectory>images</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
@@ -72,7 +72,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../console-proxy/js</directory>
+      <directory>js</directory>
       <outputDirectory>js</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
@@ -81,7 +81,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../console-proxy/ui</directory>
+      <directory>ui</directory>
       <outputDirectory>ui</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
@@ -90,7 +90,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../console-proxy/css</directory>
+      <directory>css</directory>
       <outputDirectory>css</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
@@ -99,7 +99,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../console-proxy/certs</directory>
+      <directory>certs</directory>
       <outputDirectory>certs</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>

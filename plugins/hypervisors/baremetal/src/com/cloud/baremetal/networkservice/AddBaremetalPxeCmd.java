@@ -20,11 +20,14 @@ package com.cloud.baremetal.networkservice;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
@@ -37,7 +40,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.UserContext;
-
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     private static final String s_name = "addexternalpxeresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
@@ -46,10 +48,10 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
     
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="Pod Id")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, description="Pod Id")
     private Long podId;
     
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external pxe device")

@@ -118,6 +118,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -331,6 +332,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
     protected XenServerStorageResource storageResource;
+    protected int _maxNics = 7;
 
     public enum SRType {
         NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT, FILE;
@@ -596,6 +598,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((DeleteVMSnapshotCommand)cmd);
         } else if (clazz == RevertToVMSnapshotCommand.class) {
             return execute((RevertToVMSnapshotCommand)cmd);
+        } else if (clazz == NetworkRulesVmSecondaryIpCommand.class) {
+            return execute((NetworkRulesVmSecondaryIpCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1113,13 +1117,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vm.setAffinity(conn, host);
         vm.removeFromOtherConfig(conn, "disks");
         vm.setNameLabel(conn, vmSpec.getName());
-        setMemory(conn, vm, vmSpec.getMinRam());
+        setMemory(conn, vm, vmSpec.getMinRam(),vmSpec.getMaxRam());
         vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
         vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
 
         Map<String, String> vcpuParams = new HashMap<String, String>();
 
-        Integer speed = vmSpec.getSpeed();
+        Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
 
             int cpuWeight = _maxWeight; //cpu_weight
@@ -1467,7 +1471,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     for (NicTO nic : nics) {
                         if ( nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null
                                 && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-                            result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()));
+                            List<String> nicSecIps = nic.getNicSecIps();
+                            String secIpsStr;
+                            StringBuilder sb = new StringBuilder();
+                            if (nicSecIps != null) {
+                                for (String ip : nicSecIps) {
+                                    sb.append(ip).append(":");
+                                }
+                                secIpsStr = sb.toString();
+                            } else {
+                                secIpsStr = "0:";
+                            }
+                            result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                                 s_logger.warn("Failed to program default network rules for " + vmName+" on nic with ip:"+nic.getIp()+" mac:"+nic.getMac());
@@ -1887,6 +1902,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (cmd.getVmIp6Address() != null) {
         	args += " -6 " + cmd.getVmIp6Address();
         	args += " -u " + cmd.getDuid();
+        }
+        
+        if (!cmd.isDefault()) {
+        	args += " -z";
         }
         
         String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);
@@ -3252,8 +3271,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryLimits(conn, maxMemsize, maxMemsize, minMemsize, maxMemsize);
     }
 
     private void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
@@ -3842,22 +3861,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
     }
 
-
-    protected String getUnusedVIFNum(Connection conn, VM vm) {
-        String vmName = "";
-        try {
-            vmName = vm.getNameLabel(conn);
-            Set<String> allowedVIFDevices = vm.getAllowedVIFDevices(conn);
-            if (allowedVIFDevices.size() > 0) {
-                return allowedVIFDevices.iterator().next();
-            }
-        } catch (Exception e) {
-            String msg = "getUnusedVIFNum failed due to " + e.toString();
-            s_logger.warn(msg, e);
-        }
-        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName + " to plug a VIF");
-    }
-
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         String msg;
@@ -3989,22 +3992,29 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected String getLowestAvailableVIFDeviceNum(Connection conn, VM vm) {
+        String vmName = "";
         try {
-            Set<String> availableDeviceNums = vm.getAllowedVIFDevices(conn);
-            Iterator<String> deviceNumsIterator = availableDeviceNums.iterator();
-            List<Integer> sortedDeviceNums = new ArrayList<Integer>();
-
-            while (deviceNumsIterator.hasNext()) {
-                try {
-                    sortedDeviceNums.add(Integer.valueOf(deviceNumsIterator.next()));
+            vmName = vm.getNameLabel(conn);
+            List<Integer> usedDeviceNums = new ArrayList<Integer>();
+            Set<VIF> vifs = vm.getVIFs(conn);
+            Iterator<VIF> vifIter = vifs.iterator();
+            while(vifIter.hasNext()){
+                VIF vif = vifIter.next();
+                try{
+                    usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
-                    s_logger.debug("Obtained an invalid value for an available VIF device number for VM: " + vm.getNameLabel(conn));
-                    return null;
+                    String msg = "Obtained an invalid value for an allocated VIF device number for VM: " + vmName;
+                    s_logger.debug(msg, e);
+                    throw new CloudRuntimeException(msg);
                 }
             }
 
-            Collections.sort(sortedDeviceNums);
-            return String.valueOf(sortedDeviceNums.get(0));
+            for(Integer i=0; i< _maxNics; i++){
+                if(!usedDeviceNums.contains(i)){
+                    s_logger.debug("Lowest available Vif device number: "+i+" for VM: " + vmName);
+                    return i.toString();
+                }
+            }
         } catch (XmlRpcException e) {
             String msg = "Caught XmlRpcException: " + e.getMessage();
             s_logger.warn(msg, e);
@@ -4013,7 +4023,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
         }
 
-        return null;
+        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName);
     }
 
     protected VDI mount(Connection conn, StoragePoolType pooltype, String volumeFolder, String volumePath) {
@@ -5458,7 +5468,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 "signature", cmd.getSignature(),
                 "seqno", Long.toString(cmd.getSeqNum()),
                 "deflated", "true",
-                "rules", cmd.compressStringifiedRules());
+                "rules", cmd.compressStringifiedRules(),
+                "secIps", cmd.getSecIpsString());
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
@@ -5654,6 +5665,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         value = (String) params.get("migratewait");
         _migratewait = NumbersUtil.parseInt(value, 3600);
+
+        _maxNics = NumbersUtil.parseInt((String) params.get("xen.nics.max"), 7);
 
         if (_pod == null) {
             throw new ConfigurationException("Unable to get the pod");
@@ -7508,6 +7521,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd, success, "");
     }
 
+    private Answer execute(NetworkRulesVmSecondaryIpCommand cmd) {
+        boolean success = true;
+        Connection conn = getConnection();
+
+        String result = callHostPlugin(conn, "vmops", "network_rules_vmSecondaryIp", "vmName", cmd.getVmName(), "vmMac", cmd.getVmMac(), "vmSecIp", cmd.getVmSecIp(), "action",
+                cmd.getAction());
+        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+            success = false;
+        }
+
+        return new Answer(cmd, success, "");
+    }
+
     protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
         String callResult;
@@ -7765,7 +7791,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn(msg);
                 return new PlugNicAnswer(cmd, false, msg);
             }
-            String deviceId = getUnusedVIFNum(conn, vm);
+            String deviceId = getLowestAvailableVIFDeviceNum(conn, vm);
             nic.setDeviceId(Integer.parseInt(deviceId));
             vif = createVif(conn, vmName, vm, nic);
             vif.plug(conn);

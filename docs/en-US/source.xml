@@ -24,20 +24,10 @@
 
 <chapter id="sect-source">
     <title>Building from Source</title>
-    <para>The official &PRODUCT; release is always in source code form. While there may
-        exist convenience binaries in various forms from a number of places, the
-        source is the canonical release will be source. In this document we'll cover 
-        acquiring the source release, building that into binary, deployable packages.
-    </para>
-    <para>
-       While building and deploying directly from source is certainly possible, the reality
-       of Infrastructure-as-a-Service cloud computing implies a need to deploy packages on
-       a potentially large number of systems, which RPMs and DEBs fill nicely.
-    </para>
-    <para>
-       Building and deploying directly from source is thus outside the scope of this
-       document, but is documented in the INSTALL.md file in the release.
-    </para>
+    <para>The official &PRODUCT; release is always in source code form. You will likely be able to find "convenience binaries," the source is the canonical release. In this section, we'll cover acquiring the source release and building that so that you can deploy it using Maven or create Debian packages or RPMs.</para>
+    <para>Note that building and deploying directly from source is typically not the most efficient way to deploy an IaaS. However, we will cover that method as well as building RPMs or Debian packages for deploying &PRODUCT;.</para>
+    <para>The instructions here are likely version-specific. That is, the method for building from source for the 4.0.x series is different from the 4.1.x series.</para>
+    <para>If you are working with a unreleased version of &PRODUCT;, see the INSTALL.md file in the top-level directory of the release.</para>
     <xi:include href="getting-release.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
     <xi:include href="verifying-source.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="source-prereqs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

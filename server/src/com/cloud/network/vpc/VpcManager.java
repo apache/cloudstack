@@ -71,9 +71,10 @@ public interface VpcManager extends VpcService{
 
     /**
      * @param zoneId
+     * @param provider
      * @return
      */
-    boolean vpcProviderEnabledInZone(long zoneId);
+    boolean vpcProviderEnabledInZone(long zoneId, String provider);
 
     /**
      * @param vpcId

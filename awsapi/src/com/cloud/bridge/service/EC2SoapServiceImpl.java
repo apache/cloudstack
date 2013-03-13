@@ -1905,7 +1905,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	         param3.setStartTime( cal );
 	         
 	         param3.setOwnerId(ownerId);
-	         param3.setVolumeSize( snap.getVolumeSize().toString());
+             if ( snap.getVolumeSize() == null )
+                 param3.setVolumeSize("0");
+             else
+                 param3.setVolumeSize( snap.getVolumeSize().toString() );
 	         param3.setDescription( snap.getName());
 	         param3.setOwnerAlias( snap.getAccountName() );
 	         

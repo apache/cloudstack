@@ -41,7 +41,7 @@ public interface VpcService {
 
     public VpcOffering getVpcOffering(long vpcOfferingId);
 
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders);
 
     public Vpc getVpc(long vpcId);
 
@@ -246,5 +246,5 @@ public interface VpcService {
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
     public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr);
+            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr);
 }

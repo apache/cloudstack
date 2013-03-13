@@ -28,10 +28,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
-import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -39,7 +36,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.TransactionContextBuilder;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 
@@ -56,7 +52,8 @@ public class ComponentContext implements ApplicationContextAware {
     private static ApplicationContext s_appContext;  
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {  
+    public void setApplicationContext(ApplicationContext applicationContext) {
+    	s_logger.info("Setup Spring Application context");
         s_appContext = applicationContext;  
     }  
 
@@ -157,27 +154,24 @@ public class ComponentContext implements ApplicationContextAware {
 
     public static <T> T getComponent(Class<T> beanType) {
         assert(s_appContext != null);
-        try {
-            return s_appContext.getBean(beanType);
-        } catch(NoSuchBeanDefinitionException e) {
-            Map<String, T> matchedTypes = getComponentsOfType(beanType);
-            if(matchedTypes.size() > 0) {
-                for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-                    Primary primary = getTargetClass(entry.getValue()).getAnnotation(Primary.class);
-                    if(primary != null)
-                        return entry.getValue();
-                }
-
-                if(matchedTypes.size() > 1) {
-                    s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
-                    for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-                        s_logger.warn("Candidate " + getTargetClass(entry.getValue()).getName());
-                    }
-                }
-
-                return (T)matchedTypes.values().toArray()[0];
+        Map<String, T> matchedTypes = getComponentsOfType(beanType);
+        if(matchedTypes.size() > 0) {
+            for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+                Primary primary = getTargetClass(entry.getValue()).getAnnotation(Primary.class);
+                if(primary != null)
+                    return entry.getValue();
             }
+
+            if(matchedTypes.size() > 1) {
+                s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
+                for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+                    s_logger.warn("Candidate " + getTargetClass(entry.getValue()).getName());
+                }
+            }
+
+            return (T)matchedTypes.values().toArray()[0];
         }
+        
         throw new NoSuchBeanDefinitionException(beanType.getName());
     }
 
@@ -207,25 +201,25 @@ public class ComponentContext implements ApplicationContextAware {
 
         return (T)instance;
     }
-
-    @SuppressWarnings("unchecked")
-	public static <T> T inject(Class<T> clz) {
-        Object instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
-        return (T)inject(instance);
+    
+    public static <T> T inject(Class<T> clz) {
+        T instance;
+		try {
+			instance = clz.newInstance();
+	        return inject(instance);
+		} catch (InstantiationException e) {
+			s_logger.error("Unhandled InstantiationException", e);
+			throw new RuntimeException("Unable to instantiate object of class " + clz.getName() + ", make sure it has public constructor");
+		} catch (IllegalAccessException e) {
+			s_logger.error("Unhandled IllegalAccessException", e);
+			throw new RuntimeException("Unable to instantiate object of class " + clz.getName() + ", make sure it has public constructor");
+		}
     }
 
     public static <T> T inject(Object instance) {
         // autowire dynamically loaded object
         AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
         beanFactory.autowireBean(instance);
-
-        Advisor advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
-                new TransactionContextBuilder());
-
-        ProxyFactory pf = new ProxyFactory();
-        pf.setTarget(instance);
-        pf.addAdvisor(advisor);
-
-        return (T)pf.getProxy();        
+        return (T)instance;
     }
 }

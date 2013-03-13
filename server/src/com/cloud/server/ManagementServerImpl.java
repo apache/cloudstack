@@ -47,12 +47,13 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
+
 import org.apache.cloudstack.api.command.admin.account.*;
 import org.apache.cloudstack.api.command.admin.autoscale.*;
 import org.apache.cloudstack.api.command.admin.cluster.*;
@@ -108,6 +109,9 @@ import org.apache.cloudstack.api.command.user.vpc.*;
 import org.apache.cloudstack.api.command.user.vpn.*;
 import org.apache.cloudstack.api.command.user.zone.*;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -122,6 +126,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -185,6 +190,7 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IpAddress;
+import com.cloud.network.as.ConditionVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -206,15 +212,21 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.UploadDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -222,6 +234,7 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -252,6 +265,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -285,7 +299,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     @Inject
-    private AccountManager _accountMgr;
+    public AccountManager _accountMgr;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -301,7 +315,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
-    private EventDao _eventDao;
+    public EventDao _eventDao;
     @Inject
     private DataCenterDao _dcDao;
     @Inject
@@ -337,7 +351,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private AccountDao _accountDao;
     @Inject
-    private AlertDao _alertDao;
+    public AlertDao _alertDao;
     @Inject
     private CapacityDao _capacityDao;
     @Inject
@@ -345,7 +359,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
-    private StoragePoolDao _poolDao;
+    private PrimaryDataStoreDao _poolDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -361,6 +375,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private AsyncJobManager _asyncMgr;
     private int _purgeDelay;
+    private int _alertPurgeDelay;
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
@@ -390,6 +405,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     HighAvailabilityManager _haMgr;
     @Inject
+    TemplateManager templateMgr;
+    @Inject
+    DataStoreManager dataStoreMgr;
+    @Inject
     HostTagsDao _hostTagsDao;
 
     @Inject
@@ -403,6 +422,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     EventUtils	_forceEventUtilsRef;
 */
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
+    private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     private KeystoreManager _ksMgr;
 
     private Map<String, String> _configs;
@@ -430,6 +450,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _purgeDelay = NumbersUtil.parseInt(_configs.get("event.purge.delay"), 0);
         if (_purgeDelay != 0) {
             _eventExecutor.scheduleAtFixedRate(new EventPurgeTask(), cleanup, cleanup, TimeUnit.SECONDS);
+        }
+
+        //Alerts purge configurations
+        int alertPurgeInterval = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeInterval.key()),
+                60 * 60 * 24); // 1 day.
+        _alertPurgeDelay = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeDelay.key()), 0);
+        if (_alertPurgeDelay != 0) {
+            _alertExecutor.scheduleAtFixedRate(new AlertPurgeTask(), alertPurgeInterval, alertPurgeInterval,
+                    TimeUnit.SECONDS);
         }
 
         String[] availableIds = TimeZone.getAvailableIDs();
@@ -522,6 +551,42 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return _eventDao.search(sc, null);
+    }
+
+    @Override
+    public boolean archiveEvents(ArchiveEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        boolean result =true;
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+
+        if (ids != null && events.size() < ids.size()) {
+            result = false;
+            return result;
+        }
+        _eventDao.archiveEvents(events);
+        return result;
+    }
+
+    @Override
+    public boolean deleteEvents(DeleteEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        boolean result =true;
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+
+        if (ids != null && events.size() < ids.size()) {
+            result = false;
+            return result;
+        }
+        for (EventVO event : events) {
+        _eventDao.remove(event.getId());
+        }
+        return result;
     }
 
     private Date massageDate(Date date, int hourOfDay, int minute, int second) {
@@ -1649,8 +1714,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.addAnd("type", SearchCriteria.Op.EQ, type);
         }
 
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         Pair<List<AlertVO>, Integer> result = _alertDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Alert>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    public boolean archiveAlerts(ArchiveAlertsCmd cmd) {
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        boolean result = _alertDao.archiveAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        return result;
+    }
+
+    @Override
+    public boolean deleteAlerts(DeleteAlertsCmd cmd) {
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        boolean result = _alertDao.deleteAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        return result;
     }
 
     @Override
@@ -2151,6 +2231,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVMSnapshotCmd.class);
         cmdList.add(RevertToSnapshotCmd.class);
         cmdList.add(DeleteVMSnapshotCmd.class);
+        cmdList.add(AddIpToVmNicCmd.class);
+        cmdList.add(RemoveIpFromVmNicCmd.class);
+        cmdList.add(ListNicsCmd.class);
+        cmdList.add(ArchiveAlertsCmd.class);
+        cmdList.add(DeleteAlertsCmd.class);
+        cmdList.add(ArchiveEventsCmd.class);
+        cmdList.add(DeleteEventsCmd.class);
         return cmdList;
     }
 
@@ -2188,6 +2275,39 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    protected class AlertPurgeTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                GlobalLock lock = GlobalLock.getInternLock("AlertPurge");
+                if (lock == null) {
+                    s_logger.debug("Couldn't get the global lock");
+                    return;
+                }
+                if (!lock.lock(30)) {
+                    s_logger.debug("Couldn't lock the db");
+                    return;
+                }
+                try {
+                    final Calendar purgeCal = Calendar.getInstance();
+                    purgeCal.add(Calendar.DAY_OF_YEAR, - _alertPurgeDelay);
+                    Date purgeTime = purgeCal.getTime();
+                    s_logger.debug("Deleting alerts older than: " + purgeTime.toString());
+                    List<AlertVO> oldAlerts = _alertDao.listOlderAlerts(purgeTime);
+                    s_logger.debug("Found " + oldAlerts.size() + " events to be purged");
+                    for (AlertVO alert : oldAlerts) {
+                        _alertDao.expunge(alert.getId());
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Exception ", e);
+                } finally {
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                s_logger.error("Exception ", e);
+            }
+        }
+    }
 
     @Override
     public Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c) {
@@ -2518,6 +2638,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
         // add some parameters UI needs to handle API throttling
+        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
         Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
@@ -2529,8 +2650,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
-        capabilities.put("apiLimitInterval", apiLimitInterval);
-        capabilities.put("apiLimitMax", apiLimitMax);
+        if (apiLimitEnabled) {
+            capabilities.put("apiLimitInterval", apiLimitInterval);
+            capabilities.put("apiLimitMax", apiLimitMax);
+        }
 
         return capabilities;
     }
@@ -2635,8 +2758,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         long accountId = volume.getAccountId();
-        StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
-        HostVO sserver = _storageMgr.getSecondaryStorageHost(zoneId);
+        StoragePool srcPool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+        HostVO sserver = this.templateMgr.getSecondaryStorageHost(zoneId);
         String secondaryStorageURL = sserver.getStorageUrl();
 
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
@@ -2713,7 +2836,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private String getFormatForPool(StoragePoolVO pool) {
+    private String getFormatForPool(StoragePool pool) {
         ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
 
         if (cluster.getHypervisorType() == HypervisorType.XenServer) {

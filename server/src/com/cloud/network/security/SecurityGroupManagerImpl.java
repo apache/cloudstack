@@ -46,8 +46,10 @@ import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupI
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
+import com.amazonaws.services.identitymanagement.model.User;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
@@ -67,12 +69,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.security.dao.SecurityGroupRuleDao;
-import com.cloud.network.security.dao.SecurityGroupRulesDao;
-import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.network.security.dao.SecurityGroupWorkDao;
-import com.cloud.network.security.dao.VmRulesetLogDao;
 import com.cloud.network.security.dao.*;
 import com.cloud.projects.ProjectManager;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -97,6 +93,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -149,6 +147,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     ProjectManager _projectMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    NicSecondaryIpDao _nicSecIpDao;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -489,7 +491,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         return affectedVms;
     }
 
-    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> ingressRules, Map<PortAndProto, Set<String>> egressRules) {
+    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> ingressRules, Map<PortAndProto, Set<String>> egressRules, List<String> secIps) {
         List<IpPortAndProto> ingressResult = new ArrayList<IpPortAndProto>();
         List<IpPortAndProto> egressResult = new ArrayList<IpPortAndProto>();
         for (PortAndProto pAp : ingressRules.keySet()) {
@@ -506,7 +508,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 egressResult.add(ipPortAndProto);
             }
         }
-        return new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]), egressResult.toArray(new IpPortAndProto[egressResult.size()]));
+        return new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]), egressResult.toArray(new IpPortAndProto[egressResult.size()]), secIps);
     }
 
     protected void handleVmStopped(VMInstanceVO vm) {
@@ -947,8 +949,19 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 Map<PortAndProto, Set<String>> egressRules = generateRulesForVM(userVmId, SecurityRuleType.EgressRule);
                 agentId = vm.getHostId();
                 if (agentId != null) {
+                    // get nic secondary ip address
+                    String privateIp = vm.getPrivateIpAddress();
+                    NicVO nic = _nicDao.findByIp4AddressAndVmId(privateIp, vm.getId());
+                    List<String> nicSecIps = null;
+                    if (nic != null) {
+                        if (nic.getSecondaryIp()) {
+                            //get secondary ips of the vm
+                            long networkId = nic.getNetworkId();
+                            nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
+                        }
+                    }
                     SecurityGroupRulesCmd cmd = generateRulesetCmd( vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(ingressRules, egressRules), seqnum,
-                            ingressRules, egressRules);
+                            ingressRules, egressRules, nicSecIps);
                     Commands cmds = new Commands(cmd);
                     try {
                         _agentMgr.send(agentId, cmds, _answerListener);
@@ -1271,5 +1284,67 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         } else {
             return true;
         }
+    }
+
+    @Override
+    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId,
+            String secondaryIp, boolean ruleAction) {
+
+        String vmMac = null;
+        String vmName = null;
+
+        if (secondaryIp == null || nicId == null || networkId == null) {
+            throw new InvalidParameterValueException("Vm nicId or networkId or secondaryIp can't be null");
+        }
+
+        NicVO nic = _nicDao.findById(nicId);
+        Long vmId = nic.getInstanceId();
+
+        // Validate parameters
+        List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);
+        if (vmSgGrps == null) {
+            s_logger.debug("Vm is not in any Security group ");
+            return true;
+        }
+
+        Account caller = UserContext.current().getCaller();
+
+        for (SecurityGroupVO securityGroup: vmSgGrps) {
+            Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
+            if (owner == null) {
+                throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
+            }
+            // Verify permissions
+            _accountMgr.checkAccess(caller, null, true, securityGroup);
+        }
+
+        UserVm  vm = _userVMDao.findById(vmId);
+        if (vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Can't configure the SG ipset, arprules rules for the non user vm");
+        }
+
+        if (vm != null) {
+            vmMac = vm.getPrivateMacAddress();
+            vmName = vm.getInstanceName();
+            if (vmMac == null || vmName == null) {
+                throw new InvalidParameterValueException("vm name or vm mac can't be null");
+            }
+        }
+
+        //create command for the to add ip in ipset and arptables rules
+        NetworkRulesVmSecondaryIpCommand cmd = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, ruleAction);
+        s_logger.debug("Asking agent to configure rules for vm secondary ip");
+        Commands cmds = null;
+
+        cmds = new Commands(cmd);
+        try {
+            _agentMgr.send(vm.getHostId(), cmds);
+        } catch (AgentUnavailableException e) {
+            s_logger.debug(e.toString());
+        } catch (OperationTimedoutException e) {
+            s_logger.debug(e.toString());
+        }
+
+        return true;
     }
 }

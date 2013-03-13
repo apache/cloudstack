@@ -25,11 +25,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
-import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -84,15 +82,14 @@ public class CloudOrchestrator implements OrchestrationService {
 	@Inject
 	protected DiskOfferingDao _diskOfferingDao = null;
 	
-	@Inject 
-	protected VirtualMachineEntityFactory _vmEntityFactory;
-
 	@Inject
 	protected NetworkDao _networkDao;
 	
 	@Inject
 	protected AccountDao _accountDao = null;
 
+	public CloudOrchestrator() {
+	}
 	
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
             Map<String, String> details, String owner) {
@@ -174,14 +171,7 @@ public class CloudOrchestrator implements OrchestrationService {
             }
         }
 
-    	VirtualMachineEntityImpl vmEntity = null;
-		try {
-			//vmEntity = _vmEntityFactory.getObject();
-			vmEntity = VirtualMachineEntityImpl.class.newInstance();
-			vmEntity = ComponentContext.inject(vmEntity);
-		} catch (Exception e) {
-			// add error handling here
-		}
+    	VirtualMachineEntityImpl vmEntity = ComponentContext.inject(VirtualMachineEntityImpl.class);
     	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
         
     	
@@ -230,12 +220,7 @@ public class CloudOrchestrator implements OrchestrationService {
             List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan)  throws InsufficientCapacityException {
 		
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
-    	VirtualMachineEntityImpl vmEntity = null;
-		try {
-			vmEntity = _vmEntityFactory.getObject();
-		} catch (Exception e) {
-			// add error handling here
-		}
+    	VirtualMachineEntityImpl vmEntity = ComponentContext.inject(VirtualMachineEntityImpl.class);
     	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
 
     	//load vm instance and offerings and call virtualMachineManagerImpl
@@ -267,10 +252,17 @@ public class CloudOrchestrator implements OrchestrationService {
 		rootDiskOffering.first(diskOffering);
 		rootDiskOffering.second(size);
 		
+        List<Pair<NetworkVO, NicProfile>> networkIpMap = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        for (String uuid : networkNicMap.keySet()) {
+            NetworkVO network = _networkDao.findByUuid(uuid);
+            if(network != null){
+                networkIpMap.add(new Pair<NetworkVO, NicProfile>(network, networkNicMap.get(uuid)));
+            }
+        }
 		
 		HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 		
-    	if (_itMgr.allocate(vm, _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, null, null,	plan, hypervisorType, null) == null) {
+    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
 			return null;
 		}
     	

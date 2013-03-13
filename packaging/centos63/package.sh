@@ -18,10 +18,10 @@
 
 CWD=`pwd`
 RPMDIR=$CWD/../../dist/rpmbuild
+PACK_PROJECT=cloudstack
 
 
-
-VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep -v '^\['`
+VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep '^[0-9]\.'`
 if echo $VERSION | grep SNAPSHOT ; then
   REALVER=`echo $VERSION | cut -d '-' -f 1`
   DEFVER="-D_ver $REALVER"
@@ -34,12 +34,12 @@ else
 fi
 
 mkdir -p $RPMDIR/SPECS
-mkdir -p $RPMDIR/SOURCES/cloudstack-$VERSION
+mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 
-(cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/cloudstack-$VERSION -x )
-(cd $RPMDIR/SOURCES/; tar -czf cloudstack-$VERSION.tgz cloudstack-$VERSION)
+(cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION -x )
+(cd $RPMDIR/SOURCES/; tar -czf $PACK_PROJECT-$VERSION.tgz $PACK_PROJECT-$VERSION)
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild -ba SPECS/cloud.spec "-D_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" )
+(cd $RPMDIR; rpmbuild -ba SPECS/cloud.spec "-D_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE")

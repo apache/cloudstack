@@ -130,7 +130,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
-        Volume result = _userVmService.detachVolumeFromVM(this);
+        Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName("volume");

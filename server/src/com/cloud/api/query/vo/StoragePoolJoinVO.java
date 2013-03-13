@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Storage Pool DB view.
- * @author minc
  *
  */
 @Entity

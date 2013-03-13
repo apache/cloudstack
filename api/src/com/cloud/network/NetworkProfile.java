@@ -38,6 +38,7 @@ public class NetworkProfile implements Network {
     private TrafficType trafficType;
     private String gateway;
     private String cidr;
+    private String networkCidr;
     private String ip6Gateway;
     private String ip6Cidr;
     private long networkOfferingId;
@@ -65,6 +66,7 @@ public class NetworkProfile implements Network {
         this.trafficType = network.getTrafficType();
         this.gateway = network.getGateway();
         this.cidr = network.getCidr();
+        this.networkCidr = network.getNetworkCidr();
         this.ip6Gateway = network.getIp6Gateway();
         this.ip6Cidr = network.getIp6Cidr();
         this.networkOfferingId = network.getNetworkOfferingId();
@@ -160,6 +162,11 @@ public class NetworkProfile implements Network {
     @Override
     public String getCidr() {
         return cidr;
+    }
+
+    @Override
+    public String getNetworkCidr() {
+        return networkCidr;
     }
 
     @Override

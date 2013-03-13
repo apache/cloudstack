@@ -23,12 +23,10 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.hypervisor.vmware.manager.VmwareManagerImpl;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
 
-import com.vmware.apputils.version.ExtendedAppUtil;
 @Component
 public class VmwareContextFactory {
 
@@ -56,15 +54,15 @@ public class VmwareContextFactory {
 		assert(vCenterPassword != null);
 
 		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-		String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
+		//String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
 
 		if(s_logger.isDebugEnabled())
 			s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " + StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
-		ExtendedAppUtil appUtil = ExtendedAppUtil.initialize(vCenterAddress + "-" + s_seq++, params);
+		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 
-		appUtil.connect();
-		VmwareContext context = new VmwareContext(appUtil, vCenterAddress);
+		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
 		context.registerStockObject(VmwareManager.CONTEXT_STOCK_NAME, s_vmwareMgr);
 
 		context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());

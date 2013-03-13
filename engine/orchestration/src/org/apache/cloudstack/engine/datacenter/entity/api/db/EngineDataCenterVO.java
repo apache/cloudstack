@@ -61,6 +61,12 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Column(name="dns2")
     private String dns2 = null;
 
+    @Column(name="ip6Dns1")
+    private String ip6Dns1 = null;
+
+    @Column(name="ip6Dns2")
+    private String ip6Dns2 = null;
+
     @Column(name="internal_dns1")
     private String internalDns1 = null;
 
@@ -201,13 +207,13 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     }
 
     public EngineDataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false);
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public EngineDataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
+    public EngineDataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -477,4 +483,22 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     public State getState() {
         return engineState;
     }
+
+	@Override
+	public String getIp6Dns1() {
+		return ip6Dns1;
+	}
+
+	public void setIp6Dns1(String ip6Dns1) {
+		this.ip6Dns1 = ip6Dns1;
+	}
+
+	@Override
+	public String getIp6Dns2() {
+		return ip6Dns2;
+	}
+
+	public void setIp6Dns2(String ip6Dns2) {
+		this.ip6Dns2 = ip6Dns2;
+	}
 }

@@ -28,7 +28,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.1.0-SNAPSHOT</version>
+  <version>4.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
@@ -82,14 +82,16 @@
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
+    <cs.vmware.api.version>5.1</cs.vmware.api.version>
     <org.springframework.version>3.1.2.RELEASE</org.springframework.version>
-    <cs.vmware.api.version>4.1</cs.vmware.api.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
     <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
-    <cs.java-ipv6.version>0.8</cs.java-ipv6.version>
+    <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
+    <cs.replace.properties>build/replace.properties</cs.replace.properties>
+    <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
   </properties>
 
   <distributionManagement>
@@ -161,9 +163,9 @@
     <module>usage</module>
     <module>utils</module>
     <module>deps/XenServerJava</module>
+    <module>engine</module>
     <module>plugins</module>
     <module>patches</module>
-    <module>engine</module>
     <module>framework</module>
     <module>services</module>
     <module>test</module>
@@ -343,6 +345,7 @@
               <exclude>**/*.patch</exclude>
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>
+              <exclude>**/.idea/**</exclude>
               <exclude>**/*.iml</exclude>
               <exclude>**/.settings/**</exclude>
               <exclude>.metadata/**</exclude>
@@ -360,6 +363,7 @@
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
+              <exclude>awsapi/overlays/**</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
@@ -377,8 +381,15 @@
               <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/base.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/cleanup.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/definition.rb</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/preseed.cfg</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/zerodisk.sh</exclude>
+              <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
+              <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -402,6 +413,7 @@
               <exclude>ui/lib/qunit/qunit.css</exclude>
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
+              <exclude>ui/lib/require.js</exclude>
               <exclude>waf</exclude>
               <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
               <exclude>patches/systemvm/debian/config/root/.ssh/authorized_keys</exclude>
@@ -431,7 +443,6 @@
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
-
             </excludes>
           </configuration>
         </plugin>
@@ -444,7 +455,8 @@
             <target>${cs.jdk.version}</target>
 			<fork>true</fork>
           	<meminitial>128m</meminitial>
-          	<maxmem>512m</maxmem>            
+          	<maxmem>512m</maxmem> 
+          	<compilerArgument>-XDignore.symbol.file=true</compilerArgument>            
           </configuration>
         </plugin>
       <plugin>
@@ -504,13 +516,12 @@
     </profile>
     <profile>
       <id>developer</id>
+        <properties>
+            <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+        </properties>
       <modules>
         <module>developer</module>
-        <module>tools/apidoc</module>
-        <module>tools/devcloud</module>
-        <module>tools/devcloud-kvm</module>
-        <module>tools/marvin</module>
-        <module>tools/cli</module>
+        <module>tools</module>
       </modules>
     </profile>
     <profile>
@@ -524,5 +535,113 @@
         <module>vmware-base</module>
       </modules>
     </profile>
+    <profile>
+          <id>simulator</id>
+          <activation>
+              <property>
+                  <name>deploydb-simulator</name>
+              </property>
+          </activation>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>properties-maven-plugin</artifactId>
+                      <version>1.0-alpha-2</version>
+                      <executions>
+                          <execution>
+                              <phase>initialize</phase>
+                              <goals>
+                                  <goal>read-project-properties</goal>
+                              </goals>
+                              <configuration>
+                                  <files>
+                                      <file>${project.basedir}/utils/conf/db.properties</file>
+                                      <file>${project.basedir}/utils/conf/db.properties.override</file>
+                                  </files>
+                                  <quiet>true</quiet>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+                  <!-- DatabaseCreator driver here -->
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>exec-maven-plugin</artifactId>
+                      <version>1.2.1</version>
+                      <dependencies>
+                          <!-- specify the dependent jdbc driver here -->
+                          <dependency>
+                              <groupId>mysql</groupId>
+                              <artifactId>mysql-connector-java</artifactId>
+                              <version>${cs.mysql.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-dbcp</groupId>
+                              <artifactId>commons-dbcp</artifactId>
+                              <version>${cs.dbcp.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-pool</groupId>
+                              <artifactId>commons-pool</artifactId>
+                              <version>${cs.pool.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.jasypt</groupId>
+                              <artifactId>jasypt</artifactId>
+                              <version>${cs.jasypt.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-utils</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                      </dependencies>
+                      <executions>
+                          <execution>
+                              <phase>process-resources</phase>
+                              <id>create-schema</id>
+                              <goals>
+                                  <goal>java</goal>
+                              </goals>
+                          </execution>
+                      </executions>
+                      <configuration>
+                          <includeProjectDependencies>false</includeProjectDependencies>
+                          <includePluginDependencies>true</includePluginDependencies>
+                          <executableDependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                          </executableDependency>
+                          <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                          <arguments>
+                              <!-- db properties file -->
+                              <argument>${project.basedir}/utils/conf/db.properties</argument>
+                              <argument>${project.basedir}/utils/conf/db.properties.override</argument>
+                              <!-- simulator sql files -->
+                              <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                              <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                              <!-- database upgrade-->
+                              <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                              <argument>--database=simulator</argument>
+                              <argument>--rootpassword=${db.root.password}</argument>
+                              <!-- enable verbosity by -v or dash-dash-verbose -->
+                          </arguments>
+                          <systemProperties>
+                              <systemProperty>
+                                  <key>catalina.home</key>
+                                  <value>${project.basedir}/utils</value>
+                              </systemProperty>
+                          </systemProperties>
+                      </configuration>
+                  </plugin>
+              </plugins>
+          </build>
+      </profile>
   </profiles>
 </project>

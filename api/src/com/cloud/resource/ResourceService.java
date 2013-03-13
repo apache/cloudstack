@@ -71,7 +71,7 @@ public interface ResourceService {
 
     boolean deleteCluster(DeleteClusterCmd cmd);
 
-    Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate);
+    Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate,Float memoryOvercommitRatio, Float cpuOvercommitRatio);
 
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 

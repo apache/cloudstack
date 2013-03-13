@@ -151,7 +151,12 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+        
+        // physical network id can be null in Guest Network in Basic zone, so locate the physical network
+        if (physicalNetworkId == null) {        
+            physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        }
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);

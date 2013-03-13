@@ -211,7 +211,7 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view", "4.1-new-db-schema"]:
+        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = file(p).read()
@@ -311,6 +311,7 @@ for example:
                     self.errorAndExit(err)
                 self.putDbProperty(key, value)
             self.info("Preparing %s"%dbpPath, True)
+            self.putDbProperty("region.id", self.options.regionid)
 
         prepareDBDotProperties()
 
@@ -358,7 +359,7 @@ for example:
                 if not os.path.exists(dbf):
                     self.errorAndExit("Cannot find %s"%dbf)
 
-            coreSchemas = ['create-database.sql', 'create-schema.sql', 'create-schema-view.sql', 'templates.sql']
+            coreSchemas = ['create-database.sql', 'create-schema.sql', 'templates.sql']
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
 
@@ -576,6 +577,8 @@ for example:
                           help="Secret key used to encrypt sensitive database values. A string, default is password")
         self.parser.add_option("-i", "--mshost", action="store", type="string", dest="mshostip", default="",
                           help="Cluster management server host IP. A string, by default it will try to detect a local IP")
+        self.parser.add_option("-r", "--regionid", action="store", type="string", dest="regionid", default="1",
+                          help="Region Id for the management server cluster")
 
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()

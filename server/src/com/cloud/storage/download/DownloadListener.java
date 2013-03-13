@@ -46,11 +46,11 @@ import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume.Event;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -343,8 +343,14 @@ public class DownloadListener implements Listener {
 			updateBuilder.setInstallPath(answer.getInstallPath());
 			updateBuilder.setSize(answer.getTemplateSize());
 			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-			
+
 			volumeHostDao.update(getVolumeHostId(), updateBuilder);
+
+			// Update volume size in Volume table.
+			VolumeVO updateVolume = _volumeDao.createForUpdate();
+			updateVolume.setSize(answer.getTemplateSize());
+			_volumeDao.update(volume.getId(), updateVolume);
+
 			/*if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
 				templateDaoBuilder.setChecksum(answer.getCheckSum());

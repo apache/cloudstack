@@ -1104,8 +1104,9 @@
                     name: { label: 'label.name' },
                     type: { label: 'label.type' },
                     vlan: { label: 'label.vlan.id' },
-                    cidr: { label: 'label.cidr' },
-                    scope: { label: 'label.scope' }
+                    cidr: { label: 'IPv4 CIDR' },
+                    ip6cidr: { label: 'IPv6 CIDR'}
+                    //scope: { label: 'label.scope' }
                   },
                   actions: {
                     add: {
@@ -1352,12 +1353,12 @@
 																  if(this.id == selectedNetworkOfferingId) {																	  
 																		if(this.guestiptype == "Isolated") { //*** Isolated	***															  
 																			if(this.specifyipranges == false) {
-																				$form.find('.form-item[rel=guestStartIp]').hide();
-																				$form.find('.form-item[rel=guestEndIp]').hide();
+																				$form.find('.form-item[rel=startipv4]').hide();
+																				$form.find('.form-item[rel=endipv4]').hide();
 																			}
 																			else {
-																				$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
-																				$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
+																				$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
+																				$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');
 																			}																					
                                       
 																		  var includingSourceNat = false;
@@ -1369,20 +1370,20 @@
 																				}
 																			}																			
 																			if(includingSourceNat == true) { //Isolated with SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestGateway]'));	//make guestGateway optional 	                                      							
-                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestNetmask]'));	//make guestNetmask optional  		
+																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4gateway]'));	//make ip4gateway optional 	                                      							
+                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4Netmask]'));	//make ip4Netmask optional  		
 																			}
 																			else { //Isolated with no SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required
 																			}																
 																		}
 																		else {  //*** Shared ***
-																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
-																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');																			
+																			$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
+																			$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');																			
 																			
-                                      cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
-																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required			
+                                      cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
+																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required			
 																		}
 																		
 																		if(this.specifyvlan == false) {
@@ -1400,24 +1401,47 @@
                             }
                           },
 
-                          guestGateway: {
-                            label: 'label.guest.gateway',
+                          //IPv4 (begin)
+                          ip4gateway: {
+                            label: 'IPv4 Gateway',
                             docID: 'helpGuestNetworkZoneGateway'
                           },
-                          guestNetmask: {
-                            label: 'label.guest.netmask',
+                          ip4Netmask: {
+                            label: 'IPv4 Netmask',
                             docID: 'helpGuestNetworkZoneNetmask'
                           },
-                          guestStartIp: { 
-													  label: 'label.guest.start.ip', 
-														validation: { required: true },
+                          startipv4: { 
+							label: 'IPv4 Start IP', 
+							validation: { required: true },
                             docID: 'helpGuestNetworkZoneStartIP'
-													},
-                          guestEndIp: { 
-													  label: 'label.guest.end.ip', 
-														validation: { required: true },
+						  },
+                          endipv4: { 
+							label: 'IPv4 End IP', 
+							validation: { required: true },
                             docID: 'helpGuestNetworkZoneEndIP'
-													},
+						  },
+						//IPv4 (end)
+						  
+						//IPv6 (begin)
+                          ip6gateway: {
+                            label: 'IPv6 Gateway',
+                            docID: 'helpGuestNetworkZoneGateway'
+                          },
+                          ip6cidr: {
+                            label: 'IPv6 CIDR'
+                          },
+                          startipv6: { 
+							label: 'IPv6 Start IP', 
+							validation: { required: true },
+                            docID: 'helpGuestNetworkZoneStartIP'
+						  },
+                          endipv6: { 
+							label: 'IPv6 End IP', 
+							validation: { required: true },
+                            docID: 'helpGuestNetworkZoneEndIP'
+						  },
+						//IPv6 (end)
+						  
                           networkdomain: {
                             label: 'label.network.domain',
                             docID: 'helpGuestNetworkZoneNetworkDomain'
@@ -1473,16 +1497,28 @@
 													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
 												}
 
-											  if(args.data.guestGateway != null && args.data.guestGateway.length > 0)
-												  array1.push("&gateway=" + args.data.guestGateway);
-												if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0)
-												  array1.push("&netmask=" + args.data.guestNetmask);
-
-												if(($form.find('.form-item[rel=guestStartIp]').css("display") != "none") && (args.data.guestStartIp != null && args.data.guestStartIp.length > 0))
-												  array1.push("&startip=" + args.data.guestStartIp);
-												if(($form.find('.form-item[rel=guestEndIp]').css("display") != "none") && (args.data.guestEndIp != null && args.data.guestEndIp.length > 0))
-												  array1.push("&endip=" + args.data.guestEndIp);
-
+												//IPv4 (begin)
+											    if(args.data.ip4gateway != null && args.data.ip4gateway.length > 0)
+												  array1.push("&gateway=" + args.data.ip4gateway);
+												if(args.data.ip4Netmask != null && args.data.ip4Netmask.length > 0)
+												  array1.push("&netmask=" + args.data.ip4Netmask);
+												if(($form.find('.form-item[rel=startipv4]').css("display") != "none") && (args.data.startipv4 != null && args.data.startipv4.length > 0))
+												  array1.push("&startip=" + args.data.startipv4);
+												if(($form.find('.form-item[rel=endipv4]').css("display") != "none") && (args.data.endipv4 != null && args.data.endipv4.length > 0))
+												  array1.push("&endip=" + args.data.endipv4);
+												//IPv4 (end)
+												
+												//IPv6 (begin)
+											    if(args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
+												  array1.push("&gateway=" + args.data.ip6gateway);
+												if(args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
+												  array1.push("&netmask=" + args.data.ip6cidr);
+												if(($form.find('.form-item[rel=startipv6]').css("display") != "none") && (args.data.startipv6 != null && args.data.startipv6.length > 0))
+												  array1.push("&startip=" + args.data.startipv6);
+												if(($form.find('.form-item[rel=endipv6]').css("display") != "none") && (args.data.endipv6 != null && args.data.endipv6.length > 0))
+												  array1.push("&endip=" + args.data.endipv6);
+												//IPv6 (end)
+												
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
 													array1.push("&networkdomain=" + todb(args.data.networkdomain));
 
@@ -1841,9 +1877,13 @@
                               label: 'label.network.offering.id'
                             },
 
-                            gateway: { label: 'label.gateway' },
+                            gateway: { label: 'IPv4 Gateway' },
                             //netmask: { label: 'label.netmask' },
-                            cidr: { label: 'label.cidr' },
+                            cidr: { label: 'IPv4 CIDR' },
+                            
+                            ip6gateway: { label: 'IPv6 Gateway' },
+                            ip6cidr: { label: 'IPv6 CIDR' },
+                            
                             networkdomaintext: {
                               label: 'label.network.domain'
                             },
@@ -7317,7 +7357,7 @@
                 title: 'label.add.cluster',
                 fields: {
                   zoneid: {
-                    label: 'Zone',
+                    label: 'Zone Name',
                     docID: 'helpClusterZone',
                     validation: { required: true },
                     select: function(args) {
@@ -7347,6 +7387,7 @@
                     docID: 'helpClusterHypervisor',
                     select: function(args) {
                       var vSwitchEnabled = false;
+                      var dvSwitchEnabled = false;
 
                       $.ajax({
                         url: createURL("listHypervisors"),
@@ -7375,6 +7416,21 @@
                           }
                         }
                       });
+                      
+                      //Check whether dvSwitch is enabled or not
+                      $.ajax({
+                        url: createURL('listConfigurations'),
+                        data: {
+                           name: 'vmware.use.dvswitch'
+                              },
+                        async: false,
+                        success: function(json) {
+                          if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                dvSwitchEnabled = true;
+                          }
+                        }
+                      });
+
 
                       args.$select.bind("change", function(event) {
                         var $form = $(this).closest('form');
@@ -7390,6 +7446,31 @@
 
                         if ($(this).val() == "VMware") {
                           //$('li[input_sub_group="external"]', $dialogAddCluster).show();
+
+                          if(dvSwitchEnabled){
+                        // $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');
+                         // $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
+                         // $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
+                          //$form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
+                          $form.find('.form-item[rel=overridepublictraffic]').css('display','inline-block');
+                          $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').removeAttr('checked');
+                          
+                          $form.find('.form-item[rel=overrideguesttraffic]').css('display','inline-block');
+                          $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').removeAttr('checked');
+
+ 
+
+                         }
+                          else {
+                                //  $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+                                //  $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+                                //  $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
+                                 // $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');
+                                  $form.find('.form-item[rel=overridepublictraffic]').css('display','none');
+                                  $form.find('.form-item[rel=overrideguesttraffic]').css('display','none');
+
+
+                          } 
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterPassword]').css('display', 'inline-block');
@@ -7401,6 +7482,16 @@
                             $vsmFields.css('display', 'none'); 
                           }
                         } else {
+                          
+                 
+                           $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
+                           $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
+                           $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+                           $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+                           $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
+                           $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');
+
+
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'none');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'none');
                           $form.find('.form-item[rel=vCenterPassword]').css('display', 'none');
@@ -7412,7 +7503,7 @@
                     }
                   },
                   podId: {
-                    label: 'label.pod',
+                    label: 'Pod Name',
                     docID: 'helpClusterPod',
                     dependsOn: 'zoneid',
                     select: function(args) {
@@ -7440,7 +7531,20 @@
                     validation: { required: true }
                   },
 
+                  cpuovercommit:{
+                     label: 'CPU overcommit ratio',
+                     defaultValue:'1'
+
+                  },
+
+                  memoryovercommit:{
+                     label: 'RAM overcommit ratio',
+                     defaultValue:'1'
+
+                   },
+
                   //hypervisor==VMWare begins here
+
                   vCenterHost: {
                     label: 'label.vcenter.host',
                     docID: 'helpClustervCenterHost',
@@ -7462,6 +7566,129 @@
                     docID: 'helpClustervCenterDatacenter',
                     validation: { required: true }
                   },
+
+                    overridepublictraffic:{
+                     label:'Override Public-Traffic',
+                     isBoolean:true,
+                     isHidden:true,
+                     isChecked:false,
+                     docID:'helpOverridePublicNetwork'
+
+                  },
+
+
+                  vSwitchPublicType:{
+                       label: 'Public Traffic vSwitch Type',
+                        select: function(args) {
+                            var vSwitchEnabled = false;                 
+                            var items = []
+                             $.ajax({
+                        url: createURL('listConfigurations'),
+                        data: {
+                          name: 'vmware.use.nexus.vswitch'
+                        },
+                        async: false,
+                        success: function(json) {
+                          if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                            vSwitchEnabled = true;
+                          }
+                        }
+                      });
+
+                            if(vSwitchEnabled) {
+                  
+                              items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                              items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                              items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+
+
+
+
+                              }                         
+
+                             // items.push({id: "" , description:" " });
+                            else{
+                              items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                              items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                              items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                           }
+
+                              args.response.success({data: items});
+                           },
+                        isHidden:true,
+                        dependsOn:'overridepublictraffic'
+                      },
+
+                   vSwitchPublicName:{
+                        label:'Public Traffic vSwitch Name',
+                        dependsOn:'overridepublictraffic',
+                        isHidden:true
+
+
+                     },
+
+                 overrideguesttraffic:{
+                     label:'Override Guest-Traffic',
+                     isBoolean:true,
+                     isHidden:true,
+                     isChecked:false,
+                     docID:'helpOverrideGuestNetwork'
+
+                  },
+
+
+                 vSwitchGuestType:{
+                        label: 'Guest Traffic vSwitch Type',
+                        select: function(args) {
+                        var items = []
+                      //  items.push({id: "" , description:" " });
+
+                         var vSwitchEnabled = false;
+                             $.ajax({
+                        url: createURL('listConfigurations'),
+                        data: {
+                          name: 'vmware.use.nexus.vswitch'
+                        },
+                        async: false,
+                        success: function(json) {
+                          if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                            vSwitchEnabled = true;
+                          }
+                        }
+                      });
+
+
+                       if(vSwitchEnabled){
+                        items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                        items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                        items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"}); 
+
+                       }
+
+
+                       else{
+                           items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                           items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                           items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+
+ 
+                         }
+                        args.response.success({data: items});
+                        },
+                        isHidden:true,
+                        dependsOn:'overrideguesttraffic'
+
+                        },
+
+                   vSwitchGuestName:{
+                        label:' Guest Traffic vSwitch Name',
+                        dependsOn:'overrideguesttraffic',
+                        isHidden:true
+
+
+                     },
+
+                 
                   vsmipaddress: {
                     label: 'Nexus 1000v IP Address',
                     validation: { required: true },
@@ -7497,9 +7724,34 @@
                 array1.push("&podId=" + args.data.podId);
 
                 var clusterName = args.data.name;
+
+                if(args.data.cpuovercommit != "" && args.data.cpuovercommit > 0 ){
+                   
+                     array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
+
+                   }
+
+                 if(args.data.memoryovercommit != "" && args.data.memoryovercommit > 0)
+                    array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
+
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
+            
+                  //vSwitch Public Type
+                 if(args.data.vSwitchPublicType != "")
+                  array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
+
+                 if(args.data.vSwitchPublicName != "")
+                  array1.push("&publicvswitchname=" +args.data.vSwitchPublicName);
+
+                 
+                  //vSwitch Guest Type
+                 if(args.data.vSwitchGuestType !=  "")
+                  array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
+                
+                 if(args.data.vSwitchGuestName !="")
+                  array1.push("&guestvswitchname=" +args.data.vSwitchGuestName);
 
                   if (args.data.vsmipaddress) {
                     array1.push('&vsmipaddress=' + args.data.vsmipaddress);
@@ -7572,6 +7824,38 @@
             },
 
             actions: {
+
+               edit: {
+                label: 'label.edit',
+                action: function(args) {
+                  var array1 = [];
+
+                  if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
+                    array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
+
+                  if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
+                    array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
+
+                  $.ajax({
+
+                    url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var item = json.updateclusterresponse.cluster;
+                      args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
+                      args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
+                      addExtraPropertiesToClusterObject(item);
+                      args.response.success({
+                        actionFilter: clusterActionfilter,
+                        data:item
+                       });
+
+                    }
+                  });
+                }
+              },
+              
               enable: {
                 label: 'label.action.enable.cluster',
                 messages: {
@@ -7741,6 +8025,8 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
+                    cpuovercommitratio:{ label: 'CPU overcommit Ratio', isEditable:true},
+                    memoryovercommitratio:{ label: 'Memory overcommit Ratio', isEditable:true},
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
@@ -7965,11 +8251,17 @@
 								}
 							}
 						}
-            array1.push("&zoneid=" + args.context.zones[0].id);
-            if("pods" in args.context)
-              array1.push("&podid=" + args.context.pods[0].id);
-            if("clusters" in args.context)
-              array1.push("&clusterid=" + args.context.clusters[0].id);
+
+            if (!args.context.instances) {
+              array1.push("&zoneid=" + args.context.zones[0].id);
+              if("pods" in args.context)
+                array1.push("&podid=" + args.context.pods[0].id);
+              if("clusters" in args.context)
+                array1.push("&clusterid=" + args.context.clusters[0].id);
+            } else {
+              array1.push("&hostid=" + args.context.instances[0].hostid);
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -8654,7 +8946,8 @@
             name: { label: 'label.name' },
             ipaddress: { label: 'label.server' },
 						path: { label: 'label.path' },
-						clustername: { label: 'label.cluster'}
+						clustername: { label: 'label.cluster'},
+            scope:{label:'Scope'}
           },
 
           dataProvider: function(args) {
@@ -8695,6 +8988,51 @@
               createForm: {
                 title: 'label.add.primary.storage',
                 fields: {
+                  scope: {
+                    label: 'label.scope',
+                    select: function(args) {
+                      var scope = [
+                        { id: 'zone', description: _l('label.zone.wide') },
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'host', description: _l('label.host') }
+                      ];
+
+                      args.response.success({
+                        data: scope
+                      });
+
+                      args.$select.change(function() {
+                        var $form = $(this).closest('form');
+                        var scope = $(this).val();
+
+                        if(scope == 'zone'){
+                            $form.find('.form-item[rel=podId]').hide();
+                            $form.find('.form-item[rel=clusterId]').hide();
+                            $form.find('.form-item[rel=hostId]').hide();
+
+
+                         }
+
+                        else if(scope == 'cluster'){
+
+                             $form.find('.form-item[rel=hostId]').hide();
+                             $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                             $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+
+
+                         }
+
+                         else if(scope == 'host'){
+                            $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=hostId]').css('display', 'inline-block');
+
+                         }
+
+                        })
+
+                    }
+                  },
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpPrimaryStorageZone',
@@ -8768,6 +9106,29 @@
                     }
                   },
 
+                  hostId: {
+                    label: 'label.host',
+                    validation: { required: true },
+                    dependsOn: 'clusterId',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listHosts'),
+                        data: {
+                          clusterid: args.clusterId
+                        },
+                        success: function(json) {
+                          var hosts = json.listhostsresponse.host ?
+                              json.listhostsresponse.host : [] 
+                          args.response.success({
+                            data: $.map(hosts, function(host) {
+                              return { id: host.id, description: host.name }
+                            })
+                          });
+                        }
+                      });
+                    }
+                  },
+
                   name: {
                     label: 'label.name',
                     docID: 'helpPrimaryStorageName',
@@ -8830,6 +9191,7 @@
                         var protocol = $(this).val();
                         if(protocol == null)
                           return;
+                       
 
                         if(protocol == "nfs") {
                           //$("#add_pool_server_container", $dialogAddPool).show();
@@ -9149,9 +9511,24 @@
 
               action: function(args) {
                 var array1 = [];
+                array1.push("&scope=" + todb(args.data.scope));
+
                 array1.push("&zoneid=" + args.data.zoneid);
-                array1.push("&podId=" + args.data.podId);
+            
+               if(args.data.scope == 'cluster'){
+
+                array1.push("&podid=" + args.data.podId);
                 array1.push("&clusterid=" + args.data.clusterId);
+
+               }
+
+                if(args.data.scope == 'host'){
+                array1.push("&podid=" + args.data.podId);
+                array1.push("&clusterid=" + args.data.clusterId);
+                array1.push("&hostid=" + args.data.hostId);
+
+               }
+
                 array1.push("&name=" + todb(args.data.name));
 
                 var server = args.data.server;
@@ -9650,8 +10027,10 @@
         listView: {
           section: 'guest-IP-range',
           fields: {
-            startip: { label: 'label.start.IP' },
-            endip: { label: 'label.end.IP' }
+            startip: { label: 'IPv4 Start IP' },
+            endip: { label: 'IPv4 End IP' },
+            startipv6: { label: 'IPv6 Start IP' },
+            endipv6: { label: 'IPv6 End IP' }
           },
 
           dataProvider: function(args) {
@@ -9672,16 +10051,24 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {
-                  guestStartIp: { label: 'label.guest.start.ip' },
-                  guestEndIp: { label: 'label.guest.end.ip' }
+                  startipv4: { label: 'IPv4 Start IP' },
+                  endipv4: { label: 'IPv4 End IP' },
+                  startipv6: { label: 'IPv6 Start IP' },
+                  endipv6: { label: 'IPv6 End IP' }
                 }
               },
               action: function(args) {
                 var array2 = [];
-                array2.push("&startip=" + args.data.guestStartIp);
-                var endip = args.data.guestEndIp;
-                if(endip != null && endip.length > 0)
-                  array2.push("&endip=" + endip);
+                if(args.data.startipv4 != null && args.data.startipv4.length > 0)
+                  array2.push("&startip=" + args.data.startipv4);                
+                if(args.data.endipv4 != null && args.data.endipv4.length > 0)
+                  array2.push("&endip=" + args.data.endipv4);
+                
+                if(args.data.startipv6 != null && args.data.startipv6.length > 0)
+                    array2.push("&startipv6=" + args.data.startipv6);                
+                  if(args.data.endipv6 != null && args.data.endipv6.length > 0)
+                    array2.push("&endipv6=" + args.data.endipv6);
+                
                 $.ajax({
                   url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
                   dataType: "json",
@@ -10407,10 +10794,14 @@
     if(jsonObj.state == "Enabled") {//managed, allocation enabled
 		  allowedActions.push("unmanage");
       allowedActions.push("disable");
+      allowedActions.push("edit");
+
 		}
 		else if(jsonObj.state == "Disabled") { //managed, allocation disabled
 		  allowedActions.push("unmanage");
       allowedActions.push("enable");
+      allowedActions.push("edit");
+
 		}
 		else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
 			allowedActions.push("manage");

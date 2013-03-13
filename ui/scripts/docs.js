@@ -15,11 +15,53 @@
 // specific language governing permissions and limitations
 // under the License.
 cloudStack.docs = {
+
+ //Ldap
+  helpLdapQueryFilter: {
+
+  desc:'Query filter is used to find a mapped user in the external LDAP server.Cloudstack provides some wildchars to represent the unique attributes in its database . Example - If Cloudstack account-name is same as the LDAP uid, then following will be a valid filter: Queryfilter :  (&(uid=%u) ,  Queryfilter: .incase of Active Directory , Email _ID :(&(mail=%e)) , displayName :(&(displayName=%u)',
+
+  externalLink:''
+ },
+
+
+  //IP Reservation tooltips
+   helpIPReservationCidr: {
+     desc:'Edit CIDR when you want to configure IP Reservation in isolated guest Network',
+     externalLink:''
+
+   },
+
+  helpIPReservationNetworkCidr:{
+   desc:'The CIDR of the entire network when IP reservation is configured',
+   externalLink:' '
+
+   },
+
+  helpReservedIPRange:{
+     desc:'The IP Range which is not used by CloudStack to allocate to Guest VMs.Can be used for Non Cloudstack purposes.',
+     externalLink:''
+   },
+
   // Add account
   helpAccountUsername: {
   desc: 'Any desired login ID. Must be unique in the current domain. The same username can exist in other domains, including sub-domains.',
     externalLink: ''
   },
+
+   helpOverridePublicNetwork:{
+   desc:'Choose to override zone wide traffic label for guest traffic for this cluster',
+   externalLink:''
+
+  },
+
+  helpOverrideGuestNetwork:{
+
+  desc:'Choose to override zone wide traffic label for guest traffic for this cluster',
+  externalLink:''
+
+ },
+
   helpAccountPassword: {
   desc: 'Any desired password',
   externalLink: ''

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
 import com.cloud.utils.db.DB;
@@ -45,7 +46,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
 
     protected ProjectDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
