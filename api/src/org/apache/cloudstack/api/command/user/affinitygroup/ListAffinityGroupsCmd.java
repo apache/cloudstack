@@ -83,7 +83,8 @@ public class ListAffinityGroupsCmd extends BaseListCmd {
     @Override
     public void execute(){
 
-        Pair<List<AffinityGroup>, Integer> result = _affinityGroupService.listAffinityGroups(id, affinityGroupName,
+        Pair<List<? extends AffinityGroup>, Integer> result = _affinityGroupService.listAffinityGroups(id,
+                affinityGroupName,
                 affinityGroupType, virtualMachineId, this.getStartIndex(), this.getPageSizeVal());
         if (result != null) {
             ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();

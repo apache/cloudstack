@@ -19,17 +19,22 @@ package org.apache.cloudstack.affinity.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.host.HostTagVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = { AffinityGroupVMMapDao.class })
@@ -40,6 +45,10 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
     protected GenericSearchBuilder<AffinityGroupVMMapVO, Long> CountSGForVm;
     private GenericSearchBuilder<AffinityGroupVMMapVO, Long> ListVmIdByAffinityGroup;
     private SearchBuilder<AffinityGroupVMMapVO> ListByAffinityGroup;
+    private SearchBuilder<AffinityGroupVMMapVO> ListByVmIdType;
+
+    @Inject
+    protected AffinityGroupDao _affinityGroupDao;
 
     protected AffinityGroupVMMapDaoImpl() {
         ListVmIdByAffinityGroup = createSearchBuilder(Long.class);
@@ -61,6 +70,14 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         ListByVmIdGroupId.and("instanceId", ListByVmIdGroupId.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.and("affinityGroupId", ListByVmIdGroupId.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.done();
+
+        ListByVmIdType = createSearchBuilder();
+        ListByVmIdType.and("instanceId", ListByVmIdType.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        SearchBuilder<AffinityGroupVO> groupSearch = _affinityGroupDao.createSearchBuilder();
+        groupSearch.and("type", groupSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ListByVmIdType.join("groupSearch", groupSearch, ListByVmIdType.entity().getAffinityGroupId(), groupSearch
+                .entity().getId(), JoinType.INNER);
+        ListByVmIdType.done();
 
         CountSGForVm = createSearchBuilder(Long.class);
         CountSGForVm.select(null, Func.COUNT, null);
@@ -117,4 +134,30 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
     	sc.setParameters("vmId", instanceId);
         return customSearch(sc, null).get(0);
 	}
+
+    @Override
+    public AffinityGroupVMMapVO findByVmIdType(long instanceId, String type) {
+        SearchCriteria<AffinityGroupVMMapVO> sc = ListByVmIdType.create();
+        sc.setParameters("instanceId", instanceId);
+        sc.setJoinParameters("groupSearch", "type", type);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public void updateMap(Long vmId, List<Long> affinityGroupIds) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        SearchCriteria<AffinityGroupVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
+        expunge(sc);
+
+        for (Long groupId : affinityGroupIds) {
+            AffinityGroupVMMapVO vo = new AffinityGroupVMMapVO(groupId, vmId);
+            persist(vo);
+        }
+
+        txn.commit();
+
+    }
 }

@@ -3,6 +3,7 @@ package org.apache.cloudstack.affinity;
 import java.util.List;
 
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
 public interface AffinityGroupService {
@@ -56,5 +57,7 @@ public interface AffinityGroupService {
     List<String> listAffinityGroupTypes();
 
     AffinityGroup getAffinityGroup(Long groupId);
+
+    UserVm updateVMAffinityGroups(Long vmId, List<Long> affinityGroupIds);
 
 }

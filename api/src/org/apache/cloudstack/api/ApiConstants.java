@@ -473,6 +473,8 @@ public class ApiConstants {
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
     public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
+    public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
+    public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
