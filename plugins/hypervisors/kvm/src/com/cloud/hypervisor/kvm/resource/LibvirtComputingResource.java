@@ -3929,9 +3929,13 @@ ServerResource {
         try {
             dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
                     .getBytes()));
+            int persist = dm.isPersistent();
             if (force) {
                 if (dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) {
                     dm.destroy();
+                    if (persist == 1) {
+                        dm.undefine();
+                    }
                 }
             } else {
                 if (dm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) {
@@ -3949,6 +3953,10 @@ ServerResource {
                     s_logger.warn("Timed out waiting for domain " + vmName
                             + " to shutdown gracefully");
                     return Script.ERR_TIMEOUT;
+                } else {
+                    if (persist == 1) {
+                        dm.undefine();
+                    }
                 }
             }
         } catch (LibvirtException e) {
