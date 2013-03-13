@@ -3496,7 +3496,7 @@ ServerResource {
             sscmd.setDataCenter(_dcId);
             sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
         } catch (CloudRuntimeException e) {
-
+            s_logger.debug("Unable to initialize local storage pool: " + e);
         }
 
         if (sscmd != null) {
