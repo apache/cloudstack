@@ -49,12 +49,6 @@ public class UpdateRegionCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, description="updates region with this end point")
     private String endPoint;
 
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="new API key for the Region")
-    private String apiKey;
-    
-    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="new Secret Key for the Region")
-    private String secretKey;
-    
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -73,13 +67,6 @@ public class UpdateRegionCmd extends BaseCmd {
         return endPoint;
     }
 
-    public String getApiKey() {
-        return apiKey;
-    }
-    
-    public String getSecretKey() {
-        return secretKey;
-    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -96,7 +83,7 @@ public class UpdateRegionCmd extends BaseCmd {
     
     @Override
     public void execute(){
-    	Region region = _regionService.updateRegion(getId(), getRegionName(), getEndPoint(), getApiKey(), getSecretKey());
+    	Region region = _regionService.updateRegion(getId(), getRegionName(), getEndPoint());
     	if (region != null) {
     		RegionResponse response = _responseGenerator.createRegionResponse(region);
     		response.setResponseName(getCommandName());

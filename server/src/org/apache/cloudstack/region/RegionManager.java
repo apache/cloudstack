@@ -43,11 +43,9 @@ public interface RegionManager {
      * @param id
      * @param name
      * @param endPoint
-     * @param apiKey
-     * @param secretKey
      * @return Returns added Region object
      */
-    Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+    Region addRegion(int id, String name, String endPoint);
 
     /**
      * Update details of the Region with specified Id
@@ -59,7 +57,7 @@ public interface RegionManager {
      * @param secretKey
      * @return Returns update Region object
      */
-    Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+    Region updateRegion(int id, String name, String endPoint);
 
     /**
      * @param id

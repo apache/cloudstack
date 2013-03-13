@@ -27,7 +27,7 @@ import com.cloud.domain.DomainVO;
 public interface DomainManager extends DomainService {
     Set<Long> getDomainChildrenIds(String parentDomainPath);
 
-    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain);
+    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID);
 
     Set<Long> getDomainParentIds(long domainId);
 

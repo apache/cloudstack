@@ -93,9 +93,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name="uuid")
     private String uuid;
 
-    @Column(name="region_id")
-    private int regionId;
-    
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -105,7 +102,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
     
-    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, int regionId) {
+    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid) {
         this.accountId = accountId;
         this.username = username;
         this.password = password;
@@ -115,7 +112,6 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.timezone = timezone;
         this.state = State.enabled;
     	this.uuid = uuid;
-    	this.regionId = regionId;
     }
     
     @Override
@@ -266,11 +262,4 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.uuid = uuid;
     }
     
-	public int getRegionId() {
-		return regionId;
-	}
-
-	public void setRegionId(int regionId) {
-		this.regionId = regionId;
-	}
 }

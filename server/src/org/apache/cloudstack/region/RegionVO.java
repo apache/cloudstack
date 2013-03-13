@@ -36,21 +36,13 @@ public class RegionVO implements Region{
     @Column(name="end_point")
     private String endPoint;
     
-    @Column(name="api_key")
-    private String apiKey;
-    
-    @Column(name="secret_key")
-    private String secretKey;
-    
     public RegionVO() {
     }
     
-    public RegionVO(int id, String name, String endPoint, String apiKey, String secretKey) {
+    public RegionVO(int id, String name, String endPoint) {
     	this.id = id;
     	this.name = name;
     	this.endPoint = endPoint;
-    	this.apiKey = apiKey;
-    	this.secretKey = secretKey;
     }
 
 	public int getId() {
@@ -73,21 +65,4 @@ public class RegionVO implements Region{
 		this.endPoint = endPoint;
 	}
 
-	public String getApiKey() {
-		return apiKey;
-	}
-
-	public void setApiKey(String apiKey) {
-		this.apiKey = apiKey;
-	}
-
-	public String getSecretKey() {
-		return secretKey;
-	}
-
-	public void setSecretKey(String secretKey) {
-		this.secretKey = secretKey;
-	}
-
-    
 }

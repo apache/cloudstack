@@ -139,7 +139,7 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
 
     @Override
     public Domain createDomain(String name, Long parentId,
-            String networkDomain) {
+            String networkDomain, String domainUUID) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -152,7 +152,7 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
 
     @Override
     public Domain createDomain(String name, Long parentId, Long ownerId,
-            String networkDomain) {
+            String networkDomain, String domainUUID) {
         // TODO Auto-generated method stub
         return null;
     }

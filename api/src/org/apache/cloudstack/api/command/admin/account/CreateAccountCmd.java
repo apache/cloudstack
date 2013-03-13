@@ -78,6 +78,11 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.STRING, description="Account UUID, required for adding account from external provisioning system")
+    private String accountUUID;
+
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from external provisioning system")
+    private String userUUID;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -133,6 +138,14 @@ public class CreateAccountCmd extends BaseCmd {
         return params;
     }
 
+    public String getAccountUUID() {
+        return accountUUID;
+    }
+
+    public String getUserUUID() {
+        return userUUID;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -151,7 +164,7 @@ public class CreateAccountCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
         UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
-                getDomainId(), getNetworkDomain(), getDetails());
+                getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());
