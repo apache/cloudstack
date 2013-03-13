@@ -20,12 +20,15 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.cisco.CiscoAsa1000vDeviceVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=CiscoAsa1000vDao.class)
 public class CiscoAsa1000vDaoImpl extends GenericDaoBase<CiscoAsa1000vDeviceVO, Long>
         implements CiscoAsa1000vDao {

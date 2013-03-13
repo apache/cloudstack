@@ -29,12 +29,13 @@ import com.google.gson.annotations.SerializedName;
 public class CiscoVnmcResourceResponse extends BaseResponse {
     public static final String RESOURCE_NAME = "resourcename";
 
-    @SerializedName(ApiConstants.RESOURCE_ID) @Parameter(description="resource id of the Cisco  VNMC controller")
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Parameter(description="resource id of the Cisco VNMC controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) 
     @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
-    private Long physicalNetworkId ;
+    private Long physicalNetworkId;
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;

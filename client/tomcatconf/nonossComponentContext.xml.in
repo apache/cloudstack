@@ -39,7 +39,7 @@
   
   <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" />
   <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
-   
+  
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
   <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
@@ -103,7 +103,9 @@
   <bean id="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement">
     <property name="name" value="CiscoNexus1000vVSM"/>
   </bean>
-             
+  <bean id="CiscoVNMC" class="com.cloud.network.element.CiscoVnmcElement">
+    <property name="name" value="CiscoVNMC"/>
+  </bean>
   <!--
      Adapters
   -->

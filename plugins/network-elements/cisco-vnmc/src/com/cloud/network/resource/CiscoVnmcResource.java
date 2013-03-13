@@ -52,6 +52,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -352,15 +353,18 @@ public class CiscoVnmcResource implements ServerResource {
                             throw new Exception("Failed to delete ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
-                        String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
-                        if (!_connection.createTenantVDCIngressAclRule(tenant,
-                                Long.toString(rule.getId()), policyIdentifier,
-                                rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
-                                Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp)) {
-                            throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
-                        }
+                    	if (rule.getTrafficType() == TrafficType.Ingress) {
+                            String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
+                            if (!_connection.createTenantVDCIngressAclRule(tenant,
+                                    Long.toString(rule.getId()), policyIdentifier,
+                                    rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
+                                    Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp)) {
+                                throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
+                            }
+                    	} else {
+                            // TODO for egress
+                    	}
                     }
-                    // TODO for egress
                 }
             }
 

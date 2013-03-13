@@ -18,12 +18,15 @@ package com.cloud.network.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.cisco.NetworkAsa1000vMapVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=NetworkAsa1000vMapDao.class)
 public class NetworkAsa1000vMapDaoImpl extends GenericDaoBase<NetworkAsa1000vMapVO, Long>
         implements NetworkAsa1000vMapDao {
