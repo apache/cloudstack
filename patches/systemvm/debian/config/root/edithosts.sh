@@ -179,7 +179,7 @@ then
       echo "$tag,3,$dflt" >> $DHCP_OPTS
   else
       logger -t cloud "$0: unset default router for $ipv4"
-      echo "$tag,3," >> $DHCP_OPTS
+      echo "$tag,3" >> $DHCP_OPTS
   fi
   if [ "$dns" != "" ] 
   then
