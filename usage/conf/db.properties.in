@@ -15,19 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/server/*
-/etc/cloudstack/management/*
-/etc/init.d/cloudstack-management
-/etc/security/limits.d/cloudstack-limits.conf
-/etc/sudoers.d/cloudstack
-/var/cache/cloudstack/management
-/var/cache/cloudstack/management/work
-/var/cache/cloudstack/management/temp
-/var/log/cloudstack/management
-/var/lib/cloudstack/mnt
-/var/lib/cloudstack/management
-/usr/bin/cloud-update-xenserver-licenses
-/usr/bin/cloud-setup-management
-/usr/bin/cloud-setup-databases
-/usr/bin/cloud-migrate-databases
-/usr/share/cloudstack-management/*
+# usage database settings
+db.usage.username=@DBUSER@
+db.usage.password=@DBPW@
+db.usage.host=@DBHOST@
+db.usage.port=3306
+db.usage.name=cloud_usage
+
+# usage database tuning parameters
+db.usage.maxActive=100
+db.usage.maxIdle=30
+db.usage.maxWait=10000
+db.usage.autoReconnect=true

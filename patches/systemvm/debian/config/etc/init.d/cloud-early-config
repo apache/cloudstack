@@ -597,10 +597,6 @@ setup_aesni() {
   if [ `grep aes /proc/cpuinfo | wc -l` -gt 0 ]
   then
     modprobe aesni_intel
-    if [ `lsmod | grep aesni_intel | wc -l` -gt 0 ]
-    then
-      echo aesni_intel >> /etc/modules
-    fi
   fi
 }
 

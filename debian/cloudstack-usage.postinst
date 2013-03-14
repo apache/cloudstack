@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,19 +17,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/server/*
-/etc/cloudstack/management/*
-/etc/init.d/cloudstack-management
-/etc/security/limits.d/cloudstack-limits.conf
-/etc/sudoers.d/cloudstack
-/var/cache/cloudstack/management
-/var/cache/cloudstack/management/work
-/var/cache/cloudstack/management/temp
-/var/log/cloudstack/management
-/var/lib/cloudstack/mnt
-/var/lib/cloudstack/management
-/usr/bin/cloud-update-xenserver-licenses
-/usr/bin/cloud-setup-management
-/usr/bin/cloud-setup-databases
-/usr/bin/cloud-migrate-databases
-/usr/share/cloudstack-management/*
+set -e
+
+case "$1" in
+    configure)
+        # We copy the db.properties file from the management server to the usage server
+        # This used to be a symlink, but we don't do that anymore
+        if [ -f "/etc/cloud/management/db.properties" ]; then
+            cp -a /etc/cloud/management/db.properties /etc/cloudstack/usage/db.properties
+        fi
+
+        # We also retain the log4j configuration
+        if [ -f "/etc/cloud/usage/log4j-cloud_usage.xml" ]; then
+            cp -a /etc/cloud/usage/log4j-cloud_usage.xml /etc/cloudstack/usage/log4j-cloud_usage.xml
+        fi
+        ;;
+esac
+
+exit 0

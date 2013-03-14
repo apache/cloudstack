@@ -1,23 +1,15 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+  license agreements. See the NOTICE file distributed with this work for additional 
+  information regarding copyright ownership. The ASF licenses this file to 
+  you under the Apache License, Version 2.0 (the "License"); you may not use 
+  this file except in compliance with the License. You may obtain a copy of 
+  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+  by applicable law or agreed to in writing, software distributed under the 
+  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+  OF ANY KIND, either express or implied. See the License for the specific 
+  language governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -43,7 +35,7 @@
   </issueManagement>
 
   <properties>
-    <!--skipTests>true</skipTests-->
+    <!--skipTests>true</skipTests -->
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -92,6 +84,7 @@
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
+    <cs.target.dir>target</cs.target.dir>
   </properties>
 
   <distributionManagement>
@@ -174,11 +167,11 @@
 
   <dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${cs.mysql.version}</version>
-        </dependency>
+      <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>${cs.mysql.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -188,13 +181,13 @@
       <artifactId>junit</artifactId>
       <version>${cs.junit.version}</version>
       <scope>test</scope>
-	</dependency>
-    
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-core</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>${org.springframework.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
@@ -205,74 +198,37 @@
       <artifactId>spring-web</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
-<!--           
-	<dependency>
-  	  <groupId>org.springframework</groupId>
-  	  <artifactId>spring-expression</artifactId>
-  	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-beans</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-aop</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-context-support</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-tx</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-jdbc</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-orm</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-oxm</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- 
- 	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-webmvc</artifactId>
-	  <version>${org.springframework.version}</version>
-	</dependency>
- -->
+    <!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-expression</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-beans</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-aop</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-context-support</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-tx</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-jdbc</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-orm</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-oxm</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> <dependency> 
+      <groupId>org.springframework</groupId> <artifactId>spring-webmvc</artifactId> 
+      <version>${org.springframework.version}</version> </dependency> -->
     <dependency>
-    	<groupId>org.mockito</groupId>
-    	<artifactId>mockito-all</artifactId>
-    	<version>1.9.5</version>
-        <scope>test</scope>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>1.9.5</version>
+      <scope>test</scope>
     </dependency>
 
-	<dependency>
-	  <groupId>org.springframework</groupId>
-	  <artifactId>spring-test</artifactId>
-	  <version>${org.springframework.version}</version>
-	  <scope>test</scope>
-	</dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${org.springframework.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.aspectj</groupId>
@@ -285,17 +241,19 @@
       <version>1.7.1</version>
     </dependency>
     <dependency>
-        <groupId>javax.inject</groupId>
-        <artifactId>javax.inject</artifactId>
-        <version>1</version>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>1</version>
     </dependency>
   </dependencies>
 
   <build>
     <defaultGoal>install</defaultGoal>
+    <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
+    <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <pluginManagement>
       <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings
+        <!--This plugin's configuration is used to store Eclipse m2e settings 
           only. It has no influence on the Maven build itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
@@ -453,41 +411,41 @@
           <configuration>
             <source>${cs.jdk.version}</source>
             <target>${cs.jdk.version}</target>
-			<fork>true</fork>
-          	<meminitial>128m</meminitial>
-          	<maxmem>512m</maxmem> 
-          	<compilerArgument>-XDignore.symbol.file=true</compilerArgument>            
+            <fork>true</fork>
+            <meminitial>128m</meminitial>
+            <maxmem>512m</maxmem>
+            <compilerArgument>-XDignore.symbol.file=true</compilerArgument>
           </configuration>
         </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.7</version>
-        <executions>
-          <execution>
-            <id>remove-old-installers</id>
-            <goals>
-              <goal>remove-project-artifact</goal>
-            </goals>
-            <configuration>
-              <removeAll>true</removeAll>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.4</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>1.7</version>
+          <executions>
+            <execution>
+              <id>remove-old-installers</id>
+              <goals>
+                <goal>remove-project-artifact</goal>
+              </goals>
+              <configuration>
+                <removeAll>true</removeAll>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
@@ -515,13 +473,29 @@
       </modules>
     </profile>
     <profile>
+      <id>eclipse</id>
+      <properties>
+        <cs.target.dir>target-eclipse</cs.target.dir>
+      </properties>
+    </profile>
+    <profile> 
       <id>developer</id>
-        <properties>
-            <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
-        </properties>
+      <properties>
+        <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+      </properties>
       <modules>
         <module>developer</module>
         <module>tools</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>impatient</id>
+      <properties>
+        <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+      </properties>
+      <modules>
+        <module>developer</module>
+        <!--module>tools/devcloud</module-->
       </modules>
     </profile>
     <profile>
@@ -536,112 +510,112 @@
       </modules>
     </profile>
     <profile>
-          <id>simulator</id>
-          <activation>
-              <property>
-                  <name>deploydb-simulator</name>
-              </property>
-          </activation>
-          <build>
-              <plugins>
-                  <plugin>
-                      <groupId>org.codehaus.mojo</groupId>
-                      <artifactId>properties-maven-plugin</artifactId>
-                      <version>1.0-alpha-2</version>
-                      <executions>
-                          <execution>
-                              <phase>initialize</phase>
-                              <goals>
-                                  <goal>read-project-properties</goal>
-                              </goals>
-                              <configuration>
-                                  <files>
-                                      <file>${project.basedir}/utils/conf/db.properties</file>
-                                      <file>${project.basedir}/utils/conf/db.properties.override</file>
-                                  </files>
-                                  <quiet>true</quiet>
-                              </configuration>
-                          </execution>
-                      </executions>
-                  </plugin>
-                  <!-- DatabaseCreator driver here -->
-                  <plugin>
-                      <groupId>org.codehaus.mojo</groupId>
-                      <artifactId>exec-maven-plugin</artifactId>
-                      <version>1.2.1</version>
-                      <dependencies>
-                          <!-- specify the dependent jdbc driver here -->
-                          <dependency>
-                              <groupId>mysql</groupId>
-                              <artifactId>mysql-connector-java</artifactId>
-                              <version>${cs.mysql.version}</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>commons-dbcp</groupId>
-                              <artifactId>commons-dbcp</artifactId>
-                              <version>${cs.dbcp.version}</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>commons-pool</groupId>
-                              <artifactId>commons-pool</artifactId>
-                              <version>${cs.pool.version}</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.jasypt</groupId>
-                              <artifactId>jasypt</artifactId>
-                              <version>${cs.jasypt.version}</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.cloudstack</groupId>
-                              <artifactId>cloud-utils</artifactId>
-                              <version>${project.version}</version>
-                          </dependency>
-                          <dependency>
-                              <groupId>org.apache.cloudstack</groupId>
-                              <artifactId>cloud-server</artifactId>
-                              <version>${project.version}</version>
-                          </dependency>
-                      </dependencies>
-                      <executions>
-                          <execution>
-                              <phase>process-resources</phase>
-                              <id>create-schema</id>
-                              <goals>
-                                  <goal>java</goal>
-                              </goals>
-                          </execution>
-                      </executions>
-                      <configuration>
-                          <includeProjectDependencies>false</includeProjectDependencies>
-                          <includePluginDependencies>true</includePluginDependencies>
-                          <executableDependency>
-                              <groupId>org.apache.cloudstack</groupId>
-                              <artifactId>cloud-server</artifactId>
-                          </executableDependency>
-                          <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
-                          <arguments>
-                              <!-- db properties file -->
-                              <argument>${project.basedir}/utils/conf/db.properties</argument>
-                              <argument>${project.basedir}/utils/conf/db.properties.override</argument>
-                              <!-- simulator sql files -->
-                              <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
-                              <argument>${basedir}/target/db/templates.simulator.sql</argument>
-                              <!-- database upgrade-->
-                              <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                              <argument>--database=simulator</argument>
-                              <argument>--rootpassword=${db.root.password}</argument>
-                              <!-- enable verbosity by -v or dash-dash-verbose -->
-                          </arguments>
-                          <systemProperties>
-                              <systemProperty>
-                                  <key>catalina.home</key>
-                                  <value>${project.basedir}/utils</value>
-                              </systemProperty>
-                          </systemProperties>
-                      </configuration>
-                  </plugin>
-              </plugins>
-          </build>
-      </profile>
+      <id>simulator</id>
+      <activation>
+        <property>
+          <name>deploydb-simulator</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>properties-maven-plugin</artifactId>
+            <version>1.0-alpha-2</version>
+            <executions>
+              <execution>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>read-project-properties</goal>
+                </goals>
+                <configuration>
+                  <files>
+                    <file>${project.basedir}/utils/conf/db.properties</file>
+                    <file>${project.basedir}/utils/conf/db.properties.override</file>
+                  </files>
+                  <quiet>true</quiet>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- DatabaseCreator driver here -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <dependencies>
+              <!-- specify the dependent jdbc driver here -->
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>commons-dbcp</groupId>
+                <artifactId>commons-dbcp</artifactId>
+                <version>${cs.dbcp.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>commons-pool</groupId>
+                <artifactId>commons-pool</artifactId>
+                <version>${cs.pool.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.jasypt</groupId>
+                <artifactId>jasypt</artifactId>
+                <version>${cs.jasypt.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-utils</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <phase>process-resources</phase>
+                <id>create-schema</id>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <includeProjectDependencies>false</includeProjectDependencies>
+              <includePluginDependencies>true</includePluginDependencies>
+              <executableDependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+              </executableDependency>
+              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <arguments>
+                <!-- db properties file -->
+                <argument>${project.basedir}/utils/conf/db.properties</argument>
+                <argument>${project.basedir}/utils/conf/db.properties.override</argument>
+                <!-- simulator sql files -->
+                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                <!-- database upgrade -->
+                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                <argument>--database=simulator</argument>
+                <argument>--rootpassword=${db.root.password}</argument>
+                <!-- enable verbosity by -v or dash-dash-verbose -->
+              </arguments>
+              <systemProperties>
+                <systemProperty>
+                  <key>catalina.home</key>
+                  <value>${project.basedir}/utils</value>
+                </systemProperty>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

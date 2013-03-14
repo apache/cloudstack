@@ -88,30 +88,6 @@ public class Upgrade40to41 implements DbUpgrade {
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
 
-            //Update regionId in account table
-            s_logger.debug("Updating account table with Id: "+region_id);
-            pstmt = conn.prepareStatement("update `cloud`.`account` set region_id = ?");
-            pstmt.setInt(1, region_id);
-            pstmt.executeUpdate();
-
-            //Update regionId in user table
-            s_logger.debug("Updating user table with Id: "+region_id);
-            pstmt = conn.prepareStatement("update `cloud`.`user` set region_id = ?");
-            pstmt.setInt(1, region_id);
-            pstmt.executeUpdate();
-
-            //Update regionId in domain table
-            s_logger.debug("Updating domain table with Id: "+region_id);
-            pstmt = conn.prepareStatement("update `cloud`.`domain` set region_id = ?");
-            pstmt.setInt(1, region_id);
-            pstmt.executeUpdate();
-
-            //Update regionId in cloud_usage account table
-            s_logger.debug("Updating cloud_usage account table with Id: "+region_id);
-            pstmt = conn.prepareStatement("update `cloud_usage`.`account` set region_id = ?");
-            pstmt.setInt(1, region_id);
-            pstmt.executeUpdate();
-            s_logger.debug("Successfully updated region entries with regionId: "+region_id);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Error while updating region entries", e);
         } finally {

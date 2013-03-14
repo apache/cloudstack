@@ -49,12 +49,6 @@ public class AddRegionCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, required=true, description="Region service endpoint")
     private String endPoint;
 
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="API key of Admin user")
-    private String apiKey;
-    
-    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="Secret Key of Admin user")
-    private String secretKey;
-    
     @Inject public RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -73,14 +67,6 @@ public class AddRegionCmd extends BaseCmd {
         return endPoint;
     }
 
-    public String getApiKey() {
-        return apiKey;
-    }
-    
-    public String getSecretKey() {
-        return secretKey;
-    }
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -97,7 +83,7 @@ public class AddRegionCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        Region region = _regionService.addRegion(getId(), getRegionName(), getEndPoint(), getApiKey(), getSecretKey());
+        Region region = _regionService.addRegion(getId(), getRegionName(), getEndPoint());
         if (region != null) {
         	RegionResponse response = _responseGenerator.createRegionResponse(region);
             response.setResponseName(getCommandName());

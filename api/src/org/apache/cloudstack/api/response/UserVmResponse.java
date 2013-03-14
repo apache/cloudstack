@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -169,9 +170,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String keyPairName;
 
     public UserVmResponse(){
-        securityGroupList = new HashSet<SecurityGroupResponse>();
-        nics = new HashSet<NicResponse>();
-        tags = new HashSet<ResourceTagResponse>();
+        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+        nics = new LinkedHashSet<NicResponse>();
+        tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
     public void setHypervisor(String hypervisor) {

@@ -29,7 +29,4 @@ public interface Region  {
 
 	public String getEndPoint();
 	
-	public String getApiKey();
-	
-	public String getSecretKey();
 }

@@ -15,19 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/server/*
-/etc/cloudstack/management/*
-/etc/init.d/cloudstack-management
-/etc/security/limits.d/cloudstack-limits.conf
-/etc/sudoers.d/cloudstack
-/var/cache/cloudstack/management
-/var/cache/cloudstack/management/work
-/var/cache/cloudstack/management/temp
-/var/log/cloudstack/management
-/var/lib/cloudstack/mnt
-/var/lib/cloudstack/management
-/usr/bin/cloud-update-xenserver-licenses
-/usr/bin/cloud-setup-management
-/usr/bin/cloud-setup-databases
-/usr/bin/cloud-migrate-databases
-/usr/share/cloudstack-management/*
+# Specific limits for the CloudStack management server which
+# runs under the user 'cloud' by default
+@MSUSER hard nofile 4096
+@MSUSER soft nofile 4096

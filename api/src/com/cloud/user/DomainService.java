@@ -27,7 +27,7 @@ import com.cloud.utils.Pair;
 
 public interface DomainService {
 
-    Domain createDomain(String name, Long parentId, String networkDomain);
+    Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID);
 
     Domain getDomain(long id);
 
