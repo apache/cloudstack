@@ -162,6 +162,7 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -340,6 +341,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
 
     
     int _routerRamSize;
@@ -1696,18 +1699,30 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
-            String defaultNetworkStartIp = null;
-            if (guestNetwork.getCidr() != null && !setupPublicNetwork) {
-                String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-                if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                    defaultNetworkStartIp = startIp;
-                } else if (s_logger.isDebugEnabled()){
-                    s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
-                            " is already allocated, can't use it for domain router; will get random ip address from the range");
-                }
+            String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
+            if (!setupPublicNetwork) {
+            	if (guestNetwork.getCidr() != null) {
+            		String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+            		if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+            			defaultNetworkStartIp = startIp;
+            		} else if (s_logger.isDebugEnabled()){
+            			s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
+            					" is already allocated, can't use it for domain router; will get random ip address from the range");
+            		}
+            	}
+            	
+            	if (guestNetwork.getIp6Cidr() != null) {
+            		String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+            		if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+            			defaultNetworkStartIpv6 = startIpv6;
+            		} else if (s_logger.isDebugEnabled()){
+            			s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
+            					" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+            		}
+            	}
             }
 
-            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, null);
+            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (setupPublicNetwork) {
                 if (isRedundant) {
                     gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
