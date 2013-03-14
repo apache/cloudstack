@@ -823,4 +823,10 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
 			throws InvalidParameterValueException {
 		// TODO Auto-generated method stub
 	}
+
+	@Override
+	public String getStartIpv6Address(long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
