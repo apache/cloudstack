@@ -622,10 +622,14 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         lines = rules.split(';')[:-1]
 
     logging.debug("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
-    vmchain = vm_name
-    execute("iptables -F " + vmchain)
-    egress_vmchain = egress_chain_name(vm_name)
-    execute("iptables -F " + egress_vmchain)
+    try:
+      vmchain = vm_name
+      execute("iptables -F " + vmchain)
+      egress_vmchain = egress_chain_name(vm_name)
+      execute("iptables -F " + egress_vmchain)
+    except: 
+      logging.debug("Error flushing iptables rules for " + vmchain + ".  Presuming firewall rules deleted, re-initializing." )
+      default_network_rules(vm_name, vm_id, vm_ip, vmMac, vif, brname)
     egressrule = 0
     for line in lines:
 	
