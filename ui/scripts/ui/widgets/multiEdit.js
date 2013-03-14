@@ -489,7 +489,17 @@
 
                   // Attach VM data to row
                   function(elem) {
-                    return $(elem).data('json-obj');
+                    var itemData = $(elem).data('json-obj');
+                    var $subselect = $(elem).find('.subselect select');
+
+                    // Include subselect data
+                    if ($subselect && $subselect.val()) {
+                      return $.extend(itemData, {
+                        _subselect: $subselect.val()
+                      });
+                    }
+                    
+                    return itemData;
                   }
                 ));
                 $dataList.remove();

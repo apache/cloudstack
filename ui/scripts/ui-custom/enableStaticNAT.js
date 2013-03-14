@@ -92,9 +92,10 @@
               var start = args.start;
 
               start();
-              $dataList.fadeOut(function() {
+              $dataList.fadeOut(function() {                
                 action({
                   tierID: $dataList.find('.tier-select select').val(),
+                  _subselect: $dataList.find('tr.multi-edit-selected .subselect select').val(),
                   context: $.extend(true, {}, context, {
                     instances: [
                       $dataList.find('tr.multi-edit-selected').data('json-obj')

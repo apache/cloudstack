@@ -1737,16 +1737,33 @@ div.list-view td.state.off span {
   text-indent: 0;
 }
 
-.detail-group .main-groups table td.value span {
+.detail-group .main-groups table td.value > span {
   display: block;
   height: 30px;
   overflow: auto;
   position: relative;
   top: 9px;
+  float: left;
+  width: 245px;
 }
 
-.detail-group .main-groups table td.value span {
-  width: 355px;
+.detail-group .main-groups table td.value .view-all {
+  cursor: pointer;
+  /*[empty]height:;*/
+  border-left: 1px solid #9FA2A5;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
+  background: url(../images/sprites.png) no-repeat 100% -398px;
+  float: right;
+  margin: 1px 0 0;
+  padding: 8px 33px 6px 15px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover {
+  background-position: 100% -431px;
 }
 
 .panel.always-maximized .detail-group .main-groups table td.value span {
@@ -7292,6 +7309,33 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .ui-dialog.panel div.list-view div.data-table table tbody tr.multi-edit-selected {
   background: #C3E0FC;
+}
+
+/*List-view: subselect dropdown*/
+.list-view .subselect {
+  width: 116px;
+  display: block;
+  float: left;
+  background: url(../images/bg-gradients.png) 0px -42px;
+  padding: 0;
+  margin: 8px 0 1px 7px;
+  clear: both;
+  border: 1px solid #A8A7A7;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.list-view .subselect span {
+  margin: 4px 0 0 12px;
+}
+
+.list-view .subselect select {
+  width: 85%;
+  margin: 5px 0 4px;
+  font-size: 10px;
 }
 
 /*Multi-edit*/
