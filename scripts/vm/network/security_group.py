@@ -344,7 +344,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vm_name =  '-'.join(vm_name.split('-')[:-1])
+	vm_name = '-'.join(vm_name.split('-')[:-1]) + "-def"
     
     vmchain = vm_name
     
