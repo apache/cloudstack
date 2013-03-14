@@ -11080,6 +11080,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   -webkit-box-shadow: 0px 3px 8px #000000;
   -o-box-shadow: 0px 3px 8px #000000;
   box-shadow: 0px 3px 8px #000000;
+  display: none;
 }
 
 .ui-datepicker .ui-datepicker-title {
