@@ -171,12 +171,10 @@
 											}
 										});										
 									}, g_queryAsyncJobResultInterval); 										
-								},
-                                                              error:function(XMLHttpResponse){
-                                                                   args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+								}
 
 
-                                                                }
+                                                               
 							});
             }
           }					
