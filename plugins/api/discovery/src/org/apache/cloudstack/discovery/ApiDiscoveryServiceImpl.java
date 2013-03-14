@@ -73,6 +73,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
+            cmdClasses.addAll(this.getCommands());
             cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
