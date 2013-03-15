@@ -574,4 +574,12 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.vmReservation = vmReservation;
     }
 
+    public Boolean getSameHost(){
+        return false;
+    }
+
+    public Long getNewSvcOfferingId(){
+        return serviceOfferingId;
+    }
+
 }
