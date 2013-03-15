@@ -18,6 +18,7 @@ package org.apache.cloudstack.affinity.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,12 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
     private SearchBuilder<AffinityGroupVO> AccountIdNamesSearch;
 
 
-    protected AffinityGroupDaoImpl() {
+    public AffinityGroupDaoImpl() {
+
+    }
+
+    @PostConstruct
+    protected void init() {
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();

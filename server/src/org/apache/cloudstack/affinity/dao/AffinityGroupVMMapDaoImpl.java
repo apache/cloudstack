@@ -18,6 +18,7 @@ package org.apache.cloudstack.affinity.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -50,7 +51,11 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
     @Inject
     protected AffinityGroupDao _affinityGroupDao;
 
-    protected AffinityGroupVMMapDaoImpl() {
+    public AffinityGroupVMMapDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
         ListVmIdByAffinityGroup = createSearchBuilder(Long.class);
         ListVmIdByAffinityGroup.and("affinityGroupId", ListVmIdByAffinityGroup.entity().getAffinityGroupId(),
                 SearchCriteria.Op.EQ);
