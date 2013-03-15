@@ -56,8 +56,8 @@
 				},
 				async: false,
 				success: function(json) {		
-					if(json.listlbhealtcheckpoliciesresponse.healthcheckpolicies[0].healthcheckpolicy[0] !=	undefined) {
-					  policyObj = json.listlbhealtcheckpoliciesresponse.healthcheckpolicies[0].healthcheckpolicy[0];
+					if(json.listlbhealthcheckpoliciesresponse.healthcheckpolicies[0].healthcheckpolicy[0] !=	undefined) {
+					  policyObj = json.listlbhealthcheckpoliciesresponse.healthcheckpolicies[0].healthcheckpolicy[0];
 						pingpath1 = policyObj.pingpath; //API bug: API doesn't return it
 						responsetimeout1 = policyObj.responsetime;
 						healthinterval1 =	policyObj.healthcheckinterval;		
@@ -121,26 +121,13 @@
               $loadingOnDialog.appendTo($healthCheckDialog);							
 						  var formData = cloudStack.serializeForm($healthCheckDialog.find('form'));							
 							var data = {
-							        lbruleid: args.context.multiRules[0].id, 					
+							  lbruleid: args.context.multiRules[0].id, 					
 								pingpath: formData.pingpath,
 								responsetimeout: formData.responsetimeout,
 								intervaltime: formData.healthinterval,
 								healthythreshold: formData.healthythreshold,
 								unhealthythreshold: formData.unhealthythreshold								
 							};
-
-                                                         var lbRuleData = {
-
-                                                           algorithm:args.context.multiRules[0].algorithm,
-                                                           name:args.context.multiRules[0].name,
-                                                           publicport:args.context.multiRules[0].publicport,
-                                                           privateport:args.context.multiRules[0].privateport
-
-
-                                                            }
-
-                                                        if(args.context.multiRules[0] != null)
-                                                           $.extend(data , lbRuleData);
 														
 							$.ajax({
 							  url: createURL('createLBHealthCheckPolicy'),
@@ -178,9 +165,6 @@
 										});										
 									}, g_queryAsyncJobResultInterval); 										
 								}
-
-
-                                                               
 							});
             }
           }					
@@ -226,19 +210,6 @@
 															healthythreshold: formData.healthythreshold,
 															unhealthythreshold: formData.unhealthythreshold								
 														};
-
-                                                                                                                 var lbRuleData = {
-
-                  algorithm:args.context.multiRules[0].algorithm,
-                  name:args.context.multiRules[0].name,
-                  publicport:args.context.multiRules[0].publicport,
-                  privateport:args.context.multiRules[0].privateport
-
-
-              }
-
-           if(args.context.multiRules[0] != null)
-            $.extend(data , lbRuleData);
 																					
 														$.ajax({
 															url: createURL('createLBHealthCheckPolicy'),
@@ -275,11 +246,7 @@
 																		}
 																	});										
 																}, g_queryAsyncJobResultInterval); 										
-															},
-                                                                                                                        error:function(json){
- 															   args.response.error(parseXMLHttpResponse(json));
-
-                                                                                                                                }
+															}
 														});														
 													}
 													else if (result.jobstatus == 2) {													  
@@ -297,6 +264,56 @@
             }
           }
 					//Update Button (end) 
+					,					
+					//Delete Button (begin) - call delete API 		
+          {
+            text: _l('Delete'),
+            'class': 'cancel',
+            click: function() {    
+              $loadingOnDialog.appendTo($healthCheckDialog);
+						
+							$.ajax({
+							  url: createURL('deleteLBHealthCheckPolicy'),
+								data: {
+								  id : policyObj.id
+								},
+								success: function(json) {								  						
+									var jobId = json.deletelbhealthcheckpolicyresponse.jobid;
+									var deleteLBHealthCheckPolicyIntervalId = setInterval(function(){									  
+										$.ajax({
+										  url: createURL('queryAsyncJobResult'),
+											data: {
+											  jobid: jobId
+											},
+											success: function(json) {	
+												var result = json.queryasyncjobresultresponse;
+												if (result.jobstatus == 0) {
+													return; //Job has not completed
+												}
+												else {                                      
+													clearInterval(deleteLBHealthCheckPolicyIntervalId); 
+													
+													if (result.jobstatus == 1) {															
+														cloudStack.dialog.notice({ message: _l('Health Check Policy has been deleted') });														
+                            $loadingOnDialog.remove();	
+														$healthCheckDialog.dialog('destroy');
+                            $('.overlay').remove();																										
+													}
+													else if (result.jobstatus == 2) {													  
+														cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
+                            $loadingOnDialog.remove();	
+														$healthCheckDialog.dialog('destroy');
+														$('.overlay').remove();																
+													}
+												}																						
+											}
+										});										
+									}, g_queryAsyncJobResultInterval); 										
+								}
+							});												
+            }
+          }
+					//Delete Button (end) 
 				);				
 			}
 						
