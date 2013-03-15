@@ -1763,8 +1763,8 @@ div.list-view td.state.off span {
 }
 
 .detail-group .main-groups table td.value .view-all:hover {
-   background-position: 100% -431px;
- }
+  background-position: 100% -431px;
+}
 
 /*List-view: subselect dropdown*/
 .list-view .subselect {
@@ -1789,7 +1789,7 @@ div.list-view td.state.off span {
 
 .list-view .subselect select {
   width: 85%;
- margin: 5px 0 4px;
+  margin: 5px 0 4px;
   font-size: 10px;
 }
 
@@ -7774,7 +7774,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   margin: 0 22px 0 0;
 }
 
- /** Fix long table overflow*/
+/** Fix long table overflow*/
 .detail-view .multi-edit {
   width: 100%;
 }
@@ -7791,10 +7791,9 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   max-width: 87px !important;
 }
 
- 
 /** Header fields*/
 .multi-edit .header-fields {
-  position: relative; 
+  position: relative;
   /*+placement:shift 14px 11px;*/
   position: relative;
   left: 14px;
