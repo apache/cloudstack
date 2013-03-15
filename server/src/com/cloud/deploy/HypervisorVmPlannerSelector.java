@@ -18,6 +18,7 @@ package com.cloud.deploy;
 
 import javax.ejb.Local;
 
+import com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.vm.UserVmVO;
 
@@ -26,8 +27,20 @@ public class HypervisorVmPlannerSelector extends AbstractDeployPlannerSelector {
     @Override
     public String selectPlanner(UserVmVO vm) {
         if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-            return "FirstFitPlanner";
+            //check the allocation strategy
+            if (_allocationAlgorithm != null) {
+                if (_allocationAlgorithm.equals(AllocationAlgorithm.random.toString())
+                        || _allocationAlgorithm.equals(AllocationAlgorithm.firstfit.toString())) {
+                    return "FirstFitPlanner";
+                } else if (_allocationAlgorithm.equals(AllocationAlgorithm.userdispersing.toString())) {
+                    return "UserDispersingPlanner";
+                } else if (_allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_random.toString())
+                        || _allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
+                    return "UserConcentratedPodPlanner";
+                }
+            }
         }
+
         return null;
     }
 }

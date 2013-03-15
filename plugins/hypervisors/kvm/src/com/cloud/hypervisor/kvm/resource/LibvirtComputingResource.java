@@ -110,6 +110,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
@@ -1176,6 +1177,8 @@ ServerResource {
                 return execute((ResizeVolumeCommand) cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
                 return execute((CheckNetworkCommand) cmd);
+            } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
+                return execute((NetworkRulesVmSecondaryIpCommand) cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -2339,7 +2342,7 @@ ServerResource {
         boolean result = add_network_rules(cmd.getVmName(),
                 Long.toString(cmd.getVmId()), cmd.getGuestIp(),
                 cmd.getSignature(), Long.toString(cmd.getSeqNum()),
-                cmd.getGuestMac(), cmd.stringifyRules(), vif, brname);
+                cmd.getGuestMac(), cmd.stringifyRules(), vif, brname, cmd.getSecIpsString());
 
         if (!result) {
             s_logger.warn("Failed to program network rules for vm "
@@ -3096,7 +3099,18 @@ ServerResource {
                         default_network_rules_for_systemvm(conn, vmName);
                         break;
                     } else {
-                        default_network_rules(conn, vmName, nic, vmSpec.getId());
+                        List<String> nicSecIps = nic.getNicSecIps();
+                        String secIpsStr;
+                        StringBuilder sb = new StringBuilder();
+                        if (nicSecIps != null) {
+                            for (String ip : nicSecIps) {
+                                sb.append(ip).append(":");
+                            }
+                            secIpsStr = sb.toString();
+                        } else {
+                            secIpsStr = "0:";
+                        }
+                        default_network_rules(conn, vmName, nic, vmSpec.getId(), secIpsStr);
                     }
                 }
             }
@@ -4364,7 +4378,7 @@ ServerResource {
     }
 
     protected boolean default_network_rules(Connect conn, String vmName,
-            NicTO nic, Long vmId) {
+            NicTO nic, Long vmId, String secIpStr) {
         if (!_can_bridge_firewall) {
             return false;
         }
@@ -4388,6 +4402,7 @@ ServerResource {
         cmd.add("--vmmac", nic.getMac());
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
+        cmd.add("--nicsecips", secIpStr);
         String result = cmd.execute();
         if (result != null) {
             return false;
@@ -4450,7 +4465,7 @@ ServerResource {
 
     private boolean add_network_rules(String vmName, String vmId,
             String guestIP, String sig, String seq, String mac, String rules,
-            String vif, String brname) {
+            String vif, String brname, String secIps) {
         if (!_can_bridge_firewall) {
             return false;
         }
@@ -4466,9 +4481,29 @@ ServerResource {
         cmd.add("--vmmac", mac);
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
+        cmd.add("--nicsecips", secIps);
         if (rules != null) {
             cmd.add("--rules", newRules);
         }
+        String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean network_rules_vmSecondaryIp (Connect conn, String vmName, String secIp, String action) {
+
+        if (!_can_bridge_firewall) {
+            return false;
+        }
+
+        Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+        cmd.add("network_rules_vmSecondaryIp");
+        cmd.add("--vmname", vmName);
+        cmd.add("--nicsecips", secIp);
+        cmd.add("--action", action);
+
         String result = cmd.execute();
         if (result != null) {
             return false;
@@ -4559,6 +4594,20 @@ ServerResource {
             success = default_network_rules_for_systemvm(conn, cmd.getVmName());
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
+        }
+
+        return new Answer(cmd, success, "");
+    }
+
+    private Answer execute(NetworkRulesVmSecondaryIpCommand cmd) {
+        boolean success = false;
+        Connect conn;
+        try {
+            conn = LibvirtConnection.getConnection();
+            success = network_rules_vmSecondaryIp(conn, cmd.getVmName(), cmd.getVmSecIp(), cmd.getAction());
+        } catch (LibvirtException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
         return new Answer(cmd, success, "");

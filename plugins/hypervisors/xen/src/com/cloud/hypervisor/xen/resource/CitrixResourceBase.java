@@ -3552,7 +3552,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 
     protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId,
-            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
+            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait, Long secHostId) {
         String backupSnapshotUuid = null;
 
         if (prevBackupUuid == null) {
@@ -3565,7 +3565,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String results = callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
                 "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(),
                 "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath,
-                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString());
+                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "secHostId", secHostId.toString());
         String errMsg = null;
         if (results == null || results.isEmpty()) {
             errMsg = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
@@ -6837,6 +6837,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String prevBackupUuid = cmd.getPrevBackupUuid();
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         int wait = cmd.getWait();
+        Long secHostId = cmd.getSecHostId();
         // By default assume failure
         String details = null;
         boolean success = false;
@@ -6915,7 +6916,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (cmd.getS3() != null) {
                     backupSnapshotToS3(conn, cmd.getS3(), primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
+                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait, secHostId);
                     success = (snapshotBackupUuid != null);
                 }
             }

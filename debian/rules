@@ -38,12 +38,12 @@ build-indep-stamp: configure
         -Dcs.replace.properties=replace.properties.tmp
 	touch $@
 
-clean: 
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp configure-stamp
 	rm -f replace.properties.tmp
-	dh_clean 
+	dh_clean
 
 install:
 	dh_testdir
@@ -75,6 +75,8 @@ install:
 	# cloudstack-management
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
@@ -89,6 +91,12 @@ install:
 	cp -r client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+
+	# nast hack for a couple of configuration files
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
+	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
+
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/Catalina/localhost/client
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management

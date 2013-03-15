@@ -15,15 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# usage database settings
-db.usage.username=@DBUSER@
-db.usage.password=@DBPW@
-db.usage.host=@DBHOST@
-db.usage.port=3306
-db.usage.name=cloud_usage
-
-# usage database tuning parameters
-db.usage.maxActive=100
-db.usage.maxIdle=30
-db.usage.maxWait=10000
-db.usage.autoReconnect=true
+# Specific limits for the CloudStack management server which
+# runs under the user 'cloud' by default
+@MSUSER hard nofile 4096
+@MSUSER soft nofile 4096

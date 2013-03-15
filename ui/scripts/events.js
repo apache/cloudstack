@@ -58,7 +58,11 @@
                 desc: '',
                 fields: {
                   type: { label: 'By event type'  , docID:'helpEventsDeleteType'},
-                  date: { label: 'By date (older than)' ,docID:'helpEventsDeleteDate'}
+                  date: {
+                    label: 'By date (older than)',
+                    docID:'helpEventsDeleteDate',
+                    isDatepicker: true
+                  }
                 }
               },
              action: function(args) {
@@ -104,7 +108,7 @@
                 desc: '',
                 fields: {
                   type: { label: 'By event type' , docID:'helpEventsArchiveType'},
-                  date: { label: 'By date (older than)' , docID:'helpEventsArchiveDate'}
+                  date: { label: 'By date (older than)' , docID:'helpEventsArchiveDate', isDatepicker: true },
                 }
               },
               action: function(args) {
@@ -346,7 +350,7 @@
                 desc: '',
                 fields: {
                   type: { label: 'By event type' , docID:'helpAlertsDeleteType'},
-                  date: { label: 'By date (older than)' ,docID:'helpAlertsDeleteDate' }
+                  date: { label: 'By date (older than)' ,docID:'helpAlertsDeleteDate', isDatepicker: true }
                 }
               },
              action: function(args) {
@@ -392,7 +396,7 @@
                 desc: '',
                 fields: {
                   type: { label: 'By event type', docID:'helpAlertsArchiveType' },
-                  date: { label: 'By date (older than)' , docID:'helpAlertsArchiveDate'}
+                  date: { label: 'By date (older than)' , docID:'helpAlertsArchiveDate', isDatepicker: true }
                 }
               },
               action: function(args) {
