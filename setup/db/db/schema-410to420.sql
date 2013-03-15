@@ -142,6 +142,29 @@ CREATE TABLE `cloud`.`user_vm_clone_setting` (
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');
 
+CREATE TABLE `cloud`.`affinity_group` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `name` varchar(255) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `uuid` varchar(40),
+  `description` varchar(4096) NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  UNIQUE (`name`, `account_id`),
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_affinity_group__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_affinity_group__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  CONSTRAINT `uc_affinity_group__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`affinity_group_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `affinity_group_id` bigint unsigned NOT NULL,
+  `instance_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_agvm__group_id` FOREIGN KEY(`affinity_group_id`) REFERENCES `affinity_group`(`id`)  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;
 
