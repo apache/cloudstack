@@ -268,7 +268,7 @@
 					//Delete Button (begin) - call delete API 		
           {
             text: _l('Delete'),
-            'class': 'cancel',
+            'class': 'delete',
             click: function() {    
               $loadingOnDialog.appendTo($healthCheckDialog);
 						
@@ -328,6 +328,9 @@
           $("button").each(function(){
             $(this).attr("style", "left: 400px; position: relative; margin-right: 5px; ");
           });
+       
+          $('.ui-dialog .delete').css('left','140px');
+
         },
         buttons: buttons
       }).closest('.ui-dialog').overlay();
