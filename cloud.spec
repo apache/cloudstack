@@ -502,6 +502,7 @@ fi
 %{_javadir}/jstl-1.2.jar
 %{_javadir}/javax.persistence-2.0.0.jar
 %{_javadir}/bcprov-jdk16-1.45.jar
+%{_javadir}/java-ipv6*.jar
 %doc LICENSE
 %doc NOTICE
 
