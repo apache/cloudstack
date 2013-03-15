@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "assignVirtualMachine", description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
+@APICommand(name = "assignVirtualMachine", description="Assign a VM from one account to another under the same domain. This API is available for Basic zones with security groups and Advance zones with guest networks. The VM is restricted to move between accounts under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
@@ -46,7 +46,7 @@ public class AssignVMCmd extends BaseCmd  {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="the vm ID of the user VM to be moved")
+            required=true, description="id of the VM to be moved")
     private Long virtualMachineId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="account name of the new VM owner.")
@@ -58,11 +58,11 @@ public class AssignVMCmd extends BaseCmd  {
 
     //Network information
     @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=NetworkResponse.class,
-            description="list of network ids that will be part of VM network after move in advanced network setting.")
+            description="list of new network ids in which the moved VM will participate. In case no network ids are provided the VM will be part of the default network for that zone. In case there is no network yet created for the new account the default network will be created.")
     private List<Long> networkIds;
 
     @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SecurityGroupResponse.class,
-            description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is moved in a zone with Basic Network support.")
+            description="list of security group ids to be applied on the virtual machine. In case no security groups are provided the VM is part of the default security group.")
     private List<Long> securityGroupIdList;
 
     /////////////////////////////////////////////////////
