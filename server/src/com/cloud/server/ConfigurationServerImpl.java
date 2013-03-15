@@ -106,10 +106,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
-import org.apache.cloudstack.region.RegionVO;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+
 
 @Component
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
@@ -152,7 +149,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     public void persistDefaultValues() throws InternalErrorException {
 
     	fixupScriptFileAttribute();
-    	
+
         // Create system user and admin user
         saveUser();
 
@@ -337,23 +334,20 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @DB
     protected void saveUser() {
-        int region_id = _configDao.getRegionId();
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (1, UUID(), 'system', '1', '1', ?)";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.setInt(1, region_id);
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, region_id)" +
-                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), ?)";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.setInt(1, region_id);
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
@@ -366,23 +360,21 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', ?)";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.setInt(1, region_id);
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state, region_id) " +
-                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', ?)";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.setInt(1, region_id);
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
@@ -708,15 +700,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
     }
-    
+
 	private void fixupScriptFileAttribute() {
-		// TODO : this is a hacking fix to workaround that executable bit is not preserved in WAR package 
+		// TODO : this is a hacking fix to workaround that executable bit is not preserved in WAR package
         String scriptPath = Script.findScript("", "scripts/vm/systemvm/injectkeys.sh");
         if(scriptPath != null) {
         	File file = new File(scriptPath);
         	if(!file.canExecute()) {
         		s_logger.info("Some of the shell script files may not have executable bit set. Fixup...");
-        		
+
         		String cmd = "chmod ugo+x " + scriptPath;
         		s_logger.info("Executing " + cmd);
                 String result = Script.runSimpleBashScript(cmd);
