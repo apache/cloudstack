@@ -16,15 +16,16 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<configConfMos
+<orgResolveInScope
+  dn="%vdcdn%"
   cookie="%cookie%"
+  inClass="policyPolicyNameRef"
+  inSingleLevel="false"
   inHierarchical="false">
-  <inConfigs>
-    <pair key="%dn%">
-      <orgTenant
-        dn="%dn%"
-        name="%name%"
-        status="deleted,modified"/>
-    </pair>
-  </inConfigs>
-</configConfMos>
+  <inFilter>
+  </inFilter>
+</orgResolveInScope>
+
+<!--
+    vdcdn="org-root/org-vlan-123/org-VDC-vlan-123"
+--!>
