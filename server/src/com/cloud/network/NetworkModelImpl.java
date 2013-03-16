@@ -1457,11 +1457,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (network.getGuestType() != Network.GuestType.Shared) {
             List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
             if (networkMap == null || networkMap.isEmpty()) {
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                throw new PermissionDeniedException("Unable to use network with id= " + network.getUuid() + ", permission denied");
             }
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getId() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
