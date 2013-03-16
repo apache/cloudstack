@@ -665,13 +665,16 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"  
             + backupName + "." + ImageFormat.OVA.getFileExtension();
-        
+        String snapshotDir = "";
+        if (backupName.contains("/")){
+            snapshotDir = backupName.split("/")[0];
+        }
         String srcFileName = getOVFFilePath(srcOVAFileName);
         if(srcFileName == null) {
             Script command = new Script("tar", 0, s_logger);
             command.add("--no-same-owner");
             command.add("-xf", srcOVAFileName);
-            command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir);
+            command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir + "/" + snapshotDir);
             s_logger.info("Executing command: " + command.toString());
             String result = command.execute();
             if(result != null) {
@@ -712,7 +715,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String backupUuid = UUID.randomUUID().toString();
         exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, 
             getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName);
-        return backupUuid;
+        return backupUuid + "/" + backupUuid;
     }
     
     private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,  
@@ -720,7 +723,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String workerVmName) throws Exception {
         
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-        String exportPath =  secondaryMountPoint + "/" + secStorageDir;
+        String exportPath =  secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
         
         synchronized(exportPath.intern()) {
             if(!new File(exportPath).exists()) {
