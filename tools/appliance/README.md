@@ -26,10 +26,10 @@ under the License.
           export PATH=~/.rvm/bin:$PATH
     - Install Ruby 1.9.3, if it installed some other version:
           rvm install 1.9.3
+    - Install bundler: (if you get any openssl issue see https://rvm.io/packages/openssl)
+          gem install bundler
 
 All the dependencies will be fetched automatically.
-
-Vagrant: https://github.com/chipchilders/vagrant.git
 
 To save some time if you've downloaded iso of your distro, put the isos in:
 tools/appliance/iso/
