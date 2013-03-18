@@ -14,17 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
-
-    FACTORY_FOR = StoragePool
-
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None

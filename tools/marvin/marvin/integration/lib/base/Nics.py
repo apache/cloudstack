@@ -14,17 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listNics
 
-    FACTORY_FOR = StoragePool
+class Nics(CloudStackEntity):
 
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(self, apiclient, virtualmachineid, **kwargs):
+        cmd = listNics.listNicsCmd()
+        cmd.virtualmachineid = virtualmachineid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        nics = apiclient.listNics(cmd)
+        return map(lambda e: Nics(e.__dict__), nics)

@@ -15,35 +15,35 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createAutoScalePolicy
-from marvin.cloudstackAPI import updateAutoScalePolicy
-from marvin.cloudstackAPI import deleteAutoScalePolicy
+from marvin.cloudstackAPI import addBigSwitchVnsDevice
+from marvin.cloudstackAPI import listBigSwitchVnsDevices
+from marvin.cloudstackAPI import deleteBigSwitchVnsDevice
 
-class AutoScalePolicy(CloudStackEntity):
+class BigSwitchVnsDevice(CloudStackEntity):
 
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
+    def add(self, apiclient, physicalnetworkid, hostname, **kwargs):
+        cmd = addBigSwitchVnsDevice.addBigSwitchVnsDeviceCmd()
+        cmd.hostname = hostname
+        cmd.physicalnetworkid = physicalnetworkid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        bigswitchvnsdevice = apiclient.addBigSwitchVnsDevice(cmd)
+
+
     @classmethod
-    def create(cls, apiclient, AutoScalePolicyFactory, **kwargs):
-        cmd = createAutoScalePolicy.createAutoScalePolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScalePolicyFactory.__dict__.iteritems()]
-        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        autoscalepolicy = apiclient.createAutoScalePolicy(cmd)
-        return AutoScalePolicy(autoscalepolicy.__dict__)
-
-
-    def update(self, apiclient, id, **kwargs):
-        cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
-        cmd.id = id
+    def list(self, apiclient, **kwargs):
+        cmd = listBigSwitchVnsDevices.listBigSwitchVnsDevicesCmd()
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.updateAutoScalePolicy(cmd)
+        bigswitchvnsdevice = apiclient.listBigSwitchVnsDevices(cmd)
+        return map(lambda e: BigSwitchVnsDevice(e.__dict__), bigswitchvnsdevice)
 
 
-    def delete(self, apiclient, id, **kwargs):
-        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
-        cmd.id = id
+    def delete(self, apiclient, vnsdeviceid, **kwargs):
+        cmd = deleteBigSwitchVnsDevice.deleteBigSwitchVnsDeviceCmd()
+        cmd.vnsdeviceid = vnsdeviceid
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.deleteAutoScalePolicy(cmd)
+        bigswitchvnsdevice = apiclient.deleteBigSwitchVnsDevice(cmd)

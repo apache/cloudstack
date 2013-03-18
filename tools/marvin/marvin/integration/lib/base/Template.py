@@ -42,8 +42,8 @@ class Template(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, TemplateFactory, **kwargs):
         cmd = createTemplate.createTemplateCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TemplateFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TemplateFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.createTemplate(cmd)
         return Template(template.__dict__)
 

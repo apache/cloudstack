@@ -31,8 +31,8 @@ class VPC(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, VPCFactory, **kwargs):
         cmd = createVPC.createVPCCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VPCFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VPCFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.createVPC(cmd)
         return VPC(vpc.__dict__)
 

@@ -29,8 +29,8 @@ class PrivateGateway(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, PrivateGatewayFactory, **kwargs):
         cmd = createPrivateGateway.createPrivateGatewayCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PrivateGatewayFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PrivateGatewayFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         privategateway = apiclient.createPrivateGateway(cmd)
         return PrivateGateway(privategateway.__dict__)
 

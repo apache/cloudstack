@@ -43,8 +43,8 @@ class VirtualMachine(CloudStackEntity):
     @classmethod
     def deploy(cls, apiclient, VirtualMachineFactory, **kwargs):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VirtualMachineFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VirtualMachineFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.deployVirtualMachine(cmd)
         return VirtualMachine(virtualmachine.__dict__)
 

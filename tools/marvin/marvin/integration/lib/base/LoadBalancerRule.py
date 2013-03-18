@@ -30,8 +30,8 @@ class LoadBalancerRule(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, LoadBalancerRuleFactory, **kwargs):
         cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LoadBalancerRuleFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LoadBalancerRuleFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.createLoadBalancerRule(cmd)
         return LoadBalancerRule(loadbalancerrule.__dict__)
 

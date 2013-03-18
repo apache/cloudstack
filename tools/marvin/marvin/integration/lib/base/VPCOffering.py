@@ -30,8 +30,8 @@ class VPCOffering(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, VPCOfferingFactory, **kwargs):
         cmd = createVPCOffering.createVPCOfferingCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VPCOfferingFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VPCOfferingFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpcoffering = apiclient.createVPCOffering(cmd)
         return VPCOffering(vpcoffering.__dict__)
 

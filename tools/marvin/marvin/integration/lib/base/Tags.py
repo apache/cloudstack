@@ -29,8 +29,8 @@ class Tags(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, TagsFactory, **kwargs):
         cmd = createTags.createTagsCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TagsFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TagsFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         tags = apiclient.createTags(cmd)
         return Tags(tags.__dict__)
 

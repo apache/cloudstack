@@ -126,8 +126,8 @@ def write_entity_classes(entities):
             if action in ['create', 'deploy']:
                 body.append(tabspace + 'def %s(cls, apiclient, %sFactory, **kwargs):'%(action, entity))
                 body.append(tabspace*2 + 'cmd = %(module)s.%(command)s()'%{"module": details["apimodule"], "command": details["apicmd"]})
-                body.append(tabspace*2 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in %sFactory.attributes()]'%entity)
-                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.items]')
+                body.append(tabspace*2 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in %sFactory.__dict__.iteritems()]'%entity)
+                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.iteritems()]')
                 body.append(tabspace*2 + '%s = apiclient.%s(cmd)'%(entity.lower(), details['apimodule']))
                 body.append(tabspace*2 + 'return %s(%s.__dict__)'%(entity, entity.lower()))
             else:
@@ -185,7 +185,7 @@ def write_entity_factory(entity, actions):
         code += 'from marvin.integration.lib.base import %s\n'%entity
         code += 'class %sFactory(factory.Factory):'%entity
         code += '\n\n'
-        code += tabspace + 'FACTORY_FOR = %s\n\n'%entity
+        code += tabspace + 'FACTORY_FOR = %s.%s\n\n'%(entity,entity)
         for arg in factory_defaults:
             code += tabspace + '%s = None\n'%arg
         with open("./factory/%sFactory.py"%entity, "w") as writer:

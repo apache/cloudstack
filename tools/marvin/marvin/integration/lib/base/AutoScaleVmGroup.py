@@ -39,8 +39,8 @@ class AutoScaleVmGroup(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, AutoScaleVmGroupFactory, **kwargs):
         cmd = createAutoScaleVmGroup.createAutoScaleVmGroupCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScaleVmGroupFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScaleVmGroupFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.createAutoScaleVmGroup(cmd)
         return AutoScaleVmGroup(autoscalevmgroup.__dict__)
 

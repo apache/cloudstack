@@ -29,8 +29,8 @@ class RemoteAccessVpn(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, RemoteAccessVpnFactory, **kwargs):
         cmd = createRemoteAccessVpn.createRemoteAccessVpnCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in RemoteAccessVpnFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in RemoteAccessVpnFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         remoteaccessvpn = apiclient.createRemoteAccessVpn(cmd)
         return RemoteAccessVpn(remoteaccessvpn.__dict__)
 

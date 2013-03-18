@@ -30,8 +30,8 @@ class NetworkOffering(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, NetworkOfferingFactory, **kwargs):
         cmd = createNetworkOffering.createNetworkOfferingCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkOfferingFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkOfferingFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkoffering = apiclient.createNetworkOffering(cmd)
         return NetworkOffering(networkoffering.__dict__)
 

@@ -27,7 +27,7 @@ class SnapshotPolicy(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, SnapshotPolicyFactory, **kwargs):
         cmd = createSnapshotPolicy.createSnapshotPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SnapshotPolicyFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SnapshotPolicyFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshotpolicy = apiclient.createSnapshotPolicy(cmd)
         return SnapshotPolicy(snapshotpolicy.__dict__)

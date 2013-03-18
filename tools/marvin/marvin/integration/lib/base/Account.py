@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import updateAccount
 from marvin.cloudstackAPI import disableAccount
 from marvin.cloudstackAPI import deleteAccount
 
-class Account(CloudStackEntity.CloudStackEntity):
+class Account(CloudStackEntity):
 
 
     def __init__(self, items):
@@ -47,8 +47,8 @@ class Account(CloudStackEntity.CloudStackEntity):
     @classmethod
     def create(cls, apiclient, AccountFactory, **kwargs):
         cmd = createAccount.createAccountCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AccountFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AccountFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.createAccount(cmd)
         return Account(account.__dict__)
 

@@ -30,8 +30,8 @@ class Zone(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, ZoneFactory, **kwargs):
         cmd = createZone.createZoneCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ZoneFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ZoneFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         zone = apiclient.createZone(cmd)
         return Zone(zone.__dict__)
 

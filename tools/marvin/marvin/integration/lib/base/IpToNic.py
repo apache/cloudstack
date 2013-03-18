@@ -14,17 +14,18 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addIpToNic
 
-    FACTORY_FOR = StoragePool
+class IpToNic(CloudStackEntity):
 
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    def add(self, apiclient, nicid, **kwargs):
+        cmd = addIpToNic.addIpToNicCmd()
+        cmd.nicid = nicid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iptonic = apiclient.addIpToNic(cmd)

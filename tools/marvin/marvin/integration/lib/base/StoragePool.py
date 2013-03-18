@@ -30,8 +30,8 @@ class StoragePool(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, StoragePoolFactory, **kwargs):
         cmd = createStoragePool.createStoragePoolCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StoragePoolFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StoragePoolFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagepool = apiclient.createStoragePool(cmd)
         return StoragePool(storagepool.__dict__)
 

@@ -30,8 +30,8 @@ class ServiceOffering(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, ServiceOfferingFactory, **kwargs):
         cmd = createServiceOffering.createServiceOfferingCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ServiceOfferingFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ServiceOfferingFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         serviceoffering = apiclient.createServiceOffering(cmd)
         return ServiceOffering(serviceoffering.__dict__)
 

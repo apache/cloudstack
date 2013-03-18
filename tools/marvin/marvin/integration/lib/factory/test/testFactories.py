@@ -14,17 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
 
-    FACTORY_FOR = StoragePool
+import unittest
+from marvin.integration.lib.factory import AccountFactory
+from marvin.integration.lib.base import Account
+from marvin.cloudstackTestClient import cloudstackTestClient
 
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
+class AccountFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost')
+
+    def test_userAccountFactory(self):
+        af = AccountFactory.AdminAccountFactory()
+        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        self.assertTrue(accnt is not None, msg="no account created by factory")
+
+    def tearDown(self):
+        self.apiClient.close()

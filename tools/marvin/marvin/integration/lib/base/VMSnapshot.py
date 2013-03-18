@@ -15,11 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createAutoScalePolicy
-from marvin.cloudstackAPI import updateAutoScalePolicy
-from marvin.cloudstackAPI import deleteAutoScalePolicy
+from marvin.cloudstackAPI import createVMSnapshot
+from marvin.cloudstackAPI import listVMSnapshot
+from marvin.cloudstackAPI import deleteVMSnapshot
 
-class AutoScalePolicy(CloudStackEntity):
+class VMSnapshot(CloudStackEntity):
 
 
     def __init__(self, items):
@@ -27,23 +27,24 @@ class AutoScalePolicy(CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, AutoScalePolicyFactory, **kwargs):
-        cmd = createAutoScalePolicy.createAutoScalePolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScalePolicyFactory.__dict__.iteritems()]
+    def create(cls, apiclient, VMSnapshotFactory, **kwargs):
+        cmd = createVMSnapshot.createVMSnapshotCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VMSnapshotFactory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        autoscalepolicy = apiclient.createAutoScalePolicy(cmd)
-        return AutoScalePolicy(autoscalepolicy.__dict__)
+        vmsnapshot = apiclient.createVMSnapshot(cmd)
+        return VMSnapshot(vmsnapshot.__dict__)
 
 
-    def update(self, apiclient, id, **kwargs):
-        cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
-        cmd.id = id
+    @classmethod
+    def list(self, apiclient, **kwargs):
+        cmd = listVMSnapshot.listVMSnapshotCmd()
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.updateAutoScalePolicy(cmd)
+        vmsnapshot = apiclient.listVMSnapshot(cmd)
+        return map(lambda e: VMSnapshot(e.__dict__), vmsnapshot)
 
 
-    def delete(self, apiclient, id, **kwargs):
-        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
-        cmd.id = id
+    def delete(self, apiclient, vmsnapshotid, **kwargs):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = vmsnapshotid
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.deleteAutoScalePolicy(cmd)
+        vmsnapshot = apiclient.deleteVMSnapshot(cmd)

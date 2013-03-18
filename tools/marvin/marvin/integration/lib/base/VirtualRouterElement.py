@@ -29,8 +29,8 @@ class VirtualRouterElement(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, VirtualRouterElementFactory, **kwargs):
         cmd = createVirtualRouterElement.createVirtualRouterElementCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VirtualRouterElementFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VirtualRouterElementFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualrouterelement = apiclient.createVirtualRouterElement(cmd)
         return VirtualRouterElement(virtualrouterelement.__dict__)
 

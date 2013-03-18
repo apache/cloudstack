@@ -28,12 +28,13 @@ class AccountFactory(CloudStackBaseFactory):
     email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname).lower())
     firstname = 'fname-'+random_gen()
     lastname = 'lname-'+random_gen()
-    username = None
+    username = firstname + lastname
 
     # Password Encoding
     mdf = hashlib.md5()
     mdf.update('password')
     password = mdf.hexdigest()
+
 
 class AdminAccountFactory(AccountFactory):
     accounttype = 1

@@ -30,8 +30,8 @@ class PortForwardingRule(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, PortForwardingRuleFactory, **kwargs):
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PortForwardingRuleFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PortForwardingRuleFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         portforwardingrule = apiclient.createPortForwardingRule(cmd)
         return PortForwardingRule(portforwardingrule.__dict__)
 

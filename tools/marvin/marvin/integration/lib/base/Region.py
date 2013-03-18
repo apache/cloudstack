@@ -15,35 +15,44 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createAutoScalePolicy
-from marvin.cloudstackAPI import updateAutoScalePolicy
-from marvin.cloudstackAPI import deleteAutoScalePolicy
+from marvin.cloudstackAPI import addRegion
+from marvin.cloudstackAPI import listRegions
+from marvin.cloudstackAPI import updateRegion
+from marvin.cloudstackAPI import removeRegion
 
-class AutoScalePolicy(CloudStackEntity):
+class Region(CloudStackEntity):
 
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
+    def add(self, apiclient, endpoint, id, name, **kwargs):
+        cmd = addRegion.addRegionCmd()
+        cmd.id = id
+        cmd.endpoint = endpoint
+        cmd.name = name
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        region = apiclient.addRegion(cmd)
+
+
     @classmethod
-    def create(cls, apiclient, AutoScalePolicyFactory, **kwargs):
-        cmd = createAutoScalePolicy.createAutoScalePolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScalePolicyFactory.__dict__.iteritems()]
-        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        autoscalepolicy = apiclient.createAutoScalePolicy(cmd)
-        return AutoScalePolicy(autoscalepolicy.__dict__)
+    def list(self, apiclient, **kwargs):
+        cmd = listRegions.listRegionsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        region = apiclient.listRegions(cmd)
+        return map(lambda e: Region(e.__dict__), region)
 
 
     def update(self, apiclient, id, **kwargs):
-        cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
+        cmd = updateRegion.updateRegionCmd()
         cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.updateAutoScalePolicy(cmd)
+        region = apiclient.updateRegion(cmd)
 
 
-    def delete(self, apiclient, id, **kwargs):
-        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
+    def remove(self, apiclient, id, **kwargs):
+        cmd = removeRegion.removeRegionCmd()
         cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        autoscalepolicy = apiclient.deleteAutoScalePolicy(cmd)
+        region = apiclient.removeRegion(cmd)

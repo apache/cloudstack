@@ -30,8 +30,8 @@ class DiskOffering(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, DiskOfferingFactory, **kwargs):
         cmd = createDiskOffering.createDiskOfferingCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in DiskOfferingFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in DiskOfferingFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         diskoffering = apiclient.createDiskOffering(cmd)
         return DiskOffering(diskoffering.__dict__)
 

@@ -29,8 +29,8 @@ class NetworkACL(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, NetworkACLFactory, **kwargs):
         cmd = createNetworkACL.createNetworkACLCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkACLFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkACLFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkacl = apiclient.createNetworkACL(cmd)
         return NetworkACL(networkacl.__dict__)
 

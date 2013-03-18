@@ -15,16 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
+from marvin.integration.lib.base import VMSnapshot
+class VMSnapshotFactory(factory.Factory):
 
-    FACTORY_FOR = StoragePool
+    FACTORY_FOR = VMSnapshot.VMSnapshot
 
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
+    virtualmachineid = None

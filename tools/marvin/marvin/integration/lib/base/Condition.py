@@ -29,8 +29,8 @@ class Condition(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, ConditionFactory, **kwargs):
         cmd = createCondition.createConditionCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ConditionFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ConditionFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         condition = apiclient.createCondition(cmd)
         return Condition(condition.__dict__)
 

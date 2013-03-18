@@ -14,17 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import factory
-from marvin.integration.lib.base import StoragePool
-class StoragePoolFactory(factory.Factory):
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import configureSimulator
 
-    FACTORY_FOR = StoragePool
+class Simulator(CloudStackEntity):
 
-    clusterid = None
-    name = None
-    podid = None
-    url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    def configure(self, apiclient, name, value, **kwargs):
+        cmd = configureSimulator.configureSimulatorCmd()
+        cmd.name = name
+        cmd.value = value
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        simulator = apiclient.configureSimulator(cmd)

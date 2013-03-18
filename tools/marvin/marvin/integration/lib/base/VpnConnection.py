@@ -37,8 +37,8 @@ class VpnConnection(CloudStackEntity):
     @classmethod
     def create(cls, apiclient, VpnConnectionFactory, **kwargs):
         cmd = createVpnConnection.createVpnConnectionCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VpnConnectionFactory.attributes()]
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VpnConnectionFactory.__dict__.iteritems()]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnconnection = apiclient.createVpnConnection(cmd)
         return VpnConnection(vpnconnection.__dict__)
 
