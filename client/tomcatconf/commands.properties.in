@@ -151,6 +151,9 @@ createLBStickinessPolicy=15
 deleteLBStickinessPolicy=15
 listLoadBalancerRules=15
 listLBStickinessPolicies=15
+listLBHealthCheckPolicies=15
+createLBHealthCheckPolicy=15
+deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
 

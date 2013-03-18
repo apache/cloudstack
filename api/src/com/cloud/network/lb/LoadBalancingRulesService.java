@@ -18,8 +18,10 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
@@ -28,6 +30,8 @@ import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRul
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.uservm.UserVm;
@@ -66,6 +70,22 @@ public interface LoadBalancingRulesService {
     public boolean applyLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws ResourceUnavailableException;
 
     boolean deleteLBStickinessPolicy(long stickinessPolicyId, boolean apply);
+
+    /**
+     * Create a healthcheck policy to a load balancer from the given healthcheck
+     * parameters in (name,value) pairs.
+     *
+     * @param cmd
+     *            the command specifying the stickiness method name, params
+     *            (name,value pairs), policy name and description.
+     * @return the newly created stickiness policy if successfull, null
+     *         otherwise
+     * @thows NetworkRuleConflictException
+     */
+    public HealthCheckPolicy createLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd);
+    public boolean applyLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd) throws ResourceUnavailableException;
+    boolean deleteLBHealthCheckPolicy(long healthCheckPolicyId, boolean apply);
+
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
      */
@@ -104,8 +124,18 @@ public interface LoadBalancingRulesService {
      */
     List<? extends StickinessPolicy> searchForLBStickinessPolicies(ListLBStickinessPoliciesCmd cmd);
 
+    /**
+     * List healthcheck policies based on the given criteria
+     *
+     * @param cmd
+     *            the command specifies the load balancing rule id.
+     * @return list of healthcheck policies that match the criteria.
+     */
+
+    List<? extends HealthCheckPolicy> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd);
+
     List<LoadBalancingRule> listByNetworkId(long networkId);
 
     LoadBalancer findById(long LoadBalancer);
-
+   public void updateLBHealthChecks() throws ResourceUnavailableException;
 }

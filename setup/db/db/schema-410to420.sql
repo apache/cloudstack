@@ -27,6 +27,7 @@ UPDATE `cloud`.`hypervisor_capabilities` SET `max_hosts_per_cluster`=32 WHERE `h
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_hosts_per_cluster) VALUES ('VMware', '5.1', 128, 0, 32);
 DELETE FROM `cloud`.`configuration` where name='vmware.percluster.host.max';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'xen.nics.max', '7', 'Maximum allowed nics for Vms created on Xen');
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
 alter table template_host_ref add state varchar(255);
 alter table template_host_ref add update_count bigint unsigned;
@@ -97,6 +98,21 @@ CREATE TABLE  `vpc_service_map` (
   UNIQUE (`vpc_id`, `service`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`load_balancer_healthcheck_policies` (
+ `id` bigint(20) NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `pingpath` varchar(225) NULL DEFAULT '/',
+  `description` varchar(4096)  NULL,
+  `response_time` int(11) DEFAULT 5,
+  `healthcheck_interval` int(11) DEFAULT 5,
+  `healthcheck_thresshold` int(11) DEFAULT 2,
+  `unhealth_thresshold` int(11) DEFAULT 10,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`),
+  CONSTRAINT `fk_load_balancer_healthcheck_policies_loadbalancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');

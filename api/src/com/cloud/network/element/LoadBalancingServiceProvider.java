@@ -18,6 +18,7 @@ package com.cloud.network.element;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -25,6 +26,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 public interface LoadBalancingServiceProvider extends NetworkElement, IpDeployingRequester {
     /**
      * Apply rules
+     *
      * @param network
      * @param rules
      * @return
@@ -34,10 +36,14 @@ public interface LoadBalancingServiceProvider extends NetworkElement, IpDeployin
 
     /**
      * Validate rules
+     *
      * @param network
      * @param rule
-     * @return true/false. true should be return if there are no validations. false should be return if any oneof the validation fails.
+     * @return true/false. true should be return if there are no validations.
+     *false should be return if any oneof the validation fails.
      * @throws
      */
     boolean validateLBRule(Network network, LoadBalancingRule rule);
+
+    List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules);
 }

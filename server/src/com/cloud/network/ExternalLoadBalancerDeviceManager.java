@@ -18,6 +18,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
@@ -96,7 +97,9 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, 
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException,
             InsufficientCapacityException;
-    
+
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
+            throws ResourceUnavailableException;
 }

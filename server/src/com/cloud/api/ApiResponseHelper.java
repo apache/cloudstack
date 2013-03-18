@@ -46,6 +46,8 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
@@ -143,6 +145,13 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
@@ -2748,6 +2757,58 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         spResponse.setObjectName("stickinesspolicies");
         return spResponse;
+    }
+
+    @Override
+    public LBHealthCheckResponse createLBHealthCheckPolicyResponse(
+            List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb) {
+        LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
+
+        if (lb == null)
+            return hcResponse;
+        hcResponse.setlbRuleId(lb.getUuid());
+        Account account = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (account != null) {
+            hcResponse.setAccountName(account.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+            if (domain != null) {
+                hcResponse.setDomainId(domain.getUuid());
+                hcResponse.setDomainName(domain.getName());
+            }
+        }
+
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        for (HealthCheckPolicy healthcheckPolicy : healthcheckPolicies) {
+            LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
+            responses.add(ruleResponse);
+        }
+        hcResponse.setRules(responses);
+
+        hcResponse.setObjectName("healthcheckpolicies");
+        return hcResponse;
+    }
+
+    @Override
+    public LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb) {
+        LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
+
+        hcResponse.setlbRuleId(lb.getUuid());
+        Account accountTemp = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (accountTemp != null) {
+            hcResponse.setAccountName(accountTemp.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(accountTemp.getDomainId());
+            if (domain != null) {
+                hcResponse.setDomainId(domain.getUuid());
+                hcResponse.setDomainName(domain.getName());
+            }
+        }
+
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
+        responses.add(ruleResponse);
+        hcResponse.setRules(responses);
+        hcResponse.setObjectName("healthcheckpolicies");
+        return hcResponse;
     }
 
     @Override

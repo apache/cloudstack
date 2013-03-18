@@ -106,6 +106,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
@@ -2310,52 +2311,51 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose,
             NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException {
-    	if (rules == null || rules.size() == 0) {
-    		s_logger.debug("There are no rules to forward to the network elements");
-    		return true;
-    	}
+        if (rules == null || rules.size() == 0) {
+            s_logger.debug("There are no rules to forward to the network elements");
+            return true;
+        }
 
-    	boolean success = true;
-    	Network network = _networksDao.findById(rules.get(0).getNetworkId());
+        boolean success = true;
+        Network network = _networksDao.findById(rules.get(0).getNetworkId());
         FirewallRuleVO.TrafficType trafficType = rules.get(0).getTrafficType();
-         List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
             // get the list of public ip's owned by the network
             List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
-    			PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-    			publicIps.add(publicIp);
-	                }
-             }
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                    publicIps.add(publicIp);
+                }
+            }
 
-    	// rules can not programmed unless IP is associated with network service provider, so run IP assoication for
-    	// the network so as to ensure IP is associated before applying rules (in add state)
-    	applyIpAssociations(network, false, continueOnError, publicIps);
-	}
-    	
-    	try {
-    		applier.applyRules(network, purpose, rules);
-    	} catch (ResourceUnavailableException e) {
-    		if (!continueOnError) {
-    			throw e;
-    		}
-    		s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
-    		success = false;
-    	}
-    	
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) ) {
-            // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
+            // rules can not programmed unless IP is associated with network
+            // service provider, so run IP assoication for
+            // the network so as to ensure IP is associated before applying
+            // rules (in add state)
+            applyIpAssociations(network, false, continueOnError, publicIps);
+        }
+
+        try {
+            applier.applyRules(network, purpose, rules);
+        } catch (ResourceUnavailableException e) {
+            if (!continueOnError) {
+                throw e;
+            }
+            s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
+            success = false;
+        }
+
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+            // if all the rules configured on public IP are revoked then
+            // dis-associate IP with network service provider
             applyIpAssociations(network, true, continueOnError, publicIps);
         }
 
-    	return success;
+        return success;
     }
-        
-    
-
-   
 
     public class NetworkGarbageCollector implements Runnable {
 
@@ -3099,13 +3099,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             lb.setState(FirewallRule.State.Revoke);
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
             List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            List<LbHealthCheckPolicy> hcPolicyList =  _lbMgr.getHealthCheckPolicies (lb.getId());
             // mark all destination with revoke state
             for (LbDestination dst : dstList) {
                 s_logger.trace("Marking lb destination " + dst + " with Revoke state");
                 dst.setRevoked(true);
             }
 
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
             lbRules.add(loadBalancing);
         }
 
