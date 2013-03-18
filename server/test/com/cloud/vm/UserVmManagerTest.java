@@ -197,7 +197,7 @@ public class UserVmManagerTest {
         _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
 
     }
-    /*
+
     // Test scaleVm on incompatible HV.
     @Test(expected=InvalidParameterValueException.class)
     public void testScaleVMF1()  throws Exception {
@@ -213,10 +213,10 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        //UserContext.current().setEventDetails("Vm Id: "+getId());
-       // Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, 1);
+       // UserContext.current().setEventDetails("Vm Id: "+getId());
+        Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
-       // UserContext.registerContext(1, account, null, true);
+       UserContext.registerContext(1, account, null, true);
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
@@ -359,7 +359,7 @@ public class UserVmManagerTest {
 
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
-    }    */
+    }
 
 
 

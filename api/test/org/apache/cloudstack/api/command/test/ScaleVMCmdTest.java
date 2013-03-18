@@ -66,8 +66,8 @@ public class ScaleVMCmdTest extends TestCase{
             }
         };
 
-       // Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, 1);
-        //UserContext.registerContext(1, account, null, true);
+       //Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+       //UserContext.registerContext(1, account, null, true);
 
 
     }

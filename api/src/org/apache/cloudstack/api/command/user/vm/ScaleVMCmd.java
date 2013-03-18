@@ -81,7 +81,7 @@ public class ScaleVMCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        //UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = null;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
