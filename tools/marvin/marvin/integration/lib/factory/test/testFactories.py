@@ -22,7 +22,7 @@ from marvin.cloudstackTestClient import cloudstackTestClient
 
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost')
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
 
     def test_userAccountFactory(self):
         af = AccountFactory.AccountFactory()
@@ -40,4 +40,4 @@ class AccountFactoryTest(unittest.TestCase):
         self.assertTrue(accnt is not None, msg="no account created by factory")
 
     def tearDown(self):
-        self.apiClient.close()
+        pass
