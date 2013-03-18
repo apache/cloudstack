@@ -16,12 +16,13 @@
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import listAlerts
+from marvin.cloudstackAPI import deleteAlerts
 
-class Alerts(CloudStackEntity):
+class Alerts(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod
@@ -30,3 +31,9 @@ class Alerts(CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.items]
         alerts = apiclient.listAlerts(cmd)
         return map(lambda e: Alerts(e.__dict__), alerts)
+
+
+    def delete(self, apiclient, **kwargs):
+        cmd = deleteAlerts.deleteAlertsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        alerts = apiclient.deleteAlerts(cmd)

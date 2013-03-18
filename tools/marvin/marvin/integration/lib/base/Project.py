@@ -22,11 +22,11 @@ from marvin.cloudstackAPI import updateProject
 from marvin.cloudstackAPI import activateProject
 from marvin.cloudstackAPI import deleteProject
 
-class Project(CloudStackEntity):
+class Project(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def suspend(self, apiclient, id, **kwargs):

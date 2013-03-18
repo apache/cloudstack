@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createVlanIpRange
 from marvin.cloudstackAPI import listVlanIpRanges
 from marvin.cloudstackAPI import deleteVlanIpRange
 
-class VlanIpRange(CloudStackEntity):
+class VlanIpRange(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

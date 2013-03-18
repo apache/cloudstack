@@ -21,11 +21,11 @@ from marvin.cloudstackAPI import updateVPC
 from marvin.cloudstackAPI import restartVPC
 from marvin.cloudstackAPI import deleteVPC
 
-class VPC(CloudStackEntity):
+class VPC(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

@@ -25,7 +25,17 @@ class AccountFactoryTest(unittest.TestCase):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost')
 
     def test_userAccountFactory(self):
-        af = AccountFactory.AdminAccountFactory()
+        af = AccountFactory.AccountFactory()
+        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        self.assertTrue(accnt is not None, msg="no account created by factory")
+
+    def test_adminAccountFactory(self):
+        af = AccountFactory.AccountFactory()
+        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        self.assertTrue(accnt is not None, msg="no account created by factory")
+
+    def test_userAccountFactoryCustomArgs(self):
+        af = AccountFactory.AccountFactory(firstname='test', lastname='test')
         accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
 

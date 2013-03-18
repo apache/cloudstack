@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createFirewallRule
 from marvin.cloudstackAPI import listFirewallRules
 from marvin.cloudstackAPI import deleteFirewallRule
 
-class FirewallRule(CloudStackEntity):
+class FirewallRule(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

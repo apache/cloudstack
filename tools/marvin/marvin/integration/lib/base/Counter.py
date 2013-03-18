@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createCounter
 from marvin.cloudstackAPI import listCounters
 from marvin.cloudstackAPI import deleteCounter
 
-class Counter(CloudStackEntity):
+class Counter(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

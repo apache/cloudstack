@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listVpnCustomerGateways
 from marvin.cloudstackAPI import updateVpnCustomerGateway
 from marvin.cloudstackAPI import deleteVpnCustomerGateway
 
-class VpnCustomerGateway(CloudStackEntity):
+class VpnCustomerGateway(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

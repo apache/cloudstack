@@ -17,11 +17,11 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import resetSSHKeyForVirtualMachine
 
-class SSHKeyForVirtualMachine(CloudStackEntity):
+class SSHKeyForVirtualMachine(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def reset(self, apiclient, keypair, id, **kwargs):

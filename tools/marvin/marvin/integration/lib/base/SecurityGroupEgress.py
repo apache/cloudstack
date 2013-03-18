@@ -18,11 +18,11 @@ from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import authorizeSecurityGroupEgress
 from marvin.cloudstackAPI import revokeSecurityGroupEgress
 
-class SecurityGroupEgress(CloudStackEntity):
+class SecurityGroupEgress(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def authorize(self, apiclient, **kwargs):

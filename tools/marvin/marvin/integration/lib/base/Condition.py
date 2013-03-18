@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createCondition
 from marvin.cloudstackAPI import listConditions
 from marvin.cloudstackAPI import deleteCondition
 
-class Condition(CloudStackEntity):
+class Condition(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

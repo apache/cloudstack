@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import createVpnConnection
 from marvin.cloudstackAPI import listVpnConnections
 from marvin.cloudstackAPI import deleteVpnConnection
 
-class VpnConnection(CloudStackEntity):
+class VpnConnection(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def reset(self, apiclient, id, **kwargs):

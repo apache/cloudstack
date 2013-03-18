@@ -24,11 +24,11 @@ from marvin.cloudstackAPI import detachIso
 from marvin.cloudstackAPI import extractIso
 from marvin.cloudstackAPI import deleteIso
 
-class Iso(CloudStackEntity):
+class Iso(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):

@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listRegions
 from marvin.cloudstackAPI import updateRegion
 from marvin.cloudstackAPI import removeRegion
 
-class Region(CloudStackEntity):
+class Region(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, endpoint, id, name, **kwargs):

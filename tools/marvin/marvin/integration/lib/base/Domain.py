@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listDomains
 from marvin.cloudstackAPI import updateDomain
 from marvin.cloudstackAPI import deleteDomain
 
-class Domain(CloudStackEntity):
+class Domain(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listPods
 from marvin.cloudstackAPI import updatePod
 from marvin.cloudstackAPI import deletePod
 
-class Pod(CloudStackEntity):
+class Pod(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

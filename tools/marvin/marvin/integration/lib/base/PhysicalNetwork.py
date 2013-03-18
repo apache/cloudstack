@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listPhysicalNetworks
 from marvin.cloudstackAPI import updatePhysicalNetwork
 from marvin.cloudstackAPI import deletePhysicalNetwork
 
-class PhysicalNetwork(CloudStackEntity):
+class PhysicalNetwork(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

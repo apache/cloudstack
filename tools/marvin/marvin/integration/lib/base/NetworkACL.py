@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createNetworkACL
 from marvin.cloudstackAPI import listNetworkACLs
 from marvin.cloudstackAPI import deleteNetworkACL
 
-class NetworkACL(CloudStackEntity):
+class NetworkACL(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

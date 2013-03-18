@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listStoragePools
 from marvin.cloudstackAPI import updateStoragePool
 from marvin.cloudstackAPI import deleteStoragePool
 
-class StoragePool(CloudStackEntity):
+class StoragePool(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

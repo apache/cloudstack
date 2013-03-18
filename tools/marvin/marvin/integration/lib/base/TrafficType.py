@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listTrafficTypes
 from marvin.cloudstackAPI import updateTrafficType
 from marvin.cloudstackAPI import deleteTrafficType
 
-class TrafficType(CloudStackEntity):
+class TrafficType(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, traffictype, physicalnetworkid, **kwargs):

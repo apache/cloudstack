@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listNetworkOfferings
 from marvin.cloudstackAPI import updateNetworkOffering
 from marvin.cloudstackAPI import deleteNetworkOffering
 
-class NetworkOffering(CloudStackEntity):
+class NetworkOffering(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

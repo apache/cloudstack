@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createTags
 from marvin.cloudstackAPI import listTags
 from marvin.cloudstackAPI import deleteTags
 
-class Tags(CloudStackEntity):
+class Tags(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

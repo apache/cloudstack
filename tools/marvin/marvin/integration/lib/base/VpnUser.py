@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import addVpnUser
 from marvin.cloudstackAPI import listVpnUsers
 from marvin.cloudstackAPI import removeVpnUser
 
-class VpnUser(CloudStackEntity):
+class VpnUser(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, username, password, **kwargs):

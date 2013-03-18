@@ -24,11 +24,11 @@ from marvin.cloudstackAPI import detachVolume
 from marvin.cloudstackAPI import extractVolume
 from marvin.cloudstackAPI import deleteVolume
 
-class Volume(CloudStackEntity):
+class Volume(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def migrate(self, apiclient, storageid, volumeid, **kwargs):

@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import addNetworkDevice
 from marvin.cloudstackAPI import listNetworkDevice
 from marvin.cloudstackAPI import deleteNetworkDevice
 
-class NetworkDevice(CloudStackEntity):
+class NetworkDevice(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, **kwargs):

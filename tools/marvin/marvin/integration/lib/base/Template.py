@@ -24,11 +24,11 @@ from marvin.cloudstackAPI import copyTemplate
 from marvin.cloudstackAPI import extractTemplate
 from marvin.cloudstackAPI import deleteTemplate
 
-class Template(CloudStackEntity):
+class Template(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def prepare(self, apiclient, zoneid, templateid, **kwargs):

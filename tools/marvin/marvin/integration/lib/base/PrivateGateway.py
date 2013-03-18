@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createPrivateGateway
 from marvin.cloudstackAPI import listPrivateGateways
 from marvin.cloudstackAPI import deletePrivateGateway
 
-class PrivateGateway(CloudStackEntity):
+class PrivateGateway(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

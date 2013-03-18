@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createStaticRoute
 from marvin.cloudstackAPI import listStaticRoutes
 from marvin.cloudstackAPI import deleteStaticRoute
 
-class StaticRoute(CloudStackEntity):
+class StaticRoute(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

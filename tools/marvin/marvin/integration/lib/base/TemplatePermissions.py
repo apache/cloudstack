@@ -18,11 +18,11 @@ from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import listTemplatePermissions
 from marvin.cloudstackAPI import updateTemplatePermissions
 
-class TemplatePermissions(CloudStackEntity):
+class TemplatePermissions(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createAutoScalePolicy
 from marvin.cloudstackAPI import updateAutoScalePolicy
 from marvin.cloudstackAPI import deleteAutoScalePolicy
 
-class AutoScalePolicy(CloudStackEntity):
+class AutoScalePolicy(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

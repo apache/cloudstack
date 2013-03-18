@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listServiceOfferings
 from marvin.cloudstackAPI import updateServiceOffering
 from marvin.cloudstackAPI import deleteServiceOffering
 
-class ServiceOffering(CloudStackEntity):
+class ServiceOffering(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

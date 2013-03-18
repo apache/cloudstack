@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createVMSnapshot
 from marvin.cloudstackAPI import listVMSnapshot
 from marvin.cloudstackAPI import deleteVMSnapshot
 
-class VMSnapshot(CloudStackEntity):
+class VMSnapshot(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import addNiciraNvpDevice
 from marvin.cloudstackAPI import listNiciraNvpDevices
 from marvin.cloudstackAPI import deleteNiciraNvpDevice
 
-class NiciraNvpDevice(CloudStackEntity):
+class NiciraNvpDevice(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, username, physicalnetworkid, password, hostname, transportzoneuuid, **kwargs):

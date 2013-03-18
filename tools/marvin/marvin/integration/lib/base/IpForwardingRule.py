@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createIpForwardingRule
 from marvin.cloudstackAPI import listIpForwardingRules
 from marvin.cloudstackAPI import deleteIpForwardingRule
 
-class IpForwardingRule(CloudStackEntity):
+class IpForwardingRule(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

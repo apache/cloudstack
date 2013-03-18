@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listVPCOfferings
 from marvin.cloudstackAPI import updateVPCOffering
 from marvin.cloudstackAPI import deleteVPCOffering
 
-class VPCOffering(CloudStackEntity):
+class VPCOffering(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

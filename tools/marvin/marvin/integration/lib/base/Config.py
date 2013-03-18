@@ -17,17 +17,14 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import ldapConfig
 
-class Config(CloudStackEntity):
+class Config(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
-    def ldap(self, apiclient, queryfilter, hostname, searchbase, **kwargs):
+    def ldap(self, apiclient, **kwargs):
         cmd = ldapConfig.ldapConfigCmd()
-        cmd.hostname = hostname
-        cmd.queryfilter = queryfilter
-        cmd.searchbase = searchbase
         [setattr(cmd, key, value) for key,value in kwargs.items]
         config = apiclient.ldapConfig(cmd)

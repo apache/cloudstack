@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listAutoScaleVmProfiles
 from marvin.cloudstackAPI import updateAutoScaleVmProfile
 from marvin.cloudstackAPI import deleteAutoScaleVmProfile
 
-class AutoScaleVmProfile(CloudStackEntity):
+class AutoScaleVmProfile(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

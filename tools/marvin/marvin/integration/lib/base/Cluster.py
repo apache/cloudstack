@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listClusters
 from marvin.cloudstackAPI import updateCluster
 from marvin.cloudstackAPI import deleteCluster
 
-class Cluster(CloudStackEntity):
+class Cluster(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, clustername, hypervisor, zoneid, clustertype, podid, **kwargs):

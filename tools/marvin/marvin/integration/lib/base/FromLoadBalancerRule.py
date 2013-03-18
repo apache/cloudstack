@@ -17,11 +17,11 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import removeFromLoadBalancerRule
 
-class FromLoadBalancerRule(CloudStackEntity):
+class FromLoadBalancerRule(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def remove(self, apiclient, id, virtualmachineids, **kwargs):

@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import addTrafficMonitor
 from marvin.cloudstackAPI import listTrafficMonitors
 from marvin.cloudstackAPI import deleteTrafficMonitor
 
-class TrafficMonitor(CloudStackEntity):
+class TrafficMonitor(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, url, zoneid, **kwargs):

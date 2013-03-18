@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listInstanceGroups
 from marvin.cloudstackAPI import updateInstanceGroup
 from marvin.cloudstackAPI import deleteInstanceGroup
 
-class InstanceGroup(CloudStackEntity):
+class InstanceGroup(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

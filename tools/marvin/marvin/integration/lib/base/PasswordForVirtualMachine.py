@@ -17,11 +17,11 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import resetPasswordForVirtualMachine
 
-class PasswordForVirtualMachine(CloudStackEntity):
+class PasswordForVirtualMachine(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def reset(self, apiclient, id, **kwargs):

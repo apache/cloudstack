@@ -22,11 +22,11 @@ from marvin.cloudstackAPI import updateAutoScaleVmGroup
 from marvin.cloudstackAPI import disableAutoScaleVmGroup
 from marvin.cloudstackAPI import deleteAutoScaleVmGroup
 
-class AutoScaleVmGroup(CloudStackEntity):
+class AutoScaleVmGroup(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def enable(self, apiclient, id, **kwargs):

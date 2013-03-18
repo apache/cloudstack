@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listDiskOfferings
 from marvin.cloudstackAPI import updateDiskOffering
 from marvin.cloudstackAPI import deleteDiskOffering
 
-class DiskOffering(CloudStackEntity):
+class DiskOffering(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

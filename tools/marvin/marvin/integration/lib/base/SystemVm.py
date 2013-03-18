@@ -22,11 +22,11 @@ from marvin.cloudstackAPI import rebootSystemVm
 from marvin.cloudstackAPI import startSystemVm
 from marvin.cloudstackAPI import destroySystemVm
 
-class SystemVm(CloudStackEntity):
+class SystemVm(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def migrate(self, apiclient, hostid, virtualmachineid, **kwargs):

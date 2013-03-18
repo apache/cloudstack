@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listPortForwardingRules
 from marvin.cloudstackAPI import updatePortForwardingRule
 from marvin.cloudstackAPI import deletePortForwardingRule
 
-class PortForwardingRule(CloudStackEntity):
+class PortForwardingRule(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

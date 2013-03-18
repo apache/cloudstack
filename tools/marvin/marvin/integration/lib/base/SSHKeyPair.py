@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import registerSSHKeyPair
 from marvin.cloudstackAPI import listSSHKeyPairs
 from marvin.cloudstackAPI import deleteSSHKeyPair
 
-class SSHKeyPair(CloudStackEntity):
+class SSHKeyPair(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

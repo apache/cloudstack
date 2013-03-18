@@ -20,11 +20,11 @@ from marvin.cloudstackAPI import listNetworkServiceProviders
 from marvin.cloudstackAPI import updateNetworkServiceProvider
 from marvin.cloudstackAPI import deleteNetworkServiceProvider
 
-class NetworkServiceProvider(CloudStackEntity):
+class NetworkServiceProvider(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def add(self, apiclient, physicalnetworkid, name, **kwargs):

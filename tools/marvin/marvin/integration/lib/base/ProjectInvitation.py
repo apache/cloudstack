@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import listProjectInvitations
 from marvin.cloudstackAPI import updateProjectInvitation
 from marvin.cloudstackAPI import deleteProjectInvitation
 
-class ProjectInvitation(CloudStackEntity):
+class ProjectInvitation(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

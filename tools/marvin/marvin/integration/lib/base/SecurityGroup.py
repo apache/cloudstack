@@ -19,11 +19,11 @@ from marvin.cloudstackAPI import createSecurityGroup
 from marvin.cloudstackAPI import listSecurityGroups
 from marvin.cloudstackAPI import deleteSecurityGroup
 
-class SecurityGroup(CloudStackEntity):
+class SecurityGroup(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     @classmethod

@@ -18,11 +18,11 @@ from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import disassociateIpAddress
 from marvin.cloudstackAPI import associateIpAddress
 
-class IpAddress(CloudStackEntity):
+class IpAddress(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
 
 
     def disassociate(self, apiclient, id, **kwargs):
