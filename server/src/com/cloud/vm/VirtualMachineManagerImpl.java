@@ -36,6 +36,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
@@ -174,6 +175,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ItWorkDao _workDao;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    protected CapacityManager _capacityMgr;
     @Inject
     protected NicDao _nicsDao;
     @Inject
@@ -2659,7 +2662,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VMInstanceVO scale(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId)
+    public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
@@ -2728,53 +2731,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return null;
         }
     }
-
-        @Override
-        public VMInstanceVO reConfigureVm(VMInstanceVO vm , ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException {
-            ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
-                    newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize());
-
-            Long dstHostId = vm.getHostId();
-            ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Reconfiguring, vm.getType(), vm.getId());
-            work.setStep(Step.Prepare);
-            work.setResourceType(ItWorkVO.ResourceType.Host);
-            work.setResourceId(vm.getHostId());
-            work = _workDao.persist(work);
-            boolean success = false;
-            try {
-                vm.setNewSvcOfferingId(newServiceOffering.getId()); // Capacity update should be delta (new - old) offering
-                changeState(vm, Event.ReconfiguringRequested, dstHostId, work, Step.Reconfiguring);
-
-                Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
-                if (!reconfigureAnswer.getResult()) {
-                    s_logger.error("Unable to reconfigure due to " + reconfigureAnswer.getDetails());
-                    return null;
-                }
-
-                changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Done);
-                success = true;
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
-            } catch (AgentUnavailableException e) {
-                throw e;
-            } catch (NoTransitionException e) {
-                s_logger.info("Unable to change the state : " + e.getMessage());
-                throw new ConcurrentOperationException("Unable to change the state : " + e.getMessage());
-            }finally{
-                work.setStep(Step.Done);
-                _workDao.update(work.getId(), work);
-                if(!success){
-                    try {
-                        stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
-                    } catch (NoTransitionException e) {
-                        s_logger.warn(e.getMessage());
-                    }
-                }
-            }
-
-            return vm;
-
-        }
 
         @Override
         public <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long oldSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
@@ -2881,10 +2837,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
+                    long newServiceOfferingId = vm.getServiceOfferingId();
                     vm.setServiceOfferingId(oldSvcOfferingId); // release capacity for the old service offering only
                     if (!changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started)) {
                         throw new ConcurrentOperationException("Unable to change the state for " + vm);
                     }
+                    vm.setServiceOfferingId(newServiceOfferingId);
                 } catch (NoTransitionException e1) {
                     throw new ConcurrentOperationException("Unable to change state due to " + e1.getMessage());
                 }
@@ -2928,6 +2886,56 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
         }
+    @Override
+    public VMInstanceVO reConfigureVm(VMInstanceVO vm , ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
+
+        long newServiceofferingId = vm.getServiceOfferingId();
+        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceofferingId);
+        ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
+                newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+
+        Long dstHostId = vm.getHostId();
+        ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
+        work.setStep(Step.Prepare);
+        work.setResourceType(ItWorkVO.ResourceType.Host);
+        work.setResourceId(vm.getHostId());
+        work = _workDao.persist(work);
+        boolean success = false;
+        try {
+            if(reconfiguringOnExistingHost){
+                vm.setServiceOfferingId(oldServiceOffering.getId());
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); //release the old capacity
+                vm.setServiceOfferingId(newServiceofferingId);
+                _capacityMgr.allocateVmCapacity(vm, false); // lock the new capacity
+            }
+            //vm.setNewSvcOfferingId(newServiceOffering.getId()); // Capacity update should be delta (new - old) offering
+            //changeState(vm, Event.ReconfiguringRequested, dstHostId, work, Step.Reconfiguring);
+
+            Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
+            if (!reconfigureAnswer.getResult()) {
+                s_logger.error("Unable to reconfigure due to " + reconfigureAnswer.getDetails());
+                return null;
+            }
+
+            //changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Done);
+            success = true;
+        } catch (OperationTimedoutException e) {
+            throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
+        } catch (AgentUnavailableException e) {
+            throw e;
+        } finally{
+            work.setStep(Step.Done);
+            _workDao.update(work.getId(), work);
+            if(!success){
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); // release the new capacity
+                vm.setServiceOfferingId(oldServiceOffering.getId());
+                _capacityMgr.allocateVmCapacity(vm, false); // allocate the old capacity
+            }
+        }
+
+        return vm;
+
+    }
 
 
     }

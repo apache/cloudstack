@@ -339,7 +339,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected SecurityGroupDao _securityGroupDao;
     @Inject
-    protected CapacityManager _capacityMgr;;
+    protected CapacityManager _capacityMgr;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
     @Inject
@@ -1043,7 +1043,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm
     upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException {
         Long vmId = cmd.getId();
-        Long newSvcOffId = cmd.getServiceOfferingId();
+        Long newServiceOfferingId = cmd.getServiceOfferingId();
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
@@ -1055,14 +1055,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check that the specified service offering ID is valid
-        _itMgr.checkIfCanUpgrade(vmInstance, newSvcOffId);
+        _itMgr.checkIfCanUpgrade(vmInstance, newServiceOfferingId);
 
         //Check if its a scale "up"
-        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newSvcOffId);
+        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
         ServiceOffering oldServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
         if(newServiceOffering.getSpeed() <= oldServiceOffering.getSpeed()
                 && newServiceOffering.getRamSize() <= oldServiceOffering.getRamSize()){
-            throw new InvalidParameterValueException("Only scaling up the vm is supported");
+            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
         }
 
         // Dynamically upgrade the running vms
@@ -1073,38 +1073,41 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 try{
                     // #1 Check existing host has capacity
                     boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - oldServiceOffering.getSpeed(),
-                            (newServiceOffering.getRamSize() - oldServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f,  false);
+                            (newServiceOffering.getRamSize() - oldServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f,  false); // TO DO fill it with mem.
 
                     // #2 migrate the vm if host doesn't have capacity
                     if (!existingHostHasCapacity){
-                        vmInstance = _itMgr.scale(vmInstance.getType(), vmInstance, newSvcOffId);
-                    }else{
-                        vmInstance.setSameHost(existingHostHasCapacity);
+                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId);
                     }
 
                     // #3 scale the vm now
-                    vmInstance = _itMgr.reConfigureVm(vmInstance, newServiceOffering, existingHostHasCapacity);
+                    _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
+                    vmInstance = _vmInstanceDao.findById(vmId);
+                    vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
                     success = true;
+                    return _vmDao.findById(vmInstance.getId());
                 }catch(InsufficientCapacityException e ){
-                    s_logger.warn("Recieved exception while scaling ",e);
+                    s_logger.warn("Received exception while scaling ",e);
                 } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Recieved exception while scaling ",e);
+                    s_logger.warn("Received exception while scaling ",e);
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Recieved exception while scaling ",e);
+                    s_logger.warn("Received exception while scaling ",e);
                 } catch (VirtualMachineMigrationException e) {
-                    s_logger.warn("Recieved exception while scaling ",e);
+                    s_logger.warn("Received exception while scaling ",e);
                 } catch (ManagementServerException e) {
-                    s_logger.warn("Recieved exception while scaling ",e);
+                    s_logger.warn("Received exception while scaling ",e);
+                }finally{
+                    if(!success){
+                        _itMgr.upgradeVmDb(vmId, oldServiceOffering.getId()); // rollback
+                    }
                 }
             }
             if (!success)
                 return null;
         }
 
-        //Update the DB.
-        _itMgr.upgradeVmDb(vmId, newSvcOffId);
-
         return _vmDao.findById(vmInstance.getId());
+
     }
 
     @Override

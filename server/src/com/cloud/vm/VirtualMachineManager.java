@@ -190,7 +190,7 @@ public interface VirtualMachineManager extends Manager {
     VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)
             throws ResourceUnavailableException, ConcurrentOperationException;
 
-    VMInstanceVO scale(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
+    VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException,
             VirtualMachineMigrationException, ManagementServerException;
 
