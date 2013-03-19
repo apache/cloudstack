@@ -21,7 +21,7 @@ try:
     import os
     import types
 
-    from config import cache_file
+    from config import config_fields
 except ImportError, e:
     import sys
     print "ImportError", e
@@ -168,6 +168,7 @@ def main(json_file):
     f.close()
 
 if __name__ == "__main__":
+    cache_file = config_fields['core']['cache_file']
     print "[cachemaker] Pre-caching using user's cloudmonkey cache", cache_file
     if os.path.exists(cache_file):
         main(cache_file)
