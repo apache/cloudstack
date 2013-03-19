@@ -29,8 +29,9 @@ try:
     import types
 
     from cachemaker import loadcache, savecache, monkeycache, splitverbsubject
-    from config import __version__, cache_file
-    from config import read_config, write_config
+    from config import __version__, __description__, __projecturl__
+    from config import read_config, write_config, config_file
+    from optparse import OptionParser
     from prettytable import PrettyTable
     from printer import monkeyprint
     from requester import monkeyrequest
@@ -63,13 +64,14 @@ class CloudMonkeyShell(cmd.Cmd, object):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
-    cache_file = cache_file
     config_options = []
     verbs = []
 
-    def __init__(self, pname):
+    def __init__(self, pname, cfile):
         self.program_name = pname
-        self.config_options = read_config(self.get_attr, self.set_attr)
+        self.config_file = cfile
+        self.config_options = read_config(self.get_attr, self.set_attr,
+                                          self.config_file)
         self.loadcache()
         self.prompt = self.prompt.strip() + " "  # Cosmetic fix for prompt
 
@@ -364,7 +366,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         key, value = (args[0], args[2])
         setattr(self, key, value)  # keys and attributes should have same names
         self.prompt = self.prompt.strip() + " "  # prompt fix
-        write_config(self.get_attr)
+        write_config(self.get_attr, self.config_file)
 
     def complete_set(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
@@ -458,10 +460,39 @@ class CloudMonkeyShell(cmd.Cmd, object):
         return self.do_EOF(args)
 
 
+class MonkeyParser(OptionParser):
+    def format_help(self, formatter=None):
+        if formatter is None:
+            formatter = self.formatter
+        result = []
+        if self.usage:
+            result.append("Usage: cloudmonkey [options] [cmds] [params]\n\n")
+        if self.description:
+            result.append(self.format_description(formatter) + "\n")
+        result.append(self.format_option_help(formatter))
+        result.append("\nTry cloudmonkey [help|?]\n")
+        return "".join(result)
+
+
 def main():
-    shell = CloudMonkeyShell(sys.argv[0])
+    parser = MonkeyParser()
+    parser.add_option("-c", "--config-file",
+                      dest="cfile", default=config_file,
+                      help="config file for cloudmonkey", metavar="FILE")
+    parser.add_option("-v", "--version",
+                      action="store_true", dest="version", default=False,
+                      help="prints cloudmonkey version information")
+
+    (options, args) = parser.parse_args()
+    print 'args', args
+    print 'options', options
+    if options.version:
+        print "cloudmonkey", __version__
+        print __description__, "(%s)" % __projecturl__
+
+    shell = CloudMonkeyShell(sys.argv[0], options.cfile)
     if len(sys.argv) > 1:
-        shell.onecmd(' '.join(sys.argv[1:]))
+        shell.onecmd(' '.join(args))
     else:
         shell.cmdloop()
 
