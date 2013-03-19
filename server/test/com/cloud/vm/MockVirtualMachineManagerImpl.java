@@ -271,8 +271,10 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
     }
 
     @Override
-    public VMInstanceVO scale(Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException,
+            VirtualMachineMigrationException, ManagementServerException{
+        return null;
     }
 
     @Override
