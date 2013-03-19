@@ -414,13 +414,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     S3Manager _s3Mgr;
 
-/*
-    @Inject
-    ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
-
-    @Inject
-    EventUtils	_forceEventUtilsRef;
-*/
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     private KeystoreManager _ksMgr;
@@ -429,13 +422,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private Map<String, Boolean> _availableIdsMap;
 
-    @Inject List<UserAuthenticator> _userAuthenticators;
+    List<UserAuthenticator> _userAuthenticators;
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
+    }
+    
+    public List<UserAuthenticator> getUserAuthenticators() {
+    	return _userAuthenticators;
+    }
+    
+    public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
+    	_userAuthenticators = authenticators;
     }
 
 	@Override
