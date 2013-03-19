@@ -484,8 +484,6 @@ def main():
                       help="prints cloudmonkey version information")
 
     (options, args) = parser.parse_args()
-    print 'args', args
-    print 'options', options
     if options.version:
         print "cloudmonkey", __version__
         print __description__, "(%s)" % __projecturl__
