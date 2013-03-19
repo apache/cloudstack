@@ -1,0 +1,154 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changed API Commands in 4.1-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "API Commands"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkOffering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkOfferings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameters is added: isPersistent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This parameter determines if the network or network offering created or listed by using this offering are persistent or not."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addF5LoadBalancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "configureNetscalerLoadBalancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addNetscalerLoadBalancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "configureF5LoadBalancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following response parameter is removed: inline."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listFirewallRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createFirewallRule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameter is added: traffictype (optional)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listUsageRecords"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following response parameter is added: virtualsize."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameter is added: forced (optional)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createStoragePool"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameters are made mandatory:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "podid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "clusterid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listZones"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameters is added: securitygroupenabled"
+msgstr ""
+

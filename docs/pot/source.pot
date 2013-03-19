@@ -1,22 +1,11 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
-#http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-02-02T20:11:59\n"
-"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19T13:38:04\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -30,16 +19,21 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "The official &PRODUCT; release is always in source code form. While there may exist convenience binaries in various forms from a number of places, the source is the canonical release will be source. In this document we'll cover acquiring the source release, building that into binary, deployable packages."
+msgid "The official &PRODUCT; release is always in source code form. You will likely be able to find \"convenience binaries,\" the source is the canonical release. In this section, we'll cover acquiring the source release and building that so that you can deploy it using Maven or create Debian packages or RPMs."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "While building and deploying directly from source is certainly possible, the reality of Infrastructure-as-a-Service cloud computing implies a need to deploy packages on a potentially large number of systems, which RPMs and DEBs fill nicely."
+msgid "Note that building and deploying directly from source is typically not the most efficient way to deploy an IaaS. However, we will cover that method as well as building RPMs or Debian packages for deploying &PRODUCT;."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Building and deploying directly from source is thus outside the scope of this document, but is documented in the INSTALL.md file in the release."
+msgid "The instructions here are likely version-specific. That is, the method for building from source for the 4.0.x series is different from the 4.1.x series."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are working with a unreleased version of &PRODUCT;, see the INSTALL.md file in the top-level directory of the release."
 msgstr ""
 

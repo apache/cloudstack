@@ -1,0 +1,59 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Security Groups in Advanced Zones (KVM Only)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides the ability to use security groups to provide isolation between guests on a single shared, zone-wide network in an advanced zone where KVM is the hypervisor. Using security groups in advanced zones rather than multiple VLANs allows a greater range of options for setting up guest isolation in a cloud."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Limitations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following are not supported for this feature:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Two IP ranges with the same VLAN and different gateway or netmask in security group-enabled shared network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Two IP ranges with the same VLAN and different gateway or netmask in account-specific shared networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple VLAN ranges in security group-enabled shared network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple VLAN ranges in account-specific shared networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Security groups must be enabled in the zone in order for this feature to be used."
+msgstr ""
+

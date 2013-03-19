@@ -1,0 +1,86 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installing Publican"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; documentation is built using publican. This section describes how to install publican on your own machine so that you can build the documentation guides."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; documentation source code is located under <emphasis>/docs</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Publican documentation itself is also very <ulink url=\"http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Installing_Publican.html\">useful</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL and RHEL derivatives, install publican with the following command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install publican publican-doc"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, install publican with the following command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install publican publican-doc"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For other distribution refer to the publican documentation listed above. For latest versions of OSX you may have to install from <ulink url=\"https://fedorahosted.org/publican/wiki/Installing_OSX\">source</ulink> and tweak it to your own setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once publican is installed, you need to setup the so-called &PRODUCT; brand defined in the <emphasis>docs/publican-&PRODUCT;</emphasis> directory."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To do so, enter the following commands:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"        sudo cp -R publican-cloudstack /usr/share/publican/Common_Content/cloudstack\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If this fails or you later face errors related to the brand files, see the publican <ulink url=\"http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Branding.html#sect-Users_Guide-Installing_a_brand\">documentation</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With publican installed and the &PRODUCT; brand files in place, you should be able to build any documentation guide."
+msgstr ""
+

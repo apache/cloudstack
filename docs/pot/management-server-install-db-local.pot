@@ -1,22 +1,11 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
-#http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-02-02T20:11:58\n"
-"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19T13:38:04\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -35,7 +24,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Install MySQL from the package repository from your distribution:"
+msgid "Install MySQL from the package repository of your distribution:"
 msgstr ""
 
 #. Tag: para
@@ -60,12 +49,22 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes one Management Server."
+msgid "Open the MySQL configuration file. The configuration file is <filename>/etc/my.cnf</filename> or <filename>/etc/mysql/my.cnf</filename>, depending on your OS."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "On Ubuntu, you can also create a file /etc/mysql/conf.d/cloudstack.cnf and add these directives there. Don't forget to add [mysqld] on the first line of the file."
+msgid "Insert the following lines in the [mysqld] section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes one Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, you can also create a file <filename>/etc/mysql/conf.d/cloudstack.cnf</filename> and add these directives there. Don't forget to add [mysqld] on the first line of the file."
 msgstr ""
 
 #. Tag: programlisting
@@ -124,6 +123,76 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
+msgid "&PRODUCT; can be blocked by security mechanisms, such as SELinux. Disable SELinux to ensure + that the Agent has all the required permissions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure SELinux (RHEL and CentOS):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check whether SELinux is installed on your machine. If not, you can skip this section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS, SELinux is installed and enabled by default. You can verify this with:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ rpm -qa | grep selinux</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the SELINUX variable in <filename>/etc/selinux/config</filename> to \"permissive\". This ensures that the permissive setting will be maintained after a system reboot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/selinux/config"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "SELINUX=enforcing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "to this:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "SELINUX=permissive"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set SELinux to permissive starting immediately, without requiring a system reboot."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ setenforce permissive</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
 msgid "Set up the database. The following command creates the \"cloud\" user on the database."
 msgstr ""
 
@@ -152,13 +221,19 @@ msgstr ""
 msgid "(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See <xref linkend=\"about-password-encryption\" />."
 msgstr ""
 
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For management_server_ip, you may explicitly specify cluster management server node IP. If not specified, the local IP address will be used."
+msgstr ""
+
 #. Tag: programlisting
 #, no-c-format
 msgid "cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \\\n"
 "--deploy-as=root:&lt;password&gt; \\\n"
 "-e &lt;encryption_type&gt; \\\n"
 "-m &lt;management_server_key&gt; \\\n"
-"-k &lt;database_key&gt;"
+"-k &lt;database_key&gt; \\\n"
+"-i &lt;management_server_ip&gt;"
 msgstr ""
 
 #. Tag: para
@@ -178,17 +253,12 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "This type of single-machine setup is recommended only for a trial installation."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
 msgid "Now that the database is set up, you can finish configuring the OS for the Management Server. This command will set up iptables, sudoers, and start the Management Server."
 msgstr ""
 
 #. Tag: programlisting
 #, no-c-format
-msgid "# cloud-setup-management"
+msgid "<prompt>#</prompt> cloud-setup-management"
 msgstr ""
 
 #. Tag: para
