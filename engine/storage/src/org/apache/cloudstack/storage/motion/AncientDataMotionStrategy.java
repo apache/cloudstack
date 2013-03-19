@@ -660,7 +660,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
          Long accountId = baseVolume.getAccountId();
          
          HostVO secHost = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
-         
+         Long secHostId = secHost.getId();
          String secondaryStoragePoolUrl = secHost.getStorageUrl();
          String snapshotUuid = srcSnapshot.getPath();
          // In order to verify that the snapshot is not empty,
@@ -693,7 +693,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
          StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(baseVolume.getPoolId());
          String value = configDao.getValue(Config.BackupSnapshotWait.toString());
          int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
-         BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, baseVolume.getId(), srcSnapshot.getId(), baseVolume.getPath(), srcPool, snapshotUuid,
+         BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, baseVolume.getId(), srcSnapshot.getId(), secHostId, baseVolume.getPath(), srcPool, snapshotUuid,
         		 srcSnapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
          if ( swift != null ) {

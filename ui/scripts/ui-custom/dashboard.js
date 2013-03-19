@@ -80,15 +80,15 @@
                         });
                       } else {
                         if ($li.attr('concat-value')) {
-                          var val = $(_l(arrayValue).toString().split('<br/>')).map(function() {
-                            var val = this.toString();
+                          var val = $(_l(arrayValue).toString().split(', ')).map(function() {
+                            var val = _s(this.toString());
                             var concatValue = parseInt($li.attr('concat-value'));
 
                             return val.length >= concatValue ?
                               val.substring(0, concatValue).concat('...') : val;
-                          }).toArray().join('<br/>');
+                          }).toArray().join('<br />');
 
-                          $arrayElem.html(_s(val));
+                          $arrayElem.html(val);
                         } else {
                           $arrayElem.html(_s(_l(arrayValue)));
                         }

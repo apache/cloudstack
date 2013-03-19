@@ -74,7 +74,7 @@
               <goal>copy-dependencies</goal>
             </goals>
             <configuration>
-              <outputDirectory>target/dependencies</outputDirectory>
+              <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
               <includeScope>runtime</includeScope>
             </configuration>
           </execution>

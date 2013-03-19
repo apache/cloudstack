@@ -33,11 +33,10 @@
 
     // Called in networks list, when VPC drop-down is changed
     // -- if vpcID given, return true if in network specified by vpcID
-    // -- if vpcID == -1, return true if network is not associated with a VPC
+    // -- if vpcID == -1, always show all networks
     vpcFilter: function(data, vpcID) {
-      return vpcID != -1?
-        data.vpcid == vpcID :
-        !data.vpcid;
+      return vpcID != -1 ?
+        data.vpcid == vpcID : true;
     },
 
     // Runs when advanced SG-enabled zone is run, before
@@ -401,7 +400,12 @@
                     includingSecurityGroup = true;
 										break;   								
 									}
-								}								
+								}
+
+                if (networkObj.vpcid) {
+                  networkObj._singleSelect = true;
+                }
+                
 								//for Advanced SG-enabled zone, list only SG network offerings 
 								if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {
 									if(includingSecurityGroup == false)

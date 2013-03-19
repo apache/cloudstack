@@ -34,6 +34,44 @@
 
     return elemData;
   };
+
+  var instanceSecondaryIPSubselect = function(args) {
+    var instance = args.context.instances[0];
+    var network = args.context.networks[0];
+    var nic = $.grep(instance.nic, function(nic) {
+      return nic.networkid == network.id;
+    })[0];
+
+    // Get NIC IPs
+    $.ajax({
+      url: createURL('listNics'),
+      data: {
+        virtualmachineid: instance.id,
+        nicId: nic.id
+      },
+      success: function(json) {
+        var nic = json.listnics.nic[0];
+        var ips = nic.secondaryip ? nic.secondaryip : [];
+        var ipSelection = [];
+
+        // Add primary IP as default
+        ipSelection.push({ id: -1, description: nic.ipaddress + ' (Primary)' });
+
+        // Add secondary IPs
+        $(ips).map(function(index, ip) {
+          ipSelection.push({
+            id: ip.ipaddress,
+            description: ip.ipaddress
+          });
+        }); 
+
+
+        args.response.success({
+          data: ipSelection
+        });
+      }
+    })
+  };
   
   var ipChangeNotice = function() {
     cloudStack.dialog.confirm({
@@ -620,21 +658,33 @@
 								  var data = {
 									  id: args.context.networks[0].id,		
 									  name: args.data.name,
-										displaytext: args.data.displaytext,
+										displaytext: args.data.displaytext
 									};
-								
+								  
                   //args.data.networkdomain is null when networkdomain field is hidden
                   if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain) {
 									  $.extend(data, {
 										  networkdomain: args.data.networkdomain
 										});
 									} 
+                  
+                  var oldcidr;
+                  $.ajax({
+                    url: createURL("listNetworks&id=" + args.context.networks[0].id ),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      oldcidr = json.listnetworksresponse.network[0].cidr;
+                      
+                    }
+                  });
 
-                 if(args.data.cidr !="" ){
-                                          $.extend(data, {
-                                                              guestvmcidr: args.data.cidr
-                                           });
-                                  }
+
+                  if(args.data.cidr !="" && args.data.cidr != oldcidr ){
+                    $.extend(data, {
+                      guestvmcidr: args.data.cidr
+                    });
+                  }
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
@@ -1058,400 +1108,164 @@
 										}
 									});			
                 }
+              }
+            }
+          }
+        }
+      },
+      secondaryNicIps: {
+        title: 'label.menu.ipaddresses',
+        listView: {
+          id: 'secondaryNicIps',
+          label: 'label.ips',
+          fields: {
+            virtualmachinedisplayname: { label: 'label.vm.name' },
+            ipaddress: {
+              label: 'label.ips',
+              converter: function(text, item) {
+                if (item.issourcenat) {
+                  return text + ' [' + _l('label.source.nat') + ']';
+                }
+
+                return text;
+              }
+            }
+          },
+          actions: {
+            add: {
+              label: 'label.acquire.new.ip',
+              addRow: 'true',
+              messages: {
+                confirm: function(args) {
+                  return 'message.acquire.new.ip';
+                },
+                notification: function(args) {
+                  return 'label.acquire.new.ip';
+                }
+              },
+              action: function(args) {
+                var dataObj = {};
+
+                $.ajax({
+                  url: createURL('addIpToNic'),
+                  data: {
+                    nicId: args.context.nics[0].id
+                  },
+                  success: function(json) {
+                    args.response.success({
+                      _custom: {
+                        getUpdatedItem: function(data) {
+                          return $.extend(
+                            data.queryasyncjobresultresponse.jobresult.nicsecondaryip,
+                            {
+                              zoneid: args.context.instances[0].zoneid,
+                              virtualmachinedisplayname: args.context.instances[0].displayname
+                            }
+                          );
+                        },
+                        jobId: json.addiptovmnicresponse.jobid
+                      }
+                    });
+                  }
+                });
               },
 
-              egressRules: {
-                title: 'label.egress.rules',
-                custom: function(args) {
-                  var context = args.context;
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          },
 
-                  return $('<div>').multiEdit({
-                    context: context,
-                    noSelect: true,
-                    noHeaderActionsColumn: true,
-                    fields: {
-                      'cidrlist': { edit: true, label: 'label.cidr.list', isOptional: true },
-                      'protocol': {
-                        label: 'label.protocol',
-                        select: function(args) {
-                          args.$select.change(function() {
-                            var $inputs = args.$form.find('th, td');
-                            var $icmpFields = $inputs.filter(function() {
-                              var name = $(this).attr('rel');
+          dataProvider: function(args) {
+            var data = {};
 
-                              return $.inArray(name, [
-                                'icmptype',
-                                'icmpcode'
-                              ]) > -1;
-                            });
-                            var $otherFields = $inputs.filter(function() {
-                              var name = $(this).attr('rel');
+            $.ajax({
+              url: createURL('listNics'),
+              data: {
+                nicId: args.context.nics[0].id,
+                virtualmachineid: args.context.instances[0].id
+              },
+              success: function(json) {
+                var ips = json.listnics.nic ? json.listnics.nic[0].secondaryip : [];
 
-                              return name != 'cidrlist' &&
-                                name != 'icmptype' &&
-                                name != 'icmpcode' &&
-                                name != 'protocol' &&
-                                name != 'add-rule';
-                            });
+                args.response.success({
+                  data: $(ips).map(function(index, ip) {
+                    return $.extend(ip, {
+                      zoneid: args.context.instances[0].zoneid,
+                      virtualmachinedisplayname: args.context.instances[0].displayname
+                    });
+                  })
+                });
+              }
+            });
+          },
 
-                            if ($(this).val() == 'icmp') {
-                              $icmpFields.show();
-                              $otherFields.hide();
-                            } else if ($(this).val() == 'all') {
-                              $icmpFields.hide();
-                              $otherFields.hide();
-                            } else {
-                              $icmpFields.hide();
-                              $otherFields.show();
-                            }
-                          });
-
-                          args.response.success({
-                            data: [
-                              { name: 'tcp', description: 'TCP' },
-                              { name: 'udp', description: 'UDP' },
-                              { name: 'icmp', description: 'ICMP' },
-                              { name: 'all', description: 'All' }
-                            ]
-                          });
-                        }
-                      },
-                      'startport': { edit: true, label: 'label.start.port', isOptional: true },
-                      'endport': { edit: true, label: 'label.end.port', isOptional: true },
-                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true, isOptional: true },
-                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true, isOptional: true },
-                      'add-rule': {
-                        label: 'label.add',
-                        addButton: true
-                      }
+          // Detail view
+          detailView: {
+            name: 'Secondary IP address detail',
+            actions: {
+              remove: {
+                label: 'label.action.release.ip',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('removeIpFromNic'),
+                    data: {
+                      id: args.context.secondaryNicIps[0].id
                     },
-                    add: {
-                      label: 'label.add',
-                      action: function(args) {
-                        var data = {
-                          protocol: args.data.protocol,
-                          cidrlist: args.data.cidrlist,
-                          networkid: args.context.networks[0].id
-                        };
-
-                        if (args.data.icmptype && args.data.icmpcode) { // ICMP
-                          $.extend(data, {
-                            icmptype: args.data.icmptype,
-                            icmpcode: args.data.icmpcode
-                          });
-                        } else { // TCP/UDP
-                          $.extend(data, {
-                            startport: args.data.startport,
-                            endport: args.data.endport
-                          });
-                        }
-
-                        $.ajax({
-                          url: createURL('createEgressFirewallRule'),
-                          data: data,
-                          dataType: 'json',
-                          async: true,
-                          success: function(json) {
-                            var jobId = json.createegressfirewallruleresponse.jobid;
-
-                            args.response.success({
-                              _custom: {
-                                jobId: jobId
-                              },
-                              notification: {
-                                label: 'label.add.egress.rule',
-                                poll: pollAsyncJobResult
-                              }
-                            });
-                          },
-                          error: function(json) {
-                            args.response.error(parseXMLHttpResponse(json));
-                          }
-                        });
-                      }
-                    },
-                    actions: {
-                      destroy: {
-                        label: 'label.remove.rule',
-                        action: function(args) {
-                          $.ajax({
-                            url: createURL('deleteEgressFirewallRule'),
-                            data: {
-                              id: args.context.multiRule[0].id
-                            },
-                            dataType: 'json',
-                            async: true,
-                            success: function(data) {
-                              var jobID = data.deleteegressfirewallruleresponse.jobid;
-
-                              args.response.success({
-                                _custom: {
-                                  jobId: jobID
-                                },
-                                notification: {
-                                  label: 'label.remove.egress.rule',
-                                  poll: pollAsyncJobResult
-                                }
-                              });
-                            },
-                            error: function(json) {
-                              args.response.error(parseXMLHttpResponse(json));
-                            }
-                          });
-                        }
-                      }
-                    },
-                    ignoreEmptyFields: true,
-                    dataProvider: function(args) {
-                      $.ajax({
-                        url: createURL('listEgressFirewallRules'),
-                        data: {
-                          listAll: true,
-                          networkid: args.context.networks[0].id
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(json) {
-                          var response = json.listegressfirewallrulesresponse.firewallrule ?
-                                json.listegressfirewallrulesresponse.firewallrule : [];
-                          
-                          args.response.success({
-                            data: $.map(response, function(rule) {
-                              if (rule.protocol == 'all') {
-                                $.extend(rule, {
-                                  startport: 'All',
-                                  endport: 'All'
-                                });
-                              } else if (rule.protocol == 'tcp' || rule.protocol == 'udp') {
-                                if (!rule.startport) {
-                                  rule.startport = ' ';
-                                }
-
-                                if (!rule.endport) {
-                                  rule.endport = ' ';
-                                }
-                              }
-
-                              return rule;
-                            })
-                          });
-                        }
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.removeipfromnicresponse.jobid }
                       });
                     }
                   });
-                }
-              },
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.release.ip';
+                  },
+                  notification: function(args) {
+                    return 'label.action.release.ip';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    ipaddress: { label: 'label.ip' }
+                  },
+                  {
+                    id: { label: 'label.id' },
+                    virtualmachinedisplayname: { label: 'label.vm.name' },
+                    zonename: { label: 'label.zone.name' }
+                  }
+                ],
 
-              addloadBalancer: { // EIP/ELB Basic zone: Add Load Balancer tab in network detailView
-                title: 'label.add.load.balancer',
-                custom: function(args) {
-                  var context = args.context;
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listNics'),
+                    data: {
+                      nicId: args.context.nics[0].id,
+                      virtualmachineid: args.context.instances[0].id
+                    },
+                    success: function(json) {
+                      var ips = json.listnics.nic[0].secondaryip
 
-                  return $('<div>').addClass('loadBalancer').multiEdit(
-                    {
-                      context: context,
-                      listView: $.extend(true, {}, cloudStack.sections.instances, {
-                        listView: {
-                          filters: false,
-
-                          dataProvider: function(args) {
-                            var data = {
-                              page: args.page,
-                              pageSize: pageSize,
-															domainid: g_domainid,
-                              account: g_account,
-                              networkid: args.context.networks[0].id,
-                              listAll: true
-                            };
-														
-                            $.ajax({
-                              url: createURL('listVirtualMachines'),
-                              data: data,
-                              dataType: 'json',
-                              async: true,
-                              success: function(data) {
-                                args.response.success({
-                                  data: $.grep(
-                                    data.listvirtualmachinesresponse.virtualmachine ?
-                                      data.listvirtualmachinesresponse.virtualmachine : [],
-                                    function(instance) {
-                                          var nonAutoScale=0;
-                                          if(instance.displayname == null)
-                                              nonAutoScale = 1;
-                                            else{
-                                          if( instance.displayname.match(/AutoScale-LB-/)==null)
-                                             nonAutoScale =1;
-                                          else {
-                                             if(instance.displayname.match(/AutoScale-LB-/).length)
-                                               nonAutoScale =0;
-                                             }
-                                          }
-                                      var isActiveState= $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
-                                      return nonAutoScale && isActiveState;
-                                    }
-                                  )
-                                });
-                              },
-                              error: function(data) {
-                                args.response.error(parseXMLHttpResponse(data));
-                              }
-                            });
-                          }
-                        }
-                      }),
-                      multipleAdd: true,
-                      fields: {
-                        'name': { edit: true, label: 'label.name' },
-                        'publicport': { edit: true, label: 'label.public.port' },
-                        'privateport': { edit: true, label: 'label.private.port' },
-                        'algorithm': {
-                          label: 'label.algorithm',
-                          select: function(args) {
-                            args.response.success({
-                              data: [
-                                { name: 'roundrobin', description: _l('label.round.robin') },
-                                { name: 'leastconn', description: _l('label.least.connections') },
-                                { name: 'source', description: _l('label.source') }
-                              ]
-                            });
-                          }
-                        },
-                        'sticky': {
-                          label: 'label.stickiness',
-                          custom: {
-                            buttonLabel: 'label.configure',
-                            action: cloudStack.lbStickyPolicy.dialog()
-                          }
-                        },
-                        'autoScale': {
-                          label: 'AutoScale',
-                          custom: {
-                            requireValidation: true,
-                            buttonLabel: 'label.configure',
-                            action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
-                          }
-                        },
-                        'add-vm': {
-                          label: 'label.add.vms',
-                          addButton: true
-                        }
-                      },
-											
-                      add: {  //basic zone - elastic IP - Add Load Balancer tab - Add VMs button
-                        label: 'label.add.vms',
-                        action: function(args) {                         
-                          var data = {
-                            algorithm: args.data.algorithm,
-                            name: args.data.name,
-                            privateport: args.data.privateport,
-                            publicport: args.data.publicport,
-														openfirewall: false,
-														domainid: g_domainid,
-														account: g_account
-                          };
-													
-													if('vpc' in args.context) { //from VPC section
-														if(args.data.tier == null) {													  
-															args.response.error('Tier is required');
-															return;
-														}			
-														$.extend(data, {
-															networkid: args.data.tier		
-														});	
-													}
-													else {  //from Guest Network section
-														$.extend(data, {
-															networkid: args.context.networks[0].id
-														});	
-													}
-													
-                          var stickyData = $.extend(true, {}, args.data.sticky);
-                         
-                          $.ajax({
-                            url: createURL('createLoadBalancerRule'),
-                            data: data,
-                            dataType: 'json',
-                            async: true,
-                            success: function(data) {
-                              var itemData = args.itemData;
-                              //var jobID = data.createloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
-
-                              $.ajax({
-                                url: createURL('assignToLoadBalancerRule'),
-                                data: {
-                                  id: data.createloadbalancerruleresponse.id,
-                                  virtualmachineids: $.map(itemData, function(elem) {
-                                    return elem.id;
-                                  }).join(',')
-                                },
-                                dataType: 'json',
-                                async: true,
-                                success: function(data) {
-                                  var jobID = data.assigntoloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
-																	var lbCreationComplete = false;
-
-                                  args.response.success({
-                                    _custom: {
-                                      jobId: jobID
-                                    },
-                                    notification: {
-                                      label: 'label.add.load.balancer',
-                                      poll: function(args) {
-                                        var complete = args.complete;
-                                        var error = args.error;
-
-                                        pollAsyncJobResult({
-                                          _custom: args._custom,
-                                          complete: function(args) {
-                                            if (lbCreationComplete) {
-                                              return;
-                                            }
-
-                                            lbCreationComplete = true;
-                                            cloudStack.dialog.notice({
-                                              message: _l('message.add.load.balancer.under.ip') +
-                                                args.data.loadbalancer.publicip
-                                            });
-
-                                            if (stickyData &&
-                                                stickyData.methodname &&
-                                                stickyData.methodname != 'None') {
-                                              cloudStack.lbStickyPolicy.actions.add(
-                                                args.data.loadbalancer.id,
-                                                stickyData,
-                                                complete, // Complete
-                                                complete // Error
-                                              );
-                                            } else {
-                                              complete();
-                                            }
-                                          },
-                                          error: error
-                                        });
-                                      }
-                                    }
-                                  });
-                                },
-                                error: function(data) {
-                                  args.response.error(parseXMLHttpResponse(data));
-                                }
-                              });
-                            },
-                            error: function(data) {
-                              args.response.error(parseXMLHttpResponse(data));
-                            }
+                      args.response.success({
+                        data: $.grep($(ips).map(function(index, ip) {
+                          return $.extend(ip, {
+                            zonename: args.context.instances[0].zonename,
+                            virtualmachinedisplayname: args.context.instances[0].displayname
                           });
-                        }
-                      },
-											
-											
-                      dataProvider: function(args) {
-                        args.response.success({ //no LB listing in AddLoadBalancer tab
-                          data: []
-                        });
-                      }
+                        }), function(ip) {
+                          return ip.ipaddress == args.context.secondaryNicIps[0].ipaddress;
+                        })[0]
+                      });
                     }
-                  );
+                  });
                 }
               }
             }
@@ -1595,10 +1409,11 @@
 											account: g_account
 										});
 									}									
-								}			
+								}
+
                 $.ajax({
                   url: createURL('associateIpAddress'),
-                  data: dataObj,   
+                  data: dataObj,
                   success: function(data) {
                     args.response.success({
                       _custom: {
@@ -1661,10 +1476,10 @@
               async: true,
               success: function(json) {
                 var items = json.listpublicipaddressesresponse.publicipaddress;
-                
-								$(items).each(function() {								  
-								  getExtaPropertiesForIpObj(this, args);
-								});                            
+
+                $(items).each(function() {
+                  getExtaPropertiesForIpObj(this, args);
+                });
 
                 args.response.success({
                   actionFilter: actionFilters.ipAddress,
@@ -1864,6 +1679,10 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
+                        subselect: {
+                          label: 'label.use.vm.ip',
+                          dataProvider: instanceSecondaryIPSubselect
+                        },
                         dataProvider: function(args) {
                           var data = {
                             page: args.page,
@@ -1878,7 +1697,7 @@
                             args.response.success({ data: null });
                             return;             
                           }
-                          
+
                           if('vpc' in args.context) {
                             if($tierSelect.size() && $tierSelect.val() != '-1' ){ 
                               data.networkid = $tierSelect.val();
@@ -1930,6 +1749,10 @@
 												ipaddressid: args.context.ipAddresses[0].id,
 												virtualmachineid: args.context.instances[0].id
 											};
+
+                      if (args._subselect && args._subselect != -1) {
+                        data.vmguestip = args._subselect;
+                      }
 											
 											if('vpc' in args.context) {
 											  if(args.tierID == '-1') {
@@ -2124,19 +1947,17 @@
                 dataProvider: function(args) {
                   var items = args.context.ipAddresses;
 
-                  // Get network data
                   $.ajax({
                     url: createURL('listPublicIpAddresses'),
-                    data: {                      
-                      id: args.context.ipAddresses[0].id,
-											listAll: true
+                    data: {
+                      id: args.context.ipAddresses[0].id
                     },
                     dataType: "json",
                     async: true,
                     success: function(json) {
                       var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];
                       getExtaPropertiesForIpObj(ipObj, args);
-                      
+
                       var network = $.grep(
                         args.context.vpc ?
                           args.context.vpc[0].network : args.context.networks,
@@ -2607,6 +2428,20 @@
                   loadBalancing: {
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
+                        fields: {
+                          name: { label: 'label.name' },
+                          displayname: { label: 'label.display.name' },
+                          zonename: { label: 'label.zone.name' },
+                          state: {
+                            label: 'label.state',
+                            indicator: {
+                              'Running': 'on',
+                              'Stopped': 'off',
+                              'Destroyed': 'off',
+                              'Error': 'off'
+                            }
+                          }
+                        },
                         filters: false,
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
@@ -2774,6 +2609,17 @@
                           action: cloudStack.lbStickyPolicy.dialog()
                         }
                       },
+
+                     'health-check':{
+                          label:'Health Check',
+                          custom:{
+                             requireValidation: true ,
+                             buttonLabel:'Configure',
+                             action:cloudStack.uiCustom.healthCheck()
+
+                           }
+                        },
+
                       'autoScale': {
                         label: 'AutoScale',
                         custom: {
@@ -3190,6 +3036,10 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
+                        subselect: {
+                          label: 'label.use.vm.ip',
+                          dataProvider: instanceSecondaryIPSubselect
+                        },
                         dataProvider: function(args) {
                           var networkid;
 													if('vpc' in args.context) 
@@ -3284,6 +3134,10 @@
                           virtualmachineid: args.itemData[0].id,
                           openfirewall: false
                         };
+
+                        if (args.itemData[0]._subselect && args.itemData[0]._subselect != -1) {
+                          data.vmguestip = args.itemData[0]._subselect;
+                        }
 
                         if('vpc' in args.context) { //from VPC section
                           if(args.data.tier == null) {

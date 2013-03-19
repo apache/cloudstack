@@ -16,6 +16,59 @@
 // under the License.
 cloudStack.docs = {
 
+ //Delete/archive events
+  helpEventsDeleteType:{
+
+   desc:'Delete all the events by specifying its TYPE eg . USER.LOGIN',
+   externalLink:''
+
+  },
+
+  helpEventsDeleteDate:{
+
+  desc:'Delete all the events which have been created after this date ',
+  externalLink:''
+  },
+
+  helpEventsArchiveType:{
+
+    desc:'Archive all the events by specifying its TYPE (integer number)',
+    externalLink:''
+  },
+
+  helpEventsArchiveDate:{
+
+   desc:'Archive all the events which have been created after this date',
+   externalLink:''
+  },
+
+  //Delete/archive Alerts
+  helpAlertsDeleteType:{
+
+   desc:'Delete all the alerts by specifying its TYPE eg . USER.LOGIN',
+   externalLink:''
+
+  },
+
+  helpAlertsDeleteDate:{
+
+  desc:'Delete all the alerts which have been created after this date ',
+  externalLink:''
+  },
+
+  helpAlertsArchiveType:{
+
+    desc:'Archive all the alerts by specifying its TYPE (integer number)',
+    externalLink:''
+  },
+
+  helpAlertsArchiveDate:{
+
+   desc:'Archive all the alerts which have been created after this date',
+   externalLink:''
+  },
+
+
  //Ldap
   helpLdapQueryFilter: {
 

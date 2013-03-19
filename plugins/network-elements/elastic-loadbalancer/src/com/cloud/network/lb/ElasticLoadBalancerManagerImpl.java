@@ -94,6 +94,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.network.router.VirtualRouter;
@@ -367,9 +368,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             for (LoadBalancerVO lb : lbs) {
                 List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                 List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
                 LoadBalancingRule loadBalancing = new LoadBalancingRule(
-                        lb, dstList, policyList);
-                lbRules.add(loadBalancing); 
+                        lb, dstList, policyList, hcPolicyList);
+                lbRules.add(loadBalancing);
             }
             return applyLBRules(elbVm, lbRules, network.getId());
         } else if (elbVm.getState() == State.Stopped
@@ -940,7 +942,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         for (LoadBalancerVO lb : lbs) {
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
             List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+            List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
             lbRules.add(loadBalancing);
         }
 

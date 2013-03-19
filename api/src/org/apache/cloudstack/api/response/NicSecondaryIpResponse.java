@@ -20,28 +20,38 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.serializer.Param;
+import com.cloud.vm.NicSecondaryIp;
 import com.google.gson.annotations.SerializedName;
 
+@EntityReference(value=NicSecondaryIp.class)
 @SuppressWarnings("unused")
 public class NicSecondaryIpResponse extends BaseResponse {
+
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the secondary private IP addr")
-    private Long id;
+    private String id;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="Secondary IP address")
     private String ipAddr;
 
     @SerializedName(ApiConstants.NIC_ID) @Param(description="the ID of the nic")
-    private Long nicId;
+    private String nicId;
 
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the network")
-    private  Long nwId;
+    private  String nwId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the ID of the vm")
-    private Long vmId;
+    private String vmId;
 
-    public Long getId() {
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
+    public String getId() {
         return id;
     }
 
@@ -53,32 +63,32 @@ public class NicSecondaryIpResponse extends BaseResponse {
         this.ipAddr = ipAddr;
     }
 
-    public Long getNicId() {
+    public String getNicId() {
         return nicId;
     }
 
-    public void setNicId(Long nicId) {
-        this.nicId = nicId;
+    public void setNicId(String string) {
+        this.nicId = string;
     }
 
-    public Long getNwId() {
+    public String getNwId() {
         return nwId;
     }
 
-    public void setNwId(Long nwId) {
+    public void setNwId(String nwId) {
         this.nwId = nwId;
     }
 
-    public Long getVmId() {
+    public String getVmId() {
         return vmId;
     }
 
-    public void setVmId(Long vmId) {
+    public void setVmId(String vmId) {
         this.vmId = vmId;
     }
 
-    public Long setId(Long id) {
-        return id;
+    public void setId(String id) {
+        this.id = id;
     }
 
 

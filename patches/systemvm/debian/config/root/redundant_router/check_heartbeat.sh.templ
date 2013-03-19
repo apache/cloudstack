@@ -22,7 +22,7 @@ then
     lasttime=$(cat [RROUTER_BIN_PATH]/keepalived.ts2)
     thistime=$(cat [RROUTER_BIN_PATH]/keepalived.ts)
     diff=$(($thistime - $lasttime))
-    if [ $diff -gt 100 ]
+    if [ $diff -lt 30]
     then
         echo Keepalived process is dead! >> [RROUTER_LOG]
         service keepalived stop >> [RROUTER_LOG] 2>&1

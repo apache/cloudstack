@@ -55,11 +55,14 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the template name")
     private String templateName;
 
-    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
-                                                                                        "* featured-templates that are featured and are public" +
-                                                                                        "* self-templates that have been registered/created by the owner" +
-                                                                                        "* selfexecutable-templates that have been registered/created by the owner that can be used to deploy a new VM" +
-                                                                                        "* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
+    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " + 
+                                                                                        "* featured : templates that have been marked as featured and public. " +
+                                                                                        "* self : templates that have been registered or created by the calling user. " +
+                                                                                        "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. " +
+                                                                                        "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. " +
+                                                                                        "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. " +
+                                                                                        "* community : templates that have been marked as public but not featured. " +
+                                                                                        "* all : all templates (only usable by admins).")
     private String templateFilter;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,

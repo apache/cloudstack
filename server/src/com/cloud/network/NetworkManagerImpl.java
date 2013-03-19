@@ -106,6 +106,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
@@ -1765,12 +1766,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _nicDao.remove(nic.getId());
         s_logger.debug("Removed nic id=" + nic.getId());
         //remove the secondary ip addresses corresponding to to this nic
-        List<NicSecondaryIpVO> secondaryIps = _nicSecondaryIpDao.listByNicId(nic.getId());
-        if (secondaryIps != null) {
-            for (NicSecondaryIpVO ip : secondaryIps) {
-                _nicSecondaryIpDao.remove(ip.getId());
-            }
-            s_logger.debug("Removed nic " + nic.getId() + " secondary ip addreses");
+        if (!removeVmSecondaryIpsOfNic(nic.getId())) {
+            s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
         }
     }
 
@@ -2314,52 +2311,51 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose,
             NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException {
-    	if (rules == null || rules.size() == 0) {
-    		s_logger.debug("There are no rules to forward to the network elements");
-    		return true;
-    	}
+        if (rules == null || rules.size() == 0) {
+            s_logger.debug("There are no rules to forward to the network elements");
+            return true;
+        }
 
-    	boolean success = true;
-    	Network network = _networksDao.findById(rules.get(0).getNetworkId());
+        boolean success = true;
+        Network network = _networksDao.findById(rules.get(0).getNetworkId());
         FirewallRuleVO.TrafficType trafficType = rules.get(0).getTrafficType();
-         List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
             // get the list of public ip's owned by the network
             List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
-    			PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-    			publicIps.add(publicIp);
-	                }
-             }
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                    publicIps.add(publicIp);
+                }
+            }
 
-    	// rules can not programmed unless IP is associated with network service provider, so run IP assoication for
-    	// the network so as to ensure IP is associated before applying rules (in add state)
-    	applyIpAssociations(network, false, continueOnError, publicIps);
-	}
-    	
-    	try {
-    		applier.applyRules(network, purpose, rules);
-    	} catch (ResourceUnavailableException e) {
-    		if (!continueOnError) {
-    			throw e;
-    		}
-    		s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
-    		success = false;
-    	}
-    	
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) ) {
-            // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
+            // rules can not programmed unless IP is associated with network
+            // service provider, so run IP assoication for
+            // the network so as to ensure IP is associated before applying
+            // rules (in add state)
+            applyIpAssociations(network, false, continueOnError, publicIps);
+        }
+
+        try {
+            applier.applyRules(network, purpose, rules);
+        } catch (ResourceUnavailableException e) {
+            if (!continueOnError) {
+                throw e;
+            }
+            s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
+            success = false;
+        }
+
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+            // if all the rules configured on public IP are revoked then
+            // dis-associate IP with network service provider
             applyIpAssociations(network, true, continueOnError, publicIps);
         }
 
-    	return success;
+        return success;
     }
-        
-    
-
-   
 
     public class NetworkGarbageCollector implements Runnable {
 
@@ -2835,7 +2831,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         _accountMgr.checkAccess(caller, null, false, network);
 
-        //return acquireGuestIpAddress(network, requestedIp);
         ipaddr = acquireGuestIpAddress(network, requestedIp);
         return ipaddr;
     }
@@ -3104,13 +3099,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             lb.setState(FirewallRule.State.Revoke);
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
             List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            List<LbHealthCheckPolicy> hcPolicyList =  _lbMgr.getHealthCheckPolicies (lb.getId());
             // mark all destination with revoke state
             for (LbDestination dst : dstList) {
                 s_logger.trace("Marking lb destination " + dst + " with Revoke state");
                 dst.setRevoked(true);
             }
 
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
             lbRules.add(loadBalancing);
         }
 
@@ -3654,11 +3650,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return nic.getSecondaryIp();
     }
 
-        @Override
-        public boolean removeVmSecondaryIps(long vmId) {
+         @Override
+        public boolean removeVmSecondaryIpsOfNic(long nicId) {
            Transaction txn = Transaction.currentTxn();
            txn.start();
-           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByVmId(vmId);
+           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
            if (ipList != null) {
                for (NicSecondaryIpVO ip: ipList) {
                    _nicSecondaryIpDao.remove(ip.getId());
@@ -3669,4 +3665,16 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
            return true;
         }
 
-}
+        @Override
+        public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod,Account owner,
+                String requestedIp) throws InsufficientAddressCapacityException {
+            PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
+            if (ip == null) {
+                s_logger.debug("There is no free public ip address");
+                return null;
+            }
+            Ip ipAddr = ip.getAddress();
+            return ipAddr.addr();
+        }
+
+ }

@@ -147,14 +147,14 @@ public class BackupSnapshotCommandTest {
 
     BackupSnapshotCommand bsc = new BackupSnapshotCommand(
             "http://secondary.Storage.Url",
-            101L, 102L, 103L, 104L, "vPath", pool,
+            101L, 102L, 103L, 104L, 105L, "vPath", pool,
             "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
             "9012793e-0657-11e2-bebc-0050568b0057",
             "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
 
     BackupSnapshotCommand bsc1 = new BackupSnapshotCommand(
             "http://secondary.Storage.Url",
-            101L, 102L, 103L, 104L, "vPath", pool,
+            101L, 102L, 103L, 104L, 105L,"vPath", pool,
             "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
             "9012793e-0657-11e2-bebc-0050568b0057",
             "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);

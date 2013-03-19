@@ -188,6 +188,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability InlineMode = new Capability("InlineMode");
         public static final Capability SupportedTrafficDirection = new Capability("SupportedTrafficDirection");
         public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
+        public static final Capability HealthCheckPolicy = new Capability("HealthCheckPolicy");
 
         private String name;
 

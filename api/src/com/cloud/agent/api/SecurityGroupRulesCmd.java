@@ -18,6 +18,7 @@ package com.cloud.agent.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.zip.DeflaterOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
@@ -80,6 +81,7 @@ public class SecurityGroupRulesCmd extends Command {
     Long msId;
     IpPortAndProto [] ingressRuleSet;
     IpPortAndProto [] egressRuleSet;
+    private List<String> secIps;
 
     public SecurityGroupRulesCmd() {
         super();
@@ -102,6 +104,23 @@ public class SecurityGroupRulesCmd extends Command {
         }
     }
 
+
+    public SecurityGroupRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ingressRuleSet, IpPortAndProto[] egressRuleSet, List<String> secIps) {
+        super();
+        this.guestIp = guestIp;
+        this.vmName = vmName;
+        this.ingressRuleSet = ingressRuleSet;
+        this.egressRuleSet = egressRuleSet;
+        this.guestMac = guestMac;
+        this.signature = signature;
+        this.seqNum = seqNum;
+        this.vmId  = vmId;
+        if (signature == null) {
+            String stringified = stringifyRules();
+            this.signature = DigestUtils.md5Hex(stringified);
+        }
+        this.secIps = secIps;
+    }
 
     @Override
     public boolean executeInSequence() {
@@ -129,6 +148,10 @@ public class SecurityGroupRulesCmd extends Command {
 
     public String getGuestIp() {
         return guestIp;
+    }
+
+    public List<String> getSecIps() {
+        return secIps;
     }
 
 
@@ -162,6 +185,20 @@ public class SecurityGroupRulesCmd extends Command {
         String [] toks = cidr.split("/");
         long ipnum = NetUtils.ip2Long(toks[0]);
         return Long.toHexString(ipnum) + "/" + toks[1];
+    }
+
+
+    public String getSecIpsString() {
+        StringBuilder sb = new StringBuilder();
+        List<String> ips = getSecIps();
+        if (ips == null) {
+            return "0:";
+        } else {
+            for (String ip : ips) {
+                sb.append(ip).append(":");
+            }
+        }
+        return sb.toString();
     }
 
 

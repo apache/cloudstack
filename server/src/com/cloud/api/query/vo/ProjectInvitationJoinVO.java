@@ -25,8 +25,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
+
 
 @Entity
 @Table(name="project_invitation_view")

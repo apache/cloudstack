@@ -770,6 +770,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
             clusterId = cluster.getId();
+            if (_clusterDetailsDao.findDetail(clusterId,"cpuOvercommitRatio") == null) {
+            ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId,"cpuOvercommitRatio","1");
+            ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId,"memoryOvercommitRatio","1");
+            _clusterDetailsDao.persist(cluster_cpu_detail);
+            _clusterDetailsDao.persist(cluster_memory_detail);
+            }
+
         }
 
         try {

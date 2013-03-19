@@ -158,7 +158,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         Account account = (Account) new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+                "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -223,7 +223,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         Account account = (Account) new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+                "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -288,7 +288,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         Account account = (Account) new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+                "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -353,7 +353,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         Account account = (Account) new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+                "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -418,7 +418,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         Account account = (Account) new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+                "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -496,7 +496,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         UserContext.registerContext(1, account, null, true);
@@ -561,7 +561,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 3, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 3, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         UserContext.registerContext(1, account, null, true);
@@ -635,7 +635,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         UserContext.registerContext(1, account, null, true);
@@ -695,7 +695,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
         UserContext.registerContext(1, account, null, true);
 
@@ -765,7 +765,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
         UserContext.registerContext(1, account, null, true);
 
@@ -827,7 +827,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
         UserContext.registerContext(1, account, null, true);
 
@@ -872,7 +872,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         DeleteGlobalLoadBalancerRuleCmd deleteCmd = new DeleteGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = deleteCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         UserContext.registerContext(1, account, null, true);
@@ -920,7 +920,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         DeleteGlobalLoadBalancerRuleCmd deleteCmd = new DeleteGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = deleteCmd.getClass().getSuperclass();
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString(), 1);
+        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         UserContext.registerContext(1, account, null, true);

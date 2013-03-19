@@ -46,6 +46,8 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
@@ -126,6 +128,13 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
@@ -168,6 +177,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
@@ -2748,6 +2758,58 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public LBHealthCheckResponse createLBHealthCheckPolicyResponse(
+            List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb) {
+        LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
+
+        if (lb == null)
+            return hcResponse;
+        hcResponse.setlbRuleId(lb.getUuid());
+        Account account = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (account != null) {
+            hcResponse.setAccountName(account.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+            if (domain != null) {
+                hcResponse.setDomainId(domain.getUuid());
+                hcResponse.setDomainName(domain.getName());
+            }
+        }
+
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        for (HealthCheckPolicy healthcheckPolicy : healthcheckPolicies) {
+            LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
+            responses.add(ruleResponse);
+        }
+        hcResponse.setRules(responses);
+
+        hcResponse.setObjectName("healthcheckpolicies");
+        return hcResponse;
+    }
+
+    @Override
+    public LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb) {
+        LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
+
+        hcResponse.setlbRuleId(lb.getUuid());
+        Account accountTemp = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (accountTemp != null) {
+            hcResponse.setAccountName(accountTemp.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(accountTemp.getDomainId());
+            if (domain != null) {
+                hcResponse.setDomainId(domain.getUuid());
+                hcResponse.setDomainName(domain.getName());
+            }
+        }
+
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
+        responses.add(ruleResponse);
+        hcResponse.setRules(responses);
+        hcResponse.setObjectName("healthcheckpolicies");
+        return hcResponse;
+    }
+
+    @Override
     public LDAPConfigResponse createLDAPConfigResponse(String hostname,
             Integer port, Boolean useSSL, String queryFilter,
             String searchBase, String bindDN) {
@@ -3445,9 +3507,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public NicSecondaryIpResponse createSecondaryIPToNicResponse(String ipAddr, Long nicId, Long networkId) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
+        NicVO nic = _entityMgr.findById(NicVO.class, nicId);
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, networkId);
         response.setIpAddr(ipAddr);
-        response.setNicId(nicId);
-        response.setNwId(networkId);
+        response.setNicId(nic.getUuid());
+        response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -3463,7 +3527,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
                 for (NicSecondaryIpVO ip: secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
-                    ipRes.setId(ip.getId());
+                    ipRes.setId(ip.getUuid());
                     ipRes.setIpAddr(ip.getIp4Address());
                     ipList.add(ipRes);
                 }

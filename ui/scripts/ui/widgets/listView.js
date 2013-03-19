@@ -844,7 +844,10 @@
     var rows = [];
     var reorder = options.reorder;
     var detailView = options.detailView;
-    var uiCustom = $tbody.closest('.list-view').data('view-args').uiCustom;
+    var $listView = $tbody.closest('.list-view');
+    var listViewArgs = $listView.data('view-args');
+    var uiCustom = listViewArgs.uiCustom;
+    var subselect = uiCustom ? listViewArgs.listView.subselect : null;
 
     if (!data || ($.isArray(data) && !data.length)) {
       if (!$tbody.find('tr').size()) {
@@ -1037,6 +1040,59 @@
             allowedActions: allowedActions
           }
         );
+
+        $listView.trigger('cloudStack.listView.addRow', { $tr: $tr });
+      }
+
+      // Add sub-select
+      if (subselect) {
+        var $td = $tr.find('td.first');
+        var $select = $('<div></div>').addClass('subselect').append(
+          $('<span>').html(_l(subselect.label)),
+          $('<select>')
+        ).hide();
+        var $selectionArea = $tr.find('td:last').find('input');
+
+        $td.append($select);
+
+        // Show and populate selection
+        $selectionArea.change(function() {
+          if ($(this).is(':checked')) {
+            // Populate data
+            subselect.dataProvider({
+              context: $.extend(true, {}, options.context, {
+                instances: [$tr.data('json-obj')]
+              }),
+              response: {
+                success: function(args) {
+                  var data = args.data;
+
+                  if (data.length) {
+                    $(data).map(function(index, item) {
+                      var $option = $('<option>');
+
+                      $option.attr('value', item.id);
+                      $option.append(item.description);
+                      $option.appendTo($select.find('select'));
+                    });
+                    $select.show();
+                  } else {
+                    $select.hide();
+                  }
+
+                  $listView.find('.data-table').dataTable('refresh');
+                }
+              }
+            });
+
+            if ($(this).is('input[type=radio]')) {
+              $(this).closest('tr').siblings().find('input[type=radio]').change();
+            } 
+          } else {
+            $select.find('option').remove();
+            $select.hide();
+          }
+        });
       }
 
       // Add quick view

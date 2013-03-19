@@ -32,9 +32,6 @@ public interface Region  {
 
 	public String getEndPoint();
 	
-	public String getApiKey();
-	
-	public String getSecretKey();
 
     public boolean checkIfServiceEnabled(Service service);
 

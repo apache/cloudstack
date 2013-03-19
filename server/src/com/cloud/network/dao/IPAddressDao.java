@@ -66,4 +66,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     IPAddressVO findByVmIp(String vmIp);
 
     IPAddressVO findByAssociatedVmIdAndVmIp(long vmId, String vmIp);
+
+    IPAddressVO findByIpAndNetworkId(long networkId, String ipAddress);
 }

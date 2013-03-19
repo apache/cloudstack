@@ -68,7 +68,7 @@ log() {
 
   if [ $shouldwelog -eq 1 ]
   then
-    echo "$d - $1" >> /var/log/cloud/agent/resizevolume.log
+    echo "$d - $1" >> /var/log/cloudstack/agent/resizevolume.log
   fi
 }
 
@@ -237,7 +237,7 @@ do
   esac
 done
 
-shouldwelog=1 #set this to 1 while debugging to get output in /var/log/cloud/agent/resizevolume.log
+shouldwelog=1 #set this to 1 while debugging to get output in /var/log/cloudstack/agent/resizevolume.log
 
 if [ "$ptype" == "CLVM" ]
 then

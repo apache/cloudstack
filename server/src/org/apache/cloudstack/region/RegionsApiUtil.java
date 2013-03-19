@@ -227,8 +227,8 @@ public class RegionsApiUtil {
      */
     private static String buildUrl(String apiParams, Region region) {
 
-        String apiKey = region.getApiKey();
-        String secretKey = region.getSecretKey();
+        String apiKey = "";
+        String secretKey = "";
 
 
         if (apiKey == null || secretKey == null) {

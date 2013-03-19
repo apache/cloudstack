@@ -742,7 +742,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
-        return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+        return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
     @Override
@@ -1457,11 +1457,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (network.getGuestType() != Network.GuestType.Shared) {
             List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
             if (networkMap == null || networkMap.isEmpty()) {
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                throw new PermissionDeniedException("Unable to use network with id= " + network.getUuid() + ", permission denied");
             }
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getId() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
@@ -1972,4 +1972,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         }
     }
+
+	@Override
+	public String getStartIpv6Address(long networkId) {
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	if (vlans == null) {
+    		return null;
+    	}
+    	String startIpv6 = null;
+    	// Get the start ip of first create vlan(not the lowest, because if you add a lower vlan, lowest vlan would change)
+    	for (Vlan vlan : vlans) {
+    		if (vlan.getIp6Range() != null) {
+    			startIpv6 = vlan.getIp6Range().split("-")[0];
+    			break;
+    		}
+    	}
+		return startIpv6;
+	}
 }

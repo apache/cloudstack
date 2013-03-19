@@ -78,20 +78,20 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      * {@inheritDoc}
      */    
     @Override
-    public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+    public Region addRegion(int id, String name, String endPoint) {
         //Check for valid Name
         //Check valid end_point url
-        return _regionMgr.addRegion(id, name, endPoint, apiKey, secretKey);
+        return _regionMgr.addRegion(id, name, endPoint);
     }
 
     /**
      * {@inheritDoc}
      */ 
     @Override
-    public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+    public Region updateRegion(int id, String name, String endPoint) {
         //Check for valid Name
         //Check valid end_point url
-        return _regionMgr.updateRegion(id, name, endPoint, apiKey, secretKey);
+        return _regionMgr.updateRegion(id, name, endPoint);
     }
 
     /**

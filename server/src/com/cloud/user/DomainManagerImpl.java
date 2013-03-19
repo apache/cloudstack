@@ -16,10 +16,7 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -118,7 +115,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    public Domain createDomain(String name, Long parentId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID) {
         Account caller = UserContext.current().getCaller();
 
         if (parentId == null) {
@@ -136,13 +133,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         _accountMgr.checkAccess(caller, parentDomain);
 
-        return createDomain(name, parentId, caller.getId(), networkDomain);
+        return createDomain(name, parentId, caller.getId(), networkDomain, domainUUID);
 
     }
 
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID) {
         // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -161,10 +158,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
+        if(domainUUID == null){
+            domainUUID = UUID.randomUUID().toString();
+        }
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
-        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
+        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         txn.commit();
         return domain;

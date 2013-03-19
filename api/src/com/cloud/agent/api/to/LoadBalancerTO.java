@@ -31,6 +31,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
 import com.cloud.network.lb.LoadBalancingRule.LbCondition;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.utils.Pair;
 
@@ -46,8 +47,10 @@ public class LoadBalancerTO {
     boolean inline;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
+    private HealthCheckPolicyTO[] healthCheckPolicies;
     private AutoScaleVmGroupTO autoScaleVmGroupTO;
     final static int MAX_STICKINESS_POLICIES = 1;
+    final static int MAX_HEALTHCHECK_POLICIES = 1;
 
     public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline, List<LbDestination> destinations) {
         if (destinations == null) { // for autoscaleconfig destinations will be null;
@@ -69,23 +72,52 @@ public class LoadBalancerTO {
         }
     }
 
-    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline, List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
+    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked,
+            boolean alreadyAdded, boolean inline, List<LbDestination> arg_destinations,
+            List<LbStickinessPolicy> stickinessPolicies) {
+
+        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations,
+                stickinessPolicies, null);
+    }
+
+    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked,
+            boolean alreadyAdded, boolean inline, List<LbDestination> arg_destinations,
+            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies) {
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations);
         this.stickinessPolicies = null;
+        this.healthCheckPolicies = null;
         if (stickinessPolicies != null && stickinessPolicies.size() > 0) {
             this.stickinessPolicies = new StickinessPolicyTO[MAX_STICKINESS_POLICIES];
             int index = 0;
             for (LbStickinessPolicy stickinesspolicy : stickinessPolicies) {
                 if (!stickinesspolicy.isRevoked()) {
-                    this.stickinessPolicies[index] = new StickinessPolicyTO(stickinesspolicy.getMethodName(), stickinesspolicy.getParams());
+                    this.stickinessPolicies[index] = new StickinessPolicyTO(stickinesspolicy.getMethodName(),
+                            stickinesspolicy.getParams());
                     index++;
-                    if (index == MAX_STICKINESS_POLICIES) break;
-                    }
+                    if (index == MAX_STICKINESS_POLICIES)
+                        break;
                 }
-            if (index == 0) this.stickinessPolicies = null;
             }
+            if (index == 0)
+                this.stickinessPolicies = null;
+        }
+
+        if (healthCheckPolicies != null && healthCheckPolicies.size() > 0) {
+            this.healthCheckPolicies = new HealthCheckPolicyTO[MAX_HEALTHCHECK_POLICIES];
+            int index = 0;
+            for (LbHealthCheckPolicy hcp : healthCheckPolicies) {
+                    this.healthCheckPolicies[0] = new HealthCheckPolicyTO(hcp.getpingpath(), hcp.getDescription(),
+                            hcp.getResponseTime(), hcp.getHealthcheckInterval(), hcp.getHealthcheckThresshold(),
+                            hcp.getUnhealthThresshold(), hcp.isRevoked());
+                    index++;
+                    if (index == MAX_HEALTHCHECK_POLICIES)
+                        break;
             }
 
+            if (index == 0)
+                this.healthCheckPolicies = null;
+        }
+    }
 
     protected LoadBalancerTO() {
     }
@@ -126,6 +158,10 @@ public class LoadBalancerTO {
         return stickinessPolicies;
     }
 
+    public HealthCheckPolicyTO[] getHealthCheckPolicies() {
+        return healthCheckPolicies;
+    }
+
     public DestinationTO[] getDestinations() {
         return destinations;
     }
@@ -158,6 +194,65 @@ public class LoadBalancerTO {
             this._methodName = methodName;
             this._paramsList = paramsList;
         }
+     }
+
+    public static class HealthCheckPolicyTO {
+        private String pingPath;
+        private String description;
+        private int responseTime;
+        private int healthcheckInterval;
+        private int healthcheckThresshold;
+        private int unhealthThresshold;
+        private boolean revoke = false;
+
+        public HealthCheckPolicyTO(String pingPath, String description, int responseTime, int healthcheckInterval,
+                int healthcheckThresshold, int unhealthThresshold, boolean revoke) {
+
+            this.description = description;
+            this.pingPath = pingPath;
+            this.responseTime = responseTime;
+            this.healthcheckInterval = healthcheckInterval;
+            this.healthcheckThresshold = healthcheckThresshold;
+            this.unhealthThresshold = unhealthThresshold;
+            this.revoke = revoke;
+        }
+
+        public HealthCheckPolicyTO() {
+
+        }
+
+        public String getpingPath() {
+            return pingPath;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public int getResponseTime() {
+            return responseTime;
+        }
+
+        public int getHealthcheckInterval() {
+            return healthcheckInterval;
+        }
+
+        public int getHealthcheckThresshold() {
+            return healthcheckThresshold;
+        }
+
+        public int getUnhealthThresshold() {
+            return unhealthThresshold;
+        }
+
+        public void setRevoke(boolean revoke) {
+            this.revoke = revoke;
+        }
+
+        public boolean isRevoked() {
+            return revoke;
+        }
+
     }
 
     public static class DestinationTO {
@@ -165,6 +260,7 @@ public class LoadBalancerTO {
         int destPort;
         boolean revoked;
         boolean alreadyAdded;
+        String monitorState;
         public DestinationTO(String destIp, int destPort, boolean revoked, boolean alreadyAdded) {
             this.destIp = destIp;
             this.destPort = destPort;
@@ -189,6 +285,14 @@ public class LoadBalancerTO {
 
         public boolean isAlreadyAdded() {
             return alreadyAdded;
+        }
+
+        public void setMonitorState(String state) {
+            this.monitorState = state;
+        }
+
+        public String getMonitorState() {
+            return monitorState;
         }
     }
     public static class CounterTO implements Serializable {

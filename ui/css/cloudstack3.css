@@ -1737,16 +1737,64 @@ div.list-view td.state.off span {
   text-indent: 0;
 }
 
-.detail-group .main-groups table td.value span {
+.detail-group .main-groups table td.value > span {
   display: block;
   height: 30px;
   overflow: auto;
   position: relative;
   top: 9px;
+  float: left;
+  width: 245px;
 }
 
-.detail-group .main-groups table td.value span {
-  width: 355px;
+.detail-group .main-groups table td.value .view-all {
+  cursor: pointer;
+  /*[empty]height:;*/
+  border-left: 1px solid #9FA2A5;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
+  background: url(../images/sprites.png) no-repeat 100% -398px;
+  float: right;
+  margin: 1px 0 0;
+  padding: 8px 33px 6px 15px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover {
+  background-position: 100% -431px;
+}
+
+/*List-view: subselect dropdown*/
+.list-view .subselect {
+  width: 116px;
+  display: block;
+  float: left;
+  background: url(../images/bg-gradients.png) 0px -42px;
+  padding: 0;
+  margin: 8px 0 1px 7px;
+  clear: both;
+  border: 1px solid #A8A7A7;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.list-view .subselect span {
+  margin: 4px 0 0 12px;
+}
+
+.list-view .subselect select {
+  width: 85%;
+  margin: 5px 0 4px;
+  font-size: 10px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover {
+  background-position: 100% -431px;
 }
 
 .panel.always-maximized .detail-group .main-groups table td.value span {
@@ -3664,6 +3712,21 @@ Dialogs*/
   -webkit-box-shadow: inset 0px 1px 0px #727272;
   -o-box-shadow: inset 0px 1px 0px #727272;
   float: left;
+}
+
+.ui-dialog div.form-container div.value input.hasDatepicker {
+  color: #2F5D86;
+  cursor: pointer;
+  font-size: 13px;
+  text-indent: 3px;
+}
+
+.ui-dialog div.form-container div.value input.hasDatepicker:hover {
+  /*+box-shadow:inset 0px 0px 3px;*/
+  -moz-box-shadow: inset 0px 0px 3px;
+  -webkit-box-shadow: inset 0px 0px 3px;
+  -o-box-shadow: inset 0px 0px 3px;
+  box-shadow: inset 0px 0px 3px;
 }
 
 .ui-dialog div.form-container div.value .range-edit {
@@ -7294,6 +7357,33 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #C3E0FC;
 }
 
+/*List-view: subselect dropdown*/
+.list-view .subselect {
+  width: 116px;
+  display: block;
+  float: left;
+  background: url(../images/bg-gradients.png) 0px -42px;
+  padding: 0;
+  margin: 8px 0 1px 7px;
+  clear: both;
+  border: 1px solid #A8A7A7;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.list-view .subselect span {
+  margin: 4px 0 0 12px;
+}
+
+.list-view .subselect select {
+  width: 85%;
+  margin: 5px 0 4px;
+  font-size: 10px;
+}
+
 /*Multi-edit*/
 div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit thead tr th,
 div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit tbody tr td {
@@ -7682,6 +7772,23 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .ui-tabs-panel .add-by .selection label {
   margin: 0 22px 0 0;
+}
+
+/** Fix long table overflow*/
+.detail-view .multi-edit {
+  width: 100%;
+}
+
+.detail-view .multi-edit table {
+  width: 97%;
+  max-width: inherit;
+}
+
+.detail-view .multi-edit table tr th,
+.detail-view .multi-edit table tr td {
+  width: 87px !important;
+  min-width: 87px !important;
+  max-width: 87px !important;
 }
 
 /** Header fields*/
@@ -10502,6 +10609,37 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
   width: 65px;
 }
 
+/*HEALTH CHECK*/
+.ui-dialog .health-check {
+  height: 295px !important;
+  padding-bottom: 93px;
+}
+
+div.ui-dialog div.health-check div.health-check-description {
+  color: #808080;
+}
+
+div.ui-dialog div.health-check div.form-container form div.form-item {
+  width: 58% margin-left:116px;
+  margin-top: -16px;
+  margin-bottom: 30px;
+}
+
+div.ui-dialog div.health-check div.health-check-config-title {
+  float: left;
+  color: #808080;
+  font-size: 17px;
+  margin-left: 15px;
+}
+
+div.ui-dialog div.health-check div.health-check-advanced-title {
+  float: left;
+  color: #808080;
+  font-size: 17px;
+  margin-left: 15px;
+  margin-top: -70px;
+}
+
 /*Autoscaler*/
 .ui-dialog div.autoscaler {
   overflow: auto;
@@ -11002,6 +11140,144 @@ div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
 
 div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
   font-size: 11px;
+}
+
+/*UI datepicker*/
+.ui-datepicker {
+  background: #FFFFFF 0px -2470px;
+  width: 300px;
+  height: auto;
+  overflow: hidden;
+  padding: 4px 0 0;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  /*+box-shadow:0px 3px 8px #000000;*/
+  -moz-box-shadow: 0px 3px 8px #000000;
+  -webkit-box-shadow: 0px 3px 8px #000000;
+  -o-box-shadow: 0px 3px 8px #000000;
+  box-shadow: 0px 3px 8px #000000;
+  display: none;
+}
+
+.ui-datepicker .ui-datepicker-title {
+  width: 100%;
+  margin: auto;
+}
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+  font-size: 13px;
+  color: #FFFFFF;
+  /*+box-shadow:0px 1px 5px #444444;*/
+  -moz-box-shadow: 0px 1px 5px #444444;
+  -webkit-box-shadow: 0px 1px 5px #444444;
+  -o-box-shadow: 0px 1px 5px #444444;
+  box-shadow: 0px 1px 5px #444444;
+  /*+text-shadow:0px -1px 1px #050505;*/
+  -moz-text-shadow: 0px -1px 1px #050505;
+  -webkit-text-shadow: 0px -1px 1px #050505;
+  -o-text-shadow: 0px -1px 1px #050505;
+  text-shadow: 0px -1px 1px #050505;
+  padding: 6px;
+  margin: 6px 13px 6px 14px;
+  font-size: 12px;
+  background: url(../images/bg-gradients.png) 0px -182px;
+  cursor: pointer;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.ui-datepicker .ui-datepicker-prev:hover,
+.ui-datepicker .ui-datepicker-next:hover {
+  /*+box-shadow:inset 0px 0px 10px #000000;*/
+  -moz-box-shadow: inset 0px 0px 10px #000000;
+  -webkit-box-shadow: inset 0px 0px 10px #000000;
+  -o-box-shadow: inset 0px 0px 10px #000000;
+  box-shadow: inset 0px 0px 10px #000000;
+}
+
+.ui-datepicker .ui-datepicker-prev {
+  float: left;
+}
+
+.ui-datepicker .ui-datepicker-next {
+  float: right;
+}
+
+.ui-datepicker .ui-datepicker-title .ui-datepicker-month {
+  width: 85px;
+  font-size: 16px;
+  color: #2C363F;
+}
+
+.ui-datepicker .ui-datepicker-title .ui-datepicker-year {
+}
+
+.ui-datepicker .ui-datepicker-title {
+  text-align: center;
+  width: 188px;
+  height: 19px;
+  padding: 3px 0 0;
+  /*+placement:shift 0px 6px;*/
+  position: relative;
+  left: 0px;
+  top: 6px;
+}
+
+.ui-datepicker table {
+  width: 277px;
+  height: 9px;
+}
+
+.ui-datepicker table th,
+.ui-datepicker table td {
+  min-width: 24px;
+  text-align: center;
+  border: 1px solid #B9B6B6;
+  text-indent: 0px;
+  padding: 7px 0;
+  /*[empty]+placement:;*/
+}
+
+.ui-datepicker table td {
+  cursor: pointer;
+}
+
+.ui-datepicker table td.ui-state-disabled,
+.ui-datepicker table td.ui-state-disabled:hover {
+  background-color: #DCDCDC;
+  /*+box-shadow:none;*/
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+.ui-datepicker table td a {
+  text-decoration: none;
+  color: #485867;
+  font-size: 12px;
+}
+
+.ui-datepicker table td:hover {
+  background-color: #6A839A;
+  /*+box-shadow:inset 0px 0px 4px #6B6B6B;*/
+  -moz-box-shadow: inset 0px 0px 4px #6B6B6B;
+  -webkit-box-shadow: inset 0px 0px 4px #6B6B6B;
+  -o-box-shadow: inset 0px 0px 4px #6B6B6B;
+  box-shadow: inset 0px 0px 4px #6B6B6B;
+}
+
+.ui-datepicker table td:hover a {
+  color: #FFFFFF;
+  text-shadow: 0px -1px #000000;
 }
 
 /*Plugins listing*/

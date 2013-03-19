@@ -66,9 +66,6 @@ public class AccountVO implements Account {
     @Column(name="default_zone_id")
     private Long defaultZoneId = null;
 
-    @Column(name="region_id")
-    private int regionId;
-    
     public AccountVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -78,14 +75,13 @@ public class AccountVO implements Account {
     	this.uuid = UUID.randomUUID().toString();
     }
     
-    public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid, int regionId) {
+    public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid) {
         this.accountName = accountName;
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
         this.state = State.enabled;
         this.uuid = uuid;
-        this.regionId = regionId;
     }
 
     public void setNeedsCleanup(boolean value) {
@@ -183,11 +179,4 @@ public class AccountVO implements Account {
     	this.uuid = uuid;
     }
 
-	public int getRegionId() {
-		return regionId;
-	}
-
-	public void setRegionId(int regionId) {
-		this.regionId = regionId;
-	}
 }

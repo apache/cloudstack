@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupC
 import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -45,5 +46,6 @@ public interface SecurityGroupService {
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
 
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
-
+    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId,
+            String secondaryIp, boolean ruleAction);
 }

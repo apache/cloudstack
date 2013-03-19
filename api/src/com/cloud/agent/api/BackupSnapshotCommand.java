@@ -35,6 +35,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private SwiftTO swift;
     private S3TO s3;
     StorageFilerTO pool;
+    private Long secHostId;
 
     protected BackupSnapshotCommand() {
 
@@ -49,12 +50,14 @@ public class BackupSnapshotCommand extends SnapshotCommand {
      * @param firstBackupUuid          This is the backup of the first ever snapshot taken by the volume.
      * @param isFirstSnapshotOfRootVolume true if this is the first snapshot of a root volume. Set the parent of the backup to null.
      * @param isVolumeInactive         True if the volume belongs to a VM that is not running or is detached.
+     * @param secHostId                This is the Id of the secondary storage.
      */
     public BackupSnapshotCommand(String secondaryStoragePoolURL,
                                  Long   dcId,
                                  Long   accountId,
                                  Long   volumeId,
                                  Long   snapshotId,
+                                 Long   secHostId,
                                  String volumePath,
                                  StoragePool pool,
                                  String snapshotUuid,
@@ -71,6 +74,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.prevBackupUuid = prevBackupUuid;
         this.isVolumeInactive = isVolumeInactive;
         this.vmName = vmName;
+        this.secHostId = secHostId;
         setVolumePath(volumePath);
         setWait(wait);
     }
@@ -111,4 +115,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         return snapshotId;
     }
 
+    public Long getSecHostId() {
+        return secHostId;
+    }
 }

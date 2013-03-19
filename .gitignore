@@ -59,6 +59,7 @@ tools/cli/build/
 *.iso
 *.tar.gz
 *.tgz
+target-eclipse
 awsapi/modules/*
 !.gitignore
 .classpath

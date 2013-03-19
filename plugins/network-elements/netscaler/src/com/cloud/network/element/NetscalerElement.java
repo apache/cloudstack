@@ -262,7 +262,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         lbCapabilities.put(Capability.SupportedStickinessMethods, stickyMethodList);
 
         lbCapabilities.put(Capability.ElasticLb, "true");
-
+        //Setting HealthCheck Capability to True for Netscaler element
+        lbCapabilities.put(Capability.HealthCheckPolicy, "true");
         capabilities.put(Service.Lb, lbCapabilities);
 
         Map<Capability, String> staticNatCapabilities = new HashMap<Capability, String>();
@@ -627,14 +628,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
-        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(network);
-        if (lbDevice == null) {
-            s_logger.error("Cannot find external load balanacer for network " + network.getName());
-            return null;
-        }
+
         if (_networkMgr.isNetworkInlineMode(network)) {
             return getIpDeployerForInlineMode(network);
         }
+
         return this;
     }
 
@@ -822,6 +820,20 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return null;
     }
 
+    public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
+
+        if (canHandle(network, Service.Lb)) {
+            try {
+                return getLBHealthChecks(network, lbrules);
+            } catch (ResourceUnavailableException e) {
+                s_logger.error("Error in getting the LB Rules from NetScaler " + e);
+            }
+        } else {
+            s_logger.error("Network cannot handle to LB service ");
+        }
+        return null;
+    }
+
     @Override
     public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd) {
 
@@ -833,5 +845,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         }
         return false;
+    }
+
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
+            throws ResourceUnavailableException {
+        return super.getLBHealthChecks(network, rules);
     }
 }

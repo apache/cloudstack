@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloudstack-usage/lib/cloudstack-usage.jar
+/usr/share/cloudstack-usage/lib/*
+/usr/share/cloudstack-usage/plugins
 /etc/init.d/cloudstack-usage
 /var/log/cloudstack/usage
 /etc/cloudstack/usage/*

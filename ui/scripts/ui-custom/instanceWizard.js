@@ -91,7 +91,8 @@
           options = options ? options : {};
 
           $(data).each(function() {
-            var id = this[fields.id];
+            var item = this;
+            var id = item[fields.id];
 
             var $select = $('<div>')
                   .addClass('select')
@@ -107,17 +108,22 @@
                       .val(id)
                       .click(function() {
                         var $select = $(this).closest('.select');
+                        var isSingleSelect = $select.hasClass('single-select');
                         var $radio = $select.find('input[type=radio]');
                         var $newNetwork = $(this).closest('.content').find('.select.new-network');
                         var $otherSelects = $select.siblings().filter(':visible');
                         var isCheckbox = $(this).attr('type') == 'checkbox';
-                        var isSingleSelect = $(this).closest('.select-container').hasClass('single-select');
 
                         if (isCheckbox) {
-                          if ((isSingleSelect || !$otherSelects.size()) &&
-                              $newNetwork.find('input[type=checkbox]').is(':unchecked')) {
-                            $otherSelects.find('input[type=checkbox]').attr('checked', false);
+                          if (isSingleSelect) {
+                            $select.siblings('.single-select:visible').find('input[type=checkbox]')
+                              .attr('checked', false);
+                            
+                            $(this).closest('.select').find('input[type=radio]').click();
+                          }
 
+                          if ((!$otherSelects.size()) &&
+                                     $newNetwork.find('input[type=checkbox]').is(':unchecked')) {
                             // Set as default
                             $(this).closest('.select').find('input[type=radio]').click();
                           }
@@ -144,6 +150,10 @@
 
             $selects.append($select);
 
+            if (item._singleSelect) {
+              $select.addClass('single-select');
+            }
+
             if (options.secondary) {
               var $secondary = $('<div>').addClass('secondary-input').append(
                 $('<input>')
@@ -162,6 +172,11 @@
 
                     if ($(this).closest('.select-container').hasClass('single-select')) {
                       $(this).closest('.select').siblings().find('input[type=checkbox]')
+                        .attr('checked', false);
+                    }
+
+                    if ($select.hasClass('single-select')) {
+                      $select.siblings('.single-select:visible').find('input[type=checkbox]')
                         .attr('checked', false);
                     }
                   })
@@ -614,7 +629,7 @@
                   });
 
                   // 'No VPC' option
-                  $('<option>').attr('value', '-1').html('None').prependTo($vpcSelect);
+                  $('<option>').attr('value', '-1').html(_l('ui.listView.filters.all')).prependTo($vpcSelect);
 
                   $vpcSelect.val(-1);
                   

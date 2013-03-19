@@ -40,7 +40,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer602GuestOsType(stdType, bootFromCD);
+        return CitrixHelper.getXenServer610GuestOsType(stdType, bootFromCD);
     }
 
     @Override

@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -854,11 +855,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;
     }
 
-    @Override
-    public boolean removeVmSecondaryIps(long vmId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     @Override
     public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
@@ -870,5 +866,19 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     public List<? extends Nic> listNics(ListNicsCmd listNicsCmd) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc,
+            Pod pod, Account caller, String requestedIp)
+            throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean removeVmSecondaryIpsOfNic(long nicId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

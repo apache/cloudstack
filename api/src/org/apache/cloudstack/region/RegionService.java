@@ -43,22 +43,18 @@ public interface RegionService {
 	 * @param id
 	 * @param name
 	 * @param endPoint
-	 * @param apiKey
-	 * @param secretKey
 	 * @return Return added Region object
 	 */
-	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+	public Region addRegion(int id, String name, String endPoint);
 	
 	/**
 	 * Update details of the Region with specified Id
 	 * @param id
 	 * @param name
 	 * @param endPoint
-	 * @param apiKey
-	 * @param secretKey
 	 * @return Return updated Region object
 	 */
-	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey);
+	public Region updateRegion(int id, String name, String endPoint);
 	
 	/**
 	 * @param id

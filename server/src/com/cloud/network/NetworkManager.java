@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -339,8 +341,9 @@ public interface NetworkManager  {
      public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
      throws InsufficientAddressCapacityException;
 
-     boolean removeVmSecondaryIps(long vmId);
 
     List<? extends Nic> listVmNics(Long vmId, Long nicId);
+    String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
+    boolean removeVmSecondaryIpsOfNic(long nicId);
 
 }

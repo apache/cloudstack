@@ -16,6 +16,20 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.*;
 import com.cloud.api.response.F5LoadBalancerResponse;
@@ -467,4 +481,11 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         }
         return this;
     }
+
+	@Override
+	public List<LoadBalancerTO> updateHealthChecks(Network network,
+			List<LoadBalancingRule> lbrules) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

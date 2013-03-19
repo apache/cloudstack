@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
@@ -118,7 +119,12 @@ import com.cloud.network.*;
 import com.cloud.network.Network.Service;
 import com.cloud.network.as.*;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.vpc.PrivateGateway;
@@ -201,6 +207,11 @@ public interface ResponseGenerator {
     LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
+
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies,
+            LoadBalancer lb);
+
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb);
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 

@@ -257,4 +257,6 @@ public interface NetworkModel {
 	void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
 
 	void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException;
+
+	String getStartIpv6Address(long id);
 }
