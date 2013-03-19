@@ -511,13 +511,13 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), Op.IN);
 
         SearchCriteria<VpnUserVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         //list only active users
-        sc.setParameters("state", State.Active);
+        sc.setParameters("state", State.Active, State.Add);
 
         if (id != null) {
             sc.setParameters("id", id);

@@ -400,20 +400,28 @@ cloudStack.converters = {
     case 4 : return _l('label.public.ips');
     case 5 : return _l('label.management.ips');
     case 6 : return _l('label.secondary.storage');
-    case 7 : return _l('label.vlan');
-    case 8 : return _l('label.direct.ips');
-    case 9 : return _l('label.local.storage');
+    case 7 : return _l('label.host');
+    case 9 : return _l('label.domain.router');
+    case 10 : return _l('label.console.proxy');
 
-    // These are old values -- can be removed in the future 
-    case 10 : return "Routing Host";
-    case 11 : return "Storage";
-    case 12 : return "Usage Server";
-    case 13 : return "Management Server";
-    case 14 : return "Domain Router";
-    case 15 : return "Console Proxy";
-    case 16 : return "User VM";
-    case 17 : return "VLAN";
-    case 18 : return "Secondary Storage VM";
+    // These are old values -- can be removed in the future
+    case 8 : return "User VM";
+    case 11 : return "Routing Host";
+    case 12 : return "Storage";
+    case 13 : return "Usage Server";
+    case 14 : return "Management Server";
+    case 15 : return "Domain Router";
+    case 16 : return "Console Proxy";
+    case 17 : return "User VM";
+    case 18 : return "VLAN";
+    case 19 : return "Secondary Storage VM";
+    case 20 : return "Usage Server";
+    case 21 : return "Storage";
+    case 22 : return "Update Resource Count";
+    case 23 : return "Usage Sanity Result";
+    case 24 : return "Direct Attached Public IP";
+    case 25 : return "Local Storage";
+    case 26 : return "Resource Limit Exceeded";
     }
   },
   convertByType: function(alertCode, value) {

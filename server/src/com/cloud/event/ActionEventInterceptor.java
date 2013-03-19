@@ -19,22 +19,29 @@ package com.cloud.event;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
+import org.apache.log4j.Logger;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 
 import com.cloud.user.UserContext;
+import com.cloud.utils.component.ComponentMethodProxyCache;
 
 public class ActionEventInterceptor {
+	private static final Logger s_logger = Logger.getLogger(ActionEventInterceptor.class);
 
 	public ActionEventInterceptor() {
 	}
 
 	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
-        Method targetMethod = methodSignature.getMethod();	
-        if(needToIntercept(targetMethod)) {
+		
+		// Note: AOP for ActionEvent is triggered annotation, no need to check the annotation on method again
+        Method targetMethod = ComponentMethodProxyCache.getTargetMethod(
+        	methodSignature.getMethod(), call.getTarget());	
+        
+        if(targetMethod != null) {
             EventVO event = interceptStart(targetMethod);
-        	
+        			
             boolean success = true;
 			Object ret = null;
 			try {
@@ -49,6 +56,8 @@ public class ActionEventInterceptor {
 	            }
 			}
 			return ret;
+        } else {
+        	s_logger.error("Unable to find the proxied method behind. Method: " + methodSignature.getMethod().getName());
         }
         return call.proceed();
 	}
