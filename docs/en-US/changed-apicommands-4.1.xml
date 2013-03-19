@@ -34,15 +34,139 @@
         <row>
           <entry>
             <para>createNetworkOffering</para>
+          </entry>
+          <entry>
+            <para>The following request parameters have been added:</para>
+            <itemizedlist>
+              <listitem>
+                <para>isPersistent</para>
+              </listitem>
+              <listitem>
+                <para>startipv6</para>
+              </listitem>
+              <listitem>
+                <para>endipv6</para>
+              </listitem>
+              <listitem>
+                <para>ip6gateway</para>
+              </listitem>
+              <listitem>
+                <para>ip6cidr</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry>
             <para>listNetworkOfferings</para>
             <para>listNetworks</para>
           </entry>
           <entry>
-            <para>The following request parameters is added: isPersistent.</para>
-            <para>This parameter determines if the network or network offering created or listed by
-              using this offering are persistent or not.</para>
+            <para>The following request parameters has been added: isPersistent</para>
+            <para>This parameter determines if the network or network offering listed by using this
+              offering are persistent or not.</para>
           </entry>
         </row>
+        <row>
+          <entry>
+            <para>createVlanIpRange</para>
+          </entry>
+          <entry>
+            <para>The following request parameters have been added:</para>
+            <itemizedlist>
+              <listitem>
+                <para>startipv6</para>
+              </listitem>
+              <listitem>
+                <para>endipv6</para>
+              </listitem>
+              <listitem>
+                <para>ip6gateway</para>
+              </listitem>
+              <listitem>
+                <para>ip6cidr</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>deployVirtualMachine</para>
+          </entry>
+          <entry>
+            <para>The following parameter has been added: ip6Address.</para>
+            <para>The following parameter is updated to accept the IPv6 address:
+              iptonetworklist.</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>CreateZoneCmd</para>
+          </entry>
+          <entry>
+            <para>The following parameter are added: ip6dns1, ip6dns2.</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listRouters</para>
+            <para>listVirtualMachines</para>
+          </entry>
+          <entry>
+            <para>For nic responses, the following fields has been added.</para>
+            <itemizedlist>
+              <listitem>
+                <para>ip6address</para>
+              </listitem>
+              <listitem>
+                <para>ip6gateway</para>
+              </listitem>
+              <listitem>
+                <para>ip6cidr</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listVlanIpRanges</para>
+          </entry>
+          <entry>
+            <para>For nic responses, the following fields has been added.</para>
+            <itemizedlist>
+              <listitem>
+                <para>startipv6</para>
+              </listitem>
+              <listitem>
+                <para>endipv6</para>
+              </listitem>
+              <listitem>
+                <para>ip6gateway</para>
+              </listitem>
+              <listitem>
+                <para>ip6cidr</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listRouters</para>
+            <para>listZones</para>
+          </entry>
+          <entry>
+            <para>For DomainRouter and DataCenter response, the following fields have been
+              added.</para>
+            <itemizedlist>
+              <listitem>
+                <para>ip6dns1</para>
+              </listitem>
+              <listitem>
+                <para>ip6dns2</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+          </row>
         <row>
           <entry>
             <para>addF5LoadBalancer</para>

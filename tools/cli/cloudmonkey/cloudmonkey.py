@@ -489,7 +489,7 @@ def main():
         print __description__, "(%s)" % __projecturl__
 
     shell = CloudMonkeyShell(sys.argv[0], options.cfile)
-    if len(sys.argv) > 1:
+    if len(args) > 1:
         shell.onecmd(' '.join(args))
     else:
         shell.cmdloop()
