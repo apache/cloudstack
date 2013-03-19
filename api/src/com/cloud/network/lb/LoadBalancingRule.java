@@ -128,6 +128,10 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
         return lb;
     }
 
+    public void setDestinations(List<LbDestination> destinations) {
+        this.destinations = destinations;
+    }
+
     public List<LbDestination> getDestinations() {
         return destinations;
     }

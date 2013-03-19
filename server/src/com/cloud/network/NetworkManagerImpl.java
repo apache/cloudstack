@@ -3045,26 +3045,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
-        // remove all LB rules for the network
-        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
-        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-        for (LoadBalancerVO lb : lbs) {
-            s_logger.trace("Marking lb rule " + lb + " with Revoke state");
-            lb.setState(FirewallRule.State.Revoke);
-            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-            List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-            // mark all destination with revoke state
-            for (LbDestination dst : dstList) {
-                s_logger.trace("Marking lb destination " + dst + " with Revoke state");
-                dst.setRevoked(true);
-            }
-
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
-            lbRules.add(loadBalancing);
-        }
-
         try {
-            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbRules)) {
+            if (!_lbMgr.revokeLoadBalancersForNetwork(networkId)) {
                 s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
                 success = false;
             }

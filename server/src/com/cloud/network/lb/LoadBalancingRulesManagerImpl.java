@@ -887,18 +887,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (apply) {
             try {
-                if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
-                    // Get the associated VmGroup
-                    AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(loadBalancerId, null).get(0);
-                    if (!applyAutoScaleConfig(lb, vmGroup,vmGroup.getState())) {
-                        s_logger.warn("Unable to apply the autoscale config");
-                        return false;
-                    }
-                } else {
-                    if (!applyLoadBalancerConfig(loadBalancerId)) {
-                        s_logger.warn("Unable to apply the load balancer config");
-                        return false;
-                    }
+                if (!applyLoadBalancerConfig(loadBalancerId)) {
+                    s_logger.warn("Unable to apply the load balancer config");
+                    return false;
                 }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
@@ -1142,6 +1133,20 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
+    public boolean revokeLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        if (lbs != null) {
+            for(LoadBalancerVO lb : lbs) { // called during restart, not persisting state in db
+                lb.setState(FirewallRule.State.Revoke);
+            }
+            return applyLoadBalancerRules(lbs, false); // called during restart, not persisting state in db
+        } else {
+            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to revoke");
+            return true;
+        }
+    }
+
+    @Override
     public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
         if (lbs != null) {
@@ -1170,16 +1175,30 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return handled;
     }
 
+    private LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
+
+        List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
+        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, null, policyList);
+
+        if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(lb.getId())) {
+            // Get the associated VmGroup
+            AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(lb.getId(), null).get(0);
+            LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, vmGroup.getState(), lb);
+            loadBalancing.setAutoScaleVmGroup(lbAutoScaleVmGroup);
+        } else {
+            List<LbDestination> dstList = getExistingDestinations(lb.getId());
+            loadBalancing.setDestinations(dstList);
+        }
+
+        return loadBalancing;
+    }
+
     @DB
     protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs, boolean updateRulesInDB) throws ResourceUnavailableException {
         Transaction txn = Transaction.currentTxn();
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         for (LoadBalancerVO lb : lbs) {
-            List<LbDestination> dstList = getExistingDestinations(lb.getId());
-            List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
-            rules.add(loadBalancing);
+            rules.add(getLoadBalancerRuleToApply(lb));
         }
 
         if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {

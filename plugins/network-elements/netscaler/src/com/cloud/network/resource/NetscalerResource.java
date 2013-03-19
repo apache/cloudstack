@@ -1486,23 +1486,11 @@ public class NetscalerResource implements ServerResource {
         if(!isAutoScaleSupportedInNetScaler()) {
             throw new ExecutionException("AutoScale not supported in this version of NetScaler");
         }
-        if(vmGroupTO.getState().equals("new")) {
-            assert !loadBalancer.isRevoked();
-            createAutoScaleConfig(loadBalancer);
-        }
-        else if(loadBalancer.isRevoked() || vmGroupTO.getState().equals("revoke")) {
+        if(loadBalancer.isRevoked() || vmGroupTO.getState().equals("revoke")) {
             removeAutoScaleConfig(loadBalancer);
         }
-        else if(vmGroupTO.getState().equals("enabled")) {
-            assert !loadBalancer.isRevoked();
-            enableAutoScaleConfig(loadBalancer, false);
-        }
-        else if(vmGroupTO.getState().equals("disabled")) {
-            assert !loadBalancer.isRevoked();
-            disableAutoScaleConfig(loadBalancer, false);
-        } else {
-            ///// This should never happen
-            throw new ExecutionException("Unknown AutoScale Vm Group State :" + vmGroupTO.getState());
+        else {
+            createAutoScaleConfig(loadBalancer);
         }
         // AutoScale APIs are successful executed, now save the configuration.
         saveConfiguration();
@@ -1557,7 +1545,14 @@ public class NetscalerResource implements ServerResource {
         }
 
         // Create the autoscale config
-        enableAutoScaleConfig(loadBalancerTO, false);
+        if(!loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+            // on restart of network, there might be vmgrps in disabled state, no need to create autoscale config for them
+            enableAutoScaleConfig(loadBalancerTO, false);
+        }
+        else if(loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+            disableAutoScaleConfig(loadBalancerTO, false);
+        }
+
         return true;
     }
 
