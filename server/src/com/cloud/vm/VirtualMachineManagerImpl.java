@@ -2670,8 +2670,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Long srcHostId = vm.getHostId();
         Long oldSvcOfferingId = vm.getServiceOfferingId();
         if (srcHostId == null) {
-            s_logger.debug("Unable to scale the vm because it doesn't have a host id: " + vm);
-            return vm;
+            throw new CloudRuntimeException("Unable to scale the vm because it doesn't have a host id");
         }
         Host host = _hostDao.findById(srcHostId);
         DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
@@ -2908,24 +2907,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vm.setServiceOfferingId(newServiceofferingId);
                 _capacityMgr.allocateVmCapacity(vm, false); // lock the new capacity
             }
-            //vm.setNewSvcOfferingId(newServiceOffering.getId()); // Capacity update should be delta (new - old) offering
-            //changeState(vm, Event.ReconfiguringRequested, dstHostId, work, Step.Reconfiguring);
 
             Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
-            if (!reconfigureAnswer.getResult()) {
-                s_logger.error("Unable to reconfigure due to " + reconfigureAnswer.getDetails());
-                return null;
+            if (reconfigureAnswer == null || !reconfigureAnswer.getResult()) {
+                s_logger.error("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
+                throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
             }
 
-            //changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Done);
             success = true;
         } catch (OperationTimedoutException e) {
             throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
         } catch (AgentUnavailableException e) {
             throw e;
         } finally{
-            work.setStep(Step.Done);
-            _workDao.update(work.getId(), work);
+           // work.setStep(Step.Done);
+            //_workDao.update(work.getId(), work);
             if(!success){
                 _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); // release the new capacity
                 vm.setServiceOfferingId(oldServiceOffering.getId());
