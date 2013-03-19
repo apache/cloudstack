@@ -185,6 +185,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 nicResponse.setGateway(userVm.getGateway());
                 nicResponse.setNetmask(userVm.getNetmask());
                 nicResponse.setNetworkid(userVm.getNetworkUuid());
+                nicResponse.setNetworkName(userVm.getNetworkName());
                 nicResponse.setMacAddress(userVm.getMacAddress());
                 nicResponse.setIp6Address(userVm.getIp6Address());
                 nicResponse.setIp6Gateway(userVm.getIp6Gateway());
@@ -246,6 +247,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             nicResponse.setGateway(uvo.getGateway());
             nicResponse.setNetmask(uvo.getNetmask());
             nicResponse.setNetworkid(uvo.getNetworkUuid());
+            nicResponse.setNetworkName(uvo.getNetworkName());
             nicResponse.setMacAddress(uvo.getMacAddress());
             nicResponse.setIp6Address(uvo.getIp6Address());
             nicResponse.setIp6Gateway(uvo.getIp6Gateway());
