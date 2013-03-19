@@ -25,10 +25,10 @@ class AccountFactory(CloudStackBaseFactory):
     FACTORY_FOR = Account.Account
 
     accounttype = 0
+    firstname = factory.Sequence(lambda n: random_gen())
+    lastname = factory.Sequence(lambda n: random_gen())
     email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname).lower())
-    firstname = 'fname-'+random_gen()
-    lastname = 'lname-'+random_gen()
-    username = firstname + lastname
+    username = factory.Sequence(lambda n: random_gen())
 
     # Password Encoding
     mdf = hashlib.md5()

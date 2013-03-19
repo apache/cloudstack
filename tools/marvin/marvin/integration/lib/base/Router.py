@@ -24,8 +24,8 @@ from marvin.cloudstackAPI import startRouter
 class Router(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(**kwargs)
+    def __init__(self, items):
+        self.__dict__.update(items)
 
 
     def destroy(self, apiclient, id, **kwargs):

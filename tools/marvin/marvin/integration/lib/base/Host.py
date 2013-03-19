@@ -24,8 +24,8 @@ from marvin.cloudstackAPI import deleteHost
 class Host(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(**kwargs)
+    def __init__(self, items):
+        self.__dict__.update(items)
 
 
     def add(self, apiclient, username, podid, url, hypervisor, zoneid, password, **kwargs):

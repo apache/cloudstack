@@ -22,4 +22,6 @@ class CloudStackBaseFactory(factory.Factory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+        if len(args) == 0:
+            return target_class(kwargs)
         return target_class(*args, **kwargs)

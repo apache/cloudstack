@@ -28,16 +28,19 @@ class AccountFactoryTest(unittest.TestCase):
         af = AccountFactory.AccountFactory()
         accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
+        self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
     def test_adminAccountFactory(self):
         af = AccountFactory.AccountFactory()
         accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
+        self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
     def test_userAccountFactoryCustomArgs(self):
         af = AccountFactory.AccountFactory(firstname='test', lastname='test')
         accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
+        self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
     def tearDown(self):
         pass

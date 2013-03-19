@@ -25,8 +25,8 @@ from marvin.cloudstackAPI import destroySystemVm
 class SystemVm(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(**kwargs)
+    def __init__(self, items):
+        self.__dict__.update(items)
 
 
     def migrate(self, apiclient, hostid, virtualmachineid, **kwargs):

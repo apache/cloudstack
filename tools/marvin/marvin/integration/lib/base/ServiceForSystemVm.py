@@ -20,8 +20,8 @@ from marvin.cloudstackAPI import changeServiceForSystemVm
 class ServiceForSystemVm(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(**kwargs)
+    def __init__(self, items):
+        self.__dict__.update(items)
 
 
     def change(self, apiclient, id, serviceofferingid, **kwargs):

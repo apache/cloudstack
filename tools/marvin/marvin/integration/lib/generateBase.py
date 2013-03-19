@@ -116,8 +116,8 @@ def write_entity_classes(entities):
         imports.append('from marvin.integration.lib.base import CloudStackEntity')
         body.append('class %s(CloudStackEntity.CloudStackEntity):'%entity)
         body.append('\n')
-        body.append(tabspace + 'def __init__(self, **kwargs):')
-        body.append(tabspace*2 + 'self.__dict__.update(**kwargs)')
+        body.append(tabspace + 'def __init__(self, items):')
+        body.append(tabspace*2 + 'self.__dict__.update(items)')
         body.append('\n')
         for action, details in actions.iteritems():
             imports.append('from marvin.cloudstackAPI import %s'%details['apimodule'])

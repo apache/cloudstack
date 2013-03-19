@@ -23,8 +23,8 @@ from marvin.cloudstackAPI import deleteNetworkServiceProvider
 class NetworkServiceProvider(CloudStackEntity.CloudStackEntity):
 
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(**kwargs)
+    def __init__(self, items):
+        self.__dict__.update(items)
 
 
     def add(self, apiclient, physicalnetworkid, name, **kwargs):
