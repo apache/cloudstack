@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -25,6 +25,7 @@
   <section id="whats-new-in-api-4.1">
     <title>What's New in the API for 4.1</title>
     <xi:include href="add-remove-nic.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="ipv6-support.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="vmx-settings-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="reset-ssh-key-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="changed-apicommands-4.1.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
