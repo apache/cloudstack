@@ -55,26 +55,34 @@
             fields: {
               id: { label: 'label.id', validation: { required: true } },
               name: { label: 'label.name', validation: { required: true } },
-              endpoint: { label: 'label.endpoint', validation: { required: true } },
-              userapikey: { label: 'label.api.key' },
-              userapisecretkey: { label: 'label.s3.secret_key' }
+              endpoint: { label: 'label.endpoint', validation: { required: true } }             
             }
           },
-          action: function(args) {
+          action: function(args) {					  
+						var data = {							
+							id: args.data.id,
+							name: args.data.name,
+							endpoint: args.data.endpoint
+						};		
+						
             $.ajax({
               url: createURL('addRegion'),
-              data: args.data,
-              success: function(json) {
-                var jobID = json.addregionresponse.jobid;
-
-                args.response.success({ _custom: { jobId: jobID }});
-                $(window).trigger('cloudStack.refreshRegions');
+              data: data,
+              success: function(json) {							 
+                var item = json.addregionresponse.region;
+                args.response.success({data: item});               
+                //$(window).trigger('cloudStack.refreshRegions');
               },
               error: function(json) {
                 args.response.error(parseXMLHttpResponse(json));
               } 
             });
-          }
+          },										
+					notification: {
+						poll: function(args) {
+							args.complete();
+						}
+					}			
         }
       },
       dataProvider: function(args) {
