@@ -572,6 +572,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         vpc.id vpc_id,
         vpc.uuid vpc_uuid,
         networks.uuid network_uuid,
+        networks.name network_name,
         networks.traffic_type traffic_type,
         networks.guest_type guest_type,
         user_ip_address.id public_ip_id,
@@ -750,7 +751,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             left join
         `cloud`.`networks` ON nics.network_id = networks.id
             left join
-        `cloud`.`vpc` ON networks.vpc_id = vpc.id
+        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id
             left join
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
