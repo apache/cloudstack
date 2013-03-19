@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -48,9 +49,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
@@ -74,6 +77,8 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     protected DataStoreProvider provider;
     @Inject
     VMTemplatePoolDao templatePoolDao;
+    @Inject
+    StoragePoolHostDao poolHostDao;
 
     private VolumeDao volumeDao;
 
@@ -152,6 +157,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
                     vo.getDataCenterId());
         } else if (vo.getScope() == ScopeType.ZONE) {
             return new ZoneScope(vo.getDataCenterId());
+        } else if (vo.getScope() == ScopeType.HOST) {
+            List<StoragePoolHostVO> poolHosts = poolHostDao.listByPoolId(vo.getId());
+            if (poolHosts.size() > 0) {
+                return new HostScope(poolHosts.get(0).getHostId());
+            }
+            s_logger.debug("can't find a local storage in pool host table: " + vo.getId());
         }
         return null;
     }
