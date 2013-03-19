@@ -1453,11 +1453,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throw new CloudRuntimeException("Can't get scope of data store: " + storeForDataVol.getId());
         }
         
+        if (storeForDataStoreScope.getScopeType() == ScopeType.ZONE) {
+            return false;
+        }
+        
         if (storeForRootStoreScope.getScopeType() != storeForDataStoreScope.getScopeType()) {
             throw new CloudRuntimeException("Can't move volume between scope: " + storeForDataStoreScope.getScopeType() + " and " + storeForRootStoreScope.getScopeType());
         }
        
-        return storeForRootStoreScope.isSameScope(storeForRootStoreScope);
+        return !storeForRootStoreScope.isSameScope(storeForDataStoreScope);
     }
     
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volume, Long deviceId) {
