@@ -1108,6 +1108,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
         vpnResponse.setId(vpnUser.getUuid());
         vpnResponse.setUserName(vpnUser.getUsername());
+        vpnResponse.setState(vpnUser.getState().toString());
 
         populateOwner(vpnResponse, vpnUser);
 
