@@ -45,6 +45,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -62,6 +63,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
+import com.cloud.network.element.CiscoNexusVSMElement;
+import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -103,6 +106,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	ResourceManager _resourceMgr;
 	@Inject
 	CiscoNexusVSMDeviceDao _nexusDao;
+	@Inject
+	CiscoNexusVSMElementService _nexusElement;
 	@Inject
     NetworkModel _netmgr;
     @Inject
@@ -255,7 +260,17 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
 			if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
-			}
+            }
+            String vsmIp = _urlParams.get("vsmipaddress");
+            String vsmUser = _urlParams.get("vsmusername");
+            String vsmPassword = _urlParams.get("vsmpassword");
+            String clusterName = cluster.getName();
+            try {
+                _nexusElement.validateVsmCluster(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
+            } catch(ResourceInUseException ex) {
+                DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
+                throw discEx;
+            }
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
 		}
 
