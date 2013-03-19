@@ -2133,7 +2133,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                                             + assignedPool
                                             + " assigned by deploymentPlanner");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, null);
+                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
                                 tasks.add(task);
                             }
                         } else {
