@@ -288,9 +288,27 @@ install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/clo
 install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
 cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
 
+#Don't package the below for AWS API
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/applicationContext.xml
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/cloud-bridge.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/com
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/commons-logging.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/db.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/ec2-service.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/LICENSE.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/log4j.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/log4j-vmops.xml
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/META-INF
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/NOTICE.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/org
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge/WEB-INF/classes/services.xml
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
+%pre awsapi
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
 /sbin/service cloud-management stop || true
