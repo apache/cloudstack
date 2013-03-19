@@ -1,0 +1,25 @@
+# 
+# Translators:
+# Satoshi Shimazaki <arkray0701@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-04 05:32+0000\n"
+"Last-Translator: smzksts <arkray0701@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Topology Requirements"
+msgstr "KVMトポロジの要件"
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Servers communicate with KVM hosts on port 22 (ssh)."
+msgstr "管理サーバーは、ポート22（ssh）でKVMホストと通信します。"

@@ -1,0 +1,33 @@
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 18:24+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Secondary Storage"
+msgstr "セカンダリストレージ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section gives concepts and technical details about &PRODUCT; secondary "
+"storage. For information about how to install and configure secondary "
+"storage through the &PRODUCT; UI, see the Advanced Installation Guide."
+msgstr "ここでは、&PRODUCT; のセカンダリストレージの概念と技術の詳細について説明します。&PRODUCT; ユーザーインターフェイスを使用してセカンダリストレージをインストールおよび構成する方法については、『インストールガイド上級編』を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-secondary-storage\" />"
+msgstr "<xref linkend=\"about-secondary-storage\" />"

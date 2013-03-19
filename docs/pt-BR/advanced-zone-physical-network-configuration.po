@@ -1,0 +1,28 @@
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-18 15:42+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Physical Network Configuration"
+msgstr "Configuração de rede física de zona avançada"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Within a zone that uses advanced networking, you need to tell the Management"
+" Server how the physical network is set up to carry different kinds of "
+"traffic in isolation."
+msgstr "Em uma zona que usa rede avançada, você precisa informar ao servidor de gerenciamento como a rede física é configurada para transportar diferentes tipos de tráfego com isolamento."

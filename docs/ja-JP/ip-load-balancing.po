@@ -1,0 +1,48 @@
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-09-24 05:16+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "IP Load Balancing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The user may choose to associate the same public IP for multiple guests. "
+"&PRODUCT; implements a TCP-level load balancer with the following policies."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Round-robin"
+msgstr "ラウンドロビン"
+
+#. Tag: para
+#, no-c-format
+msgid "Least connection"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source IP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This is similar to port forwarding but the destination may be multiple IP "
+"addresses."
+msgstr ""

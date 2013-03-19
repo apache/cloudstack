@@ -1,0 +1,33 @@
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-15 14:09+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Secondary Storage"
+msgstr "Storage secundária"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section gives concepts and technical details about &PRODUCT; secondary "
+"storage. For information about how to install and configure secondary "
+"storage through the &PRODUCT; UI, see the Advanced Installation Guide."
+msgstr "Esta seção fornece conceitos e detalhes técnicos sobre a storage secundária do &PRODUCT;. Para informações sobre como instalar e configurar storage secundária através da interface de usuário do &PRODUCT; UI, veja o Advanced Installation Guide."
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-secondary-storage\" />"
+msgstr "<xref linkend=\"about-secondary-storage\" />"

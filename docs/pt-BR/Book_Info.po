@@ -1,0 +1,35 @@
+# 
+# Translators:
+#   <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:01\n"
+"PO-Revision-Date: 2013-01-14 17:17+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "&PRODUCT; Guide"
+msgstr "Guia do &PRODUCT;"
+
+#. Tag: subtitle
+#, no-c-format
+msgid "Revised August 9, 2012 10:48 pm Pacific"
+msgstr "Revisado em 9 de agosto de 2012, 22:48 horário do Pacífico"
+
+#. Tag: productname
+#, no-c-format
+msgid "Apache CloudStack"
+msgstr "Apache CloudStack"
+
+#. Tag: para
+#, no-c-format
+msgid "Complete technical documentation of &PRODUCT;."
+msgstr "Completa documentação técnica do &PRODUCT;."
