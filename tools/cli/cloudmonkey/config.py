@@ -19,6 +19,12 @@
 # Use following rules for versioning:
 # <cloudstack version>-<cli increment, starts from 0>
 __version__ = "4.1.0-0"
+__description__ = "Command Line Interface for Apache CloudStack"
+__maintainer__ = "Rohit Yadav"
+__maintaineremail__ = "bhaisaab@apache.org"
+__project__ = "The Apache CloudStack Team"
+__projectemail__ = "cloudstack-dev@incubator.apache.org"
+__projecturl__ = "http://incubator.apache.org/cloudstack"
 
 try:
     import os
@@ -36,14 +42,14 @@ iterable_type = ['set', 'list', 'object']
 
 config_dir = expanduser('~/.cloudmonkey')
 config_file = expanduser(config_dir + '/config')
-cache_file = expanduser(config_dir + '/cache')
 
 # cloudmonkey config fields
-config_fields = {'core': {}, 'ui': {}, 'server': {}, 'user': {}}
+config_fields = {'core': {}, 'server': {}, 'user': {}, 'ui': {}}
 
 # core
 config_fields['core']['asyncblock'] = 'true'
 config_fields['core']['paramcompletion'] = 'false'
+config_fields['core']['cache_file'] = expanduser(config_dir + '/cache')
 config_fields['core']['history_file'] = expanduser(config_dir + '/history')
 config_fields['core']['log_file'] = expanduser(config_dir + '/log')
 
@@ -64,8 +70,8 @@ config_fields['user']['apikey'] = ''
 config_fields['user']['secretkey'] = ''
 
 
-def write_config(get_attr, first_time=False):
-    global config_fields, config_file
+def write_config(get_attr, config_file, first_time=False):
+    global config_fields
     config = ConfigParser()
     for section in config_fields.keys():
         config.add_section(section)
@@ -79,8 +85,8 @@ def write_config(get_attr, first_time=False):
     return config
 
 
-def read_config(get_attr, set_attr):
-    global config_fields, config_dir, config_file
+def read_config(get_attr, set_attr, config_file):
+    global config_fields, config_dir
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
 
@@ -95,7 +101,7 @@ def read_config(get_attr, set_attr):
         except IOError, e:
             print "Error: config_file not found", e
     else:
-        config = write_config(get_attr, True)
+        config = write_config(get_attr, config_file, True)
         print "Welcome! Using `set` configure the necessary settings:"
         print " ".join(sorted(config_options))
         print "Config file:", config_file

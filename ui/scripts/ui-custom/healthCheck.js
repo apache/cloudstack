@@ -73,7 +73,7 @@
           form: {
             title: '',
             fields:{               					 
-               pingpath: {label: 'Ping Path', docID:'helpAccountUsername' , validation: {required: false}, defaultValue: pingpath1}
+               pingpath: {label: 'Ping Path', validation: {required: false}, defaultValue: pingpath1}
              }
           }
         });
