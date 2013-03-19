@@ -1,14 +1,3 @@
-package org.apache.cloudstack.api.command.user.vm;
-
-import com.cloud.exception.*;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
-import com.cloud.uservm.UserVm;
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -25,6 +14,18 @@ import org.apache.log4j.Logger;
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.api.command.user.vm;
+
+import com.cloud.exception.*;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
+import com.cloud.uservm.UserVm;
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.log4j.Logger;
+
+
 @APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=UserVmResponse.class)
 public class ScaleVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());

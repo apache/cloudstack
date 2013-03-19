@@ -41,13 +41,6 @@ import java.util.List;
 import java.util.UUID;
 
 
-/**
- * Created with IntelliJ IDEA.
- * User: nitinmehta
- * Date: 05/03/13
- * Time: 1:40 PM
- * To change this template use File | Settings | File Templates.
- */
 public class ScaleVMCmdTest extends TestCase{
 
     private ScaleVMCmd scaleVMCmd;
