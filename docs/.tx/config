@@ -12,6 +12,7 @@
 #KIND, either express or implied.  See the License for the
 #specific language governing permissions and limitations
 #under the License.
+
 [main]
 host = https://www.transifex.com
 
@@ -2778,6 +2779,102 @@ type = PO
 [ACS_DOCS.zone-add]
 file_filter = <lang>/zone-add.po
 source_file = pot/zone-add.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.add-remove-nic]
+file_filter = <lang>/add-remove-nic.po
+source_file = pot/add-remove-nic.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.added-API-commands-4-1]
+file_filter = <lang>/added-API-commands-4-1.po
+source_file = pot/added-API-commands-4-1.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-documentation]
+file_filter = <lang>/building-documentation.po
+source_file = pot/building-documentation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-translation]
+file_filter = <lang>/building-translation.po
+source_file = pot/building-translation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.cloudmonkey]
+file_filter = <lang>/cloudmonkey.po
+source_file = pot/cloudmonkey.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.egress-firewall-rule]
+file_filter = <lang>/egress-firewall-rule.po
+source_file = pot/egress-firewall-rule.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.event-framework]
+file_filter = <lang>/event-framework.po
+source_file = pot/event-framework.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.installing-publican]
+file_filter = <lang>/installing-publican.po
+source_file = pot/installing-publican.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.persistent-network]
+file_filter = <lang>/persistent-network.po
+source_file = pot/persistent-network.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.reset-ssh-key-dev]
+file_filter = <lang>/reset-ssh-key-dev.po
+source_file = pot/reset-ssh-key-dev.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.security-groups-advanced-zones]
+file_filter = <lang>/security-groups-advanced-zones.po
+source_file = pot/security-groups-advanced-zones.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.snapshot-throttling]
+file_filter = <lang>/snapshot-throttling.po
+source_file = pot/snapshot-throttling.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.translating-documentation]
+file_filter = <lang>/translating-documentation.po
+source_file = pot/translating-documentation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.vmx-settings-dev]
+file_filter = <lang>/vmx-settings-dev.po
+source_file = pot/vmx-settings-dev.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.working-with-documentation]
+file_filter = <lang>/working-with-documentation.po
+source_file = pot/working-with-documentation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.writing-new-documentation]
+file_filter = <lang>/writing-new-documentation.po
+source_file = pot/writing-new-documentation.pot
 source_lang = en
 type = PO
 
