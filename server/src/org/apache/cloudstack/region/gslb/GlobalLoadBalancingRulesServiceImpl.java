@@ -540,6 +540,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             gslbConfigCmd.setSiteLoadBalancers(slbs);
+
             try {
                 _gslbProvider.applyGlobalLoadBalancerRule(zoneId, gslbConfigCmd);
             } catch (ResourceUnavailableException e) {

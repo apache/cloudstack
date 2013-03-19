@@ -119,6 +119,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     NetScalerPodDao _netscalerPodDao;
     @Inject
     DataCenterIpAddressDao _privateIpAddressDao;
+    @Inject
+    ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -805,21 +807,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return null;
     }
 
-    @Override
-    public boolean isServiceEnabledInZone(long zoneId) {
-        return false;
-    }
-
-    @Override
-    public String getZoneGslbProviderPublicIp(long zoneId) {
-        return null;
-    }
-
-    @Override
-    public String getZoneGslbProviderPrivateIp(long zoneId) {
-        return null;
-    }
-
     public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
 
         if (canHandle(network, Service.Lb)) {
@@ -834,21 +821,73 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return null;
     }
 
-    @Override
-    public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd) {
-
-        // get the host Id corresponding to GSLB service provider in the zone
-        long zoneGslbProviderHosId = 0;
-
-        Answer answer = _agentMgr.easySend(zoneGslbProviderHosId, gslbConfigCmd);
-        if (answer == null) {
-
-        }
-        return false;
-    }
-
     public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
             throws ResourceUnavailableException {
         return super.getLBHealthChecks(network, rules);
+    }
+
+    @Override
+    public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
+            throws ResourceUnavailableException {
+
+        long zoneGslbProviderHosId = 0;
+
+        // find the NetScaler device configured as gslb service provider in the zone
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider == null) {
+            String msg = "Unable to find a NetScaler configred as gslb service provider in zone " + zoneId;
+            s_logger.error(msg);
+            throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
+        }
+
+        // get the host Id corresponding to GSLB service provider in the zone
+        zoneGslbProviderHosId =  nsGslbProvider.getHostId();
+
+        // send gslb configuration to NetScaler device
+        Answer answer = _agentMgr.easySend(zoneGslbProviderHosId, gslbConfigCmd);
+        if (answer == null || !answer.getResult()) {
+            String msg = "Unable to apply global load balancer rule to the gslb service provider in zone " + zoneId;
+            s_logger.error(msg);
+            throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
+        }
+
+        return true;
+    }
+
+    private ExternalLoadBalancerDeviceVO findGslbProvider(long zoneId) {
+        List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+        if (pNtwks.isEmpty() || pNtwks.size() > 1) {
+            throw new InvalidParameterValueException("Unable to get physical network in zone id = " + zoneId);
+        }
+        PhysicalNetworkVO physNetwork = pNtwks.get(0);
+        ExternalLoadBalancerDeviceVO nsGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
+                physNetwork.getId(), Provider.Netscaler.getName());
+        return nsGslbProvider;
+    }
+
+    @Override
+    public boolean isServiceEnabledInZone(long zoneId) {
+
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        //return true if a NetScaler device is configured in the zone
+        return (nsGslbProvider == null);
+    }
+
+    @Override
+    public String getZoneGslbProviderPublicIp(long zoneId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider != null) {
+            nsGslbProvider.getGslbSitePublicIP();
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneGslbProviderPrivateIp(long zoneId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider != null) {
+            nsGslbProvider.getGslbSitePrivateIP();
+        }
+        return null;
     }
 }
