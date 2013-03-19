@@ -15,6 +15,7 @@
 
 [main]
 host = https://www.transifex.com
+lang_map = ja_JP:ja-JP, zh_CN:zh-CN , zh_TW:zh-TW, pt_BR:pt-BR
 
 [ACS_DOCS.Admin_Guide]
 file_filter = <lang>/Admin_Guide.po
