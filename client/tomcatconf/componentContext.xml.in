@@ -207,6 +207,12 @@
     <property name="name" value="XCP Agent"/>
   </bean>
 
+  <!--
+  <bean id="SimulatorSecondaryStorageDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
+    <property name="name" value="SecondaryStorage"/>
+  </bean>
+  -->
+
   <bean id="SecondaryStorageDiscoverer" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer">
     <property name="name" value="SecondaryStorage"/>
   </bean>
