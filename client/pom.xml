@@ -386,6 +386,11 @@
                   file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true" />
+                <exec executable="cp">
+                    <arg value="-r" />
+                    <arg value="${basedir}/../plugins/network-elements/cisco-vnmc/scripts" />
+                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
+                </exec>
               </target>
             </configuration>
           </execution>
