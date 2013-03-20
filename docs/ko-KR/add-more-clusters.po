@@ -1,0 +1,42 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#  <shibaboy@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-30 00:13+0000\n"
+"Last-Translator: shibaboy <shibaboy@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko_KR\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add More Clusters (Optional)"
+msgstr "Cluster 추가하기 (선택사항)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to tell &PRODUCT; about the hosts that it will manage. Hosts exist "
+"inside clusters, so before you begin adding hosts to the cloud, you must add"
+" at least one cluster."
+msgstr "Host들이 관리될 것이라는 것을 &PRODUCT; 에 알려줘야 한다. 따라서 host들을 cloud에 추가하기 전에 최소 한개 이상의 cluster에 속하게끔 해주어야 한다. "

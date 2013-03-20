@@ -1,0 +1,124 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#  <shibaboy@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 18:32+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko_KR\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Hosts"
+msgstr "Host에 대하여"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A host is a single computer. Hosts provide the computing resources that run "
+"the guest virtual machines. Each host has hypervisor software installed on "
+"it to manage the guest VMs. For example, a Linux KVM-enabled server, a "
+"Citrix XenServer server, and an ESXi server are hosts."
+msgstr "Host는 한개의 컴퓨터로 볼 수 있으며 Host는 가상 머신이 실행될 수 있도록 컴퓨팅 resource를 제공한다. 각각의 host는 guest VM을 관리하기 위하여 hypervisor 소프트웨어가 설치되어 있다. 예를 들면 Linux KVM, Citrix XenServer, ESXi server 와 같은 host들이 존재한다. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host is the smallest organizational unit within a &PRODUCT; deployment. "
+"Hosts are contained within clusters, clusters are contained within pods, and"
+" pods are contained within zones."
+msgstr "Host는 &PRODUCT; 설치에 있어서 가장 작은 단위 조직이다. Hosts들은 cluster에 속하게 되며, cluster들은 pod에, pod들은 zone에 속하게 된다. "
+
+#. Tag: para
+#, no-c-format
+msgid "Hosts in a &PRODUCT; deployment:"
+msgstr "&PRODUCT; 설치에서의 host"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide the CPU, memory, storage, and networking resources needed to host "
+"the virtual machines"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Interconnect using a high bandwidth TCP/IP network and connect to the "
+"Internet"
+msgstr "높은 bandwidth의 TCP/IP를 이용하여 상호 통신하며 internet에 연결되어 있다."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"May reside in multiple data centers across different geographic locations"
+msgstr "상이한 지리학적 위치에 걸쳐 있는 다수의 데이터 센터에 존재할 수 있다."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"May have different capacities (different CPU speeds, different amounts of "
+"RAM, etc.), although the hosts within a cluster must all be homogeneous"
+msgstr "상이한 리소스를 가질 수 있다. (상이한 CPU 클럭, RAM size 등등) 하지만 cluster내에서의 host들은 모두 동일해야 한다. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additional hosts can be added at any time to provide more capacity for guest"
+" VMs."
+msgstr "가상 머신에 추가적인 리소스 할당을 위하여 host의 추가는 언제든지 실행 될 수 있다. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; automatically detects the amount of CPU and memory resources "
+"provided by the Hosts."
+msgstr "&PRODUCT; 는 자동적으로 host들에 의하여 제공되는 CPU와 memory의 양을 감지한다."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hosts are not visible to the end user. An end user cannot determine which "
+"host their guest has been assigned to."
+msgstr "Host들은 end user에게 보이지 않는다. end user는 특정 host에 자신의 가상 머신이 할당 되는 것을 결정할 수 없다."
+
+#. Tag: para
+#, no-c-format
+msgid "For a host to function in &PRODUCT;, you must do the following:"
+msgstr "&PRODUCT; 에서 host의 올바른 동작을 위해서, 다음과 같이 해야한다:"
+
+#. Tag: para
+#, no-c-format
+msgid "Install hypervisor software on the host"
+msgstr "hypervisor를 host에 설치"
+
+#. Tag: para
+#, no-c-format
+msgid "Assign an IP address to the host"
+msgstr "IP를 host에 할당"
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure the host is connected to the &PRODUCT; Management Server"
+msgstr "해당 host가 &PRODUCT; management server에 연결됨을 확인"

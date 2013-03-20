@@ -1,0 +1,73 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#  <shibaboy@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-29 00:38+0000\n"
+"Last-Translator: shibaboy <shibaboy@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko_KR\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Primary Storage"
+msgstr "Primary Storage의 소개"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Primary storage is associated with a cluster, and it stores the disk volumes"
+" for all the VMs running on hosts in that cluster. You can add multiple "
+"primary storage servers to a cluster. At least one is required. It is "
+"typically located close to the hosts for increased performance."
+msgstr "Primary Storage는 cluster와 연계되어 있으며, 해당 cluster의 host에 상주하는 모든 VM들의 disk volume을 저장하는 곳이다. 한 cluster에 복수개의 primary storage를 추가할 수 있고 최소한 1개가 필수이다. 일반적으로 성능을 높이기 위하여 host들과 가까운 곳에 위치시킨다. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; is designed to work with all standards-compliant iSCSI and NFS "
+"servers that are supported by the underlying hypervisor, including, for "
+"example:"
+msgstr "&PRODUCT; 는 hypervisor를 지원하는 모든 표준 iSCSI, NFS 서버와 동작할 수 있다. 예를 들면:"
+
+#. Tag: para
+#, no-c-format
+msgid "Dell EqualLogic™ for iSCSI"
+msgstr "Dell EqualLogic™ for iSCSI"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Appliances filers for NFS and iSCSI"
+msgstr "Network Appliances filers for NFS and iSCSI"
+
+#. Tag: para
+#, no-c-format
+msgid "Scale Computing for NFS"
+msgstr "Scale Computing for NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you intend to use only local disk for your installation, you can skip to "
+"Add Secondary Storage."
+msgstr "설치 시에 local disk만을 사용할 예정이라면, Secondary Storage의 추가는 할 필요가 없다."

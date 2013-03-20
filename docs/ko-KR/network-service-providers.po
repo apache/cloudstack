@@ -1,0 +1,160 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-09-24 18:41+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko_KR\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Service Providers"
+msgstr "네트워크 서비스 제공자"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the most up-to-date list of supported network service providers, see the"
+" &PRODUCT; UI or call listNetworkServiceProviders."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A service provider (also called a network element) is hardware or virtual "
+"appliance that makes a network service possible; for example, a firewall "
+"appliance can be installed in the cloud to provide firewall service. On a "
+"single network, multiple providers can provide the same network service. For"
+" example, a firewall service may be provided by Cisco or Juniper devices in "
+"the same physical network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can have multiple instances of the same service provider in a network "
+"(say, more than one Juniper SRX device)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If different providers are set up to provide the same service on the "
+"network, the administrator can create network offerings so users can specify"
+" which network service provider they prefer (along with the other choices "
+"offered in network offerings). Otherwise, &PRODUCT; will choose which "
+"provider to use whenever the service is called for."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Supported Network Service Providers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; ships with an internal list of the supported service providers, "
+"and you can choose from this list when creating a network offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual Router"
+msgstr "가상 라우터"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix NetScaler"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Juniper SRX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "F5 BigIP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host based (KVM/Xen)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remote Access VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr "예"
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr "아니오"
+
+#. Tag: para
+#, no-c-format
+msgid "DNS/DHCP/User Data"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall"
+msgstr "방화벽(fire wall)"
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancing"
+msgstr "네트워크 로드 공유"
+
+#. Tag: para
+#, no-c-format
+msgid "Elastic IP"
+msgstr "탄력적 IP 주소"
+
+#. Tag: para
+#, no-c-format
+msgid "Elastic LB"
+msgstr "탄력적 네트워크 로드 공유"
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr "전송원 NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr "정적 NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr "포토 전송"
