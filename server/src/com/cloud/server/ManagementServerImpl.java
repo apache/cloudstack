@@ -2104,13 +2104,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(QueryAsyncJobResultCmd.class);
         cmdList.add(AssignToLoadBalancerRuleCmd.class);
         cmdList.add(CreateLBStickinessPolicyCmd.class);
-        cmdList.add(CreateLBHealthCheckPolicyCmd .class);
+        cmdList.add(CreateLBHealthCheckPolicyCmd.class);
         cmdList.add(CreateLoadBalancerRuleCmd.class);
         cmdList.add(DeleteLBStickinessPolicyCmd.class);
-        cmdList.add(DeleteLBHealthCheckPolicyCmd .class);
+        cmdList.add(DeleteLBHealthCheckPolicyCmd.class);
         cmdList.add(DeleteLoadBalancerRuleCmd.class);
         cmdList.add(ListLBStickinessPoliciesCmd.class);
-        cmdList.add(ListLBHealthCheckPoliciesCmd .class);
+        cmdList.add(ListLBHealthCheckPoliciesCmd.class);
         cmdList.add(ListLoadBalancerRuleInstancesCmd.class);
         cmdList.add(ListLoadBalancerRulesCmd.class);
         cmdList.add(RemoveFromLoadBalancerRuleCmd.class);
