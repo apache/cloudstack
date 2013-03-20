@@ -29,8 +29,7 @@
               data: regions ? regions : [
                 { id: -1, name: '(Default)' }
               ],
-              activeRegionID: cloudStack.context.users.regionid ?
-                cloudStack.context.users.regionid : 1
+              activeRegionID: cloudStack.context.users[0].regionid
             });
           }
         }); 
