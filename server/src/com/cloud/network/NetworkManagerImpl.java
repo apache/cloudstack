@@ -4846,9 +4846,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (usedIps.size() != 0) {
             allPossibleIps.removeAll(usedIps);
         }
+
+        String gateway = network.getGateway();
+        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
+            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
         return allPossibleIps;
     }
-    
 
     private String getZoneNetworkDomain(long zoneId) {
         return _dcDao.findById(zoneId).getDomain();
