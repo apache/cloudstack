@@ -66,8 +66,8 @@
             <itemizedlist>
               <listitem>
                 <para>isPersistent</para>
-                <para>This parameter determines if the network or network offering listed by using
-                  this offering are persistent or not.</para>
+                <para>This parameter determines if the network or network offering listed are
+                  persistent or not.</para>
               </listitem>
               <listitem>
                 <para>ip6gateway</para>
