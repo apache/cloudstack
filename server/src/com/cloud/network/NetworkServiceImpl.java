@@ -1751,6 +1751,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (usedIps.size() != 0) {
             allPossibleIps.removeAll(usedIps);
         }
+
+        String gateway = network.getGateway();
+        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
+            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
         return allPossibleIps;
     }
 
