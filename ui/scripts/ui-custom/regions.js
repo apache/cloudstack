@@ -27,9 +27,8 @@
         response: {
           success: function(args) {
             var data = args.data;
-            var activeRegionID = args.activeRegionID;
-
-						var currentRegion;
+            
+						var currentRegion = null;
             $(data).each(function() {
               var region = this;
               var regionName = region.name;
@@ -37,20 +36,21 @@
 
               $li.data('region-data', region);
 							
-							if(region.endpoint == document.location.href) {		
+							/* e.g.
+							region.endpoint	== "http://localhost:8080/client/" 
+							document.location.href == "http://localhost:8080/client/#" 
+							*/
+							if(document.location.href.indexOf(region.endpoint) != -1) {							
                 currentRegion = region;	
 								$li.addClass('active');
 							}
-							/*
-              if (region.id == activeRegionID) {
-                $li.addClass('active');
-              }
-              */
-							
+														
               $regionList.append($li);							
             });
-												
-						$regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));              
+							
+            if(currentRegion != null)	{						
+						  $regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));   
+            }							
           }
         }
       });

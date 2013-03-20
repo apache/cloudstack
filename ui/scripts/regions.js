@@ -28,8 +28,7 @@
             args.response.success({
               data: regions ? regions : [
                 { id: -1, name: '(Default)' }
-              ],
-              activeRegionID: cloudStack.context.users[0].regionid
+              ]
             });
           }
         }); 
@@ -132,7 +131,12 @@
             },						
 						preAction: function(args) {
 						  var region = args.context.regions[0];							
-							if(region.endpoint == document.location.href) {		
+														
+							/* e.g.
+							region.endpoint	== "http://localhost:8080/client/" 
+							document.location.href == "http://localhost:8080/client/#" 
+							*/
+							if(document.location.href.indexOf(region.endpoint) != -1) {	
 							  cloudStack.dialog.notice({ message: _l('You can not remove the region that you are currently in.') });
                 return false;
 							}						
