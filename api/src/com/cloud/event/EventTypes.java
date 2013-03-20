@@ -110,6 +110,8 @@ public class EventTypes {
     public static final String EVENT_LOAD_BALANCER_DELETE = "LB.DELETE";
     public static final String EVENT_LB_STICKINESSPOLICY_CREATE = "LB.STICKINESSPOLICY.CREATE";
     public static final String EVENT_LB_STICKINESSPOLICY_DELETE = "LB.STICKINESSPOLICY.DELETE";
+    public static final String EVENT_LB_HEALTHCHECKPOLICY_CREATE = "LB.HEALTHCHECKPOLICY.CREATE";
+    public static final String EVENT_LB_HEALTHCHECKPOLICY_DELETE = "LB.HEALTHCHECKPOLICY.DELETE";
     public static final String EVENT_LOAD_BALANCER_UPDATE = "LB.UPDATE";
 
     // Account events

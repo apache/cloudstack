@@ -360,7 +360,10 @@ public class ApiConstants {
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
     public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     public static final String GUID = "guid";
-
+    public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
+    public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
+    public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
+    public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
@@ -379,9 +382,8 @@ public class ApiConstants {
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
-	public static final String END_POINT = "endpoint";
-	public static final String REGION_ID = "regionid";
-	public static final String IS_PROPAGATE = "ispropagate";
+    public static final String END_POINT = "endpoint";
+    public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
@@ -452,7 +454,19 @@ public class ApiConstants {
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";
+    public static final String UCS_MANAGER_ID = "ucsmanagerid";
+    public static final String UCS_PROFILE_DN = "profiledn";
+    public static final String UCS_BLADE_DN = "bladedn";
+    public static final String UCS_BLADE_ID = "bladeid";
+    public static final String VM_GUEST_IP = "vmguestip";
+    public static final String OLDER_THAN = "olderthan";
+    public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
+    public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
+    public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
+    public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
+    public static final String HEALTHCHECK_PINGPATH = "pingpath";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
+
 
     public enum HostDetails {
         all, capacity, events, stats, min;

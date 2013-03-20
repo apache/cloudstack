@@ -41,7 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 @Component
 @DB(txn=false)
-public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements GenericDao<DataCenterVnetVO, Long> {
+public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements DataCenterVnetDao {
     private final SearchBuilder<DataCenterVnetVO> FreeVnetSearch;
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearch;
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearchAllocated;

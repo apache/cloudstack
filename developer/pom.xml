@@ -10,7 +10,7 @@
   language governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-developer</artifactId>
   <name>Apache CloudStack Developer Tools</name>
@@ -21,25 +21,98 @@
     <version>4.2.0-SNAPSHOT</version>
   </parent>
   <dependencies>
+    <!-- specify the dependent jdbc driver here -->
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>5.1.21</version>
-      <scope>runtime</scope>
+      <version>${cs.mysql.version}</version>
     </dependency>
-      <dependency>
-          <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-          <version>${project.version}</version>
-          <scope>compile</scope>
-      </dependency>
+    <dependency>
+      <groupId>commons-dbcp</groupId>
+      <artifactId>commons-dbcp</artifactId>
+      <version>${cs.dbcp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-pool</groupId>
+      <artifactId>commons-pool</artifactId>
+      <version>${cs.pool.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jasypt</groupId>
+      <artifactId>jasypt</artifactId>
+      <version>${cs.jasypt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-server</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0-alpha-2</version>
+        <executions>
+          <execution>
+            <phase>initialize</phase>
+            <goals>
+              <goal>read-project-properties</goal>
+            </goals>
+            <configuration>
+              <files>
+                <file>${basedir}/../utils/conf/db.properties</file>
+                <file>${basedir}/../utils/conf/db.properties.override</file>
+              </files>
+              <quiet>true</quiet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <filter token="VERSION" value="${project.version}"/>
+                <copy todir="${basedir}/target/db" filtering="true">
+                  <fileset dir="${basedir}/../setup/db/"/>
+                </copy>
+                <copy todir="${basedir}/target/db" filtering="true">
+                  <fileset
+                      dir="${basedir}/../awsapi-setup/db/mysql/">
+                    <include name="**/*.sql"/>
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
-
   <profiles>
     <profile>
+      <!-- default deploydb property -->
       <id>deploydb</id>
       <activation>
         <property>
@@ -50,89 +123,8 @@
         <plugins>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
-            <artifactId>properties-maven-plugin</artifactId>
-            <version>1.0-alpha-2</version>
-            <executions>
-              <execution>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>read-project-properties</goal>
-                </goals>
-                <configuration>
-                  <files>
-                    <file>${project.parent.basedir}/utils/conf/db.properties</file>
-                    <file>${project.parent.basedir}/utils/conf/db.properties.override</file>
-                  </files>
-                  <quiet>true</quiet>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>1.7</version>
-            <executions>
-              <execution>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <filter token="VERSION" value="${project.version}" />
-                    <copy todir="${basedir}/target/db" filtering="true">
-                      <fileset dir="${project.basedir}/../setup/db/" />
-                    </copy>
-                    <copy todir="${basedir}/target/db" filtering="true">
-                      <fileset
-                        dir="${project.basedir}/../awsapi-setup/db/mysql/">
-                        <include name="**/*.sql" />
-                      </fileset>
-                    </copy>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- DatabaseCreator driver here -->
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.2.1</version>
-            <dependencies>
-              <!-- specify the dependent jdbc driver here -->
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>commons-dbcp</groupId>
-                <artifactId>commons-dbcp</artifactId>
-                <version>${cs.dbcp.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>commons-pool</groupId>
-                <artifactId>commons-pool</artifactId>
-                <version>${cs.pool.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.jasypt</groupId>
-                <artifactId>jasypt</artifactId>
-                <version>${cs.jasypt.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-utils</artifactId>
-                <version>${project.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-server</artifactId>
-                <version>${project.version}</version>
-              </dependency>
-            </dependencies>
             <executions>
               <execution>
                 <phase>process-resources</phase>
@@ -143,17 +135,11 @@
               </execution>
             </executions>
             <configuration>
-              <includeProjectDependencies>false</includeProjectDependencies>
-              <includePluginDependencies>true</includePluginDependencies>
-              <executableDependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-server</artifactId>
-              </executableDependency>
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
               <arguments>
                 <!-- db properties file -->
-                <argument>${project.parent.basedir}/utils/conf/db.properties</argument>
-                <argument>${project.parent.basedir}/utils/conf/db.properties.override</argument>
+                <argument>${basedir}/../utils/conf/db.properties</argument>
+                <argument>${basedir}/../utils/conf/db.properties.override</argument>
                 <!-- Create default schema and db table views -->
                 <argument>${basedir}/target/db/create-schema.sql</argument>
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
@@ -181,7 +167,59 @@
               <systemProperties>
                 <systemProperty>
                   <key>catalina.home</key>
-                  <value>${project.parent.basedir}/utils</value>
+                  <value>${basedir}/../utils</value>
+                </systemProperty>
+                <systemProperty>
+                  <key>paths.script</key>
+                  <value>${basedir}/target/db</value>
+                </systemProperty>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <!-- simulator deploydb property -->
+      <id>deploydb-simulator</id>
+      <activation>
+        <property>
+          <name>deploydb-simulator</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <phase>process-resources</phase>
+                <id>create-schema-simulator</id>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <arguments>
+                <!-- db properties file -->
+                <argument>${basedir}/../utils/conf/db.properties</argument>
+                <argument>${basedir}/../utils/conf/db.properties.override</argument>
+                <!-- simulator sql files -->
+                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                <!-- upgrade -->
+                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                <argument>--database=simulator</argument>
+                <argument>--rootpassword=${db.root.password}</argument>
+              </arguments>
+              <systemProperties>
+                <systemProperty>
+                  <key>catalina.home</key>
+                  <value>${basedir}/../utils</value>
                 </systemProperty>
                 <systemProperty>
                   <key>paths.script</key>

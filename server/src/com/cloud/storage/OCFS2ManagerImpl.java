@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -43,7 +44,6 @@ import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -63,7 +63,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     @Inject ClusterDao _clusterDao;
     @Inject ResourceManager _resourceMgr;
     @Inject StoragePoolHostDao _poolHostDao;
-    @Inject StoragePoolDao _poolDao;
+    @Inject PrimaryDataStoreDao _poolDao;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

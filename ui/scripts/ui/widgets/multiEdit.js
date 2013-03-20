@@ -222,8 +222,7 @@
         }
 
         // Align width to main header
-        var targetWidth = $multi.find('th.' + fieldName).width() + 5;
-        $td.width(targetWidth);
+        _medit.refreshItemWidths($multi);
 
         if (data._hideFields &&
             $.inArray(fieldName, data._hideFields) > -1) {
@@ -490,7 +489,17 @@
 
                   // Attach VM data to row
                   function(elem) {
-                    return $(elem).data('json-obj');
+                    var itemData = $(elem).data('json-obj');
+                    var $subselect = $(elem).find('.subselect select');
+
+                    // Include subselect data
+                    if ($subselect && $subselect.val()) {
+                      return $.extend(itemData, {
+                        _subselect: $subselect.val()
+                      });
+                    }
+                    
+                    return itemData;
                   }
                 ));
                 $dataList.remove();
@@ -523,10 +532,15 @@
      * Align width of each data row to main header
      */
     refreshItemWidths: function($multi) {
+      $multi.find('.data-body').width(
+        $multi.find('form > table.multi-edit').width()
+      );
+
       $multi.find('.data tr').filter(function() {
         return !$(this).closest('.expandable-listing').size();
       }).each(function() {
         var $tr = $(this);
+
         $tr.find('td').each(function() {
           var $td = $(this);
 

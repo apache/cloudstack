@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
@@ -197,4 +198,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public IpDeployer getIpDeployer(Network network) {
         return this;
     }
+
+    @Override
+    public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
+        return null;
+    }
+
 }

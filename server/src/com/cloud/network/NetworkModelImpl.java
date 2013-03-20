@@ -92,6 +92,7 @@ import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -109,6 +110,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -170,6 +172,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     PrivateIpDao _privateIpDao;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
+    @Inject
+    NicSecondaryIpDao _nicSecondaryIpDao;;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -395,9 +399,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Network network = _networksDao.findById(networkId);
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
         NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
-        if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
-        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
-        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+        if (ComponentContext.getTargetObject(oldElement) instanceof IpDeployingRequester && ComponentContext.getTargetObject(newElement) instanceof IpDeployingRequester) {
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)ComponentContext.getTargetObject(oldElement)).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)ComponentContext.getTargetObject(newElement)).getIpDeployer(network);
         	if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
         		throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
         	}
@@ -709,7 +713,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             return null;
         }
     
-        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+        return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 
     @Override
@@ -738,7 +742,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
-        return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+        return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
     @Override
@@ -1405,7 +1409,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             return true;
         }
         IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
-        PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipVO, _vlanDao.findById(userIp.getVlanId()));
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
@@ -1453,11 +1457,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (network.getGuestType() != Network.GuestType.Shared) {
             List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
             if (networkMap == null || networkMap.isEmpty()) {
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                throw new PermissionDeniedException("Unable to use network with id= " + network.getUuid() + ", permission denied");
             }
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getId() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
@@ -1624,6 +1628,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");
         List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
+        ips.addAll(secondaryIps);
         Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         Set<Long> usedIps = new TreeSet<Long>(); 
         
@@ -1638,6 +1644,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (usedIps.size() != 0) {
             allPossibleIps.removeAll(usedIps);
         }
+
+        String gateway = network.getGateway();
+        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
+            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
         return allPossibleIps;
     }
 
@@ -1884,8 +1895,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             for (IpAddress addr : addrs) {
                 if (addr.isSourceNat()) {
                     sourceNatIp = _ipAddressDao.findById(addr.getId());
-                    return new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+                    return PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
                 }
             }
     
@@ -1930,9 +1940,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
-        // Ipv6 cidr limit should be at least /64
-        if (cidrSize < 64) {
-            throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+        // we only support cidr == 64
+        if (cidrSize != 64) {
+            throw new InvalidParameterValueException("The cidr size of IPv6 network must be 64 bits!");
         }
     }
 
@@ -1967,4 +1977,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         }
     }
+
+	@Override
+	public String getStartIpv6Address(long networkId) {
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	if (vlans == null) {
+    		return null;
+    	}
+    	String startIpv6 = null;
+    	// Get the start ip of first create vlan(not the lowest, because if you add a lower vlan, lowest vlan would change)
+    	for (Vlan vlan : vlans) {
+    		if (vlan.getIp6Range() != null) {
+    			startIpv6 = vlan.getIp6Range().split("-")[0];
+    			break;
+    		}
+    	}
+		return startIpv6;
+	}
 }

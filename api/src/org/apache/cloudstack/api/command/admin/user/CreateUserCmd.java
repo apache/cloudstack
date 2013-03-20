@@ -65,12 +65,9 @@ public class CreateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
 
-    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from another Region")
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from external provisioning system")
     private String userUUID;
-    
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, description="Id of the Region creating the User")
-    private Integer regionId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -107,14 +104,10 @@ public class CreateUserCmd extends BaseCmd {
         return username;
     }
 
-	public String getUserUUID() {
-		return userUUID;
-	}
-    
-	public Integer getRegionId() {
-		return regionId;
-	}
-    
+    public String getUserUUID() {
+        return userUUID;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -146,7 +139,7 @@ public class CreateUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserName: "+getUserName()+", FirstName :"+getFirstName()+", LastName: "+getLastName());
-        User user = _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(), getUserUUID(), getRegionId());
+        User user = _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(), getUserUUID());
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

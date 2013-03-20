@@ -53,7 +53,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Inject protected SnapshotStateMachineManager stateMachineMgr;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
-    protected SnapshotObject() {
+    public SnapshotObject() {
       
     }
     

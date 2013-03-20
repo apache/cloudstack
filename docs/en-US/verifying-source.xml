@@ -36,7 +36,7 @@
           file.
        </para>
        <para>
-          You next need to import those keys, which you can do by running the following command:
+          You next need to import those keys, which you can do by running:
           <programlisting><prompt>#</prompt> <command>gpg</command> --import KEYS</programlisting>
        </para>
     </section>

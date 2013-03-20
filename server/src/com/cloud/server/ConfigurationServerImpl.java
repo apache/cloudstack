@@ -106,10 +106,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
-import org.apache.cloudstack.region.RegionVO;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+
 
 @Component
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
@@ -130,7 +127,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private ResourceCountDao _resourceCountDao;
     @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     @Inject private IdentityDao _identityDao;
-    @Inject private RegionDao _regionDao;
 
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
@@ -151,6 +147,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Override
     @DB
     public void persistDefaultValues() throws InternalErrorException {
+
+    	fixupScriptFileAttribute();
 
         // Create system user and admin user
         saveUser();
@@ -233,8 +231,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
             // Create default networks
             createDefaultNetworks();
-
-            createDefaultRegion();
 
             // Create userIpAddress ranges
 
@@ -338,9 +334,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @DB
     protected void saveUser() {
-    	//ToDo: Add regionId to default users and accounts
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (1, UUID(), 'system', '1', '1', '1')";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -348,8 +343,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, region_id)" +
-                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), '1')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -365,7 +360,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -374,8 +369,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state, region_id) " +
-                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', '1')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {
@@ -600,8 +595,16 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             throw new CloudRuntimeException("No home directory was detected for the user '" + username + "'. Please check the profile of this user.");
         }
 
-        File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
-        File pubkeyfile = new File(homeDir + "/.ssh/id_rsa.pub");
+        // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
+        File privkeyfile = null;
+        File pubkeyfile = null;
+        if (devel) {
+            privkeyfile = new File(homeDir + "/.ssh/id_rsa.cloud");
+            pubkeyfile = new File(homeDir + "/.ssh/id_rsa.cloud.pub");
+        } else {
+            privkeyfile = new File(homeDir + "/.ssh/id_rsa");
+            pubkeyfile = new File(homeDir + "/.ssh/id_rsa.pub");
+        }
 
         if (already == null || already.isEmpty()) {
             if (s_logger.isInfoEnabled()) {
@@ -658,13 +661,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
 
         } else {
-            s_logger.info("Keypairs already in database");
-            if (username.equalsIgnoreCase("cloud")) {
-                s_logger.info("Keypairs already in database, updating local copy");
-                updateKeyPairsOnDisk(homeDir);
-            } else {
-                s_logger.info("Keypairs already in database, skip updating local copy (not running as cloud user)");
-            }
+            s_logger.info("Keypairs already in database, updating local copy");
+            updateKeyPairsOnDisk(homeDir);
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
@@ -703,16 +701,42 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     }
 
+	private void fixupScriptFileAttribute() {
+		// TODO : this is a hacking fix to workaround that executable bit is not preserved in WAR package
+        String scriptPath = Script.findScript("", "scripts/vm/systemvm/injectkeys.sh");
+        if(scriptPath != null) {
+        	File file = new File(scriptPath);
+        	if(!file.canExecute()) {
+        		s_logger.info("Some of the shell script files may not have executable bit set. Fixup...");
+
+        		String cmd = "chmod ugo+x " + scriptPath;
+        		s_logger.info("Executing " + cmd);
+                String result = Script.runSimpleBashScript(cmd);
+                if (result != null) {
+                    s_logger.warn("Failed to fixup shell script executable bits " + result);
+                }
+        	}
+        }
+	}
+
     private void updateKeyPairsOnDisk(String homeDir) {
         File keyDir = new File(homeDir + "/.ssh");
+        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
         if (!keyDir.isDirectory()) {
             s_logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
             keyDir.mkdir();
         }
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
-        writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
-        writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.pub");
+
+        // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
+        if( devel ) {
+            writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa.cloud");
+            writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.cloud.pub");
+        } else {
+            writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
+            writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.pub");
+        }
     }
 
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
@@ -1270,11 +1294,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         return svcProviders;
-    }
-
-    private void createDefaultRegion(){
-    	//Get Region name and URL from db.properties
-    	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
     }
 
 }

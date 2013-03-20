@@ -66,6 +66,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -143,7 +144,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -197,7 +197,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao;
     @Inject VMInstanceDao _vmInstanceDao;
-    @Inject StoragePoolDao _poolDao;
+    @Inject PrimaryDataStoreDao _poolDao;
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject EventDao _eventDao;
     @Inject DownloadMonitor _downloadMonitor;

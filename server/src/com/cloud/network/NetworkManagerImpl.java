@@ -106,6 +106,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
@@ -129,6 +130,7 @@ import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.*;
@@ -140,8 +142,19 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.*;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -240,6 +253,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     UsageEventDao _usageEventDao;
     @Inject
     NetworkModel _networkModel;
+   @Inject
+    NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     @Inject
@@ -355,9 +370,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             _firewallMgr.addSystemFirewallRules(addr, owner);
         }
 
-        long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
-
-        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
+        return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 
     @DB
@@ -404,8 +417,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         PublicIp ipToReturn = null;
         if (sourceNatIp != null) {
-            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()),
-                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+            ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
             ipToReturn = assignDedicateIpAddress(owner, guestNetwork.getId(), null, dcId, true);
         }
@@ -490,8 +502,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()),
-                        NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIps.add(publicIp);
             }
         }
@@ -537,10 +548,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
-                if (!(element instanceof IpDeployingRequester)) {
+                if (!(ComponentContext.getTargetObject(element) instanceof IpDeployingRequester)) {
                     throw new CloudRuntimeException("Element " + element + " is not a IpDeployingRequester!");
                 }
-                deployer = ((IpDeployingRequester)element).getIpDeployer(network);
+                deployer = ((IpDeployingRequester)ComponentContext.getTargetObject(element)).getIpDeployer(network);
                 if (deployer == null) {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -1520,13 +1531,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
-                    (element instanceof DhcpServiceProvider)) {
+                    (ComponentContext.getTargetObject(element) instanceof DhcpServiceProvider)) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
-                    (element instanceof UserDataServiceProvider)) {
+                    (ComponentContext.getTargetObject(element) instanceof UserDataServiceProvider)) {
                 UserDataServiceProvider sp = (UserDataServiceProvider) element;
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
@@ -1754,6 +1765,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
         s_logger.debug("Removed nic id=" + nic.getId());
+        //remove the secondary ip addresses corresponding to to this nic
+        if (!removeVmSecondaryIpsOfNic(nic.getId())) {
+            s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
+        }
     }
 
     @Override
@@ -2296,52 +2311,51 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose,
             NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException {
-    	if (rules == null || rules.size() == 0) {
-    		s_logger.debug("There are no rules to forward to the network elements");
-    		return true;
-    	}
+        if (rules == null || rules.size() == 0) {
+            s_logger.debug("There are no rules to forward to the network elements");
+            return true;
+        }
 
-    	boolean success = true;
-    	Network network = _networksDao.findById(rules.get(0).getNetworkId());
+        boolean success = true;
+        Network network = _networksDao.findById(rules.get(0).getNetworkId());
         FirewallRuleVO.TrafficType trafficType = rules.get(0).getTrafficType();
-         List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
             // get the list of public ip's owned by the network
             List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
-    			PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-    			publicIps.add(publicIp);
-	                }
-             }
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                    publicIps.add(publicIp);
+                }
+            }
 
-    	// rules can not programmed unless IP is associated with network service provider, so run IP assoication for
-    	// the network so as to ensure IP is associated before applying rules (in add state)
-    	applyIpAssociations(network, false, continueOnError, publicIps);
-	}
-    	
-    	try {
-    		applier.applyRules(network, purpose, rules);
-    	} catch (ResourceUnavailableException e) {
-    		if (!continueOnError) {
-    			throw e;
-    		}
-    		s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
-    		success = false;
-    	}
-    	
-        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) ) {
-            // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
+            // rules can not programmed unless IP is associated with network
+            // service provider, so run IP assoication for
+            // the network so as to ensure IP is associated before applying
+            // rules (in add state)
+            applyIpAssociations(network, false, continueOnError, publicIps);
+        }
+
+        try {
+            applier.applyRules(network, purpose, rules);
+        } catch (ResourceUnavailableException e) {
+            if (!continueOnError) {
+                throw e;
+            }
+            s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
+            success = false;
+        }
+
+        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
+            // if all the rules configured on public IP are revoked then
+            // dis-associate IP with network service provider
             applyIpAssociations(network, true, continueOnError, publicIps);
         }
 
-    	return success;
+        return success;
     }
-        
-    
-
-   
 
     public class NetworkGarbageCollector implements Runnable {
 
@@ -2796,6 +2810,32 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     Random _rand = new Random(System.currentTimeMillis());
 
+    public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
+        List<NicVO> result = null;
+        if (nicId == null) {
+            result = _nicDao.listByVmId(vmId);
+        } else {
+            result = _nicDao.listByVmIdAndNicId(vmId, nicId);
+        }
+        return result;
+    }
+
+    public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
+    throws InsufficientAddressCapacityException {
+        String ipaddr = null;
+        Account caller = UserContext.current().getCaller();
+        long callerUserId = UserContext.current().getCallerUserId();
+        // check permissions
+        DataCenter zone = _configMgr.getZone(zoneId);
+        Network network = _networksDao.findById(networkId);
+
+        _accountMgr.checkAccess(caller, null, false, network);
+
+        ipaddr = acquireGuestIpAddress(network, requestedIp);
+        return ipaddr;
+    }
+
+
     @Override
     @DB
     public String acquireGuestIpAddress(Network network, String requestedIp) {
@@ -2806,7 +2846,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
-        if (availableIps.isEmpty()) {
+        if (availableIps == null || availableIps.isEmpty()) {
             return null;
         }
 
@@ -2847,7 +2887,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIps.add(publicIp);
             }
         }
@@ -2877,7 +2917,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         IPAddressVO ip = _ipAddressDao.findByIdIncludingRemoved(staticNat.getSourceIpAddressId());
                         // ip can't be null, otherwise something wrong happened
                         ip.setAssociatedWithVmId(null);
-                        publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+                        publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
                         publicIps.add(publicIp);
                         break;
                     }
@@ -3036,9 +3076,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 throw new InvalidParameterValueException("Source ip address of the rule id=" + firewallStaticNatRule.getId() + " is not static nat enabled");
             }
 
-            String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), firewallStaticNatRule.getNetworkId());
+            //String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), firewallStaticNatRule.getNetworkId());
             ruleVO.setState(FirewallRule.State.Revoke);
-            staticNatRules.add(new StaticNatRuleImpl(ruleVO, dstIp));
+            staticNatRules.add(new StaticNatRuleImpl(ruleVO, ip.getVmIp()));
         }
 
         try {
@@ -3059,13 +3099,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             lb.setState(FirewallRule.State.Revoke);
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
             List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            List<LbHealthCheckPolicy> hcPolicyList =  _lbMgr.getHealthCheckPolicies (lb.getId());
             // mark all destination with revoke state
             for (LbDestination dst : dstList) {
                 s_logger.trace("Marking lb destination " + dst + " with Revoke state");
                 dst.setRevoked(true);
             }
 
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
             lbRules.add(loadBalancing);
         }
 
@@ -3154,7 +3195,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
                 userIp.setState(State.Releasing);
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIpsToRelease.add(publicIp);
             }
         }
@@ -3578,15 +3619,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
-        assert element instanceof StaticNatServiceProvider;
-        return (StaticNatServiceProvider)element;
+        assert ComponentContext.getTargetObject(element) instanceof StaticNatServiceProvider;
+        return (StaticNatServiceProvider)ComponentContext.getTargetObject(element);
     }
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
-        assert element instanceof LoadBalancingServiceProvider; 
-        return ( LoadBalancingServiceProvider)element;
+        assert ComponentContext.getTargetObject(element) instanceof LoadBalancingServiceProvider; 
+        return ( LoadBalancingServiceProvider)ComponentContext.getTargetObject(element);
     }
     @Override
     public boolean isNetworkInlineMode(Network network) {
@@ -3602,4 +3643,38 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         return rules.size();
     }
-}
+
+         @Override
+    public boolean isSecondaryIpSetForNic(long nicId) {
+        NicVO nic = _nicDao.findById(nicId);
+        return nic.getSecondaryIp();
+    }
+
+         @Override
+        public boolean removeVmSecondaryIpsOfNic(long nicId) {
+           Transaction txn = Transaction.currentTxn();
+           txn.start();
+           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
+           if (ipList != null) {
+               for (NicSecondaryIpVO ip: ipList) {
+                   _nicSecondaryIpDao.remove(ip.getId());
+               }
+               s_logger.debug("Revoving nic secondary ip entry ...");
+           }
+           txn.commit();
+           return true;
+        }
+
+        @Override
+        public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod,Account owner,
+                String requestedIp) throws InsufficientAddressCapacityException {
+            PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
+            if (ip == null) {
+                s_logger.debug("There is no free public ip address");
+                return null;
+            }
+            Ip ipAddr = ip.getAddress();
+            return ipAddr.addr();
+        }
+
+ }

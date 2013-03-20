@@ -151,6 +151,9 @@ createLBStickinessPolicy=15
 deleteLBStickinessPolicy=15
 listLoadBalancerRules=15
 listLBStickinessPolicies=15
+listLBHealthCheckPolicies=15
+createLBHealthCheckPolicy=15
+deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
 
@@ -218,9 +221,13 @@ listZones=15
 #### events commands
 listEvents=15
 listEventTypes=15
+archiveEvents=15
+deleteEvents=15
 
 #### alerts commands
 listAlerts=3
+archiveAlerts=1
+deleteAlerts=1
 
 #### system capacity commands
 listCapacity=3
@@ -325,6 +332,11 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
+
+####
+addIpToNic=15
+removeIpFromNic=15
+listNics=15
 
 #### SSH key pair commands
 registerSSHKeyPair=15

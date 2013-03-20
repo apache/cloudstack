@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
 import com.cloud.utils.db.DB;
@@ -44,7 +45,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     protected final SearchBuilder<StaticRouteVO> AllFieldsSearch;
     protected final SearchBuilder<StaticRouteVO> NotRevokedSearch;
     protected final GenericSearchBuilder<StaticRouteVO, Long> RoutesByGatewayCount;
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
     
     protected StaticRouteDaoImpl() {
         super();

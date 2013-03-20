@@ -49,8 +49,11 @@ public class ConsoleProxyHttpHandlerHelper {
         if(map.get("token") != null) {
             ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(
                 ConsoleProxy.getEncryptorPassword());
-            
+    
             ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
+
+            // make sure we get information from token only
+            guardUserInput(map);
             if(param != null) {
                 if(param.getClientHostAddress() != null)
                     map.put("host", param.getClientHostAddress());
@@ -67,8 +70,21 @@ public class ConsoleProxyHttpHandlerHelper {
                 if(param.getTicket() != null)
                     map.put("ticket", param.getTicket());
             }
+        } else {
+        	// we no longer accept information from parameter other than token 
+        	guardUserInput(map);
         }
         
         return map;
+    }
+    
+    private static void guardUserInput(Map<String, String> map) {
+    	map.remove("host");
+    	map.remove("port");
+    	map.remove("tag");
+    	map.remove("sid");
+    	map.remove("consoleurl");
+    	map.remove("sessionref");
+       	map.remove("ticket");
     }
 }

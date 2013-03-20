@@ -63,7 +63,7 @@
                 <listitem><para><emphasis role="bold">Basic.</emphasis> For AWS-style networking. Provides a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering).</para></listitem>
                 <listitem><para><emphasis role="bold">Advanced.</emphasis> For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.</para></listitem>
             </itemizedlist>
-            <para>For more information about the network types, see Network Setup.</para>
+            <para>For more information about the network types, see <xref linkend="about-physical-networks" />.</para>
         </listitem>
         <listitem><para>The rest of the steps differ depending on whether you chose Basic or Advanced. Continue with the steps that apply to you:</para>
             <itemizedlist>

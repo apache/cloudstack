@@ -38,10 +38,13 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.dao.StorageComponent;
@@ -377,6 +380,18 @@ public class AgentShell implements IAgentShell {
 
     public void init(String[] args) throws ConfigurationException {
 
+    	// PropertiesUtil is used both in management server and agent packages,
+    	// it searches path under class path and common J2EE containers
+    	// For KVM agent, do it specially here
+    	
+    	File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
+    	if(file == null || !file.exists()) {
+    		file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+    	}
+    	DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+
+    	s_logger.info("Agent started");
+    	
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
         if (_version == null) {
@@ -553,6 +568,9 @@ public class AgentShell implements IAgentShell {
 
     public void start() {
         try {
+            /* By default we only search for log4j.xml */
+            LogUtils.initLog4j("log4j-cloud.xml");
+
             System.setProperty("java.net.preferIPv4Stack", "true");
 
             String instance = getProperty(null, "instance");
@@ -612,8 +630,6 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
-        	LogUtils.initLog4j("log4j-cloud.xml");
-        	
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();

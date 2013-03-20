@@ -22,7 +22,7 @@
       var sections = [];
 
       if(isAdmin()) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions"];
       }
       else if(isDomainAdmin()) {
         sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
@@ -54,7 +54,8 @@
       accounts: {},
 			
       domains: {}, //domain-admin and root-admin only
-			
+
+      regions: {}, //root-admin only
       system: {},  //root-admin only     
       'global-settings': {}, //root-admin only     
       configuration: {}, //root-admin only

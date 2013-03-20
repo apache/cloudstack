@@ -87,7 +87,7 @@ class Services:
                         "template": {
                                     "displaytext": "Cent OS Template",
                                     "name": "Cent OS Template",
-                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                    "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                                     "ispublic": False,
                         },
@@ -130,7 +130,7 @@ class Services:
                                     "endport": 22,
                                     "cidrlist": '0.0.0.0/0',
                         },
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -152,7 +152,7 @@ class TestOfferings(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -332,7 +332,7 @@ class TestNetwork(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -520,7 +520,7 @@ class TestTemplates(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -749,7 +749,7 @@ class TestSnapshots(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -895,7 +895,7 @@ class TestPublicIpAddress(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1194,7 +1194,7 @@ class TestSecurityGroup(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id

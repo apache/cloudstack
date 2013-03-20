@@ -56,21 +56,21 @@ public class QueryBuilder<S, T> implements MethodInterceptor, SimpleQueryBuilder
         }
     }
     
-    protected HashMap<Class<?>, Pair<GenericDaoBase<?,?>, Object>> _entities;
+    protected HashMap<Class<?>, Pair<GenericDao<?,?>, Object>> _entities;
     protected ArrayList<Attribute> _specifiedAttrs = new ArrayList<Attribute>();
     protected T _resultSetClass;
     protected ArrayList<Select<S, T>> _selects;
     
     public QueryBuilder(Class<T> resultSetClass, Class<?>... clazzes) {
-        _entities = new HashMap<Class<?>, Pair<GenericDaoBase<?,?>, Object>>(clazzes.length);
+        _entities = new HashMap<Class<?>, Pair<GenericDao<?,?>, Object>>(clazzes.length);
         for (Class<?> clazz : clazzes) {
-            GenericDaoBase<?,?> dao = GenericDaoBase.getDao(clazz);
+            GenericDao<?,?> dao = GenericDaoBase.getDao(clazz);
             Enhancer searchEnhancer = new Enhancer();
             searchEnhancer.setSuperclass(clazz);
             searchEnhancer.setCallback(this);
             Object entity = searchEnhancer.create();
             
-            _entities.put(clazz, new Pair<GenericDaoBase<?, ?>, Object>(dao, entity));
+            _entities.put(clazz, new Pair<GenericDao<?, ?>, Object>(dao, entity));
         }
     }
     
@@ -86,14 +86,14 @@ public class QueryBuilder<S, T> implements MethodInterceptor, SimpleQueryBuilder
      * @param resultSetClass result class to put the result set in.
      */
     public QueryBuilder(Class<S> entityClass, Class<T> resultSetClass) {
-        _entities = new HashMap<Class<?>, Pair<GenericDaoBase<?,?>, Object>>(1);
-        GenericDaoBase<?,?> dao = GenericDaoBase.getDao(entityClass);
+        _entities = new HashMap<Class<?>, Pair<GenericDao<?,?>, Object>>(1);
+        GenericDao<?,?> dao = GenericDaoBase.getDao(entityClass);
         Enhancer searchEnhancer = new Enhancer();
         searchEnhancer.setSuperclass(entityClass);
         searchEnhancer.setCallback(this);
         Object entity = searchEnhancer.create();
         
-        _entities.put(entityClass, new Pair<GenericDaoBase<?, ?>, Object>(dao, entity));
+        _entities.put(entityClass, new Pair<GenericDao<?, ?>, Object>(dao, entity));
     }
     
     @Override
@@ -114,7 +114,7 @@ public class QueryBuilder<S, T> implements MethodInterceptor, SimpleQueryBuilder
         return this;
     }
     
-    protected void set(GenericDaoBase<?, ?> dao , String name) {
+    protected void set(GenericDao<?, ?> dao , String name) {
         Attribute attr = dao.getAllAttributes().get(name);
         assert (attr != null) : "Searching for a field that's not there: " + name;
         _specifiedAttrs.add(attr);
@@ -125,9 +125,9 @@ public class QueryBuilder<S, T> implements MethodInterceptor, SimpleQueryBuilder
     public Object intercept(Object entity, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         Class<?> entityClass = entity.getClass().getSuperclass();
         
-        Pair<GenericDaoBase<?,?>, Object> daoInfo = _entities.get(entityClass);
+        Pair<GenericDao<?,?>, Object> daoInfo = _entities.get(entityClass);
         assert (daoInfo != null) : "You need to specify " + entityClass + " as one of the entities in the Query";
-        GenericDaoBase<?,?> dao = daoInfo.first();
+        GenericDao<?,?> dao = daoInfo.first();
         
         String name = method.getName();
         if (name.startsWith("get")) {

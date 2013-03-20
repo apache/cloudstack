@@ -53,7 +53,7 @@ public class TemplateObject implements TemplateInfo {
     ObjectInDataStoreManager ojbectInStoreMgr;
     @Inject VMTemplatePoolDao templatePoolDao;
 
-    protected TemplateObject() {
+    public TemplateObject() {
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {

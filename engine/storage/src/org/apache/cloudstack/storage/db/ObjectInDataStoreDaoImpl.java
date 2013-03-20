@@ -38,6 +38,8 @@ public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO
     private SearchBuilder<ObjectInDataStoreVO> updateStateSearch;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	super.configure(name, params);
+    	
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);

@@ -74,6 +74,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -364,11 +365,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
 
         try {
             // schedule a scan task immediately
-            if (_agentMgr instanceof ClusteredAgentManagerImpl) {
+            if (ComponentContext.getTargetObject(_agentMgr) instanceof ClusteredAgentManagerImpl) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Received notification as part of addHost command to start a host scan task");
                 }
-                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)_agentMgr;
+                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)ComponentContext.getTargetObject(_agentMgr);
                 clusteredAgentMgr.scheduleHostScanTask();
             }
         } catch (Exception e) {

@@ -52,11 +52,8 @@ public class UpdateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,10 +70,6 @@ public class UpdateDomainCmd extends BaseCmd {
         return networkDomain;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -95,7 +88,7 @@ public class UpdateDomainCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
         Domain domain =  _regionService.updateDomain(this);
-        
+
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
             response.setResponseName(getCommandName());

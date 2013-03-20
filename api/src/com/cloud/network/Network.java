@@ -138,7 +138,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         // NiciraNvp is not an "External" provider, otherwise we get in trouble with NetworkServiceImpl.providersConfiguredForExternalNetworking 
         public static final Provider NiciraNvp = new Provider("NiciraNvp", false);  
         public static final Provider MidokuraMidonet = new Provider("MidokuraMidonet", true);
-        public static final Provider VPCNetscaler = new Provider("VPCNetscaler", true);
         public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
         private String name;
@@ -190,6 +189,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability InlineMode = new Capability("InlineMode");
         public static final Capability SupportedTrafficDirection = new Capability("SupportedTrafficDirection");
         public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
+        public static final Capability HealthCheckPolicy = new Capability("HealthCheckPolicy");
 
         private String name;
 

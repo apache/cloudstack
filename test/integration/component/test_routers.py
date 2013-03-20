@@ -89,7 +89,7 @@ class Services:
                                     "cidr": '55.55.0.0/11',
                                     # Any network (For creating FW rule
                                     },
-                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                         "ostype": 'CentOS 5.3 (64-bit)',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
                          "mode": 'advanced',    # Networking mode: Advanced, basic
                         }
@@ -108,7 +108,7 @@ class TestRouterServices(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -595,7 +595,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -806,7 +806,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -1017,7 +1017,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 

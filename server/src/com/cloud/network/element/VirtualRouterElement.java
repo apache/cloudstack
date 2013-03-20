@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElement
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -363,7 +364,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
         } else {
-            return true;
+            return false;
         }
     }
 
@@ -938,4 +939,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     protected VirtualRouterProviderType getVirtualRouterProvider() {
         return VirtualRouterProviderType.VirtualRouter;
     }
+
+	@Override
+	public List<LoadBalancerTO> updateHealthChecks(Network network,
+			List<LoadBalancingRule> lbrules) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

@@ -104,6 +104,8 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="project_name")
     private String projectName;
 
+    @Column(name="archived")
+    private boolean archived;
 
 
     public EventJoinVO() {
@@ -313,5 +315,12 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.parameters = parameters;
     }
 
+    public boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
+    }
 
 }

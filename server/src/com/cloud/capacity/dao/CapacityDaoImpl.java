@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -34,7 +35,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -62,7 +62,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private final SearchBuilder<CapacityVO> _hostIdTypeSearch;
     private final SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     private final SearchBuilder<CapacityVO> _allFieldsSearch;
-    @Inject protected StoragePoolDao _storagePoolDao;
+    @Inject protected PrimaryDataStoreDao _storagePoolDao;
 
 
     private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = " SELECT  host_capacity.host_id FROM (`cloud`.`host` JOIN `cloud`.`op_host_capacity` host_capacity ON (host.id = host_capacity.host_id AND host.cluster_id = ?) JOIN `cloud`.`cluster_details` cluster_details ON (host_capacity.cluster_id = cluster_details.cluster_id) AND  host.type = ? AND cluster_details.name='cpuOvercommitRatio' AND ((host_capacity.total_capacity *cluster_details.value ) - host_capacity.used_capacity) >= ? and host_capacity.capacity_type = '1' " +
@@ -305,10 +305,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             }
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
+                Long capacityPodId = null;
+                Long capacityClusterId = null;
+
+                if(level != 1 && rs.getLong(6) != 0)
+                    capacityPodId = rs.getLong(6);
+                if(level == 3 && rs.getLong(7) != 0)
+                    capacityClusterId = rs.getLong(7);                   
+
                 SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getFloat(3),
                         (short)rs.getLong(4), rs.getLong(5),
-                        level != 1 ? rs.getLong(6): null,
-                                level == 3 ? rs.getLong(7): null);
+                        capacityPodId, capacityClusterId);
 
                 result.add(summedCapacity);
             }

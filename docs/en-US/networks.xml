@@ -31,6 +31,7 @@
   <xi:include href="advanced-zone-physical-network-configuration.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="using-multiple-guest-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="reserved-ip-addresses-non-csvms.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="security-groups.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="external-firewalls-and-load-balancers.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>

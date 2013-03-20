@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -161,7 +162,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     private Set<ResourceTagResponse> tags;
 
     public VolumeResponse(){
-        tags = new HashSet<ResourceTagResponse>();
+        tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,7 +31,7 @@ import com.cloud.storage.StoragePoolStatus;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/StoragePoolDaoTestContext.xml")
 public class StoragePoolDaoTest extends TestCase {
-    @Inject StoragePoolDaoImpl dao;
+    @Inject PrimaryDataStoreDaoImpl dao;
 
     @Test
     public void testCountByStatus() {

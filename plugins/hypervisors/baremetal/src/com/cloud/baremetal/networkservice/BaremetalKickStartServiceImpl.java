@@ -96,10 +96,35 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             String tpl = profile.getTemplate().getUrl();
             assert tpl != null : "How can a null template get here!!!";
             String[] tpls = tpl.split(";");
-            assert tpls.length == 2 : "Template is not correctly encoded. " + tpl;
+            CloudRuntimeException err = new CloudRuntimeException(String.format("template url[%s] is not correctly encoded. it must be in format of ks=http_link_to_kickstartfile;kernel=nfs_path_to_pxe_kernel;initrd=nfs_path_to_pxe_initrd", tpl));
+            if (tpls.length != 3) {
+                throw err;
+            }
+            
+            String ks = null;
+            String kernel = null;
+            String initrd = null;
+            
+            for (String t : tpls) {
+                String[] kv = t.split("=");
+                if (kv.length != 2) {
+                    throw err;
+                }
+                if (kv[0].equals("ks")) {
+                    ks = kv[1];
+                } else if (kv[0].equals("kernel")) {
+                    kernel = kv[1];
+                } else if (kv[0].equals("initrd")) {
+                    initrd = kv[1];
+                } else {
+                    throw err;
+                }
+            }
+            
             PrepareKickstartPxeServerCommand cmd = new PrepareKickstartPxeServerCommand();
-            cmd.setKsFile(tpls[0]);
-            cmd.setRepo(tpls[1]);
+            cmd.setKsFile(ks);
+            cmd.setInitrd(initrd);
+            cmd.setKernel(kernel);
             cmd.setMac(nic.getMacAddress());
             cmd.setTemplateUuid(template.getUuid());
             Answer aws = _agentMgr.send(pxeVo.getHostId(), cmd);

@@ -50,11 +50,12 @@ import com.sun.mail.smtp.SMTPTransport;
 @Local(value={AlertManager.class})
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
+    private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
     private EmailAlert _emailAlert;
     @Inject private AlertDao _alertDao;
     @Inject private ConfigurationDao _configDao;
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
          Map<String, String> configs = _configDao.getConfiguration("management-server", params);
@@ -101,6 +102,9 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         try {
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, subject, body);
+            } else {
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: "
+                    + podId + " // clusterId:: " + null + " // message:: " + subject );
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -171,18 +175,19 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
+                podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
-            
             if ((alertType != AlertManager.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.ALERT_TYPE_USERVM) &&
                 (alertType != AlertManager.ALERT_TYPE_DOMAIN_ROUTER) &&
                 (alertType != AlertManager.ALERT_TYPE_CONSOLE_PROXY) &&
-                (alertType != AlertManager.ALERT_TYPE_SSVM) &&                
+                (alertType != AlertManager.ALERT_TYPE_SSVM) &&
                 (alertType != AlertManager.ALERT_TYPE_STORAGE_MISC) &&
                 (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE)) {
                 alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
             }
-            
+
             if (alert == null) {
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();

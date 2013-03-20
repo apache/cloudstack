@@ -1,0 +1,127 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          cloudstack usage
+# Required-Start:    $network $local_fs
+# Required-Stop:     $network $local_fs
+# Default-Start:     3 4 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Start/stop Apache CloudStack Usage Monitor
+# Description: This scripts Starts/Stops the Apache CloudStack Usage Monitor
+##  The CloudStack Usage Monitor is a part of the Apache CloudStack project and is used
+##  for storing usage statistics from instances.
+## JSVC (Java daemonizing) is used for starting and stopping the usage monitor.
+### END INIT INFO
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+. /lib/lsb/init-functions
+
+SHORTNAME="cloudstack-usage"
+PIDFILE=/var/run/"$SHORTNAME".pid
+PROGNAME="CloudStack Usage Monitor"
+CLASS="com.cloud.usage.UsageServer"
+PROG="jsvc"
+DAEMON="/usr/bin/jsvc"
+
+unset OPTIONS
+[ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
+
+# The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
+JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
+
+for jdir in $JDK_DIRS; do
+    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
+        JAVA_HOME="$jdir"
+    fi
+done
+export JAVA_HOME
+
+UCP=`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':' | sed s'/.$//'`
+PCP=`ls /usr/share/cloudstack-usage/plugins/*.jar 2>/dev/null | tr '\n' ':' | sed s'/.$//'`
+
+# We need to append the JSVC daemon JAR to the classpath
+# AgentShell implements the JSVC daemon methods
+export CLASSPATH="/usr/share/java/commons-daemon.jar:$UCP:$PCP:/etc/cloudstack/usage"
+
+start() {
+    if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
+        log_daemon_msg "$PROGNAME apparently already running"
+        log_end_msg 0
+        exit 0
+    fi
+
+    log_daemon_msg "Starting $PROGNAME" "$SHORTNAME"
+    if hostname --fqdn >/dev/null 2>&1 ; then
+        true
+    else
+        log_failure_msg "The host name does not resolve properly to an IP address. Cannot start $PROGNAME"
+        log_end_msg 1
+        exit 1
+    fi
+
+    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -pidfile "$PIDFILE" -outfile SYSLOG -errfile SYSLOG -Dpid=$$ $CLASS
+        RETVAL=$?
+    then
+        rc=0
+        sleep 1
+        if ! kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
+            log_failure_msg "$PROG failed to start"
+            rc=1
+        fi
+    else
+        rc=1
+    fi
+
+    if [ $rc -eq 0 ]; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+        rm -f "$PIDFILE"
+    fi
+}
+
+stop() {
+    log_daemon_msg "Stopping $PROGNAME" "$SHORTNAME"
+    killproc -p $PIDFILE $DAEMON
+    log_end_msg $?
+    rm -f "$PIDFILE"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status_of_proc -p "$PIDFILE" "$PROG" "$SHORTNAME"
+        RETVAL=$?
+        ;;
+    restart | force-reload)
+        stop
+        sleep 3
+        start
+        ;;
+    *)
+    echo "Usage: $0 {start|stop|restart|force-reload|status}"
+    RETVAL=3
+esac
+
+exit $RETVAL

@@ -25,6 +25,9 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.vm.VirtualMachineProfile;
+
+import java.util.Map;
 
 public interface VMEntityManager {
 
@@ -34,7 +37,7 @@ public interface VMEntityManager {
 
 	String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan plan, ExcludeList exclude) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    void deployVirtualMachine(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
+    void deployVirtualMachine(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     boolean stopvirtualmachine(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 

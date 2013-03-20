@@ -20,6 +20,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
@@ -38,6 +39,7 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
     List<LbDestination> getExistingDestinations(long lbId);
     List<LbStickinessPolicy> getStickinessPolicies(long lbId);
     List<LbStickinessMethod> getStickinessMethods(long networkid);
+    List<LbHealthCheckPolicy> getHealthCheckPolicies(long lbId);
 
     /**
      * Remove vm from all load balancers

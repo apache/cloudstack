@@ -25,8 +25,8 @@
 <section id="building-marvin">
     <title>Building and Installing Marvin</title>
     <para>Marvin is built with Maven and is dependent on APIdoc. To build it do the following in the root tree of &PRODUCT;:</para>
-    <programlisting>mvn -P developer -l :cloud-apidoc</programlisting>
-    <programlisting>mvn -P developer -l :cloud-marvin</programlisting>
+    <programlisting>mvn -P developer -pl :cloud-apidoc</programlisting>
+    <programlisting>mvn -P developer -pl :cloud-marvin</programlisting>
     <para>If successfull the build will have created the cloudstackAPI Python package under tools/marvin/marvin/cloudstackAPI as well as a gziped Marvin package under tools/marvin dist. To install the Python Marvin module do the following in tools/marvin:</para>
     <programlisting>sudo python ./setup.py install</programlisting>
     <para>The dependencies will be downloaded the Python module installed and you should be able to use Marvin in Python. Check that you can import the module before starting to use it.</para>

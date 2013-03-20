@@ -18,15 +18,23 @@ package com.cloud.deploy;
 
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.UserVmVO;
 
-public abstract class AbstractDeployPlannerSelector implements DeployPlannerSelector {
+public abstract class AbstractDeployPlannerSelector extends AdapterBase implements DeployPlannerSelector {
     protected Map<String, Object>  params;
     protected String name;
     protected int runLevel;
-    
+
+    @Inject
+    protected ConfigurationDao _configDao;
+    protected String _allocationAlgorithm = "random";
+
     @Override
     public String getName() {
         return name;
@@ -59,6 +67,8 @@ public abstract class AbstractDeployPlannerSelector implements DeployPlannerSele
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
         return true;
     }
 

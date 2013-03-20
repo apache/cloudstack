@@ -370,7 +370,7 @@ Within the scripts/vm/hypervisor/xenserver directory
         from OpenStack, LLC  http://www.openstack.org 
             swift 
 
-Within the tools/appliance/definitions/systemvmtemplate directory
+Within the tools/appliance/definitions/systemvmtemplate and tools/appliance/definitions/systemvmtemplate64 directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
             Copyright (c) 2010-2012 Patrick Debois 

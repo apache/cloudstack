@@ -71,11 +71,8 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="Unique username")
     private String username;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -116,10 +113,6 @@ public class UpdateUserCmd extends BaseCmd {
         return username;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -143,7 +136,7 @@ public class UpdateUserCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.updateUser(this);
-        
+
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

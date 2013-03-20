@@ -123,6 +123,7 @@ known_categories = {
     'Pool': 'Pool',
     'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
+    'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',
@@ -132,6 +133,9 @@ known_categories = {
     'Condition': 'AutoScale',
     'Api': 'API Discovery',
     'Region': 'Region',
+    'addIpToNic': 'Nic',
+    'removeIpFromNic': 'Nic',
+    'listNics':'Nic',
     }
 
 

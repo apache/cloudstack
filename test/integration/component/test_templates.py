@@ -77,7 +77,7 @@ class Services:
                             0: {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": 'CentOS 5.3 (64-bit)',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -89,12 +89,12 @@ class Services:
                         "template": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": 'CentOS 5.3 (64-bit)',
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
                         "destzoneid": 2,    # For Copy template (Destination zone)
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced',     # Networking mode: Advanced, basic
@@ -294,7 +294,7 @@ class TestTemplates(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.account = Account.create(

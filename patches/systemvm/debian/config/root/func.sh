@@ -23,7 +23,8 @@
 # $2 timeout seconds
 getLockFile() {
     __locked=0
-    __LOCKFILE="/tmp/$1-$$.lock"
+    __TS=`date +%s%N`
+    __LOCKFILE="/tmp/$__TS-$$-$1.lock"
     if [ $2 ]
     then
         __TIMEOUT=$2
@@ -49,7 +50,7 @@ getLockFile() {
     
     for i in `seq 1 $(($__TIMEOUT * 10))`
     do
-        currlock=`ls -tr /tmp/$1-*.lock | head -n1`
+        currlock=`ls /tmp/*-$1.lock | head -n1`
         if [ $currlock -ef $__LOCKFILE ]
         then
             __locked=1
@@ -77,7 +78,7 @@ getLockFile() {
 # $1 lock filename
 # $2 locked(1) or not(0)
 releaseLockFile() {
-    __LOCKFILE="/tmp/$1-$$.lock"
+    __LOCKFILE="/tmp/*-$$-$1.lock"
     __locked=$2
     if [ "$__locked" == "1" ]
     then

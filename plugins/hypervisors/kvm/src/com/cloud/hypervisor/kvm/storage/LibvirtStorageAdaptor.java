@@ -120,14 +120,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
-            sp = conn.storagePoolDefineXML(spd.toString(), 0);
-            sp.create(0);
+            sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
             if (sp != null) {
                 try {
-                    sp.undefine();
+                    if (sp.isPersistent() == 1) {
+                        sp.destroy();
+                        sp.undefine();
+                    } else {
+                        sp.destroy();
+                    }
                     sp.free();
                 } catch (LibvirtException l) {
                     s_logger.debug("Failed to define nfs storage pool with: "
@@ -150,15 +154,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
-            sp = conn.storagePoolDefineXML(spd.toString(), 0);
-            sp.create(0);
-
+            sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
             if (sp != null) {
                 try {
-                    sp.undefine();
+                    if (sp.isPersistent() == 1) {
+                        sp.destroy();
+                        sp.undefine();
+                    } else {
+                        sp.destroy();
+                    }
                     sp.free();
                 } catch (LibvirtException l) {
                     s_logger.debug("Failed to define shared mount point storage pool with: "
@@ -181,14 +188,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
-            sp = conn.storagePoolDefineXML(spd.toString(), 0);
-            sp.create(0);
+            sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
             if (sp != null) {
                 try {
-                    sp.undefine();
+                    if (sp.isPersistent() == 1) {
+                        sp.destroy();
+                        sp.undefine();
+                    } else {
+                        sp.destroy();
+                    }
                     sp.free();
                 } catch (LibvirtException l) {
                     s_logger.debug("Failed to define clvm storage pool with: "
@@ -236,14 +247,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         try {
             s_logger.debug(spd.toString());
-            sp = conn.storagePoolDefineXML(spd.toString(), 0);
-            sp.create(0);
+            sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.debug(e.toString());
             if (sp != null) {
                 try {
-                    sp.undefine();
+                    if (sp.isPersistent() == 1) {
+                        sp.destroy();
+                        sp.undefine();
+                    } else {
+                        sp.destroy();
+                    }
                     sp.free();
                 } catch (LibvirtException l) {
                     s_logger.debug("Failed to define RBD storage pool with: " + l.toString());
@@ -291,58 +306,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String volDefXML = vol.getXMLDesc(0);
         LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
         return parser.parseStorageVolumeXML(volDefXML);
-    }
-
-    public StoragePool createFileBasedStoragePool(Connect conn,
-            String localStoragePath, String uuid) {
-        if (!(_storageLayer.exists(localStoragePath) && _storageLayer
-                .isDirectory(localStoragePath))) {
-            return null;
-        }
-
-        File path = new File(localStoragePath);
-        if (!(path.canWrite() && path.canRead() && path.canExecute())) {
-            return null;
-        }
-
-        StoragePool pool = null;
-
-        try {
-            pool = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-
-        }
-
-        if (pool == null) {
-            LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR,
-                    uuid, uuid, null, null, localStoragePath);
-            try {
-                pool = conn.storagePoolDefineXML(spd.toString(), 0);
-                pool.create(0);
-            } catch (LibvirtException e) {
-                if (pool != null) {
-                    try {
-                        pool.destroy();
-                        pool.undefine();
-                    } catch (LibvirtException e1) {
-                    }
-                    pool = null;
-                }
-                throw new CloudRuntimeException(e.toString());
-            }
-        }
-
-        try {
-            StoragePoolInfo spi = pool.getInfo();
-            if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
-                pool.create(0);
-            }
-
-        } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        return pool;
     }
 
     @Override
@@ -437,15 +400,59 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         try {
             sp = conn.storagePoolLookupByUUIDString(name);
-            if (sp.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+            if (sp != null && sp.isActive() == 0) {
                 sp.undefine();
                 sp = null;
+                s_logger.debug("Found existing defined storage pool " + name + ". It wasn't running, so we undefined it.");
+            }
+            if (sp != null) {
+                s_logger.debug("Found existing defined storage pool " + name + ", using it.");
             }
         } catch (LibvirtException e) {
+            sp = null;
+            s_logger.debug("createStoragePool didn't find existing running pool: " + e + ", need to create it");
+        }
 
+        // libvirt strips trailing slashes off of path, we will too in order to match
+        // existing paths
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
         }
 
         if (sp == null) {
+            // see if any existing pool by another name is using our storage path.
+            // if anyone is, undefine the pool so we can define it as requested.
+            // This should be safe since a pool in use can't be removed, and no
+            // volumes are affected by unregistering the pool with libvirt.
+            s_logger.debug("Didn't find an existing storage pool " + name 
+                            + " by UUID, checking for pools with duplicate paths");
+
+            try {
+                String[] poolnames = conn.listStoragePools();
+                for (String poolname : poolnames) {
+                    s_logger.debug("Checking path of existing pool " + poolname 
+                                    + " against pool we want to create");
+                    StoragePool p = conn.storagePoolLookupByName(poolname);
+                    LibvirtStoragePoolDef pdef = getStoragePoolDef(conn, p);
+
+                    if (pdef.getTargetPath().equals(path)) {
+                        s_logger.debug("Storage pool utilizing path '" + path + "' already exists as pool "
+                                       + poolname + ", undefining so we can re-define with correct name " + name);
+                        if (p.isPersistent() == 1) {
+                            p.destroy();
+                            p.undefine();
+                        } else {
+                            p.destroy();
+                        }
+                    }
+                }
+            } catch (LibvirtException e) {
+                s_logger.error("Failure in attempting to see if an existing storage pool might " 
+                               + "be using the path of the pool to be created:" + e);
+            }
+
+            s_logger.debug("Attempting to create storage pool " + name);
+
             if (type == StoragePoolType.NetworkFilesystem) {
                 sp = createNfsStoragePool(conn, name, host, path);
             } else if (type == StoragePoolType.SharedMountPoint
@@ -459,8 +466,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            StoragePoolInfo spi = sp.getInfo();
-            if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+            if (sp.isActive() == 0) {
+                s_logger.debug("attempting to activate pool " + name);
                 sp.create(0);
             }
 
@@ -479,7 +486,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
   
             return pool;
         } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString());
+            String error = e.toString();
+            if (error.contains("Storage source conflict")) {
+                throw new CloudRuntimeException("A pool matching this location already exists in libvirt, "
+                                  + " but has a different UUID/Name. Cannot create new pool without first " 
+                                  + " removing it. Check for inactive pools via 'virsh pool-list --all'. " 
+                                  + error);
+            } else {
+                throw new CloudRuntimeException(error);
+            }
         }
     }
 
@@ -511,8 +526,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            sp.destroy();
-            sp.undefine();
+            if (sp.isPersistent() == 1) {
+                sp.destroy();
+                sp.undefine();
+            } else {
+                sp.destroy();
+            }
             sp.free();
             if (s != null) {
                 s.undefine();

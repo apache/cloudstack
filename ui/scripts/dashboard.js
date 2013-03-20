@@ -91,7 +91,7 @@
                 var netTotal = json.listnetworksresponse.count ?
                   json.listnetworksresponse.count : 0;
 
-                 $.ajax({
+                $.ajax({
                   url: createURL('listPublicIpAddresses'),
                   success: function(json) {
                     var ipTotal = json.listpublicipaddressesresponse.count ?
@@ -102,7 +102,7 @@
                       ipTotal: ipTotal
                     }));
                   }
-                });                
+                });
               }
             });
           }
@@ -128,7 +128,7 @@
           }
         }
       },
-      
+
       dataProvider: function(args) {
         var dataFns = {
           zones: function(data) {
@@ -142,71 +142,24 @@
             });
           },
           capacity: function(data) {
-           var latestData =null;
-           if(window.fetchLatestflag == 1)
-           {
+            var latestData =null;
+            if(window.fetchLatestflag == 1)
+            {
               latestData = {
 
-                  fetchLatest:true
-                 }
+                fetchLatest:true
+              }
             }
-           else
+            else
             {
               latestData = {
                 fetchLatest:false
-               }         
+              }
             }
-	    window.fetchLatestflag = 0;          
-            if (data.zones) {
-              $.ajax({
-                url: createURL('listCapacity'),
-                data: latestData,
-                success: function(json) {
-                  var capacities = json.listcapacityresponse.capacity;
 
-                  var capacity = function(id, converter) {
-                    var result = $.grep(capacities, function(capacity) {
-                      return capacity.type == id;
-                    });
-                    return result[0] ? result[0] : {
-                      capacityused: 0,
-                      capacitytotal: 0,
-                      percentused: 0
-                    };
-                  };
+            window.fetchLatestflag = 0;
 
-                  dataFns.alerts($.extend(data, {
-                    publicIPAllocated: capacity(8).capacityused,
-                    publicIPTotal: capacity(8).capacitytotal,
-                    publicIPPercentage: parseInt(capacity(8).percentused),
-                    privateIPAllocated: capacity(5).capacityused,
-                    privateIPTotal: capacity(5).capacitytotal,
-                    privateIPPercentage: parseInt(capacity(8).percentused),
-                    memoryAllocated: cloudStack.converters.convertBytes(capacity(0).capacityused),
-                    memoryTotal: cloudStack.converters.convertBytes(capacity(0).capacitytotal),
-                    memoryPercentage: parseInt(capacity(0).percentused),
-                    cpuAllocated: cloudStack.converters.convertHz(capacity(1).capacityused),
-                    cpuTotal: cloudStack.converters.convertHz(capacity(1).capacitytotal),
-                    cpuPercentage: parseInt(capacity(1).percentused)
-                  }));
-                }
-              });
-            } else {
-              dataFns.alerts($.extend(data, {
-                publicIPAllocated: 0,
-                publicIPTotal: 0,
-                publicIPPercentage: 0,
-                privateIPAllocated: 0,
-                privateIPTotal: 0,
-                privateIPPercentage: 0,
-                memoryAllocated: 0,
-                memoryTotal: 0,
-                memoryPercentage: 0,
-                cpuAllocated: 0,
-                cpuTotal: 0,
-                cpuPercentage: 0
-              }));
-            }
+            dataFns.alerts(data);
           },
 
           alerts: function(data) {
@@ -273,11 +226,11 @@
                 complete($.extend(data, {
                   zoneCapacities: $.map(capacities, function(capacity) {
                     if (capacity.podname) {
-                      capacity.zonename = capacity.zonename.concat('<br/>' + _l('label.pod') + ': ' + capacity.podname);
+                      capacity.zonename = capacity.zonename.concat(', ' + _l('label.pod') + ': ' + capacity.podname);
                     }
 
                     if (capacity.clustername) {
-                      capacity.zonename = capacity.zonename.concat('<br/>' + _l('label.cluster') + ': ' + capacity.clustername);
+                      capacity.zonename = capacity.zonename.concat(', ' + _l('label.cluster') + ': ' + capacity.clustername);
                     }
 
                     capacity.zonename.replace('Zone:', _l('label.zone') + ':');

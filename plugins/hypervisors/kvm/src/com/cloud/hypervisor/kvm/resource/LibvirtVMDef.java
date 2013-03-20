@@ -846,6 +846,31 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class VirtioSerialDef {
+        private final String _name;
+        private String _path;
+
+        public VirtioSerialDef(String name, String path) {
+            _name = name;
+            _path = path;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder virtioSerialBuilder = new StringBuilder();
+            if(_path == null) {
+                _path = "/var/lib/libvirt/qemu";
+            }
+            virtioSerialBuilder.append("<channel type='unix'>\n");
+            virtioSerialBuilder.append("<source mode='bind' path='" + _path
+                                        + "/" + _name + ".agent'/>\n");
+            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
+            virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            virtioSerialBuilder.append("</channel>\n");
+            return virtioSerialBuilder.toString();
+        }
+    }
+
     public static class GraphicDef {
         private final String _type;
         private short _port = -2;

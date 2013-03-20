@@ -22,12 +22,12 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -88,7 +88,7 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() throws ResourceAllocationException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
 
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);

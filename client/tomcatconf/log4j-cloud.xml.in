@@ -74,6 +74,20 @@ under the License.
          <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
       </layout>
    </appender>
+   <!-- ============================== -->
+   <!-- send alert warnings+ as the SNMP trap if it is configured! -->
+   <!-- ============================== -->
+
+   <appender name="SNMP" class="org.apache.cloudstack.alert.snmp.SnmpTrapAppender">
+      <param name="Threshold" value="WARN"/>
+      <param name="SnmpManagerIpAddresses" value=""/>
+      <param name="SnmpManagerPorts" value=""/>
+      <param name="SnmpManagerCommunities" value=""/>
+      <layout class="org.apache.cloudstack.alert.snmp.SnmpEnhancedPatternLayout">
+         <param name="PairDelimiter" value="//"/>
+         <param name="KeyValueDelimiter" value="::"/>
+      </layout>
+   </appender>
 
    <!-- ============================== -->
    <!-- Append messages to the console -->
@@ -142,6 +156,17 @@ under the License.
       <appender-ref ref="AWSAPI"/>
    </logger>
 
+   <!-- ============================== -->
+   <!-- Add or remove these logger for SNMP, this logger is for SNMP alerts plugin -->
+   <!-- ============================== -->
+
+   <logger name="org.apache.cloudstack.alerts" additivity="false">
+      <level value="WARN"/>
+      <appender-ref ref="SYSLOG"/>
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE"/>
+      <appender-ref ref="SNMP"/>
+   </logger>
 
    <!-- ======================= -->
    <!-- Setup the Root category -->

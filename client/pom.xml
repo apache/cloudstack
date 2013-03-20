@@ -67,6 +67,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -86,11 +91,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-       <groupId>org.apache.cloudstack</groupId>
-       <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-       <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
       <version>${project.version}</version>
@@ -99,6 +99,11 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+       <groupId>org.apache.cloudstack</groupId>
+       <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
+       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -214,6 +219,11 @@
         <artifactId>cloud-engine-storage-volume</artifactId>
         <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -238,7 +248,6 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <jvmArgs>-XX:MaxPermSize=512m -Xmx2g</jvmArgs>
           <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
           <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
           <webAppConfig>
@@ -268,7 +277,13 @@
             </goals>
             <configuration>
               <target>
-
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                  <fileset dir="${basedir}/../scripts" />
+                </copy>
+                <!--  CLOUDSTACK-1304 -->
+                <chmod perm="755" >
+                    <fileset dir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
+                </chmod>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
@@ -281,13 +296,6 @@
                     <include name="resources/**/*" />
                   </fileset>
                 </copy>
-
-                <exec executable="cp">
-                    <arg value="-r" />
-                    <arg value="${basedir}/../scripts" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
-                </exec>
-
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
                   <fileset dir="${basedir}/../services/console-proxy/server/dist">
                     <include name="systemvm.zip" />
@@ -307,7 +315,7 @@
                     <filterreader
                       classname="org.apache.tools.ant.filters.ReplaceTokens">
                       <param type="propertiesfile"
-                        value="${basedir}/../build/replace.properties" />
+                        value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -318,7 +326,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -329,7 +337,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -340,7 +348,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -350,9 +358,25 @@
                   </fileset>
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/conf">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/conf">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <exclude name="*.in" />
+                  </fileset>
                 </copy>
               </target>
             </configuration>
@@ -466,21 +490,6 @@
     </pluginManagement>
   </build>
   <profiles>
-    <profile>
-        <id>simulator</id>
-        <activation>
-            <property>
-                <name>simulator</name>
-            </property>
-        </activation>
-        <dependencies>
-            <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </profile>
     <profile>
       <id>netapp</id>
       <activation>

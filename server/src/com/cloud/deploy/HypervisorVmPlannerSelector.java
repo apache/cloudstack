@@ -18,16 +18,37 @@ package com.cloud.deploy;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
+import com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.vm.UserVmVO;
 
 @Local(value = {DeployPlannerSelector.class})
 public class HypervisorVmPlannerSelector extends AbstractDeployPlannerSelector {
+    private static final Logger s_logger = Logger.getLogger(HypervisorVmPlannerSelector.class);
+
     @Override
     public String selectPlanner(UserVmVO vm) {
         if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-            return "FirstFitPlanner";
+            //check the allocation strategy
+            if (_allocationAlgorithm != null) {
+                if (_allocationAlgorithm.equals(AllocationAlgorithm.random.toString())
+                        || _allocationAlgorithm.equals(AllocationAlgorithm.firstfit.toString())) {
+                    return "FirstFitPlanner";
+                } else if (_allocationAlgorithm.equals(AllocationAlgorithm.userdispersing.toString())) {
+                    return "UserDispersingPlanner";
+                } else if (_allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_random.toString())
+                        || _allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
+                    return "UserConcentratedPodPlanner";
+                }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("The allocation algorithm is null, cannot select the planner");
+                }
+            }
         }
+
         return null;
     }
 }

@@ -48,9 +48,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -115,7 +117,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
@@ -813,6 +814,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
         Long size = null;
+        // Volume VO used for extracting the source template id
+        VolumeVO parentVolume = null;
 
         // validate input parameters before creating the volume
         if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null)
@@ -891,6 +894,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         + snapshotId + " is not in " + Snapshot.State.BackedUp
                         + " state yet and can't be used for volume creation");
             }
+            parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             diskOfferingId = snapshotCheck.getDiskOfferingId();
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
@@ -947,6 +951,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
                 .getDomainId());
+        if (parentVolume != null) {
+            volume.setTemplateId(parentVolume.getTemplateId());
+        }  else {
+            volume.setTemplateId(null);
+        }
 
         volume = _volsDao.persist(volume);
         if (cmd.getSnapshotId() == null) {
@@ -1431,63 +1440,29 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {
-        StoragePoolVO vmRootVolumePool = _storagePoolDao
-                .findById(rootVolumeOfVm.getPoolId());
-        DiskOfferingVO volumeDiskOffering = _diskOfferingDao
-                .findById(volume.getDiskOfferingId());
-        String[] volumeTags = volumeDiskOffering.getTagsArray();
-
-        boolean isVolumeOnSharedPool = !volumeDiskOffering
-                .getUseLocalStorage();
-        StoragePoolVO sourcePool = _storagePoolDao.findById(volume
-                .getPoolId());
-        List<StoragePoolVO> matchingVMPools = _storagePoolDao
-                .findPoolsByTags(vmRootVolumePool.getDataCenterId(),
-                        vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(), volumeTags,
-                        isVolumeOnSharedPool);
+        DataStore storeForRootVol = this.dataStoreMgr.getPrimaryDataStore(rootVolumeOfVm.getPoolId());
+        DataStore storeForDataVol = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         
-        boolean moveVolumeNeeded = true;
-        if (matchingVMPools.size() == 0) {
-            String poolType;
-            if (vmRootVolumePool.getClusterId() != null) {
-                poolType = "cluster";
-            } else if (vmRootVolumePool.getPodId() != null) {
-                poolType = "pod";
-            } else {
-                poolType = "zone";
-            }
-            throw new CloudRuntimeException(
-                    "There are no storage pools in the VM's " + poolType
-                    + " with all of the volume's tags ("
-                    + volumeDiskOffering.getTags() + ").");
-        } else {
-            long sourcePoolId = sourcePool.getId();
-            Long sourcePoolDcId = sourcePool.getDataCenterId();
-            Long sourcePoolPodId = sourcePool.getPodId();
-            Long sourcePoolClusterId = sourcePool.getClusterId();
-            for (StoragePoolVO vmPool : matchingVMPools) {
-                long vmPoolId = vmPool.getId();
-                Long vmPoolDcId = vmPool.getDataCenterId();
-                Long vmPoolPodId = vmPool.getPodId();
-                Long vmPoolClusterId = vmPool.getClusterId();
-
-                // Moving a volume is not required if storage pools belongs
-                // to same cluster in case of shared volume or
-                // identical storage pool in case of local
-                if (sourcePoolDcId == vmPoolDcId
-                        && sourcePoolPodId == vmPoolPodId
-                        && sourcePoolClusterId == vmPoolClusterId
-                        && (isVolumeOnSharedPool || sourcePoolId == vmPoolId)) {
-                    moveVolumeNeeded = false;
-                    break;
-                }
-            }
+        Scope storeForRootStoreScope = storeForRootVol.getScope();
+        if (storeForRootStoreScope == null) {
+            throw new CloudRuntimeException("Can't get scope of data store: " + storeForRootVol.getId());
         }
         
-        return moveVolumeNeeded;
+        Scope storeForDataStoreScope = storeForDataVol.getScope();
+        if (storeForDataStoreScope == null) {
+            throw new CloudRuntimeException("Can't get scope of data store: " + storeForDataVol.getId());
+        }
+        
+        if (storeForDataStoreScope.getScopeType() == ScopeType.ZONE) {
+            return false;
+        }
+        
+        if (storeForRootStoreScope.getScopeType() != storeForDataStoreScope.getScopeType()) {
+            throw new CloudRuntimeException("Can't move volume between scope: " + storeForDataStoreScope.getScopeType() + " and " + storeForRootStoreScope.getScopeType());
+        }
+       
+        return !storeForRootStoreScope.isSameScope(storeForDataStoreScope);
     }
-    
     
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volume, Long deviceId) {
         String errorMsg = "Failed to attach volume: " + volume.getName()
@@ -2158,7 +2133,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                                             + assignedPool
                                             + " assigned by deploymentPlanner");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, null);
+                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
                                 tasks.add(task);
                             }
                         } else {

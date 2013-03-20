@@ -100,7 +100,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject
     ConfigurationDao configDao;
     @Inject
-    StorageManager storagMgr;
+    StorageManager storageMgr;
     @Inject
     VolumeDao volDao;
     @Inject
@@ -149,7 +149,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         CopyVolumeAnswer cvAnswer = null;
         String errMsg = null;
         try {
-            cvAnswer = (CopyVolumeAnswer) this.storagMgr.sendToPool(destPool,
+            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(destPool,
                     cvCmd);
         } catch (StorageUnavailableException e1) {
             s_logger.debug("Failed to copy volume " + srcData.getId() + " to "
@@ -231,7 +231,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                         "2.1");
                 Answer answer = null;
                 try {
-                    answer = this.storagMgr.sendToPool(pool, cmd);
+                    answer = this.storageMgr.sendToPool(pool, cmd);
                 } catch (StorageUnavailableException e) {
                 } finally {
                     snapshotDao.unlockFromLockTable(snapshotId.toString());
@@ -268,7 +268,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                         + snapshotId
                         + " due to this snapshot is being used, try it later ");
             }
-            answer = (CreateVolumeFromSnapshotAnswer) this.storagMgr
+            answer = (CreateVolumeFromSnapshotAnswer) this.storageMgr
                     .sendToPool(pool, createVolumeFromSnapshotCommand);
             if (answer != null && answer.getResult()) {
                 vdiUUID = answer.getVdi();
@@ -306,7 +306,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         StoragePool pool = (StoragePool)volume.getDataStore();
         String errMsg = null;
         try {
-            answer = storagMgr.sendToPool(pool, null, cmd);
+            answer = storageMgr.sendToPool(pool, null, cmd);
         } catch (StorageUnavailableException e) {
             s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
@@ -358,7 +358,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 _copyvolumewait);
         CopyVolumeAnswer cvAnswer;
         try {
-            cvAnswer = (CopyVolumeAnswer) this.storagMgr.sendToPool(srcPool, cvCmd);
+            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(srcPool, cvCmd);
         } catch (StorageUnavailableException e1) {
             throw new CloudRuntimeException(
                     "Failed to copy the volume from the source primary storage pool to secondary storage.",
@@ -376,7 +376,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 secondaryStorageVolumePath, destPool,
                 secondaryStorageURL, false, _copyvolumewait);
         try {
-            cvAnswer = (CopyVolumeAnswer) this.storagMgr.sendToPool(destPool, cvCmd);
+            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(destPool, cvCmd);
         } catch (StorageUnavailableException e1) {
             throw new CloudRuntimeException(
                     "Failed to copy the volume from secondary storage to the destination primary storage pool.");
@@ -464,7 +464,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Long volumeId = snapshot.getVolumeId();
 
         String origTemplateInstallPath = null;
-        List<StoragePoolVO> pools = this.storagMgr
+        List<StoragePoolVO> pools = this.storageMgr
                 .ListByDataCenterHypervisor(zoneId,
                         snapshot.getHypervisorType());
         if (pools == null || pools.size() == 0) {
@@ -516,7 +516,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 }
                 Answer answer = null;
                 try {
-                    answer = this.storagMgr.sendToPool(pool, cmd);
+                    answer = this.storageMgr.sendToPool(pool, cmd);
                     cmd = null;
                 } catch (StorageUnavailableException e) {
                 } finally {
@@ -557,7 +557,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         CreatePrivateTemplateAnswer answer = null;
         try {
-            answer = (CreatePrivateTemplateAnswer) this.storagMgr.sendToPool(
+            answer = (CreatePrivateTemplateAnswer) this.storageMgr.sendToPool(
                     pool, cmd);
         } catch (StorageUnavailableException e) {
             throw new CloudRuntimeException(
@@ -660,7 +660,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
          Long accountId = baseVolume.getAccountId();
          
          HostVO secHost = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
-         
+         Long secHostId = secHost.getId();
          String secondaryStoragePoolUrl = secHost.getStorageUrl();
          String snapshotUuid = srcSnapshot.getPath();
          // In order to verify that the snapshot is not empty,
@@ -693,7 +693,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
          StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(baseVolume.getPoolId());
          String value = configDao.getValue(Config.BackupSnapshotWait.toString());
          int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
-         BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, baseVolume.getId(), srcSnapshot.getId(), baseVolume.getPath(), srcPool, snapshotUuid,
+         BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, baseVolume.getId(), srcSnapshot.getId(), secHostId, baseVolume.getPath(), srcPool, snapshotUuid,
         		 srcSnapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
          if ( swift != null ) {

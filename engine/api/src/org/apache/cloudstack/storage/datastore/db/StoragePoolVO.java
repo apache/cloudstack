@@ -32,12 +32,13 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="storage_pool")
-public class StoragePoolVO {
+public class StoragePoolVO implements StoragePool{
     @Id
     @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
@@ -300,5 +301,11 @@ public class StoragePoolVO {
     
     public boolean isLocal() {
         return !isShared();
+    }
+
+    @Override
+    public boolean isInMaintenance() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

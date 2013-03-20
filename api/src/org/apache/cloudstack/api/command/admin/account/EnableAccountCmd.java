@@ -50,11 +50,8 @@ public class EnableAccountCmd extends BaseCmd {
             description="Enables specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,10 +68,6 @@ public class EnableAccountCmd extends BaseCmd {
         return domainId;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -101,7 +94,7 @@ public class EnableAccountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	Account result = _regionService.enableAccount(this);
+        Account result = _regionService.enableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

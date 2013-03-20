@@ -76,7 +76,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template from snapshot',
                                     "name": 'Template from snapshot',
-                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                    "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                                     "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                     "hypervisor": 'XenServer',
@@ -98,7 +98,7 @@ class Services:
                                     "endport": 22,
                                     "protocol": "TCP"
                         },
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "mode": 'advanced',
@@ -122,7 +122,7 @@ class TestSnapshots(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["zoneid"] = cls.zone.id
@@ -546,7 +546,7 @@ class TestNATRules(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -740,7 +740,7 @@ class TestRouters(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         # Create an account, domain etc
@@ -866,7 +866,7 @@ class TestRouterRestart(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -996,7 +996,7 @@ class TestTemplates(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.account = Account.create(

@@ -30,12 +30,15 @@
        for package management. 
     </para>
     <para>
-       The minimum bootstrapped prerequisites for building &PRODUCT; includes
-       the following: 
+       You will need, at a minimum, the following to compile &PRODUCT;:
        <orderedlist>
-          <listitem><para>ant</para></listitem>
-          <listitem><para>maven (version 3)</para></listitem>
-          <listitem><para>Java (Java 6/OpenJDK 1.6) </para></listitem>
+          <listitem><para>Maven (version 3)</para></listitem>
+          <listitem><para>Java (OpenJDK 1.6 or Java 7/OpenJDK 1.7)</para></listitem>
+          <listitem><para>Apache Web Services Common Utilities (ws-commons-util)</para></listitem> 
+          <listitem><para>MySQL</para></listitem>
+          <listitem><para>MySQLdb (provides Python database API)</para></listitem>
+          <listitem><para>Tomcat 6 (not 6.0.35)</para></listitem>
+          <listitem><para>genisoimage</para></listitem>
           <listitem><para>rpmbuild or dpkg-dev</para></listitem>
        </orderedlist>
     </para>

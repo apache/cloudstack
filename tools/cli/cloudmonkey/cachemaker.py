@@ -21,7 +21,7 @@ try:
     import os
     import types
 
-    from config import cache_file
+    from config import config_fields
 except ImportError, e:
     import sys
     print "ImportError", e
@@ -100,7 +100,11 @@ def monkeycache(apis):
     cache['count'] = getvalue(apis[responsekey], 'count')
     cache['asyncapis'] = []
 
-    for api in getvalue(apis[responsekey], 'api'):
+    apilist = getvalue(apis[responsekey], 'api')
+    if apilist == None:
+        print "[monkeycache] Server response issue, no apis found"
+
+    for api in apilist:
         name = getvalue(api, 'name')
         verb, subject = splitverbsubject(name)
 
@@ -168,6 +172,7 @@ def main(json_file):
     f.close()
 
 if __name__ == "__main__":
+    cache_file = config_fields['core']['cache_file']
     print "[cachemaker] Pre-caching using user's cloudmonkey cache", cache_file
     if os.path.exists(cache_file):
         main(cache_file)

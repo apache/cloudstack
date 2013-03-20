@@ -64,7 +64,7 @@ public class RegionCmdTest extends TestCase {
 
         Region region = Mockito.mock(Region.class);
         Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
         		.thenReturn(region);
 
         addRegionCmd._regionService = regionService;
@@ -87,7 +87,7 @@ public class RegionCmdTest extends TestCase {
 
         Region region = Mockito.mock(Region.class);
         Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
         		.thenReturn(null);
 
         addRegionCmd._regionService = regionService;

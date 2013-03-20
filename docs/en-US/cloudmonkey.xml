@@ -1,0 +1,264 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="cloudmonkey">
+    <title>CloudMonkey</title>
+    <para>CloudMonkey is the &PRODUCT; Command Line Interface (CLI). It is written in Python. CloudMonkey can be used both as an interactive shell and as a command line tool which simplifies &PRODUCT; configuration and management. It can be used with &PRODUCT; CloudStack 4.0-incubating and above</para>
+    <warning>
+        <para>CloudMonkey is still under development and should be considered a Work In Progress (WIP), the wiki is the most up to date documentation:</para>
+        <para><ulink url="https://cwiki.apache.org/CLOUDSTACK/cloudstack-cloudmonkey-cli.html">https://cwiki.apache.org/CLOUDSTACK/cloudstack-cloudmonkey-cli.html</ulink></para>
+    </warning>
+
+    <section id="gettingcloudmonkey">
+    <title>Installing CloudMonkey</title>
+        <para>CloudMonkey is dependent on <emphasis>readline, pygments, prettytable</emphasis>, when installing from source you will need to resolve those dependencies. Using the cheese shop, the dependencies will be automatically installed.</para>
+        <para>There are three ways to get CloudMonkey. Via the official &PRODUCT; source releases or via a community maintained distribution at <ulink url="http://pypi.python.org/pypi/cloudmonkey/">the cheese shop</ulink>. Developers can also get it directly from the git repository in <emphasis>tools/cli/</emphasis>.</para>
+        <para>
+        <itemizedlist>
+            <listitem>
+                <para>Via the official Apache &PRODUCT; releases as well as the git repository.</para>
+                    <programlisting>
+    <![CDATA[
+$ git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git # (optional if using a release download)
+$ mvn clean install -P developer
+$ cd tools/cli # cloudmonkey-x.x.x.tar.gz will be built in dist
+$ python setup.py build
+$ python setup.py install
+    ]]>
+                    </programlisting>
+            </listitem>
+            <listitem>
+                <para>Via a community maintained package on Cheese Shop</para>
+                <para><programlisting>pip install cloudmonkey</programlisting></para>
+            </listitem>
+        </itemizedlist>
+        </para>
+    </section>
+
+    <section id="configuringcloudmonkey">
+    <title>Configuration</title>
+    <para>To configure CloudMonkey you can edit the ~/.cloudmonkey/config file in the user's home directory as shown below. The values can also be set interactively at the cloudmonkey prompt. Logs are kept in ~/.cloudmonkey/log, and history is stored in ~/.cloudmonkey/history. Discovered apis are listed in ~/.cloudmonkey/cache. Only the log and history files can be custom paths and can be configured by setting appropriate file paths in ~/.cloudmonkey/config</para>
+    <programlisting>
+$ cat ~/.cloudmonkey/config 
+[core]
+log_file = /Users/sebastiengoasguen/.cloudmonkey/log
+asyncblock = true
+paramcompletion = false
+history_file = /Users/sebastiengoasguen/.cloudmonkey/history
+
+[ui]
+color = true
+prompt = > 
+tabularize = false
+
+[user]
+secretkey =VDaACYb0LV9eNjTetIOElcVQkvJck_J_QljX_FcHRj87ZKiy0z0ty0ZsYBkoXkY9b7eq1EhwJaw7FF3akA3KBQ 
+apikey = plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdMkAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg
+
+[server]
+path = /client/api
+host = localhost
+protocol = http
+port = 8080
+timeout = 3600
+    </programlisting>
+    <para>The values can also be set at the CloudMonkey prompt. The API and secret keys are obtained via the &PRODUCT; UI or via a raw api call.</para>
+    <programlisting>
+<![CDATA[
+$ cloudmonkey
+☁ Apache CloudStack cloudmonkey 4.1.0-snapshot. Type help or ? to list commands.
+
+> set prompt myprompt>
+myprompt> set host localhost
+myprompt> set port 8080
+myprompt> set apikey <your api key>
+myprompt> set secretkey <your secret key>
+]]>
+    </programlisting>
+    <para>You can use CloudMonkey to interact with a local cloud, and even with a remote public cloud. You just need to set the host value properly and obtain the keys from the cloud administrator.</para>
+    </section>
+    
+    <section id="cliapidiscovery">
+    <title>API Discovery</title>
+    <note>
+    <para>In &PRODUCT; 4.0.* releases, the list of api calls available will be pre-cached, while starting with &PRODUCT; 4.1 releases and above an API discovery service is enabled. CloudMonkey will discover automatically the api calls available on the management server. The sync command in CloudMonkey pulls a list of apis which are accessible to your user role, along with help docs etc. and stores them in ~/.cloudmonkey/cache. This allows cloudmonkey to be adaptable to changes in mgmt server, so in case the sysadmin enables a plugin such as Nicira NVP for that user role, the users can get those changes. New verbs and grammar (DSL) rules are created on the fly.</para>
+    </note>
+    <para>To discover the APIs available do:</para>
+    <programlisting>
+ > sync
+324 APIs discovered and cached
+    </programlisting>
+    </section>
+
+    <section id="clitabularoutput">
+    <title>Tabular Output</title>
+    <para>The number of key/value pairs returned by the api calls can be large resulting in a very long output. To enable easier viewing of the output, a tabular formatting can be setup. You may enable tabular listing and even choose set of column fields, this allows you to create your own field using the filter param which takes in comma separated argument. If argument has a space, put them under double quotes. The create table will have the same sequence of field filters provided</para>
+    <para>To enable it, use the <emphasis>set</emphasis> function and create filters like so:</para>
+    <programlisting>
+> set tabularize true
+> list users filter=id,domain,account
+count = 1
+user:
++--------------------------------------+--------+---------+
+|                  id                  | domain | account |
++--------------------------------------+--------+---------+
+| 7ed6d5da-93b2-4545-a502-23d20b48ef2a |  ROOT  |  admin  |
++--------------------------------------+--------+---------+
+    </programlisting>
+    </section>
+
+    <section id="interactivecli">
+    <title>Interactive Shell Usage</title>
+    <para>To start learning CloudMonkey, the best is to use the interactive shell. Simply type CloudMonkey at the prompt and you should get the interactive shell.</para>
+    <para>At the CloudMonkey prompt press the tab key twice, you will see all potential verbs available. Pick on, enter a space and then press tab twice. You will see all actions available for that verb</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>
+EOF        assign     cancel     create     detach     extract    ldap       prepare    reconnect  restart    shell      update     
+activate   associate  change     delete     disable    generate   list       query      register   restore    start      upload     
+add        attach     configure  deploy     enable     get        mark       quit       remove     revoke     stop       
+api        authorize  copy       destroy    exit       help       migrate    reboot     reset      set        suspend    
+cloudmonkey>create 
+account                diskoffering           loadbalancerrule       portforwardingrule     snapshot               tags                   vpc
+autoscalepolicy        domain                 network                privategateway         snapshotpolicy         template               vpcoffering
+autoscalevmgroup       firewallrule           networkacl             project                sshkeypair             user                   vpnconnection
+autoscalevmprofile     instancegroup          networkoffering        remoteaccessvpn        staticroute            virtualrouterelement   vpncustomergateway
+condition              ipforwardingrule       physicalnetwork        securitygroup          storagenetworkiprange  vlaniprange            vpngateway
+counter                lbstickinesspolicy     pod                    serviceoffering        storagepool            volume                 zone
+]]>
+    </programlisting>
+    <para>Picking one action and entering a space plus the tab key, you will obtain the list of parameters for that specific api call.</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>create network 
+account=            domainid=           isAsync=            networkdomain=      projectid=          vlan=               
+acltype=            endip=              name=               networkofferingid=  startip=            vpcid=              
+displaytext=        gateway=            netmask=            physicalnetworkid=  subdomainaccess=    zoneid=             
+]]>
+    </programlisting>
+    <para>To get additional help on that specific api call you can use the following:</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>create network -h
+Creates a network
+Required args: displaytext name networkofferingid zoneid
+Args: account acltype displaytext domainid endip gateway isAsync name netmask networkdomain networkofferingid physicalnetworkid projectid startip subdomainaccess vlan vpcid zoneid
+
+cloudmonkey>create network -help
+Creates a network
+Required args: displaytext name networkofferingid zoneid
+Args: account acltype displaytext domainid endip gateway isAsync name netmask networkdomain networkofferingid physicalnetworkid projectid startip subdomainaccess vlan vpcid zoneid
+
+cloudmonkey>create network --help
+Creates a network
+Required args: displaytext name networkofferingid zoneid
+Args: account acltype displaytext domainid endip gateway isAsync name netmask networkdomain networkofferingid physicalnetworkid projectid startip subdomainaccess vlan vpcid zoneid
+cloudmonkey>    
+]]>
+    </programlisting>
+    <para>Note the required arguments necessary for the calls.</para>
+    <note><para>To find out the required parameters value, using a debugger console on the &PRODUCT; UI might be very useful. For instance using Firebug on Firefox, you can navigate the UI and check the parameters values for each call you are making as you navigate the UI.</para></note>
+    </section>
+
+    <section id="startingavmexample">
+    <title>Starting a Virtual Machine instance with CloudMonkey</title>
+    <para>To start a virtual machine instance we will use the <emphasis>deploy virtualmachine</emphasis> call.</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>deploy virtualmachine -h
+Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.
+Required args: serviceofferingid templateid zoneid
+Args: account diskofferingid displayname domainid group hostid hypervisor ipaddress iptonetworklist isAsync keyboard keypair name networkids projectid securitygroupids securitygroupnames serviceofferingid size startvm templateid userdata zoneid
+]]>
+    </programlisting>
+    <para>The required arguments are <emphasis>serviceofferingid, templateid and zoneid</emphasis></para>
+    <para>In order to specify the template that we want to use, we can list all available templates with the following call:</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>list templates templatefilter=all
+count = 2
+template:
+========
+domain = ROOT
+domainid = 8a111e58-e155-4482-93ce-84efff3c7c77
+zoneid = e1bfdfaf-3d9b-43d4-9aea-2c9f173a1ae7
+displaytext = SystemVM Template (XenServer)
+ostypeid = 849d7d0a-9fbe-452a-85aa-70e0a0cbc688
+passwordenabled = False
+id = 6d360f79-4de9-468c-82f8-a348135d298e
+size = 2101252608
+isready = True
+templatetype = SYSTEM
+zonename = devcloud
+...<snipped>
+]]>
+    </programlisting>
+    <para>In this snippet, I used DevCloud and only showed the beginning output of the first template, the SystemVM template</para>
+    <para>Similarly to get the <emphasis>serviceofferingid</emphasis> you would do:</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>list serviceofferings | grep id
+id = ef2537ad-c70f-11e1-821b-0800277e749c
+id = c66c2557-12a7-4b32-94f4-48837da3fa84
+id = 3d8b82e5-d8e7-48d5-a554-cf853111bc50
+]]>
+    </programlisting>
+    <para>Note that we can use the linux pipe as well as standard linux commands within the interactive shell. Finally we would start an instance with the following call:</para>
+    <programlisting>
+<![CDATA[
+cloudmonkey>deploy virtualmachine templateid=13ccff62-132b-4caf-b456-e8ef20cbff0e zoneid=e1bfdfaf-3d9b-43d4-9aea-2c9f173a1ae7 serviceofferingid=ef2537ad-c70f-11e1-821b-0800277e749c
+jobprocstatus = 0
+created = 2013-03-05T13:04:51-0800
+cmd = com.cloud.api.commands.DeployVMCmd
+userid = 7ed6d5da-93b2-4545-a502-23d20b48ef2a
+jobstatus = 1
+jobid = c441d894-e116-402d-aa36-fdb45adb16b7
+jobresultcode = 0
+jobresulttype = object
+jobresult:
+=========
+virtualmachine:
+==============
+domain = ROOT
+domainid = 8a111e58-e155-4482-93ce-84efff3c7c77
+haenable = False
+templatename = tiny Linux
+...<snipped>
+]]>
+    </programlisting>
+    <para>The instance would be stopped with:</para>
+    <programlisting>
+cloudmonkey>stop virtualmachine id=7efe0377-4102-4193-bff8-c706909cc2d2
+    </programlisting>
+    <note><para>The <emphasis>ids</emphasis> that you will use will differ from this example. Make sure you use the ones that corresponds to your &PRODUCT; cloud.</para></note>
+    </section>
+
+    <section id="scriptingcli">
+    <title>Scripting with CloudMonkey</title>
+    <para>All previous examples use CloudMonkey via the interactive shell, however it can be used as a straightfoward CLI, passing the commands to the <emphasis>cloudmonkey</emphasis> command like shown below.</para>
+    <para><programlisting>$cloudmonkey list users</programlisting></para>
+    <para>As such it can be used in shell scripts, it can received commands via stdin and its output can be parsed like any other unix commands as mentioned before.</para>
+    </section>
+
+</section>

@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
 import com.cloud.api.commands.AddF5LoadBalancerCmd;
@@ -496,4 +497,11 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         }
         return this;
     }
+
+	@Override
+	public List<LoadBalancerTO> updateHealthChecks(Network network,
+			List<LoadBalancingRule> lbrules) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

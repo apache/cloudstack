@@ -277,4 +277,6 @@ public interface GenericDao<T, ID extends Serializable> {
      * @return
      */
     Pair<List<T>, Integer> searchAndCount(SearchCriteria<T> sc, Filter filter);
+
+    Map<String, Attribute> getAllAttributes();
 }

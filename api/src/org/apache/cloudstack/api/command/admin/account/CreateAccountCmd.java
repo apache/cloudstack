@@ -78,19 +78,12 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
-	//@Parameter(name = ApiConstants.REGION_DETAILS, type = CommandType.MAP, description = "details for account used to store region specific parameters")
-    //private Map<String, String> regionDetails;
-	
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.STRING, description="Account UUID, required for adding account from another Region")
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.STRING, description="Account UUID, required for adding account from external provisioning system")
     private String accountUUID;
 
-    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from another Region")
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from external provisioning system")
     private String userUUID;
 
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, description="Id of the Region creating the account")
-    private Integer regionId;
-
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -146,17 +139,13 @@ public class CreateAccountCmd extends BaseCmd {
     }
 
     public String getAccountUUID() {
-		return accountUUID;
-	}
+        return accountUUID;
+    }
 
-	public String getUserUUID() {
-		return userUUID;
-	}
+    public String getUserUUID() {
+        return userUUID;
+    }
 
-	public Integer getRegionId() {
-		return regionId;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -174,8 +163,8 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain(), getDetails(), 
-        		getAccountUUID(), getUserUUID(), getRegionId());
+        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
+                getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());

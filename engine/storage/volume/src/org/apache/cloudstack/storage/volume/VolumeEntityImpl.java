@@ -39,7 +39,7 @@ public class VolumeEntityImpl implements VolumeEntity {
     private final VolumeService vs;
     private VolumeApiResult result;
     
-    protected VolumeEntityImpl() {
+    public VolumeEntityImpl() {
         this.vs = null;
     }
     

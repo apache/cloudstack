@@ -21,50 +21,55 @@ import tempfile
 import os.path
 import os
 
-iso_folder = ''
-copy_to = ''
+kernel = None
+initrd = None
+copy_to = None
 
 def cmd(cmdstr, err=True):
+    print cmdstr
     if os.system(cmdstr) != 0 and err:
         raise Exception("Failed to run shell command: %s" % cmdstr)
     
 def prepare():
+    global kernel, initrd, copy_to
     try:
-        kernel = os.path.join(copy_to, "vmlinuz")
-        initrd = os.path.join(copy_to, "initrd.img")
-        if os.path.exists(kernel) and os.path.exists(initrd):
+        k = os.path.join(copy_to, "vmlinuz")
+        i = os.path.join(copy_to, "initrd.img")
+        if os.path.exists(k) and os.path.exists(i):
             print "Having template(%s) prepared already, skip copying" % copy_to
             return 0
         else:
             if not os.path.exists(copy_to):
                 os.makedirs(copy_to)
 
-        mnt_path = tempfile.mkdtemp()
-        try:
-            mnt = "mount %s %s" % (iso_folder, mnt_path)
-            cmd(mnt)
-            
-            kernel = os.path.join(mnt_path, "vmlinuz")
-            initrd = os.path.join(mnt_path, "initrd.img")
-            cp = "cp -f %s %s/" % (kernel, copy_to)
-            cmd(cp)
-            cp = "cp -f %s %s/" % (initrd, copy_to)
-            cmd(cp)
-        finally:
-            umnt = "umount %s" % mnt_path
-            cmd(umnt, False)
-            rm = "rm -r %s" % mnt_path
-            cmd(rm, False)
-        return 0
+
+        def copy_from_nfs(src, dst):
+            mnt_path = tempfile.mkdtemp()
+            try:
+                nfs_path = os.path.dirname(src)
+                filename = os.path.basename(src)
+                t = os.path.join(mnt_path, filename)
+                mnt = "mount %s %s" % (nfs_path, mnt_path)
+                cmd(mnt)
+                cp = "cp -f %s %s" % (t, dst)
+                cmd(cp)
+            finally:
+                umnt = "umount %s" % mnt_path
+                cmd(umnt, False)
+                rm = "rm -r %s" % mnt_path
+                cmd(rm, False)
+
+        copy_from_nfs(kernel, copy_to)
+        copy_from_nfs(initrd, copy_to)
     except Exception, e:
         print e
         return 1
     
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print "Usage: prepare_kickstart_kerneal_initrd.py path_to_kernel_initrd_iso path_kernel_initrd_copy_to"
+    if len(sys.argv) < 4:
+        print "Usage: prepare_kickstart_kerneal_initrd.py path_to_kernel path_to_initrd path_kernel_initrd_copy_to"
 	sys.exit(1)
     
-    (iso_folder, copy_to) = sys.argv[1:]
+    (kernel, initrd, copy_to) = sys.argv[1:]
     sys.exit(prepare())
     

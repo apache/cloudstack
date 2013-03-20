@@ -717,7 +717,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         	//Exists then don't download
         	if (volumeInfos.containsKey(volume.getId())){
                 TemplateInfo volInfo = volumeInfos.remove(volume.getId());
-                toBeDownloaded.remove(volumeHost);                
+                toBeDownloaded.remove(volumeHost);
                 s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume host table");
                 if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
                 	volumeHost.setErrorString("");
@@ -735,13 +735,19 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                     }
 
                 } else { // Put them in right status
-                	volumeHost.setDownloadPercent(100);
-                	volumeHost.setDownloadState(Status.DOWNLOADED);
-                	volumeHost.setInstallPath(volInfo.getInstallPath());
-                	volumeHost.setSize(volInfo.getSize());
-                	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
-                	volumeHost.setLastUpdated(new Date());               
-                	_volumeHostDao.update(volumeHost.getId(), volumeHost);
+                    volumeHost.setDownloadPercent(100);
+                    volumeHost.setDownloadState(Status.DOWNLOADED);
+                    volumeHost.setInstallPath(volInfo.getInstallPath());
+                    volumeHost.setSize(volInfo.getSize());
+                    volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
+                    volumeHost.setLastUpdated(new Date());
+                    _volumeHostDao.update(volumeHost.getId(), volumeHost);
+
+                    if (volume.getSize() == 0) {
+                        // Set volume size in volumes table
+                        volume.setSize(volInfo.getSize());
+                        _volumeDao.update(volumeHost.getVolumeId(), volume);
+                    }
                 }
                 continue;
         	}

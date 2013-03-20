@@ -16,12 +16,15 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import java.util.List;
+
 public class NicTO extends NetworkTO {
     int deviceId;
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
     boolean defaultNic;
     String uuid;
+    List <String> nicSecIps;
 
     public NicTO() {
         super();
@@ -68,5 +71,13 @@ public class NicTO extends NetworkTO {
     @Override
     public String toString() {
         return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();
+    }
+
+    public void setNicSecIps(List<String> secIps) {
+        this.nicSecIps = secIps;
+    }
+
+    public List<String> getNicSecIps() {
+        return nicSecIps;
     }
 }

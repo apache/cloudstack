@@ -86,6 +86,7 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -249,19 +250,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     VpcManager _vpcMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
-    @Inject protected DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao;
+    @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
 
-    private int _maxVolumeSizeInGb;
-    private long _defaultPageSize;
+    private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
+    private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     protected Set<String> configValuesForValidation;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.key());
+        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 
+        	Integer.parseInt(Config.MaxVolumeSize.getDefaultValue()));
 
-        String defaultPageSizeString = _configDao.getValue("default.page.size");
-        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, 500L);
+        String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
+        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, 
+        	Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
 
         populateConfigValuesForValidationSet();
         return true;
@@ -2329,10 +2332,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
                 endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
 
+        txn.commit();
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
         }
-        txn.commit();
 
         // Associate ips to the network
         if (associateIpRangeToAccount) {

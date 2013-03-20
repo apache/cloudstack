@@ -162,10 +162,12 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
@@ -293,8 +295,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     UserVmDao _userVmDao;
     @Inject VMInstanceDao _vmDao;
     @Inject
-    UserStatisticsDao _statsDao = null;
-    @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     GuestOSDao _guestOSDao = null;
@@ -342,6 +342,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
 
     
     int _routerRamSize;
@@ -364,7 +366,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
-    
+    private static final int USAGE_AGGREGATION_RANGE_MIN = 10; // 10 minutes, same as com.cloud.usage.UsageManagerImpl.USAGE_AGGREGATION_RANGE_MIN
+    private boolean _dailyOrHourly = false;
+
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
@@ -728,6 +732,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             cal.roll(Calendar.DAY_OF_YEAR, true);
             cal.add(Calendar.MILLISECOND, -1);
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = true;
         } else if (_usageAggregationRange == HOURLY_TIME) {
             cal.roll(Calendar.HOUR_OF_DAY, false);
             cal.set(Calendar.MINUTE, 0);
@@ -736,8 +741,15 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             cal.roll(Calendar.HOUR_OF_DAY, true);
             cal.add(Calendar.MILLISECOND, -1);
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = true;
         } else {
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = false;
+        }
+
+        if (_usageAggregationRange < USAGE_AGGREGATION_RANGE_MIN) {
+            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + USAGE_AGGREGATION_RANGE_MIN);
+            _usageAggregationRange = USAGE_AGGREGATION_RANGE_MIN;
         }
 
         _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()),
@@ -854,7 +866,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                                         forVpc, routerNic.getIp4Address());
                                 String routerType = router.getType().toString();
-                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(),
+                                UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(),
                                         router.getDataCenterId(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                 NetworkUsageAnswer answer = null;
                                 try {
@@ -876,7 +888,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                             continue;
                                         }
                                         txn.start();
-                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(),
+                                        UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(),
                                                 router.getDataCenterId(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                         if (stats == null) {
                                             s_logger.warn("unable to find stats for account: " + router.getAccountId());
@@ -912,7 +924,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                             stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                         }
                                         stats.setCurrentBytesSent(answer.getBytesSent());
-                                        _statsDao.update(stats.getId(), stats);
+                                        if (! _dailyOrHourly) {
+                                            //update agg bytes
+                                            stats.setAggBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+                                            stats.setAggBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+                                        }
+                                        _userStatsDao.update(stats.getId(), stats);
                                         txn.commit();
                                     } catch (Exception e) {
                                         txn.rollback();
@@ -954,7 +971,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     try {
                         txn.start();
                         //get all stats with delta > 0
-                        List<UserStatisticsVO> updatedStats = _statsDao.listUpdatedStats();
+                        List<UserStatisticsVO> updatedStats = _userStatsDao.listUpdatedStats();
                         Date updatedTime = new Date();
                         for(UserStatisticsVO stat : updatedStats){
                             //update agg bytes                    
@@ -1683,18 +1700,30 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
-            String defaultNetworkStartIp = null;
-            if (guestNetwork.getCidr() != null && !setupPublicNetwork) {
-                String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-                if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                    defaultNetworkStartIp = startIp;
-                } else if (s_logger.isDebugEnabled()){
-                    s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
-                            " is already allocated, can't use it for domain router; will get random ip address from the range");
-                }
+            String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
+            if (!setupPublicNetwork) {
+            	if (guestNetwork.getCidr() != null) {
+            		String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+            		if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+            			defaultNetworkStartIp = startIp;
+            		} else if (s_logger.isDebugEnabled()){
+            			s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
+            					" is already allocated, can't use it for domain router; will get random ip address from the range");
+            		}
+            	}
+            	
+            	if (guestNetwork.getIp6Cidr() != null) {
+            		String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+            		if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+            			defaultNetworkStartIpv6 = startIpv6;
+            		} else if (s_logger.isDebugEnabled()){
+            			s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
+            					" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+            		}
+            	}
             }
 
-            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, null);
+            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (setupPublicNetwork) {
                 if (isRedundant) {
                     gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
@@ -2305,8 +2334,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
       
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
                     if (ip.isOneToOneNat()) {
-                            String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), guestNetworkId);
-                            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), dstIp, false);
+                            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), false);
                         staticNats.add(staticNat);
                     }
                 }
@@ -2355,11 +2383,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 for (LoadBalancerVO lb : lbs) {
                     List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                     List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+                    List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
                     lbRules.add(loadBalancing);
                 }
             }
-   
+
             s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
             if (!lbRules.isEmpty()) {
                     createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
@@ -2401,8 +2430,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 
                 if (addIp) {
                     IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
-                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipVO, _vlanDao.findById(userIp.getVlanId()));
                     allPublicIps.add(publicIp);
                 }
             }
@@ -3105,8 +3133,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if (guestOS.getDisplayName().startsWith(name)) {
                     needGateway = true;
                     break;
+                }
             }
-        }
         }
         if (!needGateway) {
             gatewayIp = "0.0.0.0";
@@ -3115,6 +3143,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
         dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
         dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
+        dhcpCommand.setDefault(nic.isDefaultNic());
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -3257,7 +3286,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     for (LoadBalancerVO lb : lbs) {
                         List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                         List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList,policyList);
+                        List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId() );
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
                         lbRules.add(loadBalancing);
                     }
                     return sendLBRules(router, lbRules, network.getId());
@@ -3598,7 +3628,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     boolean forVpc = router.getVpcId() != null;
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                             forVpc, routerNic.getIp4Address());
-                    UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
+                    UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(),
                             router.getDataCenterId(), network.getId(), null, router.getId(), router.getType().toString());
                     NetworkUsageAnswer answer = null;
                     try {
@@ -3620,7 +3650,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 continue;
                             }
                             txn.start();
-                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
+                            UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(),
                                     router.getDataCenterId(), network.getId(), null, router.getId(), router.getType().toString());
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
@@ -3656,7 +3686,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                             }
                             stats.setCurrentBytesSent(answer.getBytesSent());
-                            _statsDao.update(stats.getId(), stats);
+                            _userStatsDao.update(stats.getId(), stats);
                             txn.commit();
                         } catch (Exception e) {
                             txn.rollback();

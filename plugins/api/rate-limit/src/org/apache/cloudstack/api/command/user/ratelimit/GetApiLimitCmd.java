@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -35,6 +36,9 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
+
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -54,6 +58,9 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Inject
     ApiRateLimitService _apiLimitService;
+
+    @Inject
+    ConfigurationDao _configDao;
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -76,6 +83,10 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
+        if ( !apiLimitEnabled ){
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
+        }
         Account caller = UserContext.current().getCaller();
         ApiLimitResponse response = _apiLimitService.searchApiLimit(caller);
         response.setResponseName(getCommandName());

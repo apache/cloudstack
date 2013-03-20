@@ -41,6 +41,9 @@ public class XmlObject {
     }
     
     public XmlObject putElement(String key, Object e) {
+        if (e == null) {
+            throw new IllegalArgumentException(String.format("element[%s] can not be null", key));
+        }
         Object old = elements.get(key);
         if (old == null) {
             System.out.println(String.format("no %s, add new", key));

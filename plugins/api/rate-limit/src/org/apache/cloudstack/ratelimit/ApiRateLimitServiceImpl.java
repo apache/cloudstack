@@ -50,6 +50,11 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 	private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
 
 	/**
+	 * True if api rate limiting is enabled
+	 */
+	private boolean enabled = false;
+
+	/**
 	 * Fixed time duration where api rate limit is set, in seconds
 	 */
 	private int timeToLive = 1;
@@ -73,6 +78,10 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
         if (_store == null) {
             // get global configured duration and max values
+            String isEnabled = _configDao.getValue(Config.ApiLimitEnabled.key());
+            if ( isEnabled != null ){
+                enabled = Boolean.parseBoolean(isEnabled);
+            }
             String duration = _configDao.getValue(Config.ApiLimitInterval.key());
             if (duration != null) {
                 timeToLive = Integer.parseInt(duration);
@@ -139,7 +148,11 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
 
     @Override
-    public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException, RequestLimitException {
+    public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
+        // check if api rate limiting is enabled or not
+        if (!enabled){
+            return true;
+        }
         Long accountId = user.getAccountId();
         Account account = _accountService.getAccount(accountId);
         if ( _accountService.isRootAdmin(account.getType())){
@@ -189,6 +202,12 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     @Override
     public void setMaxAllowed(int max) {
         this.maxAllowed = max;
+
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
 
     }
 

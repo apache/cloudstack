@@ -155,6 +155,8 @@ under the License.
         </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
+        <manager name="LBHealthCheckManager" key="com.cloud.network.lb.LBHealthCheckManager" class="com.cloud.network.lb.LBHealthCheckManagerImpl"/>
+        <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>

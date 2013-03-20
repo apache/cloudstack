@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -50,7 +51,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
@@ -58,6 +58,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -100,7 +101,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     protected VolumeDao _volsDao;
     
     @Inject
-    protected StoragePoolDao _storagePoolDao;
+    protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
     DataStoreManager dataStoreMgr;
     
@@ -188,7 +189,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public void deployVirtualMachine(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException{
+    public void deployVirtualMachine(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
         //grab the VM Id and destination using the reservationId.
         
         VMReservationVO vmReservation = _reservationDao.findByReservationId(reservationId);
@@ -208,7 +209,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(),
                 vmReservation.getHostId(), poolId , null);
         
-        VMInstanceVO vmDeployed = _itMgr.start(vm, null, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), plan);
+        VMInstanceVO vmDeployed = _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), plan);
         
     }
 

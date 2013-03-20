@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implements GenericDao<NetworkOpVO, Long> {
+public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implements NetworkOpDao {
     protected final SearchBuilder<NetworkOpVO> AllFieldsSearch;
     protected final GenericSearchBuilder<NetworkOpVO, Integer> ActiveNicsSearch;
     protected final Attribute _activeNicsAttribute;

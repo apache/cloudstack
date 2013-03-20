@@ -20,17 +20,21 @@ import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.log4j.Logger;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 
+import com.cloud.utils.component.ComponentMethodProxyCache;
+
 public class TransactionContextBuilder implements MethodInterceptor {
+	private static final Logger s_logger = Logger.getLogger(TransactionContextBuilder.class);
 	public TransactionContextBuilder() {
 	}
 	
 	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
-        Method targetMethod = methodSignature.getMethod();	
-        if(needToIntercept(targetMethod)) {
+        Method targetMethod = methodSignature.getMethod();
+        if(needToIntercept(targetMethod, call.getTarget())) {
 			Transaction txn = Transaction.open(call.getSignature().getName());
 			Object ret = null;
 			try {
@@ -47,7 +51,7 @@ public class TransactionContextBuilder implements MethodInterceptor {
 	public Object invoke(MethodInvocation method) throws Throwable {
 		Method targetMethod = method.getMethod();
 		
-        if(needToIntercept(targetMethod)) {
+        if(needToIntercept(targetMethod, method.getThis())) {
 			Transaction txn = Transaction.open(targetMethod.getName());
 			Object ret = null;
 			try {
@@ -60,13 +64,20 @@ public class TransactionContextBuilder implements MethodInterceptor {
         return method.proceed();
 	}
 	
-	private boolean needToIntercept(Method method) {
+	private boolean needToIntercept(Method method, Object target) {
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return true;
         }
         
         Class<?> clazz = method.getDeclaringClass();
+        if(clazz.isInterface()) {
+        	clazz = target.getClass();
+        	Method targetMethod = ComponentMethodProxyCache.getTargetMethod(method, target);
+			if(targetMethod != null && targetMethod.getAnnotation(DB.class) != null)
+				return true;
+        }
+        
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {

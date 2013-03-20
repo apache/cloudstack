@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.List;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -54,7 +56,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -79,7 +83,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
-    
+    @Inject
+    NicSecondaryIpDao _nicSecondaryIpDao;
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
     
     @Override
@@ -230,6 +236,16 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             txn.start();
             _networkMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
+            //unassign nic secondary ip address
+            s_logger.debug("remove nic " + nic.getId() + " secondary ip ");
+            List<String> nicSecIps = null;
+            nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
+            for (String secIp: nicSecIps) {
+                IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
+                _networkMgr.markIpAsUnavailable(pubIp.getId());
+                _ipAddressDao.unassignIpAddress(pubIp.getId());
+            }
+
             txn.commit();
         }
     	}

@@ -22,6 +22,8 @@ do
     while read line
     do
         ip=`echo $line|cut -d " " -f 2|cut -d "/" -f 1`
-        arping -I $i -A $ip -c 2 >> [RROUTER_LOG] 2>&1
+        arping -I $i -A $ip -c 1 >> [RROUTER_LOG] 2>&1
+        arping -I $i -A $ip -c 1 >> [RROUTER_LOG] 2>&1
     done < /tmp/iplist_$i
 done < /tmp/iflist
+sleep 1
