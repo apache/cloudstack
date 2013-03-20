@@ -123,6 +123,7 @@ known_categories = {
     'Pool': 'Pool',
     'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
+    'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',

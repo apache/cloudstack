@@ -37,8 +37,24 @@
   -->
   <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
   
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" />
   <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
+  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" >
+    <property name="UserAuthenticators">
+        <list>
+            <ref bean="MD5UserAuthenticator"/>
+            <ref bean="LDAPUserAuthenticator"/>
+        </list>
+    </property>
+  </bean>
+ 
+  <bean id ="AccountManagerImpl" class="com.cloud.user.AccountManagerImpl">
+    <property name="UserAuthenticators">
+        <list>
+            <ref bean="MD5UserAuthenticator"/>
+            <ref bean="LDAPUserAuthenticator"/>
+        </list>
+    </property>
+  </bean>
    
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />

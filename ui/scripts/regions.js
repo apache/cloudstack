@@ -29,8 +29,7 @@
               data: regions ? regions : [
                 { id: -1, name: '(Default)' }
               ],
-              activeRegionID: cloudStack.context.users.regionid ?
-                cloudStack.context.users.regionid : 1
+              activeRegionID: cloudStack.context.users[0].regionid
             });
           }
         }); 
@@ -55,26 +54,34 @@
             fields: {
               id: { label: 'label.id', validation: { required: true } },
               name: { label: 'label.name', validation: { required: true } },
-              endpoint: { label: 'label.endpoint', validation: { required: true } },
-              userapikey: { label: 'label.api.key' },
-              userapisecretkey: { label: 'label.s3.secret_key' }
+              endpoint: { label: 'label.endpoint', validation: { required: true } }             
             }
           },
-          action: function(args) {
+          action: function(args) {					  
+						var data = {							
+							id: args.data.id,
+							name: args.data.name,
+							endpoint: args.data.endpoint
+						};		
+						
             $.ajax({
               url: createURL('addRegion'),
-              data: args.data,
-              success: function(json) {
-                var jobID = json.addregionresponse.jobid;
-
-                args.response.success({ _custom: { jobId: jobID }});
+              data: data,
+              success: function(json) {							 
+                var item = json.addregionresponse.region;
+                args.response.success({data: item});               
                 $(window).trigger('cloudStack.refreshRegions');
               },
               error: function(json) {
                 args.response.error(parseXMLHttpResponse(json));
               } 
             });
-          }
+          },										
+					notification: {
+						poll: function(args) {
+							args.complete();
+						}
+					}			
         }
       },
       dataProvider: function(args) {
@@ -98,9 +105,15 @@
           edit: {
             label: 'label.edit.region',
             action: function(args) {
+							var data = {
+							  id: args.context.regions[0].id,
+								name: args.data.name,
+								endpoint: args.data.endpoint
+							};							
+						
               $.ajax({
                 url: createURL('updateRegion'),
-                data: args.data,
+                data: data,
                 success: function(json) {
                   args.response.success();
                   $(window).trigger('cloudStack.refreshRegions');
@@ -116,7 +129,15 @@
             messages: {
               notification: function() { return 'label.remove.region'; },
               confirm: function() { return 'message.remove.region'; }
-            },
+            },						
+						preAction: function(args) {
+						  var region = args.context.regions[0];							
+							if(region.endpoint == document.location.href) {		
+							  cloudStack.dialog.notice({ message: _l('You can not remove the region that you are currently in.') });
+                return false;
+							}						
+              return true;
+            },	
             action: function(args) {
               var region = args.context.regions[0];
 
@@ -139,11 +160,11 @@
             title: 'label.details',
             fields: [
               {
-                name: { label: 'label.name', isEditable: true },
+                id: { label: 'label.id' }
               },
               {
-                endpoint: { label: 'label.endpoint', isEditable: true },
-                id: { label: 'label.id', isEditable: true }
+							  name: { label: 'label.name', isEditable: true },
+                endpoint: { label: 'label.endpoint', isEditable: true }                
               }
             ],
             dataProvider: function(args) {								  

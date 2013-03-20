@@ -27,10 +27,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.resource.ResourceManager;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +93,7 @@ public class StatsCollector {
 	@Inject private StoragePoolHostDao _storagePoolHostDao;
 	@Inject private SecondaryStorageVmManager _ssvmMgr;
 	@Inject private ResourceManager _resourceMgr;
+    @Inject private ConfigurationDao _configDao;
 
 	private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
 	private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -107,12 +113,18 @@ public class StatsCollector {
     }
     
 	public static StatsCollector getInstance(Map<String, String> configs) {
+        s_instance.init(configs);
         return s_instance;
     }
 	
 	public StatsCollector() {
 		s_instance = this;
 	}
+
+    @PostConstruct
+    private void init(){
+        init(_configDao.getConfiguration());
+    }
 
 	private void init(Map<String, String> configs) {
 		_executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StatsCollector"));

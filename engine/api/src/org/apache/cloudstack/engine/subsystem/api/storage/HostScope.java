@@ -19,7 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
-public class HostScope implements Scope {
+public class HostScope extends AbstractScope {
     private ScopeType type = ScopeType.HOST;
     private Long hostId;
     public HostScope(Long hostId) {

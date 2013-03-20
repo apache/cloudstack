@@ -632,7 +632,7 @@ public class NetUtils {
         Set<Long> result = new TreeSet<Long>();
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
-        long start = (ip & startNetMask) + 2;
+        long start = (ip & startNetMask) + 1;
         long end = start;
 
         end = end >> (32 - size);

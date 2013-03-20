@@ -29,23 +29,28 @@
             var data = args.data;
             var activeRegionID = args.activeRegionID;
 
+						var currentRegion;
             $(data).each(function() {
               var region = this;
               var regionName = region.name;
               var $li = $('<li>').append($('<span>').html(_s(region.name)));
 
               $li.data('region-data', region);
-
+							
+							if(region.endpoint == document.location.href) {		
+                currentRegion = region;	
+								$li.addClass('active');
+							}
+							/*
               if (region.id == activeRegionID) {
                 $li.addClass('active');
               }
-              
-              $regionSwitcherButton.find('.title')
-                .html(regionName)
-                .attr('title', regionName);
-              
-              $regionList.append($li);
+              */
+							
+              $regionList.append($li);							
             });
+												
+						$regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));              
           }
         }
       });
@@ -81,8 +86,8 @@
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));
-
-          document.location.href = url;
+          
+          document.location.href = url + g_regionUrlParam;
         }
       });
     };

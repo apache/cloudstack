@@ -48,7 +48,6 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
@@ -140,7 +139,6 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Component
 @Local(value = { AccountManager.class, AccountService.class })
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
@@ -223,7 +221,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private AutoScaleManager _autoscaleMgr;
     @Inject VolumeManager volumeMgr;
 
-    @Inject
     private List<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -237,6 +234,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     List<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
 
+    public List<UserAuthenticator> getUserAuthenticators() {
+    	return _userAuthenticators;
+    }
+    
+    public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
+    	_userAuthenticators = authenticators;
+    }
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);

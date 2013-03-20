@@ -62,9 +62,20 @@
             <para>listNetworks</para>
           </entry>
           <entry>
-            <para>The following request parameters has been added: isPersistent</para>
-            <para>This parameter determines if the network or network offering listed by using this
-              offering are persistent or not.</para>
+            <para>The following request parameters have been added:</para>
+            <itemizedlist>
+              <listitem>
+                <para>isPersistent</para>
+                <para>This parameter determines if the network or network offering listed are
+                  persistent or not.</para>
+              </listitem>
+              <listitem>
+                <para>ip6gateway</para>
+              </listitem>
+              <listitem>
+                <para>ip6cidr</para>
+              </listitem>
+            </itemizedlist>
           </entry>
         </row>
         <row>
@@ -104,7 +115,7 @@
             <para>CreateZoneCmd</para>
           </entry>
           <entry>
-            <para>The following parameter are added: ip6dns1, ip6dns2.</para>
+            <para>The following parameter have been added: ip6dns1, ip6dns2.</para>
           </entry>
         </row>
         <row>
@@ -113,7 +124,7 @@
             <para>listVirtualMachines</para>
           </entry>
           <entry>
-            <para>For nic responses, the following fields has been added.</para>
+            <para>For nic responses, the following fields have been added.</para>
             <itemizedlist>
               <listitem>
                 <para>ip6address</para>
@@ -132,7 +143,7 @@
             <para>listVlanIpRanges</para>
           </entry>
           <entry>
-            <para>For nic responses, the following fields has been added.</para>
+            <para>For nic responses, the following fields have been added.</para>
             <itemizedlist>
               <listitem>
                 <para>startipv6</para>
@@ -166,7 +177,7 @@
               </listitem>
             </itemizedlist>
           </entry>
-          </row>
+        </row>
         <row>
           <entry>
             <para>addF5LoadBalancer</para>
