@@ -1,0 +1,68 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Mariano Iumiento <miumiento@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-03 20:59+0000\n"
+"Last-Translator: miumiento <miumiento@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "What Is &PRODUCT;?"
+msgstr "Cos'è &PRODUCT;?"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; is an open source software platform that pools computing resources"
+" to build public, private, and hybrid Infrastructure as a Service (IaaS) "
+"clouds. &PRODUCT; manages the network, storage, and compute nodes that make "
+"up a cloud infrastructure. Use &PRODUCT; to deploy, manage, and configure "
+"cloud computing environments."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Typical users are service providers and enterprises. With &PRODUCT;, you "
+"can:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up an on-demand, elastic cloud computing service. Service providers can "
+"sell self service virtual machine instances, storage volumes, and networking"
+" configurations over the Internet."
+msgstr "Configurare un servizio di cloud computing flessibile on-demand, I Service Provider possono offrire in modalità self service instanze di virtual machine, volumi di storage, e configurazioni di rete fruibili via Internet."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up an on-premise private cloud for use by employees. Rather than "
+"managing virtual machines in the same way as physical machines, with "
+"&PRODUCT; an enterprise can offer self-service virtual machines to users "
+"without involving IT departments."
+msgstr "Configurare una infrastruttura cloud privata su sistemi esistenti per l'uso da parte del personale interno. Con &PRODUCT;, piuttosto che gestire virtual machine come sistemi fisici, un'azienda può offrire virtual machine agli utenti in modalità self-service senza il coinvolgimento del reparto IT."

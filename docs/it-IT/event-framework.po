@@ -1,0 +1,188 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:14+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Event Notification"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Event notification framework provides a means for the Management Server "
+"components to publish and subscribe to &PRODUCT; events. Event notification "
+"is achieved by implementing the concept of event bus abstraction in the "
+"Management Server. An event bus is introduced in the Management Server that "
+"allows the &PRODUCT;components and extension plug-ins to subscribe to the "
+"events by using the Advanced Message Queuing Protocol (AMQP) client. In "
+"&PRODUCT;, a default implementation of event bus is provided as a plug-in "
+"that uses the RabbitMQ AMQP client. The AMQP client pushes the published "
+"events to a compatible AMQP server. Therefore all the &PRODUCT; events are "
+"published to an exchange in the AMQP server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A new event for state change, resource state change, is introduced as part "
+"of Event notification framework. Every resource, such as user VM, volume, "
+"NIC, network, public IP, snapshot, and template, is associated with a state "
+"machine and generates events as part of the state change. That implies that "
+"a change in the state of a resource results in a state change event, and the"
+" event is published in the corresponding state machine on the event bus. All"
+" the &PRODUCT; events (alerts, action events, usage events) and the "
+"additional category of resource state change events, are published on to the"
+" events bus."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Use Cases"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following are some of the use cases:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Usage or Billing Engines: A third-party cloud usage solution can implement a"
+" plug-in that can connects to &PRODUCT; to subscribe to &PRODUCT; events and"
+" generate usage data. The usage data is consumed by their usage software."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"AMQP plug-in can place all the events on the a message queue, then a AMQP "
+"message broker can provide topic-based notification to the subscribers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Publish and Subscribe notification service can be implemented as a pluggable"
+" service in &PRODUCT; that can provide rich set of APIs for event "
+"notification, such as topics-based subscription and notification. "
+"Additionally, the pluggable service can deal with multi-tenancy, "
+"authentication, and authorization issues."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuration"
+msgstr "Configurazione"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"As a &PRODUCT; administrator, perform the following one-time configuration "
+"to enable event notification framework. At run time no changes can control "
+"the behaviour."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Open <filename>'componentContext.xml</filename>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Define a bean named <filename>eventNotificationBus</filename> as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "name : Specify a name for the bean."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "server : The name or the IP address of the RabbitMQ AMQP server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "port : The port on which RabbitMQ server is running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"username : The username associated with the account to access the RabbitMQ "
+"server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"password : The password associated with the username of the account to "
+"access the RabbitMQ server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"exchange : The exchange name on the RabbitMQ server where &PRODUCT; events "
+"are published."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A sample bean is given below:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"&lt;bean id=\"eventNotificationBus\" class=\"org.apache.cloudstack.mom.rabbitmq.RabbitMQEventBus\"&gt;\n"
+"    &lt;property name=\"name\" value=\"eventNotificationBus\"/&gt;\n"
+"    &lt;property name=\"server\" value=\"127.0.0.1\"/&gt;\n"
+"    &lt;property name=\"port\" value=\"5672\"/&gt;\n"
+"    &lt;property name=\"username\" value=\"guest\"/&gt;\n"
+"    &lt;property name=\"password\" value=\"guest\"/&gt;\n"
+"   &lt;property name=\"exchange\" value=\"cloudstack-events\"/&gt;\n"
+"   &lt;/bean&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <filename>eventNotificationBus</filename> bean represents the "
+"<filename>org.apache.cloudstack.mom.rabbitmq.RabbitMQEventBus</filename> "
+"class."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""

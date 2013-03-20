@@ -1,0 +1,121 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Mariano Iumiento <miumiento@gmail.com>, 2013.
+#  <robedal@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Linux OS Installation"
+msgstr "Installazione su sistema operativo Linux"
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to begin the Linux OS installation:"
+msgstr "Utilizzare le seguenti indicazioni per avviare una installazione su sistema operativo Linux:"
+
+#. Tag: para
+#, no-c-format
+msgid "Download the script file cloud-set-guest-password:"
+msgstr "Scaricare lo script cloud-set-guest-password:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Linux: <ulink url=\" http://cloudstack.org/dl/cloud-set-guest-password \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows: <ulink url=\" "
+"http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download"
+" \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this file to /etc/init.d."
+msgstr "Copiare il file in /etc/init.d."
+
+#. Tag: para
+#, no-c-format
+msgid "On some Linux distributions, copy the file to /etc/rc.d/init.d."
+msgstr "In alcune distribuzioni di Linux è necessario copiarlo in /etc/rc.d/init.d."
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to make the script executable:"
+msgstr "Eseguire il comando seguente per rendere lo script eseguibile:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chmod +x /etc/init.d/cloud-set-guest-password"
+msgstr "chmod +x /etc/init.d/cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Depending on the Linux distribution, continue with the appropriate step."
+msgstr "In base alla distribuzione di Linux, continuare con i passi appropriati."
+
+#. Tag: para
+#, no-c-format
+msgid "On Fedora, CentOS/RHEL, and Debian, run:"
+msgstr "Su Fedora, CentOS/RHEL, e Debian, eseguire:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chkconfig --add cloud-set-guest-password"
+msgstr "chkconfig --add cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On Ubuntu with VMware tools, link the script file to the /etc/network/if-up "
+"and /etc/network/if-down folders, and run the script:"
+msgstr "In Ubuntu con VMware tool installati, configurare il link dal file script alle cartelle /etc/network/if-up e /etc/network/if-down, ed eseguire lo script:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password\n"
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-down/cloud-set-guest-password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using Ubuntu 11.04, start by creating a directory called "
+"/var/lib/dhcp3 on your Ubuntu machine (works around a known issue with this "
+"version of Ubuntu). On all Ubuntu versions: Run “sudo update-rc.d cloud-set-"
+"guest-password defaults 98”. To test, run \"mkpasswd\" and check that it is "
+"generating a new password. If the “mkpasswd” command does not exist, run "
+"\"sudo apt-get install whois\" (or sudo apt-get install mkpasswd, depending "
+"on your Ubuntu version) and repeat."
+msgstr "Se si utilizza Ubuntu 11.04, creare la directory /var/lib/dhcp3 (risolve un problema noto con questa versione di Ubuntu). In tutte le versioni Ubuntu: eseguire il comando “sudo update-rc.d cloud-set-guest-password defaults 98”. Per verificare il buon esito, eseguire il comando \"mkpasswd\" e verificare che venga generata una nuova password. Se il comando “mkpasswd” non esiste, eseguire \"sudo apt-get install whois\" (oppure sudo apt-get install mkpasswd, a seconda della versione Ubuntu utilizzata) e riprovare."

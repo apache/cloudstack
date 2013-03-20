@@ -1,0 +1,115 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Mariano Iumiento <miumiento@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-26 22:01+0000\n"
+"Last-Translator: miumiento <miumiento@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "Preparare il sistema operativo"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The OS of the Host must be prepared to host the &PRODUCT; Agent and run KVM "
+"instances."
+msgstr "Il S.O. del sistema Host deve essere configurato per ospitare i servizi di &PRODUCT; ed eseguire instanze KVM."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to your OS as root."
+msgstr "Accedere al SO come root."
+
+#. Tag: para
+#, no-c-format
+msgid "Check for a fully qualified hostname."
+msgstr "Verificare il nome di dominio completo."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ hostname --fqdn</command>"
+msgstr "<command>$ hostname --fqdn</command>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This should return a fully qualified hostname such as "
+"\"kvm1.lab.example.org\". If it does not, edit /etc/hosts so that it does."
+msgstr "Ci si aspetta in output il valore del nome completo del sistema come ad esempio \"kvm1.lab.example.org\". Se così non fosse, modificare il file /etc/hosts affinchè l'output sia corretto."
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure that the machine can reach the Internet."
+msgstr "Assicurarsi che il sistema possa raggiungere la rete Internet."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ping www.cloudstack.org</command>"
+msgstr "<command>$ ping www.cloudstack.org</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "Turn on NTP for time synchronization."
+msgstr "Avviare il servizio NTP di sincronizzazione dell'orario."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NTP is required to synchronize the clocks of the servers in your cloud. "
+"Unsynchronized clocks can cause unexpected problems."
+msgstr "E' necessario configurare il servizio NTP per sincronizzare l'orario dei server nell'installazione cloud. Orari non sincronizzati sono causa di varie tipologie di problemi."
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP"
+msgstr "Installare NTP"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS:"
+msgstr "Su RHEL o CentOS:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ yum install ntp</command>"
+msgstr "<command>$ yum install ntp</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu:"
+msgstr "Su Ubuntu:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ apt-get install openntpd</command>"
+msgstr "<command>$ apt-get install openntpd</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat all of these steps on every hypervisor host."
+msgstr "Ripetere queste istruzioni su ogni host hypervisor."
