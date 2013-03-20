@@ -1,0 +1,132 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-18 01:30+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Acquiring a New IP Address for a VPC"
+msgstr "為VPC取得一個新的IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you acquire an IP address, all IP addresses are allocated to VPC, not "
+"to the guest networks within the VPC. The IPs are associated to the guest "
+"network only when the first port-forwarding, load balancing, or Static NAT "
+"rule is created for the IP or the network. IP can't be associated to more "
+"than one network at a time."
+msgstr "當你取得一個IP時，所有IP位址將被分配到VPC，而不是到VPC內的客戶網路。IP只有在port-forwarding, load balancing, 或Static NAT rule被建立時才會連結到客戶網路。同時，IP每次只能連結到一個網路"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左邊的導覽視窗，選擇Network"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "在Select視窗選擇VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "帳戶所有創建的VPC會表列在本頁"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "對想要配置VM的VPC按下\"Configure\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC 頁面會顯示所有你創建的層級"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "按下\"Settings\"圖示"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "會顯示出以下選項"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr "選擇IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "顯示IP Address葉面"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Acquire New IP, and click Yes in the confirmation dialog."
+msgstr "按下Acquire New IP，然後按下Yes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You are prompted for confirmation because, typically, IP addresses are a "
+"limited resource. Within a few moments, the new IP address should appear "
+"with the state Allocated. You can now use the IP address in port forwarding,"
+" load balancing, and static NAT rules."
+msgstr "由於IP位址是有限的資源，因此你需要立即得確認。不久後IP位址應該就會顯示Allocated。現在你可以使用你的IP來 port forwarding, load balancing, 和 static NAT rules."

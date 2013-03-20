@@ -1,0 +1,146 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:03+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Load Balancer Rule"
+msgstr "增加 Load Balancer Rule"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左邊的導覽視窗，選擇Network"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the name of the network where you want to load balance the traffic."
+msgstr "選擇你想要流量負載平衡的網路"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "按 View IP Addresses."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the IP address for which you want to create the rule, then click the "
+"Configuration tab."
+msgstr "選擇你想要新增規則的IP，按下Configuration標籤"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Load Balancing node of the diagram, click View All."
+msgstr "在 Load Balancing 點，按 View All"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a Basic zone, you can also create a load balancing rule without acquiring"
+" or selecting an IP address. &PRODUCT; internally assign an IP when you "
+"create the load balancing rule, which is listed in the IP Addresses page "
+"when the rule is created."
+msgstr "在 Basic中，你也可以不用獲得或選擇IP來建立規則。 &PRODUCT; 在你建立規則時，就已經指定一個IP了，並列在IP Addresses葉面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To do that, select the name of the network, then click Add Load Balancer "
+"tab. Continue with <xref linkend=\"config-lb\" />."
+msgstr "選擇網路名稱，然後按下Add Load Balancer標籤， <xref linkend=\"config-lb\" />繼續"
+
+#. Tag: para
+#, no-c-format
+msgid "Fill in the following:"
+msgstr "填寫以下："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: A name for the load balancer rule."
+msgstr "<emphasis role=\"bold\">Name</emphasis>:  load balancer rule的名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public Port</emphasis>: The port receiving incoming "
+"traffic to be balanced."
+msgstr "<emphasis role=\"bold\">Public Port</emphasis>: 應被平衡流量的埠"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private Port</emphasis>: The port that the VMs will "
+"use to receive the traffic."
+msgstr "<emphasis role=\"bold\">Private Port</emphasis>: VM接收流量的不"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Algorithm</emphasis>: Choose the load balancing "
+"algorithm you want &PRODUCT; to use. &PRODUCT; supports a variety of well-"
+"known algorithms. If you are not familiar with these choices, you will find "
+"plenty of information about them on the Internet."
+msgstr "<emphasis role=\"bold\">Algorithm</emphasis> 選擇你想要&PRODUCT;使用的演算法，&PRODUCT;支援很多已知的演算法，如果你不熟悉這些選擇，你可以在網際網路上找到詳細資料"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Stickiness</emphasis>: (Optional) Click Configure "
+"and choose the algorithm for the stickiness policy. See Sticky Session "
+"Policies for Load Balancer Rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">AutoScale</emphasis>: Click Configure and complete "
+"the AutoScale configuration as explained in <xref linkend=\"autoscale\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click Add VMs, then select two or more VMs that will divide the load of "
+"incoming traffic, and click Apply."
+msgstr "按Add VMs，然後選擇兩個以上要分流量的VMs，然後按Apply"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new load balancer rule appears in the list. You can repeat these steps "
+"to add more load balancer rules for this IP address."
+msgstr "新的規則會出現在表單中，你可以重複以上步驟來新增多個規則"

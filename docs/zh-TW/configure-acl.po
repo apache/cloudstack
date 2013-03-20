@@ -1,0 +1,219 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 08:22+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Access Control List"
+msgstr "設定Access Control List"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Define Network Access Control List (ACL) on the VPC virtual router to "
+"control incoming (ingress) and outgoing (egress) traffic between the VPC "
+"tiers, and the tiers and Internet. By default, all incoming and outgoing "
+"traffic to the guest networks is blocked. To open the ports, you must create"
+" a new network ACL. The network ACLs can be created for the tiers only if "
+"the NetworkACL service is supported."
+msgstr "在VPC虛擬路由器上定義Network Access Control List (ACL)，並在VPC層級、層級和網際網路間控制輸入 (ingress)和輸出 (egress)流量，預設上，客戶網路的輸入、輸出流量是被阻擋的。你必須要建立新的network ACL來打開埠。只有在支援network ACL服務時才能在層級創立Network ACL "
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左邊的導覽視窗，選擇Network"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "在Select視窗選擇VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "帳戶所有創建的VPC會表列在本頁"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "按下\"Settings\"圖示"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "會顯示出以下選項"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select Network ACLs."
+msgstr "選擇 Network ACLs."
+
+#. Tag: para
+#, no-c-format
+msgid "The Network ACLs page is displayed."
+msgstr "會顯示Network ACLs頁面"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Network ACLs."
+msgstr "按下Add Network ACLs."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To add an ACL rule, fill in the following fields to specify what kind of "
+"network traffic is allowed in this tier."
+msgstr "填入以下區域來指定哪種流量在此層級是被允許的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">CIDR</emphasis>: The CIDR acts as the Source CIDR "
+"for the Ingress rules, and Destination CIDR for the Egress rules. To accept "
+"traffic only from or to the IP addresses within a particular address block, "
+"enter a CIDR or a comma-separated list of CIDRs. The CIDR is the base IP "
+"address of the incoming traffic. For example, 192.168.0.0/22. To allow all "
+"CIDRs, set to 0.0.0.0/0."
+msgstr "<emphasis role=\"bold\">CIDR</emphasis>:  CIDR在 Ingress rules中扮演Source CIDR的腳色； 在Egress rules扮演Destination CIDR的腳色。為了在特定位址區域中允許流量自或到IP位址，進入CIDR或CIDR的comma-separated list。CIDR是輸入流量的基礎IP。比如說， 192.168.0.0/22，為了允許所有CIDR，設定 0.0.0.0/0."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol</emphasis>: The networking protocol that "
+"sources use to send traffic to the tier. The TCP and UDP protocols are "
+"typically used for data exchange and end-user communications. The ICMP "
+"protocol is typically used to send error messages or network monitoring "
+"data."
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: 來源送流量到層級的網路協定。TCP和UDP協定常被用作資料交換和終端使用者傳輸，ICMP協定常被用作傳送錯誤訊息或網路監視資料"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start Port</emphasis>, <emphasis role=\"bold\">End "
+"Port</emphasis> (TCP, UDP only): A range of listening ports that are the "
+"destination for the incoming traffic. If you are opening a single port, use "
+"the same number in both fields."
+msgstr "<emphasis role=\"bold\">Start Port</emphasis>, <emphasis role=\"bold\">End Port</emphasis> (TCP, UDP only): 一個範圍內，輸入流量目標的正在等候埠，如果你要開啟一個埠，在所有區內使用同一數字"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Select Tier</emphasis>: Select the tier for which "
+"you want to add this ACL rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">ICMP Type</emphasis>, <emphasis role=\"bold\">ICMP "
+"Code</emphasis> (ICMP only): The type of message and error code that will be"
+" sent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Traffic Type</emphasis>: Select the traffic type you"
+" want to apply."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Egress</emphasis>: To add an egress rule, select "
+"Egress from the Traffic type drop-down box and click Add. This specifies "
+"what type of traffic is allowed to be sent out of VM instances in this tier."
+" If no egress rules are specified, all traffic from the tier is allowed out "
+"at the VPC virtual router. Once egress rules are specified, only the traffic"
+" specified in egress rules and the responses to any traffic that has been "
+"allowed in through an ingress rule are allowed out. No egress rule is "
+"required for the VMs in a tier to communicate with each other."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Ingress</emphasis>: To add an ingress rule, select "
+"Ingress from the Traffic type drop-down box and click Add. This specifies "
+"what network traffic is allowed into the VM instances in this tier. If no "
+"ingress rules are specified, then no traffic will be allowed in, except for "
+"responses to any traffic that has been allowed out through an egress rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default, all incoming and outgoing traffic to the guest networks is "
+"blocked. To open the ports, create a new network ACL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add. The ACL rule is added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To view the list of ACL rules you have added, click the desired tier from "
+"the Network ACLs page, then select the Network ACL tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can edit the tags assigned to the ACL rules and delete the ACL rules you"
+" have created. Click the appropriate button in the Actions column."
+msgstr ""

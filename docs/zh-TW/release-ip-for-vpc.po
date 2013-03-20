@@ -1,0 +1,132 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-18 01:30+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Releasing an IP Address Alloted to a VPC"
+msgstr "釋出一個IP給VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The IP address is a limited resource. If you no longer need a particular IP,"
+" you can disassociate it from its VPC and return it to the pool of available"
+" addresses. An IP address can be released from its tier, only when all the "
+"networking ( port forwarding, load balancing, or StaticNAT ) rules are "
+"removed for this IP address. The released IP address will still belongs to "
+"the same VPC."
+msgstr "IP位址是有限的，如果你已經不需要固定IP，你可以切斷IP與VPC的連結，使IP成為可用位址。IP位址只有在所有規則 ( port forwarding, load balancing, or StaticNAT )都移除的情況下才能被釋出。釋出的IP仍屬於同一個VPC"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左邊的導覽視窗，選擇Network"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "在Select視窗選擇VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "帳戶所有創建的VPC會表列在本頁"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure button of the VPC whose IP you want to release."
+msgstr "對想要釋出IP的VPC按下 Configure"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC 頁面會顯示所有你創建的層級"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "按下\"Settings\"圖示"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "會顯示出以下選項"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr "選擇IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "顯示IP Address葉面"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP you want to release."
+msgstr "選擇你想要釋出的IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Details tab, click the Release IP button <inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/release-ip-icon.png\" /> "
+"</imageobject> <textobject> <phrase>release-ip-icon.png: button to release "
+"an IP.</phrase> </textobject> </inlinemediaobject>"
+msgstr "在Details標籤, 按下Release IP <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/release-ip-icon.png\" /> </imageobject> <textobject> <phrase>release-ip-icon.png: button 來釋出 IP.</phrase> </textobject> </inlinemediaobject>"

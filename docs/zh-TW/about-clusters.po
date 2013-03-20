@@ -1,0 +1,83 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-16 14:15+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Clusters"
+msgstr "關於Clusters"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster provides a way to group hosts. To be precise, a cluster is a "
+"XenServer server pool, a set of KVM servers, , or a VMware cluster "
+"preconfigured in vCenter. The hosts in a cluster all have identical "
+"hardware, run the same hypervisor, are on the same subnet, and access the "
+"same shared primary storage. Virtual machine instances (VMs) can be live-"
+"migrated from one host to another within the same cluster, without "
+"interrupting service to the user."
+msgstr "CloudStack所定義的群組是一群實體主機的集合，更精確的說，一個群組可以是一群XenServer主機的集合、一群KVM主機的集合，甚至是一個於VCenter中預先配置好的VMWare集合。群組中的主機擁有相同的硬體、使用相同的Hypervisor、運行於相同的子網路、並且存取相同的主存儲。在同一個群組下的虛擬機器(VMs)可以在不中斷的情況下從一台主機，搬移到另一台主機上。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster is the third-largest organizational unit within a &PRODUCT; "
+"deployment. Clusters are contained within pods, and pods are contained "
+"within zones. Size of the cluster is limited by the underlying hypervisor, "
+"although the &PRODUCT; recommends less in most cases; see Best Practices."
+msgstr " 群組在CloudStack中是第三大的集合單位；"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster consists of one or more hosts and one or more primary storage "
+"servers."
+msgstr "一個cluster的組成至少含有一個(或以上)實體主機，並還有至少一個擁有一個(或以上)的主要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows multiple clusters in a cloud deployment."
+msgstr "CloudStack允許環境中擁有多個cluster"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Even when local storage is used exclusively, clusters are still required "
+"organizationally, even if there is just one host per cluster."
+msgstr "即使採用了本機端的儲存設定，Cluster仍然是需要的，在這個情況下，一個Cluster只能擁有一台主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When VMware is used, every VMware cluster is managed by a vCenter server. "
+"Administrator must register the vCenter server with &PRODUCT;. There may be "
+"multiple vCenter servers per zone. Each vCenter server may manage multiple "
+"VMware clusters."
+msgstr "當使用VMware時，每一個VMware的cluster是有vCenter所管理，管理者需將vCenter於CloudStack中註冊。每個Zone可以擁有多個vCenter伺服器、而每一個vCenter伺服器可以控制多個VMware cluster"
