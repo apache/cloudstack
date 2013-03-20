@@ -1570,7 +1570,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, false, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup);
+                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, false);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
