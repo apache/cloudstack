@@ -1,0 +1,217 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-28 19:08+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic and Advanced Networking"
+msgstr "Rede básica e avançada"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides two styles of networking:."
+msgstr "O &PRODUCT; provê dois estilos de rede:"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic"
+msgstr "Básico"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For AWS-style networking. Provides a single network where guest isolation "
+"can be provided through layer-3 means such as security groups (IP address "
+"source filtering)."
+msgstr "Para redes no estilo AWS. Provê uma única rede onde o isolamento de hóspedes pode ser implantado através de métodos da camada 3 tais como grupos de segurança (filtragem do endereço IP de origem)."
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced"
+msgstr "Avançado"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more sophisticated network topologies. This network model provides the "
+"most flexibility in defining guest networks, but requires more configuration"
+" steps than basic networking."
+msgstr "Para topologias de rede mais sofisticadas. Este modelo de rede provê a maior flexibilidade ao definir redes hóspedes, mas requer mais passos de configuração que a rede básica."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each zone has either basic or advanced networking. Once the choice of "
+"networking model for a zone has been made and configured in &PRODUCT;, it "
+"can not be changed. A zone is either basic or advanced for its entire "
+"lifetime."
+msgstr "Cada zona tem ou rede básica ou rede avançada. Uma vez que a escolha do modelo de rede para uma zona  foi feita e configurada no &PRODUCT;, ela não pode ser alterada. Uma zona ou é básica ou avançada por toda sua vida."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following table compares the networking features in the two networking "
+"models."
+msgstr "A tabela seguinte compara os recursos de rede dos dois modelos de rede."
+
+#. Tag: para
+#, no-c-format
+msgid "Networking Feature"
+msgstr "Recurso de rede"
+
+#. Tag: para
+#, no-c-format
+msgid "Basic Network"
+msgstr "Rede básica"
+
+#. Tag: para
+#, no-c-format
+msgid "Advanced Network"
+msgstr "Rede avançada"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of networks"
+msgstr "Número de redes"
+
+#. Tag: para
+#, no-c-format
+msgid "Single network"
+msgstr "Rede única"
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple networks"
+msgstr "Redes múltiplas"
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall type"
+msgstr "Tipo de firewall"
+
+#. Tag: para
+#, no-c-format
+msgid "Physical"
+msgstr "Físico"
+
+#. Tag: para
+#, no-c-format
+msgid "Physical and Virtual"
+msgstr "Físico e virtual"
+
+#. Tag: para
+#, no-c-format
+msgid "Load balancer"
+msgstr "Balanceador de carga"
+
+#. Tag: para
+#, no-c-format
+msgid "Isolation type"
+msgstr "Tipo de isolamento"
+
+#. Tag: para
+#, no-c-format
+msgid "Layer 3"
+msgstr "Camada 3"
+
+#. Tag: para
+#, no-c-format
+msgid "Layer 2 and Layer 3"
+msgstr "Camada 2 e camada 3"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN support"
+msgstr "Suporte a VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr "Não"
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr "Sim"
+
+#. Tag: para
+#, no-c-format
+msgid "Port forwarding"
+msgstr "Encaminhamento de porta"
+
+#. Tag: para
+#, no-c-format
+msgid "1:1 NAT"
+msgstr "NAT 1:1"
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr "NAT de origem"
+
+#. Tag: para
+#, no-c-format
+msgid "Userdata"
+msgstr "Userdata"
+
+#. Tag: para
+#, no-c-format
+msgid "Network usage monitoring"
+msgstr "Monitoração da utilização de rede"
+
+#. Tag: para
+#, no-c-format
+msgid "sFlow / netFlow at physical router"
+msgstr "sFlow / netFlow no roteador físico"
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor and Virtual Router"
+msgstr "Hipervisor e roteador virtual"
+
+#. Tag: para
+#, no-c-format
+msgid "DNS and DHCP"
+msgstr "DNS e DHCP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The two types of networking may be in use in the same cloud. However, a "
+"given zone must use either Basic Networking or Advanced Networking."
+msgstr "Os dois tipos de rede podem estar em uso na mesma nuvem. Entretanto, uma determinada zona deve usar ou rede básica ou rede avançada."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Different types of network traffic can be segmented on the same physical "
+"network. Guest traffic can also be segmented by account. To isolate traffic,"
+" you can use separate VLANs. If you are using separate VLANs on a single "
+"physical network, make sure the VLAN tags are in separate numerical ranges."
+msgstr "Diferentes tipos de tráfego de rede podem ser segmentados na mesma rede física. Tráfego hóspede pode também ser segmentado por conta. Para isolar tráfego, você pode usar VLANs separadas. Se você esta usando VLANs separadas em uma única rede física, certifique-se de que as tags VLAN estão em intervalos numéricos distintos."

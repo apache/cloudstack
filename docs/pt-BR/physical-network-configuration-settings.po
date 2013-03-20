@@ -1,0 +1,84 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-18 13:03+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configurable Characteristics of Physical Networks"
+msgstr "Características configuráveis de redes físicas"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides configuration settings you can use to set up a physical "
+"network in a zone, including:"
+msgstr "O &PRODUCT; provê definições de configuração que você pode usar para configurar uma rede física em uma zona, incluindo:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"What type of network traffic it carries (guest, public, management, storage)"
+msgstr "Qual tipo de tráfego de rede é transportado (hóspede, público, gerência, storage)"
+
+#. Tag: para
+#, no-c-format
+msgid "VLANs"
+msgstr "VLANs"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Unique name that the hypervisor can use to find that particular network"
+msgstr "Nome singular que o hipervisor pode usar para encontrar aquela rede específica"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Enabled or disabled. When a network is first set up, it is disabled – not in"
+" use yet. The administrator sets the physical network to enabled, and it "
+"begins to be used. The administrator can later disable the network again, "
+"which prevents any new virtual networks from being created on that physical "
+"network; the existing network traffic continues even though the state is "
+"disabled."
+msgstr "Habilitada ou desabilitada. Quando uma rede é inicialmente configurada, ela é desabilitada – ainda não em uso. O administrador configura a rede como habilitada, e ela começa a ser utilizada. Depois, o administrador pode desabilitar novamente a rede, o que impede a criação de quaisquer novas redes virtuais naquela rede física; o tráfego de rede existente continua mesmo que o estado seja desabilitado."
+
+#. Tag: para
+#, no-c-format
+msgid "Speed"
+msgstr "Velocidade"
+
+#. Tag: para
+#, no-c-format
+msgid "Tags, so network offerings can be matched to physical networks"
+msgstr "Tags, de modo que as ofertas de rede podem ser combinadas com redes físicas"
+
+#. Tag: para
+#, no-c-format
+msgid "Isolation method"
+msgstr "Método de isolamento"

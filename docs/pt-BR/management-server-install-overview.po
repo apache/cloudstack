@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 13:35+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Installation Overview"
+msgstr "Visão geral da instalação do servidor de gerenciamento"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section describes installing the Management Server. There are two "
+"slightly different installation flows, depending on how many Management "
+"Server nodes will be in your cloud:"
+msgstr "Esta seção descreve a instalação do servidor de gerenciamento. Há dois fluxos de instalação ligeiramente diferentes, dependendo de quantos nós servidores de gerenciamento haverão na sua nuvem:"
+
+#. Tag: para
+#, no-c-format
+msgid "A single Management Server node, with MySQL on the same node."
+msgstr "Um único nó servidor de gerenciamento, com MySQL no mesmo nó."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Multiple Management Server nodes, with MySQL on a node separate from the "
+"Management Servers."
+msgstr "Múltiplos nós servidores de gerenciamento, com MySQL em um nó separado dos servidores de gerenciamento."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In either case, each machine must meet the system requirements described in "
+"System Requirements."
+msgstr "Em qualquer caso, cada máquina deve atender os requerimentos descritos em Requerimentos do sistema."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the sake of security, be sure the public Internet can not access port "
+"8096 or port 8250 on the Management Server."
+msgstr "Por razões de segurança, certifique-se de que as portas 8096 e 8250 do servidor de gerenciamento não possam ser acessadas pela Internet."
+
+#. Tag: para
+#, no-c-format
+msgid "The procedure for installing the Management Server is:"
+msgstr "O procedimento para instalação do servidor de gerenciamento é:"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "Preparar o sistema operacional"
+
+#. Tag: para
+#, no-c-format
+msgid "(XenServer only) Download and install vhd-util."
+msgstr "(somente para XenServer) Faça download e instale vhd-util."
+
+#. Tag: para
+#, no-c-format
+msgid "Install the First Management Server"
+msgstr "Instalar o primeiro servidor de gerenciamento"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and Configure the MySQL database"
+msgstr "Instalar e configurar o database MySQL"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr "Preparar os compartilhamentos NFS"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers (optional)"
+msgstr "Preparar e ativar servidores de gerenciamento adicionais (opcional)"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "Preparar o template de máquina virtual de sistema"

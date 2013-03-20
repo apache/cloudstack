@@ -1,0 +1,117 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring VPN"
+msgstr "Configurando VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "To set up VPN for the cloud:"
+msgstr "Para configurar VPN para a nuvem:"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr "Na barra de navegação à esquerda, clique em Global Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following global configuration parameters."
+msgstr "Configure os seguintes parâmetros de configuração global."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"remote.access.vpn.client.ip.range – The range of IP addressess to be "
+"allocated to remote access VPN clients. The first IP in the range is used by"
+" the VPN server."
+msgstr "remote.access.vpn.client.ip.range – O intervalo de endereços IP a ser alocados para clientes de acesso remoto VPN. O primeiro IP no intervalo é utilizado pelo servidor VPN."
+
+#. Tag: para
+#, no-c-format
+msgid "remote.access.vpn.psk.length – Length of the IPSec key."
+msgstr "remote.access.vpn.psk.length – Tamanho da chave IPSec."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"remote.access.vpn.user.limit – Maximum number of VPN users per account."
+msgstr "remote.access.vpn.user.limit – Número máximo de usuários VPN por conta."
+
+#. Tag: para
+#, no-c-format
+msgid "To enable VPN for a particular network:"
+msgstr "Para habilitar VPN para uma rede em particular:"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as a user or administrator to the &PRODUCT; UI."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Network."
+msgstr "Na barra de navegação à esquerda, clique em Network."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network you want to work with."
+msgstr "Clique no nome da rede com a qual você quer trabalhar."
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "Clique em View IP Addresses."
+
+#. Tag: para
+#, no-c-format
+msgid "Click one of the displayed IP address names."
+msgstr "Clique em um dos endereços IP apresentados."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Enable VPN button. <inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/vpn-icon.png\" /> </imageobject> <textobject> "
+"<phrase>AttachDiskButton.png: button to attach a volume</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IPsec key is displayed in a popup window."
+msgstr "A chave IPsec é apresentada em uma janela popup."

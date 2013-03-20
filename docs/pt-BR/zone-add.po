@@ -1,0 +1,184 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <ebalter@gmail.com>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:14+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Zone"
+msgstr "Adicionando uma zona"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps assume you have already logged in to the &PRODUCT; UI. See <xref"
+" linkend=\"log-in\" />."
+msgstr "Nestes passos se supõe que você já está logado na interface de usuário do &PRODUCT;. Veja <xref linkend=\"log-in\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you are going to use Swift for cloud-wide secondary storage, "
+"you need to add it before you add zones."
+msgstr "(Opcional) Se você irá usar Swift para storage secundária na nuvem, você precisa adicioná-la antes de adicionar zonas."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this is your first time visiting the UI, you will see the guided tour "
+"splash screen. Choose “Experienced user.” The Dashboard appears."
+msgstr "Se esta é a primeira vez utilizando a interface de usuário, você verá uma tela de apresentação. Selecione “Experienced user.” O painel de instrumentos é exibido."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Global Settings."
+msgstr "Na barra de navegação à esquerda, clique em Global Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type swift.enable and click the search button."
+msgstr "Na caixa de pesquisa, digite swift.enable e clique no botão de pesquisa."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the edit button and set swift.enable to true. <inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> "
+"</imageobject> <textobject><phrase>edit-icon.png: button to modify "
+"data</phrase></textobject> </inlinemediaobject>"
+msgstr "Clique no botão de edit e marque swift.enable como true. <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject><phrase>edit-icon.png: botão para alterar datos</phrase></textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr "Reinicie o servidor de gerenciamento."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr "# service cloud-management restart"
+
+#. Tag: para
+#, no-c-format
+msgid "Refresh the &PRODUCT; UI browser tab and log back in."
+msgstr "Recarregue a interface de usuário do &PRODUCT; no navegador e faça logon novamente."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Infrastructure."
+msgstr "Na barra de navegação à esquerda, selecione Infrastructure."
+
+#. Tag: para
+#, no-c-format
+msgid "On Zones, click View More."
+msgstr "Em Zones, clique em View More."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you are using Swift storage, click Enable Swift. Provide the "
+"following:"
+msgstr "(Opcional) Se você está utilizando storage Swift, clique Enable Swift. Forneça o seguinte:"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">URL.</emphasis> The Swift URL."
+msgstr "<emphasis role=\"bold\">URL.</emphasis> A URL Swift."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Account.</emphasis> The Swift account."
+msgstr "<emphasis role=\"bold\">Account.</emphasis> A conta Swift."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The Swift account’s username."
+msgstr "<emphasis role=\"bold\">Username.</emphasis> O nome de usuário associado à conta Swift."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Key.</emphasis> The Swift key."
+msgstr "<emphasis role=\"bold\">Key.</emphasis> A chave Swift."
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Zone. The zone creation wizard will appear."
+msgstr "Clique em Add Zone. O consultor de criação de zona será exibido."
+
+#. Tag: para
+#, no-c-format
+msgid "Choose one of the following network types:"
+msgstr "Selecione um dos seguintes tipos de rede:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Basic.</emphasis> For AWS-style networking. Provides"
+" a single network where each VM instance is assigned an IP directly from the"
+" network. Guest isolation can be provided through layer-3 means such as "
+"security groups (IP address source filtering)."
+msgstr "<emphasis role=\"bold\">Basic.</emphasis> Para redes no estilo AWS. Provê um rede única a cada instância de máquina virtual é assinalado um endereço IP diretamente da rede. O isolamento de hóspedes pode ser provido através de recursos da camada 3 como grupos seguros (filtragem de endereço IP de origem)."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Advanced.</emphasis> For more sophisticated network "
+"topologies. This network model provides the most flexibility in defining "
+"guest networks and providing custom network offerings such as firewall, VPN,"
+" or load balancer support."
+msgstr "<emphasis role=\"bold\">Advanced.</emphasis> Para topologias de rede mais sofisticadas. Este modelo de rede provê a mais alta flexibilidade na definição de redes hóspedes e oferece customização de rede como firewall, VPN, ou suporte a balanceador de carga."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information about the network types, see <xref linkend=\"about-"
+"physical-networks\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The rest of the steps differ depending on whether you chose Basic or "
+"Advanced. Continue with the steps that apply to you:"
+msgstr "O restante dos passos diferem dependendo se você escolheu Basic ou Advanced. Continue com os passos que se aplicam a você:"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"basic-zone-configuration\" />"
+msgstr "<xref linkend=\"basic-zone-configuration\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"advanced-zone-configuration\" />"
+msgstr "<xref linkend=\"advanced-zone-configuration\" />"

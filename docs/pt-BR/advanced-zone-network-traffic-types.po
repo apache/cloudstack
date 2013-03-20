@@ -1,0 +1,94 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-22 12:50+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Network Traffic Types"
+msgstr "Tipos de tráfego de rede da zona avançada"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When advanced networking is used, there can be multiple physical networks in"
+" the zone. Each physical network can carry one or more traffic types, and "
+"you need to let &PRODUCT; know which type of network traffic you want each "
+"network to carry. The traffic types in an advanced zone are:"
+msgstr "Quando rede avançada é usada, pode haver múltiplas redes físicas na zona. Cada rede física pode transportar um ou mais tipos de tráfego, e você precisa informar ao &PRODUCT; qual o tipo de tráfego que você deseja que cada rede transporte. Os tipos de tráfego em uma zona avançada são:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Guest. When end users run VMs, they generate guest traffic. The guest VMs "
+"communicate with each other over a network that can be referred to as the "
+"guest network. This network can be isolated or shared. In an isolated guest "
+"network, the administrator needs to reserve VLAN ranges to provide isolation"
+" for each &PRODUCT; account’s network (potentially a large number of VLANs)."
+" In a shared guest network, all guest VMs share a single network."
+msgstr "Hóspede. Quando usuários finais executam máquinas virtuais, eles geram tráfego hóspede. As máquinas virtuais hóspedes  comunicam-se através de uma rede que pode ser referida como a rede hóspede. Esta rede pode ser isolada ou compartilhada. Em uma rede hóspede isolada, o administrador precisa reservar intervalos de VLAN para prover isolamento para cada rede de conta do &PRODUCT; (potencialmente um grande número de VLANs). Em uma rede hóspede compartilhada, todas as máquinas virtuais hóspedes compartilham uma única rede."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Management. When &PRODUCT;’s internal resources communicate with each other,"
+" they generate management traffic. This includes communication between "
+"hosts, system VMs (VMs used by &PRODUCT; to perform various tasks in the "
+"cloud), and any other component that communicates directly with the "
+"&PRODUCT; Management Server. You must configure the IP range for the system "
+"VMs to use."
+msgstr "Gerência. Quando recursos internos do &PRODUCT; comunicam-se entre si, eles geram tráfego de gerência. Isto inclui a comunicação entre hosts, máquinas virtuais do sistema (máquinas virtuais usadas pelo &PRODUCT; para executar várias tarefas na nuvem), e  qualquer outro componente que se comunica diretamente com o servidor de gerenciamento do &PRODUCT;. Você deve configurar o intervalo de IP para uso das máquinas virtuais do sistema."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Public. Public traffic is generated when VMs in the cloud access the "
+"Internet. Publicly accessible IPs must be allocated for this purpose. End "
+"users can use the &PRODUCT; UI to acquire these IPs to implement NAT between"
+" their guest network and the public network, as described in “Acquiring a "
+"New IP Address” in the Administration Guide."
+msgstr "Público. Tráfego público é gerado quando máquinas virtuais na nuvem acessam a Internet. Endereços IP publicamente acessíveis devem ser alocados para esta finalidade. Usuários finais podem usar a interface de usuário do &PRODUCT; para obter estes endereços IP para implementar NAT entre sua rede  hóspede e a rede pública, como descrito em Obtendo um novo endereço IP no Guia de Administração."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Storage. Traffic such as VM templates and snapshots, which is sent between "
+"the secondary storage VM and secondary storage servers. &PRODUCT; uses a "
+"separate Network Interface Controller (NIC) named storage NIC for storage "
+"network traffic. Use of a storage NIC that always operates on a high "
+"bandwidth network allows fast template and snapshot copying. You must "
+"configure the IP range to use for the storage network."
+msgstr "Storage. Tráfego tal como templates e snapshots de máquinas virtuais, que trafega entre a máquina virtual de storage secundária e os servidores de storage secundária. O &PRODUCT; usa uma Network Interface Controller (NIC), chamada storage NIC, dedicada a tráfego de rede de storage. Uso de uma NIC de storage que sempre opera em uma rede de alta capacidade permite a cópia rápida de template e snapshot. Você deve configurar um intervalo de IP para uso da rede de storage."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These traffic types can each be on a separate physical network, or they can "
+"be combined with certain restrictions. When you use the Add Zone wizard in "
+"the UI to create a new zone, you are guided into making only valid choices."
+msgstr "Cada um destes tipos de tráfego pode estar em uma rede física separada, ou eles podem ser combinados com certas restrições. Quando você usa o assistente Add Zone na interface de usuário para criar uma nova zona, você é orientado a fazer somente escolhas válidas."

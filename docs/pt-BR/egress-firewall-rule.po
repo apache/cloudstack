@@ -1,0 +1,144 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:14+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating Egress Firewall Rules in an Advanced Zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The egress firewall rules are supported only on virtual routers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The egress traffic originates from a private network to a public network, "
+"such as the Internet. By default, the egress traffic is blocked, so no "
+"outgoing traffic is allowed from a guest network to the Internet. However, "
+"you can control the egress traffic in an Advanced zone by creating egress "
+"firewall rules. When an egress firewall rule is applied, the traffic "
+"specific to the rule is allowed and the remaining traffic is blocked. When "
+"all the firewall rules are removed the default policy, Block, is applied."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Consider the following scenarios to apply egress firewall rules:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Allow the egress traffic from specified source CIDR. The Source CIDR is part"
+" of guest network CIDR."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Allow the egress traffic with destination protocol TCP,UDP,ICMP, or ALL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Allow the egress traffic with destination protocol and port range. The port "
+"range is specified for TCP, UDP or for ICMP type and code."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure an egress firewall rule:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In Select view, choose Guest networks, then click the Guest network you "
+"want."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To add an egress rule, click the Egress rules tab and fill out the following"
+" fields to specify what type of traffic is allowed to be sent out of VM "
+"instances in this guest network:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">CIDR</emphasis>: (Add by CIDR only) To send traffic "
+"only to the IP addresses within a particular address block, enter a CIDR or "
+"a comma-separated list of CIDRs. The CIDR is the base IP address of the "
+"destination. For example, 192.168.0.0/22. To allow all CIDRs, set to "
+"0.0.0.0/0."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol</emphasis>: The networking protocol that "
+"VMs uses to send outgoing traffic. The TCP and UDP protocols are typically "
+"used for data exchange and end-user communications. The ICMP protocol is "
+"typically used to send error messages or network monitoring data."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start Port, End Port</emphasis>: (TCP, UDP only) A "
+"range of listening ports that are the destination for the outgoing traffic. "
+"If you are opening a single port, use the same number in both fields."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">ICMP Type, ICMP Code</emphasis>: (ICMP only) The "
+"type of message and error code that are sent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "Clique em Add."

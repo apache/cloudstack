@@ -1,0 +1,117 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Daniela Sant Ana de Oliveira <daniela.santana@ibge.gov.br>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the Management Server on the First Host"
+msgstr "Instale o servidor de gerenciamento  no primeiro host."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The first step in installation, whether you are installing the Management "
+"Server on one host or many, is to install the software on a single node."
+msgstr "O primeiro passo para a instalação, se você está instalando o servidor de gerenciamento em um host ou muitos, é instalar o software em um único nó."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are planning to install the Management Server on multiple nodes for "
+"high availability, do not proceed to the additional nodes yet. That step "
+"will come later."
+msgstr "Se você estiver planejando instalar o servidor de gerenciamento em vários nós para alta disponibilidade, não avance para os nós adicionais ainda. Esse passo virá mais tarde."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; Management server can be installed using either RPM or DEB "
+"packages. These packages will depend on everything you need to run the "
+"Management server."
+msgstr "O servidor de gerenciamento &PRODUCT; pode ser instalado usando  tanto pacotes RPM ou DEB. Estes pacotes vão depender tudo que você precisa para executar o servidor de gerenciamento."
+
+#. Tag: title
+#, no-c-format
+msgid "Install on CentOS/RHEL"
+msgstr "Instale o CentOS/RHEL"
+
+#. Tag: para
+#, no-c-format
+msgid "We start by installing the required packages:"
+msgstr "Começamos instalando os pacotes necessários:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install cloud-client"
+msgstr "yum install cloud-client"
+
+#. Tag: title
+#, no-c-format
+msgid "Install on Ubuntu"
+msgstr "Instale o Ubuntu"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install cloud-client"
+msgstr "apt-get install cloud-client"
+
+#. Tag: title
+#, no-c-format
+msgid "Downloading vhd-util"
+msgstr "Baixando o vhd-util"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This procedure is required only for installations where XenServer is "
+"installed on the hypervisor hosts."
+msgstr "Este procedimento somente é necessário em instalações onde XenServer é instalado nos hosts hipervisores."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before setting up the Management Server, download vhd-util from <ulink "
+"url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-"
+"util</ulink>."
+msgstr "Antes de configurar o servidor de gerenciamento, baixe vhd-util de <ulink url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-util</ulink>."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is RHEL or CentOS, copy vhd-util to "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr "Se o servidor de gerenciamento é RHEL ou CentOS, copie vhd-util para /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is Ubuntu, copy vhd-util to "
+"/usr/lib/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr ""

@@ -1,0 +1,84 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <ebalter@gmail.com>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-22 12:25+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Clusters"
+msgstr "Sobre clusters"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster provides a way to group hosts. To be precise, a cluster is a "
+"XenServer server pool, a set of KVM servers, , or a VMware cluster "
+"preconfigured in vCenter. The hosts in a cluster all have identical "
+"hardware, run the same hypervisor, are on the same subnet, and access the "
+"same shared primary storage. Virtual machine instances (VMs) can be live-"
+"migrated from one host to another within the same cluster, without "
+"interrupting service to the user."
+msgstr "Um cluster provê um modo de agrupar hosts. Mais precisamente, um cluster é um pool de servidores XenServer, um conjunto de servidores KVM, um conjunto de servidores OVM, ou um cluster VMware pré-configurado no vCenter. Todos os hosts em um cluster têm hardwares idênticos, executam o mesmo hipervisor, estão na mesma subnet e acessam a mesma storage primária  compartilhada. Instâncias de máquinas virtuais (VMs) ativas em um host podem ser migradas para outro host no mesmo cluster, sem interromper os serviços fornecidos ao usuário."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster is the third-largest organizational unit within a &PRODUCT; "
+"deployment. Clusters are contained within pods, and pods are contained "
+"within zones. Size of the cluster is limited by the underlying hypervisor, "
+"although the &PRODUCT; recommends less in most cases; see Best Practices."
+msgstr "Um cluster é a terceira maior unidade organizacional em uma implementação do &PRODUCT;. Clusters são contidos em pods, e pods são contidos em zonas. O tamanho do cluster é limitado pelo hipervisor subjacente, embora o &PRODUCT; recomenda menos na maioria dos caso; veja \"Melhores práticas\"."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster consists of one or more hosts and one or more primary storage "
+"servers."
+msgstr "Um cluster consiste em um ou mais hosts e um ou mais servidores de storage primária."
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows multiple clusters in a cloud deployment."
+msgstr "O &PRODUCT; permite múltiplos clusters em uma implementação de nuvem."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Even when local storage is used exclusively, clusters are still required "
+"organizationally, even if there is just one host per cluster."
+msgstr "Mesmo quando exclusivamente armazenamento local é usado, clusters ainda são organizacionalmente requeridos, mesmo que haja somente um host por cluster."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When VMware is used, every VMware cluster is managed by a vCenter server. "
+"Administrator must register the vCenter server with &PRODUCT;. There may be "
+"multiple vCenter servers per zone. Each vCenter server may manage multiple "
+"VMware clusters."
+msgstr "Quando VMware é usado, todo cluster VMware é gerenciado por um servidor vCenter. O administrador deve registrar o servidor vCenter no &PRODUCT;. Pode haver múltiplos servidores vCenter por zona. Cada servidor vCenter pode gerenciar múltiplos clusters VMware."

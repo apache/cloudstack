@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:07+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Guest Traffic"
+msgstr "Tráfego de hóspedes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A network can carry guest traffic only between VMs within one zone. Virtual "
+"machines in different zones cannot communicate with each other using their "
+"IP addresses; they must communicate with each other by routing through a "
+"public IP address."
+msgstr "Uma rede pode transportar tráfego de hóspedes somente entre máquinas virtuais em uma zona. Máquinas virtuais em diferentes zonas não podem se comunicar usando seus endereços IP; elas devem se comunicar através de roteamento em uma rede IP pública."
+
+#. Tag: para
+#, no-c-format
+msgid "This figure illustrates a typical guest traffic setup:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server automatically creates a virtual router for each "
+"network. A virtual router is a special virtual machine that runs on the "
+"hosts. Each virtual router has three network interfaces. Its eth0 interface "
+"serves as the gateway for the guest traffic and has the IP address of "
+"10.1.1.1. Its eth1 interface is used by the system to configure the virtual "
+"router. Its eth2 interface is assigned a public IP address for public "
+"traffic."
+msgstr "O servidor de gerenciamento automaticamente cria um roteador virtual para cada rede. Um roteador virtual é uma máquina virtual especial que executa nos hosts. Cada roteador virtual tem três interfaces de rede. Seu interface eth0 serve como o gateway para o tráfego hóspede e tem o endereço IP 10.1.1.1. Seu interface eth1 é usado pelo sistema para configurar o roteador virtual. A seu interface eth2 é assinalado um endereço IP público para tráfego público."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The virtual router provides DHCP and will automatically assign an IP address"
+" for each guest VM within the IP range assigned for the network. The user "
+"can manually reconfigure guest VMs to assume different IP addresses."
+msgstr "O roteador virtual provê DHCP e automaticamente irá assinalar um endereço IP para cada máquina virtual no intervalo de IPs assinalado para a rede. O usuário pode manualmente reconfigurar máquinas virtuais hóspedes para utilizarem diferentes endereços IP."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Source NAT is automatically configured in the virtual router to forward "
+"outbound traffic for all guest VMs"
+msgstr "NAT da origem é automaticamente configurado no roteador virtual para encaminhar tráfego de saída para todas as máquinas virtuais hóspedes"

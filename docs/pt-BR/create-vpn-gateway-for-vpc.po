@@ -1,0 +1,142 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-04 19:09+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a VPN gateway for the VPC"
+msgstr "Criando um gateway VPN para o VPC"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "Na view Select, selecione VPC."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "Todas as VPCs que você criou para a conta são listadas na página."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "Clique no botão Configure da VPC na qual você deseja implementar as máquinas virtuais."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "Na página VPC apresentada, todas as camadas que você criou são listadas em um diagrama."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "Clique no ícone Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "As seguintes opções são apresentadas."
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "Endereços IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select Site-to-Site VPN."
+msgstr "Selecione Site-to-Site VPN."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are creating the VPN gateway for the first time, selecting Site-to-"
+"Site VPN prompts you to create a VPN gateway."
+msgstr "Se você está criando o gateway VPN pela primeira vez, selecionando Site-to-Site VPN requer de você criar um gateway VPN."
+
+#. Tag: para
+#, no-c-format
+msgid "In the confirmation dialog, click Yes to confirm."
+msgstr "No diálogo de confirmação, clique Yes para confirmar."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Within a few moments, the VPN gateway is created. You will be prompted to "
+"view the details of the VPN gateway you have created. Click Yes to confirm."
+msgstr "Em poucos momentos, o gateway VPN é criado. Você será solicitado ver os detalhes do gateway VPN que você criou. Clique Yes para confirmar."
+
+#. Tag: para
+#, no-c-format
+msgid "The following details are displayed in the VPN Gateway page:"
+msgstr "Os seguintes detalhes são apresentados na página VPN Gateway:"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Address"
+msgstr "Endereço IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Account"
+msgstr "Conta"
+
+#. Tag: para
+#, no-c-format
+msgid "Domain"
+msgstr "Domínio"

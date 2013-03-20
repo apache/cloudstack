@@ -1,0 +1,284 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Daniela Sant Ana de Oliveira <daniela.santana@ibge.gov.br>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the Database on a Separate Node"
+msgstr "Instale o banco de dados em um nó separado"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section describes how to install MySQL on a standalone machine, "
+"separate from the Management Server. This technique is intended for a "
+"deployment that includes several Management Server nodes. If you have a "
+"single-node Management Server deployment, you will typically use the same "
+"node for MySQL. See <xref linkend=\"management-server-install-db-local\" />."
+msgstr "Esta seção descreve como instalar o MySQL em uma máquina independente, separado do servidor de gerenciamento. Esta técnica destina-se a uma implantação que inclui vários nós servidor  de gerenciamento. Se você tem um único nó implantado no servidor de gerenciamento, você vai utilizar o mesmo nó para o MySQL. Veja <xref linkend=\"management-server-install-db-local\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The management server doesn't require a specific distribution for the MySQL "
+"node. You can use a distribution or Operating System of your choice. Using "
+"the same distribution as the management server is recommended, but not "
+"required. See <xref linkend=\"management-server-system-requirements\" />."
+msgstr "O servidor de gerenciamento  não requer uma distribuição específica para o nó MySQL. Você pode usar uma distribuição ou  sistema operacional de sua escolha. Usar a mesma distribuição que o servidor de gerenciamento é recomendável, mas não obrigatório. Veja <xref linkend=\"management-server-system-requirements\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Install MySQL from the package repository from your distribution:"
+msgstr "Instalar o MySQL a partir do repositório de pacotes de sua distribuição:"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS:"
+msgstr "No RHEL ou CentOS:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install mysql-server"
+msgstr "yum install mysql-server"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu:"
+msgstr "No Ubuntu:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install mysql-server"
+msgstr "apt-get install mysql-server"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on"
+" your OS) and insert the following lines in the [mysqld] section. You can "
+"put these lines below the datadir line. The max_connections parameter should"
+" be set to 350 multiplied by the number of Management Servers you are "
+"deploying. This example assumes two Management Servers."
+msgstr "Edite a configuração do MySQL (/etc/my.cnf ou o arquivo /etc/mysql/my.cnf, dependendo do seu sistema operacional) e insira as seguintes linhas na seção [mysqld]. Você pode colocar essas linhas abaixo da linha datadir. O parâmetro max_connections deveria ser definido para 350, multiplicado pelo número de servidores de gerenciamento que você está implantando. Este exemplo assume dois servidores de gerenciamento."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On Ubuntu, you can also create /etc/mysql/conf.d/cloudstack.cnf file and add"
+" these directives there. Don't forget to add [mysqld] on the first line of "
+"the file."
+msgstr "No Ubuntu, você também pode criar arquivo /etc/mysql/conf.d/cloudstack.cnf e adicionar essas directivas lá. Não se esqueça de adicionar [mysqld] na primeira linha do arquivo."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"innodb_rollback_on_timeout=1\n"
+"innodb_lock_wait_timeout=600\n"
+"max_connections=700\n"
+"log-bin=mysql-bin\n"
+"binlog-format = 'ROW'\n"
+"bind-address = 0.0.0.0"
+msgstr "innodb_rollback_on_timeout=1\ninnodb_lock_wait_timeout=600\nmax_connections=700\nlog-bin=mysql-bin\nbinlog-format = 'ROW'\nbind-address = 0.0.0.0"
+
+#. Tag: para
+#, no-c-format
+msgid "Start or restart MySQL to put the new configuration into effect."
+msgstr "Iniciar ou reiniciar o MySQL para colocar a nova configuração em vigor."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On RHEL/CentOS, MySQL doesn't automatically start after installation. Start "
+"it manually."
+msgstr "No RHEL/CentOS, o MYSQL não inicia automaticamente depois da instalação. Inicia-lo manualmente."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service mysqld start"
+msgstr "# service mysqld restart"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, restart MySQL."
+msgstr "No Ubuntu, reinicie o MySQL."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service mysqld restart"
+msgstr "# service mysqld restart"
+
+#. Tag: para
+#, no-c-format
+msgid "(CentOS and RHEL only; not required on Ubuntu)"
+msgstr "(Só no CentOS e RHEL, não é necessário no Ubuntu)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On RHEL and CentOS, MySQL does not set a root password by default. It is "
+"very strongly recommended that you set a root password as a security "
+"precaution."
+msgstr "No RHEL e CentOS, o MySQL não definir uma senha de root por padrão. É extremamente recomendável que você defina uma senha de root como medida de segurança."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run the following command to secure your installation. You can answer \"Y\" "
+"to all questions except \"Disallow root login remotely?\". Remote root login"
+" is required to set up the databases."
+msgstr "Execute o seguinte comando para garantir a sua instalação. Você pode responder \"Y\" a todas as perguntas, exceto \"Proibir login root remotamente?\". O login remoto é necessário para configurar os bancos de dados."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysql_secure_installation"
+msgstr "mysql_secure_installation"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a firewall is present on the system, open TCP port 3306 so external MySQL"
+" connections can be established."
+msgstr "Se um firewall estiver presente no sistema, abrir a porta TCP 3306 para conexões externas MySQL pode ser estabelecida."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On Ubuntu, UFW is the default firewall. Open the port with this command:"
+msgstr "No Ubuntu,  o UFW é o firewall padrão. Abra a porta com o comando:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ufw allow mysql"
+msgstr "ufw allow mysql"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL/CentOS:"
+msgstr "No RHEL/CentOS:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Edit the /etc/sysconfig/iptables file and add the following line at the "
+"beginning of the INPUT chain."
+msgstr "Edite o arquivo /etc/sysconfig/iptables e adicione a seguinte linha no início da cadeia INPUT."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "-A INPUT -p tcp --dport 3306 -j ACCEPT"
+msgstr "-A INPUT -p tcp --dport 3306 -j ACCEPT"
+
+#. Tag: para
+#, no-c-format
+msgid "Now reload the iptables rules."
+msgstr "Agora recarregue as regras do iptables."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service iptables restart"
+msgstr "service iptables restart"
+
+#. Tag: para
+#, no-c-format
+msgid "Return to the root shell on your first Management Server."
+msgstr "Retorne para o shell de root em seu primeiro servidor de gerenciamento."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up the database. The following command creates the cloud user on the "
+"database."
+msgstr "Configure o banco de dados. O seguinte comando cria o usuário no banco de dados em nuvem."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In dbpassword, specify the password to be assigned to the cloud user. You "
+"can choose to provide no password."
+msgstr "Em dbpassword, especifique a senha a ser atribuída ao usuário nuvem. Você pode escolher  por não fornecer a senha."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In deploy-as, specify the username and password of the user deploying the "
+"database. In the following command, it is assumed the root user is deploying"
+" the database and creating the cloud user."
+msgstr "Em deploy-as, especifique o username e senha do usuário que está implementando o database. No comando a seguir, é suposto que o usuário root está user implementando o database e criando o usuário cloud."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) For encryption_type, use file or web to indicate the technique "
+"used to pass in the database encryption password. Default: file. See <xref "
+"linkend=\"about-password-encryption\" />."
+msgstr "(Opcional) Para encryption_type, use arquivo ou web para indicar a técnica utilizada para passar a senha de criptografia de banco de dados. Padrão: arquivo. Consulte sobre Senha e Criptografia de Chave.\n\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) For management_server_key, substitute the default key that is "
+"used to encrypt confidential parameters in the &PRODUCT; properties file. "
+"Default: password. It is highly recommended that you replace this with a "
+"more secure value. See About Password and Key Encryption."
+msgstr "       (Opcional) Para management_server_key, substituir a chave padrão que é usada para criptografar os parâmetros  confidenciais no arquivo de propriedades &PRODUCT;. Padrão: senha. É altamente recomendado que você substitua isso com um valor mais seguro. Consulte sobre Senha e Criptografia de chave.                                                                                              "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) For database_key, substitute the default key that is used to "
+"encrypt confidential parameters in the &PRODUCT; database. Default: "
+"password. It is highly recommended that you replace this with a more secure "
+"value. See <xref linkend=\"about-password-encryption\" />."
+msgstr "(Opcional) Para database_key, substituir a chave padrão que é usada para criptografar os parâmetros confidenciais no banco de dados &PRODUCT;. Padrão: senha. É altamente recomendado que você substitua isso com um valor mais seguro. Veja <xref linkend=\"about-password-encryption\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) For management_server_ip, you may explicitly specify cluster "
+"management server node IP. If not specified, the local IP address will be "
+"used."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \\\n"
+"--deploy-as=root:&lt;password&gt; \\\n"
+"-e &lt;encryption_type&gt; \\\n"
+"-m &lt;management_server_key&gt; \\\n"
+"-k &lt;database_key&gt; \\\n"
+"-i &lt;management_server_ip&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When this script is finished, you should see a message like “Successfully "
+"initialized the database.”"
+msgstr "Quando o script estiver concluído, você deveria ver  uma mensagem como \"Iniciou com sucesso o banco de dados.\""

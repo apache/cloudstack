@@ -1,0 +1,123 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using VPN with Windows"
+msgstr "Usando VPN com Windows"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The procedure to use VPN varies by Windows version. Generally, the user must"
+" edit the VPN properties and make sure that the default route is not the "
+"VPN. The following steps are for Windows L2TP clients on Windows Vista. The "
+"commands should be similar for other Windows versions."
+msgstr "O procedimento para usar VPN varia de acordo com a versão do Windows. Geralmente, o usuário deve editar as propriedades da VPN e certificar-se de que a rota default não é a VPN. Os passos seguintes são para clientes Windows L2TP no Windows Vista. Os comandos devem ser similares para outras versões do Windows."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Log in to the &PRODUCT; UI and click on the source NAT IP for the account. "
+"The VPN tab should display the IPsec preshared key. Make a note of this and "
+"the source NAT IP. The UI also lists one or more users and their passwords. "
+"Choose one of these users, or, if none exists, add a user and password."
+msgstr "Faça login na interface de usuário do &PRODUCT; e clique no IP NAT de origem para a conta. A aba VPN deve exibir a chave IPsec pré-compartilhada. Tome nota disto e do IP NAT de origem. A interface de usuário também lista um ou mais usuários e suas senhas. Escolha um destes usuários ou, se nenhum existe, adicione um usuário e uma senha."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Windows box, go to Control Panel, then select Network and Sharing "
+"center. Click Setup a connection or network."
+msgstr "No Windows, vá para o Painel de Controle, selecione Centro de Rede e Compartilhamento. Clique em Configurar uma conexão ou uma rede."
+
+#. Tag: para
+#, no-c-format
+msgid "In the next dialog, select No, create a new connection."
+msgstr "No próximo diálogo, selecione Conectar a um local de trabalho."
+
+#. Tag: para
+#, no-c-format
+msgid "In the next dialog, select Use my Internet Connection (VPN)."
+msgstr "No próximo diálogo, selecione Use minha conexão com a Internet (VPN)."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the next dialog, enter the source NAT IP from step <xref linkend"
+"=\"source-nat\" /> and give the connection a name. Check Don't connect now."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the next dialog, enter the user name and password selected in step <xref "
+"linkend=\"source-nat\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create."
+msgstr "Clique em Create."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Go back to the Control Panel and click Network Connections to see the new "
+"connection. The connection is not active yet."
+msgstr "Volte ao painel de Controle e clique em Conexões de Rede para ver a nova conexão. A conexão ainda não está ativa."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Right-click the new connection and select Properties. In the Properties "
+"dialog, select the Networking tab."
+msgstr "Clique com o botão da direita na nova conexão e selecione Propriedades. No diálogo de Propriedades, selecione a aba Rede."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In Type of VPN, choose L2TP IPsec VPN, then click IPsec settings. Select Use"
+" preshared key. Enter the preshared key from Step <xref linkend=\"source-"
+"nat\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The connection is ready for activation. Go back to Control Panel -&gt; "
+"Network Connections and double-click the created connection."
+msgstr "A conexão está pronta para ser ativada. Volte a Painel de Controle -&gt; Conexões de Rede e dê dois cliques na conexão criada."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Enter the user name and password from Step <xref linkend=\"source-nat\" />."
+msgstr ""

@@ -1,0 +1,147 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 15:58+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Offerings"
+msgstr "Oferta de Rede"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the most up-to-date list of supported network services, see the "
+"&PRODUCT; UI or call listNetworkServices."
+msgstr "Para a mais atualizada lista de serviços de rede suportados, veja o interface de usuário do &PRODUCT; ou chame listNetworkServices."
+
+#. Tag: para
+#, no-c-format
+msgid "A network offering is a named set of network services, such as:"
+msgstr "Uma oferta de rede é um conjunto identificado de serviços de rede, tais como:"
+
+#. Tag: para
+#, no-c-format
+msgid "DHCP"
+msgstr "DHCP"
+
+#. Tag: para
+#, no-c-format
+msgid "DNS"
+msgstr "DNS"
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr "Source NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr "NAT EstÃ¡tico"
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr "Encaminhamento de Porta"
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancing"
+msgstr "Balanceamento de Carga"
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall"
+msgstr "Firewall"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN"
+msgstr "VPN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Optional) Name one of several available providers to use for a given "
+"service, such as Juniper for the firewall"
+msgstr "Opcional) Nome de um entre vários fornecedores para usar para um dado serviço, tal como Juniper para o firewall"
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Network tag to specify which physical network to use"
+msgstr "(Opcional) Tag de rede para especificar qual a rede física a utilizar"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When creating a new VM, the user chooses one of the available network "
+"offerings, and that determines which network services the VM can use."
+msgstr "Ao criar uma nova máquina virtual, o usuário escolhe uma das ofertas de rede disponíveis, e isto determina quais serviços de rede a máquina virtual pode usar."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; administrator can create any number of custom network "
+"offerings, in addition to the default network offerings provided by "
+"&PRODUCT;. By creating multiple custom network offerings, you can set up "
+"your cloud to offer different classes of service on a single multi-tenant "
+"physical network. For example, while the underlying physical wiring may be "
+"the same for two tenants, tenant A may only need simple firewall protection "
+"for their website, while tenant B may be running a web server farm and "
+"require a scalable firewall solution, load balancing solution, and alternate"
+" networks for accessing the database backend."
+msgstr "O administrado do &PRODUCT; pode criar qualquer número de ofertas de rede customizadas, em adição às ofertas de rede default providas pelo &PRODUCT;. Criando múltiplas ofertas de rede customizadas, você pode configurar sua nuvem para oferecer diferentes classes de serviço em uma única rede física multi-tenant. Por exemplo, enquanto o cabeamento físico subjacente pode ser o mesmo para dois tenants, o tenant A pode requerer apenas proteção de firewall simples para o seu website, enquanto o tenant B pode estar executando um web server farm e requerer uma solução escalável de firewall, solução de balanceamento de carga e redes alternativas para acessar o database no backend."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you create load balancing rules while using a network service offering "
+"that includes an external load balancer device such as NetScaler, and later "
+"change the network service offering to one that uses the &PRODUCT; virtual "
+"router, you must create a firewall rule on the virtual router for each of "
+"your existing load balancing rules so that they continue to function."
+msgstr "Se você cria regras de balanceamento de carga enquanto usando um oferta de serviço de rede que inclui um equipamento externo de balanceamento de carga, como o NetScaler, e depois altera a oferta de serviço para um que usa o roteador virtual do &PRODUCT; , você deve criar uma regra no firewall do roteador virtual para cada uma das regras de balanceamento de carga existentes, de forma que elas possam continuar funcionado."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When creating a new virtual network, the &PRODUCT; administrator chooses "
+"which network offering to enable for that network. Each virtual network is "
+"associated with one network offering. A virtual network can be upgraded or "
+"downgraded by changing its associated network offering. If you do this, be "
+"sure to reprogram the physical network to match."
+msgstr "Ao criar uma nova rede virtual, o administrador do &PRODUCT; escolhe qual oferta de rede habilitar para aquela rede. Cada rede virtual é associada com uma oferta de rede. Uma rede virtual pode ser  incrementada ou decrementada alterando sua oferta de rede associada. Se você fizer isto, certifique-se de reprogramar a rede física para coincidir."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; also has internal network offerings for use by &PRODUCT; system "
+"VMs. These network offerings are not visible to users but can be modified by"
+" administrators."
+msgstr "O &PRODUCT; também possui ofertas de rede internas para uso das máquinas virtuais de sistema do &PRODUCT;. Estas ofertas de rede não são visíveis pelos usuários, mas podem ser modificadas pelos administradores."

@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 20:42+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Ongoing Configuration of External Firewalls and Load Balancers"
+msgstr "Configuração continuada de firewalls e balanceadores de carga externos"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additional user actions (e.g. setting a port forward) will cause further "
+"programming of the firewall and load balancer. A user may request additional"
+" public IP addresses and forward traffic received at these IPs to specific "
+"VMs. This is accomplished by enabling static NAT for a public IP address, "
+"assigning the IP to a VM, and specifying a set of protocols and port ranges "
+"to open. When a static NAT rule is created, &PRODUCT; programs the zone's "
+"external firewall with the following objects:"
+msgstr "Ações adicionais de usuários (e.g. configuração de um encaminhamento de porta) causará programação adicional do firewall e balanceador de carga. Um usuário pode requisitar endereços IP públicos adicionais e encaminhamento de tráfego recebido nestes  IPs para máquinas virtuais específicas. Isto é executado através da habilitação de NAT estático para um endereço IP público, assinalando o IP a uma máquina virtual, e especificando um conjunto de protocolos e intervalos de portas a liberar. Quando uma regra NAT estática é criada, o &PRODUCT; programa o firewall externo da zona com os seguintes objetos:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A static NAT rule that maps the public IP address to the private IP address "
+"of a VM."
+msgstr "Uma regra NAT estática que mapeia o endereço IP público ao endereço IP privado de uma máquina virtual."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A security policy that allows traffic within the set of protocols and port "
+"ranges that are specified."
+msgstr "Uma política de segurança que permite tráfego no conjunto de protocolos e intervalos de porta que são especificados."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A firewall filter counter that measures the number of bytes of incoming "
+"traffic to the public IP."
+msgstr "Um contador de filtro de firewall que registra o número de bytes do tráfego entrante no IP público."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The number of incoming and outgoing bytes through source NAT, static NAT, "
+"and load balancing rules is measured and saved on each external element. "
+"This data is collected on a regular basis and stored in the &PRODUCT; "
+"database."
+msgstr "O número de bytes entrantes e saintes através de NAT de origem, NAT estático, e regras de balanceamento de carga é medido e salvo em cada elemento externo. Este dado é coletado regularmente e armazenado no database do &PRODUCT;."

@@ -1,0 +1,86 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-28 18:08+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Physical Networks"
+msgstr "Sobre redes físicas"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Part of adding a zone is setting up the physical network. One or (in an "
+"advanced zone) more physical networks can be associated with each zone. The "
+"network corresponds to a NIC on the hypervisor host. Each physical network "
+"can carry one or more types of network traffic. The choices of traffic type "
+"for each network vary depending on whether you are creating a zone with "
+"basic networking or advanced networking."
+msgstr "Em parte, a adição de uma zona é configurar a rede física. Uma ou (em uma zona avançada) mais redes físicas podem ser associada com cada zona. A rede corresponde a uma NIC no host hipervisor. Cada rede física pode transportar um ou mais tipos de tráfego de rede. As escolhas de tipo de tráfego para cada rede variam dependendo se você está criando uma zona com rede básica ou rede avançada."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A physical network is the actual network hardware and wiring in a zone. A "
+"zone can have multiple physical networks. An administrator can:"
+msgstr "Uma rede física é o hardware de rede e o cabeamento em uma zona. Uma zona pode ter múltiplas redes físicas. Um administrador pode:"
+
+#. Tag: para
+#, no-c-format
+msgid "Add/Remove/Update physical networks in a zone"
+msgstr "Adicionar/Remover/Atualizar redes físicas em uma zona"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure VLANs on the physical network"
+msgstr "Configurar VLANs na rede física"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure a name so the network can be recognized by hypervisors"
+msgstr "Configurar um nome para que a rede seja reconhecida pelos hipervisores"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the service providers (firewalls, load balancers, etc.) available "
+"on a physical network"
+msgstr "Configurar os provedores de serviços (firewalls, balanceadores de carga, etc.) disponíveis em uma rede física"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the IP addresses trunked to a physical network"
+msgstr "Configurar os endereços IP implementados, ou trunked, para uma rede física"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify what type of traffic is carried on the physical network, as well as "
+"other properties like network speed"
+msgstr "Especificar o tipo de tráfego que é transportado na rede física, assim como outras propriedades como a velocidade da rede"

@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Deployment Architecture Overview"
+msgstr "Visão geral da arquitetura de implementação"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A &PRODUCT; installation consists of two parts: the Management Server and "
+"the cloud infrastructure that it manages. When you set up and manage a "
+"&PRODUCT; cloud, you provision resources such as hosts, storage devices, and"
+" IP addresses into the Management Server, and the Management Server manages "
+"those resources."
+msgstr "Uma instalação do &PRODUCT; consiste em dois componentes: o servidor de gerenciamento e a infraestrutura de nuvem que ele gerencia. Quando você monta e gerencia uma nuvem &PRODUCT;, você provê recursos como hosts, equipamentos de storage, e endereços IP no servidor de gerenciamento, e o servidor de gerenciamento gerencia estes recursos."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The minimum production installation consists of one machine running the "
+"&PRODUCT; Management Server and another machine to act as the cloud "
+"infrastructure (in this case, a very simple infrastructure consisting of one"
+" host running hypervisor software). In its smallest deployment, a single "
+"machine can act as both the Management Server and the hypervisor host (using"
+" the KVM hypervisor)."
+msgstr "A instalação mínima de produção consiste em uma máquina executando o servidor de gerenciamento do &PRODUCT; e outra atuando como a infraestrutura de rede (neste caso, uma infraestrutura muito simples consistindo em um host executando software hipervisor). Na menor implementação possível, uma única máquina pode atuar tanto como servidor de gerenciamento quanto o host hipervisor (usando o hipervisor KVM)."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A more full-featured installation consists of a highly-available multi-node "
+"Management Server installation and up to tens of thousands of hosts using "
+"any of several advanced networking setups. For information about deployment "
+"options, see the \"Choosing a Deployment Architecture\" section of the "
+"$PRODUCT; Installation Guide."
+msgstr ""

@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:11+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Up a Site-to-Site VPN Connection"
+msgstr "Configurando uma conexão VPN Site-to-Site"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A Site-to-Site VPN connection helps you establish a secure connection from "
+"an enterprise datacenter to the cloud infrastructure. This allows users to "
+"access the guest VMs by establishing a VPN connection to the virtual router "
+"of the account from a device in the datacenter of the enterprise. Having "
+"this facility eliminates the need to establish VPN connections to individual"
+" VMs."
+msgstr "Uma conexão VPN Site-to-Site o ajuda a estabelecer uma conexão segura de um centro de dados empresarial à infraestrutura de nuvem. Isto permite o acesso de usuários a máquinas virtuais hóspedes estabelecendo uma conexão VPN de um equipamento no centro de dados da empresa ao roteador virtual da conta . Possuindo este recurso é eliminada a necessidade de estabelecer conexões VPN a máquinas virtuais individuais."
+
+#. Tag: para
+#, no-c-format
+msgid "The supported endpoints on the remote datacenters are:"
+msgstr "Os terminais suportados nos centros de dados remotos são:"
+
+#. Tag: para
+#, no-c-format
+msgid "Cisco ISR with IOS 12.4 or later"
+msgstr "Cisco ISR com IOS 12.4 ou posterior"
+
+#. Tag: para
+#, no-c-format
+msgid "Juniper J-Series routers with JunOS 9.5 or later"
+msgstr "Roteadores Juniper J-Series com JunOS 9.5 ou posterior"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the specific Cisco and Juniper devices listed above, the "
+"expectation is that any Cisco or Juniper device running on the supported "
+"operating systems are able to establish VPN connections."
+msgstr "Adicionalmente aos equipamentos Cisco e Juniper específicos listados acima, a expectativa é que qualquer equipamento Cisco ou Juniper executando os sistemas operacionais suportados sejam capazes de estabelecer conexões VPN."
+
+#. Tag: para
+#, no-c-format
+msgid "To set up a Site-to-Site VPN connection, perform the following:"
+msgstr "Para configurar uma conexão VPN Site-to-Site, execute o seguinte:"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a Virtual Private Cloud (VPC)."
+msgstr "Crie uma Virtual Private Cloud (VPC)."
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"configure-vpc\" />."
+msgstr "Veja <xref linkend=\"configure-vpc\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VPN Customer Gateway."
+msgstr "Crie um VPN Customer Gateway."
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VPN gateway for the VPC that you created."
+msgstr "Crie um VPN gateway para a VPC que você criou."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create VPN connection from the VPC VPN gateway to the customer VPN gateway."
+msgstr "Crie uma conexão VPN do VPN gateway da VPC para o customer VPN gateway."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Appropriate events are generated on the &PRODUCT; UI when status of a Site-"
+"to-Site VPN connection changes from connected to disconnected, or vice "
+"versa. Currently no events are generated when establishing a VPN connection "
+"fails or pending."
+msgstr ""

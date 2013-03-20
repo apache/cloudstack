@@ -1,0 +1,104 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-18 12:48+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Overview"
+msgstr "Visão geral da arquitetura de implementação"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server is the &PRODUCT; software that manages cloud "
+"resources. By interacting with the Management Server through its UI or API, "
+"you can configure and manage your cloud infrastructure."
+msgstr "O servidor de gerenciamento é o software do &PRODUCT; que gerencia os recursos da nuvem. Pela interação com o servidor de gerenciamento através de sua interface de usuário ou API, você pode configurar e gerenciar sua infraestrutura de nuvem."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server runs on a dedicated server or VM. It controls "
+"allocation of virtual machines to hosts and assigns storage and IP addresses"
+" to the virtual machine instances. The Management Server runs in a Tomcat "
+"container and requires a MySQL database for persistence."
+msgstr "O servidor de gerenciamento é executado em um servidor dedicado ou máquina virtual. Ele controla a alocação de máquinas virtuais em hosts e atribui storage e endereços IP às instâncias de máquinas virtuais. O servidor de gerenciamento é executado em um container Tomcat e requer um database MySQL para persistência."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The machine must meet the system requirements described in System "
+"Requirements."
+msgstr "A máquina deve atender os requerimentos descritos em \"Requerimentos do sistema\"."
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server:"
+msgstr "O servidor de gerenciamento:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provides the web user interface for the administrator and a reference user "
+"interface for end users."
+msgstr "Provê a interface web de usuário para o administrador e uma interface de referência de usuário para usuários finais."
+
+#. Tag: para
+#, no-c-format
+msgid "Provides the APIs for &PRODUCT;."
+msgstr "Provê as APIs para o &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the assignment of guest VMs to particular hosts."
+msgstr "Gerencia o assinalamento de máquinas virtuais hóspedes a hosts determinados."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages the assignment of public and private IP addresses to particular "
+"accounts."
+msgstr "Gerencia o assinalamento de endereços IP públicos e privados a determinadas contas."
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the allocation of storage to guests as virtual disks."
+msgstr "Gerencia a alocação de storage - como discos virtuais - para hóspedes."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages snapshots, templates, and ISO images, possibly replicating them "
+"across data centers."
+msgstr "Gerencia snapshots, templates, e imagens ISO, possivelmente replicando estes elementos através de data centers."
+
+#. Tag: para
+#, no-c-format
+msgid "Provides a single point of configuration for the cloud."
+msgstr "Provê um ponto único de configuração para a nuvem."

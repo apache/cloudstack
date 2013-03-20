@@ -1,0 +1,116 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-02 18:38+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure Guest Traffic in an Advanced Zone"
+msgstr "Configure o tráfego hóspede na zona avançada"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps assume you have already logged in to the &PRODUCT; UI. To "
+"configure the base guest network:"
+msgstr "Nestes passos se supõe que você já está logado na interface de usuário do &PRODUCT;. Para configurar a base da rede hóspede:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. On Zones, click View More, "
+"then click the zone to which you want to add a network."
+msgstr "No painel de navegação à esquerda, selecione Infrastructure. Em Zones, clique View More, então clique a zona à qual você deseja adicionar uma rede."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr "Clique na aba Network."
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add guest network."
+msgstr "Clique em Add guest network."
+
+#. Tag: para
+#, no-c-format
+msgid "The Add guest network window is displayed:"
+msgstr "A janela Add guest network é apresentada:"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information:"
+msgstr "Forneça as seguintes informações:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>. The name of the network. This will "
+"be user-visible"
+msgstr "<emphasis role=\"bold\">Name</emphasis>. O nome da rede. Isto será visível pelo usuário"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Display Text</emphasis>: The description of the "
+"network. This will be user-visible"
+msgstr "<emphasis role=\"bold\">Display Text</emphasis>: A descrição da rede. Isto será visível pelo usuário"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>: The zone in which you are "
+"configuring the guest network."
+msgstr "<emphasis role=\"bold\">Zone</emphasis>: A zona na qual você está configurando a rede hóspede."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network offering</emphasis>: If the administrator "
+"has configured multiple network offerings, select the one you want to use "
+"for this network"
+msgstr "<emphasis role=\"bold\">Network offering</emphasis>: Se o administrador configurou múltiplas ofertas de rede, selecione a que você deseja usar para esta rede"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Gateway</emphasis>: The gateway that the "
+"guests should use"
+msgstr "<emphasis role=\"bold\">Guest Gateway</emphasis>: O gateway que os hóspedes devem usar"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Netmask</emphasis>: The netmask in use on the "
+"subnet the guests will use"
+msgstr "<emphasis role=\"bold\">Guest Netmask</emphasis>: A máscara de rede em uso na subnet que os hóspedes utilizarão"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "Clique em OK."

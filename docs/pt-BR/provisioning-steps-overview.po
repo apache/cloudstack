@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Daniela Sant Ana de Oliveira <daniela.santana@ibge.gov.br>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:10+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Provisioning Steps"
+msgstr "Visão geral dos passos de provisionamento"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After the Management Server is installed and running, you can add the "
+"compute resources for it to manage. For an overview of how a &PRODUCT; cloud"
+" infrastructure is organized, see <xref linkend=\"cloud-infrastructure-"
+"overview\" />."
+msgstr "Depois do servidor de gerenciamento ser instalado e estar funcionando, você pode adicionar os recursos de computação para gerenciá-lo. Para uma visão geral de como uma infraestrutura de nuvem  &PRODUCT; é organizada, veja <xref linkend=\"cloud-infrastructure-overview\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To provision the cloud infrastructure, or to scale it up at any time, follow"
+" these procedures:"
+msgstr "Para provisionar a infraestrutura de nuvem, ou para escalá-la a qualquer momento, siga estes procedimentos:"
+
+#. Tag: para
+#, no-c-format
+msgid "Add a zone. See <xref linkend=\"zone-add\" />."
+msgstr "Adicione uma zona. Veja <xref linkend=\"zone-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />."
+msgstr "Adicione mais pods (opcional). Veja <xref linkend=\"pod-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />."
+msgstr "Adicione mais clusters (opcional). Veja <xref linkend=\"cluster-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />."
+msgstr "Adicione mais hosts (opcional). Veja <xref linkend=\"host-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add primary storage. See <xref linkend=\"primary-storage-add\" />."
+msgstr "Adicione storage primária. Veja <xref linkend=\"primary-storage-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add secondary storage. See <xref linkend=\"secondary-storage-add\" />."
+msgstr "Adicione storage secundária. Veja <xref linkend=\"secondary-storage-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Initialize and test the new cloud. See <xref linkend=\"initialize-and-test\""
+" />."
+msgstr "Inicialize e teste a nova nuvem. Veja <xref linkend=\"initialize-and-test\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you have finished these steps, you will have a deployment with the "
+"following basic structure:"
+msgstr "Quando você terminar estes passos, você terá uma implantação com a seguinte estrutura básica:"

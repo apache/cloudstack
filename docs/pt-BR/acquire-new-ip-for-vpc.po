@@ -1,0 +1,132 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-05 12:11+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Acquiring a New IP Address for a VPC"
+msgstr "Obtendo um novo endereço IP para uma VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you acquire an IP address, all IP addresses are allocated to VPC, not "
+"to the guest networks within the VPC. The IPs are associated to the guest "
+"network only when the first port-forwarding, load balancing, or Static NAT "
+"rule is created for the IP or the network. IP can't be associated to more "
+"than one network at a time."
+msgstr "Quando você obtém um endereço IP, todos os endereços IP são alocados à VPC, não às redes hóspedes na VPC. Os IPs são associados à rede hóspede somente quando a primeira regra de port-forwarding, balanceamento de carga ou NAT estática é criada para o IP ou para a rede. Um IP não pode ser associado a mais de uma rede de cada vez."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "Na view Select, selecione VPC."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "Todas as VPCs que você criou para a conta são listadas na página."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "Clique no botão Configure da VPC na qual você deseja implementar as máquinas virtuais."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "Na página VPC apresentada, todas as camadas que você criou são listadas em um diagrama."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "Clique no ícone Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "As seguintes opções são apresentadas."
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "Endereços IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr "Selecione IP Addresses."
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "A página IP Addresses é apresentada."
+
+#. Tag: para
+#, no-c-format
+msgid "Click Acquire New IP, and click Yes in the confirmation dialog."
+msgstr "Clique em Acquire New IP, e clique Yes no diálogo de confirmação."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You are prompted for confirmation because, typically, IP addresses are a "
+"limited resource. Within a few moments, the new IP address should appear "
+"with the state Allocated. You can now use the IP address in port forwarding,"
+" load balancing, and static NAT rules."
+msgstr "Você deve confirmar porque, tipicamente, endereços IP são um recurso limitado. Em alguns momentos, o novo endereço IP deve aparecer no estado Allocated. Agora você pode usar o endereço IP no encaminhamento de porta, balanceamento de carga, ou regras NAT estáticas."

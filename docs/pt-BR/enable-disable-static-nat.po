@@ -1,0 +1,96 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:07+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling or Disabling Static NAT"
+msgstr "Habilitando ou desabilitando NAT estática"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If port forwarding rules are already in effect for an IP address, you cannot"
+" enable static NAT to that IP."
+msgstr "Se regras de encaminhamento de portas já estão em efeito para um endereço IP, você não pode habilitar NAT estática para este IP."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a guest VM is part of more than one network, static NAT rules will "
+"function only if they are defined on the default network."
+msgstr "Se uma máquina virtual hóspede faz parte de mais de uma rede, regras de NAT estática funcionarão somente se elas estão definidas na rede default."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network where you want to work with."
+msgstr "Clique no nome da rede com a qual você quer trabalhar."
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "Clique em View IP Addresses."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP address you want to work with."
+msgstr "Clique no endereço IP com o qual você deseja trabalhar."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Static NAT <inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject> "
+"<phrase>ReleaseIPButton.png: button to release an IP</phrase> </textobject> "
+"</inlinemediaobject>button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The button toggles between Enable and Disable, depending on whether static "
+"NAT is currently enabled for the IP address."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are enabling static NAT, a dialog appears where you can choose the "
+"destination VM and click Apply."
+msgstr ""

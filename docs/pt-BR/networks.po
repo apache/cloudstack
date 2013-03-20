@@ -1,0 +1,43 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-13 16:53+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Managing Networks and Traffic"
+msgstr "Gerenciando redes e tráfego"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a &PRODUCT;, guest VMs can communicate with each other using shared "
+"infrastructure with the security and user perception that the guests have a "
+"private LAN. The &PRODUCT; virtual router is the main component providing "
+"networking features for guest traffic."
+msgstr "Em um ambiente &PRODUCT;, máquinas virtuais hóspedes podem comunicar-se entre si usando uma infraestrutura compartilhada com segurança e com a percepção do usuário que os hóspedes têm uma rede privada. O roteador virtual do &PRODUCT; é o principal componente a fornecer recursos de rede para o tráfego de hóspedes."

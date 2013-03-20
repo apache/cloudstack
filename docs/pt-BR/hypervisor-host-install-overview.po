@@ -1,0 +1,83 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 14:29+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Installation Overview"
+msgstr "Visão geral da instalação do KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to use the Linux Kernel Virtual Machine (KVM) hypervisor to run "
+"guest virtual machines, install KVM on the host(s) in your cloud. The "
+"material in this section doesn't duplicate KVM installation docs. It "
+"provides the &PRODUCT;-specific steps that are needed to prepare a KVM host "
+"to work with &PRODUCT;."
+msgstr "Se você deseja usar o hipervisor Linux Kernel Virtual Machine (KVM) para executar máquinas virtuais hóspedes, instale o KVM nos host(s) em sua nuvem. O material nesta seção não duplica a documentação de instalação do KVM. São fornecidos os passos específicos para o &PRODUCT; que são necessários para preparar um host KVM para trabalhar com o &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before continuing, make sure that you have applied the latest updates to "
+"your host."
+msgstr "Antes de continuar, certifique-se de que você aplicou as mais recentes atualizações no seu host."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It is NOT recommended to run services on this host not controlled by "
+"&PRODUCT;."
+msgstr "NÃO é recomendado executar serviços neste host que não sejam controlados pelo &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid "The procedure for installing a KVM Hypervisor Host is:"
+msgstr "O procedimento para instalação de um host hipervisor KVM é:"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "Preparar o sistema operacional"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and configure libvirt"
+msgstr "Instalar e configurar o libvirt"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure Security Policies (AppArmor and SELinux)"
+msgstr "Configurar as políticas de segurança (AppArmor e SELinux)"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and configure the Agent"
+msgstr "Instalar e configurar o agente"

@@ -1,0 +1,143 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <ebalter@gmail.com>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-25 16:12+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Installation Steps"
+msgstr "Visão geral dos passos de instalação"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For anything more than a simple trial installation, you will need guidance "
+"for a variety of configuration choices. It is strongly recommended that you "
+"read the following:"
+msgstr "Para qualquer coisa mais que uma simples instalação de avaliação, você precisará de orientação para uma variedade de opções de configuração. É altamente recomendado que você leia o seguinte:"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Deployment Architecture"
+msgstr "Selecionando a arquitetura de implementação"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Hypervisor: Supported Features"
+msgstr "Selecionando o hipervisor: recursos suportados"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Setup"
+msgstr "Configuração de rede"
+
+#. Tag: para
+#, no-c-format
+msgid "Storage Setup"
+msgstr "Configuração de storage"
+
+#. Tag: para
+#, no-c-format
+msgid "Best Practices"
+msgstr "Melhores práticas"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Prepare</emphasis>"
+msgstr "<emphasis role=\"bold\">Preparação</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure you have the required hardware ready"
+msgstr "Certifique-se de que o hardware requerido está pronto"
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Fill out the preparation checklists"
+msgstr "(Opcional) Preencha os checklists de preparação"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Install the &PRODUCT; software</emphasis>"
+msgstr "<emphasis role=\"bold\">Instale o &PRODUCT;</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Install the Management Server (choose single-node or multi-node)"
+msgstr "Instale o servidor de gerenciamento (selecione single-node ou multi-node)"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI"
+msgstr "Faça login na interface de usuário"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Provision your cloud infrastructure</emphasis>"
+msgstr "<emphasis role=\"bold\">Disponibilize a sua infraestrutura de nuvem</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Add a zone. Includes the first pod, cluster, and host"
+msgstr "Adicione uma zona. Inclua o primeiro pod, cluster, e host"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods"
+msgstr "Adicione mais pods"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters"
+msgstr "Adicione mais clusters"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts"
+msgstr "Adicione mais hosts"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more primary storage"
+msgstr "Adicione mais storage primária"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more secondary storage"
+msgstr "Adicione mais storage secundária"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Try using the cloud</emphasis>"
+msgstr "<emphasis role=\"bold\">Experimente o uso da nuvem</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Initialization and testing"
+msgstr "Inicialização e teste"

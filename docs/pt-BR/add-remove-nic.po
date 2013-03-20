@@ -1,0 +1,184 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:14+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Reconfiguring Physical Networks in VMs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides you the ability to move VMs between networks and "
+"reconfigure a VM's network. You can remove a VM from a physical network and "
+"add to a new physical network. You can also change the default physical "
+"network of a virtual machine. With this functionality, hybrid or traditional"
+" server loads can be accommodated with ease."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This feature is supported on XenServer and KVM hypervisors."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following APIs have been added to support this feature. These API calls "
+"can function only while the VM is in running or stopped state."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "addNicToVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The addNicToVirtualMachine API adds a new NIC to the specified VM on a "
+"selected network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "parameter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Value"
+msgstr "Valor"
+
+#. Tag: para
+#, no-c-format
+msgid "virtualmachineid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the VM to which the NIC is to be added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "true"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "networkid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the network the NIC that you add should apply to."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ipaddress"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IP address of the VM on the network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "false"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The network and VM must reside in the same zone. Two VMs with the same name "
+"cannot reside in the same network. Therefore, adding a second VM that "
+"duplicates a name on a network will fail."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "removeNicFromVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The removeNicFromVirtualMachine API removes a NIC from the specified VM on a"
+" selected network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the VM from which the NIC is to be removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "nicid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the NIC that you want to remove."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Removing the default NIC is not allowed."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "updateDefaultNicForVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The updateDefaultNicForVirtualMachine API updates the specified NIC to be "
+"the default one for a selected VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the VM for which you want to specify the default NIC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The unique ID of the NIC that you want to set as the default one."
+msgstr ""

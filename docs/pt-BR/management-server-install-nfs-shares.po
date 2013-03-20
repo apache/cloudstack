@@ -1,0 +1,87 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Daniela Sant Ana de Oliveira <daniela.santana@ibge.gov.br>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr "Preparar os compartilhamentos NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; needs a place to keep primary and secondary storage (see Cloud "
+"Infrastructure Overview). Both of these can be NFS shares. This section "
+"tells how to set up the NFS shares before adding the storage to &PRODUCT;."
+msgstr "O &PRODUCT; precisa de um lugar para manter a storage primária e secundária (ver Visão geral da infraestrutura de nuvem). Ambas podem ser compartilhamentos NFS. Esta seção mostra como configurar os compartilhamentos NFS antes de adicionar a storage para o &PRODUCT;."
+
+#. Tag: title
+#, no-c-format
+msgid "Alternative Storage"
+msgstr "Storage alternativa"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NFS is not the only option for primary or secondary storage. For example, "
+"you may use Ceph RBD, GlusterFS, iSCSI, and others. The choice of storage "
+"system will depend on the choice of hypervisor and whether you are dealing "
+"with primary or secondary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The requirements for primary and secondary storage are described in:"
+msgstr "Os requisitos para storage  primária e secundária são descritos em:"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-primary-storage\" />"
+msgstr "<xref linkend=\"about-primary-storage\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-secondary-storage\" />"
+msgstr "<xref linkend=\"about-secondary-storage\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A production installation typically uses a separate NFS server. See <xref "
+"linkend=\"nfs-shares-on-separate-server\" />."
+msgstr "Uma instalação de produção geralmente usa um servidor NFS separado. Veja <xref linkend=\"nfs-shares-on-separate-server\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can also use the Management Server node as the NFS server. This is more "
+"typical of a trial installation, but is technically possible in a larger "
+"deployment. See <xref linkend=\"nfs-shares-on-management-server\" />."
+msgstr "Você também pode usar o nó  servidor de gerenciamento como o servidor NFS. Isto é mais característico do  processo de instalação de avaliação, mas é tecnicamente possível em uma implantação maior. Veja <xref linkend=\"nfs-shares-on-management-server\" />."

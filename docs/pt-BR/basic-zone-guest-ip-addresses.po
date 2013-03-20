@@ -1,0 +1,43 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-24 11:44+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic Zone Guest IP Addresses"
+msgstr "Endereços IP de hóspedes na zona básica"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When basic networking is used, &PRODUCT; will assign IP addresses in the "
+"CIDR of the pod to the guests in that pod. The administrator must add a "
+"Direct IP range on the pod for this purpose. These IPs are in the same VLAN "
+"as the hosts."
+msgstr "Quando rede básica é usada, o &PRODUCT; irá assinalar endereços IP no CIDR do pod para hóspedes naquele pod. O administrador deve adicionar um intervalo IP direto no pod para este propósito. Estes IPs estão na mesma VLAN que os hosts."

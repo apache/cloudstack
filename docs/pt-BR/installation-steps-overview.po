@@ -1,0 +1,128 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <ebalter@gmail.com>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 16:13+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Installation Steps"
+msgstr "Visão geral dos passos de instalação"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For anything more than a simple trial installation, you will need guidance "
+"for a variety of configuration choices. It is strongly recommended that you "
+"read the following:"
+msgstr "Para qualquer coisa mais que uma simples instalação de avaliação, você precisará de orientação para uma variedade de opções de configuração. É altamente recomendado que você leia o seguinte:"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Deployment Architecture"
+msgstr "Selecionando a arquitetura de implementação"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Hypervisor: Supported Features"
+msgstr "Selecionando o hipervisor: recursos suportados"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Setup"
+msgstr "Configuração de rede"
+
+#. Tag: para
+#, no-c-format
+msgid "Storage Setup"
+msgstr "Configuração de storage"
+
+#. Tag: para
+#, no-c-format
+msgid "Best Practices"
+msgstr "Melhores práticas"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure you have the required hardware ready. See <xref linkend=\"minimum-"
+"system-requirements\" />"
+msgstr "Certifique-se de que está pronto o hardware requerido. Veja <xref linkend=\"minimum-system-requirements\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Install the Management Server (choose single-node or multi-node). See <xref "
+"linkend=\"management-server-install-flow\" />"
+msgstr "Instale o servidor de gerenciamento (selecione single-node ou multi-node). Veja <xref linkend=\"management-server-install-flow\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI. See <xref linkend=\"ui\" />"
+msgstr "Faça login na interface de usuário. Veja <xref linkend=\"ui\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add a zone. Includes the first pod, cluster, and host. See <xref linkend"
+"=\"zone-add\" />"
+msgstr "Adicione uma zona. Inclua o primeiro pod, cluster, e host. Veja <xref linkend=\"zone-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />"
+msgstr "Adicione mais pods (opcional). Veja <xref linkend=\"pod-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />"
+msgstr "Adicione mais clusters (opcional). Veja <xref linkend=\"cluster-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />"
+msgstr "Adicione mais hosts (opcional). Veja <xref linkend=\"host-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add more primary storage (optional). See <xref linkend=\"primary-storage-"
+"add\" />"
+msgstr "Adicione mais storage primária (opcional). Veja <xref linkend=\"primary-storage-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add more secondary storage (optional). See <xref linkend=\"secondary-"
+"storage-add\" />"
+msgstr "Adicione mais storage secundária (opcional). Veja <xref linkend=\"secondary-storage-add\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Try using the cloud. See <xref linkend=\"initialize-and-test\" />"
+msgstr "Experimente o uso da rede. Veja <xref linkend=\"initialize-and-test\" />"

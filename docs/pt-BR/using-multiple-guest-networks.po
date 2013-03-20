@@ -1,0 +1,72 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-30 18:14+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using Multiple Guest Networks"
+msgstr "Usando múltiplas redes hóspedes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In zones that use advanced networking, additional networks for guest traffic"
+" may be added at any time after the initial installation. You can also "
+"customize the domain name associated with the network by specifying a DNS "
+"suffix for each network."
+msgstr "Em zonas que usam rede avançada, redes adicionais para tráfego hóspede podem ser adicionadas a qualquer tempo após a instalação inicial. Você pode também customizar o nome de domínio associado com a rede especificando um sufixo DNS para cada rede."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A VM's networks are defined at VM creation time. A VM cannot add or remove "
+"networks after it has been created, although the user can go into the guest "
+"and remove the IP address from the NIC on a particular network."
+msgstr "As redes de uma máquina virtual são definidas em tempo de criação da máquina virtual. Uma máquina virtual não pode adicionar ou remover redes após ter sido criada, embora o usuário possa remover no hóspede o endereço IP da NIC de uma rede específica."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each VM has just one default network. The virtual router's DHCP reply will "
+"set the guest's default gateway as that for the default network. Multiple "
+"non-default networks may be added to a guest in addition to the single, "
+"required default network. The administrator can control which networks are "
+"available as the default network."
+msgstr "Cada máquina virtual tem somente uma rede default. A resposta do DHCP do roteador virtual irá determinar o default gateway do hóspede como aquele da rede default. Múltiplas redes non-default podem ser adicionadas a um hóspede em adição à rede default, única,  requerida. O administrador pode controlar quais redes são disponíveis como rede default."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additional networks can either be available to all accounts or be assigned "
+"to a specific account. Networks that are available to all accounts are zone-"
+"wide. Any user with access to the zone can create a VM with access to that "
+"network. These zone-wide networks provide little or no isolation between "
+"guests.Networks that are assigned to a specific account provide strong "
+"isolation."
+msgstr "Redes adicionais podem estar disponíveis para todas as contas ou serem assinaladas a uma conta específica. Redes que estão disponíveis para todas as contas são zone-wide. Qualquer usuário com acesso à zona pode criar uma máquina virtual com acesso àquela rede. Estas redes zone-wide proveem pequeno ou nenhum isolamento entre hóspedes. Redes que são assinaladas a contas específicas proveem isolamento robusto."

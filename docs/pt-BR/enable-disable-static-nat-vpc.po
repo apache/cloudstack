@@ -1,0 +1,156 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-04 19:26+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling or Disabling Static NAT on a VPC"
+msgstr "Habilitando ou desabilitando NAT estática em uma VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A static NAT rule maps a public IP address to the private IP address of a VM"
+" in a VPC to allow Internet traffic to it. This section tells how to enable "
+"or disable static NAT for a particular IP address in a VPC."
+msgstr "Uma regra NAT estática mapeia um endereço IP público para o endereço IP privado de uma máquina virtual em uma VPC para permitir tráfego da Internet para ela. Esta seção informa como habilitar ou desabilitar NAT estática para um endereço IP em particular em uma VPC."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If port forwarding rules are already in effect for an IP address, you cannot"
+" enable static NAT to that IP."
+msgstr "Se regras de encaminhamento de portas já estão em efeito para um endereço IP, você não pode habilitar NAT estática para este IP."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a guest VM is part of more than one network, static NAT rules will "
+"function only if they are defined on the default network."
+msgstr "Se uma máquina virtual hóspede faz parte de mais de uma rede, regras de NAT estática funcionarão somente se elas estão definidas na rede default."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "Na view Select, selecione VPC."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "Todas as VPCs que você criou para a conta são listadas na página."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "Clique no botão Configure da VPC na qual você deseja implementar as máquinas virtuais."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "Na página VPC apresentada, todas as camadas que você criou são listadas em um diagrama."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "Clique no ícone Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "As seguintes opções são apresentadas."
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "Endereços IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr "Selecione IP Addresses."
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "A página IP Addresses é apresentada."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP you want to work with."
+msgstr "Clique no IP com o qual você deseja trabalhar."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Details tab,click the Static NAT button.<inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> "
+"</imageobject> <textobject> <phrase>enable-disable.png: button to enable "
+"Statid NAT.</phrase> </textobject> </inlinemediaobject>The button toggles "
+"between Enable and Disable, depending on whether static NAT is currently "
+"enabled for the IP address."
+msgstr "Na aba Details,clique no botão Static NAT.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject> <phrase>enable-disable.png: botão para habilitar Static NAT.</phrase> </textobject> </inlinemediaobject>O botão alterna entre Enable e Disable, dependendo se NAT estática está habilitada ou não para o endereço IP."
+
+#. Tag: para
+#, no-c-format
+msgid "If you are enabling static NAT, a dialog appears as follows:"
+msgstr "Se você está habilitando NAT estática, um diálogo é apresentado como se segue:"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the tier and the destination VM, then click Apply."
+msgstr "Selecione a camada e a máquina virtual de destino, e então clique em Apply."

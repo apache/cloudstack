@@ -1,0 +1,143 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 14:23+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Reserved IP Addresses"
+msgstr "Endereços IP reservados pelo sistema"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In each zone, you need to configure a range of reserved IP addresses for the"
+" management network. This network carries communication between the "
+"&PRODUCT; Management Server and various system VMs, such as Secondary "
+"Storage VMs, Console Proxy VMs, and DHCP."
+msgstr "Em cada zona, você precisa configurar um intervalo de endereços IP reservados para a rede de gerência. Esta rede transporta a comunicação entre o servidor de gerenciamento do &PRODUCT; e várias máquinas virtuais do sistema, tais como as máquinas virtuais de storage secundária, as máquinas virtuais de proxy de console, e DHCP."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The reserved IP addresses must be unique across the cloud. You cannot, for "
+"example, have a host in one zone which has the same private IP address as a "
+"host in another zone."
+msgstr "Os endereços IP reservados devem ser únicos na nuvem. Você não pode, por exemplo, ter um host em uma zona com o mesmo endereço IP privado que um host em outra zona."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The hosts in a pod are assigned private IP addresses. These are typically "
+"RFC1918 addresses. The Console Proxy and Secondary Storage system VMs are "
+"also allocated private IP addresses in the CIDR of the pod that they are "
+"created in."
+msgstr "Aos hosts em um pod são assinalados endereços IP privados. Estes são tipicamente endereços da RFC1918. As máquinas virtuais de proxy de console e storage secundária também têm endereços IP privados alocados no CIDR do pod onde são criadas."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure computing servers and Management Servers use IP addresses outside "
+"of the System Reserved IP range. For example, suppose the System Reserved IP"
+" range starts at 192.168.154.2 and ends at 192.168.154.7. &PRODUCT; can use "
+".2 to .7 for System VMs. This leaves the rest of the pod CIDR, from .8 to "
+".254, for the Management Server and hypervisor hosts."
+msgstr "Certifique-se de que servidores de computação e servidores de gerenciamento utilizem endereços IP fora do intervalo de IP reservado pelo sistema. Por exemplo, suponha que o intervalo de IP reservado pelo sistema se inicia em 192.168.154.2 e termina em 192.168.154.7. O &PRODUCT; pode usar .2 a .7 para máquinas virtuais do sistema. Isto deixa o restante do CIDR do pod, de .8 a .254, para o servidor de gerenciamento e para os hosts hipervisores."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">In all zones:</emphasis>"
+msgstr "<emphasis role=\"bold\">Em todas as zonas:</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide private IPs for the system in each pod and provision them in "
+"&PRODUCT;."
+msgstr "Forneça IPs privados para o sistema em cada pod e disponibilize-os no &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For KVM and XenServer, the recommended number of private IPs per pod is one "
+"per host. If you expect a pod to grow, add enough private IPs now to "
+"accommodate the growth."
+msgstr "Para o KVM e o XenServer, o número recomendado de IPs privados por pod é um por host. Se você espera que o pod cresça, adicione agora IPs privados suficientes para permitir o crescimento."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">In a zone that uses advanced networking:</emphasis>"
+msgstr "<emphasis role=\"bold\">Em uma zona que usa rede avançada:</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For zones with advanced networking, we recommend provisioning enough private"
+" IPs for your total number of customers, plus enough for the required "
+"&PRODUCT; System VMs. Typically, about 10 additional IPs are required for "
+"the System VMs. For more information about System VMs, see Working with "
+"System Virtual Machines in the Administrator's Guide."
+msgstr "Para zonas com rede avançada, recomendamos o fornecimento de IPs privados suficientes para o número total de usuários mais o requerido pelas máquinas virtuais de sistema. Tipicamente, cerca de 10 IPs adicionais são requeridos para as máquinas virtuais de sistema. Para informações adicionais sobre máquinas virtuais de sistema, veja Trabalhando com máquinas virtuais de sistema no Guia do administrador."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When advanced networking is being used, the number of private IP addresses "
+"available in each pod varies depending on which hypervisor is running on the"
+" nodes in that pod. Citrix XenServer and KVM use link-local addresses, which"
+" in theory provide more than 65,000 private IP addresses within the address "
+"block. As the pod grows over time, this should be more than enough for any "
+"reasonable number of hosts as well as IP addresses for guest virtual "
+"routers. VMWare ESXi, by contrast uses any administrator-specified "
+"subnetting scheme, and the typical administrator provides only 255 IPs per "
+"pod. Since these are shared by physical machines, the guest virtual router, "
+"and other entities, it is possible to run out of private IPs when scaling up"
+" a pod whose nodes are running ESXi."
+msgstr "Quando rede avançada está sendo usada, o número de endereços IP privados disponíveis em cada pod varia dependendo de qual hipervisor está sendo executado nos nós daquele pod. O Citrix XenServer e o KVM usam endereços de enlace local &mdash; 169.254.0.0/16 ou fe80::/64 &mdash;, o que em teoria provê mais de 65.000 endereços IP privados no bloco de endereçamento. Conforme o pod cresce, isto deveria ser mais que suficiente para qualquer número razoável de hosts, assim como endereços IP para roteadores virtuais hóspedes. O VMWare ESXi, em contraste, usa qualquer esquema de subnet especificada pelo administrador, e o administrador típico provê apenas 255 IPs por pod. Como estes são compartilhados por máquinas físicas, o roteador virtual hóspede, e outras entidades, é possível esgotar os IPs privados ao incrementar a configuração de um pod cujos nós executam ESXi."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To ensure adequate headroom to scale private IP space in an ESXi pod that "
+"uses advanced networking, use one or both of the following techniques:"
+msgstr "Para garantir  uma margem adequada para redimensionar o espaço de IPs privados em um pod ESXi que usa rede avançada, use uma ou ambas técnicas a seguir:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify a larger CIDR block for the subnet. A subnet mask with a /20 suffix "
+"will provide more than 4,000 IP addresses."
+msgstr "Especifique um bloco CIDR maior para a subnet. Uma máscara de subnet com um sufixo /20 proverá mais de 4.000 endereços IP."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create multiple pods, each with its own subnet. For example, if you create "
+"10 pods and each pod has 255 IPs, this will provide 2,550 IP addresses."
+msgstr "Crie múltiplos pods, cada um com sua própria subnet. Por exemplo, se você criar 10 pods e cada pod tem 255 IPs, isto irá prover 2.550 endereços IP."

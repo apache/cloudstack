@@ -1,0 +1,44 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-28 16:21+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Separate Storage Network"
+msgstr "Rede dedicada de storage"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the large-scale redundant setup described in the previous section, "
+"storage traffic can overload the management network. A separate storage "
+"network is optional for deployments. Storage protocols such as iSCSI are "
+"sensitive to network delays. A separate storage network ensures guest "
+"network traffic contention does not impact storage performance."
+msgstr "Na configuração redundante em larga escala descrita na seção anterior, tráfego de storage pode sobrecarregar a rede de gerência. Uma rede dedicada de storage é opcional para implementações. Protocolos de storage, tal como iSCSI, são sensíveis a atrasos na rede. Uma rede dedicada de storage garante que o tráfego de rede de hóspedes não comprometam a performance de storage."

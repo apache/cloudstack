@@ -1,0 +1,133 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 16:07+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for KVM Hypervisor Hosts"
+msgstr "Requerimentos de sistema para hosts hipervisores KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM is included with a variety of Linux-based operating systems. Although "
+"you are not required to run these distributions, the following are "
+"recommended:"
+msgstr "O KVM é incluído em vários sistemas operacionais baseados no Linux. Embora você não seja obrigado a executar uma destas distribuições, as seguintes são recomendadas:"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS / RHEL: 6.3"
+msgstr "CentOS / RHEL: 6.3"
+
+#. Tag: para
+#, no-c-format
+msgid "Ubuntu: 12.04(.1)"
+msgstr "Ubuntu: 12.04(.1)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The main requirement for KVM hypervisors is the libvirt and Qemu version. No"
+" matter what Linux distribution you are using, make sure the following "
+"requirements are met:"
+msgstr "O principal requerimento para hipervisores KVM é a versão de libvirt e de Qemu. Para qualquer distribuição Linux que esteja em uso, certifique-se de que os seguintes requerimentos são atendidos:"
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.4 or higher"
+msgstr "libvirt: 0.9.4 ou mais recente"
+
+#. Tag: para
+#, no-c-format
+msgid "Qemu/KVM: 1.0 or higher"
+msgstr "Qemu/KVM: 1.0 ou mais recente"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The default bridge in &PRODUCT; is the Linux native bridge implementation "
+"(bridge module). &PRODUCT; includes an option to work with OpenVswitch, the "
+"requirements are listed below"
+msgstr "A bridge default no &PRODUCT; é a implementação brige nativa do Linux (bridge module). O &PRODUCT; inclui uma opção para trabalhar com OpenVswitch, os requerimento são listados abaixo"
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.11 or higher"
+msgstr "libvirt: 0.9.11 ou mais recente"
+
+#. Tag: para
+#, no-c-format
+msgid "openvswitch: 1.7.1 or higher"
+msgstr "openvswitch: 1.7.1 ou mais recente"
+
+#. Tag: para
+#, no-c-format
+msgid "In addition, the following hardware requirements apply:"
+msgstr "Adicionalmente, os seguintes requerimentos de hardware se aplicam:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Within a single cluster, the hosts must be of the same distribution version."
+msgstr "Em um cluster, os hosts devem ser da mesma versão da distribuição."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogenous. The CPUs must be of the same "
+"type, count, and feature flags."
+msgstr "Todos os em um cluster devem ser homogêneos. As CPUs devem ser do mesmo tipo, número e mesmos recursos."
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr "Deve suportar HVM (Intel-VT ou AMD-V habilitados)."
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "CPU x86 64-bit (mais cores resultam em melhor performance)"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "4 GB de memória"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "No mínimo 1 NIC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running"
+msgstr "Quando você implementa o &PRODUCT;, o host hipervisor não pode ter máquinas virtuais já ativas"

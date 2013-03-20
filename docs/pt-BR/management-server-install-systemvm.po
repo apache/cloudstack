@@ -1,0 +1,160 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Daniela Sant Ana de Oliveira <daniela.santana@ibge.gov.br>, 2013.
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "Prepare o template de máquina virtual de sistema"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Secondary storage must be seeded with a template that is used for &PRODUCT; "
+"system VMs."
+msgstr "Storage secundária deve ser gerada com um template que é usado por máquinas virtuais de sistema do &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "Ao copiar e colar um comando, certifique-se que o comando tenha colado como uma única linha antes de executar. Alguns visualizadores de documentos podem introduzir quebras de linha indesejadas no texto copiado."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Management Server, run one or more of the following cloud-install-"
+"sys-tmplt commands to retrieve and decompress the system VM template. Run "
+"the command for each hypervisor type that you expect end users to run in "
+"this Zone."
+msgstr "No servidor de gerenciamento, execute um ou mais dos seguintes comandos nuvem-install-sys-tmplt para recuperar e descomprimir o template de máquina virtual de sistema. Execute o comando para cada tipo de hipervisor  que você espera que os usuários finais executem nesta zona."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If your secondary storage mount point is not named /mnt/secondary, "
+"substitute your own mount point name."
+msgstr "Se o ponto de montagem da storage secundária não é nomeado /mnt /secondary, substitua pelo nome do seu próprio ponto de montagem."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you set the &PRODUCT; database encryption type to \"web\" when you set up"
+" the database, you must now add the parameter -s &lt;management-server-"
+"secret-key&gt;. See <xref linkend=\"about-password-encryption\" />."
+msgstr "Se você definiu o tipo de criptografia do banco de dados do &PRODUCT; para \"web\" quando você configurou o banco de dados, você deve agora adicionar o parâmetro -s &lt;management-server-secret-key&gt;. Veja <xref linkend=\"about-password-encryption\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This process will require approximately 5 GB of free space on the local file"
+" system and up to 30 minutes each time it runs."
+msgstr "Este processo requer aproximadamente 5 GB de espaço livre no sistema de arquivos local e até 30 minutos de cada vez que é executado."
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer:"
+msgstr "Para XenServer:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-"
+"systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-"
+"secret-key&gt; -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F"
+
+#. Tag: para
+#, no-c-format
+msgid "For vSphere:"
+msgstr "Para vSphere:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/burbank/burbank-"
+"systemvm-08012012.ova -h vmware -s &lt;optional-management-server-secret-"
+"key&gt;  -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F"
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM:"
+msgstr "Para KVM:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-"
+"systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-"
+"key&gt; -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, use the following path instead:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using a separate NFS server, perform this step. If you are using "
+"the Management Server as the NFS server, you MUST NOT perform this step."
+msgstr "Se você estiver usando um servidor NFS separado, execute este passo. Se você estiver usando o servidor de gerenciamento como servidor NFS, você não deve executar este passo."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the script has finished, unmount secondary storage and remove the "
+"created directory."
+msgstr "Quando o script terminar, desmonte a storage secundária e remova o diretório criado."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# umount /mnt/secondary\n"
+"# rmdir /mnt/secondary"
+msgstr "# umount /mnt/secondary\n# rmdir /mnt/secondary"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for each secondary storage server."
+msgstr "Repita estes passos em cada servidor de storage secundária."

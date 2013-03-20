@@ -1,0 +1,146 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-22 12:03+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "What Can &PRODUCT; Do?"
+msgstr "O que o &PRODUCT; pode fazer?"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Multiple Hypervisor Support</emphasis>"
+msgstr "<emphasis role=\"bold\">Suporte a múltiplos hipervisores</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; works with a variety of hypervisors, and a single cloud deployment"
+" can contain multiple hypervisor implementations. The current release of "
+"&PRODUCT; supports pre-packaged enterprise solutions like Citrix XenServer "
+"and VMware vSphere, as well as KVM or Xen running on Ubuntu or CentOS."
+msgstr "O &PRODUCT; trabalha com uma variedade de hipervisores. Uma única implementação de nuvem pode conter múltiplas implementações de hipervisores. O release atual do &PRODUCT; suporta soluções empresariais pre-packaged como o Citrix XenServer e o VMware vSphere, assim como KVM ou Xen executando no Ubuntu ou CentOS."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Massively Scalable Infrastructure "
+"Management</emphasis>"
+msgstr "<emphasis role=\"bold\">Gestão de infraestrutura altamente escalável</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; can manage tens of thousands of servers installed in multiple "
+"geographically distributed datacenters. The centralized management server "
+"scales linearly, eliminating the need for intermediate cluster-level "
+"management servers. No single component failure can cause cloud-wide outage."
+" Periodic maintenance of the management server can be performed without "
+"affecting the functioning of virtual machines running in the cloud."
+msgstr "O &PRODUCT; pode gerenciar dezenas de milhares de servidores instalados em múltiplos centros de computação geograficamente distribuídos. O servidor de gerenciamento centralizado é linearmente escalável, eliminando a necessidade de servidores de gerenciamento de cluster intermediários. Nenhuma falha de componente único pode causar uma interrupção geral na nuvem. A manutenção periódica do servidor de gerenciamento pode ser executada sem afetar o funcionamento de máquinas virtuais que são executadas na nuvem."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Automatic Configuration Management</emphasis>"
+msgstr "<emphasis role=\"bold\">Gerenciamento automático de configuração</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; automatically configures each guest virtual machine’s networking "
+"and storage settings."
+msgstr "O &PRODUCT; automaticamente configura os parâmetros de rede e armazenamento de cada máquina virtual hóspede."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; internally manages a pool of virtual appliances to support the "
+"cloud itself. These appliances offer services such as firewalling, routing, "
+"DHCP, VPN access, console proxy, storage access, and storage replication. "
+"The extensive use of virtual appliances simplifies the installation, "
+"configuration, and ongoing management of a cloud deployment."
+msgstr "O &PRODUCT; gerencia internamente um pool de dispositivos virtuais (\"virtual appliances\") para suporte à nuvem. Estes dispositivos oferecem serviços como firewall, roteamento, DHCP, acesso VPN, console proxy, acesso a storage e replicação de storage. O uso extensivo de dispositivos virtuais simplifica a instalação, configuração e gerenciamento contínuo de uma implementação de nuvem."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Graphical User Interface</emphasis>"
+msgstr "<emphasis role=\"bold\">Interface gráfica do usuário</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; offers an administrator's Web interface, used for provisioning and"
+" managing the cloud, as well as an end-user's Web interface, used for "
+"running VMs and managing VM templates. The UI can be customized to reflect "
+"the desired service provider or enterprise look and feel."
+msgstr "O &PRODUCT; oferece uma interface web para o administrador, usado para provisionamento e gestão da nuvem, assim como uma interface web do usuário final, usada para executar máquinas virtuais e gerenciar  modelos (templates) de máquinas virtuais. A interface de usuário pode ser customizada para refletir os padrões de visuais de apresentação do provedor de serviços ou empresa."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">API and Extensibility</emphasis>"
+msgstr "<emphasis role=\"bold\">API e extensibilidade</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides an API that gives programmatic access to all the "
+"management features available in the UI. The API is maintained and "
+"documented. This API enables the creation of command line tools and new user"
+" interfaces to suit particular needs. See the Developer’s Guide and API "
+"Reference, both available at <ulink "
+"url=\"http://incubator.apache.org/cloudstack/docs\">Apache CloudStack "
+"Guides</ulink> and <ulink "
+"url=\"http://incubator.apache.org/cloudstack/docs/api\">Apache CloudStack "
+"API Reference</ulink> respectively."
+msgstr "O &PRODUCT; fornece uma API que permite acesso programático para todos os recursos de gerência disponíveis na interface de usuário. A API é mantida e documentada. Esta API habilita a criação de ferramentas de comandos de linha e nova interfaces de usuário para se ajustar a necessidades específicas. Veja o Developer’s Guide e a API Reference, ambos disponíveis em <ulink url=\"http://incubator.apache.org/cloudstack/docs\">Apache CloudStack Guides</ulink> e <ulink url=\"http://incubator.apache.org/cloudstack/docs/api\">Apache CloudStack API Reference</ulink>, respectivamente."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; pluggable allocation architecture allows the creation of new "
+"types of allocators for the selection of storage and Hosts. See the "
+"Allocator Implementation Guide (<ulink "
+"url=\"http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide\">http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide</ulink>)."
+msgstr "A arquitetura de alocação de plataformas conectáveis do &PRODUCT; permite a criação de novos tipos de alocadores para a seleção de storage e hosts. Veja o \"Allocator Implementation Guide\" (<ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide\">http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide</ulink>)."
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">High Availability</emphasis>"
+msgstr "<emphasis role=\"bold\">Alta disponibilidade</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; has a number of features to increase the availability of the "
+"system. The Management Server itself may be deployed in a multi-node "
+"installation where the servers are load balanced. MySQL may be configured to"
+" use replication to provide for a manual failover in the event of database "
+"loss. For the hosts, &PRODUCT; supports NIC bonding and the use of separate "
+"networks for storage as well as iSCSI Multipath."
+msgstr "A plataforma do &PRODUCT; tem um número de recursos para aumentar a disponibilidade do sistema. O próprio servidor de gerenciamento pode ser implementado em um ambiente com múltiplos nós onde é feito balanceamento de carga entre os servidores. MySQL pode ser configurado para usar replicação, provendo uma método manual de recuperação em caso de perda do database. Para os hosts, a plataforma &PRODUCT; suporta NIC bonding e o uso de redes isoladas de storage, assim como iSCSI Multipath."

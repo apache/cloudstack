@@ -1,0 +1,176 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-15 15:48+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Port Forwarding Rule on a VPC"
+msgstr "Adicionando uma regra de encaminhamento de porta em uma VPC"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "Faça login na interface de usuário do &PRODUCT; como administrador ou usuário final."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "Na barra de navegação à esquerda, selecione Network."
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "Na view Select, selecione VPC."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "Todas as VPCs que você criou para a conta são listadas na página."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "Clique no botão Configure da VPC na qual você deseja implementar as máquinas virtuais."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "Na página VPC apresentada, todas as camadas que você criou são listadas em um diagrama."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "Clique no ícone Settings."
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "As seguintes opções são apresentadas."
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "Endereços IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "Gateways"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "Site-to-Site VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "Network ACLs"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Choose an existing IP address or acquire a new IP address. Click the name of"
+" the IP address in the list."
+msgstr "Escolha um endereço IP existente ou obtenha um novo endereço IP. Clique no nome do endereço IP na lista."
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "A página IP Addresses é apresentada."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the IP address for which you want to create the rule, then click the "
+"Configuration tab."
+msgstr "Clique no endereço IP para o qual você deseja criar a regra, então clique na aba Configuration."
+
+#. Tag: para
+#, no-c-format
+msgid "In the Port Forwarding node of the diagram, click View All."
+msgstr "No nó Port Forwarding do diagrama, clique em View All."
+
+#. Tag: para
+#, no-c-format
+msgid "Select the tier to which you want to apply the rule."
+msgstr "Selecione a camada para a qual você deseja aplicar a regra."
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr "Especifique o seguinte:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public Port</emphasis>: The port to which public "
+"traffic will be addressed on the IP address you acquired in the previous "
+"step."
+msgstr "<emphasis role=\"bold\">Public Port</emphasis>: A porta para a qual tráfego público será encaminhado no endereço IP que você obteve no passo anterior."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private Port</emphasis>: The port on which the "
+"instance is listening for forwarded public traffic."
+msgstr "<emphasis role=\"bold\">Private Port</emphasis>: A porta na qual a instância está ouvindo por tráfego público encaminhado."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol</emphasis>: The communication protocol in "
+"use between the two ports."
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: O protocolo de comunicações em uso entre as duas portas."
+
+#. Tag: para
+#, no-c-format
+msgid "TCP"
+msgstr "TCP"
+
+#. Tag: para
+#, no-c-format
+msgid "UDP"
+msgstr "UDP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Add VM</emphasis>: Click Add VM. Select the name of "
+"the instance to which this rule applies, and click Apply."
+msgstr "<emphasis role=\"bold\">Add VM</emphasis>: Clique em Add VM. Selecione o nome da instância a qual esta regra se aplica, e clique Apply."
+
+#. Tag: para
+#, no-c-format
+msgid "You can test the rule by opening an ssh session to the instance."
+msgstr "Você pode testar a regra abrindo uma sessão ssh com a instância."

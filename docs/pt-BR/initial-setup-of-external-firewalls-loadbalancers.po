@@ -1,0 +1,82 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-31 20:20+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Initial Setup of External Firewalls and Load Balancers"
+msgstr "Configuração inicial de firewalls e balanceadores de carga externos"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the first VM is created for a new account, &PRODUCT; programs the "
+"external firewall and load balancer to work with the VM. The following "
+"objects are created on the firewall:"
+msgstr "Quando a primeira máquina virtual é criada para uma nova conta, o &PRODUCT; programa o firewall e o balanceador de carga externos para trabalhar com a máquina virtual. Os seguintes objetos são criados no firewall:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A new logical interface to connect to the account's private VLAN. The "
+"interface IP is always the first IP of the account's private subnet (e.g. "
+"10.1.1.1)."
+msgstr "Uma nova interface lógica para conectar à VLAN privada da conta. O IP da interface é sempre o primeiro IP da subnet privada da conta (e.g. 10.1.1.1)."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A source NAT rule that forwards all outgoing traffic from the account's "
+"private VLAN to the public Internet, using the account's public IP address "
+"as the source address"
+msgstr "Uma regra NAT de origem que encaminha todo o tráfego sainte da VLAN privada da conta para a Internet pública, usando o endereço IP público da conta como o endereço de origem"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A firewall filter counter that measures the number of bytes of outgoing "
+"traffic for the account"
+msgstr "Um contador de filtro de firewall que registra o número de bytes do tráfego sainte da conta"
+
+#. Tag: para
+#, no-c-format
+msgid "The following objects are created on the load balancer:"
+msgstr "Os seguintes objetos são criados no balanceador de carga:"
+
+#. Tag: para
+#, no-c-format
+msgid "A new VLAN that matches the account's provisioned Zone VLAN"
+msgstr "Uma nova VLAN que corresponde à VLAN na zona fornecida para a conta"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A self IP for the VLAN. This is always the second IP of the account's "
+"private subnet (e.g. 10.1.1.2)."
+msgstr "Um IP para a VLAN. Este é sempre o segundo IP da subnet privada da conta (e.g. 10.1.1.2)."

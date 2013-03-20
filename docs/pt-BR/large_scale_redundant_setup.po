@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Edgard Balter Jr. <ebalter@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-25 23:59+0000\n"
+"Last-Translator: ebalter <ebalter@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Large-Scale Redundant Setup"
+msgstr " Configuração redundante em larga escala"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates the network architecture of a large-scale &PRODUCT;"
+" deployment."
+msgstr "Este diagrama ilustra a arquitetura de rede de uma implementação  redundante em larga escala do &PRODUCT;."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-3 switching layer is at the core of the data center. A router "
+"redundancy protocol like VRRP should be deployed. Typically high-end core "
+"switches also include firewall modules. Separate firewall appliances may "
+"also be used if the layer-3 switch does not have integrated firewall "
+"capabilities. The firewalls are configured in NAT mode. The firewalls "
+"provide the following functions:"
+msgstr "Uma camada de comutação em layer-3 está no núcleo do data center. Um protocolo redundante de roteamento como VRRP deve ser implementado. Tipicamente, switches centrais de topo de linha também incluem módulos firewall. Aplicações de firewall distintas podem também ser usadas se a switches layer-3 não têm serviço de firewall integrado. Os firewalls são configurados em modo NAT. Os firewalls proveem as seguintes funções:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Forwards HTTP requests and API calls from the Internet to the Management "
+"Server. The Management Server resides on the management network."
+msgstr "Encaminha requisições HTTP e chamadas API da Internet para o servidor de gerenciamento. O servidor de gerenciamento reside na rede de gerência."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the cloud spans multiple zones, the firewalls should enable site-to-"
+"site VPN such that servers in different zones can directly reach each other."
+msgstr "Quando a nuvem se estende por múltiplas zonas, os firewalls devem habilitar VPNs entre sites, de forma que servidores em diferentes zonas possam conectar-se um ao outro diretamente."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-2 access switch layer is established for each pod. Multiple switches"
+" can be stacked to increase port count. In either case, redundant pairs of "
+"layer-2 switches should be deployed."
+msgstr "Um acesso em switch layer-2 é estabelecido para cada pod. Múltiplas switches podem ser empilhadas para aumentar o número de portas. Em qualquer caso, pares redundantes de switches layer-2 devem ser implementados."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server cluster (including front-end load balancers, "
+"Management Server nodes, and the MySQL database) is connected to the "
+"management network through a pair of load balancers."
+msgstr "O cluster do servidor de gerenciamento (incluindo os balanceadores de carga front-end, nós servidores de gerenciamento, e o database MySQL) é conectado à rede de gerência através de um par de balanceadores de carga."
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage servers are connected to the management network."
+msgstr "Servidores de storage secundária são conectados à rede de gerência."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each pod contains storage and computing servers. Each storage and computing "
+"server should have redundant NICs connected to separate layer-2 access "
+"switches."
+msgstr "Cada pod contém servidores de storage e de computação. Cada servidor de storage e computação deve ter NICs redundantes conectadas a switches layer-2 de acesso distintas."

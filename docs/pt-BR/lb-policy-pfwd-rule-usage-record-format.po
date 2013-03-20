@@ -1,0 +1,87 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:43+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Load Balancer Policy or Port Forwarding Rule Usage Record Format"
+msgstr "Formato do registro do balanceador de carga ou regra de uso de port forwarding"
+
+#. Tag: para
+#, no-c-format
+msgid "account - name of the account"
+msgstr "account - nome da conta"
+
+#. Tag: para
+#, no-c-format
+msgid "accountid - ID of the account"
+msgstr "accountid - ID da conta"
+
+#. Tag: para
+#, no-c-format
+msgid "domainid - ID of the domain in which this account resides"
+msgstr "domainid - ID do domínio no qual a conta reside"
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid - Zone where the usage occurred"
+msgstr "zoneid - zona onde a utilização da conta ocorreu"
+
+#. Tag: para
+#, no-c-format
+msgid "description - A string describing what the usage record is tracking"
+msgstr "description - um string que descreve a que o registro de uso se refere"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage - String representation of the usage, including the units of usage "
+"(e.g. 'Hrs' for hours)"
+msgstr "usage - representação do uso, incluindo as unidades de uso (e.g. 'Hrs' para horas)"
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype - A number representing the usage type (see Usage Types)"
+msgstr "usagetype - um número representando o tipo de uso (veja Tipos de uso)"
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage - A number representing the actual usage in hours"
+msgstr "rawusage - um número representando o uso real em horas"
+
+#. Tag: para
+#, no-c-format
+msgid "usageid - ID of the load balancer policy or port forwarding rule"
+msgstr "usageid - ID da política do balanceador de carga ou regra de port forwarding"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"startdate, enddate - The range of time for which the usage is aggregated; "
+"see Dates in the Usage Record"
+msgstr "startdate, enddate - o intervalo de tempo para o qual o uso é contabilizado; veja Datas no registro de uso"
