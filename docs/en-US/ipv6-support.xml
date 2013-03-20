@@ -86,9 +86,9 @@
       <listitem>
         <para>In a multiple shared network, the default route is set by the rack router, rather than
           the DHCP server, which is out of &PRODUCT; control. Therefore, in order for the user VM to
-          get only the default route from the default NIC, modify the configuration of the user VM,
-          and set non-default NIC's <code>accept_ra</code> to 0 explicitly. The
-            <code>accept_ra</code> parameter accepts Router Advertisements and auto-configure
+          get the default route from the default NIC, modify the configuration of the user VM, and
+          set non-default NIC's <code>accept_ra</code> to 0 explicitly. The <code>accept_ra</code>
+          parameter accepts Router Advertisements and auto-configure
             <code>/proc/sys/net/ipv6/conf/interface</code> with received data.</para>
       </listitem>
     </itemizedlist>
@@ -105,9 +105,6 @@
       </listitem>
       <listitem>
         <para>Passwords</para>
-      </listitem>
-      <listitem>
-        <para>The administrator cannot specify the IPv6 address of a VM</para>
       </listitem>
     </orderedlist>
   </section>
