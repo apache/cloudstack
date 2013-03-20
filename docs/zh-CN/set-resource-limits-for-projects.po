@@ -1,0 +1,46 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-10 06:25+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Resource Limits for Projects"
+msgstr "设置项目的资源限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; administrator can set global default limits to control the "
+"amount of resources that can be owned by each project in the cloud. This "
+"serves to prevent uncontrolled usage of resources such as snapshots, IP "
+"addresses, and virtual machine instances. Domain administrators can override"
+" these resource limits for individual projects with their domains, as long "
+"as the new limits are below the global defaults set by the &PRODUCT; root "
+"administrator. The root administrator can also set lower resource limits for"
+" any project in the cloud"
+msgstr "&PRODUCT;管理员可以设置全局默认的限制，控制在云中的每个项目可以拥有的资源量。这是为了防止不受控制的资源使用，如快照，IP地址和虚拟机实例。域管理员可以取代他们域中个别项目的资源限制，只要新的限制是低于&PRODUCT;根管理员设置的默认全局限制。根管理员还可以为云中的任何项目设置较低的资源限制。"

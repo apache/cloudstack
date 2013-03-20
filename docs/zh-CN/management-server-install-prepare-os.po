@@ -1,0 +1,117 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:44+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "准备操作系统"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The OS must be prepared to host the Management Server using the following "
+"steps. These steps must be performed on each Management Server node."
+msgstr "要在主机上安装管理服务器,需要按下列步骤准备操作系统. 这些步骤必须在每个要安装的管理服务器节点上执行."
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to your OS as root."
+msgstr "作为root用户登入你的系统."
+
+#. Tag: para
+#, no-c-format
+msgid "Check for a fully qualified hostname."
+msgstr "检查全称域名."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "hostname --fqdn"
+msgstr "hostname --fqdn"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This should return a fully qualified hostname such as "
+"\"managament1.lab.example.org\". If it does not, edit /etc/hosts so that it "
+"does."
+msgstr "这将会返回一个全称域名例如\"managament1.lab.example.org\". 如果不是这样, 请编辑/etc/hosts使其返回类似的结果."
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure that the machine can reach the Internet."
+msgstr "确保机器可以连接到互联网."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ping www.cloudstack.org"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Turn on NTP for time synchronization."
+msgstr "启用NTP服务以确保时间同步."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NTP is required to synchronize the clocks of the servers in your cloud."
+msgstr "NTP对于你云环境中服务器时钟同步是必须的."
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP."
+msgstr "安装NTP服务."
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS:"
+msgstr "在RHEL或CentOS发行版上:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install ntp"
+msgstr "yum install ntp"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu:"
+msgstr "在Ubuntu系统中:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install openntpd"
+msgstr "apt-get install openntpd"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Repeat all of these steps on every host where the Management Server will be "
+"installed."
+msgstr "在每一个安装管理服务器的节点上重复所有这些步骤."

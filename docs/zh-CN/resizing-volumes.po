@@ -1,0 +1,149 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Resizing Volumes"
+msgstr "调整卷大小"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides the ability to resize data disks; &PRODUCT; controls "
+"volume size by using disk offerings. This provides &PRODUCT; administrators "
+"with the flexibility to choose how much space they want to make available to"
+" the end users. Volumes within the disk offerings with the same storage tag "
+"can be resized. For example, if you only want to offer 10, 50, and 100 GB "
+"offerings, the allowed resize should stay within those limits. That implies "
+"if you define a 10 GB, a 50 GB and a 100 GB disk offerings, a user can "
+"upgrade from 10 GB to 50 GB, or 50 GB to 100 GB. If you create a custom-"
+"sized disk offering, then you have the option to resize the volume by "
+"specifying a new, larger size."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additionally, using the resizeVolume API, a data volume can be moved from a "
+"static disk offering to a custom disk offering with the size specified. This"
+" functionality allows those who might be billing by certain volume sizes or "
+"disk offerings to stick to that model, while providing the flexibility to "
+"migrate to whatever custom size necessary."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This feature is supported on KVM, XenServer, and VMware hosts. However, "
+"shrinking volumes is not supported on VMware hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you try to resize a volume, consider the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VMs associated with the volume are stopped."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The data disks associated with the volume are removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a volume is shrunk, the disk associated with it is simply truncated, "
+"and doing so would put its content at risk of data loss. Therefore, resize "
+"any partitions or file systems before you shrink a data disk so that all the"
+" data is moved off from that disk."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To resize a volume:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以管理员或普通用户身份登录进入&PRODUCT;用户界面。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr "在左侧导航栏点击存储。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "在选择视图选择卷。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select the volume name in the Volumes list, then click the Resize Volume "
+"button <inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/resize-volume-icon.png\" /> </imageobject> <textobject> <phrase>resize-"
+"volume-icon.png: button to display the resize volume option.</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Resize Volume pop-up, choose desired characteristics for the storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Custom Disk, specify a custom size."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Shrink OK to confirm that you are reducing the size of a volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This parameter protects against inadvertent shrinking of a disk, which might"
+" lead to the risk of data loss. You must sign off that you know what you are"
+" doing."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "点击 确定。"

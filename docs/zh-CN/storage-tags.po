@@ -1,0 +1,59 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Richard Liu <tanthalas510@hotmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-06 09:47+0000\n"
+"Last-Translator: RichardL <tanthalas510@hotmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Storage Tags"
+msgstr "å­å¨æ ç­¾"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Storage may be \"tagged\". A tag is a text string attribute associated with "
+"primary storage, a Disk Offering, or a Service Offering. Tags allow "
+"administrators to provide additional information about the storage. For "
+"example, that is a \"SSD\" or it is \"slow\". Tags are not interpreted by "
+"&PRODUCT;. They are matched against tags placed on service and disk "
+"offerings. &PRODUCT; requires all tags on service and disk offerings to "
+"exist on the primary storage before it allocates root or data disks on the "
+"primary storage. Service and disk offering tags are used to identify the "
+"requirements of the storage that those offerings have. For example, the high"
+" end service offering may require \"fast\" for its root disk volume."
+msgstr "存储可以被打上标签。 字符串的标签使得主存储，磁盘服务，或计算服务相互关联起来。标签使得管理员可以添加关于存储的额外信息。例如它是\"SSD\" 或它是\"slow\"。标签不会被&PRODUCT; 解读。标签是用于在计算服务和磁盘服务上相互匹配使用的。在主存储上分配根和数据磁盘之前，&PRODUCT; 需要计算和磁盘服务上的标签都标记于主存储上。计算和磁盘服务的标签用于识别 这些服务拥有存储的要求。例如高级的计算服务可能需要\"fast\"标签 给其跟磁盘卷"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The interaction between tags, allocation, and volume copying across clusters"
+" and pods can be complex. To simplify the situation, use the same set of "
+"tags on the primary storage for all clusters in a pod. Even if different "
+"devices are used to present those tags, the set of exposed tags can be the "
+"same."
+msgstr "标签，分配，跨集群或机架的卷复制之间的关系是很复杂的。简单的环境就是在一个机架内所有集群的主存储使用相同的标签。即使用这些标签表示不同设备，展现出来的标签组仍可以是一样的。"

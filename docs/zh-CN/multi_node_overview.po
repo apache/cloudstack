@@ -1,0 +1,83 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-09-24 18:41+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Multi-Node Installation Overview"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section describes installing multiple Management Servers and installing"
+" MySQL on a node separate from the Management Servers. The machines must "
+"meet the system requirements described in System Requirements."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the sake of security, be sure the public Internet can not access port "
+"8096 or port 8250 on the Management Server."
+msgstr "为安全起见, 确保公共网络不能访问管理服务器的8096和8250端口."
+
+#. Tag: para
+#, no-c-format
+msgid "The procedure for a multi-node installation is:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "准备操作系统"
+
+#. Tag: para
+#, no-c-format
+msgid "Install the First Management Server"
+msgstr "安装第一台管理服务器"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and Configure the Database"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr "准备NFS共享存储"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "准备系统虚拟机模板"

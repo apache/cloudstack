@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-20 14:58+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Global Configuration Parameters"
+msgstr "设置全局配置参数"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides parameters that you can set to control many aspects of "
+"the cloud. When &PRODUCT; is first installed, and periodically thereafter, "
+"you might need to modify these settings."
+msgstr "你可以通过设置&PRODUCT;提供的参数控制云的多个方面.&PRODUCT;首次安装后,在此后定期,您可能需要修改这些设置。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI as administrator."
+msgstr "使用管理员账号登陆"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Global Settings."
+msgstr "在左侧导航栏，点击 全局设置"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose one of the following:"
+msgstr "在选择视图中，选择下列操作之一："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Global Settings. This displays a list of the parameters with brief "
+"descriptions and current values."
+msgstr "全局设置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hypervisor Capabilities. This displays a list of hypervisor versions with "
+"the maximum number of guests supported for each."
+msgstr "hypervsior 容量。这里显示列出了不同hypervsior版本所支持的最大虚拟机数量。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use the search box to narrow down the list to those you are interested in."
+msgstr "使用搜索框来缩小列表中你所感兴趣的那些"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Edit icon to modify a value. If you are viewing Hypervisor "
+"Capabilities, you must click the name of the hypervisor first to display the"
+" editing screen."
+msgstr "单击“编辑”图标修改一个值。如果您正在查看的hypervsior容量，您必须单击hypervsior第一次显示编辑屏幕的名称。"

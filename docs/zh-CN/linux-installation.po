@@ -1,0 +1,120 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Linux OS Installation"
+msgstr "Linux系统安装"
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to begin the Linux OS installation:"
+msgstr "试用一下步骤开始Linux系统的安装"
+
+#. Tag: para
+#, no-c-format
+msgid "Download the script file cloud-set-guest-password:"
+msgstr "下载脚本文件cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Linux: <ulink url=\" http://cloudstack.org/dl/cloud-set-guest-password \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows: <ulink url=\" "
+"http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download"
+" \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this file to /etc/init.d."
+msgstr "拷贝本文件到Copy this file to /etc/init.d "
+
+#. Tag: para
+#, no-c-format
+msgid "On some Linux distributions, copy the file to /etc/rc.d/init.d."
+msgstr "在某些linux发行版拷贝此文件到/etc/rc.d/init.d"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to make the script executable:"
+msgstr "执行以下命令使脚本可执行"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chmod +x /etc/init.d/cloud-set-guest-password"
+msgstr "chmod +x /etc/init.d/cloud-set-guest-password （这里注意文件路径）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Depending on the Linux distribution, continue with the appropriate step."
+msgstr "根据不同的Linux发行版，选择适当的步骤继续"
+
+#. Tag: para
+#, no-c-format
+msgid "On Fedora, CentOS/RHEL, and Debian, run:"
+msgstr "在Fedora、CentOS/RHEL、 和 Debian,执行‘"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chkconfig --add cloud-set-guest-password"
+msgstr "chkconfig --add cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On Ubuntu with VMware tools, link the script file to the /etc/network/if-up "
+"and /etc/network/if-down folders, and run the script:"
+msgstr "在装有VMware tools的Ubuntu，连接本脚本到/etc/network/if-up 和 /etc/network/if-down folders，然后执行"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password\n"
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-down/cloud-set-guest-password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using Ubuntu 11.04, start by creating a directory called "
+"/var/lib/dhcp3 on your Ubuntu machine (works around a known issue with this "
+"version of Ubuntu). On all Ubuntu versions: Run “sudo update-rc.d cloud-set-"
+"guest-password defaults 98”. To test, run \"mkpasswd\" and check that it is "
+"generating a new password. If the “mkpasswd” command does not exist, run "
+"\"sudo apt-get install whois\" (or sudo apt-get install mkpasswd, depending "
+"on your Ubuntu version) and repeat."
+msgstr "如果你使用Ubuntu 11.04，现在你的Ubuntu机器上创建目录 /var/lib/dhcp3\n（用于解决此版本Ubuntu的一个目前已知的问题）。在所有的的Ubuntu版本：执行“sudo update-rc.d cloud-set-guest-password defaults 98”。测试的话执行mkpassword然后检查是否产生了一个新的密码。如果mkpasswd命令不存在，执行\"sudo apt-get install whois\"(或执行 sudo apt-get install mkpasswd, 这取决于你的Ubuntu版本 )，然后再执行mkpassword"

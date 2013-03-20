@@ -1,0 +1,68 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-02 12:34+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Acquiring a New IP Address"
+msgstr "获得一个新的IP地址"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "作为管理员或最终用户登入到&PRODUCT; UI."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左边的导航栏里选择网络."
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network where you want to work with."
+msgstr "点击你想要与之工作的网络名称."
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "点击查看IP地址."
+
+#. Tag: para
+#, no-c-format
+msgid "Click Acquire New IP, and click Yes in the confirmation dialog."
+msgstr "点击获得一个新IP, 并且在确认的对话框中点击确定."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You are prompted for confirmation because, typically, IP addresses are a "
+"limited resource. Within a few moments, the new IP address should appear "
+"with the state Allocated. You can now use the IP address in port forwarding "
+"or static NAT rules."
+msgstr "你被要求点击确认是因为, 通常IP地址是有限的资源. 在稍等片刻之后, 新的IP地址将会出现并且状态是已分配. 你现在可以使用这个IP地址进行端口转发或静态NAT规则."

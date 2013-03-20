@@ -1,0 +1,72 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-13 02:37+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building Steps"
+msgstr "编译步骤"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; uses git for source version control, first make sure you have the "
+"source code by pulling it:"
+msgstr "&PRODUCT; 使用git进行源码版本控制, 首先确保你将源码都pull到本地:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git"
+msgstr "git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Several Project Object Models (POM) are defined to deal with the various "
+"build targets of &PRODUCT;. Certain features require some packages that are "
+"not compatible with the Apache license and therefore need to be downloaded "
+"on your own. Check the wiki for additional information <ulink "
+"url=\"https://cwiki.apache.org/CLOUDSTACK/building-with-"
+"maven.html\">https://cwiki.apache.org/CLOUDSTACK/building-with-"
+"maven.html</ulink>. In order to build all the open source targets of "
+"&PRODUCT; do:"
+msgstr "项目对象模型(POM)用来编译&PRODUCT;中的各种目标.有一些功能需要的依赖包与Apache许可不兼容因此你需要自己下载.更多的信息查看Wiki页面<ulink url=\"https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html\">https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html</ulink>. 为了编译所有&PRODUCT;中开源的组件执行:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mvn clean install"
+msgstr "mvn clean install"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The resulting jar files will be in the target directory of the subdirectory "
+"of the compiled module."
+msgstr "编译产生的jar文件将会在编译模块的target目录."

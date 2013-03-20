@@ -1,0 +1,84 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Attaching a Volume"
+msgstr "附加卷"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can attach a volume to a guest VM to provide extra disk storage. Attach "
+"a volume when you first create a new volume, when you are moving an existing"
+" volume from one VM to another, or after you have migrated a volume from one"
+" storage pool to another."
+msgstr "您能通过附加一个卷来提供虚拟机的额外磁盘存储。当你第一次创建新卷，或移动已存在的卷到另一台虚拟机，或实在从另一个存储池迁移过来一个卷的时候你才可以附加一个卷。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以管理员身份登录进入 &PRODUCT; 用户界面。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Storage."
+msgstr "在左侧导航栏点击存储。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "在选择视图选择卷。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"4. Click the volume name in the Volumes list, then click the Attach Disk "
+"button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/attach-disk-icon.png\" /> </imageobject> <textobject> "
+"<phrase>AttachDiskButton.png: button to attach a volume</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Instance popup, choose the VM to which you want to attach the volume."
+" You will only see instances to which you are allowed to attach volumes; for"
+" example, a user will see only instances created by that user, but the "
+"administrator will have more choices."
+msgstr "在弹出的实例界面，选择你打算附加卷到哪台虚拟机。你只能看到允许你附加卷的实例。比如，普通用户只能看到他自己创建的实例，而管理员将会有更多的选择。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the volume has been attached, you should be able to see it by clicking "
+"Instances, the instance name, and View Volumes."
+msgstr "当卷被附加之后你通过点击实例看到实例名和该实例所附加的卷。"

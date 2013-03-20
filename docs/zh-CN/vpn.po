@@ -1,0 +1,81 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Simon Xianyu <dwangel2004@yahoo.com.cn>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VPN"
+msgstr "VPN 虚拟专用网"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; account owners can create virtual private networks (VPN) to access"
+" their virtual machines. If the guest network is instantiated from a network"
+" offering that offers the Remote Access VPN service, the virtual router "
+"(based on the System VM) is used to provide the service. &PRODUCT; provides "
+"a L2TP-over-IPsec-based remote access VPN service to guest virtual networks."
+" Since each network gets its own virtual router, VPNs are not shared across "
+"the networks. VPN clients native to Windows, Mac OS X and iOS can be used to"
+" connect to the guest networks. The account owner can create and manage "
+"users for their VPN. &PRODUCT; does not use its account database for this "
+"purpose but uses a separate table. The VPN user database is shared across "
+"all the VPNs created by the account owner. All VPN users get access to all "
+"VPNs created by the account owner."
+msgstr "&PRODUCT; account拥有者可以建立 VPN 以便访问他们的虚拟机。如果来宾网络 从一个提供 远程VPN访问服务的网络实例化，虚拟路由(在 System VM上的)将被用于提供服务。\n&PRODUCT; 提供了一个 基于 L2TP-over-IPsec-based 协议的远程VPN访问服务 给 guest虚拟网络。 因为每个网络有它自己的 虚拟路由， VPNs 没有在这些网络中被共享。Windows, Mac OS X和iOS的原生(自带) VPN客户端 可以用于访问 来宾网络。account拥有者可以建立并管理他们的VPN用户。&PRODUCT; 不使用自己账户数据库，而是用了另外一个独立的表。VPN用户数据库在同一个account拥有者建立的VPN网络中被共享。 也就是说，同一个account拥有者建立里的全部VPN可以被它的全部VPN用户访问。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure that not all traffic goes through the VPN. That is, the route "
+"installed by the VPN should be only for the guest network and not for all "
+"traffic."
+msgstr "确保不是所有的网络流量走VPN。也就是说，用于配置VPN的route不是唯一用于该guest network，也不承担全部的网络流量。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Road Warrior / Remote Access</emphasis>. Users want "
+"to be able to connect securely from a home or office to a private network in"
+" the cloud. Typically, the IP address of the connecting client is dynamic "
+"and cannot be preconfigured on the VPN server."
+msgstr "<emphasis role=\"bold\">Road Warrior / Remote Access 公路勇士/远程访问</emphasis>.用户希望可以安全地从家里或者办公室连接到云上的一个 私有网络。特别是连接的客户端的IP地址是动态决定的，不能预先配置到VPN 服务器上。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Site to Site</emphasis>. In this scenario, two "
+"private subnets are connected over the public Internet with a secure VPN "
+"tunnel. The cloud user’s subnet (for example, an office network) is "
+"connected through a gateway to the network in the cloud. The address of the "
+"user’s gateway must be preconfigured on the VPN server in the cloud. Note "
+"that although L2TP-over-IPsec can be used to set up Site-to-Site VPNs, this "
+"is not the primary intent of this feature. For more information, see <xref "
+"linkend=\"site-to-site-vpn\" />"
+msgstr ""

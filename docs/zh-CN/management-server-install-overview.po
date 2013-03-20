@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:44+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Installation Overview"
+msgstr "管理服务器安装概述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section describes installing the Management Server. There are two "
+"slightly different installation flows, depending on how many Management "
+"Server nodes will be in your cloud:"
+msgstr "本章节介绍管理服务器的安装. 根据你云环境中管理服务器节点个数的不同, 安装步骤有两处稍有不同."
+
+#. Tag: para
+#, no-c-format
+msgid "A single Management Server node, with MySQL on the same node."
+msgstr "一个单独的管理服务器节点, MySQL也装在这个节点上."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Multiple Management Server nodes, with MySQL on a node separate from the "
+"Management Servers."
+msgstr "多个管理服务器节点, MySQL装在与所有管理服务都不相同的节点上."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In either case, each machine must meet the system requirements described in "
+"System Requirements."
+msgstr "不管是哪种方案, 所有系统的要求都会符合系统需求里的描述."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the sake of security, be sure the public Internet can not access port "
+"8096 or port 8250 on the Management Server."
+msgstr "为安全起见, 确保公共网络不能访问管理服务器的8096和8250端口."
+
+#. Tag: para
+#, no-c-format
+msgid "The procedure for installing the Management Server is:"
+msgstr "安装管理服务器的步骤:"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "准备操作系统"
+
+#. Tag: para
+#, no-c-format
+msgid "(XenServer only) Download and install vhd-util."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install the First Management Server"
+msgstr "安装第一台管理服务器"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and Configure the MySQL database"
+msgstr "安装并配置MySQL数据库"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr "准备NFS共享存储"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers (optional)"
+msgstr "准备并启动额外的管理服务器(可选)"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "准备系统虚拟机模板"

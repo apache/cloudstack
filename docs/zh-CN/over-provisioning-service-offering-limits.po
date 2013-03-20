@@ -1,0 +1,74 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-11-30 09:19+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Over-Provisioning and Service Offering Limits"
+msgstr "超配和服务提供方案的限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio"
+" configured by the administrator. This is defined by the "
+"cpu.overprovisioning.factor global configuration variable."
+msgstr "&PRODUCT; 的CPU资源超配是基于管理员设置的超配比例的。这在全局变量cpu.overprovisioning.factor中定义。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio"
+" configured by the administrator. This is defined by the "
+"cpu.overprovisioning.factor global configuration variable"
+msgstr "&PRODUCT; 的CPU资源超配是基于管理员设置的超配比例的。这在全局变量cpu.overprovisioning.factor中定义。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Service offerings limits (e.g. 1 GHz, 1 core) are strictly enforced for core"
+" count. For example, a guest with a service offering of one core will have "
+"only one core available to it regardless of other activity on the Host."
+msgstr "服务提供方案限制（比如1G主频，1核）严格执行核心数。比如，一个使用分配有一个核心服务方案的来宾，会只有一个核心可用，不管主机上其它的活动。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Service offering limits for gigahertz are enforced only in the presence of "
+"contention for CPU resources. For example, suppose that a guest was created "
+"with a service offering of 1 GHz on a Host that has 2 GHz cores, and that "
+"guest is the only guest running on the Host. The guest will have the full 2 "
+"GHz available to it. When multiple guests are attempting to use the CPU a "
+"weighting factor is used to schedule CPU resources. The weight is based on "
+"the clock speed in the service offering. Guests receive a CPU allocation "
+"that is proportionate to the GHz in the service offering. For example, a "
+"guest created from a 2 GHz service offering will receive twice the CPU "
+"allocation as a guest created from a 1 GHz service offering. &PRODUCT; does "
+"not perform memory over-provisioning."
+msgstr "服务方案限制为千兆的，执行CPU资源争用机制。比如，假设一个来宾使用1GHz的服务提供方案，而它所在的主机有一个2GHz的核心，并且该来宾是此主机上唯一运行的实例。这个来宾将可以使用2GHz的cpu资源。当多个来宾打算使用CPU资源时，一个权衡机制将用来分配CPU资源。权重值基于来宾所使用的服务提供方案中指定的时钟频率。来宾被分配的CPU资源将服务提供方案中相应的频率执行。比如，一个使用2GHz服务提供方案的来宾将获得使用1GHz服务提供方案的来宾CPU资源的两倍，。&PRODUCT; 不支持内存超额分配。"

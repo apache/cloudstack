@@ -1,0 +1,94 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:10+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Provisioning Steps"
+msgstr "设置步骤概览"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After the Management Server is installed and running, you can add the "
+"compute resources for it to manage. For an overview of how a &PRODUCT; cloud"
+" infrastructure is organized, see <xref linkend=\"cloud-infrastructure-"
+"overview\" />."
+msgstr "管理服务器节点安装并运行之后, 你就可以添加计算资源来进行管理了. 要查看&PRODUCT;云架构整体上是如何组织的, 请参考 <xref linkend=\"cloud-infrastructure-overview\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To provision the cloud infrastructure, or to scale it up at any time, follow"
+" these procedures:"
+msgstr "为了提供云基础架构, 或者在任何时个需要扩展过规模, 请按照下面的步骤进行:"
+
+#. Tag: para
+#, no-c-format
+msgid "Add a zone. See <xref linkend=\"zone-add\" />."
+msgstr "添加一个资源域. 参照 <xref linkend=\"zone-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />."
+msgstr "添加更多机架 (可选). 参照<xref linkend=\"pod-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />."
+msgstr "添加更多集群 (可选). 参照<xref linkend=\"cluster-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />."
+msgstr "添加更多主机 (可选). 参照<xref linkend=\"host-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add primary storage. See <xref linkend=\"primary-storage-add\" />."
+msgstr "添加主存储. 参照<xref linkend=\"primary-storage-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "Add secondary storage. See <xref linkend=\"secondary-storage-add\" />."
+msgstr "添加二级存储. 参照<xref linkend=\"secondary-storage-add\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Initialize and test the new cloud. See <xref linkend=\"initialize-and-test\""
+" />."
+msgstr "初始化并测试新的云环境. 参照<xref linkend=\"initialize-and-test\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you have finished these steps, you will have a deployment with the "
+"following basic structure:"
+msgstr "当你完成这些步骤以后, 你将部署如下的一个基本结构:"

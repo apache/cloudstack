@@ -1,0 +1,47 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Richard Liu <tanthalas510@hotmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-07 02:33+0000\n"
+"Last-Translator: RichardL <tanthalas510@hotmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Multiple System VM Support for VMware"
+msgstr "支持VMware的多种系统虚拟机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Every &PRODUCT; zone has single System VM for template processing tasks such"
+" as downloading templates, uploading templates, and uploading ISOs. In a "
+"zone where VMware is being used, additional System VMs can be launched to "
+"process VMware-specific tasks such as taking snapshots and creating private "
+"templates. The &PRODUCT; management server launches additional System VMs "
+"for VMware-specific tasks as the load increases. The management server "
+"monitors and weights all commands sent to these System VMs and performs "
+"dynamic load balancing and scaling-up of more System VMs."
+msgstr "每个&PRODUCT; 资源域都有单独的系统虚拟机用于处理关于模版的各种任务，如下载模版，上传模版，上传ISO。在使用VMware的资源域中，会启动额外的系统虚拟机用于执行VMware的特殊任务，如做快照和创建私有模版。当VMware特殊任务压力增加时，&PRODUCT; 管理服务器会启动额外的系统虚拟机。管理服务器会监控并权衡所有发往这些系统虚拟机的命令，并执行动态负载均衡和扩展更多的系统虚拟机。"

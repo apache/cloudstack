@@ -1,0 +1,136 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# RoyalYang <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-29 02:59+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts, Users, and Domains"
+msgstr "账户，用户，域"
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts"
+msgstr "å¸æ·"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"An account typically represents a customer of the service provider or a "
+"department in a large organization. Multiple users can exist in an account."
+msgstr "一个账号通常代表一个客户的服务提供者或一个大组织中的一个部门。一个账户下可有多个用户。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domains"
+msgstr "å"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Accounts are grouped by domains. Domains usually contain multiple accounts "
+"that have some logical relationship to each other and a set of delegated "
+"administrators with some authority over the domain and its subdomains. For "
+"example, a service provider with several resellers could create a domain for"
+" each reseller."
+msgstr "域通常包含多个账户。域中经常包含多个账户，这些账户间存在一些逻辑上关系和一系列该域和其子域下的委派的管理员（这段的意思就是说在逻辑上域下可以有管理员，子域下也可以有管理员）。比如，一个服务提供商可有多个分销商这样的服务提供商就能为每一个分销商创建一个域"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For each account created, the Cloud installation creates three different "
+"types of user accounts: root administrator, domain administrator, and user."
+msgstr "对于每个账户的创建，&PRODUCT; 创建了三种不同类型的用户账户：根管理员，域管理员，普通用户。"
+
+#. Tag: title
+#, no-c-format
+msgid "Users"
+msgstr "普通用户"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users are like aliases in the account. Users in the same account are not "
+"isolated from each other, but they are isolated from users in other "
+"accounts. Most installations need not surface the notion of users; they just"
+" have one user per account. The same user cannot belong to multiple "
+"accounts."
+msgstr "用户就像是账户的别名。在同一账户下的用户彼此之间并非隔离的。但是他们与不同账户下的用户是相互隔离的。大多数安装不需要表面的用户的概念；他们只是每一个帐户的用户。相同的用户不能属于多个帐户。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Username is unique in a domain across accounts in that domain. The same "
+"username can exist in other domains, including sub-domains. Domain name can "
+"repeat only if the full pathname from root is unique. For example, you can "
+"create root/d1, as well as root/foo/d1, and root/sales/d1."
+msgstr "多个账户中的用户名在域中应该是唯一的。相同的用户名能在其他的域中存在，包括子域。域名只有在全路径名唯一的时候才能重复。比如，你能创建一个root/d1，也可以创建root/foo/d1和root/sales/d1。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Administrators are accounts with special privileges in the system. There may"
+" be multiple administrators in the system. Administrators can create or "
+"delete other administrators, and change the password for any user in the "
+"system."
+msgstr "管理员在系统中是拥有特权的账户。可能有多个管理员在系统中，管理员能创建删除其他管理员，并且修改系统中任意用户的密码。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domain Administrators"
+msgstr "域管理员"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Domain administrators can perform administrative operations for users who "
+"belong to that domain. Domain administrators do not have visibility into "
+"physical servers or other domains."
+msgstr "域管理员能在它所属域中执行和管理员相同的操作。域管理员在物理服务器或其他域中不可见。"
+
+#. Tag: title
+#, no-c-format
+msgid "Root Administrator"
+msgstr "根管理员"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Root administrators have complete access to the system, including managing "
+"templates, service offerings, customer care administrators, and domains"
+msgstr "根管理员拥有系统完全访问权限，包括管理模板，服务方案，客户服务管理员和域。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The resources belong to the account, not individual users in that account. "
+"For example, billing, resource limits, and so on are maintained by the "
+"account, not the users. A user can operate on any resource in the account "
+"provided the user has privileges for that operation. The privileges are "
+"determined by the role."
+msgstr "资源属于帐户而不是个人用户。例如,帐单、资源限制,等等都是由该帐户维护,而不是用户维护。一个用户可以操作任何资源帐户提供了用户权限的操作。特权由角色决定。"

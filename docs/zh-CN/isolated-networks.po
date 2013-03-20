@@ -1,0 +1,57 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-02 11:48+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Isolated Networks"
+msgstr "隔离的网络"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"An isolated network can be accessed only by virtual machines of a single "
+"account. Isolated networks have the following properties."
+msgstr "一个隔离的网络可以访问虚拟机的单一账户。隔离的网络具有下列性质。"
+
+#. Tag: para
+#, no-c-format
+msgid "Resources such as VLAN are allocated and garbage collected dynamically"
+msgstr "如VLAN等资源被动态分配和垃圾收集"
+
+#. Tag: para
+#, no-c-format
+msgid "There is one network offering for the entire network"
+msgstr "有一个用于整个网络的网络提供"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The network offering can be upgraded or downgraded but it is for the entire "
+"network"
+msgstr "网络提供可升级或降级，但它是用于整个网络的"

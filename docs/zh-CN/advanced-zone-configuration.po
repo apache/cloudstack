@@ -1,0 +1,485 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <szcyyf@hotmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 21:00+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Configuration"
+msgstr "高级资源域配置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you select Advanced in the Add Zone wizard and click Next, you will be"
+" asked to enter the following details. Then click Next."
+msgstr "在添加域向导中选择了高级并且点击下一步之后，你会被要求输入下列信息。然后点击下一步。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> A name for the zone."
+msgstr "<emphasis role=\"bold\">名称.</emphasis> 一个区域的名称。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">DNS 1 and 2.</emphasis> These are DNS servers for "
+"use by guest VMs in the zone. These DNS servers will be accessed via the "
+"public network you will add later. The public IP addresses for the zone must"
+" have a route to the DNS server named here."
+msgstr "<emphasis role=\"bold\">DNS 1 和 2.</emphasis> 这些DNS服务器是给在域中的客户虚拟机使用的。这些DNS服务器可以通过稍后添加的公共网络访问。这个域的公共IP 地址必须有一个路由到在这里指定的DNS服务器。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis> These "
+"are DNS servers for use by system VMs in the zone(these are VMs used by "
+"&PRODUCT; itself, such as virtual routers, console proxies,and Secondary "
+"Storage VMs.) These DNS servers will be accessed via the management traffic "
+"network interface of the System VMs. The private IP address you provide for "
+"the pods must have a route to the internal DNS server named here."
+msgstr "<emphasis role=\"bold\">内部 DNS 1 and 内部 DNS 2.</emphasis>  这些DNS 服务器给域中的系统虚拟机使用。(这些系统虚拟机是&PRODUCT;自己使用的，例如虚拟路由，控制代理和辅助存储虚拟机。)这些DNS服务器可以通过系统虚拟机管理网络接口访问。你提供给机架的私有IP地址必须有一个路由到在这里指定的内部DNS服务器。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to"
+" assign a special domain name to the guest VM network, specify the DNS "
+"suffix."
+msgstr "<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to assign a special domain name to the guest VM network, specify the DNS suffix."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest CIDR.</emphasis> This is the CIDR that "
+"describes the IP addresses in use in the guest virtual networks in this "
+"zone. For example, 10.1.1.0/24. As a matter of good practice you should set "
+"different CIDRs for different zones. This will make it easier to set up VPNs"
+" between networks in different zones."
+msgstr "<emphasis role=\"bold\">来宾 CIDR.</emphasis> CIDR 描述了使用在来宾虚拟网络的IP地址在这个区域中。例如，10.1.1.0/24。作为一个好的实践你应该设置不同的CIDR给不同的区域。这会更容易去设置VPN在不同的区域之间。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1)"
+" Choose the hypervisor for the first cluster in the zone. You can add "
+"clusters with different hypervisors later, after you finish adding the zone."
+msgstr "<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1) 选择hypervisor 给区域的第一个集群。 之后你可以添加集群用不同的hypervisors, 在完成添加区域之后。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public.</emphasis> A public zone is available to all"
+" users. A zone that is not public will be assigned to a particular domain. "
+"Only users in that domain will be allowed to create guest VMs in this zone."
+msgstr "<emphasis role=\"bold\">公共.</emphasis> 一个公共的区域是对所有用户有效的。一个不公开的区域会被安排给一个特别的域。只有在那个域的用户才能被允许建立来宾虚拟机在这个区域里。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose which traffic types will be carried by the physical network."
+msgstr "选择哪种通信类型"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The traffic types are management, public, guest, and storage traffic. For "
+"more information about the types, roll over the icons to display their tool "
+"tips, or see <xref linkend=\"advanced-zone-network-traffic-types\" />. This "
+"screen starts out with one network already configured. If you have multiple "
+"physical networks, you need to add more. Drag and drop traffic types onto a "
+"greyed-out network and it will become active. You can move the traffic icons"
+" from one network to another; for example, if the default traffic types "
+"shown for Network 1 do not match your actual setup, you can move them down. "
+"You can also change the network names if desired."
+msgstr "通信类型是管理，公共，来宾和存储通信。更多的关于类型的信息，覆盖到相应的图标会显示他们的工具提示，或者参考<xref linkend=\"advanced-zone-network-traffic-types\" />。这个界面初始时一个网络已经被配置了。如果你有多个物理网络，你需要添加多个。拖拽或者删除通信类型对一个灰色的网络，它会被激活。你可以移动通信图标从一个网络到另一个；例如，如果默认的通信类型显示在网络1的不匹配你的实际设置，你可以把他们拉下来。你也可以改变网络名按照你期望的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Introduced in version 3.0.1) Assign a network traffic label to each traffic"
+" type on each physical network. These labels must match the labels you have "
+"already defined on the hypervisor host. To assign each label, click the Edit"
+" button under the traffic type icon within each physical network. A popup "
+"dialog appears where you can type the label, then click OK."
+msgstr "(3.0.1 版本中介绍) 安排一个网络通信标识给每个通信类型在每个物理网络上。这些标识必须匹配你已经定义在hypervisor主机上的标识。安排每个标识，点击编辑按钮在通信类型图标下，一个弹出的对话框显示出来，你可以输入标识，然后点击确定。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These traffic labels will be defined only for the hypervisor selected for "
+"the first cluster. For all other hypervisors, the labels can be configured "
+"after the zone is created."
+msgstr "这些通信标识被定义只有hypervisor被选中给第一集群的时候。对于所有其它hypervisor,那些标识能够被配置在区域建立好以后。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next."
+msgstr "点击下一步。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the IP range for public Internet traffic. Enter the following "
+"details, then click Add. If desired, you can repeat this step to add more "
+"public Internet IP ranges. When done, click Next."
+msgstr "配置IP地址段给公共的Internet通信。输入下面详细信息，然后点击添加。如果有需要，你可以重复这步添加更多的公共Internet IP 段。完成后，点击下一步。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Gateway.</emphasis> The gateway in use for these IP "
+"addresses."
+msgstr "<emphasis role=\"bold\">网关.</emphasis>网关使用为这些IP地址。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Netmask.</emphasis> The netmask associated with this"
+" IP range."
+msgstr "<emphasis role=\"bold\">子网掩码.</emphasis> 和这个IP地址段相关的子网掩码。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLAN.</emphasis> The VLAN that will be used for "
+"public traffic."
+msgstr "<emphasis role=\"bold\">VLAN.</emphasis> VLAN 会被用到公共通信。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start IP/End IP.</emphasis> A range of IP addresses "
+"that are assumed to be accessible from the Internet and will be allocated "
+"for access to guest networks."
+msgstr "<emphasis role=\"bold\">开始 IP/结束 IP.</emphasis> 一个IP地址段被安排"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new zone, &PRODUCT; adds the first pod for you. You can always add more"
+" pods later. For an overview of what a pod is, see <xref linkend=\"about-"
+"pods\" />."
+msgstr "在新的区域中，&PRODUCT;添加第一个机架。你可以添加更多的机架在以后。关于什么是机架，请参考<xref linkend=\"关于机架\" />。"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first pod, enter the following, then click Next:"
+msgstr "配置第一个机架，输入下面信息，然后点击下一步："
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Pod Name.</emphasis> A name for the pod."
+msgstr "<emphasis role=\"bold\">机架名称.</emphasis> 机架的命名."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system gateway.</emphasis> The gateway for "
+"the hosts in that pod."
+msgstr "<emphasis role=\"bold\">Reserved system gateway.</emphasis> 这个网关是给在机架中的主机使用的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system netmask.</emphasis> The network "
+"prefix that defines the pod's subnet. Use CIDR notation."
+msgstr "<emphasis role=\"bold\">预留系统网络掩码.</emphasis> 定义给机架的子网前缀。  使用CIDR形式。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> The IP "
+"range in the management network that &PRODUCT; uses to manage various system"
+" VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more "
+"information, see <xref linkend=\"system-reserved-ip-addresses\" />."
+msgstr "<emphasis role=\"bold\">开始/结束 预留系统IP.</emphasis> 管理网络中的IP地址段，&PRODUCT; 用来管理各种系统虚拟机,  例如辅助存储系统虚拟机,控制代理系统虚拟机和DHCP.更多信息请参考 <xref linkend=\"系统预留ip地址\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify a range of VLAN IDs to carry guest traffic for each physical network"
+" (see VLAN Allocation Example ), then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new pod, &PRODUCT; adds the first cluster for you. You can always add "
+"more clusters later. For an overview of what a cluster is, see <xref linkend"
+"=\"about-clusters\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first cluster, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Version 3.0.0 only; in "
+"3.0.1, this field is read only) Choose the type of hypervisor software that "
+"all hosts in this cluster will run. If you choose VMware, additional fields "
+"appear so you can give information about a vSphere cluster. For vSphere "
+"servers, we recommend creating the cluster of hosts in vCenter and then "
+"adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere ."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the "
+"cluster. This can be text of your choosing and is not used by &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first host for you. You can always add "
+"more hosts later. For an overview of what a host is, see <xref linkend"
+"=\"about-hosts\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you can configure the host, you need to install the hypervisor "
+"software on the host. You will need to know which version of the hypervisor "
+"software version is supported by &PRODUCT; and what additional configuration"
+" is required to ensure the host will work with &PRODUCT;. To find these "
+"installation details, see:"
+msgstr "在你能配置主机之前，你需要安装虚拟机管理软件在主机上。你需要知道哪个虚拟机管理软件版本被支持，并且额外的配置信息是需要确认主机是否会和&PRODUCT;好好工作。这些安装详细信息请参考："
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Installation for &PRODUCT;"
+msgstr "Citrix XenServer 安装为了 &PRODUCT;"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr "VMware vSphere 安装和配置"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM Installation and Configuration"
+msgstr "KVM 安装和配置"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first host, enter the following, then click Next:"
+msgstr "配置第一个主机，输入下列信息，然后点击下一步："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Name.</emphasis> The DNS name or IP address of "
+"the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> Usually root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password.</emphasis> This is the password for the "
+"user named above (from your XenServer or KVM install)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Tags.</emphasis> (Optional) Any labels that you"
+" use to categorize hosts for ease of maintenance. For example, you can set "
+"to the cloud's HA tag (set in the ha.tag global configuration parameter) if "
+"you want this host to be used only for VMs with the \"high availability\" "
+"feature enabled. For more information, see HA-Enabled Virtual Machines as "
+"well as HA for Hosts, both in the Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first primary storage server for you. "
+"You can always add more servers later. For an overview of what primary "
+"storage is, see <xref linkend=\"about-primary-storage\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure the first primary storage server, enter the following, then "
+"click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the storage device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol.</emphasis> For XenServer, choose either "
+"NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, CLVM, and "
+"RBD. For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The "
+"remaining fields in the screen vary depending on what you choose here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS"
+msgstr "NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Server.</emphasis> The IP address or DNS name of the"
+" storage device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Path.</emphasis> The exported path from the server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Tags (optional).</emphasis> The comma-separated list"
+" of tags for this storage device. It should be an equivalent set or superset"
+" of the tags on your disk offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The tag sets on primary storage across clusters in a Zone must be identical."
+" For example, if cluster A provides primary storage that has tags T1 and T2,"
+" all other clusters in the Zone must also provide primary storage that has "
+"tags T1 and T2."
+msgstr "在一个区（zone）内的多个集群所拥有的主存储标签集必须是完全一致的。例如：如果集群A提供主存储有标签T1和T2，那么在这个区内的所有其它集群提供的主存储也必须有标签T1和T2。"
+
+#. Tag: para
+#, no-c-format
+msgid "iSCSI"
+msgstr "iSCSI"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Target IQN.</emphasis> The IQN of the target. For "
+"example, iqn.1986-03.com.sun:02:01ec9bb549-1271378984."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Lun.</emphasis> The LUN number. For example, 3."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "preSetup"
+msgstr "预设置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">SR Name-Label.</emphasis> Enter the name-label of "
+"the SR that has been set up outside &PRODUCT;."
+msgstr "<emphasis role=\"bold\">SR Name-Label.</emphasis> 输入已经安装在&PRODUCT;之外的SR名称标识。"
+
+#. Tag: para
+#, no-c-format
+msgid "SharedMountPoint"
+msgstr "SharedMountPoint"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Path.</emphasis> The path on each host that is where"
+" this primary storage is mounted. For example, \"/mnt/primary\"."
+msgstr "<emphasis role=\"bold\">路径.</emphasis> 主存储被挂载到每个主机上的路径。例如, \"/mnt/primary\"."
+
+#. Tag: para
+#, no-c-format
+msgid "VMFS"
+msgstr "VMFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Server.</emphasis> The IP address or DNS name of the"
+" vCenter server."
+msgstr "<emphasis role=\"bold\">服务器.</emphasis> vCenter服务器的IP地址或者是DNS名称。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Path.</emphasis> A combination of the datacenter "
+"name and the datastore name. The format is \"/\" datacenter name \"/\" "
+"datastore name. For example, \"/cloud.dc.VM/cluster1datastore\"."
+msgstr "<emphasis role=\"bold\">路径.</emphasis> 一个数据中心和数据存储合并的名称。格式是 \"/\" 数据中心名 \"/\" 数据存储名。例如, \"/cloud.dc.VM/cluster1datastore\"."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new zone, &PRODUCT; adds the first secondary storage server for you. "
+"For an overview of what secondary storage is, see <xref linkend=\"about-"
+"secondary-storage\" />."
+msgstr "在这个新区域中，&PRODUCT;添加第一个辅助存储服务器给你。对于辅助存储概览，请参考<xref linkend=\"about-secondary-storage\" />。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you can fill out this screen, you need to prepare the secondary "
+"storage by setting up NFS shares and installing the latest &PRODUCT; System "
+"VM template. See Adding Secondary Storage :"
+msgstr "在你填写这个界面之前，你需要提前准备好辅助存储通过设置NFS共享并且安装最新版本的&PRODUCT;系统虚拟机模板。参考添加辅助存储。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">NFS Server.</emphasis> The IP address of the server."
+msgstr "<emphasis role=\"bold\">NFS 服务器.</emphasis> NFS 服务器的IP地址。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Launch."
+msgstr "点击启动。"

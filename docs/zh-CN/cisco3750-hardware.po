@@ -1,0 +1,91 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-29 12:43+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Cisco 3750"
+msgstr "Cisco 3750"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following steps show how a Cisco 3750 is configured for zone-level "
+"layer-3 switching. These steps assume VLAN 201 is used to route untagged "
+"private IPs for pod 1, and pod 1’s layer-2 switch is connected to "
+"GigabitEthernet1/0/1."
+msgstr "以下步骤以Cisco 3750为例来展示如何在资源域级别配置3层交换. 以下步骤假定VLAN 201用做机架1的未标记私有IP的路由, 并且机架1的2层交换连至端口GigabitEthernet1/0/1."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Setting VTP mode to transparent allows us to utilize VLAN IDs above 1000. "
+"Since we only use VLANs up to 999, vtp transparent mode is not strictly "
+"required."
+msgstr "设置VTP为透明模式以允许我们使用超过1000的VLAN ID. 因为我们最多用到VLAN 999, VTP透明模式并不是必须的."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"vtp mode transparent\n"
+"vlan 200-999\n"
+"exit"
+msgstr "vtp mode transparent\nvlan 200-999\nexit"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure GigabitEthernet1/0/1."
+msgstr "配置交换机端口GigabitEthernet1/0/1."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"interface GigabitEthernet1/0/1\n"
+"switchport trunk encapsulation dot1q\n"
+"switchport mode trunk\n"
+"switchport trunk native vlan 201\n"
+"exit"
+msgstr "interface GigabitEthernet1/0/1\nswitchport trunk encapsulation dot1q\nswitchport mode trunk\nswitchport trunk native vlan 201\nexit"
+
+#. Tag: para
+#, no-c-format
+msgid "The statements configure GigabitEthernet1/0/1 as follows:"
+msgstr "以下是配置GigabitEthernet1/0/1端口的说明:"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 201 is the native untagged VLAN for port GigabitEthernet1/0/1."
+msgstr "VLAN 201是GigabitEthernet1/0/1端口的本地未标记VLAN."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cisco passes all VLANs by default. As a result, all VLANs (300-999) are "
+"passed to all the pod-level layer-2 switches."
+msgstr "Cisco 默认传递所有的VLAN. 其结果是所有的VLAN (300-999) 都通过了所有的机架一级的2层交换."

@@ -1,0 +1,117 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+#   <szcyyf@hotmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-02 18:38+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure Guest Traffic in an Advanced Zone"
+msgstr "在高级资源域中设置来宾流量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps assume you have already logged in to the &PRODUCT; UI. To "
+"configure the base guest network:"
+msgstr "以下步骤假定你已经登录进入 &PRODUCT; 界面。设置基本的来宾网络："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. On Zones, click View More, "
+"then click the zone to which you want to add a network."
+msgstr "在左边的导航栏，选择基础架构。在区域数量界面点击查看全部，然后点击你要添加网络的区域名。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr "点击网络标签。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add guest network."
+msgstr "点击 添加客户网络。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Add guest network window is displayed:"
+msgstr "添加来宾网络窗口显示："
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information:"
+msgstr "提供以下信息"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>. The name of the network. This will "
+"be user-visible"
+msgstr "<emphasis role=\"bold\">名称</emphasis>。网络名称。这是对用户可见的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Display Text</emphasis>: The description of the "
+"network. This will be user-visible"
+msgstr "<emphasis role=\"bold\">显示文本</emphasis>:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>: The zone in which you are "
+"configuring the guest network."
+msgstr "<emphasis role=\"bold\">区域</emphasis>: 这里的区域是指你要配置来宾网络的区域。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network offering</emphasis>: If the administrator "
+"has configured multiple network offerings, select the one you want to use "
+"for this network"
+msgstr "<emphasis role=\"bold\">网络提供方案</emphasis>: 如果管理员已经配置了多个网络i共方案，选择你需要的那个。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Gateway</emphasis>: The gateway that the "
+"guests should use"
+msgstr "<emphasis role=\"bold\">来宾网络网关</emphasis>: 来宾网络使用的网关"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Netmask</emphasis>: The netmask in use on the "
+"subnet the guests will use"
+msgstr "<emphasis role=\"bold\">来宾网络子网掩码</emphasis>: 来宾网络使用的子网掩码"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "点击 确定。"

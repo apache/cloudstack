@@ -1,0 +1,161 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# RoyalYang <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Service Providers"
+msgstr "网络服务提供方案"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the most up-to-date list of supported network service providers, see the"
+" &PRODUCT; UI or call listNetworkServiceProviders."
+msgstr "与查看最新的网络服务提供者支持列表请见&PRODUCT;用户界面或者条用API listNetworkServiceProviders。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A service provider (also called a network element) is hardware or virtual "
+"appliance that makes a network service possible; for example, a firewall "
+"appliance can be installed in the cloud to provide firewall service. On a "
+"single network, multiple providers can provide the same network service. For"
+" example, a firewall service may be provided by Cisco or Juniper devices in "
+"the same physical network."
+msgstr "服务提供者（也称为网络元件）是指通过硬件或虚拟应用来实现网络应用。比如，防火墙应用可以安装在云端来提供防火墙服务。在独立网络中多个提供者能提供相同的网络服务。比如，可以通过思科或者Juniper的设备在同一个物理网络中提供防火墙服务。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can have multiple instances of the same service provider in a network "
+"(say, more than one Juniper SRX device)."
+msgstr "在一个网络中你可以多个实例使用相同的服务提供者（也可以使用多个Juniper SRX设备）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If different providers are set up to provide the same service on the "
+"network, the administrator can create network offerings so users can specify"
+" which network service provider they prefer (along with the other choices "
+"offered in network offerings). Otherwise, &PRODUCT; will choose which "
+"provider to use whenever the service is called for."
+msgstr "如果不同提供者被设置在网络中提供相同服务，管理员可以通过创建网络提供方案，因此用户能够自己制定使用哪个物理网络提供者（要遵从网络提供方案中的其他选项）。否则&PRODUCT; 会在服务被需求的时候选择使用哪个提供者。"
+
+#. Tag: title
+#, no-c-format
+msgid "Supported Network Service Providers"
+msgstr "支持的网络服务提供者"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; ships with an internal list of the supported service providers, "
+"and you can choose from this list when creating a network offering."
+msgstr "&PRODUCT;已经预置了一些内置的服务提供者支持列表。你能在创建网络提供方案的时候你能从这列表中选择。"
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual Router"
+msgstr "èæè·¯ç±å¨"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix NetScaler"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Juniper SRX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "F5 BigIP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host based (KVM/Xen)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remote Access VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr "是"
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr "否"
+
+#. Tag: para
+#, no-c-format
+msgid "DNS/DHCP/User Data"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall"
+msgstr "é²ç«å¢"
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancing"
+msgstr "è´è½½å¹³è¡¡"
+
+#. Tag: para
+#, no-c-format
+msgid "Elastic IP"
+msgstr "å¼¹æ§ IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Elastic LB"
+msgstr "å¼¹æ§è´è½½å¹³è¡¡å¨"
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr "æº NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr "静态 NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr "ç«¯å£è½¬å"

@@ -1,0 +1,81 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2012-11-30 03:06+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Project"
+msgstr "创建一个新项目"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; administrators and domain administrators can create projects. If "
+"the global configuration parameter allow.user.create.projects is set to "
+"true, end users can also create projects."
+msgstr "&PRODUCT; （默认）系统管理员和与管理员能创建项目。如果全局变量allow.user.create.projects设置为true，终端用户也能创建项目。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "以管理员权限登录&PRODUCT; 界面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "在左边导航栏点击项目。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select view, click Projects."
+msgstr "在选择视图点击项目。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click New Project."
+msgstr "点击新建项目。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Give the project a name and description for display to users, then click "
+"Create Project."
+msgstr "为项目命名并添加描述，然后点击创建项目。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A screen appears where you can immediately add more members to the project. "
+"This is optional. Click Next when you are ready to move on."
+msgstr "会出现一个界面，你可以很快的添加更多成员到项目中，此步可选。当你准备好继续，点击下一步。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Save."
+msgstr "点击保存。"

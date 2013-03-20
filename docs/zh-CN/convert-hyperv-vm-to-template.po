@@ -1,0 +1,211 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Converting a Hyper-V VM to a Template"
+msgstr "转换Hyper-v 虚拟机为模板"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To convert a Hyper-V VM to a XenServer-compatible &PRODUCT; template, you "
+"will need a standalone XenServer host with an attached NFS VHD SR. Use "
+"whatever XenServer version you are using with &PRODUCT;, but use XenCenter "
+"5.6 FP1 or SP2 (it is backwards compatible to 5.6). Additionally, it may "
+"help to have an attached NFS ISO SR."
+msgstr "要转换的Hyper-V虚拟机到的XenServer兼容&PRODUCT;模板，您将需要一个独立的XenServer主机连接的NFS VHD的SR。使用任何&PRODUCT支持的XenServer版本，单必须是XenCenter5.6 FP1或SP2(它是向后兼容5.6)。此外，它可以帮助你瓜子一个NFS ISO SR。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For Linux VMs, you may need to do some preparation in Hyper-V before trying "
+"to get the VM to work in XenServer. Clone the VM and work on the clone if "
+"you still want to use the VM in Hyper-V. Uninstall Hyper-V Integration "
+"Components and check for any references to device names in /etc/fstab:"
+msgstr "对于linux虚拟机，在你使用XenServer中虚拟机进行工作之前，需要为虚拟化做一些准备工作。克隆虚拟机，并且如果你还打算在hyper-v中使用虚拟机。需要卸载hyper-v集组件，同时检查在/etc/fstab中的相关设备"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From the linux_ic/drivers/dist directory, run make uninstall (where "
+"\"linux_ic\" is the path to the copied Hyper-V Integration Components "
+"files)."
+msgstr "从linux_ic/驱动器/ dist目录中，运行卸载(其中的“linux_ic”是复制的Hyper-V的集成组件文件的路径)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restore the original initrd from backup in /boot/ (the backup is named "
+"*.backup0)."
+msgstr "在/ boot /(备份是名为*。backup0)从备份中恢复原来的initrd。"
+
+#. Tag: para
+#, no-c-format
+msgid "Remove the \"hdX=noprobe\" entries from /boot/grub/menu.lst."
+msgstr "从/boot/grub/menu.lst.中移除存在的\"hdX=noprobe\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Check /etc/fstab for any partitions mounted by device name. Change those "
+"entries (if any) to mount by LABEL or UUID. You can get that information "
+"with the blkid command."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The next step is make sure the VM is not running in Hyper-V, then get the "
+"VHD into XenServer. There are two options for doing this."
+msgstr "下一步是确保在Hyper-V的虚拟机没有运行，接着应用VHD到XenServer。这里包含有两个选项。"
+
+#. Tag: para
+#, no-c-format
+msgid "Option one:"
+msgstr "选项1："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Import the VHD using XenCenter. In XenCenter, go to Tools&gt;Virtual "
+"Appliance Tools&gt;Disk Image Import."
+msgstr "通过xencenter导入VHD, 工具   虚拟应用工具  磁盘镜像导入"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VHD, then click Next."
+msgstr "选择 VHD,点击 下一步"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Name the VM, choose the NFS VHD SR under Storage, enable \"Run Operating "
+"System Fixups\" and choose the NFS ISO SR."
+msgstr "为vm命名，选择存储下面的NFS VHD SR,选中 “运行操作系统修复”，并且选择NFS ISO SR"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next, then Finish. A VM should be created."
+msgstr "点击下一步 完成。完成虚拟机创建"
+
+#. Tag: para
+#, no-c-format
+msgid "Option two:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run XenConvert, under From choose VHD, under To choose XenServer. Click "
+"Next."
+msgstr "运行 XenConvert ,选择 VHD,选择 XenServer,点击下一步"
+
+#. Tag: para
+#, no-c-format
+msgid "Input the XenServer host info, then click Next."
+msgstr "输入XenServer主机信息，点击下一步"
+
+#. Tag: para
+#, no-c-format
+msgid "Name the VM, then click Next, then Convert. A VM should be created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you have a VM created from the Hyper-V VHD, prepare it using the "
+"following steps:"
+msgstr "一旦你完成从hyper-v VHD到虚拟机的创建，准备使用以下步骤："
+
+#. Tag: para
+#, no-c-format
+msgid "Boot the VM, uninstall Hyper-V Integration Services, and reboot."
+msgstr "启动虚拟机，卸载Hyper-V集成服务，并重新启动"
+
+#. Tag: para
+#, no-c-format
+msgid "Install XenServer Tools, then reboot."
+msgstr "安装XenServer的工具，然后重新启动。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Prepare the VM as desired. For example, run sysprep on Windows VMs. See "
+"<xref linkend=\"create-windows-template\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Either option above will create a VM in HVM mode. This is fine for Windows "
+"VMs, but Linux VMs may not perform optimally. Converting a Linux VM to PV "
+"mode will require additional steps and will vary by distribution."
+msgstr "以上任一选项将创建一个VM在HVM模式。为Windows虚拟机这是很好的，但Linux的虚拟机可能无法达到最佳性能。转换的Linux虚拟机，以PV模式，对于不同的发行版本将需要额外的步骤会 。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Shut down the VM and copy the VHD from the NFS storage to a web server; for "
+"example, mount the NFS share on the web server and copy it, or from the "
+"XenServer host use sftp or scp to upload it to the web server."
+msgstr "关闭虚拟机，从NFS存储拷贝虚拟到一个web服务器；比如，在web服务器上挂载NFS共享然后拷贝它，或者是在其他XenServer逐渐向使用sftp或scp上传到web服务器"
+
+#. Tag: para
+#, no-c-format
+msgid "In &PRODUCT;, create a new template using the following values:"
+msgstr "在&PRODUCT中;使用以下值创建模板"
+
+#. Tag: para
+#, no-c-format
+msgid "URL. Give the URL for the VHD"
+msgstr "URL,提供VHD的url"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV "
+"(32-bit) or Other PV (64-bit). This choice is available only for XenServer."
+msgstr "os 类型，使用相应的os。对于centos的pv模式，选择 其他PV(32-位)或者其他PV(64-位)。这个选项只能在Xenserver上使用"
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor. XenServer"
+msgstr "Hypervisor. XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "Format. VHD"
+msgstr "格式化，VHD"
+
+#. Tag: para
+#, no-c-format
+msgid "The template will be created, and you can create instances from it."
+msgstr "这个模板将被创建，你可以通过它来创建实例"

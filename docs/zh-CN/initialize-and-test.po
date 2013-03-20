@@ -1,0 +1,143 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# yuanshuai <yuanshuai.develop@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Initialize and Test"
+msgstr "初始化和测试"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After everything is configured, &PRODUCT; will perform its initialization. "
+"This can take 30 minutes or more, depending on the speed of your network. "
+"When the initialization has completed successfully, the administrator's "
+"Dashboard should be displayed in the &PRODUCT; UI."
+msgstr "所有内容配置好之后，执行初始化。根据你的网络速度，大概花费30分钟或更长时间。当初始化成功执行之后，管理面板会在&PRODUCT; UI中显示。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Verify that the system is ready. In the left navigation bar, select "
+"Templates. Click on the CentOS 5.5 (64bit) no Gui (KVM) template. Check to "
+"be sure that the status is \"Download Complete.\" Do not proceed to the next"
+" step until this status is displayed."
+msgstr "系统验证完成后，在左边的导航栏，选择模版，点击‘ CentOS 5.5 (64bit) no Gui (KVM) template’，在下载完成前不要做下一步操作。"
+
+#. Tag: para
+#, no-c-format
+msgid "Go to the Instances tab, and filter by My Instances."
+msgstr "进入‘实例’标签，查看我的实例。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Instance and follow the steps in the wizard."
+msgstr "点击添加实例，进入导航。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone you just added."
+msgstr "选择你添加的区域。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the template selection, choose the template to use in the VM. If this is "
+"a fresh installation, likely only the provided CentOS template is available."
+msgstr "在选择模版中，选择要在虚拟机中使用的模版，如果是新安装的系统，只有CentOS模版供选择。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select a service offering. Be sure that the hardware you have allows "
+"starting the selected service offering."
+msgstr "选择计算方案，确定硬件环境允许启动你选择的计算方案。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In data disk offering, if desired, add another data disk. This is a second "
+"volume that will be available to but not mounted in the guest. For example, "
+"in Linux on XenServer you will see /dev/xvdb in the guest after rebooting "
+"the VM. A reboot is not required if you have a PV-enabled OS kernel in use."
+msgstr "在磁盘方案中，如果需要，添加另一个数据磁盘。第二个卷可能不会挂载在虚拟机上。例如：在XenServer的Linux下重启后你会看到/dev/xvdb。如果使用PV-enabled 的操作系统内核，则不需要重启。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In default network, choose the primary network for the guest. In a trial "
+"installation, you would have only one option here."
+msgstr "在默认网络，为客户虚拟机选择主要网络。在试用安装中，在这里只有一个选项。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Optionally give your VM a name and a group. Use any descriptive text you "
+"would like."
+msgstr "任意的为虚拟机添加名称和组。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click Launch VM. Your VM will be created and started. It might take some "
+"time to download the template and complete the VM startup. You can watch the"
+" VMâ€™s progress in the Instances screen."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To use the VM, click the View Console button. <inlinemediaobject> "
+"<imageobject><imagedata fileref=\"./images/console-icon.png\" "
+"/></imageobject> <textobject><phrase>ConsoleButton.png: button to launch a "
+"console</phrase></textobject> </inlinemediaobject>"
+msgstr "使用虚拟机，点击查看按钮<inlinemediaobject> <imageobject><imagedata fileref=\"./images/console-icon.png\" /></imageobject> <textobject><phrase>ConsoleButton.png: button to launch a console</phrase></textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information about using VMs, including instructions for how to "
+"allow incoming network traffic to the VM, start, stop, and delete VMs, and "
+"move a VM from one host to another, see Working With Virtual Machines in the"
+" Administratorâ€™s Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Congratulations! You have successfully completed a &PRODUCT; Installation."
+msgstr "恭喜你，你成功完成了 &PRODUCT;的安装"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you decide to grow your deployment, you can add more hosts, primary "
+"storage, zones, pods, and clusters."
+msgstr "如果你决定增加你的部署，你可以增加更多的主机，主存储，区域，机架和集群"

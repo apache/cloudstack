@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# RoyalYang <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-31 05:38+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "HA-Enabled Virtual Machines"
+msgstr "开启了高可用特性的虚拟机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The user can specify a virtual machine as HA-enabled. By default, all "
+"virtual router VMs and Elastic Load Balancing VMs are automatically "
+"configured as HA-enabled. When an HA-enabled VM crashes, &PRODUCT; detects "
+"the crash and restarts the VM automatically within the same Availability "
+"Zone. HA is never performed across different Availability Zones. &PRODUCT; "
+"has a conservative policy towards restarting VMs and ensures that there will"
+" never be two instances of the same VM running at the same time. The "
+"Management Server attempts to start the VM on another Host in the same "
+"cluster."
+msgstr "用户可以给虚拟机制定开启高可用特性。默认情况下所有的虚拟路由虚拟机负载均衡虚拟机自动开启了高可用特性。当&PRODUCT;检测到开启了高可用特性的虚拟机崩溃时将会在相同的可用资源与中自动重新启动该虚拟机。高可用特性不会跨资源域执行。&PRODUCT; 采用比较保守的方式重启虚拟机，以确使不会同时运行两个相同的实例。管理服务器会尝试在本季群的另一台主机上开启该虚拟机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"HA features work with iSCSI or NFS primary storage. HA with local storage is"
+" not supported."
+msgstr "高可用特性只在使用iSCSI和NFS做主存储的才可以使用。不支持使用本地存储作为主存储的高可用。"

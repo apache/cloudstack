@@ -1,0 +1,49 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <tiansiyuan@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2012-12-19 12:10+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Guest Network"
+msgstr "宾客网络"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a &PRODUCT; cloud, guest VMs can communicate with each other using shared"
+" infrastructure with the security and user perception that the guests have a"
+" private LAN."
+msgstr "在一个 &PRODUCT; 云中，宾客虚拟机能够使用共享的基础设施彼此安全地通信，从用户的角度看来，宾客虚拟机在一个局域网>内。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; virtual router is the main component providing networking "
+"features for guest traffic."
+msgstr "&PRODUCT; 虚拟路由器是为宾客虚拟机通信提供联网功能的主要部份。"

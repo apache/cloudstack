@@ -1,0 +1,116 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# yuanshuai <yuanshuai.develop@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the Management Server on the First Host"
+msgstr "在第一台主机上安装管理服务器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The first step in installation, whether you are installing the Management "
+"Server on one host or many, is to install the software on a single node."
+msgstr "安装的第一步，不论你在一台或多台主机上安装管理服务器，在一个单机上安装这些软件。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are planning to install the Management Server on multiple nodes for "
+"high availability, do not proceed to the additional nodes yet. That step "
+"will come later."
+msgstr "如果你计划为了高可用在多个节点安装管理服务器，目前不要进行添加其他节点，这个会在后面的步骤中进行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; Management server can be installed using either RPM or DEB "
+"packages. These packages will depend on everything you need to run the "
+"Management server."
+msgstr "&PRODUCT;管理服务器可以用RMP或者DEB包来安装，这些包会依赖运行管理服务器的所有需要的东西。"
+
+#. Tag: title
+#, no-c-format
+msgid "Install on CentOS/RHEL"
+msgstr "在CentOS/RHEL上安装"
+
+#. Tag: para
+#, no-c-format
+msgid "We start by installing the required packages:"
+msgstr "我们开始安装需要的软件包："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install cloud-client"
+msgstr "yum install cloud-client"
+
+#. Tag: title
+#, no-c-format
+msgid "Install on Ubuntu"
+msgstr "在ubuntu上安装"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install cloud-client"
+msgstr "apt-get install cloud-client"
+
+#. Tag: title
+#, no-c-format
+msgid "Downloading vhd-util"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This procedure is required only for installations where XenServer is "
+"installed on the hypervisor hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before setting up the Management Server, download vhd-util from <ulink "
+"url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-"
+"util</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is RHEL or CentOS, copy vhd-util to "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is Ubuntu, copy vhd-util to "
+"/usr/lib/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr ""

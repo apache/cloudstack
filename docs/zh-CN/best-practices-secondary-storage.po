@@ -1,0 +1,54 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 18:35+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Best Practices for Secondary Storage"
+msgstr "二级存储的最佳实践"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each Zone can have one or more secondary storage servers. Multiple secondary"
+" storage servers provide increased scalability to the system."
+msgstr "每个区域可以有一个或多个二级存储服务器。多个二级存储服务器为系统提供更高的可扩展性。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Secondary storage has a high read:write ratio and is expected to consist of "
+"larger drives with lower IOPS than primary storage."
+msgstr "二级存储具有较高的阅读：写比并预期包括带有较以及存储低IOPS的较大的驱动器。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that nothing is stored on the server. Adding the server to &PRODUCT; "
+"will destroy any existing data."
+msgstr ""

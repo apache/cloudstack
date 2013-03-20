@@ -1,0 +1,135 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Template from an Existing Virtual Machine"
+msgstr "通过已存在的虚拟机创建模板"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you have at least one VM set up in the way you want, you can use it as "
+"the prototype for other VMs."
+msgstr "当你已经有了一台安妮想法已经配置好的虚拟机，你就能以他为原型创建别的虚拟机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create and start a virtual machine using any of the techniques given in "
+"<xref linkend=\"creating-vms\" />."
+msgstr "使用<xref linkend=\"creating-vms\" />给出的方法创建并且开启一个虚拟机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make any desired configuration changes on the running VM, then click Stop."
+msgstr "在虚拟机中做好需要的配置然后点击按钮关闭该虚拟机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Wait for the VM to stop. When the status shows Stopped, go to the next step."
+msgstr "等待虚拟机关闭。当虚拟机状态显示为“已停止”，执行下一步。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create Template and provide the following:"
+msgstr "点击创建模板并填写如下内容："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name and Display Text</emphasis>. These will be "
+"shown in the UI, so choose something descriptive."
+msgstr "<emphasis role=\"bold\">名字和显示文本</emphasis>. 这些会在网页用户界面显示，所以建议写一些描述信息。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>. This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following."
+msgstr "<emphasis role=\"bold\">系统类型</emphasis>。这个选项有助于&PRODUCT; 和虚拟机软件执行正确的操作和提高来宾的性能。选择以下其中一个。"
+
+#. Tag: para
+#, no-c-format
+msgid "If the operating system of the stopped VM is listed, choose it."
+msgstr "如果已停止虚拟机的系统在列表中就选择。"
+
+#. Tag: para
+#, no-c-format
+msgid "If the OS type of the stopped VM is not listed, choose Other."
+msgstr "如果已停止虚拟机系统类型不在列表中就选择其他。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to boot from this template in PV mode, choose Other PV (32-bit) "
+"or Other PV (64-bit). This choice is available only for XenServere:"
+msgstr "如果你打算以PV模式启动该模板，请选择其他PV（32位）或其他PV（64位）。这个选项只对XenServer有效："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note: Generally you should not choose an older version of the OS than the "
+"version in the image. For example, choosing CentOS 5.4 to support a CentOS "
+"6.2 image will in general not work. In those cases you should choose Other."
+msgstr "注意：一般情况下你不应该选择一个比你镜像中系统地的版本。比如选用CentOS 5.4来支持CentOS6.2的镜像会导致启动失败。这种情况下你应该选择其他。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>. Choose Yes to make this template "
+"accessible to all users of this &PRODUCT; installation. The template will "
+"appear in the Community Templates list. See <xref linkend=\"private-public-"
+"template\" />."
+msgstr "<emphasis role=\"bold\">公用</emphasis>.选择是使模板对&PRODUCT; installation所有用户可见。该模板会在社区模板中出现。详情请见 <xref linkend=\"private-public-template\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password Enabled</emphasis>. Choose Yes if your "
+"template has the &PRODUCT; password change script installed. See <xref "
+"linkend=\"add-password-management-to-templates\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "点击添加。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new template will be visible in the Templates section when the template "
+"creation process has been completed. The template is then available when "
+"creating a new VM."
+msgstr ""

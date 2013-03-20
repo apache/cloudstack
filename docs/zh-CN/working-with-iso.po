@@ -1,0 +1,69 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-13 03:26+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with ISOs"
+msgstr "使用iso文件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports ISOs and their attachment to guest VMs. An ISO is a read-"
+"only file that has an ISO/CD-ROM style file system. Users can upload their "
+"own ISOs and mount them on their guest VMs."
+msgstr "&PRODUCT;支持iso并加载到客户vm中。一个iso文件是包含iso/cd-rom格式文件系统的只读文件。用户可以上传自己的iso文件，  并挂载到vm中"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISOs are uploaded based on a URL. HTTP is the supported protocol. Once the "
+"ISO is available via HTTP specify an upload URL such as "
+"http://my.web.server/filename.iso."
+msgstr "iso文件通过url方法上传。HTTP支持这个这个协议。你可以通过以下方式访问通过http方式发布的iso.比如http://my.web.server/filename.iso."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISOs may be public or private, like templates.ISOs are not hypervisor-"
+"specific. That is, a guest on vSphere can mount the exact same image that a "
+"guest on KVM can mount."
+msgstr "iso文件就像模板一样可以是共有或者私有. iso不是一个定制的hypersior,用户可以在vSphere和KVM已同样的方式挂载"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISO images may be stored in the system and made available with a privacy "
+"level similar to templates. ISO images are classified as either bootable or "
+"not bootable. A bootable ISO image is one that contains an OS image. "
+"&PRODUCT; allows a user to boot a guest VM off of an ISO image. Users can "
+"also attach ISO images to guest VMs. For example, this enables installing PV"
+" drivers into Windows. ISO images are not hypervisor-specific."
+msgstr "iso镜像存储在系统中，配置和模板系统的相似的隐私级别。iso镜像被分为可引导和不可引导。一个可引导iso镜像包含一个OS镜像。&PRODUCT;允许在不使用iso镜像时候启动客户vm.\n用户也可以在客户vm中挂载iso镜像。例如，在windows中安装pv驱动。iso镜像不是一个定制的hypervisor"

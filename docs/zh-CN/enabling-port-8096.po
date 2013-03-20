@@ -1,0 +1,66 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-07 04:44+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling Port 8096"
+msgstr "启用8096端口"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Port 8096, which allows API calls without authentication, is closed and "
+"disabled by default on any fresh 3.0.1 installations. You can enable 8096 "
+"(or another port) for this purpose as follows:"
+msgstr "8096端口, 不需要验证即可进行API调用. 在所有的3.0.1版本全新安装时, 这个端口都是默认被禁用的. 你可以通过下面的设置启用8096(或使用其它端口号):"
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that the first Management Server is installed and running."
+msgstr "确保第一个管理服务器安装并运行."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set the global configuration parameter integration.api.port to the desired "
+"port."
+msgstr "设置你期望的端口号到全局配置参数 integration.api.port."
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr "重启管理服务器."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Management Server host machine, create an iptables rule allowing "
+"access to that port."
+msgstr "在管理服务器的节点上, 创建一个防火墙规则以便允许访问这个端口."

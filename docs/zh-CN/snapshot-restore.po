@@ -1,0 +1,43 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-12-20 10:00+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Snapshot Restore"
+msgstr "快照恢复"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There are two paths to restoring snapshots. Users can create a volume from "
+"the snapshot. The volume can then be mounted to a VM and files recovered as "
+"needed. Alternatively, a template may be created from the snapshot of a root"
+" disk. The user can then boot a VM from this template to effect recovery of "
+"the root disk."
+msgstr "有两种方式恢复快照。用户能够从快照中创建一个卷。卷可以随后被装载到虚拟机上并且文件根据需要被复原。另一种方式是，模板可以从一个root 盘的快照创建。用户能够从这个模板启动虚拟机从而实际上复原root盘。"

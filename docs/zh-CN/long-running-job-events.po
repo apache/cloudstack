@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-04 04:36+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Long Running Job Events"
+msgstr "长时间运行的任务事件"
+
+#. Tag: para
+#, no-c-format
+msgid "The events log records three types of standard events."
+msgstr "事件日志记录了三种类型的标志事件."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"INFO. This event is generated when an operation has been successfully "
+"performed."
+msgstr "INFO. 当一个操作成功执行时会产生这样的事件."
+
+#. Tag: para
+#, no-c-format
+msgid "WARN. This event is generated in the following circumstances."
+msgstr "WARN. 这个事件在以下情况下产生."
+
+#. Tag: para
+#, no-c-format
+msgid "When a network is disconnected while monitoring a template download."
+msgstr "当一个模板正在下载时检测到网络断开."
+
+#. Tag: para
+#, no-c-format
+msgid "When a template download is abandoned."
+msgstr "当放弃一个模板的下载."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When an issue on the storage server causes the volumes to fail over to the "
+"mirror storage server."
+msgstr "一个存储服务器上的错误导致卷故障无法转移到另一个镜像的存储服务器."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ERROR. This event is generated when an operation has not been successfully "
+"performed"
+msgstr "ERROR. 当一个操作没有被成功执行时会产生这个事件."

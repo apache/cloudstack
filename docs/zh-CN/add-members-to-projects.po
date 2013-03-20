@@ -1,0 +1,54 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-04 00:59+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Members to a Project"
+msgstr "添加成员到一个项目"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New members can be added to a project by the project’s administrator, the "
+"domain administrator of the domain where the project resides or any parent "
+"domain, or the &PRODUCT; root administrator. There are two ways to add "
+"members in &PRODUCT;, but only one way is enabled at a time:"
+msgstr "新的成员可以由，项目所在的域或任何父域的域管理员，或&PRODUCT;的root管理员，项目的管理员添加到项目中。在&PRODUCT; 中，有两种添加成员的方式，但在一个时刻只有一种可用："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If invitations have been enabled, you can send invitations to new members."
+msgstr "如果邀请被设置，你可以给新成员发送邀请。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If invitations are not enabled, you can add members directly through the UI."
+msgstr "如果邀请没有被设置，你可以通过UI直接添加成员。"

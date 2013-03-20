@@ -1,0 +1,68 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-05 10:15+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Removing XenServer and KVM Hosts"
+msgstr "移除XenServer和KVM宿主机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A node cannot be removed from a cluster until it has been placed in "
+"maintenance mode. This will ensure that all of the VMs on it have been "
+"migrated to other Hosts. To remove a Host from the cloud:"
+msgstr "主机进入维护模式才能在集群中移除。该宿主机上所有的虚拟机已经迁移到其他宿主机上之后才能进入维护模式。从cloud中移除宿主机："
+
+#. Tag: para
+#, no-c-format
+msgid "Place the node in maintenance mode."
+msgstr "将节点置于维护模式。"
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"scheduled-maintenance-maintenance-mode-hosts\" />."
+msgstr "详见 <xref linkend=\"scheduled-maintenance-maintenance-mode-hosts\" />."
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM, stop the cloud-agent service."
+msgstr "如果是使用KVM的宿主机你需要停止cloud-agent 服务。"
+
+#. Tag: para
+#, no-c-format
+msgid "Use the UI option to remove the node."
+msgstr "点击用户界面中的删除按钮删除节点。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Then you may power down the Host, re-use its IP address, re-install it, etc"
+msgstr "然后你就可以关闭这台已被移除的宿主机，重新使用它的IP，重装它，等等。"

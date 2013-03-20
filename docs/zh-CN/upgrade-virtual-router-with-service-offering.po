@@ -1,0 +1,71 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Richard Liu <tanthalas510@hotmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrading a Virtual Router with System Service Offerings"
+msgstr "使用系统计算服务方案升级虚拟路由器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When &PRODUCT; creates a virtual router, it uses default settings which are "
+"defined in a default system service offering. See <xref linkend=\"system-"
+"service-offerings\" />. All the virtual routers in a single guest network "
+"use the same system service offering. You can upgrade the capabilities of "
+"the virtual router by creating and applying a custom system service "
+"offering."
+msgstr "当 &PRODUCT; 创建一个虚拟路由器，它是按照默认的系统计算服务方案进行的设置。参见 <xref linkend=\"system-service-offerings\" />。所有在单独客户网络中的虚拟路由器都使用相同的系统计算服务方案。可以通过新建和使用自定义的系统计算服务方案来提高虚拟路由器的性能。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Define your custom system service offering. See <xref linkend=\"creating-"
+"system-service-offerings\" />. In System VM Type, choose Domain Router."
+msgstr "定义定制的系统计算服务方案，参见<xref linkend=\"creating-system-service-offerings\" />。在系统虚拟机类型中，选择域路由器。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Associate the system service offering with a network offering. <phrase "
+"condition=\"install\">See \"Creating Network Offerings\" in the "
+"Administrator's Guide.</phrase> <phrase condition=\"admin\">See <xref "
+"linkend=\"creating-network-offerings\" />.</phrase>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Apply the network offering to the network where you want the virtual routers"
+" to use the new system service offering. If this is a new network, follow "
+"the steps in Adding an Additional Guest Network on page 66. To change the "
+"service offering for existing virtual routers, follow the steps in <xref "
+"linkend=\"change-network-offering-on-guest-network\" />."
+msgstr "将网络服务方案应用到使用新系统计算服务方案的虚拟路由器的网络上。如果这是一个新的网络，请根据66页的添加额外客户网络的步骤操作。想要改变已生成的虚拟路由器的计算服务方案，请根据以下步骤操作<xref linkend=\"change-network-offering-on-guest-network\" />。"

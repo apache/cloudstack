@@ -1,0 +1,411 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 18:33+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API commands in 3.0"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForSystemVm"
+msgstr "changeServiceForSystemVm"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Changes the service offering for a system VM (console proxy or secondary "
+"storage). The system VM must be in a \"Stopped\" state for this command to "
+"take effect."
+msgstr "修改系统虚拟机的服务提供方案（控制台代理或者二级存储虚拟机）。修改的虚拟即必须处于“已停止”状态时该命令才会生效。"
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.1"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"assignVirtualMachine (Move a user VM to another user under same domain.)"
+msgstr "assignVirtualMachine （将一台用户虚拟机移动到与其同域的另一个用户下。）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"restoreVirtualMachine (Restore a VM to original template or specific "
+"snapshot)"
+msgstr "restoreVirtualMachine （恢复虚拟机到原始模板或指定的快照状态）"
+
+#. Tag: para
+#, no-c-format
+msgid "createLBStickinessPolicy (Creates a Load Balancer stickiness policy )"
+msgstr "createLBStickinessPolicy （创建负载均衡粘性策略）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteLBStickinessPolicy (Deletes a LB stickiness policy.)"
+msgstr "deleteLBStickinessPolicy （删除一个负载均衡黏性策略）"
+
+#. Tag: para
+#, no-c-format
+msgid "listLBStickinessPolicies (Lists LBStickiness policies.)"
+msgstr "listLBStickinessPolicies （列出负载均衡黏性策略）"
+
+#. Tag: para
+#, no-c-format
+msgid "ldapConfig (Configure the LDAP context for this site.)"
+msgstr "ldapConfig （为此站点设置LDAP上下文）"
+
+#. Tag: para
+#, no-c-format
+msgid "addSwift (Adds Swift.)"
+msgstr "addSwift （添加Swift）"
+
+#. Tag: para
+#, no-c-format
+msgid "listSwifts (List Swift.)"
+msgstr "listSwifts (列出Swift)"
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVolume (Migrate volume)"
+msgstr "migrateVolume （迁移卷）"
+
+#. Tag: para
+#, no-c-format
+msgid "updateStoragePool (Updates a storage pool.)"
+msgstr "updateStoragePool （更新存储池）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"authorizeSecurityGroupEgress (Authorizes a particular egress rule for this "
+"security group)"
+msgstr "authorizeSecurityGroupEgress （为此安全组授权一个特定的出口规则）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"revokeSecurityGroupEgress (Deletes a particular egress rule from this "
+"security group)"
+msgstr "revokeSecurityGroupEgress (删除一个特定的安全组出口规则)"
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkOffering (Creates a network offering.)"
+msgstr "createNetworkOffering （创建网络提供方案）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkOffering (Deletes a network offering.)"
+msgstr "deleteNetworkOffering （删除网络提供方案）"
+
+#. Tag: para
+#, no-c-format
+msgid "createProject (Creates a project)"
+msgstr "createProject （创建项目）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProject (Deletes a project)"
+msgstr "deleteProject （删除项目）"
+
+#. Tag: para
+#, no-c-format
+msgid "updateProject (Updates a project)"
+msgstr "updateProject （更新项目）"
+
+#. Tag: para
+#, no-c-format
+msgid "activateProject (Activates a project)"
+msgstr "activateProject （激活项目）"
+
+#. Tag: para
+#, no-c-format
+msgid "suspendProject (Suspends a project)"
+msgstr "suspendProject （挂起项目）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listProjects (Lists projects and provides detailed information for listed "
+"projects)"
+msgstr "listProjects （列出项目详细信息）"
+
+#. Tag: para
+#, no-c-format
+msgid "addAccountToProject (Adds acoount to a project)"
+msgstr "addAccountToProject （向项目中添加账户）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteAccountFromProject (Deletes account from the project)"
+msgstr "deleteAccountFromProject （从项目中删除账户）"
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectAccounts (Lists project's accounts)"
+msgstr "listProjectAccounts （列出项目中的账户）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listProjectInvitations (Lists an account's invitations to join projects)"
+msgstr "listProjectInvitations （列出一个用户的邀请加入项目的信息）"
+
+#. Tag: para
+#, no-c-format
+msgid "updateProjectInvitation (Accepts or declines project invitation)"
+msgstr "updateProjectInvitation （更新项目邀请信息）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProjectInvitation (Deletes a project invitation)"
+msgstr "deleteProjectInvitation （删除项目邀请信息）"
+
+#. Tag: para
+#, no-c-format
+msgid "updateHypervisorCapabilities (Updates a hypervisor capabilities.)"
+msgstr "updateHypervisorCapabilities （更新虚拟机能力）"
+
+#. Tag: para
+#, no-c-format
+msgid "listHypervisorCapabilities (Lists all hypervisor capabilities.)"
+msgstr "listHypervisorCapabilities （列出所有宿主机能力）"
+
+#. Tag: para
+#, no-c-format
+msgid "createPhysicalNetwork (Creates a physical network)"
+msgstr "createPhysicalNetwork（创建物理网络）"
+
+#. Tag: para
+#, no-c-format
+msgid "deletePhysicalNetwork (Deletes a Physical Network.)"
+msgstr "deletePhysicalNetwork （删除物理网络）"
+
+#. Tag: para
+#, no-c-format
+msgid "listPhysicalNetworks (Lists physical networks)"
+msgstr "listPhysicalNetworks （列出物理网络）"
+
+#. Tag: para
+#, no-c-format
+msgid "updatePhysicalNetwork (Updates a physical network)"
+msgstr "updatePhysicalNetwork （更新物理网络）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listSupportedNetworkServices (Lists all network services provided by "
+"&PRODUCT; or for the given Provider.)"
+msgstr "listSupportedNetworkServices （列出所有&PRODUCT; 或指定提供者所提供的网络服务）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"addNetworkServiceProvider (Adds a network serviceProvider to a physical "
+"network)"
+msgstr "addNetworkServiceProvider （向物理网络添加网络服务提供者）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkServiceProvider (Deletes a Network Service Provider.)"
+msgstr "deleteNetworkServiceProvider （删除网络服务提供者）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listNetworkServiceProviders (Lists network serviceproviders for a given "
+"physical network.)"
+msgstr "listNetworkServiceProviders （列出指定物理网络的网络服务提供者）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateNetworkServiceProvider (Updates a network serviceProvider of a "
+"physical network)"
+msgstr "updateNetworkServiceProvider （更新指定物理网络的网络服务提供者）"
+
+#. Tag: para
+#, no-c-format
+msgid "addTrafficType (Adds traffic type to a physical network)"
+msgstr "addTrafficType（向物理网络中添加流量类型）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTrafficType (Deletes traffic type of a physical network)"
+msgstr "deleteTrafficType （删除流量类型）"
+
+#. Tag: para
+#, no-c-format
+msgid "listTrafficTypes (Lists traffic types of a given physical network.)"
+msgstr "listTrafficTypes （列出指定网络的流量类型）"
+
+#. Tag: para
+#, no-c-format
+msgid "updateTrafficType (Updates traffic type of a physical network)"
+msgstr "updateTrafficType （更新指定网络的流量类型）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listTrafficTypeImplementors (Lists implementors of implementor of a network "
+"traffic type or implementors of all network traffic types)"
+msgstr "listTrafficTypeImplementors （列出网络流量实现者的实现者或所有网络流量的实现者）"
+
+#. Tag: para
+#, no-c-format
+msgid "createStorageNetworkIpRange (Creates a Storage network IP range.)"
+msgstr "createStorageNetworkIpRange （创建存储网络IP范围）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStorageNetworkIpRange (Deletes a storage network IP Range.)"
+msgstr "deleteStorageNetworkIpRange （删除存储网络IP范围）"
+
+#. Tag: para
+#, no-c-format
+msgid "listStorageNetworkIpRange (List a storage network IP range.)"
+msgstr "listStorageNetworkIpRange （列出存储网络IP范围）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateStorageNetworkIpRange (Update a Storage network IP range, only allowed"
+" when no IPs in this range have been allocated.)"
+msgstr "updateStorageNetworkIpRange （更新存储网络IP范围，只有当此范围内没有IP被分配的时候才允许使用此命令）"
+
+#. Tag: para
+#, no-c-format
+msgid "listUsageTypes (List Usage Types)"
+msgstr "listUsageTypes （列出使用类型）"
+
+#. Tag: para
+#, no-c-format
+msgid "addF5LoadBalancer (Adds a F5 BigIP load balancer device)"
+msgstr "addF5LoadBalancer （添加F5 负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "configureF5LoadBalancer (configures a F5 load balancer device)"
+msgstr "configureF5LoadBalancer （配置F5负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteF5LoadBalancer ( delete a F5 load balancer device)"
+msgstr "deleteF5LoadBalancer （删除F5负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancers (lists F5 load balancer devices)"
+msgstr "listF5LoadBalancers （列出F5负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listF5LoadBalancerNetworks (lists network that are using a F5 load balancer "
+"device)"
+msgstr "listF5LoadBalancerNetworks (列出使用F5负载均衡设备的网络)"
+
+#. Tag: para
+#, no-c-format
+msgid "addSrxFirewall (Adds a SRX firewall device)"
+msgstr "addSrxFirewall （添加一个SRX防火墙设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteSrxFirewall ( delete a SRX firewall device)"
+msgstr "deleteSrxFirewall （删除SRX防火墙设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewalls (lists SRX firewall devices in a physical network)"
+msgstr "listSrxFirewalls （删除SRX防火墙设备）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listSrxFirewallNetworks (lists network that are using SRX firewall device)"
+msgstr "listSrxFirewallNetworks（列出适用SRX防火墙设备的网络）"
+
+#. Tag: para
+#, no-c-format
+msgid "addNetscalerLoadBalancer (Adds a netscaler load balancer device)"
+msgstr "addNetscalerLoadBalancer （添加一个netscaler 负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetscalerLoadBalancer ( delete a netscaler load balancer device)"
+msgstr "deleteNetscalerLoadBalancer （删除一个netscaler 负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"configureNetscalerLoadBalancer (configures a netscaler load balancer device)"
+msgstr "configureNetscalerLoadBalancer （配置netscaler 负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancers (lists netscaler load balancer devices)"
+msgstr "listNetscalerLoadBalancers （列出netscaler 负载均衡设备）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listNetscalerLoadBalancerNetworks (lists network that are using a netscaler "
+"load balancer device)"
+msgstr "listNetscalerLoadBalancerNetworks （列出使用netscaler负载均衡设备的网络 ）"
+
+#. Tag: para
+#, no-c-format
+msgid "createVirtualRouterElement (Create a virtual router element.)"
+msgstr "createVirtualRouterElement(创建虚拟路由元素)"
+
+#. Tag: para
+#, no-c-format
+msgid "configureVirtualRouterElement (Configures a virtual router element.)"
+msgstr "configureVirtualRouterElement （配置虚拟路由元素）"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listVirtualRouterElements (Lists all available virtual router elements.)"
+msgstr "listVirtualRouterElements （列出虚拟路由元素）"

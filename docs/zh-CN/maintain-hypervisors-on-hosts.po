@@ -1,0 +1,61 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Maintaining Hypervisors on Hosts"
+msgstr "维护主机上的虚拟机管理器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When running hypervisor software on hosts, be sure all the hotfixes provided"
+" by the hypervisor vendor are applied. Track the release of hypervisor "
+"patches through your hypervisor vendor’s support channel, and apply patches "
+"as soon as possible after they are released. &PRODUCT; will not track or "
+"notify you of required hypervisor patches. It is essential that your hosts "
+"are completely up to date with the provided hypervisor patches. The "
+"hypervisor vendor is likely to refuse to support any system that is not up "
+"to date with patches."
+msgstr "在虚拟机管理器软件在主机上执行时，请确定已应用了由虚拟机软件提供商提供的全部补丁。时刻保持虚拟机管理器软件的更新。本产品不会追踪或提醒你虚拟机管理器软件的更新。保持虚拟机管理器软件的补丁最新很重要。虚拟机管理器提供商很可能对于未更新补丁的系统不提供支持。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr "缺乏最新补丁更新可能会导致数据和虚拟机丢失。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer) For more information, see <ulink "
+"url=\"http://docs.cloudstack.org/Knowledge_Base/Possible_VM_corruption_if_XenServer_Hotfix_is_not_Applied/Highly_Recommended_Hotfixes_for_XenServer_5.6_SP2\">Highly"
+" Recommended Hotfixes for XenServer in the &PRODUCT; Knowledge Base</ulink>."
+msgstr ""

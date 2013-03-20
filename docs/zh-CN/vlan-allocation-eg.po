@@ -1,0 +1,138 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-05 05:16+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VLAN Allocation Example"
+msgstr "VLAN分配实例"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"VLANs are required for public and guest traffic. The following is an example"
+" of a VLAN allocation scheme:"
+msgstr "VLAN对于公共流量及来宾流量是必需的. 下面的例子介绍VLAN的分配模型:"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN IDs"
+msgstr "VLAN ID"
+
+#. Tag: para
+#, no-c-format
+msgid "Traffic type"
+msgstr "流量类型"
+
+#. Tag: para
+#, no-c-format
+msgid "Scope"
+msgstr "èå´"
+
+#. Tag: para
+#, no-c-format
+msgid "less than 500"
+msgstr "小于500"
+
+#. Tag: para
+#, no-c-format
+msgid "Management traffic. Reserved for administrative purposes."
+msgstr "管理流量. 为管理保留"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; software can access this, hypervisors, system VMs."
+msgstr "&PRODUCT;自身可以访问这些, Hypervisor, 系统虚拟机等."
+
+#. Tag: para
+#, no-c-format
+msgid "500-599"
+msgstr "500-599"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN carrying public traffic."
+msgstr "VLAN携带公共流量."
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; accounts."
+msgstr "&PRODUCT;账号."
+
+#. Tag: para
+#, no-c-format
+msgid "600-799"
+msgstr "600-799"
+
+#. Tag: para
+#, no-c-format
+msgid "VLANs carrying guest traffic."
+msgstr "VLAN携带来宾流量"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; accounts. Account-specific VLAN is chosen from this pool."
+msgstr "&PRODUCT;账号. 账号指定VLAN从这个VLAN池里选取."
+
+#. Tag: para
+#, no-c-format
+msgid "800-899"
+msgstr "800-899"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; accounts. Account-specific VLAN chosen by &PRODUCT; admin to "
+"assign to that account."
+msgstr "&PRODUCT;账号. &PRODUCT;选取账号指定的VLAN, 管理员分配到指定的账号."
+
+#. Tag: para
+#, no-c-format
+msgid "900-999"
+msgstr "900-999"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN carrying guest traffic"
+msgstr "VLAN携带来宾流量"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; accounts. Can be scoped by project, domain, or all accounts."
+msgstr "&PRODUCT; 账号. 其范围可以是项目, 域或所有的账号."
+
+#. Tag: para
+#, no-c-format
+msgid "greater than 1000"
+msgstr "大于1000"
+
+#. Tag: para
+#, no-c-format
+msgid "Reserved for future use"
+msgstr "保留将来使用"

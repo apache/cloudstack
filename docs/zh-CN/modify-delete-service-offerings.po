@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-04 01:36+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Modifying or Deleting a Service Offering"
+msgstr "修改或删除服务提供"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Service offerings cannot be changed once created. This applies to both "
+"compute offerings and disk offerings."
+msgstr "服务提供一旦被创建，不能改变。这也适用于计算提供和磁盘提供。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A service offering can be deleted. If it is no longer in use, it is deleted "
+"immediately and permanently. If the service offering is still in use, it "
+"will remain in the database until all the virtual machines referencing it "
+"have been deleted. After deletion by the administrator, a service offering "
+"will not be available to end users that are creating new instances."
+msgstr "一个服务提供可以被删除。如果不再使用时，它立即并永久删除。如果服务提供仍然是在使用中，它会保留在数据库中，直到所有的虚拟机引用已被删除。管理员删除后，服务提供将不提供给创建新的实例的最终用户。"

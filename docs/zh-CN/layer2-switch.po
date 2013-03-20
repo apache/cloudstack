@@ -1,0 +1,66 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-05 15:02+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Layer-2 Switch"
+msgstr "层-2交换机（2层交换机）"
+
+#. Tag: para
+#, no-c-format
+msgid "The layer-2 switch is the access switching layer inside the pod."
+msgstr "在pod中层-2交换机提供接入层功能"
+
+#. Tag: para
+#, no-c-format
+msgid "It should trunk all VLANs into every computing host."
+msgstr "它通过trunk连接所有vlans中的计算主机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It should switch traffic for the management network containing computing and"
+" storage hosts. The layer-3 switch will serve as the gateway for the "
+"management network."
+msgstr "它为管理网络提供包含计算和存储主机的流量交换。层-3（三层）交换机将作为这个管理网络的网关。"
+
+#. Tag: title
+#, no-c-format
+msgid "Example Configurations"
+msgstr "配置实例"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section contains example configurations for specific switch models for "
+"pod-level layer-2 switching. It assumes VLAN management protocols such as "
+"VTP or GVRP have been disabled. The scripts must be changed appropriately if"
+" you choose to use VTP or GVRP."
+msgstr "这部分包含一个指定交换机模式为pod的层-2交换的配置实例。假定vlan管理协议比如vtp或者grvp已经被禁用。如果你使用了vtp或者gvrp下面的脚本必须做相应的修改。"

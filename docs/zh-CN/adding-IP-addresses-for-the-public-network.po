@@ -1,0 +1,94 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# RoyalYang <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-29 01:45+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding IP Addresses for the Public Network"
+msgstr "向公共网络中添加IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These instructions assume you have already logged in to the &PRODUCT; UI."
+msgstr "以下说明假设你已经登入了&PRODUCT; 用户界面。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the desired zone ."
+msgstr "在左侧导航栏选择基础设施。在资源域先点击查看更多，然后点击进入资源域修改的资源域。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr "点击网络标签。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Public node of the diagram, click Configure."
+msgstr "在图表的公共节点，点击配置。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP Ranges tab."
+msgstr "点击IP范围标签。"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information:"
+msgstr "填写以下内容。"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateway. The gateway in use for these IP addresses"
+msgstr "网关。欲添加IP的网关。"
+
+#. Tag: para
+#, no-c-format
+msgid "Netmask. The netmask associated with this IP range"
+msgstr "子网掩码。欲添加IP的子网掩码。"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN. The VLAN that will be used for public traffic"
+msgstr "VLAN。公共网络所使用的VLAN。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Start IP/End IP. A range of IP addresses that are assumed to be accessible "
+"from the Internet and will be allocated for access to guest networks."
+msgstr "开始和结束IP。将来分配用以联通来宾网络的能访问internet的IP范围。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "点击添加。"

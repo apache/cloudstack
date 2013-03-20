@@ -1,0 +1,188 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <cybeijing@gmail.com>, 2013.
+#   <szcyyf@hotmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:42+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Hypervisor Support for Primary Storage"
+msgstr "虚拟机平台对主存储的支持"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following table shows storage options and parameters for different "
+"hypervisors."
+msgstr "下表显示了针对不同虚拟机平台的存储选项和参数。"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere"
+msgstr "VMware vSphere"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer"
+msgstr "Citrix XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr "KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\"><emphasis role=\"bold\">Format for Disks, Templates,"
+" and Snapshots</emphasis></emphasis>"
+msgstr "<emphasis role=\"bold\"><emphasis role=\"bold\">磁盘格式,模板,和快照</emphasis></emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "VMDK"
+msgstr "VMDK"
+
+#. Tag: para
+#, no-c-format
+msgid "VHD"
+msgstr "VHD"
+
+#. Tag: para
+#, no-c-format
+msgid "QCOW2"
+msgstr "QCOW2"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">iSCSI support</emphasis>"
+msgstr "<emphasis role=\"bold\">支持 iSCSI</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "VMFS"
+msgstr "VMFS"
+
+#. Tag: para
+#, no-c-format
+msgid "Clustered LVM"
+msgstr "集群的逻辑卷(LVM)"
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Shared Mountpoint"
+msgstr "可以, 通过共享挂载点"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Fiber Channel support</emphasis>"
+msgstr "<emphasis role=\"bold\">支持 Fiber Channel</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Existing SR"
+msgstr "是，通过现有的存储空间。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">NFS support</emphasis>"
+msgstr "<emphasis role=\"bold\">NFS 支持</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Y"
+msgstr "是"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Local storage support</emphasis>"
+msgstr "<emphasis role=\"bold\">本地存储支持</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Storage over-provisioning</emphasis>"
+msgstr "<emphasis role=\"bold\">基于供应的存储</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "NFS and iSCSI"
+msgstr "NFS 和 iSCSI"
+
+#. Tag: para
+#, no-c-format
+msgid "NFS"
+msgstr "NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer uses a clustered LVM system to store VM images on iSCSI and Fiber "
+"Channel volumes and does not support over-provisioning in the hypervisor. "
+"The storage server itself, however, can support thin-provisioning. As a "
+"result the &PRODUCT; can still support storage over-provisioning by running "
+"on thin-provisioned storage volumes."
+msgstr "XenServer在iSCSI和光纤通道存储卷使用集群的LVM系统，而不支持预留空间特性。但是，存储服务器本身可以支持自动精简供应（thin-provisioning）。所以，其结果是&PRODUCT;在自动精简供应的存储卷上仍然可以实现预留空间的特性。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM supports \"Shared Mountpoint\" storage. A shared mountpoint is a file "
+"system path local to each server in a given cluster. The path must be the "
+"same across all Hosts in the cluster, for example /mnt/primary1. This shared"
+" mountpoint is assumed to be a clustered filesystem such as OCFS2. In this "
+"case the &PRODUCT; does not attempt to mount or unmount the storage as is "
+"done with NFS. The &PRODUCT; requires that the administrator insure that the"
+" storage is available"
+msgstr "KVM支持“共享挂载点”存储。在一个给定的集群里，共享挂载点是每个服务器的一个文件系统路径。这个路径对所有集群内的主机都必须是一致的，例如：/mnt/primary1。此共享挂载点假定是一个集群文件系统，比如OCFS2。在此情况下， &PRODUCT;不会像对待NFS那样挂载或者卸载存储。 &PRODUCT;要求管理员保证存储已经可用。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With NFS storage, &PRODUCT; manages the overprovisioning. In this case the "
+"global configuration parameter storage.overprovisioning.factor controls the "
+"degree of overprovisioning. This is independent of hypervisor type."
+msgstr "&PRODUCT;管理NFS存储的预留空间特性。在这种情况下，有一个全局参数storage.overprovisioning.factor来控制预留空间的程度。这与虚拟机管理器的类型无关。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Local storage is an option for primary storage for vSphere, XenServer, and "
+"KVM. When the local disk option is enabled, a local disk storage pool is "
+"automatically created on each host. To use local storage for the System "
+"Virtual Machines (such as the Virtual Router), set "
+"system.vm.use.local.storage to true in global configuration."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports multiple primary storage pools in a Cluster. For example,"
+" you could provision 2 NFS servers in primary storage. Or you could "
+"provision 1 iSCSI LUN initially and then add a second iSCSI LUN when the "
+"first approaches capacity."
+msgstr "&PRODUCT;支持在一个集群中使用多个主存储池。例如，你能在主存储中准备2个NFS服务器，或者最初可以准备一个iSCSI LUN，然后在第一个容量将满时添加第二个iSCSI LUN。"

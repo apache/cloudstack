@@ -1,0 +1,112 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <szcyyf@hotmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-11-30 02:13+0000\n"
+"Last-Translator: AnAnSS <szcyyf@hotmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Log In to the UI"
+msgstr "登陆到用户界面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides a web-based UI that can be used by both administrators "
+"and end users. The appropriate version of the UI is displayed depending on "
+"the credentials used to log in. The UI is available in popular browsers "
+"including IE7, IE8, IE9, Firefox 3.5+, Firefox 4, Safari 4, and Safari 5. "
+"The URL is: (substitute your own management server IP address)"
+msgstr "&PRODUCT;提供一个基于web的用户界面能够被管理员和终端用户使用。适当的用户界面版本被展现依赖于登陆时使用的凭证。用户界面是适用于大多数流行的浏览器包括IE7,IE8,IE9,Firefox3.5+,Firefox4,Safari4,和Safari5。URL是:(用你自己的管理控制服务器IP地址代替)"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://&lt;management-server-ip-address&gt;:8080/client"
+msgstr "http://&lt;管理控制-服务器-ip-地址&gt;:8080/client"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On a fresh Management Server installation, a guided tour splash screen "
+"appears. On later visits, you’ll see a login screen where you specify the "
+"following to proceed to your Dashboard:"
+msgstr "初次登陆管理控制服务器时，一个向导启动画面会显现。你将看到登陆界面当你执行下面的过程在你的控制面板上:"
+
+#. Tag: title
+#, no-c-format
+msgid "Username"
+msgstr "用户名"
+
+#. Tag: para
+#, no-c-format
+msgid "The user ID of your account. The default username is admin."
+msgstr "你的帐户的用户标识。默认的用户名是admin。"
+
+#. Tag: title
+#, no-c-format
+msgid "Password"
+msgstr "密码"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The password associated with the user ID. The password for the default "
+"username is password."
+msgstr "相关用户标识的密码。默认用户（admin）的密码是password。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domain"
+msgstr "域"
+
+#. Tag: para
+#, no-c-format
+msgid "If you are a root user, leave this field blank."
+msgstr "如果你是一个root用户，不用填写域这个字段。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are a user in the sub-domains, enter the full path to the domain, "
+"excluding the root domain."
+msgstr "如果你是一个子域的用户，输入完全路径在域字段，不包括根域。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, suppose multiple levels are created under the root domain, such"
+" as Comp1/hr. The users in the Comp1 domain should enter Comp1 in the Domain"
+" field, whereas the users in the Comp1/sales domain should enter "
+"Comp1/sales."
+msgstr "例如，假设多个层级被建立在根域下，像Comp1/hr，在Comp1域的用户应该输入Comp1在域字段，在Comp1/sales域的用户应该输入Comp1/sales。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more guidance about the choices that appear when you log in to this UI, "
+"see Logging In as the Root Administrator."
+msgstr "更多关于当你登陆这个界面时选项的指导，参照作为根管理员登陆。"

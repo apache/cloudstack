@@ -1,0 +1,119 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-04 05:57+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Customizing the Network Domain Name"
+msgstr "自定义网络域名"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The root administrator can optionally assign a custom DNS suffix at the "
+"level of a network, account, domain, zone, or entire &PRODUCT; installation,"
+" and a domain administrator can do so within their own domain. To specify a "
+"custom domain name and put it into effect, follow these steps."
+msgstr "根管理员在网络, 帐户, 域, 资源域以及整个&PRODUCT;安装级别可选择的设置DNS后缀, 一个域管理员可以在自己的域做这样的设置. 要自定义域名并使其有效, 请跟随下面的步骤."
+
+#. Tag: para
+#, no-c-format
+msgid "Set the DNS suffix at the desired scope"
+msgstr "在希望的范围内设置DNS后缀"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"At the network level, the DNS suffix can be assigned through the UI when "
+"creating a new network, as described in <xref linkend=\"add-additional-"
+"guest-network\" /> or with the updateNetwork command in the &PRODUCT; API."
+msgstr "在网络级别, DNS后缀可以通过UI在创建一个新的网络时设置, 这些在 <xref linkend=\"add-additional-guest-network\" /> 和&PRODUCT; API的updateNetwork命令都有描述."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"At the account, domain, or zone level, the DNS suffix can be assigned with "
+"the appropriate &PRODUCT; API commands: createAccount, editAccount, "
+"createDomain, editDomain, createZone, or editZone."
+msgstr "在账户, 域或资源域级别, DNS后缀可以指派给合适的&PRODUCT; API命令: createAccount, editAccount, createDomain, editDomain, createZone或editZone."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"At the global level, use the configuration parameter guest.domain.suffix. "
+"You can also use the &PRODUCT; API command updateConfiguration. After "
+"modifying this global configuration, restart the Management Server to put "
+"the new setting into effect."
+msgstr "在全局范围内, 使用配置参数guest.domain.suffix. 你也可以使用&PRODUCT; API命令updateConfiguration. 当更改了这个全局配置后, 重启管理服务器的服务以便新的设置有效."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To make the new DNS suffix take effect for an existing network, call the "
+"&PRODUCT; API command updateNetwork. This step is not necessary when the DNS"
+" suffix was specified while creating a new network."
+msgstr "为了使你的新DNS后缀对已经存在的网络有效, 你需要调用&PRODUCT; API命令updateNetwork. 对于DNS后缀已经更改后新建的网络这一步不是必需的."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The source of the network domain that is used depends on the following "
+"rules."
+msgstr "你使用的网域的源取决于下面的一些规则."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For all networks, if a network domain is specified as part of a network's "
+"own configuration, that value is used."
+msgstr "对于所有的网络,如果网域作为这个网络自己配置的一部分, 那这个网域的值会被使用."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For an account-specific network, the network domain specified for the "
+"account is used. If none is specified, the system looks for a value in the "
+"domain, zone, and global configuration, in that order."
+msgstr "对于账户指定的网络, 为这个账户指定的网域会被使用. 如果没有指定, 系统会按照域, 资源域, 全局配置的顺序查找网域的值."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For a domain-specific network, the network domain specified for the domain "
+"is used. If none is specified, the system looks for a value in the zone and "
+"global configuration, in that order."
+msgstr "对于域指定的网络, 为这个域指定的网域会被使用. 如果没有指定, 系统会按照 资源域, 全局配置的顺序查找网域的值."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For a zone-specific network, the network domain specified for the zone is "
+"used. If none is specified, the system looks for a value in the global "
+"configuration."
+msgstr "对于资源域指定的网络, 为这个资源域指定的网域会被使用. 如果没有指定, 系统会在全局配置里查找网域的值."

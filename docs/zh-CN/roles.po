@@ -1,0 +1,59 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 20:45+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Roles"
+msgstr "角色"
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; API supports three access roles:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Root Admin. Access to all features of the cloud, including both virtual and "
+"physical resource management."
+msgstr "Root 管理员。获得云的所有功能，包括虚拟和物理资源管理。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Domain Admin. Access to only the virtual resources of the clouds that belong"
+" to the administrator’s domain."
+msgstr "域管理员。进入到虚拟资源的云属于管理员的域。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"User. Access to only the features that allow management of the user’s "
+"virtual instances, storage, and network."
+msgstr "用户。只访问允许用户管理的功能，虚拟实例，存储，和网络。"

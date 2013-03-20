@@ -1,0 +1,86 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-04 04:05+0000\n"
+"Last-Translator: rayang2004 <rayang2004@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Physical Networks"
+msgstr "关于物理网络"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Part of adding a zone is setting up the physical network. One or (in an "
+"advanced zone) more physical networks can be associated with each zone. The "
+"network corresponds to a NIC on the hypervisor host. Each physical network "
+"can carry one or more types of network traffic. The choices of traffic type "
+"for each network vary depending on whether you are creating a zone with "
+"basic networking or advanced networking."
+msgstr "设置物理网络是添加区域步骤中的一个部分。每个区域可以分配一个（极限与高级资源域）或者多个物理网络。这个网络对应宿主机的一个网卡。每个物理网络可以承载一种或多种网络流量。每个网络流量的类型的选项由你选择的是基本网络与还是高级网络与而不同。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A physical network is the actual network hardware and wiring in a zone. A "
+"zone can have multiple physical networks. An administrator can:"
+msgstr "物理网络是连接到资源与的真实网络硬件。一个资源与能有多个物理网络。管理员能做一下操作："
+
+#. Tag: para
+#, no-c-format
+msgid "Add/Remove/Update physical networks in a zone"
+msgstr "添加/删除/更新 域中的物理网络"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure VLANs on the physical network"
+msgstr "在物理网络上设置VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure a name so the network can be recognized by hypervisors"
+msgstr "通过设置名字使网络能被虚拟机软件识别"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the service providers (firewalls, load balancers, etc.) available "
+"on a physical network"
+msgstr "设置在物理网络上能够提供的服务（防火墙，负载均衡器，等等）"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the IP addresses trunked to a physical network"
+msgstr "设置能直连到物理网络的IP地址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify what type of traffic is carried on the physical network, as well as "
+"other properties like network speed"
+msgstr "指定物理网络承载的流量类型还有其他类似网络速度之类的属性"

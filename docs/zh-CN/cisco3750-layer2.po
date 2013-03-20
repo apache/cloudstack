@@ -1,0 +1,80 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-18 14:25+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Cisco 3750"
+msgstr "Cisco 3750"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following steps show how a Cisco 3750 is configured for pod-level "
+"layer-2 switching."
+msgstr "以下步骤将演示怎么配置cisco 3750 作为pod级别的层-2交换机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Setting VTP mode to transparent allows us to utilize VLAN IDs above 1000. "
+"Since we only use VLANs up to 999, vtp transparent mode is not strictly "
+"required."
+msgstr "设置VTP为透明模式以允许我们使用超过1000的VLAN ID. 因为我们最多用到VLAN 999, VTP透明模式并不是必须的."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"vtp mode transparent\n"
+"vlan 300-999\n"
+"exit"
+msgstr "vtp mode transparent\n vlan 300-999\n exit"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure all ports to dot1q and set 201 as the native VLAN."
+msgstr "配置所有端口为dot1q，本征vlan为201"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"interface range GigabitEthernet 1/0/1-24\n"
+"switchport trunk encapsulation dot1q\n"
+"switchport mode trunk\n"
+"switchport trunk native vlan 201\n"
+"exit"
+msgstr "interface range GigabitEthernet 1/0/1-24\nswitchport trunk encapsulation dot1q\n switchport mode trunk\nswitchport trunk native vlan 201\nexit"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default, Cisco passes all VLANs. Cisco switches complain of the native "
+"VLAN IDs are different when 2 ports are connected together. That’s why you "
+"must specify VLAN 201 as the native VLAN on the layer-2 switch."
+msgstr "默认情况，cisco允许通过所有vlan。当2个不同端口连接在一起的时cisco交换机控制不同的vlan id。这就是你为什么必须指定vlan 201 为层-2交换机的本征vlan"

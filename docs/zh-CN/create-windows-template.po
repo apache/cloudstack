@@ -1,0 +1,90 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <net2817@126.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Windows Template"
+msgstr "创建WINdows 模板"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows templates must be prepared with Sysprep before they can be "
+"provisioned on multiple machines. Sysprep allows you to create a generic "
+"Windows template and avoid any possible SID conflicts."
+msgstr "创建Windows模板必须完成公用Sysprep（卷快照）创建。Sysprep（卷快照）允许你创建一个通用的WINdows模板并避免任何可能的SID冲突"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer) Windows VMs running on XenServer require PV drivers, which may "
+"be provided in the template or added after the VM is created. The PV drivers"
+" are necessary for essential management functions such as mounting "
+"additional volumes and ISO images, live migration, and graceful shutdown."
+msgstr "在XenServer上运行Windows虚拟机需要PV驱动支持，用来在虚拟机创建后创建模板。PV驱动程序需要基本的管理功能，以及一些额外的卷容量、ISO镜像、实时迁移功能和可以正常关机。"
+
+#. Tag: para
+#, no-c-format
+msgid "An overview of the procedure is as follows:"
+msgstr "安装步骤概述："
+
+#. Tag: para
+#, no-c-format
+msgid "Upload your Windows ISO."
+msgstr "上传WINdows 系统安装ISO文件."
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <xref linkend=\"add-iso\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VM Instance with this ISO."
+msgstr "使用刚上传的Windows ISO创建一个实例。"
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <xref linkend=\"creating-vms\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Follow the steps in Sysprep for Windows Server 2008 R2 (below) or Sysprep "
+"for Windows Server 2003 R2, depending on your version of Windows Server"
+msgstr "按照需求创建WIN 2008 R2或WIN2003 R2 卷快照。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The preparation steps are complete. Now you can actually create the template"
+" as described in Creating the Windows Template."
+msgstr "准备步骤完成，现在可以创建WINdows模板了。"

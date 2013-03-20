@@ -1,0 +1,168 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-06 15:04+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring SNMP Community String on a RHEL Server"
+msgstr "配置RHEL服务器上的snmp通信组"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The SNMP Community string is similar to a user id or password that provides "
+"access to a network device, such as router. This string is sent along with "
+"all SNMP requests. If the community string is correct, the device responds "
+"with the requested information. If the community string is incorrect, the "
+"device discards the request and does not respond."
+msgstr "SNMP团体字符串是类似的用户ID或密码，提供了访问网络设备，如路由器。此字符串的所有SNMP请求一起发送。如果团体字符串是正确的，设备响应请求的信息。如果团体字符串是不正确的，则丢弃请求没有回应。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The NetScaler device uses SNMP to communicate with the VMs. You must install"
+" SNMP and configure SNMP Community string for a secure communication between"
+" the NetScaler device and the RHEL machine."
+msgstr "NetScaler设备使用SNMP和虚拟机通信。你必须安装SNMP，并且配置SNMP通信组用于netscaler和RHEL机器之间的安全通信。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that you installed SNMP on RedHat. If not, run the following command:"
+msgstr "确保你的RedHat上安装了SNMP,如果没有执行以下命令："
+
+#. Tag: screen
+#, no-c-format
+msgid "yum install net-snmp-utils"
+msgstr "yum install net-snmp-utils"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Edit the /etc/snmp/snmpd.conf file to allow the SNMP polling from the "
+"NetScaler device."
+msgstr "编辑 /etc/snmp/snmpd.conf 允许SNMP测试netscaler 设备"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Map the community name into a security name (local and mynetwork, depending "
+"on where the request is coming from):"
+msgstr "映射团体名到一个安全组(本地和网络，依赖从哪里发来请求):"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use a strong password instead of public when you edit the following table."
+msgstr "当你编辑以下表格，使用强壮密码替换public"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"#         sec.name   source        community\n"
+"com2sec    local      localhost     public\n"
+"com2sec   mynetwork   0.0.0.0       public"
+msgstr "# sec.name source community com2sec local localhost \npublic com2sec mynetwork 0.0.0.0 public"
+
+#. Tag: para
+#, no-c-format
+msgid "Setting to 0.0.0.0 allows all IPs to poll the NetScaler server."
+msgstr "设置0.0.0.0 允许所有ip查询netscaler服务器"
+
+#. Tag: para
+#, no-c-format
+msgid "Map the security names into group names:"
+msgstr "映射安全名到组名"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"#      group.name   sec.model  sec.name\n"
+"group   MyRWGroup     v1         local\n"
+"group   MyRWGroup     v2c        local\n"
+"group   MyROGroup     v1        mynetwork\n"
+"group   MyROGroup     v2c       mynetwork"
+msgstr "# group.name sec.model sec.name\ngroup MyRWGroup v1 local\ngroup MyRWGroup v2c local\ngroup MyROGroup v1 mynetwork\ngroup MyROGroup v2c mynetwork"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a view to allow the groups to have the permission to:"
+msgstr "创建视图授予组以下权限："
+
+#. Tag: screen
+#, no-c-format
+msgid "incl/excl subtree mask view all included .1 "
+msgstr "incl/excl subtree mask view all included .1 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Grant access with different write permissions to the two groups to the view "
+"you created."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"# context     sec.model     sec.level     prefix     read     write     notif\n"
+"  access      MyROGroup \"\"  any noauth     exact      all      none     none\n"
+"  access      MyRWGroup \"\"  any noauth     exact      all      all      all "
+msgstr "# context sec.model sec.level prefix read write notif\naccess MyROGroup \"\" any noauth exact all none none\naccess MyRWGroup \"\" any noauth exact all all all "
+
+#. Tag: para
+#, no-c-format
+msgid "Unblock SNMP in iptables."
+msgstr "iptalbes 中放行SNMP"
+
+#. Tag: screen
+#, no-c-format
+msgid "iptables -A INPUT -p udp --dport 161 -j ACCEPT"
+msgstr "iptables -A INPUT -p udp --dport 161 -j ACCEPT"
+
+#. Tag: para
+#, no-c-format
+msgid "Start the SNMP service:"
+msgstr "启动SNMP服务"
+
+#. Tag: screen
+#, no-c-format
+msgid "service snmpd start"
+msgstr "service snmpd start"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that the SNMP service is started automatically during the system "
+"startup:"
+msgstr "确保snmp服务随系统自动启动"
+
+#. Tag: screen
+#, no-c-format
+msgid "chkconfig snmpd on"
+msgstr "chkconfig snmpd on"

@@ -1,0 +1,99 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <cybeijing@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-09 09:08+0000\n"
+"Last-Translator: cybeijing <cybeijing@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding an Additional Guest Network"
+msgstr "添加另一个虚拟机的网络"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "作为管理员或最终用户登入到&PRODUCT; UI."
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左边的导航栏里选择网络."
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add guest network. Provide the following information:"
+msgstr "点击添加虚拟机网络。系统给出如下信息："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: The name of the network. This will "
+"be user-visible."
+msgstr "<emphasis role=\"bold\">名称</emphasis>: 网络名称。用户可见。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Display Text</emphasis>: The description of the "
+"network. This will be user-visible."
+msgstr "<emphasis role=\"bold\">显示文本</emphasis>: 网络描述。用户可见。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>. The name of the zone this network "
+"applies to. Each zone is a broadcast domain, and therefore each zone has a "
+"different IP range for the guest network. The administrator must configure "
+"the IP range for each zone."
+msgstr "<emphasis role=\"bold\">区域</emphasis>. 此网络所应用的区域名。每个区域都是一个广播范围，因此对虚拟机网络来说，每个区域都有一个不同的IP范围。管理员必须为每个区域配置IP范围。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network offering</emphasis>: If the administrator "
+"has configured multiple network offerings, select the one you want to use "
+"for this network."
+msgstr "<emphasis role=\"bold\">网络提议</emphasis>: 如果管理员已经配置了多个网络提议，为此网络从中选择一个。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Gateway</emphasis>: The gateway that the "
+"guests should use."
+msgstr "<emphasis role=\"bold\">虚拟机网关</emphasis>: 虚拟机应该使用的网关。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Netmask</emphasis>: The netmask in use on the "
+"subnet the guests will use."
+msgstr "<emphasis role=\"bold\">虚拟机掩码</emphasis>: 虚拟机子网说使用的掩码。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create."
+msgstr "点击创建。"

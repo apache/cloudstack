@@ -1,0 +1,182 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-31 13:28+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Signing API Requests"
+msgstr "API请求签名"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Whether you access the CloudStack API with HTTP or HTTPS, it must still be "
+"signed so that CloudStack can verify the caller has been authenticated and "
+"authorized to execute the command. Make sure that you have both the API Key "
+"and Secret Key provided by the CloudStack administrator for your account "
+"before proceeding with the signing process."
+msgstr "无论你通过HTTP或HTTPS访问&PRODUCT; API, 都必须签名以便让&PRODUCT;可以检验调用者已通过验证并有权限执行相关命令. 在你进行签名过程之前, 确保&PRODUCT;的管理员为你的账号提供了API键值及密钥."
+
+#. Tag: para
+#, no-c-format
+msgid "To show how to sign a request, we will re-use the previous example."
+msgstr "为了展示如何为一个请求签名, 我们重用之前的例子."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"http://http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey"
+"=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-"
+"jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr "http://http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+
+#. Tag: para
+#, no-c-format
+msgid "Breaking this down, we have several distinct parts to this URL."
+msgstr "把这个分解开来, 我们能清晰地看出这个URL的组成."
+
+#. Tag: para
+#, no-c-format
+msgid "Base URL: This is the base URL to the CloudStack Management Server."
+msgstr "基本URL: 这个是到管理服务器的基本URL."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://localhost:8080"
+msgstr "http://localhost:8080"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"API Path: This is the path to the API Servlet that processes the incoming "
+"requests."
+msgstr "API路径: 这是处理API请求的服务端程序路径."
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/client/api?"
+msgstr "/client/api?"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Command String: This part of the query string comprises of the command, its "
+"parameters, and the API Key that identifies the account."
+msgstr "命令字串: 这部分由查询字串组成的命令, 它的参数以及标识这个账户的API键值共同组成."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"As with all query string parameters of field-value pairs, the \"field\" "
+"component is case insensitive while all \"value\" values are case sensitive."
+msgstr "所有的查询字串都是一组域-值对, \"域\"是大小写不敏感的但\"值\"是大小写敏感的."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey"
+"=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-"
+"jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ"
+msgstr "command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Signature: This is the hashed signature of the Base URL that is generated "
+"using a combination of the user’s Secret Key and the HMAC SHA-1 hashing "
+"algorithm."
+msgstr "签名: 是由用户的密钥和请求的基本URL通过HMAC SHA-1哈希算法共同生成的哈希签名."
+
+#. Tag: para
+#, no-c-format
+msgid "&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr "&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Every API request has the format Base URL+API Path+Command String+Signature."
+msgstr "每一个API请求格式的组成都是 基本URL + API 路径 + 命令字串 + 签名."
+
+#. Tag: para
+#, no-c-format
+msgid "To generate the signature."
+msgstr "要生成一个签名."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For each field-value pair (as separated by a '&amp;') in the Command String,"
+" URL encode each value so that it can be safely sent via HTTP GET."
+msgstr "对于命令字串里的每个域-值对 (由 '&amp;'分隔), 值都会进行URL编码以便通过HTTP GET安全传输."
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure all spaces are encoded as \"%20\" rather than \"+\"."
+msgstr "确保所有的空格字符都编码成 \"%20\" 而非 \"+\"."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Lower case the entire Command String and sort it alphabetically via the "
+"field for each field-value pair. The result of this step would look like the"
+" following."
+msgstr "将命令字串全转换成小写字符并且对所有域-值对都通过域的字母表顺序进行排列. 这步的结果看起来像下面这样."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"apikey=mivr6x7u6bn_sdahobpjnejpgest35exq-"
+"jb8cg20yi3yaxxcgpyuairmfi_ejtvwz0nukkjbpmy3y2bcikwfq&amp;command=deployvirtualmachine&amp;diskofferingid=1&amp;serviceofferingid=1&amp;templateid=2&amp;zoneid=4"
+msgstr "apikey=mivr6x7u6bn_sdahobpjnejpgest35exq-jb8cg20yi3yaxxcgpyuairmfi_ejtvwz0nukkjbpmy3y2bcikwfq&amp;command=deployvirtualmachine&amp;diskofferingid=1&amp;serviceofferingid=1&amp;templateid=2&amp;zoneid=4"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Take the sorted Command String and run it through the HMAC SHA-1 hashing "
+"algorithm (most programming languages offer a utility method to do this) "
+"with the user’s Secret Key. Base64 encode the resulting byte array in UTF-8 "
+"so that it can be safely transmitted via HTTP. The final string produced "
+"after Base64 encoding should be \"Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D\"."
+msgstr "对于已排序的命令字串, 与用户的密钥一起运行HMAC SHA-1哈希算法(大多数的编程语言都提供这样的工具). 对其结果进行Base64编码然后对数组进行UTF-8编码以便可以通过HTTP进行安全的传输.在Base64编码后最终的字串应该像\"Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D\"."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By reconstructing the final URL in the format Base URL+API Path+Command "
+"String+Signature, the final URL should look like:"
+msgstr "按格式 基本URL + API路径 + 命令字串 + 签名 重构的最终的URL看起来像这样:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey"
+"=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-"
+"jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr "http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"

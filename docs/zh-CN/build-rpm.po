@@ -1,0 +1,236 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building RPMs from Source"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"As mentioned previously in <xref linkend=\"sect-source-prereq\" />, you will"
+" need to install several prerequisites before you can build packages for "
+"&PRODUCT;. Here we'll assume you're working with a 64-bit build of CentOS or"
+" Red Hat Enterprise Linux."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# yum groupinstall \"Development Tools\""
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# yum install java-1.6.0-openjdk-devel.x86_64 genisoimage mysql mysql-server"
+" ws-common-utils MySQL-python tomcat6 createrepo"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Next, you'll need to install build-time dependencies for CloudStack with "
+"Maven. We're using Maven 3, so you'll want to <ulink "
+"url=\"http://maven.apache.org/download.cgi\">grab a Maven 3 tarball</ulink> "
+"and uncompress it in your home directory (or whatever location you prefer):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ tar zxvf apache-maven-3.0.4-bin.tar.gz"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ export PATH=/usr/local/apache-maven-3.0.4//bin:$PATH"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maven also needs to know where Java is, and expects the JAVA_HOME "
+"environment variable to be set:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ export JAVA_HOME=/usr/lib/jvm/jre-1.6.0-openjdk.x86_64/"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Verify that Maven is installed correctly:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ mvn --version"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You probably want to ensure that your environment variables will survive a "
+"logout/reboot. Be sure to update <filename>~/.bashrc</filename> with the "
+"PATH and JAVA_HOME variables."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Building RPMs for $PRODUCT; is fairly simple. Assuming you already have the "
+"source downloaded and have uncompressed the tarball into a local directory, "
+"you're going to be able to generate packages in just a few minutes."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Packaging has Changed"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you've created packages for $PRODUCT; previously, you should be aware "
+"that the process has changed considerably since the project has moved to "
+"using Apache Maven. Please be sure to follow the steps in this section "
+"closely."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Generating RPMS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we have the prerequisites and source, you will cd to the "
+"<filename>packaging/centos63/</filename> directory."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Generating RPMs is done using the <filename>package.sh</filename> script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt>./package.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That will run for a bit and then place the finished packages in "
+"<filename>dist/rpmbuild/RPMS/x86_64/</filename>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should see seven RPMs in that directory: <filename>cloudstack-"
+"agent-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
+"awsapi-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
+"cli-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
+"common-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
+"docs-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
+"management-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, and <filename"
+">cloudstack-usage-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a yum repo"
+msgstr "创建一个yum 库"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"While RPMs is a useful packaging format - it's most easily consumed from Yum"
+" repositories over a network. The next step is to create a Yum Repo with the"
+" finished packages:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> mkdir -p ~/tmp/repo"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> cp dist/rpmbuild/RPMS/x86_64/*rpm ~/tmp/repo/"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> createrepo ~/tmp/repo"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The files and directories within <filename>~/tmp/repo</filename> can now be "
+"uploaded to a web server and serve as a yum repository."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring your systems to use your new yum repository"
+msgstr "配置你的系统使用新的yum源"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that your yum repository is populated with RPMs and metadata we need to "
+"configure the machines that need to install $PRODUCT;. Create a file named "
+"<filename>/etc/yum.repos.d/cloudstack.repo</filename> with this information:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"                        [apache-cloudstack]\n"
+"                        name=Apache CloudStack\n"
+"                        baseurl=http://<replaceable>webserver.tld/path/to/repo</replaceable>\n"
+"                        enabled=1\n"
+"                        gpgcheck=0\n"
+"                    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Completing this step will allow you to easily install $PRODUCT; on a number "
+"of machines across the network."
+msgstr ""

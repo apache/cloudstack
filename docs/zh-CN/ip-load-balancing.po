@@ -1,0 +1,62 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-02 10:39+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "IP Load Balancing"
+msgstr "IP负载均衡"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The user may choose to associate the same public IP for multiple guests. "
+"&PRODUCT; implements a TCP-level load balancer with the following policies."
+msgstr "用户可以选择关联到同一个公网IP的多个宾客虚拟机。&PRODUCT;实现了TCP级别的负载平衡器，有一下策略。"
+
+#. Tag: para
+#, no-c-format
+msgid "Round-robin"
+msgstr "轮询"
+
+#. Tag: para
+#, no-c-format
+msgid "Least connection"
+msgstr "最少连接"
+
+#. Tag: para
+#, no-c-format
+msgid "Source IP"
+msgstr "源IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This is similar to port forwarding but the destination may be multiple IP "
+"addresses."
+msgstr "这类似于端口转发，但目标可能会有多个IP地址。"

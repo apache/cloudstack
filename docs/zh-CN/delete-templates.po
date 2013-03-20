@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-03 23:34+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Deleting Templates"
+msgstr "删除模板"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Templates may be deleted. In general, when a template spans multiple Zones, "
+"only the copy that is selected for deletion will be deleted; the same "
+"template in other Zones will not be deleted. The provided CentOS template is"
+" an exception to this. If the provided CentOS template is deleted, it will "
+"be deleted from all Zones."
+msgstr "模板可以被删除。在一般情况下，当一个模板跨越多个区域，只为删除被选中的副本将被删除，在其他区域相同的模板将不会被删除。CentOS的模板是一个例外。如果所提供的CentOS的模板被删除，它从所有区域都将被删除。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When templates are deleted, the VMs instantiated from them will continue to "
+"run. However, new VMs cannot be created based on the deleted template."
+msgstr "删除模板时，从它们中产生的虚拟机实例将继续运行。然而，新的虚拟机不能在被删除模板的基础上创建。"

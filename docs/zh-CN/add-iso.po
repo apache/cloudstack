@@ -1,0 +1,266 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <moaihe1111@163.com>, 2012.
+#   <szcyyf@hotmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2012-12-20 06:45+0000\n"
+"Last-Translator: AnAnSS <szcyyf@hotmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding an ISO"
+msgstr "添加一个ISO"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To make additional operating system or other software available for use with"
+" guest VMs, you can add an ISO. The ISO is typically thought of as an "
+"operating system image, but you can also add ISOs for other types of "
+"software, such as desktop applications that you want to be installed as part"
+" of a template."
+msgstr "为了制造额外的操作系统或者其它有效的软件为了guest VMs使用，你能够添加ISO。最典型的ISO被认为是一个操作系统，但是你也能添加软件类型的ISO，例如你想作为模板被安装的桌面应用。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "登陆到&PRODUCT;界面以管理员或者终端用户。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr "在左边的导航栏，点击模板。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose ISOs."
+msgstr "在选择视图中，选择ISO。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add ISO."
+msgstr "点击添加ISO。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Add ISO screen, provide the following:"
+msgstr "在添加ISO屏幕中，提供下列信息:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: Short name for the ISO image. For "
+"example, CentOS 6.2 64-bit."
+msgstr "<emphasis role=\"bold\">名称</emphasis>:ISO 镜像的简称。例如，CentOS6.2 64-bit。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Description</emphasis>: Display test for the ISO "
+"image. For example, CentOS 6.2 64-bit."
+msgstr "<emphasis role=\"bold\">说明</emphasis>:对于ISO镜像的说明。例如，CentOS6.2 64-bit。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">URL</emphasis>: The URL that hosts the ISO image. "
+"The Management Server must be able to access this location via HTTP. If "
+"needed you can place the ISO image directly on the Management Server"
+msgstr "<emphasis role=\"bold\">URL</emphasis>:URL是ISO镜像的主机。管理控制服务器必须能够访问这个地址通过HTTP。如果有需要你可以直接放置ISO镜像在管理控制服务器。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>: Choose the zone where you want the "
+"ISO to be available, or All Zones to make it available throughout &PRODUCT;."
+msgstr "<emphasis role=\"bold\">区域</emphasis>:选择你想让ISO有效的区域，或者ALL Zones可以让它在整个&PRODUCT;可用。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Bootable</emphasis>: Whether or not a guest could "
+"boot off this ISO image. For example, a CentOS ISO is bootable, a Microsoft "
+"Office ISO is not bootable."
+msgstr "<emphasis role=\"bold\">可启动</emphasis>:是否一个guest能够引导这个ISO image。例如，一个CentOS ISO 是可启动的，一个Microsoft Office ISO 是不可启动的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>: This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following."
+msgstr "<emphasis role=\"bold\">操作系统类型</emphasis>:这帮助&PRODUCT;和虚拟化平台执行正常的操作并且假设能够提高guest性能。选择下列中的一个。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the operating system of your desired ISO image is listed, choose it."
+msgstr "如果你需要的操作系统在ISO镜像被列出来，请选择它。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the OS Type of the ISO is not listed or if the ISO is not bootable, "
+"choose Other."
+msgstr "如果ISO操作系统类型没有被列出或者ISO是不可引导的，选择Other。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer only) If you want to boot from this ISO in PV mode, choose Other "
+"PV (32-bit) or Other PV (64-bit)"
+msgstr "(仅针对XenServer) 如果你想从这个ISO引导以PV 模式，选择 Other PV (32-bit) or Other PV(64-bit)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(KVM only) If you choose an OS that is PV-enabled, the VMs created from this"
+" ISO will have a SCSI (virtio) root disk. If the OS is not PV-enabled, the "
+"VMs will have an IDE root disk. The PV-enabled types are:"
+msgstr "(仅针对KVM) 如果你选择一个操作系统是PV-enabled， 从这个ISO创建的虚拟机会有一个SCSI(virtio)引导磁盘。如果这个操作系统没有PV-enabled,虚拟机将有一个IDE引导磁盘。PV-enabled 类型是:"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 13"
+msgstr "Fedora 13"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 12"
+msgstr "Fedora 12"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 11"
+msgstr "Fedora 11"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 10"
+msgstr "Fedora 10"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 9"
+msgstr "Fedora 9"
+
+#. Tag: para
+#, no-c-format
+msgid "Other PV"
+msgstr "Other PV"
+
+#. Tag: para
+#, no-c-format
+msgid "Debian GNU/Linux"
+msgstr "Debian GNU/Linux"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.3"
+msgstr "CentOS 5.3"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.4"
+msgstr "CentOS 5.4"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.5"
+msgstr "CentOS 5.5"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.3"
+msgstr "Red Hat Enterprise Linux 5.3"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.4"
+msgstr "Red Hat Enterprise Linux 5.4"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.5"
+msgstr "Red Hat Enterprise Linux 5.5"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 6"
+msgstr "Red Hat Enterprise Linux 6"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It is not recommended to choose an older version of the OS than the version "
+"in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image"
+" will usually not work. In these cases, choose Other."
+msgstr "不建议选择一个比镜像操作系统老的版本。比如，选择CentOS 5.4 去支持一个CentOS6.2的镜像通常会导致不能工作。在这种情况下，去选择Other。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Extractable</emphasis>: Choose Yes if the ISO should"
+" be available for extraction."
+msgstr "<emphasis role=\"bold\">Extractable</emphasis>: Choose Yes if the ISO should be available for extraction."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>: Choose Yes if this ISO should be "
+"available to other users."
+msgstr "<emphasis role=\"bold\">Public</emphasis>: Choose Yes if this ISO should be available to other users."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Featured</emphasis>: Choose Yes if you would like "
+"this ISO to be more prominent for users to select. The ISO will appear in "
+"the Featured ISOs list. Only an administrator can make an ISO Featured."
+msgstr "<emphasis role=\"bold\">精选</emphasis>: 如果你想让这个ISO更显著为了让用户选择的话，请选中这个选项。这个ISO将会显示到精选ISOs列表中。只有管理员可以制作一个ISO精选。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "点击确定。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server will download the ISO. Depending on the size of the "
+"ISO, this may take a long time. The ISO status column will display Ready "
+"once it has been successfully downloaded into secondary storage. Clicking "
+"Refresh updates the download percentage."
+msgstr "管理控制服务器将下载那个ISO。依赖与那个ISO的大小，下载过程可能会用很长时间。ISO 状态栏将会显示Ready当它已经成功被下载到第二存储上的时候。点击刷新更新下载率。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Important</emphasis>: Wait for the ISO to finish "
+"downloading. If you move on to the next task and try to use the ISO right "
+"away, it will appear to fail. The entire ISO must be available before "
+"&PRODUCT; can work with it."
+msgstr "<emphasis role=\"bold\">要点</emphasis>: 等ISO下载完成的过程中。如果你想执行下一个任务并且试着正常使用这个ISO，这将会失败。完整的ISO必须是有效的在&PRODUCT;能够使用它之前。"

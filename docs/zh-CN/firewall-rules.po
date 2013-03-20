@@ -1,0 +1,142 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Firewall Rules"
+msgstr "防火墙规则"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default, all incoming traffic to the public IP address is rejected by the"
+" firewall. To allow external traffic, you can open firewall ports by "
+"specifying firewall rules. You can optionally specify one or more CIDRs to "
+"filter the source IPs. This is useful when you want to allow only incoming "
+"requests from certain IP addresses."
+msgstr "默认情况下，防火墙拒绝所有流入公共IP的流量。要是需要允许外部流量，你需要通过制定防火墙规则打开防火墙端口。你可以选择性的制定一个或多个CIDR（无类别域际路由选择，这个说法太晦涩，你可以理解为一个IP网络）来过滤来源IP。这在当你只需要允许特定IP请求时会很有用。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You cannot use firewall rules to open ports for an elastic IP address. When "
+"elastic IP is used, outside access is instead controlled through the use of "
+"security groups. See <xref linkend=\"add-security-group\" />."
+msgstr "你不能使用防火墙规则打开弹性IP端口。当弹性IP处在使用状态时，外部的通过请求将被安全组管理。详情查看<xref linkend=\"add-security-group\" />。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In an advanced zone, you can also create egress firewall rules by using the "
+"virtual router. For more information, see <xref linkend=\"egress-firewall-"
+"rule\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Firewall rules can be created using the Firewall tab in the Management "
+"Server UI. This tab is not displayed by default when &PRODUCT; is installed."
+" To display the Firewall tab, the &PRODUCT; administrator must set the "
+"global configuration parameter firewall.rule.ui.enabled to \"true.\""
+msgstr "防火墙规则能在管理服务器的web UI的防火墙表里创建，这个规则表默认不显示，你需要以管理员身份修改全局变量 firewall.rule.ui.enabled为 \"true\"才能显示。"
+
+#. Tag: para
+#, no-c-format
+msgid "To create a firewall rule:"
+msgstr "如果你想创建防火墙规则："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "以用户或管理员身份登录进入WebUI。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "在左边的导航，选择网络"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network where you want to work with."
+msgstr "选择你要修改的网络名称"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "点击 查看IP地址"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP address you want to work with."
+msgstr "点击你要修改的IP地址"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configuration tab and fill in the following values."
+msgstr "点击设置标签 填入以下值"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Source CIDR</emphasis>. (Optional) To accept only "
+"traffic from IP addresses within a particular address block, enter a CIDR or"
+" a comma-separated list of CIDRs. Example: 192.168.0.0/22. Leave empty to "
+"allow all CIDRs."
+msgstr "<emphasis role=\"bold\">来源CIDR</emphasis>。（可选）只允许在某个特定地址块的IP流量的话，输入一个CIDR或者一个逗号隔开的CIDR列表。例如：192.168.0.0/22或者192.168.0.0/24,192.168.1.0/24,192.168.2.0/24。留空则为允许所有的CIDR。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol</emphasis>. The communication protocol in "
+"use on the opened port(s)."
+msgstr "<emphasis role=\"bold\">协议</emphasis>. 你所要开反复端口所使用的网络协议。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start Port and End Port</emphasis>. The port(s) you "
+"want to open on the firewall. If you are opening a single port, use the same"
+" number in both fields"
+msgstr "<emphasis role=\"bold\">起始端口和结束端口</emphasis>. 你想要在防火墙开放的端口。如果你只打开单个端口，在两个空格中填入相同的端口号。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">ICMP Type and ICMP Code</emphasis>. Used only if "
+"Protocol is set to ICMP. Provide the type and code required by the ICMP "
+"protocol to fill out the ICMP header. Refer to ICMP documentation for more "
+"details if you are not sure what to enter"
+msgstr "<emphasis role=\"bold\">ICMP 类型和编号</emphasis>.。只有在设置ICMP协议时才会用到。提供需要填写的ICMP协议，ICMP头的类型和代码。如果你不知道天什么请参看ICMP文档。（这里推荐一个 http://wenku.baidu.com/view/e235e8ecaeaad1f346933fed.html）"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "点击添加."

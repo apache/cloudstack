@@ -1,0 +1,43 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-02 10:53+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Scheduled Maintenance and Maintenance Mode for Hosts"
+msgstr "主机定期维护和维护模式"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can place a host into maintenance mode. When maintenance mode is "
+"activated, the host becomes unavailable to receive new guest VMs, and the "
+"guest VMs already running on the host are seamlessly migrated to another "
+"host not in maintenance mode. This migration uses live migration technology "
+"and does not interrupt the execution of the guest."
+msgstr "您可以将主机置于维护模式。维护模式被激活时，主机将无法接收新的客户虚拟机，并且已经在主机上运行的虚拟机被无缝地迁移到另一台不在维护模式下的主机上。迁移使用实时迁移技术和不中断客户的执行。"

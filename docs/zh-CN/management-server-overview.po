@@ -1,0 +1,104 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Gavin Lee <gavin.lxh@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-02 13:01+0000\n"
+"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Overview"
+msgstr "管理服务器概述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server is the &PRODUCT; software that manages cloud "
+"resources. By interacting with the Management Server through its UI or API, "
+"you can configure and manage your cloud infrastructure."
+msgstr "管理服务器是&PRODUCT;软件用来管理云环境的所有资源. 通过UI或API与管理服务器交互, 你就可以配置并管理你的云基础架构."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server runs on a dedicated server or VM. It controls "
+"allocation of virtual machines to hosts and assigns storage and IP addresses"
+" to the virtual machine instances. The Management Server runs in a Tomcat "
+"container and requires a MySQL database for persistence."
+msgstr "一个管理服务器运行在专属的服务器或虚机里. 它控制虚拟机在主机上的分配, 并且分配存储和IP地址到虚拟机实例. 管理服务器运行在一个Tomcat容器里并通过MySQL数据库进行持久化."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The machine must meet the system requirements described in System "
+"Requirements."
+msgstr "机器必须符合系统需求, 在系统需求里有相关描述."
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server:"
+msgstr "管理服务器:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provides the web user interface for the administrator and a reference user "
+"interface for end users."
+msgstr "为管理员提供一个Web用户接口并且为最终用户提供一个引用的用户接口."
+
+#. Tag: para
+#, no-c-format
+msgid "Provides the APIs for &PRODUCT;."
+msgstr "为&PRODUCT;提供API."
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the assignment of guest VMs to particular hosts."
+msgstr "管理客户虚拟机到特定的主机分配."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages the assignment of public and private IP addresses to particular "
+"accounts."
+msgstr "管理公共IP及私有IP地址到账号的分配."
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the allocation of storage to guests as virtual disks."
+msgstr "管理客户的存储作为虚拟磁盘的分配."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages snapshots, templates, and ISO images, possibly replicating them "
+"across data centers."
+msgstr "管理快照, 模板, 和ISO映像, 并且可以在多个数据中心复制."
+
+#. Tag: para
+#, no-c-format
+msgid "Provides a single point of configuration for the cloud."
+msgstr "提供整个云环境的集中式配置."

@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-04 00:50+0000\n"
+"Last-Translator: tiansiyuan <tiansiyuan@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Volume Status"
+msgstr "卷状态"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a snapshot operation is triggered by means of a recurring snapshot "
+"policy, a snapshot is skipped if a volume has remained inactive since its "
+"last snapshot was taken. A volume is considered to be inactive if it is "
+"either detached or attached to a VM that is not running. &PRODUCT; ensures "
+"that at least one snapshot is taken since the volume last became inactive."
+msgstr "快照操作时由一个经常性的快照策略所引发，如果从其上次创建快照后，卷一直处于非活跃状态，快照被跳过。卷被认为是非活跃的，如果它被分离或附加的虚拟机没有运行。&PRODUCT;确保从卷上一次变得不活跃后，至少有一个快照创建。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a snapshot is taken manually, a snapshot is always created regardless "
+"of whether a volume has been active or not."
+msgstr "手动创建快照时，快照总是创建，无论卷活跃与否。"

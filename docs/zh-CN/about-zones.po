@@ -1,0 +1,129 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 18:32+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Zones"
+msgstr "关于资源域"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A zone is the largest organizational unit within a &PRODUCT; deployment. A "
+"zone typically corresponds to a single datacenter, although it is "
+"permissible to have multiple zones in a datacenter. The benefit of "
+"organizing infrastructure into zones is to provide physical isolation and "
+"redundancy. For example, each zone can have its own power supply and network"
+" uplink, and the zones can be widely separated geographically (though this "
+"is not required)."
+msgstr "资源域在&PRODUCT; 部署中是最大的组织单位。一个资源与通常对应于一个数据中心，但是一个数据中心中也允许有多个资源域。以资源与的方组织设备有利于提供物理隔离和冗余。比如，每个资源域可以有自己的电源和上行链路网络，同事各个资源域可以广泛的分布于不同的地理位置（虽然这不是必需的）。"
+
+#. Tag: para
+#, no-c-format
+msgid "A zone consists of:"
+msgstr "一个资源域包括："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"One or more pods. Each pod contains one or more clusters of hosts and one or"
+" more primary storage servers."
+msgstr "一个或多个提供点。每个提供点包含一个或多个宿主机集群和iygehuoduoge主存储服务器。"
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage, which is shared by all the pods in the zone."
+msgstr "二级存储是在资源域下的所有提供点共享的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Zones are visible to the end user. When a user starts a guest VM, the user "
+"must select a zone for their guest. Users might also be required to copy "
+"their private templates to additional zones to enable creation of guest VMs "
+"using their templates in those zones."
+msgstr "资源与对用户使可见的。当用户运行一个来宾虚拟机，他必须选择该虚拟机运行在哪个资源域上。当来宾虚拟机需要运行在额外的资源域时，用户可能需要拷贝私有模板向这些资源域拷贝私有模板。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Zones can be public or private. Public zones are visible to all users. This "
+"means that any user may create a guest in that zone. Private zones are "
+"reserved for a specific domain. Only users in that domain or its subdomains "
+"may create guests in that zone."
+msgstr "资源域可以是公有也可以是私有的。公共资源与对所有用户可见。这意味着所用用户都可以在上面创建来宾虚拟机。私有资源域只对特定的鱼保留。只有在这个域或其子域的用户才能创建来宾虚拟机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hosts in the same zone are directly accessible to each other without having "
+"to go through a firewall. Hosts in different zones can access each other "
+"through statically configured VPN tunnels."
+msgstr "同一个资源域下的宿主机是不需要穿过防火墙的互连的机器。不同资源域的宿主机可以通过静态配置的vpn通道互相访问。"
+
+#. Tag: para
+#, no-c-format
+msgid "For each zone, the administrator must decide the following."
+msgstr "管理员必须决定每个资源域以下内容。"
+
+#. Tag: para
+#, no-c-format
+msgid "How many pods to place in a zone."
+msgstr "资源与中有多少提供点。"
+
+#. Tag: para
+#, no-c-format
+msgid "How many clusters to place in each pod."
+msgstr "每个提供点中有多少集群。"
+
+#. Tag: para
+#, no-c-format
+msgid "How many hosts to place in each cluster."
+msgstr "每个集群中有几台宿主机。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"How many primary storage servers to place in each cluster and total capacity"
+" for the storage servers."
+msgstr "每个集群中有几个主存储，且总的存储量要多大。"
+
+#. Tag: para
+#, no-c-format
+msgid "How much secondary storage to deploy in a zone."
+msgstr "每个资源域下要有多少二级存储。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you add a new zone, you will be prompted to configure the zone’s "
+"physical network and add the first pod, cluster, host, primary storage, and "
+"secondary storage."
+msgstr "当您添加一个新的区域时，系统会提示您配置区域的物理网络，并添加提供点，集群，主机，主存储和二级存储。"

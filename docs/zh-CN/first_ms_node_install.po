@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# xierf <typuc@163.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-07 15:44+0000\n"
+"Last-Translator: typuc <typuc@163.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the First Management Server"
+msgstr "安装第一个管理服务器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure you have configured your machine according to <xref linkend=\"sect-"
+"source-buildrpm-repo2\" /> or <xref linkend=\"sect-source-builddebs-repo2\" "
+"/> as appropriate for your platform."
+msgstr "确信你已经根据 <xref linkend=\"sect-source-buildrpm-repo2\" /> or <xref linkend=\"sect-source-builddebs-repo2\" />对应平台， 配置了你的服务器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Install the &PRODUCT; management server packages by issuing one of the "
+"following commands as appropriate:"
+msgstr "通过以下对应的命令安装 &PRODUCT; 管理器服务器包"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>yum</command> install cloud-client"
+msgstr "#yum install cloud-client"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>apt-get</command> install cloud-client"
+msgstr "#apt-get install cloud-client"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(RPM-based distributions) When the installation is finished, run the "
+"following commands to start essential services:"
+msgstr "(基于RPM的发行版)安装完成后，允许以下命令以启动必要服务"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>#</prompt> <command>service</command> rpcbind start\n"
+"<prompt>#</prompt> <command>service</command> nfs start\n"
+"<prompt>#</prompt> <command>chkconfig</command> nfs on\n"
+"<prompt>#</prompt> <command>chkconfig</command> rpcbind on\n"
+"                        "
+msgstr "#service rpcbind start\n# service nfs start\n#chkconfig nfs on\n#chkconfig rpcbind on"

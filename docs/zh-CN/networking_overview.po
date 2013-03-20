@@ -1,0 +1,58 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:45+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Networking Overview"
+msgstr "网络概述"
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack offers two types of networking scenario:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Basic. For AWS-style networking. Provides a single network where guest "
+"isolation can be provided through layer-3 means such as security groups (IP "
+"address source filtering)."
+msgstr "基本网络. 类似于AWS类型的网络. 提供一个单一网络, 在这个网络里客户通过提供的三层方式进行隔离,比如借安全组方式(源IP地址过滤)."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Advanced. For more sophisticated network topologies. This network model "
+"provides the most flexibility in defining guest networks."
+msgstr "高级网络. 为更复杂的网络拓扑设计. 网络模型提供了更为灵活的客户网络定义."
+
+#. Tag: para
+#, no-c-format
+msgid "For more details, see Network Setup."
+msgstr "更详细的信息, 请参数网络设置."

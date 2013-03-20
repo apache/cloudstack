@@ -1,0 +1,98 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:03+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Cluster: OVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To add a Cluster of hosts that run Oracle VM (OVM):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add a companion non-OVM cluster to the Pod. This cluster provides an "
+"environment where the &PRODUCT; System VMs can run. You should have already "
+"installed a non-OVM hypervisor on at least one Host to prepare for this "
+"step. Depending on which hypervisor you used:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For VMWare, follow the steps in <xref linkend=\"add-clusters-vsphere\" />. "
+"When finished, return here and continue with the next step."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For KVM or XenServer, follow the steps in <xref linkend=\"add-clusters-kvm-"
+"xenserver\" />. When finished, return here and continue with the next step"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View All, "
+"then click the zone in which you want to add the cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute and Storage tab. In the Pods node, click View All."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click View Clusters, then click Add Cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Add Cluster dialog is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Hypervisor, choose OVM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Cluster, enter a name for the cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "点击添加."

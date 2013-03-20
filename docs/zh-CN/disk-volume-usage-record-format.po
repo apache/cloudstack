@@ -1,0 +1,112 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2012-09-24 05:05+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Disk Volume Usage Record Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For disk volumes, the following fields exist in a usage record."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "account – name of the account"
+msgstr "account--账户的名字"
+
+#. Tag: para
+#, no-c-format
+msgid "accountid – ID of the account"
+msgstr "accountid--账户的ID"
+
+#. Tag: para
+#, no-c-format
+msgid "domainid – ID of the domain in which this account resides"
+msgstr "domainid – ID of the domain in which this account resides"
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid – Zone where the usage occurred"
+msgstr "zoneid – 使用资源域的ID号"
+
+#. Tag: para
+#, no-c-format
+msgid "description – A string describing what the usage record is tracking"
+msgstr "description – 字符描述，用于追查使用量的记录"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage – String representation of the usage, including the units of usage "
+"(e.g. 'Hrs' for hours)"
+msgstr "usage – 代表使用量的文字，包括使用量的单位 (如 'Hrs'是小时)"
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype – A number representing the usage type (see Usage Types)"
+msgstr "usagetype – 代表使用量类型的数字 (参见使用量类型)"
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage – A number representing the actual usage in hours"
+msgstr "rawusage – 代表以小时为单位实时使用量的数字A"
+
+#. Tag: para
+#, no-c-format
+msgid "usageid – The volume ID"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "offeringid – The ID of the disk offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "type – Hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "templateid – ROOT template ID"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "size – The amount of storage allocated"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"startdate, enddate – The range of time for which the usage is aggregated; "
+"see Dates in the Usage Record"
+msgstr "startdate, enddate – The range of time for which the usage is aggregated; 参见使用量记录中的日期"

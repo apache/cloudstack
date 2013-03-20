@@ -1,0 +1,291 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the Usage Server"
+msgstr "配置使用服务器"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the usage server:"
+msgstr "配置使用服务器之前："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure the Usage Server has been installed. This requires extra steps "
+"beyond just installing the &PRODUCT; software. See Installing the Usage "
+"Server (Optional) in the Advanced Installation Guide."
+msgstr "确定你已经安装了使用服务器。这需要你在&PRODUCT; 软件之外的其他步骤。详情请见高级安装指南中的 安装使用服务器（可选）部分。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "以管理员身份登录进入&PRODUCT; 用户界面。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Global Settings."
+msgstr "点击 全局设置。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In Search, type usage. Find the configuration parameter that controls the "
+"behavior you want to set. See the table below for a description of the "
+"available parameters."
+msgstr "在搜索栏输入 usage。找到no需要改变的配置参数。下表是这些参数的详细描述。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Actions, click the Edit icon."
+msgstr "在操作栏点击编辑图标。"
+
+#. Tag: para
+#, no-c-format
+msgid "Type the desired value and click the Save icon."
+msgstr "输入数值点击保存图标。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restart the Management Server (as usual with any global configuration "
+"change) and also the Usage Server:"
+msgstr "重新启动管理服务器（通常在改变了全局配置之后都要进行这步）并重启使用服务器。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# service cloud-management restart\n"
+"# service cloud-usage restart \n"
+msgstr "# service cloud-management restart⏎ # service cloud-usage restart ⏎\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following table shows the global configuration settings that control the"
+" behavior of the Usage Server."
+msgstr "下表流出了全局配置中控制使用服务器的配置项。"
+
+#. Tag: para
+#, no-c-format
+msgid "Parameter Name"
+msgstr "变量名"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "è¯´æ"
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server"
+msgstr "enable.usage.server"
+
+#. Tag: para
+#, no-c-format
+msgid "Whether the Usage Server is active."
+msgstr "是否开启使用服务器。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.aggregation.timezone"
+msgstr "usage.aggregation.timezone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Time zone of usage records. Set this if the usage records and daily job "
+"execution are in different time zones. For example, with the following "
+"settings, the usage job will run at PST 00:15 and generate usage records for"
+" the 24 hours from 00:00:00 GMT to 23:59:59 GMT:"
+msgstr "记录使用信息所用的时区。如果使用记录和每日的任务执行在不同时区的话需要设置本参数。例如,使用以下设置会使使用作业在PST 00:15运行并生成从GMT时间0点到23:59:59 的二十四小时使用记录。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"usage.stats.job.exec.time = 00:15\t\n"
+"usage.execution.timezone = PST\n"
+"usage.aggregation.timezone = GMT\n"
+"                        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Valid values for the time zone are specified in <xref linkend=\"time-zones\""
+" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: GMT"
+msgstr "默认：GMT"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone"
+msgstr "usage.execution.timezone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time zone of usage.stats.job.exec.time. Valid values for the time zone "
+"are specified in <xref linkend=\"time-zones\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: The time zone of the management server."
+msgstr "默认时区是管理服务器的时区。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.sanity.check.interval"
+msgstr "usage.sanity.check.interval"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The number of days between sanity checks. Set this in order to periodically "
+"search for records with erroneous data before issuing customer invoices. For"
+" example, this checks for VM usage records created after the VM was "
+"destroyed, and similar checks for templates, volumes, and so on. It also "
+"checks for usage times longer than the aggregation range. If any issue is "
+"found, the alert ALERT_TYPE_USAGE_SANITY_RESULT = 21 is sent."
+msgstr "完整性检查时间间隔。设置此值来定期在生成用户账单之前检查出错误的数据。比如，他能检查虚拟机被销毁之后的使用记录和模板，卷等的类似记录。还会检查超过聚合时间的使用时间。如果发生了错误就会发送ALERT_TYPE_USAGE_SANITY_RESULT = 21 警告。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range"
+msgstr "usage.stats.job.aggregation.range"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time period in minutes between Usage Server processing jobs. For "
+"example, if you set it to 1440, the Usage Server will run once per day. If "
+"you set it to 600, it will run every ten hours. In general, when a Usage "
+"Server job runs, it processes all events generated since usage was last run."
+msgstr "使用服务器执行任务时间间隔（分钟为单位）。比如，如果你将此值设为1440，使用服务器将每天执行一次。如果你将此值设为600，则会10小时执行一次。一般情况下使用服务器执行任务时会继续在上次的使用统计基础上处理所有事件。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There is special handling for the case of 1440 (once per day). In this case "
+"the Usage Server does not necessarily process all records since Usage was "
+"last run. &PRODUCT; assumes that you require processing once per day for the"
+" previous, complete day’s records. For example, if the current day is "
+"October 7, then it is assumed you would like to process records for October "
+"6, from midnight to midnight. &PRODUCT; assumes this “midnight to midnight” "
+"is relative to the usage.execution.timezone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 1440"
+msgstr "默认：1440"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.exec.time"
+msgstr "usage.stats.job.exec.time"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time when the Usage Server processing will start. It is specified in "
+"24-hour format (HH:MM) in the time zone of the server, which should be GMT. "
+"For example, to start the Usage job at 10:30 GMT, enter “10:30”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If usage.stats.job.aggregation.range is also set, and its value is not 1440,"
+" then its value will be added to usage.stats.job.exec.time to get the time "
+"to run the Usage Server job again. This is repeated until 24 hours have "
+"elapsed, and the next day's processing begins again at "
+"usage.stats.job.exec.time."
+msgstr "如果同时设置了usage.stats.job.aggregation.range参数，并且该参数值不是1440，这个值将被添加到usage.stats.job.exec.time到时再次运行使用服务器任务。重复此过程,直到24小时已经过去,第二天到达 usage.stats.job.exec.time处理任务开始。"
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 00:15."
+msgstr "默认值：00:15"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, suppose that your server is in GMT, your user population is "
+"predominantly in the East Coast of the United States, and you would like to "
+"process usage records every night at 2 AM local (EST) time. Choose these "
+"settings:"
+msgstr "比如,假设你服务器时区是GMT，你的用户主要在美国东海岸，而你有打算在当地时间（EST）每天凌晨两点执行使用记录统计。选择这些选项："
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server = true"
+msgstr "enable.usage.server = true"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone = America/New_York"
+msgstr "usage.execution.timezone = America/New_York"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage.stats.job.exec.time = 07:00. This will run the Usage job at 2:00 AM "
+"EST. Note that this will shift by an hour as the East Coast of the U.S. "
+"enters and exits Daylight Savings Time."
+msgstr "usage.stats.job.exec.time = 07:00。这将会在东部时间2：00执行使用任务。注意，这会由于东部时间进入退出夏令时间而改变一小时。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range = 1440"
+msgstr "usage.stats.job.aggregation.range = 1440"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With this configuration, the Usage job will run every night at 2 AM EST and "
+"will process records for the previous day’s midnight-midnight as defined by "
+"the EST (America/New_York) time zone."
+msgstr "在这种配置下，使用任务 会在东部时间每天凌晨两点执行，同时会如定义的一样以东部时间统计前一天的“午夜到午夜使用记录。”"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Because the special value 1440 has been used for "
+"usage.stats.job.aggregation.range, the Usage Server will ignore the data "
+"between midnight and 2 AM. That data will be included in the next day's run."
+msgstr ""

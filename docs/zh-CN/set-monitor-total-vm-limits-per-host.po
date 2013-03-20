@@ -1,0 +1,53 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-09-24 20:48+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Set and Monitor Total VM Limits per Host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; administrator should monitor the total number of VM instances "
+"in each cluster, and disable allocation to the cluster if the total is "
+"approaching the maximum that the hypervisor can handle. Be sure to leave a "
+"safety margin to allow for the possibility of one or more hosts failing, "
+"which would increase the VM load on the other hosts as the VMs are "
+"automatically redeployed. Consult the documentation for your chosen "
+"hypervisor to find the maximum permitted number of VMs per host, then use "
+"&PRODUCT; global configuration settings to set this as the default limit. "
+"Monitor the VM activity in each cluster at all times. Keep the total number "
+"of VMs below a safe level that allows for the occasional host failure. For "
+"example, if there are N hosts in the cluster, and you want to allow for one "
+"host in the cluster to be down at any given time, the total number of VM "
+"instances you can permit in the cluster is at most (N-1) * (per-host-limit)."
+" Once a cluster reaches this number of VMs, use the &PRODUCT; UI to disable "
+"allocation of more VMs to the cluster."
+msgstr "&PRODUCT;管理员应该监视每个集群中的虚拟机实例的总数，并禁止分配给集群接近最大的虚拟机管理程序可以处理。一定要留一个安全余量，允许一个或多个主机出现故障，这会增加其他主机上的虚拟机负载，增加自动重新部署的可能性。查询你选择虚拟机管理程序的文档，来发现的最大许可数量每台主机上的虚拟机，然后使用&PRODUCT;的全局配置设置设置为默认的限制。在每个群集在任何时候都监控虚拟机的活动。保持总的虚拟机数量低于安全水平，允许偶尔主机发生故障。例如，如果有N个集群中的主机，你想允许在集群中的一台主机是在任何给定的时间内，总数量的虚拟机实例，你可以允许集群中最多（N-1 ）*（每个主机的限制）。集群一旦达到这个数字的虚拟机，使用&PRODUCT; UI禁用分配更多的虚拟机的集群。"

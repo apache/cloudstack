@@ -1,0 +1,83 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <rayang2004@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-02 18:32+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Clusters"
+msgstr "关于集群"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster provides a way to group hosts. To be precise, a cluster is a "
+"XenServer server pool, a set of KVM servers, , or a VMware cluster "
+"preconfigured in vCenter. The hosts in a cluster all have identical "
+"hardware, run the same hypervisor, are on the same subnet, and access the "
+"same shared primary storage. Virtual machine instances (VMs) can be live-"
+"migrated from one host to another within the same cluster, without "
+"interrupting service to the user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster is the third-largest organizational unit within a &PRODUCT; "
+"deployment. Clusters are contained within pods, and pods are contained "
+"within zones. Size of the cluster is limited by the underlying hypervisor, "
+"although the &PRODUCT; recommends less in most cases; see Best Practices."
+msgstr "集群在本产品中是第三大组织单位；\n部署\n集群隶属于pod之下，而pod隶属于zone之下。集群的大小取决于下层虚拟机软件。大多数情况下基本无建议；详见最佳实践"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A cluster consists of one or more hosts and one or more primary storage "
+"servers."
+msgstr "集群由一个或多个宿主机和一个或多个主要存储服务器构成。"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows multiple clusters in a cloud deployment."
+msgstr "本产品允许在云部署中有多个集群"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Even when local storage is used exclusively, clusters are still required "
+"organizationally, even if there is just one host per cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When VMware is used, every VMware cluster is managed by a vCenter server. "
+"Administrator must register the vCenter server with &PRODUCT;. There may be "
+"multiple vCenter servers per zone. Each vCenter server may manage multiple "
+"VMware clusters."
+msgstr "当使用VMware时，每个VMware集群都被vCenter 服务器管理。管理员必须在本产品中登记vCenter。每个zone下可以有多个vCenter服务器。每个vCenter服务器可能管理多个VMware集群。"
