@@ -20,6 +20,7 @@ var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
 var g_account = null;
 var g_domainid = null;
+var g_regionUrlParam = null;
 var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;

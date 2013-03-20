@@ -81,8 +81,8 @@
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));
-
-          document.location.href = url;
+          
+          document.location.href = url + g_regionUrlParam;
         }
       });
     };

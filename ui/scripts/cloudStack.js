@@ -251,6 +251,9 @@
           array1.push("&domain=" + encodeURIComponent("/"));
         }
 
+				g_regionUrlParam = '?loginUrl=' + escape("command=login" + array1.join("") + "&response=json");
+				$.cookie('loginUrl', escape("command=login" + array1.join("") + "&response=json"), { expires: 1});
+				
         $.ajax({
           type: "POST",
           data: "command=login" + array1.join("") + "&response=json",					
@@ -382,8 +385,9 @@
 						g_domainid = null;	
 						g_timezoneoffset = null;
 						g_timezone = null;
-						g_supportELB = null;
-								
+						g_supportELB = null;						
+						g_regionUrlParam = null;
+						
 						$.cookie('JSESSIONID', null);
 						$.cookie('sessionKey', null);
 						$.cookie('username', null);
@@ -394,6 +398,7 @@
 						$.cookie('timezoneoffset', null);
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
+						$.cookie('loginUrl', null);
 												
 						if(onLogoutCallback()) {	 //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
               document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
