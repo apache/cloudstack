@@ -372,7 +372,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
         }
         else {
-            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, false, null, null, 180000);
         }
     }
     
