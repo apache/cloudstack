@@ -70,7 +70,7 @@
               success: function(json) {							 
                 var item = json.addregionresponse.region;
                 args.response.success({data: item});               
-                //$(window).trigger('cloudStack.refreshRegions');
+                $(window).trigger('cloudStack.refreshRegions');
               },
               error: function(json) {
                 args.response.error(parseXMLHttpResponse(json));
@@ -123,7 +123,15 @@
             messages: {
               notification: function() { return 'label.remove.region'; },
               confirm: function() { return 'message.remove.region'; }
-            },
+            },						
+						preAction: function(args) {
+						  var region = args.context.regions[0];							
+							if(region.endpoint == document.location.href) {		
+							  cloudStack.dialog.notice({ message: _l('You can not remove the region that you are currently in.') });
+                return false;
+							}						
+              return true;
+            },	
             action: function(args) {
               var region = args.context.regions[0];
 

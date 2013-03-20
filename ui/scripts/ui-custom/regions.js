@@ -37,7 +37,7 @@
 
               $li.data('region-data', region);
 							
-							if(document.location.href == region.endpoint) {		
+							if(region.endpoint == document.location.href) {		
                 currentRegion = region;	
 								$li.addClass('active');
 							}
