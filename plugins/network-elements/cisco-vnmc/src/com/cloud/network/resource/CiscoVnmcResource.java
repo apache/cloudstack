@@ -73,7 +73,11 @@ public class CiscoVnmcResource implements ServerResource {
     private String _guid;
     private Integer _numRetries;
 
-    CiscoVnmcConnectionImpl _connection;
+    private CiscoVnmcConnectionImpl _connection;
+
+    public void setConnection(CiscoVnmcConnectionImpl connection) {
+        this._connection = connection;
+    }
 
     private final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
 
@@ -135,7 +139,7 @@ public class CiscoVnmcResource implements ServerResource {
             _password = (String) params.get("password");
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
-            }            
+            }
 
             _guid = (String)params.get("guid");
             if (_guid == null) {
@@ -148,9 +152,9 @@ public class CiscoVnmcResource implements ServerResource {
 
             // Open a socket and login
             _connection = new CiscoVnmcConnectionImpl(_ip, _username, _password);
-            if (!refreshVnmcConnection()) {
-                throw new ConfigurationException("Unable to open a connection to the VNMC.");
-            }
+            //if (!refreshVnmcConnection()) {
+            //    throw new ConfigurationException("Unable to open a connection to the VNMC.");
+            //}
 
             return true;
         } catch (Exception e) {
@@ -192,6 +196,9 @@ public class CiscoVnmcResource implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(final long id) {
+        if (!refreshVnmcConnection()) {
+            return null;
+        }
         return new PingCommand(Host.Type.ExternalFirewall, id);
     }
 
@@ -222,7 +229,7 @@ public class CiscoVnmcResource implements ServerResource {
     /*
      * Login
      */
-    private boolean refreshVnmcConnection() {
+    public boolean refreshVnmcConnection() {
         boolean ret = false;
         try {
             ret = _connection.login();

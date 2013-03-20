@@ -111,7 +111,7 @@ public class CiscoVnmcConnectionTest {
     public void testCreateTenantVDCEdgeDeviceRoute() {
         try {
             boolean response = connection.createTenantVDCEdgeStaticRoute(tenantName,
-                    "10.223.136.1", "Edge_Outside", "0.0.0.0", "0.0.0.0");
+                    "10.223.136.1", "0.0.0.0", "0.0.0.0");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
