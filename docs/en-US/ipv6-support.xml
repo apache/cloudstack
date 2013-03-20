@@ -106,14 +106,14 @@
       <listitem>
         <para>Passwords</para>
       </listitem>
-      <listitem>
-        <para>The administrator cannot specify the IPv6 address of a VM.</para>
-      </listitem>
     </orderedlist>
   </section>
   <section id="network-conf-dhcpv6">
-    <title>Network Configuration for DHCPv6</title>
-    <para>Use DUID-LL to get IPv6 address from DHCP server</para>
+    <title>Guest VM Configuration for DHCPv6</title>
+    <para>For the guest VMs to get IPv6 address, run dhclient command manually on each of the VMs.
+      Use DUID-LL to set up dhclient. </para>
+    <note><para>The IPv6 address is lost when a VM is stopped and started. Therefore, use the same procedure
+        to get an IPv6 address when a VM is stopped and started.</para></note>
     <orderedlist>
       <listitem>
         <para>Set up dhclient by using DUID-LL.</para>
