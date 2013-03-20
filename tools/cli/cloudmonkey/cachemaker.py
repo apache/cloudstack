@@ -100,7 +100,11 @@ def monkeycache(apis):
     cache['count'] = getvalue(apis[responsekey], 'count')
     cache['asyncapis'] = []
 
-    for api in getvalue(apis[responsekey], 'api'):
+    apilist = getvalue(apis[responsekey], 'api')
+    if apilist == None:
+        print "[monkeycache] Server response issue, no apis found"
+
+    for api in apilist:
         name = getvalue(api, 'name')
         verb, subject = splitverbsubject(name)
 
