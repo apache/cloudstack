@@ -1,0 +1,91 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-04 15:32+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Cisco 3750"
+msgstr "Cisco 3750"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following steps show how a Cisco 3750 is configured for zone-level "
+"layer-3 switching. These steps assume VLAN 201 is used to route untagged "
+"private IPs for pod 1, and pod 1’s layer-2 switch is connected to "
+"GigabitEthernet1/0/1."
+msgstr "次の手順では、Cisco 3750 をゾーンレベルのレイヤー3 スイッチ用に構成する方法を示します。この手順は、VLAN 201 を使用してポッド 1 のタグなしのプライベート IP アドレスをルーティングし、ポッド 1 のレイヤー2 スイッチがギガビットイーサ ネット 1/0/1 に接続されていることを前提としています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Setting VTP mode to transparent allows us to utilize VLAN IDs above 1000. "
+"Since we only use VLANs up to 999, vtp transparent mode is not strictly "
+"required."
+msgstr "VTP のモードをトランスペアレントにすることにより、1000 を超える VLAN ID を使用することができます。ここでは最 大 999 個の VLAN しか使用しないため、VTP のモードをトランスペアレントにすることが絶対に必要というわけではありません。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"vtp mode transparent\n"
+"vlan 200-999\n"
+"exit"
+msgstr "vtp mode transparent\nvlan 200-999\nexit"
+
+#. Tag: para
+#, no-c-format
+msgid "Configure GigabitEthernet1/0/1."
+msgstr "ギガビットイーサネット 1/0/1 を構成します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"interface GigabitEthernet1/0/1\n"
+"switchport trunk encapsulation dot1q\n"
+"switchport mode trunk\n"
+"switchport trunk native vlan 201\n"
+"exit"
+msgstr "interface GigabitEthernet1/0/1\nswitchport trunk encapsulation dot1q\nswitchport mode trunk\nswitchport trunk native vlan 201\nexit"
+
+#. Tag: para
+#, no-c-format
+msgid "The statements configure GigabitEthernet1/0/1 as follows:"
+msgstr "これらのコマンドにより、ギガビットイーサネット 1/0/1 が次のように構成されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 201 is the native untagged VLAN for port GigabitEthernet1/0/1."
+msgstr "VLAN 201 は、ギガビットイーサネット 1/0/1 のタグなしネイティブ VLAN です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cisco passes all VLANs by default. As a result, all VLANs (300-999) are "
+"passed to all the pod-level layer-2 switches."
+msgstr "Cisco ではデフォルトですべての VLAN が渡されます。その結果、すべての VLAN(300~999)は、ポッドレベルのすべてのレイヤー2 スイッチに渡されます。"

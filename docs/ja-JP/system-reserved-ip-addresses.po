@@ -1,0 +1,144 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-22 03:44+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Reserved IP Addresses"
+msgstr "システムにより予約済みの IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In each zone, you need to configure a range of reserved IP addresses for the"
+" management network. This network carries communication between the "
+"&PRODUCT; Management Server and various system VMs, such as Secondary "
+"Storage VMs, Console Proxy VMs, and DHCP."
+msgstr "各ゾーンで、管理ネットワーク用に予約済みの IP アドレスの範囲を構成する必要があります。このネットワークは、&PRODUCT; 管理サーバーとさまざまなシステム仮想マシン(セカンダリストレージ仮想マシン、コンソールプロキシ仮想マシン、DHCP など)の間の通信に使用されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The reserved IP addresses must be unique across the cloud. You cannot, for "
+"example, have a host in one zone which has the same private IP address as a "
+"host in another zone."
+msgstr "予約済みの IP アドレスは、クラウド全体で一意である必要があります。たとえば、2 つのゾーンのホストに同じプライベート IP アドレスを使用することはできません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The hosts in a pod are assigned private IP addresses. These are typically "
+"RFC1918 addresses. The Console Proxy and Secondary Storage system VMs are "
+"also allocated private IP addresses in the CIDR of the pod that they are "
+"created in."
+msgstr "ポッド内のホストにはプライベート IP アドレスが割り当てられます。これは通常、RFC1918 アドレスです。コンソールプロキシとセカンダリストレージのシステム仮想マシンにも、それらが作成されたポッドの CIDR のプライベート IP アドレスが割り当てられます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure computing servers and Management Servers use IP addresses outside "
+"of the System Reserved IP range. For example, suppose the System Reserved IP"
+" range starts at 192.168.154.2 and ends at 192.168.154.7. &PRODUCT; can use "
+".2 to .7 for System VMs. This leaves the rest of the pod CIDR, from .8 to "
+".254, for the Management Server and hypervisor hosts."
+msgstr "コンピューティングサーバーと管理サーバーはシステム予約 IP 範囲外の IP アドレスを利用します。例として、システム予約 IP 範囲が 192.168.154.2 から始まり 192.168.154.7 で終わる場合、&PRODUCT; は .2 から .7 をシステム仮想マシンに利用できます。 これはポッドの CIDR とは別になり .8 から .254 を管理サーバーやハイパーバイザーホストに利用できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">In all zones:</emphasis>"
+msgstr "<emphasis role=\"bold\">全てのゾーンで : </emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide private IPs for the system in each pod and provision them in "
+"&PRODUCT;."
+msgstr "各ポッドのシステムにプライベート IP アドレスを割り当てて、&PRODUCT; で準備します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For KVM and XenServer, the recommended number of private IPs per pod is one "
+"per host. If you expect a pod to grow, add enough private IPs now to "
+"accommodate the growth."
+msgstr "KVM と XenServer で推奨されるポッドあたりのプライベート IP アドレスの数は、ホストごとに 1 つです。ポッドの拡張が予想される場合は、拡張に対応できるだけの数のプライベート IP アドレスをあらかじめ追加しておきます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">In a zone that uses advanced networking:</emphasis>"
+msgstr "<emphasis role=\"bold\">拡張ネットワーク設定を使用するゾーンで : </emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For zones with advanced networking, we recommend provisioning enough private"
+" IPs for your total number of customers, plus enough for the required "
+"&PRODUCT; System VMs. Typically, about 10 additional IPs are required for "
+"the System VMs. For more information about System VMs, see Working with "
+"System Virtual Machines in the Administrator's Guide."
+msgstr "ゾーンに対し拡張ネットワーク設定を使用する場合は、顧客の合計数に必要な &PRODUCT; システム仮想マシンの数を加えた数のプライベート IP アドレスを準備することをお勧めします。通常は、システム仮想マシン用に約 10 個の IP アドレスが追加で必要になります。システム仮想マシンについて詳しくは、「システム仮想マシンの操作」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When advanced networking is being used, the number of private IP addresses "
+"available in each pod varies depending on which hypervisor is running on the"
+" nodes in that pod. Citrix XenServer and KVM use link-local addresses, which"
+" in theory provide more than 65,000 private IP addresses within the address "
+"block. As the pod grows over time, this should be more than enough for any "
+"reasonable number of hosts as well as IP addresses for guest virtual "
+"routers. VMWare ESXi, by contrast uses any administrator-specified "
+"subnetting scheme, and the typical administrator provides only 255 IPs per "
+"pod. Since these are shared by physical machines, the guest virtual router, "
+"and other entities, it is possible to run out of private IPs when scaling up"
+" a pod whose nodes are running ESXi."
+msgstr "拡張ネットワーク設定を使用する場合は、各ポッドで使用できるプライベート IP アドレスの数は、そのポッドのノードで実行するハイパーバイザーによって異なります。Citrix XenServer と KVM ではリンクローカルアドレスが使用されるため、理論上は、アドレスブロック内で 65,000 を超える数のプライベート IP アドレスを使用できます。次第にポッドが拡張されても、ホ ストやゲスト仮想ルーターの IP アドレスが足りなくなることはまずありません。一方、VMWare ESXi では、管理者が指定するサブネット方式が使用されるため、一般的なポッドあたりの IP アドレスの数は 255 個のみです。これらのアドレスは、物理マシン、ゲスト仮想ルーター、およびそのほかのエンティティに割り当てられるため、ノードで ESXi が実行されているポッ ドを拡張するときには、プライベート IP アドレスが足りなくなる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To ensure adequate headroom to scale private IP space in an ESXi pod that "
+"uses advanced networking, use one or both of the following techniques:"
+msgstr "拡張ネットワーク設定を使用する ESXi ポッドでプライベート IP 領域を拡張するための適切な余裕を確保するには、次のどちらか、または両方の方法を使用します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify a larger CIDR block for the subnet. A subnet mask with a /20 suffix "
+"will provide more than 4,000 IP addresses."
+msgstr "サブネットに対してより大きい CIDR ブロックを指定する。サフィックスが/20 のサブネットマスクでは、4,000 個を超える IP アドレスを提供できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create multiple pods, each with its own subnet. For example, if you create "
+"10 pods and each pod has 255 IPs, this will provide 2,550 IP addresses."
+msgstr "複数のポッドを、それぞれ独自のサブネットを指定して作成する。たとえば、10 個のポッドを作成し、各ポッドに 255 個の IP を持たせる場合、2,550 個の IP アドレスを提供できます。"

@@ -1,0 +1,45 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-05 10:37+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Guest IP Addresses"
+msgstr "拡張ゾーンのゲスト IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When advanced networking is used, the administrator can create additional "
+"networks for use by the guests. These networks can span the zone and be "
+"available to all accounts, or they can be scoped to a single account, in "
+"which case only the named account may create guests that attach to these "
+"networks. The networks are defined by a VLAN ID, IP range, and gateway. The "
+"administrator may provision thousands of these networks if desired."
+msgstr "拡張ネットワーク設定を使用する場合は、ゲストが使用するための追加のネットワークを作成できます。それらのネットワークは、ゾーン全体を対象にしてすべてのアカウントが使用できるようにすることも、単一のアカウントを対象にすること もできます。後者の場合、それらのネットワークに接続するゲストを作成できるのはそのアカウントだけになります。ネットワークは、VLAN ID、IP アドレス範囲、およびゲートウェイによって定義されます。管理者は、こうしたネットワークを必要に応じて何千もプロビジョニングできます。"

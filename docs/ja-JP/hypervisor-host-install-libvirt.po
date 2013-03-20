@@ -1,0 +1,153 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install and Configure libvirt"
+msgstr "libvirt の構成とインストール"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; uses libvirt for managing virtual machines. Therefore it is vital "
+"that libvirt is configured correctly. Libvirt is a dependency of cloud-agent"
+" and should already be installed."
+msgstr "&PRODUCT; は仮想マシンを管理するために libvirt を利用します。そのため libvirt を正しく設定することはとても重要です。Libvirt は cloud-agent から参照され正常にインストールされている必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order to have live migration working libvirt has to listen for unsecured "
+"TCP connections. We also need to turn off libvirts attempt to use Multicast "
+"DNS advertising. Both of these settings are in "
+"<filename>/etc/libvirt/libvirtd.conf</filename>"
+msgstr "libvirt を用いてライブマイグレーションを実施するにはセキュアでない TCP コネクションを開放する必要があります。また、libvirt がマルチキャストの DNS アドバタイズを試行しないよう無効化する必要があります。これらの設定方法は <filename>/etc/libvirt/libvirtd.conf</filename> にて編集してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following paramaters:"
+msgstr "以下のパラメーターを設定してください。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tls = 0"
+msgstr "listen_tls = 0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tcp = 1"
+msgstr "listen_tcp = 1"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "tcp_port = \"16059\""
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auth_tcp = \"none\""
+msgstr "auth_tcp = \"none\""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mdns_adv = 0"
+msgstr "mdns_adv = 0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Turning on \"listen_tcp\" in libvirtd.conf is not enough, we have to change "
+"the parameters as well:"
+msgstr " libvirtd.conf では \"listen_tcp\" だけでなくいくつかのパラメーターを以下のように設定する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:"
+msgstr "RHEL や CentOS を利用している場合は <filename>/etc/sysconfig/libvirtd</filename> を編集してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following line:"
+msgstr "次の行のコメントを外してください。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#LIBVIRTD_ARGS=\"--listen\""
+msgstr "#LIBVIRTD_ARGS=\"--listen\""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename>"
+msgstr "Ubuntu を利用している場合は <filename>/etc/init/libvirt-bin.conf</filename> を編集してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line (at the end of the file):"
+msgstr "以下の行を変更してください(ファイルの行末): "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d"
+msgstr "exec /usr/sbin/libvirtd -d"
+
+#. Tag: para
+#, no-c-format
+msgid "to (just add -l)"
+msgstr "-l オプションをつける場合"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d -l"
+msgstr "exec /usr/sbin/libvirtd -d -l"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart libvirt"
+msgstr "libvirt を再起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr "RHELもしくはCentOSの場合:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirtd restart</command>"
+msgstr "<command>$ service libvirtd restart</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu:"
+msgstr "Ubuntuの場合:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirt-bin restart</command>"
+msgstr "<command>$ service libvirt-bin restart</command>"

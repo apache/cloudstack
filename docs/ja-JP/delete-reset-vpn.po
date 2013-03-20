@@ -1,0 +1,149 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-08 01:43+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Restarting and Removing a VPN Connection"
+msgstr "VPN 接続の再起動と削除"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者もしくはエンドユーザーとして &PRODUCT; UI にログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "選択ビューから VPC を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "アカウントに対して作成された全ての VPC がページにリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "仮想マシンを展開したい VPC の [Configure] ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC ページではダイアグラム上にリストされる作成された全ての層が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "設定アイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "以下のオプションが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "ゲートウェイ"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "サイト間 VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ASLs"
+msgstr "ネットワーク ACL"
+
+#. Tag: para
+#, no-c-format
+msgid "Select Site-to-Site VPN."
+msgstr "サイト間 VPN を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Site-to-Site VPN page is displayed."
+msgstr "サイト間 VPN のページが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From the Select View drop-down, ensure that VPN Connection is selected."
+msgstr "セレクトビューのドロップダウンから VPN 接続を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPN connections you created are displayed."
+msgstr "作成した全ての VPN 接続が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the VPN connection you want to work with."
+msgstr "対象となる VPN 接続を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Details tab is displayed."
+msgstr "[詳細] タブが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To remove a VPN connection, click the Delete VPN connection "
+"button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/remove-vpn.png\" /> </imageobject> <textobject> <phrase>remove-vpn.png: "
+"button to remove a VPN connection</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "VPN 接続を削除するには [Delete VPN Connection] ボタンをクリックします。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/remove-vpn.png\" /> </imageobject> <textobject> <phrase>remove-vpn.png: button to remove a VPN connection</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To restart a VPN connection, click the Reset VPN connection button present "
+"in the Details tab.<inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/reset-vpn.png\" /> </imageobject> <textobject> <phrase"
+">reset-vpn.png: button to reset a VPN connection</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "VPN 接続を再起動するには [詳細] タブにある [Reset VPN Connection] ボタンをクリックします。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/reset-vpn.png\" /> </imageobject> <textobject> <phrase>reset-vpn.png: button to reset a VPN connection</phrase> </textobject> </inlinemediaobject>"

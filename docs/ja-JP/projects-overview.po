@@ -1,0 +1,96 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 05:25+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Projects"
+msgstr "プロジェクトの概要"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Projects are used to organize people and resources. &PRODUCT; users within a"
+" single domain can group themselves into project teams so they can "
+"collaborate and share virtual resources such as VMs, snapshots, templates, "
+"data disks, and IP addresses. &PRODUCT; tracks resource usage per project as"
+" well as per user, so the usage can be billed to either a user account or a "
+"project. For example, a private cloud within a software company might have "
+"all members of the QA department assigned to one project, so the company can"
+" track the resources used in testing while the project members can more "
+"easily isolate their efforts from other users of the same cloud"
+msgstr "&PRODUCT;ユーザーはプロジェクトチームを組織して協力し合い、仮想マシン、スナップショット、テンプレート、データディスク、およびIPアドレスなどの仮想リソースを共有することができます。&PRODUCT;によってプロジェクトおよびユーザーごとのリソース使用状況が追跡されるため、ユーザーアカウントまたはプロジェクト単位で使用料を請求することができます。たとえば、ソフトウェア会社の品質保証部門のすべてのメンバーを、プライベートクラウド内の1つのプロジェクトに割り当てます。プロジェクトメンバーは同じクラウドのほかのユーザーの作業から自分たちの作業を簡単に分離できる一方で、会社はテストに使用されるリソースを追跡することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can configure &PRODUCT; to allow any user to create a new project, or "
+"you can restrict that ability to just &PRODUCT; administrators. Once you "
+"have created a project, you become that project’s administrator, and you can"
+" add others within your domain to the project. &PRODUCT; can be set up "
+"either so that you can add people directly to a project, or so that you have"
+" to send an invitation which the recipient must accept. Project members can "
+"view and manage all virtual resources created by anyone in the project (for "
+"example, share VMs). A user can be a member of any number of projects and "
+"can switch views in the &PRODUCT; UI to show only project-related "
+"information, such as project VMs, fellow project members, project-related "
+"alerts, and so on."
+msgstr "どのユーザーも新しいプロジェクトを作成できるように構成したり、この機能を&PRODUCT;管理者のみに制限したりすることができます。プロジェクトを作成すると、自身がそのプロジェクトの管理者になり、自分のドメイン内のほかのユーザーをプロジェクトに追加できます。ユーザーをプロジェクトに直接追加できるようにするか、招待状の送信を必須とするように&PRODUCT;をセットアップできます。招待状を必須とする場合は、受信者はこの招待状を承諾する必要があります。プロジェクトメンバーは、プロジェクト内のどのユーザーが作成した仮想リソースも表示および管理できます(たとえば、共有仮想マシンなど)。ユーザーがメンバーになれるプロジェクトの数に制限はありません。&PRODUCT;ユーザーインターフェイスのビューを切り替えれば、プロジェクト仮想マシン、仲間のプロジェクトメンバー、プロジェクト関連のアラートなど、プロジェクトに関する情報のみを表示することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The project administrator can pass on the role to another project member. "
+"The project administrator can also add more members, remove members from the"
+" project, set new resource limits (as long as they are below the global "
+"defaults set by the &PRODUCT; administrator), and delete the project. When "
+"the administrator removes a member from the project, resources created by "
+"that user, such as VM instances, remain with the project. This brings us to "
+"the subject of resource ownership and which resources can be used by a "
+"project."
+msgstr "プロジェクト管理者は、その役割を別のプロジェクトメンバーに委任できます。また、プロジェクト管理者は、さらにメンバーを追加したり、メンバーをプロジェクトから削除したり、(&PRODUCT;管理者が設定するグローバルデフォルト以下であることが条件ですが)新しいリソース制限を設定したり、プロジェクトを削除したりすることもできます。管理者がメンバーをプロジェクトから削除すると、そのユーザーが作成した仮想マシンインスタンスなどのリソースはプロジェクトと共に残ります。これにより、リソースの所有権と、どのリソースをプロジェクトで使用できるかという問題が生じます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Resources created within a project are owned by the project, not by any "
+"particular &PRODUCT; account, and they can be used only within the project. "
+"A user who belongs to one or more projects can still create resources "
+"outside of those projects, and those resources belong to the user’s account;"
+" they will not be counted against the project’s usage or resource limits. "
+"You can create project-level networks to isolate traffic within the project "
+"and provide network services such as port forwarding, load balancing, VPN, "
+"and static NAT. A project can also make use of certain types of resources "
+"from outside the project, if those resources are shared. For example, a "
+"shared network or public template is available to any project in the domain."
+" A project can get access to a private template if the template’s owner will"
+" grant permission. A project can use any service offering or disk offering "
+"available in its domain; however, you can not create private service and "
+"disk offerings at the project level.."
+msgstr "プロジェクト内で作成されたリソースは、特定の&PRODUCT;アカウントではなく、プロジェクトによって所有され、プロジェクト内のみで使用できます。プロジェクトに属するユーザーは、プロジェクトの外にもリソースを作成できます。そのようなリソースはユーザーのアカウントに属し、プロジェクトの使用状況やリソース制限の対象にはなりません。プロジェクトレベルのネットワークを作成して、プロジェクト内のトラフィックを分離し、ポート転送、負荷分散、VPN、静的NATなどのネットワークサービスを提供できます。プロジェクトでは、特定の種類のリソースが共有されている場合には、プロジェクトの外からそのリソースを利用することもできます。たとえば、共有ネットワークまたはパブリックテンプレートは、ドメイン内のどのプロジェクトでも使用できます。テンプレートの所有者が許可すれば、プロジェクトでプライベートテンプレートにアクセスできます。プロジェクトでは、そのドメインで使用できるどのサービスオファリングまたはディスクオファリングも使用できますが、プロジェクトレベルではプライベートサービスオファリングもディスクオファリングも作成できません。"

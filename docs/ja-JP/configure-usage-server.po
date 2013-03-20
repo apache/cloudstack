@@ -1,0 +1,293 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+# Kimihiko Kitase <kkitase@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the Usage Server"
+msgstr "使用状況測定サーバーの構成"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the usage server:"
+msgstr "使用状況測定サーバーを構成するには"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure the Usage Server has been installed. This requires extra steps "
+"beyond just installing the &PRODUCT; software. See Installing the Usage "
+"Server (Optional) in the Advanced Installation Guide."
+msgstr "使用状況測定サーバーがインストール済みであることを確認します。これには&PRODUCT;ソフトウェアの単なるインストールだけではない、追加の手順が必要です。『インストールガイド上級編』の「使用状況サーバーのインストール(オプション)」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "&PRODUCT;ユーザーインターフェイスに管理者としてログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Global Settings."
+msgstr "Global Settingsをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In Search, type usage. Find the configuration parameter that controls the "
+"behavior you want to set. See the table below for a description of the "
+"available parameters."
+msgstr "検索ボックスに「usage」と入力します。設定する動作を制御する構成パラメーターを見つけます。使用できるパラメーターの説明については、次の表を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Actions, click the Edit icon."
+msgstr "操作列のEditアイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Type the desired value and click the Save icon."
+msgstr "望ましい値を入力してSaveアイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restart the Management Server (as usual with any global configuration "
+"change) and also the Usage Server:"
+msgstr "ほかのグローバル構成変更を行ったときと同様に管理サーバーを再起動し、使用状況測定サーバーも再起動しま す。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# service cloud-management restart\n"
+"# service cloud-usage restart \n"
+msgstr "# service cloud-management restart\n# service cloud-usage restart \n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following table shows the global configuration settings that control the"
+" behavior of the Usage Server."
+msgstr "次の表に、使用状況測定サーバーの動作を制御するグローバル構成設定を示します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Parameter Name"
+msgstr "パラメーター名"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "説明"
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server"
+msgstr "enable.usage.server"
+
+#. Tag: para
+#, no-c-format
+msgid "Whether the Usage Server is active."
+msgstr "使用状況測定サーバーがアクティブかどうかを示します。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.aggregation.timezone"
+msgstr "usage.aggregation.timezone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Time zone of usage records. Set this if the usage records and daily job "
+"execution are in different time zones. For example, with the following "
+"settings, the usage job will run at PST 00:15 and generate usage records for"
+" the 24 hours from 00:00:00 GMT to 23:59:59 GMT:"
+msgstr "使用状況レコードのタイムゾーンです。使用状況レコードと日次ジョブが異なるタイムゾーンで処理される場合に設定します。たとえば次の設定により、使用状況測定ジョブが米国太平洋標準時午前 0 時 15 分に実行され、グリニッジ標準時午前 0 時 0 分 0 秒から午後 11 時 59 分 59 秒までの 24 時間分の使用状況レコードが生成され ます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"usage.stats.job.exec.time = 00:15\t\n"
+"usage.execution.timezone = PST\n"
+"usage.aggregation.timezone = GMT\n"
+"                        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Valid values for the time zone are specified in <xref linkend=\"time-zones\""
+" />"
+msgstr "タイムゾーンに設定できる有効な値は <xref linkend=\"time-zones\" /> を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Default: GMT"
+msgstr "デフォルト: GMT"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone"
+msgstr "usage.execution.timezone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time zone of usage.stats.job.exec.time. Valid values for the time zone "
+"are specified in <xref linkend=\"time-zones\" />"
+msgstr "usage.stats.job.exec.time のタイムゾーン : タイムゾーンに設定できる有効な値は <xref linkend=\"time-zones\" /> を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Default: The time zone of the management server."
+msgstr "デフォルト:管理サーバーのタイムゾーン"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.sanity.check.interval"
+msgstr "usage.sanity.check.interval"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The number of days between sanity checks. Set this in order to periodically "
+"search for records with erroneous data before issuing customer invoices. For"
+" example, this checks for VM usage records created after the VM was "
+"destroyed, and similar checks for templates, volumes, and so on. It also "
+"checks for usage times longer than the aggregation range. If any issue is "
+"found, the alert ALERT_TYPE_USAGE_SANITY_RESULT = 21 is sent."
+msgstr "サニティチェックの実行間隔で、日単位で指定します。顧客に請求書を発行する前に、誤ったデータを含むレコードを定期的にチェックする場合に設定します。たとえば、これにより仮想マシンが破棄された後に、その仮想マシンについて作成された 使用状況レコードがないかチェックされます。テンプレートやボリュームなどについても同様のチェックが行われます。合計範囲より長い使用時間がないかどうかもチェックされます。問題が見つかった場合は、アラート ALERT_TYPE_USAGE_SANITY_RESULT = 21 が送信されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range"
+msgstr "usage.stats.job.aggregation.range"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time period in minutes between Usage Server processing jobs. For "
+"example, if you set it to 1440, the Usage Server will run once per day. If "
+"you set it to 600, it will run every ten hours. In general, when a Usage "
+"Server job runs, it processes all events generated since usage was last run."
+msgstr "使用状況測定サーバーのジョブの実行間隔で、分単位で指定します。たとえば、この値を 1440 に設定すると、使用状況測定サーバーは 1 日に 1 回実行されます。この値を 600 に設定した場合は、10 時間ごとに実行されます。通常、使用状況測定 サーバーのジョブが実行されるときは、使用状況測定サーバーが最後に実行されてから生成されたすべてのイベントが処理されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There is special handling for the case of 1440 (once per day). In this case "
+"the Usage Server does not necessarily process all records since Usage was "
+"last run. &PRODUCT; assumes that you require processing once per day for the"
+" previous, complete day’s records. For example, if the current day is "
+"October 7, then it is assumed you would like to process records for October "
+"6, from midnight to midnight. &PRODUCT; assumes this “midnight to midnight” "
+"is relative to the usage.execution.timezone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 1440"
+msgstr "デフォルト: 1440"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.exec.time"
+msgstr "usage.stats.job.exec.time"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time when the Usage Server processing will start. It is specified in "
+"24-hour format (HH:MM) in the time zone of the server, which should be GMT. "
+"For example, to start the Usage job at 10:30 GMT, enter “10:30”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If usage.stats.job.aggregation.range is also set, and its value is not 1440,"
+" then its value will be added to usage.stats.job.exec.time to get the time "
+"to run the Usage Server job again. This is repeated until 24 hours have "
+"elapsed, and the next day's processing begins again at "
+"usage.stats.job.exec.time."
+msgstr "usage.stats.job.aggregation.range も設定されていて、その値が 1440 ではない場合は、値を usage.stats.job.exec.time に追加して使用状況測定サーバーのジョブを再 実行する時刻を取得します。この処理は 24 時間経過するまで繰り返され、翌日の処理は usage.stats.job.exec.time に再び開始されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 00:15."
+msgstr "デフォルト:00:15"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, suppose that your server is in GMT, your user population is "
+"predominantly in the East Coast of the United States, and you would like to "
+"process usage records every night at 2 AM local (EST) time. Choose these "
+"settings:"
+msgstr "たとえば、サーバーのタイムゾーンがグリニッジ標準時で、大部分のユーザーが米国の東海岸に存在する場合に、使用状況レコードをユーザーのローカルタイム(米国東部標準時)の午前 2 時に毎日処理するとします。この場合は、次のように設定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server = true"
+msgstr "enable.usage.server = true"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone = America/New_York"
+msgstr "usage.execution.timezone = America/New_York"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage.stats.job.exec.time = 07:00. This will run the Usage job at 2:00 AM "
+"EST. Note that this will shift by an hour as the East Coast of the U.S. "
+"enters and exits Daylight Savings Time."
+msgstr "usage.stats.job.exec.time = 07:00。これにより、使用状況測定ジョブが米国東部標準時の午前 2 時に実行されま す。この時刻は、米国の東海岸で夏時間が開始および終了するときに 1 時間ずれることに注意してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range = 1440"
+msgstr "usage.stats.job.aggregation.range = 1440"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With this configuration, the Usage job will run every night at 2 AM EST and "
+"will process records for the previous day’s midnight-midnight as defined by "
+"the EST (America/New_York) time zone."
+msgstr "この構成では、使用状況測定ジョブが米国東部標準時午前 2 時に毎日実行され、米国東部標準時(America/New_York)\nのタイムゾーンで定義されている前日の 0 時から午後 11 時 59 分 59 秒までのレコードが処理されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Because the special value 1440 has been used for "
+"usage.stats.job.aggregation.range, the Usage Server will ignore the data "
+"between midnight and 2 AM. That data will be included in the next day's run."
+msgstr ""

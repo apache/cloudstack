@@ -1,0 +1,123 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using VPN with Windows"
+msgstr "Windows での VPN の使用方法"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The procedure to use VPN varies by Windows version. Generally, the user must"
+" edit the VPN properties and make sure that the default route is not the "
+"VPN. The following steps are for Windows L2TP clients on Windows Vista. The "
+"commands should be similar for other Windows versions."
+msgstr "VPN を使用する手順は、Windows のバージョンによって異なります。一般に、ユーザーは VPN プロパティを編集し、デフォ ルトのルートが VPN ではないことを確認する必要があります。次の手順は Windows Vista 上の Windows L2TP クライアントを対象にしています。ほかのバージョンの Windows でもコマンドは同様のはずです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Log in to the &PRODUCT; UI and click on the source NAT IP for the account. "
+"The VPN tab should display the IPsec preshared key. Make a note of this and "
+"the source NAT IP. The UI also lists one or more users and their passwords. "
+"Choose one of these users, or, if none exists, add a user and password."
+msgstr "&PRODUCT; ユーザーインターフェイスにログオンして、アカウントの送信元 NAT IP アドレスをクリックします。[VPN] タブに IPsec 事前共有キーが表示されます。これと送信元 NAT IP アドレスを記録します。ユーザーインターフェイスに、ユーザーとパスワードも表示されます。ユーザーを選択するか、ユーザーが存在しない場合はユーザーとパスワードを追加します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Windows box, go to Control Panel, then select Network and Sharing "
+"center. Click Setup a connection or network."
+msgstr "Windows コンピューターでコントロールパネルの[ネットワークと共有センター]を開きます。[接続またはネットワークのセットアップ]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the next dialog, select No, create a new connection."
+msgstr "次に開くダイアログボックスで、[いいえ]をクリックして新しい接続を作成します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the next dialog, select Use my Internet Connection (VPN)."
+msgstr "次に開くダイアログボックスで、[インターネット接続(VPN)を使用します]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the next dialog, enter the source NAT IP from step <xref linkend"
+"=\"source-nat\" /> and give the connection a name. Check Don't connect now."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the next dialog, enter the user name and password selected in step <xref "
+"linkend=\"source-nat\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create."
+msgstr "[Create] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Go back to the Control Panel and click Network Connections to see the new "
+"connection. The connection is not active yet."
+msgstr "コントロールパネルに戻り、[ネットワーク接続]をクリックして新しい接続を表示します。接続はまだアクティブになっていません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Right-click the new connection and select Properties. In the Properties "
+"dialog, select the Networking tab."
+msgstr "新しい接続を右クリックし、[プロパティ]を選択します。[プロパティ]ダイアログボックスで[ネットワーク]タブをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In Type of VPN, choose L2TP IPsec VPN, then click IPsec settings. Select Use"
+" preshared key. Enter the preshared key from Step <xref linkend=\"source-"
+"nat\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The connection is ready for activation. Go back to Control Panel -&gt; "
+"Network Connections and double-click the created connection."
+msgstr "これで、接続をアクティブにする準備ができました。コントロールパネルに戻り、[ネットワーク接続]を開いて作成した接続をダブルクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Enter the user name and password from Step <xref linkend=\"source-nat\" />."
+msgstr ""

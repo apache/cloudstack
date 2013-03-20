@@ -1,0 +1,79 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2012-12-30 10:33+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Secondary Storage"
+msgstr "セカンダリストレージの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure there is nothing stored on the server. Adding the server to "
+"CloudStack will destroy any existing data."
+msgstr "サーバーに何も格納されていないことを確認 してください。&PRODUCT; にサーバーを追加 すると、既存のデータはすべて破棄されま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you create a new zone, the first secondary storage is added as part of "
+"that procedure. You can add secondary storage servers at any time to add "
+"more servers to an existing zone."
+msgstr "新しいゾーンを作成するとき、手順の一部として最初のセカンダリス トレージが追加されます。いつでもセカンダリストレージサーバーを 追加して、既存のゾーンにサーバーを追加することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are going to use Swift for cloud-wide secondary storage, you must add"
+" the Swift storage to &PRODUCT; before you add the local zone secondary "
+"storage servers."
+msgstr "クラウド全体のセカンダリストレージとして Swift を使用する場 合は、ゾーンに対してローカルなセカンダリストレージサー バーを追加する前に、&PRODUCT; に Swift ストレージを追加す る必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To prepare for local zone secondary storage, you should have created and "
+"mounted an NFS share during Management Server installation."
+msgstr "ゾーンに対してローカルなセカンダリストレージの準備のため、管理サーバーのインストール中に NFS 共有を作成し マウントしておく必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure you prepared the system VM template during Management Server "
+"installation."
+msgstr "管理サーバーのインストール中にシステム仮想マシンテンプレートを準備したことを確認します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"4. Now that the secondary storage server for per-zone storage is prepared, "
+"add it to &PRODUCT;. Secondary storage is added as part of the procedure for"
+" adding a new zone."
+msgstr "れでゾーン単位のストレージとしてセカンダリストレージサーバーの準備ができたので、&PRODUCT; に追加します。 新しいゾーンの追加手順の一部として、セカンダリストレージが追加されます。"

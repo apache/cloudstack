@@ -1,0 +1,87 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-07 15:55+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Removing Tiers"
+msgstr "層の削除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can remove a tier from a VPC. A removed tier cannot be revoked. When a "
+"tier is removed, only the resources of the tier are expunged. All the "
+"network rules (port forwarding, load balancing and staticNAT) and the IP "
+"addresses associated to the tier are removed. The IP address still be "
+"belonging to the same VPC."
+msgstr "VPC から層を削除することができ、削除された層は無効化することができません。層を削除した場合、層に設定したリソースのみ削除されます。全てのネットワークルール(ポート転送や負荷分散、静的 NAT など)と IP アドレスは削除された層に割り当てられたままになります。その際、IP アドレスは VPC に所属し続けます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者またはユーザーとして &PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "選択ビューから VPC を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPC that you have created for the account is listed in the page."
+msgstr "アカウントに対して作成された全ての VPC がページ上にリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC for which you want to set up tiers."
+msgstr "層を設定したい VPC の [Configure] ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Configure VPC page is displayed. Locate the tier you want to work with."
+msgstr "VPC の設定画面が表示され、設定したい層の情報が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Remove VPC button:"
+msgstr "[Remove VPC] ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Wait for some time for the tier to be removed."
+msgstr "層を削除するにはしばらく待ちます。"

@@ -1,0 +1,154 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-22 13:55+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "システム仮想マシンテンプレートの準備"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Secondary storage must be seeded with a template that is used for &PRODUCT; "
+"system VMs. Citrix provides you with the necessary binary package of the "
+"system VM."
+msgstr "セカンダリストレージは &PRODUCT; のシステム VM が利用するテンプレートを内部に持つ必要があります。Citrix が必要なシステム VM のバイナリパッケージを提供します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "コマンドをコピーして実行するときは、単一の行として貼り付けたことを確認してください。 一部のドキュメントビューアーでは、コピーしたテキストに不要な改行が含まれる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Management Server, run one or more of the following cloud-install-"
+"sys-tmplt commands to retrieve and decompress the system VM template. Run "
+"the command for each hypervisor type that you expect end users to run in "
+"this Zone."
+msgstr "管理サーバーで次の cloud-install-sys-tmplt コマンドを実 行して、システム仮想マシンテンプレートを取得して展開します。 このゾーンでエンドユーザーが実行することが予想される各ハイパーバイザーの種類に対応するコマンドを実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If your secondary storage mount point is not named /mnt/secondary, "
+"substitute your own mount point name."
+msgstr "セカンダリストレージのマウントポイントが/mnt/secondary でない場合は、実際のマウントポイント名に置き換えま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you set the &PRODUCT; database encryption type to \"web\" when you set up"
+" the database, you must now add the parameter -s &lt;management-server-"
+"secret-key&gt;. See <xref linkend=\"about-password-encryption\" />."
+msgstr "データベースのセットアップ時に &PRODUCT; データベースの暗号化の種類を \"web\" に設定した場合は、パラメーター -s &lt;management-server-secret-key&gt;を追加する必要があります。<xref linkend=\"about-password-encryption\" /> を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This process will require approximately 5 GB of free space on the local file"
+" system and up to 30 minutes each time it runs."
+msgstr "この処理を実行するにはローカルファイルシステムに約 5 GB の空き領域が必要で、実行するたびに最長で 30 分かかります。"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer:"
+msgstr "XenServer:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-"
+"systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-"
+"secret-key&gt; -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F"
+
+#. Tag: para
+#, no-c-format
+msgid "For vSphere:"
+msgstr "vSphere:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-"
+"systemvm-02062012.ova -h vmware -s &lt;optional-management-server-secret-"
+"key&gt;  -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F"
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM:"
+msgstr "KVM:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt "
+"-m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-"
+"systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-"
+"key&gt; -F"
+msgstr "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F"
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using a separate NFS server, perform this step."
+msgstr "別の NFS サーバーを使用する場合は、この手順を実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Do not perform this step if you are using the Management Server as the NFS "
+"server."
+msgstr "管理サーバーを NFS サーバーとして使用する場合は、この手順を実行しないでください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the script has finished, unmount secondary storage and remove the "
+"created directory."
+msgstr "スクリプトの完了後セカンダリストレージをアンマウントし作成したディレクトリを削除します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# umount /mnt/secondary\n"
+"# rmdir /mnt/secondary"
+msgstr "# umount /mnt/secondary\n# rmdir /mnt/secondary"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for each secondary storage server."
+msgstr "これらの手順を各セカンダリストレージサーバーに対して行います。"

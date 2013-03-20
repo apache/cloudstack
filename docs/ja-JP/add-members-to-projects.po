@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-05 11:13+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Members to a Project"
+msgstr "プロジェクトへのメンバーの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New members can be added to a project by the project’s administrator, the "
+"domain administrator of the domain where the project resides or any parent "
+"domain, or the &PRODUCT; root administrator. There are two ways to add "
+"members in &PRODUCT;, but only one way is enabled at a time:"
+msgstr "新しいメンバーをプロジェクトに追加できるのは、プロジェクト管理者、プロジェクトの存在するドメインまたは親ドメインのドメイン管理者、または &PRODUCT; ルート管理者です。&PRODUCT; にメンバーを追加する方法は 2 つありますが、一度に有効にできるのは 1 つの方法のみです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If invitations have been enabled, you can send invitations to new members."
+msgstr "招待状機能が有効な場合は、新しいメンバーに招待状を送信できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If invitations are not enabled, you can add members directly through the UI."
+msgstr "招待状機能が無効な場合は、ユーザーインターフェイスでメンバーを直接追加できます。"

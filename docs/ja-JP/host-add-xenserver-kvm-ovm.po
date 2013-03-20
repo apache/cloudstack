@@ -1,0 +1,259 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-05 03:16+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Host (XenServer or KVM)"
+msgstr "ホストの追加(XenServer または KVM)"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer and KVM hosts can be added to a cluster at any time."
+msgstr "XenServer および KVM のホストは、いつでもクラスターに追加できます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Requirements for XenServer and KVM Hosts"
+msgstr "XenServer および KVM ホストの要件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the hypervisor host does not have any VMs already running before "
+"you add it to &PRODUCT;."
+msgstr "￼ハイパーバイザーホストに実行中の仮想マ シンがないことを確認してから、&PRODUCT; に追加してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Configuration requirements:"
+msgstr "構成要件"
+
+#. Tag: para
+#, no-c-format
+msgid "Each cluster must contain only hosts with the identical hypervisor."
+msgstr "各クラスターには同一のハイパーバイザーを使用するホストのみを含める必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer, do not put more than 8 hosts in a cluster."
+msgstr "XenServer の場合は、クラスターに配置するホストは 8 台までにしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM, do not put more than 16 hosts in a cluster."
+msgstr "KVM の場合は、クラスターに配置するホストは 16 台までにしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For hardware requirements, see the installation section for your hypervisor "
+"in the &PRODUCT; Installation Guide."
+msgstr "ハードウェア要件については、&PRODUCT; インストールガイドのハイパーバイザー毎のインストールセクションを参照してください。"
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer Host Additional Requirements"
+msgstr "XenServer ホストの追加要件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If network bonding is in use, the administrator must cable the new host "
+"identically to other hosts in the cluster."
+msgstr "ネットワークボンディングを使用する場合は、管理者はホストの配線を、クラスター内のほかのホストと完全に同じにする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For all additional hosts to be added to the cluster, run the following "
+"command. This will cause the host to join the master in a XenServer pool."
+msgstr "クラスターに追加するすべてのホストに対して次のコマンドを実行します。これで、ホストが XenServer プールのマスターに加わります。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pool-join master-address=[master IP] master-username=root master-"
+"password=[your password]"
+msgstr "# xe pool-join master-address=[master IP] master-username=root master-password=[your password]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "￼コマンドをコピーして実行するときは、単一の行として貼り付けたことを確認してください。一部のドキュメントビューアーでは、コピーしたテキストに不要な改行が含まれる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With all hosts added to the XenServer pool, run the cloud-setup-bond script."
+" This script will complete the configuration and setup of the bonds on the "
+"new hosts in the cluster."
+msgstr "XenServer プールにすべてのホストを追加したら、cloud-setup-bond スクリプトを実行します。このスクリプトにより、クラスター内の新しいホストのボンドの構成とセットアップを完了します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the script from the Management Server in "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-"
+"bonding.sh to the master host and ensure it is executable."
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh スクリプトを管理サーバーから マスターホストにコピーし、スクリプトが実行可能であることを確認します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script:"
+msgstr "次のスクリプトを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ./cloud-setup-bonding.sh"
+msgstr "# ./cloud-setup-bonding.sh"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Host Additional Requirements"
+msgstr "KVM ホストの追加要件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If shared mountpoint storage is in use, the administrator should ensure that"
+" the new host has all the same mountpoints (with storage mounted) as the "
+"other hosts in the cluster."
+msgstr "共有マウントポイントストレージを使用する場合は、管理者は新しいホストのすべてのマウントポイントを(マウントされたストレージも含めて)、クラスター内のほかのホストと完全に同じにする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the new host has the same network configuration (guest, private, "
+"and public network) as other hosts in the cluster."
+msgstr "新しいホストのネットワーク構成(ゲスト、プライベート、およびパブリックネットワーク)が、クラスター内のほかのホ ストと同じであることを確認してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using OpenVswitch bridges edit the file agent.properties on the "
+"KVM host and set the parameter <emphasis "
+"role=\"italic\">network.bridge.type</emphasis> to <emphasis "
+"role=\"italic\">openvswitch</emphasis> before adding the host to &PRODUCT;"
+msgstr "OpenVswitch のブリッジを利用している場合は &PRODUCT; にホストを追加するまえに KVM ホストの agent.properties を編集し <emphasis role=\"italic\">network.bridge.type</emphasis> パラメーターを <emphasis role=\"italic\">openvswitch</emphasis> に設定してください。"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a XenServer or KVM Host"
+msgstr "XenServer または KVM ホストの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you have not already done so, install the hypervisor software on the "
+"host. You will need to know which version of the hypervisor software version"
+" is supported by &PRODUCT; and what additional configuration is required to "
+"ensure the host will work with &PRODUCT;. To find these installation "
+"details, see the appropriate section for your hypervisor in the &PRODUCT; "
+"Installation Guide."
+msgstr "ホストにハイパーバイザーソフトウェアをまだインストールしていない場合はインストールします。&PRODUCT; がサポートするハイパーバイザーソフトウェアのバージョン、およびホストを &PRODUCT; と連動させるために必要な追加構成を確認しておく必要があります。このインストールの詳細については、&PRODUCT; インストールガイドからハイパーバイザー毎の適切なセクションを参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "&PRODUCT;ユーザーインターフェイスに管理者としてログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the host."
+msgstr "左側のナビゲーションバーで[Infrastructure]をクリックします。[Zones]で[View More]をクリックし、ホストを追加するゾーンを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute tab. In the Clusters node, click View All."
+msgstr "[Compute]タブをクリックします。[Clusters]ノードの[View All]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the cluster where you want to add the host."
+msgstr "ホストを追加するクラスターを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View Hosts."
+msgstr "[View Hosts]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Host."
+msgstr "[Add Host]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information."
+msgstr "次の情報を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Host Name. The DNS name or IP address of the host."
+msgstr "Host Name: ホストの DNS 名または IP アドレスです。"
+
+#. Tag: para
+#, no-c-format
+msgid "Username. Usually root."
+msgstr "Username: 通常は root です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Password. This is the password for the user from your XenServer or KVM "
+"install)."
+msgstr "Password: XenServer または KVM 側で指定した、上のユーザー名に対するパスワードです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Host Tags (Optional). Any labels that you use to categorize hosts for ease "
+"of maintenance. For example, you can set to the cloud's HA tag (set in the "
+"ha.tag global configuration parameter) if you want this host to be used only"
+" for VMs with the \"high availability\" feature enabled. For more "
+"information, see HA-Enabled Virtual Machines as well as HA for Hosts."
+msgstr "Host Tags(オプション): ホストを分類して保守を簡単にするために使用するラベルです。たとえばホストに対し仮想マシンの高可用機能を有効化した場合、クラウドの HA タグ(グローバル設定で ha.tag に設定したパラメーター)を設定することができます。詳細な情報は 「仮想マシンでの高可用性の有効化」や「ホストの高可用性」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There may be a slight delay while the host is provisioned. It should "
+"automatically display in the UI."
+msgstr "ホストがプロビジョニングされる間、多少の遅延が発生する場合があります。ユーザーインターフェイスにホストが自動的に表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat for additional hosts."
+msgstr "追加のホストについて、この手順を繰り返します。"

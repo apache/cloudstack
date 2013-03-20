@@ -1,0 +1,91 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 16:03+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Per-Project Resource Limits"
+msgstr "プロジェクトごとのリソース制限の設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; root administrator or the domain administrator of the domain "
+"where the project resides can set new resource limits for an individual "
+"project. The project owner can set resource limits only if the owner is also"
+" a domain or root administrator."
+msgstr "&PRODUCT; ルート管理者またはプロジェクトが存在するドメインのドメイン管理者は、個別のプロジェクトに新しいリソース制限を設定できます。プロジェクト所有者は、ドメイン管理者またはルート管理者でもある場合にのみ、リソース制限を設定できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new limits must be below the global default limits set by the &PRODUCT; "
+"administrator (as described in <xref linkend=\"set-resource-limits-for-"
+"projects\" />). If the project already owns more of a given type of resource"
+" than the new maximum, the resources are not affected; however, the project "
+"can not add any new resources of that type until the total drops below the "
+"new limit."
+msgstr "新しい制限は、&PRODUCT; 管理者が設定するグローバルなデフォルト制限未満である必要があります(<xref linkend=\"set-resource-limits-for-projects\" />を参照)。特定の種類のリソースが新しい上限を既に超えているプロジェクトについては、 既存のリソースは影響を受けません。ただし、リソース量が上限値未満になるまで、そのプロジェクトにはその種類のリソースを追加できなくなります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "管理者として&PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "左側のナビゲーションバーで [Projects] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "[Select view] ボックスの一覧で [Projects] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr "設定するプロジェクトの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Resources tab. This tab lists the current maximum amount that the "
+"project is allowed to own for each type of resource."
+msgstr "[Resources]タブをクリックします。このタブには、プロジェクトで所有を許可されている現在の最大数が、リソースの種類ごとに一覧表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Type new values for one or more resources."
+msgstr "リソースの新しい値を入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Apply."
+msgstr "「適用」をクリックします。"

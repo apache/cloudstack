@@ -1,0 +1,84 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-26 12:49+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "The System VM Template"
+msgstr "システム仮想マシンテンプレート"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The System VMs come from a single template. The System VM has the following "
+"characteristics:"
+msgstr "システム仮想マシンは単一のテンプレートから作成されます。システム仮想マシンには、次の特性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Debian 6.0 (\"Squeeze\"), 2.6.32 kernel with the latest security patches "
+"from the Debian security APT repository"
+msgstr "Debian セキュリティ APT リポジトリから取得した最新のセキュリティパッチを適用した Debian 6.0(「Squeeze」) 2.6.32 カーネルを実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Has a minimal set of packages installed thereby reducing the attack surface"
+msgstr "セキュリティ上脆弱な箇所を小さくするために、最小限のパッケージがインストールされています。"
+
+#. Tag: para
+#, no-c-format
+msgid "32-bit for enhanced performance on Xen/VMWare"
+msgstr "Xen/VMWare 上のパフォーマンスを向上する 32 ビット版です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"pvops kernel with Xen PV drivers, KVM virtio drivers, and VMware tools for "
+"optimum performance on all hypervisors"
+msgstr "すべてのハイパーバイザー上で最適なパフォーマンスを実現する、Xen PV ドライバー、KVM virtio ドライバー、お よび VMware Tools を備えた pvops カーネルを使用します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Xen tools inclusion allows performance monitoring"
+msgstr "Xen Tools が含まれ、パフォーマンスを監視できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Latest versions of HAProxy, iptables, IPsec, and Apache from debian "
+"repository ensures improved security and speed"
+msgstr "Debian リポジトリから入手する最新バージョンの HAProxy、iptables、IPsec、Apache により、セキュリティ保護と速度の向上を保証します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Latest version of JRE from Sun/Oracle ensures improved security and speed"
+msgstr "Sun/Oracle の最新バージョンの JRE により、セキュリティ保護と速度の向上を保証します。"

@@ -1,0 +1,88 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Satoshi Shimazaki <arkray0701@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:02+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Security Groups"
+msgstr "セキュリティグループについて"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security groups provide a way to isolate traffic to VMs. A security group is"
+" a group of VMs that filter their incoming and outgoing traffic according to"
+" a set of rules, called ingress and egress rules. These rules filter network"
+" traffic according to the IP address that is attempting to communicate with "
+"the VM. Security groups are particularly useful in zones that use basic "
+"networking, because there is a single guest network for all guest VMs. In "
+"advanced zones, security groups are supported only on the KVM hypervisor."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a zone that uses advanced networking, you can instead define multiple "
+"guest networks to isolate traffic to VMs."
+msgstr "拡張ネットワークを使用すゾーンでは、代わりに複数のゲストネットワークを作成することで、仮想マシンへのトラフィックを隔離します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each &PRODUCT; account comes with a default security group that denies all "
+"inbound traffic and allows all outbound traffic. The default security group "
+"can be modified so that all new VMs inherit some other desired set of rules."
+msgstr "各&PRODUCT;アカウントには、すべての受信トラフィックを拒否し、すべての送信トラフィックを許可するデフォルトのセキュリティグループが用意されています。すべての新しい仮想マシンが望ましい規則セットを継承するように、デフォルトのセキュリティグループを変更できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Any &PRODUCT; user can set up any number of additional security groups. When"
+" a new VM is launched, it is assigned to the default security group unless "
+"another user-defined security group is specified. A VM can be a member of "
+"any number of security groups. Once a VM is assigned to a security group, it"
+" remains in that group for its entire lifetime; you can not move a running "
+"VM from one security group to another."
+msgstr "&PRODUCT;のユーザーは、任意の数のセキュリティグループを追加できます。新しい仮想マシンには、ユーザー定義のセキュリティグループが別に指定されていない限り、デフォルトのセキュリティグループが起動時に割り当てられます。仮想マシンは、任意の数のセキュリティグループのメンバーになることができます。仮想マシンをセキュリティグループに割り当てると、仮想マシンは有効である限りずっとそのグループに属します。実行中の仮想マシンを別のセキュリティグループに移動することはできません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can modify a security group by deleting or adding any number of ingress "
+"and egress rules. When you do, the new rules apply to all VMs in the group, "
+"whether running or stopped."
+msgstr "セキュリティグループは、任意の数の受信規則および送信規則を削除または追加することで変更できます。変更後の新しい規則は、実行中または停止中にかかわらず、グループ内のすべての仮想マシンに適用されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If no ingress rules are specified, then no traffic will be allowed in, "
+"except for responses to any traffic that has been allowed out through an "
+"egress rule."
+msgstr "受信規則を指定しない場合は、送信規則によって送信が許可されているトラフィックへの応答を除いて、トラフィックの受信は許可されません。"

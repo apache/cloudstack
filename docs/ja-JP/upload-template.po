@@ -1,0 +1,172 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Uploading Templates"
+msgstr "テンプレートのアップロード"
+
+#. Tag: title
+#, no-c-format
+msgid "vSphere Templates and ISOs"
+msgstr "vSphere テンプレートと ISO"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are uploading a template that was created using vSphere Client, be "
+"sure the OVA file does not contain an ISO. If it does, the deployment of VMs"
+" from the template will fail."
+msgstr "vSphere Client を使用して作成したテンプレートをアップロードする場合は、OVA ファイルに ISO が含まれないことを確認してください。ISO が含まれていると、テンプレートから仮想マシンを展開できません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Templates are uploaded based on a URL. HTTP is the supported access "
+"protocol. Templates are frequently large files. You can optionally gzip them"
+" to decrease upload times."
+msgstr "テンプレートは、URL に基づいてアップロードされます。サポートされるアクセスプロトコルは HTTP です。テンプレートは、 大きなファイルである場合がよくあります。オプションとして gzip 形式で圧縮し、アップロード時間を削減することができま す。"
+
+#. Tag: para
+#, no-c-format
+msgid "To upload a template:"
+msgstr "テンプレートをアップロードするには"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr "左側のナビゲーションバーで[Templates]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Register Template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following:"
+msgstr "次の情報を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name and Description</emphasis>. These will be shown"
+" in the UI, so choose something descriptive."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">URL</emphasis>. The Management Server will download "
+"the file from the specified URL, such as "
+"http://my.web.server/filename.vhd.gz."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>. Choose the zone where you want the "
+"template to be available, or All Zones to make it available throughout "
+"&PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>: This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the operating system of the stopped VM is listed, choose it."
+msgstr "停止している仮想マシンのオペレーティングシステムが一覧にある場合は、それを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "If the OS type of the stopped VM is not listed, choose Other."
+msgstr "停止している仮想マシンのオペレーティングシステムの種類が一覧にない場合は、[Other]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should not choose an older version of the OS than the version in the "
+"image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will "
+"in general not work. In those cases you should choose Other."
+msgstr "通常は、イメージのオペレーティングシステムより古いバージョンを選択しないでください。たとえば、\nCentOS 6.2 イメージをサポートするために CentOS 5.4 を選択すると、通常は動作しません。このような場合は、 [Other]を選択する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor</emphasis>: The supported hypervisors are"
+" listed. Select the desired one."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Format</emphasis>. The format of the template upload"
+" file, such as VHD or OVA."
+msgstr "<emphasis role=\"bold\">Format :</emphasis> VHD や OVA など、テンプレートのアップロードファイルの形式です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password Enabled</emphasis>. Choose Yes if your "
+"template has the &PRODUCT; password change script installed. See Adding "
+"Password Management to Your Templates"
+msgstr "<emphasis role=\"bold\">Password Enabled :</emphasis> テンプレートに &PRODUCT;のパスワード変更スクリプトがインストールされている場合は、このチェックボックスをオンにします。「テンプレートへのパスワード管理機能の追加」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Extractable</emphasis>. Choose Yes if the template "
+"is available for extraction. If this option is selected, end users can "
+"download a full image of a template."
+msgstr "<emphasis role=\"bold\">Extractable :</emphasis> テンプレートを抽出可能にする場合、このチェックボックスをオンにします。エンドユーザーはテンプレートの全てのイメージをダウンロード可能になります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>. Choose Yes to make this template "
+"accessible to all users of this &PRODUCT; installation. The template will "
+"appear in the Community Templates list. See <xref linkend=\"private-public-"
+"template\" />."
+msgstr "<emphasis role=\"bold\">Public :</emphasis> この &PRODUCT; 環境のすべてのユーザーがこのテンプレートにアクセスできるようにするには、このチェックボックスをオンにします。テンプレートが [Community Templates] の一覧に表示されます。<xref linkend=\"private-public-template\" />を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Featured</emphasis>. Choose Yes if you would like "
+"this template to be more prominent for users to select. The template will "
+"appear in the Featured Templates list. Only an administrator can make a "
+"template Featured."
+msgstr "<emphasis role=\"bold\">Featured :</emphasis> ユーザーがテンプレートを選択するときに「おすすめのテンプレート」としてこのテンプレートを目立た せるには、このチェックボックスをオンにします。テンプレートが[Featured Templates]の一覧に表示されます。 テンプレートをおすすめに設定できるのは管理者だけです。"

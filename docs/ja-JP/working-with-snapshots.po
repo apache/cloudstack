@@ -1,0 +1,78 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-21 08:39+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with Snapshots"
+msgstr "スナップショットに関わる作業"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Supported for the following hypervisors: <emphasis "
+"role=\"bold\">XenServer</emphasis>, <emphasis role=\"bold\">VMware "
+"vSphere</emphasis>, and <emphasis role=\"bold\">KVM</emphasis>)"
+msgstr "(サポートされるハイパーバイザー : <emphasis role=\"bold\">XenServer</emphasis>、<emphasis role=\"bold\">VMware vSphere</emphasis>、および<emphasis role=\"bold\">KVM</emphasis>)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports snapshots of disk volumes. Snapshots are a point-in-time "
+"capture of virtual machine disks. Memory and CPU states are not captured."
+msgstr "&PRODUCT; は、ディスクボリュームのスナップショットをサポートします。スナップショットは、仮想マシンディスクの一時点でのキャプチャです。メモリと CPU の状態はキャプチャされません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snapshots may be taken for volumes, including both root and data disks. The "
+"administrator places a limit on the number of stored snapshots per user. "
+"Users can create new volumes from the snapshot for recovery of particular "
+"files and they can create templates from snapshots to boot from a restored "
+"disk."
+msgstr "ルートディスクとデータディスクの両方を含むボリュームのスナップショットを作成することができます。管理者は、ユーザーごとに格納されるスナップショットの数を制限します。ユーザーは、特定のファイルの復元のために、スナップ ショットから新しいボリュームを作成でき、復元したディスクから起動するために、スナップショットからテンプレートを作成できます。スナップショットを定期的に作成するように設定できます。完成したスナップショットはプライマリストレージからセカ ンダリストレージにコピーされ、削除されるか新しいスナップショットによって消去されるまで格納されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users can create snapshots manually or by setting up automatic recurring "
+"snapshot policies. Users can also create disk volumes from snapshots, which "
+"may be attached to a VM like any other disk volume. Snapshots of both root "
+"disks and data disks are supported. However, &PRODUCT; does not currently "
+"support booting a VM from a recovered root disk. A disk recovered from "
+"snapshot of a root disk is treated as a regular data disk; the data on "
+"recovered disk can be accessed by attaching the disk to a VM."
+msgstr "ユーザーはスナップショットを手動で作成することも、自動定期スナップショットポリシーをセットアップすることもできます。 ユーザーはスナップショットからディスクボリュームを作成することもでき、そのディスクボリュームはほかのディスクボリュームのように仮想マシンにアタッチできます。ルートディスクとデータディスクの両方のスナップショットがサポートされ ます。ただし現在は、復元されたルートディスクから仮想マシンを起動することはできません。ルートディスクのスナップショットから復元したディスクは通常のデータディスクとして扱われ、復元ディスクのデータは、ディスクを仮想マシンにアタッチすることでアクセスできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A completed snapshot is copied from primary storage to secondary storage, "
+"where it is stored until deleted or purged by newer snapshot."
+msgstr "完成したスナップショットはプライマリストレージからセカンダリストレージにコピーされ、削除されるか新しいスナップショットによって消去されるまで格納されます。"

@@ -1,0 +1,86 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-02 18:45+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Multi-Site Deployment"
+msgstr "複数サイトの展開"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; platform scales well into multiple sites through the use of "
+"zones. The following diagram shows an example of a multi-site deployment."
+msgstr "&PRODUCT; は、ゾーンを使用することで複数のサイトに問題なく拡張できます。次の図は、複数サイトの展開例を示しています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Data Center 1 houses the primary Management Server as well as zone 1. The "
+"MySQL database is replicated in real time to the secondary Management Server"
+" installation in Data Center 2."
+msgstr "データセンター1 には、プライマリ管理サーバーとゾーン 1 が含まれます。MySQL データベースは、データセンター2 のセカンダリ管理サーバーにリアルタイムでレプリケートされます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates a setup with a separate storage network. Each "
+"server has four NICs, two connected to pod-level network switches and two "
+"connected to storage network switches."
+msgstr "この図は、別個のストレージネットワークのセットアップを示しています。各サーバーには 4 つの NIC があり、2 つはポッドレ ベルのネットワークスイッチに接続され、2 つはストレージネットワークスイッチに接続されています。"
+
+#. Tag: para
+#, no-c-format
+msgid "There are two ways to configure the storage network:"
+msgstr "ストレージネットワークを構成するには、次の 2 つの方法があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Bonded NIC and redundant switches can be deployed for NFS. In NFS "
+"deployments, redundant switches and bonded NICs still result in one network "
+"(one CIDR block+ default gateway address)."
+msgstr "NFS の場合は、ボンドされた NIC と冗長なスイッチを展開できます。NFS 環境では、冗長なスイッチとボンドされた NIC により 1 つのネットワークを構成します(1 つの CIDR ブロックとデフォルトゲートウェイアドレス)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"iSCSI can take advantage of two separate storage networks (two CIDR blocks "
+"each with its own default gateway). Multipath iSCSI client can failover and "
+"load balance between separate storage networks."
+msgstr "iSCSIの場合は、2つの独立したストレージネットワークを利用できます(2つのCIDRブロックとそれぞれに専用のデフォルトゲートウェイ)。マルチパス iSCSI クライアントは、異なるストレージネットワークの間でフェールオーバーと負荷分散を行うことができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates the differences between NIC bonding and Multipath "
+"I/O (MPIO). NIC bonding configuration involves only one network. MPIO "
+"involves two separate networks."
+msgstr "この図は、NIC ボンディングとマルチパス I/O(MPIO)の違いを示しています。NIC ボンディングの構成に含まれるネットワークは 1 つだけです。MPIO には 2 つの異なるネットワークが含まれます。"

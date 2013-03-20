@@ -1,0 +1,80 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-26 12:44+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Incremental Snapshots and Backup"
+msgstr "増分スナップショットとバックアップ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snapshots are created on primary storage where a disk resides. After a "
+"snapshot is created, it is immediately backed up to secondary storage and "
+"removed from primary storage for optimal utilization of space on primary "
+"storage."
+msgstr "スナップショットは、ディスクがあるプライマリストレージ上に作成されます。作成されたスナップショットはすぐにセカンダリストレージにバックアップされ、プライマリストレージの容量を有効活用するために、プライマリストレージから削除されま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; does incremental backups for some hypervisors. When incremental "
+"backups are supported, every N backup is a full backup."
+msgstr "&PRODUCT; では、一部のハイパーバイザーを対象に増分バックアップを行います。増分バックアップがサポートされる場合は、指定間隔で完全バックアップが実行されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere"
+msgstr "VMware vSphere"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer"
+msgstr "Citrix XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr "KVM"
+
+#. Tag: para
+#, no-c-format
+msgid "Support incremental backup"
+msgstr "増分バックアップのサポート"
+
+#. Tag: para
+#, no-c-format
+msgid "N"
+msgstr "なし"
+
+#. Tag: para
+#, no-c-format
+msgid "Y"
+msgstr "あり"

@@ -1,0 +1,84 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Attaching a Volume"
+msgstr "ボリュームのアタッチ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can attach a volume to a guest VM to provide extra disk storage. Attach "
+"a volume when you first create a new volume, when you are moving an existing"
+" volume from one VM to another, or after you have migrated a volume from one"
+" storage pool to another."
+msgstr "追加のディスクストレージを提供するために、ゲスト仮想マシンにボリュームをアタッチできます。ボリュームをアタッチするのは、新しいボリュームを初めて作成したとき、既存のボリュームをボリューム間で移動するとき、またはストレージプール間でボリュームを移行した後です。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "ユーザーもしくは管理者として &PRODUCT; ユーザーインターフェイスからログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Storage."
+msgstr "左側のナビゲーションバーで[Storage]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "[Select view]ボックスの一覧で[Volumes]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"4. Click the volume name in the Volumes list, then click the Attach Disk "
+"button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/attach-disk-icon.png\" /> </imageobject> <textobject> "
+"<phrase>AttachDiskButton.png: button to attach a volume</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Instance popup, choose the VM to which you want to attach the volume."
+" You will only see instances to which you are allowed to attach volumes; for"
+" example, a user will see only instances created by that user, but the "
+"administrator will have more choices."
+msgstr "ポップアップウィンドウの[Instance]ボックスの一覧で、ボリュームをアタッチする仮想マシンを選択します。ボリュームのアタッチが許可されているインスタンスのみが表示されます。たとえば、ユーザーにはそのユーザーが作成したインスタンスのみが表示されますが、管理者にはより多くの選択肢があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the volume has been attached, you should be able to see it by clicking "
+"Instances, the instance name, and View Volumes."
+msgstr "[Instances]、インスタンス名、[View Volumes]の順にクリックすると、ボリュームをアタッチ済みかどうかわかりま す。"

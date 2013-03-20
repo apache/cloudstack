@@ -1,0 +1,177 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:11+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Up Invitations"
+msgstr "招待状のセットアップ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; can be set up either so that project administrators can add people"
+" directly to a project, or so that it is necessary to send an invitation "
+"which the recipient must accept. The invitation can be sent by email or "
+"through the user’s &PRODUCT; account. If you want administrators to use "
+"invitations to add members to projects, turn on and set up the invitations "
+"feature in &PRODUCT;."
+msgstr "プロジェクト管理者がユーザーをプロジェクトに直接追加できるようにするか、招待状の送信を必須とするように &PRODUCT; をセットアップできます。招待状を必須とする場合は、受信者はこの招待状を承諾する必要があります。招待状は電子メールまたはユーザーの &PRODUCT; アカウントから送信できます。管理者が招待状を使用してプロジェクトにメンバーを追加する設定にする場合は、&PRODUCT; の招待状機能を有効にしてセットアップします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "管理者として&PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr "左側のナビゲーションバーで [Global Settings] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the search box, type project and click the search "
+"button.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/search-button.png\" /> </imageobject> <textobject><phrase>searchbutton.png:"
+" Searches projects</phrase></textobject> </inlinemediaobject>"
+msgstr "検索ボックスに「project」と入力して検索ボタンをクリックします。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/search-button.png\" /> </imageobject> <textobject><phrase>searchbutton.png: Searches projects</phrase></textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the search results, you can see a few other parameters you need to set to"
+" control how invitations behave. The table below shows global configuration "
+"parameters related to project invitations. Click the edit button to set each"
+" parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configuration Parameters"
+msgstr "設定パラメーター"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "説明"
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.required"
+msgstr "project.invite.required"
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true to turn on the invitations feature."
+msgstr "招待状機能を有効にするには true に設定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.email.sender"
+msgstr "project.email.sender"
+
+#. Tag: para
+#, no-c-format
+msgid "The email address to show in the From field of invitation emails."
+msgstr "招待状の電子メールの差出人フィールドに表示される電子メールアドレスで す。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.timeout"
+msgstr "project.invite.timeout"
+
+#. Tag: para
+#, no-c-format
+msgid "Amount of time to allow for a new member to respond to the invitation."
+msgstr "新しいメンバーが招待状に返信するまでの猶予期間です。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.host"
+msgstr "project.smtp.host"
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the host that acts as an email server to handle invitations."
+msgstr "招待状を処理する電子メールサーバーとして機能するホストの名前です。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.password"
+msgstr "project.smtp.password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) Password required by the SMTP server. You must also set "
+"project.smtp.username and set project.smtp.useAuth to true."
+msgstr "(オプション)SMTP サーバーが要求するパスワードです。 project.smtp.username を指定して、project.smtp.useAuth を true に設定する必要もあります。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.port"
+msgstr "project.smtp.port"
+
+#. Tag: para
+#, no-c-format
+msgid "SMTP server’s listening port."
+msgstr "SMTP サーバーのリッスンポートです。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.useAuth"
+msgstr "project.smtp.useAuth"
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true if the SMTP server requires a username and password."
+msgstr "SMTP サーバーがユーザー名とパスワードを要求する場合は true に設定し ます。"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.username"
+msgstr "project.smtp.username"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) User name required by the SMTP server for authentication. You "
+"must also set project.smtp.password and set project.smtp.useAuth to true.."
+msgstr "(オプション)SMTP サーバーが認証のために要求するユーザー名です。 project.smtp.password を指定して、project.smtp.useAuth を true に設定する必要もあります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service cloud-management restart"
+msgstr "service cloud-management restart"

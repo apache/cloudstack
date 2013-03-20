@@ -1,0 +1,176 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-05 16:20+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Port Forwarding Rule on a VPC"
+msgstr "VPC へのポート転送ルールの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者またはユーザーとして &PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "選択ビューから VPC を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "アカウントに対して作成された全ての VPC がページにリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "仮想マシンを展開したい VPC の [Configure] ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC ページではダイアグラム上にリストされる作成された全ての層が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "設定アイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "以下のオプションが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "ゲートウェイ"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "サイト間 VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "ネットワーク ACL"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Choose an existing IP address or acquire a new IP address. Click the name of"
+" the IP address in the list."
+msgstr "既存の IP アドレスを選択するか新しい IP アドレスを取得します。リスト表示された IP アドレス名をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "IP アドレスのページが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the IP address for which you want to create the rule, then click the "
+"Configuration tab."
+msgstr "ルールを作成したい IP アドレスをクリックし、[Configuration] タブをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Port Forwarding node of the diagram, click View All."
+msgstr "ダイアグラムの[Port Forwarding]ノードの[View All]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the tier to which you want to apply the rule."
+msgstr "ルールを適用したい層を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr "以下の要素を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public Port</emphasis>: The port to which public "
+"traffic will be addressed on the IP address you acquired in the previous "
+"step."
+msgstr "<emphasis role=\"bold\">Public Port</emphasis>: The port to which public traffic will be addressed on the IP address you acquired in the previous step.以前の手順で取得したどの IP アドレスへのパブリックトラフィックを受信するポートを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private Port</emphasis>: The port on which the "
+"instance is listening for forwarded public traffic."
+msgstr "<emphasis role=\"bold\">Private Port</emphasis>: 仮想マシンが転送されたパブリックトラッフィクをリッスンするポートを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol</emphasis>: The communication protocol in "
+"use between the two ports."
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: それぞれのポートで利用する通信プロトコルを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "TCP"
+msgstr "TCP"
+
+#. Tag: para
+#, no-c-format
+msgid "UDP"
+msgstr "UDP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Add VM</emphasis>: Click Add VM. Select the name of "
+"the instance to which this rule applies, and click Apply."
+msgstr "<emphasis role=\"bold\">Add VM</emphasis>: [Add VM] をクリックします。その後、ルールを適用したい仮想マシン名を選択し [Apply] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "You can test the rule by opening an ssh session to the instance."
+msgstr "仮想マシンへの ssh セッションを作成することでルールをテストすることができます。"

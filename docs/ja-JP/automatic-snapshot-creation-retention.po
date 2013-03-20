@@ -1,0 +1,64 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-21 08:03+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Automatic Snapshot Creation and Retention"
+msgstr "スナップショットの自動作成と保持"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Supported for the following hypervisors: <emphasis "
+"role=\"bold\">XenServer</emphasis>, <emphasis role=\"bold\">VMware "
+"vSphere</emphasis>, and <emphasis role=\"bold\">KVM</emphasis>)"
+msgstr "(サポートされるハイパーバイザー : <emphasis role=\"bold\">XenServer</emphasis>、<emphasis role=\"bold\">VMware vSphere</emphasis>、および <emphasis role=\"bold\">KVM</emphasis>)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users can set up a recurring snapshot policy to automatically create "
+"multiple snapshots of a disk at regular intervals. Snapshots can be created "
+"on an hourly, daily, weekly, or monthly interval. One snapshot policy can be"
+" set up per disk volume. For example, a user can set up a daily snapshot at "
+"02:30."
+msgstr "ユーザーは、ディスクの複数のスナップショットを定期的に自動作成するように、定期スナップショットポリシーを設定でき ます。スナップショットは、時、日、週、または月単位の間隔で作成できます。スナップショットポリシーは、ディスクボリュームごとに 1 つセットアップできます。たとえば、毎日 02:30 にスナップショットを作成するようにセットアップできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With each snapshot schedule, users can also specify the number of scheduled "
+"snapshots to be retained. Older snapshots that exceed the retention limit "
+"are automatically deleted. This user-defined limit must be equal to or lower"
+" than the global limit set by the &PRODUCT; administrator. See <xref linkend"
+"=\"globally-configured-limits\" />. The limit applies only to those "
+"snapshots that are taken as part of an automatic recurring snapshot policy. "
+"Additional manual snapshots can be created and retained."
+msgstr "スナップショットのスケジュールごとに、保持するスナップショットの数を指定することもできます。保持期限を超過した古いスナップショットは、自動的に削除されます。このユーザーによって定義された期限は &PRODUCT; 管理者が設定した値以下である必要があります。詳細は <xref linkend=\"globally-configured-limits\" /> を参照してください。制限はスナップショットの自動作成と保持ポリシーによって作成されたスナップショットのみに適用され、追加で手動によるスナップショットを作成、保持することができます。"

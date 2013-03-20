@@ -1,0 +1,211 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Converting a Hyper-V VM to a Template"
+msgstr "Hyper-V 仮想マシンのテンプレートへの変換"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To convert a Hyper-V VM to a XenServer-compatible &PRODUCT; template, you "
+"will need a standalone XenServer host with an attached NFS VHD SR. Use "
+"whatever XenServer version you are using with &PRODUCT;, but use XenCenter "
+"5.6 FP1 or SP2 (it is backwards compatible to 5.6). Additionally, it may "
+"help to have an attached NFS ISO SR."
+msgstr "Hyper-V 仮想マシンを XenServer 互換の &PRODUCT; テンプレートに変換するには、NFS VHD ストレージリポジトリがアタッチされたスタンドアロンの XenServer ホストが必要です。&PRODUCT; と組み合わせて使用しているバージョンであれば XenServer のバージョンはどれでもかまいませんが、XenCenter 5.6 FP1 または SP2(5.6 と後方互換性があります)を使用してください。また、NFS ISO ストレージリポジトリがアタッチされていると役に立つ場合があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For Linux VMs, you may need to do some preparation in Hyper-V before trying "
+"to get the VM to work in XenServer. Clone the VM and work on the clone if "
+"you still want to use the VM in Hyper-V. Uninstall Hyper-V Integration "
+"Components and check for any references to device names in /etc/fstab:"
+msgstr "Linux 仮想マシンでは、仮想マシンを XenServer で使用する前に、Hyper-V で準備する必要がある場合があります。 Hyper-V で引き続き仮想マシンを使用する場合は、仮想マシンを複製して、その複製で作業します。Hyper-V 統合コンポーネントをアンインストールして、/etc/fstab でデバイス名を参照していないか確認します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From the linux_ic/drivers/dist directory, run make uninstall (where "
+"\"linux_ic\" is the path to the copied Hyper-V Integration Components "
+"files)."
+msgstr "linux_ic/drivers/dist ディレクトリから、make uninstall を実行します(ここで、linux_ic は、コピーされた Hyper-V 統合コンポーネントファイルのパスです)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restore the original initrd from backup in /boot/ (the backup is named "
+"*.backup0)."
+msgstr "元の initrd を/boot/のバックアップから復元します(バックアップの名前は*.backup0 です)。"
+
+#. Tag: para
+#, no-c-format
+msgid "Remove the \"hdX=noprobe\" entries from /boot/grub/menu.lst."
+msgstr "「hdX=noprobe」のエントリを/boot/grub/menu.lst から削除します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Check /etc/fstab for any partitions mounted by device name. Change those "
+"entries (if any) to mount by LABEL or UUID. You can get that information "
+"with the blkid command."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The next step is make sure the VM is not running in Hyper-V, then get the "
+"VHD into XenServer. There are two options for doing this."
+msgstr "次に、仮想マシンが Hyper-V で動作していないことを確認してから、VHD を XenServer に取り込みます。これを行うには、 2 つの方法があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Option one:"
+msgstr "オプション 1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Import the VHD using XenCenter. In XenCenter, go to Tools&gt;Virtual "
+"Appliance Tools&gt;Disk Image Import."
+msgstr "XenCenter を使用して VHD をインポートします。XenCenter で、[ツール]>[仮想アプライアンスツール]>[ディスクイメージインポート]の順に選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VHD, then click Next."
+msgstr "[VHD]を選択し、[次へ]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Name the VM, choose the NFS VHD SR under Storage, enable \"Run Operating "
+"System Fixups\" and choose the NFS ISO SR."
+msgstr "仮想マシンに名前を付け、[ストレージ]ページで NFS VHD ストレージリポジトリを選択し、オペレーティングシステム\nの修復機能を有効にして、NFS ISO ストレージリポジトリを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next, then Finish. A VM should be created."
+msgstr "[次へ]をクリックし、[完了]をクリックします。これで、仮想マシンが作成されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Option two:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run XenConvert, under From choose VHD, under To choose XenServer. Click "
+"Next."
+msgstr "XenConvert を実行して、[変換元]ボックスの一覧で[VHD]を選択し、[変換先]ボックスの一覧で[XenServer]を選択します。[次へ]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Input the XenServer host info, then click Next."
+msgstr "XenServer ホストの情報を入力し、[次へ]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Name the VM, then click Next, then Convert. A VM should be created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you have a VM created from the Hyper-V VHD, prepare it using the "
+"following steps:"
+msgstr "Hyper-V VHD から仮想マシンを作成したら、次の手順に従って、その仮想マシンを準備します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Boot the VM, uninstall Hyper-V Integration Services, and reboot."
+msgstr "仮想マシンを起動して、Hyper-V 統合サービスをアンインストールし、再起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Install XenServer Tools, then reboot."
+msgstr "XenServer Tools をインストールし、再起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Prepare the VM as desired. For example, run sysprep on Windows VMs. See "
+"<xref linkend=\"create-windows-template\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Either option above will create a VM in HVM mode. This is fine for Windows "
+"VMs, but Linux VMs may not perform optimally. Converting a Linux VM to PV "
+"mode will require additional steps and will vary by distribution."
+msgstr "上のオプションのどちらでも、HVM モードの仮想マシンが作成されます。Windows 仮想マシンの場合は問題はありません が、Linux 仮想マシンは適切に動作しない場合があります。Linux 仮想マシンを PV モードに変換するには、追加の手順を 実行する必要があり、その手順はディストリビューションごとに異なります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Shut down the VM and copy the VHD from the NFS storage to a web server; for "
+"example, mount the NFS share on the web server and copy it, or from the "
+"XenServer host use sftp or scp to upload it to the web server."
+msgstr "仮想マシンをシャットダウンして、VHD を NFS ストレージから Web サーバーにコピーします。たとえば、NFS 共有を Web サーバーにマウントしてコピーするか、XenServer ホストから sftp または scp を使用して、Web サーバーにアップロードします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In &PRODUCT;, create a new template using the following values:"
+msgstr "&PRODUCT; で次の値を使用して、新しいテンプレートを作成します。"
+
+#. Tag: para
+#, no-c-format
+msgid "URL. Give the URL for the VHD"
+msgstr "<emphasis role=\"bold\">URL :</emphasis> VHD の URL を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV "
+"(32-bit) or Other PV (64-bit). This choice is available only for XenServer."
+msgstr "<emphasis role=\"bold\">OS Type :</emphasis> 適切なオペレーティングシステムを使用します。PV モードの CentOS の場合は、[Other PV(32-bit)] または[Other PV(64-bit)]を選択します。この選択肢は、XenServer でのみ使用できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor. XenServer"
+msgstr "<emphasis role=\"bold\">Hypervisor :</emphasis> [XenServer]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Format. VHD"
+msgstr "<emphasis role=\"bold\">Format :</emphasis> [VHD]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The template will be created, and you can create instances from it."
+msgstr "テンプレートが作成され、そのテンプレートからインスタンスを作成できます。"

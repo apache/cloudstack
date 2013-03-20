@@ -1,0 +1,176 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:14+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Persistent Networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The network that you can provision without having to deploy any VMs on it is"
+" called a persistent network. A persistent network can be part of a VPC or a"
+" non-VPC environment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you create other types of network, a network is only a database entry "
+"until the first VM is created on that network. When the first VM is created,"
+" a VLAN ID is assigned and the network is provisioned. Also, when the last "
+"VM is destroyed, the VLAN ID is released and the network is no longer "
+"available. With the addition of persistent network, you will have the "
+"ability to create a network in &PRODUCT; in which physical devices can be "
+"deployed without having to run any VMs. Additionally, you can deploy "
+"physical devices on that network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"One of the advantages of having a persistent network is that you can create "
+"a VPC with a tier consisting of only physical devices. For example, you "
+"might create a VPC for a three-tier application, deploy VMs for Web and "
+"Application tier, and use physical machines for the Database tier. Another "
+"use case is that if you are providing services by using physical hardware, "
+"you can define the network as persistent and therefore even if all its VMs "
+"are destroyed the services will not be discontinued."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Persistent Network Considerations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Persistent network is designed for isolated networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All default network offerings are non-persistent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A network offering cannot be editable because changing it affects the "
+"behavior of the existing networks that were created using this network "
+"offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you create a guest network, the network offering that you select "
+"defines the network persistence. This in turn depends on whether persistent "
+"network is enabled in the selected network offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"An existing network can be made persistent by changing its network offering "
+"to an offering that has the Persistent option enabled. While setting this "
+"property, even if the network has no running VMs, the network is "
+"provisioned."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"An existing network can be made non-persistent by changing its network "
+"offering to an offering that has the Persistent option disabled. If the "
+"network has no running VMs, during the next network garbage collection run "
+"the network is shut down."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the last VM on a network is destroyed, the network garbage collector "
+"checks if the network offering associated with the network is persistent, "
+"and shuts down the network only if it is non-persistent."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Persistent Guest Network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a persistent network, perform the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a network offering with the Persistent option enabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"creating-network-offerings\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See the Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Network from the left navigation pane."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select the guest network that you want to offer this network service to."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Edit button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From the Network Offering drop-down, select the persistent network offering "
+"you have just created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "[OK]をクリックします。"

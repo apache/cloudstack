@@ -1,0 +1,118 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-26 14:15+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "User Data and Meta Data"
+msgstr "ユーザーデータとメタデータ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides API access to attach user data to a deployed VM. Deployed"
+" VMs also have access to instance metadata via the virtual router."
+msgstr "&PRODUCT; は、展開された仮想マシンにユーザーデータをアタッチするための API アクセスを提供します。 展開された仮想マシンは、仮想ルーターを経由してインスタンスメタデータにもアクセスします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"User data can be accessed once the IP address of the virtual router is "
+"known. Once the IP address is known, use the following steps to access the "
+"user data:"
+msgstr "仮想ルーターの IP アドレスがわかれば、ユーザーデータにアクセスできます。この IP アドレスがわかったら、次の手順に従ってユーザーデータにアクセスします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to find the virtual router."
+msgstr "次のコマンドを実行して、仮想ルーターを見つけます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier |"
+" tail -1"
+msgstr "# cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Access user data by running the following command using the result of the "
+"above command"
+msgstr "上のコマンドの結果を使用して次のコマンドを実行し、ユーザーデータにアクセスします。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# curl http://10.1.1.1/latest/user-data"
+msgstr "# curl http://10.1.1.1/latest/user-data"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Meta Data can be accessed similarly, using a URL of the form "
+"http://10.1.1.1/latest/meta-data/{metadata type}. (For backwards "
+"compatibility, the previous URL http://10.1.1.1/latest/{metadata type} is "
+"also supported.) For metadata type, use one of the following:"
+msgstr "「http://10.1.1.1/latest/meta-data/{metadata type}」形式の URL を使用して、メタデータにも同様の方法でアクセスできま す(後方互換性を維持するため、以前の「http://10.1.1.1/latest/{metadata type}」形式の URL もサポートされます)。メタデータについては、次のいずれか 1 つを使用します。"
+
+#. Tag: para
+#, no-c-format
+msgid "service-offering. A description of the VMs service offering"
+msgstr "service-offering : 仮想マシンサービスオファリングの説明です。"
+
+#. Tag: para
+#, no-c-format
+msgid "availability-zone. The Zone name"
+msgstr "availability-zone : ゾーン名です。"
+
+#. Tag: para
+#, no-c-format
+msgid "local-ipv4. The guest IP of the VM"
+msgstr "local-ipv4 : 仮想マシンのゲスト IP アドレスです。"
+
+#. Tag: para
+#, no-c-format
+msgid "local-hostname. The hostname of the VM"
+msgstr "local-hostname : 仮想マシンのホスト名です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"public-ipv4. The first public IP for the router. (E.g. the first IP of eth2)"
+msgstr "public-ipv4 : ルーターの最初のパブリック IP アドレスです(例:eth2 の最初の IP アドレス)。"
+
+#. Tag: para
+#, no-c-format
+msgid "public-hostname. This is the same as public-ipv4"
+msgstr "public-hostname : public-ipv4 と同じです。"
+
+#. Tag: para
+#, no-c-format
+msgid "instance-id. The instance name of the VM"
+msgstr "instance-id : 仮想マシンのインスタンス名です。"

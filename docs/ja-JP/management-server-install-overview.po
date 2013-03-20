@@ -1,0 +1,109 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 02:23+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Installation Overview"
+msgstr "管理サーバーのインストール"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section describes installing the Management Server. There are two "
+"slightly different installation flows, depending on how many Management "
+"Server nodes will be in your cloud:"
+msgstr "ここでは管理サーバーのインストール手順について説明します。インストールには2種類の手順があり、あなたのクラウド環境にいくつの管理サーバーを用意するかによって異なります。"
+
+#. Tag: para
+#, no-c-format
+msgid "A single Management Server node, with MySQL on the same node."
+msgstr "単一ホストでの管理サーバーと MySQL。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Multiple Management Server nodes, with MySQL on a node separate from the "
+"Management Servers."
+msgstr "物理的に分けられた複数ホストへの管理サーバーと MySQL。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In either case, each machine must meet the system requirements described in "
+"System Requirements."
+msgstr "どちらの場合でもこれらのマシンは「システム要件」に記載されているシステム要件を満たしている必要 があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the sake of security, be sure the public Internet can not access port "
+"8096 or port 8250 on the Management Server."
+msgstr "セキュリティのため、パブリックインターネット から管理サーバー上のポート 8096 または 8250 にアクセスできないようにする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "The procedure for installing the Management Server is:"
+msgstr "管理サーバーインストールの手順:"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr "オペレーティングシステムの準備"
+
+#. Tag: para
+#, no-c-format
+msgid "(XenServer only) Download and install vhd-util."
+msgstr "(XenServer のみ) vhd-util をダウンロードしてインストールしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Install the First Management Server"
+msgstr "最初の管理サーバーのインストール"
+
+#. Tag: para
+#, no-c-format
+msgid "Install and Configure the MySQL database"
+msgstr "MySQLのインストールと設定"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr "NFS共有の準備"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers (optional)"
+msgstr "追加の管理サーバーの準備と起動(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr "システム仮想マシンテンプレートの準備"

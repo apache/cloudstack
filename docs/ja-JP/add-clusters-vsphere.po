@@ -1,0 +1,156 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-04 15:58+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Cluster: vSphere"
+msgstr "クラスターの追加:vSphere"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Host management for vSphere is done through a combination of vCenter and the"
+" &PRODUCT; admin UI. &PRODUCT; requires that all hosts be in a &PRODUCT; "
+"cluster, but the cluster may consist of a single host. As an administrator "
+"you must decide if you would like to use clusters of one host or of multiple"
+" hosts. Clusters of multiple hosts allow for features like live migration. "
+"Clusters also require shared storage such as NFS or iSCSI."
+msgstr "vSphere のホスト管理は、vCenter および &PRODUCT; の管理者ユーザーインターフェイスを組み合わせて行います。&PRODUCT; では、すべてのホストが &PRODUCT; クラスターにあることが必要ですが、クラスターを単一のホストで構成することもできます。管理者はクラスターに 1 台のホストを使用するか、複数のホストを使用するかを決定する必要があります。 複数ホストのクラスターでは、ライブマイグレーションのような機能を使用できます。クラスターには、NFS または iSCSI のような共有ストレージも必要です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For vSphere servers, we recommend creating the cluster of hosts in vCenter "
+"and then adding the entire cluster to &PRODUCT;. Follow these requirements:"
+msgstr "vSphere サーバーの場合は、vCenter でホストのクラスターを作成した後、クラスター全体を &PRODUCT; に追加することをお勧めします。次の要件に従ってください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Do not put more than 8 hosts in a vSphere cluster"
+msgstr "vSphere クラスターに配置するホストは 8 台までにしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the hypervisor hosts do not have any VMs already running before "
+"you add them to &PRODUCT;."
+msgstr "ハイパーバイザーホストに実行中の仮想マシンがないことを確認してから、&PRODUCT; に追加してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "To add a vSphere cluster to &PRODUCT;:"
+msgstr "vSphere クラスターを &PRODUCT; に追加するには"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create the cluster of hosts in vCenter. Follow the vCenter instructions to "
+"do this. You will create a cluster that looks something like this in "
+"vCenter."
+msgstr "vCenter でホストのクラスターを作成します。vCenter の指示に従って、これを実行します。クラスターを作成すると、 vCenter には次のように表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI."
+msgstr "ユーザーインターフェイスにログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the cluster."
+msgstr "左側のナビゲーションバーで[Infrastructure]をクリックします。[Zones]で[View More]をクリックし、クラスターを追加するゾーンを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Compute tab, and click View All on Pods. Choose the pod to which "
+"you want to add the cluster."
+msgstr "[Compute]タブをクリックし、[Pods]の[View All]をクリックします。クラスターを追加するポッドを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View Clusters."
+msgstr "[View Clusters]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Cluster."
+msgstr "[Add Cluster]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Hypervisor, choose VMware."
+msgstr "[Hypervisor]ボックスの一覧で、[VMware]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide the following information in the dialog. The fields below make "
+"reference to values from vCenter."
+msgstr "ダイアログボックスに次の情報を入力します。次のフィールドによって、vCenter 側の値を参照できるようになりま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cluster Name. Enter the name of the cluster you created in vCenter. For "
+"example, \"cloud.cluster.2.2.1\""
+msgstr "Cluster Name: vCenter で作成したクラスターの名前を入力します。たとえば、「cloud.cluster.2.2.1」とします。"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Host. Enter the hostname or IP address of the vCenter server."
+msgstr "vCenter Host: vCenter サーバーのホスト名または IP アドレスを入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vCenter Username. Enter the username that &PRODUCT; should use to connect to"
+" vCenter. This user must have all administrative privileges."
+msgstr "vCenter Username: &PRODUCT; が vCenter への接続に使用するユーザー名を入力します。このユーザーにはすべての管理特権が必要です。"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Password. Enter the password for the user named above"
+msgstr "vCenter Password: 上記のユーザー名に対するパスワードを入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For"
+" example, \"cloud.dc.VM\"."
+msgstr "vCenter Datacenter: クラスターが存在する vCenter データセンターを入力します。たとえば、「cloud.dc.VM」とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There might be a slight delay while the cluster is provisioned. It will "
+"automatically display in the UI"
+msgstr "クラスターがプロビジョニングされる間、多少の遅延が発生する場合があります。ユーザーインターフェイスにクラスターが自動的に表示されます。"

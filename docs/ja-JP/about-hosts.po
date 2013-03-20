@@ -1,0 +1,125 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-03 02:16+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Hosts"
+msgstr "ホストについて"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A host is a single computer. Hosts provide the computing resources that run "
+"the guest virtual machines. Each host has hypervisor software installed on "
+"it to manage the guest VMs. For example, a Linux KVM-enabled server, a "
+"Citrix XenServer server, and an ESXi server are hosts."
+msgstr "ホストは単一のコンピューターです。ホストは、ゲスト仮想マシンを実行するコンピューティングリソースを提供します。各ホストにはゲスト仮想マシンを管理するためのハイパーバイザーソフトウェアをインストールしま す。たとえば、KVM が有効な Linux サーバー、Citrix XenServer が動作するサーバー、および ESXi サーバーがホストです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host is the smallest organizational unit within a &PRODUCT; deployment. "
+"Hosts are contained within clusters, clusters are contained within pods, and"
+" pods are contained within zones."
+msgstr "ホストは &PRODUCT; 環境内の最小の組織単位です。ホストはクラスターに含まれ、クラスターはポッドに含まれ、ポッドは ゾーンに含まれます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Hosts in a &PRODUCT; deployment:"
+msgstr "&PRODUCT; 環境内のホストには次の機能があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide the CPU, memory, storage, and networking resources needed to host "
+"the virtual machines"
+msgstr "仮想マシンをホストするために必要な CPU、メモリ、ストレージ、およびネットワークリソースを提供します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Interconnect using a high bandwidth TCP/IP network and connect to the "
+"Internet"
+msgstr "高帯域幅の TCP/IP ネットワークに相互接続して、インターネットに接続します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"May reside in multiple data centers across different geographic locations"
+msgstr "地理的に異なる複数データセンターに横断的に配置されています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"May have different capacities (different CPU speeds, different amounts of "
+"RAM, etc.), although the hosts within a cluster must all be homogeneous"
+msgstr "1 つのクラスター内のホストはすべて同種である必要がありますが、CPU 速度や RAM サイズなど、能力が異なる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additional hosts can be added at any time to provide more capacity for guest"
+" VMs."
+msgstr "ゲストVMの能力を向上させるためにいつでもホストを追加できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; automatically detects the amount of CPU and memory resources "
+"provided by the Hosts."
+msgstr "&PRODUCT; は自動的にホストのCPU、メモリのリソースを検出します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hosts are not visible to the end user. An end user cannot determine which "
+"host their guest has been assigned to."
+msgstr "ホストはユーザーに対し不可視であり、ユーザーはどのホストに対しゲストVMが割り当てられているかわかりません。"
+
+#. Tag: para
+#, no-c-format
+msgid "For a host to function in &PRODUCT;, you must do the following:"
+msgstr "&PRODUCT; 内のホストを機能させるには、次の作業が必要です。"
+
+#. Tag: para
+#, no-c-format
+msgid "Install hypervisor software on the host"
+msgstr "ホストにハイパーバイザーソフトウェアをインストールする。"
+
+#. Tag: para
+#, no-c-format
+msgid "Assign an IP address to the host"
+msgstr "ホストに IP アドレスを割り当てる。"
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure the host is connected to the &PRODUCT; Management Server"
+msgstr "ホストが &PRODUCT; 管理サーバーに接続していることを確認する。"

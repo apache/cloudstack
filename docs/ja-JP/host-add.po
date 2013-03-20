@@ -1,0 +1,78 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-04 15:42+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Host"
+msgstr "ホストの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before adding a host to the &PRODUCT; configuration, you must first install "
+"your chosen hypervisor on the host. &PRODUCT; can manage hosts running VMs "
+"under a variety of hypervisors."
+msgstr "&PRODUCT; 構成としてホストを追加する前に選択したハイパーバイザーをホストにインストールする必要があります。&PRODUCT; ホストを様々なハイパーバイザー下で動作する仮想マシンとともに管理することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; Installation Guide provides instructions on how to install "
+"each supported hypervisor and configure it for use with &PRODUCT;. See the "
+"appropriate section in the Installation Guide for information about which "
+"version of your chosen hypervisor is supported, as well as crucial "
+"additional steps to configure the hypervisor hosts for use with &PRODUCT;."
+msgstr "&PRODUCT; インストールガイドではそれぞれのサポートされるハイパーバイザーを &PRODUCT; からどのように利用するかインストール方法や設定方法を提供しています。どのバージョンのハイパーバイザーがサポートされているか「インストールガイドの」適切なセクションを参照することは &PRODUCT; でハイパーバイザーホストを構成するための重要なステップになります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure you have performed the additional &PRODUCT;-specific configuration "
+"steps described in the hypervisor installation section for your particular "
+"hypervisor."
+msgstr "それぞれのハイパーバイザーに対して「ハイパーバイザーのインストール」で述べられる &PRODUCT; 特有の構成手順を確認してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now add the hypervisor host to &PRODUCT;. The technique to use varies "
+"depending on the hypervisor."
+msgstr "&PRODUCT; に対しホストを追加します。関連する技術情報は利用するハイパーバイザーによって異なります。"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"host-add-xenserver-kvm-ovm\" />"
+msgstr "<xref linkend=\"host-add-xenserver-kvm-ovm\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"host-add-vsphere\" />"
+msgstr "<xref linkend=\"host-add-vsphere\" />"

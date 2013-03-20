@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Virtual Router"
+msgstr "仮想ルーター"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The virtual router is a type of System Virtual Machine. The virtual router "
+"is one of the most frequently used service providers in &PRODUCT;. The end "
+"user has no direct access to the virtual router. Users can ping the virtual "
+"router and take actions that affect it (such as setting up port forwarding),"
+" but users do not have SSH access into the virtual router."
+msgstr "仮想ルーターはシステム VM の一つであり、&PRODUCT; で良く利用されるサービスプロバイダーのです。エンドユーザーは仮想ルーターに直接アクセスすることはできず、ping を打つことやいくつかの設定(ポートフォワーディングなど)のみができます。しかし、ユーザーは仮想ルーターに対しての SSH アクセスはできません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There is no mechanism for the administrator to log in to the virtual router."
+" Virtual routers can be restarted by administrators, but this will interrupt"
+" public network access and other services for end users. A basic test in "
+"debugging networking issues is to attempt to ping the virtual router from a "
+"guest VM. Some of the characteristics of the virtual router are determined "
+"by its associated system service offering.."
+msgstr ""

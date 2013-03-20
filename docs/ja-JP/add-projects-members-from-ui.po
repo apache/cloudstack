@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-05 10:56+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Project Members From the UI"
+msgstr "ユーザーインターフェイスでのメンバーの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The steps below tell how to add a new member to a project if the invitations"
+" feature is not enabled in the cloud. If the invitations feature is enabled "
+"cloud,as described in <xref linkend=\"set-up-invitations\" />, use the "
+"procedure in <xref linkend=\"send-projects-membership-invitation\" />."
+msgstr "クラウドで招待状機能が無効な場合は、次の手順に従ってプロジェクトに新しいメンバーを追加します。 <xref linkend=\"set-up-invitations\" /> に記述されている方法によりクラウドで招待状機能が有効になっている場合は <xref linkend=\"send-projects-membership-invitation\" /> の手順に従います。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "&PRODUCT;ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "左側のナビゲーションバーで [Projects] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "[Select view] ボックスの一覧で [Projects] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr "設定するプロジェクトの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Accounts tab. The current members of the project are listed."
+msgstr "[Accounts] タブをクリックします。現在のプロジェクトメンバーが一覧表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Type the account name of the new member you want to add, and click Add "
+"Account. You can add only people who have an account in this cloud and "
+"within the same domain as the project."
+msgstr "追加する新しいメンバーのアカウント名を入力して、[Add Account] をクリックします。このクラウドの、プロジェクトの\n存在するドメインにアカウントを持つユーザーのみを追加できます。"

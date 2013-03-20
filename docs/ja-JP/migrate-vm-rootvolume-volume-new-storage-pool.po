@@ -1,0 +1,78 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:09+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Migrating a VM Root Volume to a New Storage Pool"
+msgstr "仮想マシンルートボリュームの新しいストレージプールへの移行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When migrating the root disk volume, the VM must first be stopped, and users"
+" can not access the VM. After migration is complete, the VM can be "
+"restarted."
+msgstr "ルートディスクボリュームの移行時には、まず仮想マシンを停止して、ユーザーがアクセスできないようにする必要があります。移行が完了したら、仮想マシンを再起動できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "&PRODUCT; ユーザーインターフェイスに管理者としてログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Detach the data disk from the VM. See Detaching and Moving Volumes <xref "
+"linkend=\"detach-move-volumes\" /> (but skip the “reattach” step at the end."
+" You will do that after migrating to new storage)."
+msgstr "仮想マシンからデータディスクをデタッチします。「ボリュームのデタッチと移動」<xref linkend=\"detach-move-volumes\" />を参照してください(ただし、最後の「再アタッチ」の手順は飛ばして下さい。これは新しいストレージへの移行完了後に実施します)。"
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the VM."
+msgstr "仮想マシンを停止します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use the &PRODUCT; API command, migrateVirtualMachine, with the ID of the VM "
+"to migrate and the IDs of a destination host and destination storage pool in"
+" the same zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch for the VM status to change to Migrating, then back to Stopped."
+msgstr "仮想マシンの状態が移行中から停止済みになるのを待ちます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the VM."
+msgstr "仮想マシンを再起動します。"

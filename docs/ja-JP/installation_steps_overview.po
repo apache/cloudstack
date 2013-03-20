@@ -1,0 +1,142 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-30 03:44+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Installation Steps"
+msgstr "インストール手順の概要"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For anything more than a simple trial installation, you will need guidance "
+"for a variety of configuration choices. It is strongly recommended that you "
+"read the following:"
+msgstr "簡単な試用インストール以上のことを行うには、構成のさまざまな選択肢についてガイダ ンスが必要になります。次の項目を参照す ることを強くお勧めします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Deployment Architecture"
+msgstr "展開アーキテクチャの選択"
+
+#. Tag: para
+#, no-c-format
+msgid "Choosing a Hypervisor: Supported Features"
+msgstr "ハイパーバイザーの選択 : サポートされる機能"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Setup"
+msgstr "ネットワークのセットアップ"
+
+#. Tag: para
+#, no-c-format
+msgid "Storage Setup"
+msgstr "ストレージのセットアップ"
+
+#. Tag: para
+#, no-c-format
+msgid "Best Practices"
+msgstr "ベストプラクティス"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Prepare</emphasis>"
+msgstr "<emphasis role=\"bold\">準備</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure you have the required hardware ready"
+msgstr "必要なハードウェアの準備ができたかどうかの確認"
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Fill out the preparation checklists"
+msgstr "(オプション)準備チェックリストの記入"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Install the &PRODUCT; software</emphasis>"
+msgstr "<emphasis role=\"bold\">&PRODUCT; のインストール</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Install the Management Server (choose single-node or multi-node)"
+msgstr "&PRODUCT; 管理サーバーのインストール(単一ノード、複数ノードの選択)"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI"
+msgstr "ユーザーインターフェイスへのログイン"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Provision your cloud infrastructure</emphasis>"
+msgstr "<emphasis role=\"bold\">クラウドインフラストラクチャのプロビジョニング</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Add a zone. Includes the first pod, cluster, and host"
+msgstr "ゾーンの追加。最初のポッド、クラスター、およびホストの設定"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods"
+msgstr "ポッドの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters"
+msgstr "クラスターの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts"
+msgstr "ホストの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more primary storage"
+msgstr "プライマリストレージの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Add more secondary storage"
+msgstr "セカンダリストレージの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Try using the cloud</emphasis>"
+msgstr "<emphasis role=\"bold\">クラウドの使用</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Initialization and testing"
+msgstr "初期化とテスト"

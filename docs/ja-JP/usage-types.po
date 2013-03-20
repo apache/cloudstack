@@ -1,0 +1,275 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-08 12:25+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Usage Types"
+msgstr "使用状況データの種類"
+
+#. Tag: para
+#, no-c-format
+msgid "The following table shows all usage types."
+msgstr "次の表は使用状況データの種類を表しています。"
+
+#. Tag: entry
+#, no-c-format
+msgid "Type ID"
+msgstr "Type ID"
+
+#. Tag: entry
+#, no-c-format
+msgid "Type Name"
+msgstr "Type Name"
+
+#. Tag: entry
+#, no-c-format
+msgid "Description"
+msgstr "説明"
+
+#. Tag: entry
+#, no-c-format
+msgid "1"
+msgstr "1"
+
+#. Tag: entry
+#, no-c-format
+msgid "RUNNING_VM"
+msgstr "RUNNING_VM"
+
+#. Tag: entry
+#, no-c-format
+msgid ""
+"Tracks the total running time of a VM per usage record period. If the VM is "
+"upgraded during the usage period, you will get a separate Usage Record for "
+"the new upgraded VM."
+msgstr "使用状況レコードの期間における仮想マシンの総稼働時間を追跡します。もし期間中に仮想マシンがアップグレードされた場合は、新しいアップグレードされた仮想マシンに対し別の使用状況レコードを取得します。"
+
+#. Tag: para
+#, no-c-format
+msgid "2"
+msgstr "2"
+
+#. Tag: para
+#, no-c-format
+msgid "ALLOCATED_VM"
+msgstr "ALLOCATED_VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time the VM has been created to the time when it has been "
+"destroyed. This usage type is also useful in determining usage for specific "
+"templates such as Windows-based templates."
+msgstr "仮想マシンが作成されてから削除されるまでの総時間を追跡します。この使用状況タイプは Windows ベースのテンプレートのような特定テンプレートの使用状況を確認するのに役立ちます。"
+
+#. Tag: para
+#, no-c-format
+msgid "3"
+msgstr "3"
+
+#. Tag: para
+#, no-c-format
+msgid "IP_ADDRESS"
+msgstr "IP_ADDRESS"
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the public IP address owned by the account."
+msgstr "アカウントが所有するパブリック IP を追跡します"
+
+#. Tag: para
+#, no-c-format
+msgid "4"
+msgstr "4"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_BYTES_SENT"
+msgstr "NETWORK_BYTES_SENT"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total number of bytes sent by all the VMs for an account. "
+"Cloud.com does not currently track network traffic per VM."
+msgstr "アカウントが所有している全ての仮想マシンから送信したデータの総バイト数を追跡します。Cloud.com は 現在仮想マシン毎のネットワークトラフィックは追跡しません。"
+
+#. Tag: para
+#, no-c-format
+msgid "5"
+msgstr "5"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_BYTES_RECEIVED"
+msgstr "NETWORK_BYTES_RECEIVED"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total number of bytes received by all the VMs for an account. "
+"Cloud.com does not currently track network traffic per VM."
+msgstr "アカウントが所有している全ての仮想マシンで受信したデータの総バイト数を追跡します。Cloud.com は 現在仮想マシン毎のネットワークトラフィックは追跡しません。"
+
+#. Tag: para
+#, no-c-format
+msgid "6"
+msgstr "6"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME"
+msgstr "VOLUME"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time a disk volume has been created to the time when it has"
+" been destroyed."
+msgstr "ディスクボリュームが作成されてから削除されるまでの総時間を追跡します。"
+
+#. Tag: para
+#, no-c-format
+msgid "7"
+msgstr "7"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE"
+msgstr "TEMPLATE"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time a template (either created from a snapshot or uploaded"
+" to the cloud) has been created to the time it has been destroyed. The size "
+"of the template is also returned."
+msgstr "テンプレート(スナップショットから作成もしくはクラウド上にアップロードされたもの)が作成されてから削除されるまでの総時間を追跡します。また、テンプレートのサイズも返されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "8"
+msgstr "8"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO"
+msgstr "ISO"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time an ISO has been uploaded to the time it has been "
+"removed from the cloud. The size of the ISO is also returned."
+msgstr "ISO がアップロードされてから削除されるまでの総時間を追跡します。また、ISO のサイズも返されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "9"
+msgstr "9"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOT"
+msgstr "SNAPSHOT"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time from when a snapshot has been created to the time it "
+"have been destroyed."
+msgstr "スナップショットが作成されてから削除されるまでの総時間を追跡します。"
+
+#. Tag: para
+#, no-c-format
+msgid "11"
+msgstr "11"
+
+#. Tag: para
+#, no-c-format
+msgid "LOAD_BALANCER_POLICY"
+msgstr "LOAD_BALANCER_POLICY"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the total time a load balancer policy has been created to the time it"
+" has been removed. Cloud.com does not track whether a VM has been assigned "
+"to a policy."
+msgstr "負荷分散ポリシーが作成されてから削除されるまでの総時間を追跡します。Cloud.com は規則がいつ仮想マシンに割り当てられたかまでは追跡しません。"
+
+#. Tag: para
+#, no-c-format
+msgid "12"
+msgstr "12"
+
+#. Tag: para
+#, no-c-format
+msgid "PORT_FORWARDING_RULE"
+msgstr "PORT_FORWARDING_RULE"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tracks the time from when a port forwarding rule was created until the time "
+"it was removed."
+msgstr "ポートフォワーディング規則が作成されてから削除されるまでの総時間を追跡します。"
+
+#. Tag: para
+#, no-c-format
+msgid "13"
+msgstr "13"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_OFFERING"
+msgstr "NETWORK_OFFERING"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The time from when a network offering was assigned to a VM until it is "
+"removed."
+msgstr "ネットワークオファリングが仮想マシンに割り当てられてから削除されるまでの時間を追跡します。"
+
+#. Tag: para
+#, no-c-format
+msgid "14"
+msgstr "14"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN_USERS"
+msgstr "VPN_USERS"
+
+#. Tag: para
+#, no-c-format
+msgid "The time from when a VPN user is created until it is removed."
+msgstr "VPN ユーザーが作成されてから削除されるまでの時間を追跡します。"

@@ -1,0 +1,598 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-05 03:31+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changed API Commands in 4.0.0-incubating"
+msgstr "4.0.0-incubating で変更された API コマンド"
+
+#. Tag: para
+#, no-c-format
+msgid "API Commands"
+msgstr "API コマンド"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "説明"
+
+#. Tag: para
+#, no-c-format
+msgid "copyTemplate"
+msgstr "copyTemplate"
+
+#. Tag: para
+#, no-c-format
+msgid "prepareTemplate"
+msgstr "prepareTemplate"
+
+#. Tag: para
+#, no-c-format
+msgid "registerTemplate"
+msgstr "registerTemplate"
+
+#. Tag: para
+#, no-c-format
+msgid "updateTemplate"
+msgstr "updateTemplate"
+
+#. Tag: para
+#, no-c-format
+msgid "createProject"
+msgstr "createProject"
+
+#. Tag: para
+#, no-c-format
+msgid "activateProject"
+msgstr "activateProject"
+
+#. Tag: para
+#, no-c-format
+msgid "suspendProject"
+msgstr "suspendProject"
+
+#. Tag: para
+#, no-c-format
+msgid "updateProject"
+msgstr "updateProject"
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectAccounts"
+msgstr "listProjectAccounts"
+
+#. Tag: para
+#, no-c-format
+msgid "createVolume"
+msgstr "createVolume"
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVolume"
+msgstr "migrateVolume"
+
+#. Tag: para
+#, no-c-format
+msgid "attachVolume"
+msgstr "attachVolume"
+
+#. Tag: para
+#, no-c-format
+msgid "detachVolume"
+msgstr "detachVolume"
+
+#. Tag: para
+#, no-c-format
+msgid "uploadVolume"
+msgstr "uploadVolume"
+
+#. Tag: para
+#, no-c-format
+msgid "createSecurityGroup"
+msgstr "createSecurityGroup"
+
+#. Tag: para
+#, no-c-format
+msgid "registerIso"
+msgstr "registerIso"
+
+#. Tag: para
+#, no-c-format
+msgid "copyIso"
+msgstr "copyIso"
+
+#. Tag: para
+#, no-c-format
+msgid "updateIso"
+msgstr "updateIso"
+
+#. Tag: para
+#, no-c-format
+msgid "createIpForwardingRule"
+msgstr "createIpForwardingRule"
+
+#. Tag: para
+#, no-c-format
+msgid "listIpForwardingRules"
+msgstr "listIpForwardingRules"
+
+#. Tag: para
+#, no-c-format
+msgid "createLoadBalancerRule"
+msgstr "createLoadBalancerRule"
+
+#. Tag: para
+#, no-c-format
+msgid "updateLoadBalancerRule"
+msgstr "updateLoadBalancerRule"
+
+#. Tag: para
+#, no-c-format
+msgid "createSnapshot"
+msgstr "createSnapshot"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The commands in this list have a single new response parameter, and no other"
+" changes."
+msgstr "ここに記述されたコマンドは単一の新しいレスポンスパラメーターを持ち、それ以外の変更点はありません。"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: tags(*)"
+msgstr "新しいレスポンスパラメーター: tags(*)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Many other commands also have the new tags(*) parameter in addition to other"
+" changes; those commands are listed separately."
+msgstr "その他の多くのコマンドは新しい tags(*) パラメーターを持ちその他の変更点を含みます。これらのコマンドを別途記述します。"
+
+#. Tag: para
+#, no-c-format
+msgid "rebootVirtualMachine"
+msgstr "rebootVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "attachIso"
+msgstr "attachIso"
+
+#. Tag: para
+#, no-c-format
+msgid "detachIso"
+msgstr "detachIso"
+
+#. Tag: para
+#, no-c-format
+msgid "listLoadBalancerRuleInstances"
+msgstr "listLoadBalancerRuleInstances"
+
+#. Tag: para
+#, no-c-format
+msgid "resetPasswordForVirtualMachine"
+msgstr "resetPasswordForVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForVirtualMachine"
+msgstr "changeServiceForVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "recoverVirtualMachine"
+msgstr "recoverVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "startVirtualMachine"
+msgstr "startVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVirtualMachine"
+msgstr "migrateVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "deployVirtualMachine"
+msgstr "deployVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "assignVirtualMachine"
+msgstr "assignVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "updateVirtualMachine"
+msgstr "updateVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "restoreVirtualMachine"
+msgstr "restoreVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "stopVirtualMachine"
+msgstr "stopVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid "destroyVirtualMachine"
+msgstr "destroyVirtualMachine"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The commands in this list have two new response parameters, and no other "
+"changes."
+msgstr "ここに記述されたコマンドは 2つの新しいレスポンスパラメーターを持ち、それ以外の変更点はありません。"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: keypair, tags(*)"
+msgstr "新しいレスポンスパラメーター: keypair, tags(*)"
+
+#. Tag: para
+#, no-c-format
+msgid "listSecurityGroups"
+msgstr "listSecurityGroups"
+
+#. Tag: para
+#, no-c-format
+msgid "listFirewallRules"
+msgstr "listFirewallRules"
+
+#. Tag: para
+#, no-c-format
+msgid "listPortForwardingRules"
+msgstr "listPortForwardingRules"
+
+#. Tag: para
+#, no-c-format
+msgid "listSnapshots"
+msgstr "listSnapshots"
+
+#. Tag: para
+#, no-c-format
+msgid "listIsos"
+msgstr "listIsos"
+
+#. Tag: para
+#, no-c-format
+msgid "listProjects"
+msgstr "listProjects"
+
+#. Tag: para
+#, no-c-format
+msgid "listTemplates"
+msgstr "listTemplates"
+
+#. Tag: para
+#, no-c-format
+msgid "listLoadBalancerRules"
+msgstr "listLoadBalancerRules"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The commands in this list have the following new parameters, and no other "
+"changes."
+msgstr "ここに記述されたコマンドは以下の新しいパラメーターを持ち、それ以外の変更点はありません。"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: tags (optional)"
+msgstr "新しいリクエストパラメーター: tags (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancerNetworks"
+msgstr "listF5LoadBalancerNetworks"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancerNetworks"
+msgstr "listNetscalerLoadBalancerNetworks"
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewallNetworks"
+msgstr "listSrxFirewallNetworks"
+
+#. Tag: para
+#, no-c-format
+msgid "updateNetwork"
+msgstr "updateNetwork"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The commands in this list have three new response parameters, and no other "
+"changes."
+msgstr "ここに記述されたコマンドは 3つの新しいレスポンスパラメーターを持ち、それ以外の変更点はありません。"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: canusefordeploy, vpcid, tags(*)"
+msgstr "新しいレスポンスパラメーター: canusefordeploy, vpcid, tags(*)"
+
+#. Tag: para
+#, no-c-format
+msgid "createZone"
+msgstr "createZone"
+
+#. Tag: para
+#, no-c-format
+msgid "updateZone"
+msgstr "updateZone"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: localstorageenabled (optional)"
+msgstr "新しいリクエストパラメーター: localstorageenabled (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: localstorageenabled"
+msgstr "新しいレスポンスパラメーター: localstorageenabled"
+
+#. Tag: para
+#, no-c-format
+msgid "listZones"
+msgstr "listZones"
+
+#. Tag: para
+#, no-c-format
+msgid "rebootRouter"
+msgstr "rebootRouter"
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForRouter"
+msgstr "changeServiceForRouter"
+
+#. Tag: para
+#, no-c-format
+msgid "startRouter"
+msgstr "startRouter"
+
+#. Tag: para
+#, no-c-format
+msgid "destroyRouter"
+msgstr "destroyRouter"
+
+#. Tag: para
+#, no-c-format
+msgid "stopRouter"
+msgstr "stopRouter"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcid, nic(*)"
+msgstr "新しいレスポンスパラメーター: vpcid, nic(*)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateAccount"
+msgstr "updateAccount"
+
+#. Tag: para
+#, no-c-format
+msgid "disableAccount"
+msgstr "disableAccount"
+
+#. Tag: para
+#, no-c-format
+msgid "listAccounts"
+msgstr "listAccounts"
+
+#. Tag: para
+#, no-c-format
+msgid "markDefaultZoneForAccount"
+msgstr "markDefaultZoneForAccount"
+
+#. Tag: para
+#, no-c-format
+msgid "enableAccount"
+msgstr "enableAccount"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcavailable, vpclimit, vpctotal"
+msgstr "新しいレスポンスパラメーター: vpcavailable, vpclimit, vpctotal"
+
+#. Tag: para
+#, no-c-format
+msgid "listRouters"
+msgstr "listRouters"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: forvpc (optional), vpcid (optional)"
+msgstr "新しいリクエストパラメーター: forvpc (オプション), vpcid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkOfferings"
+msgstr "listNetworkOfferings"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: forvpc (optional)"
+msgstr "新しいリクエストパラメーター: forvpc(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: forvpc"
+msgstr "新しいレスポンスパラメーター: forvpc"
+
+#. Tag: para
+#, no-c-format
+msgid "listVolumes"
+msgstr "listVolumes"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: details (optional), tags (optional)"
+msgstr "新しいリクエストパラメーター: detais (オプション), tags (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: tags(*)"
+msgstr "新しいリクエストパラメーター: tags(*)"
+
+#. Tag: para
+#, no-c-format
+msgid "addTrafficMonitor"
+msgstr "addTrafficMonitor"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New request parameters: excludezones (optional), includezones (optional)"
+msgstr "新しいリクエストパラメーター: excludezones (オプション), includezones (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "createNetwork"
+msgstr "createNetwork"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: vpcid (optional)"
+msgstr "新しいリクエストパラメーター: vpcid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "listPublicIpAddresses"
+msgstr "listPublicIpAddresses"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: tags (optional), vpcid (optional)"
+msgstr "新しいリクエストパラメーター: tags (オプション), vpcid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcid, tags(*)"
+msgstr "新しいレスポンスパラメーター: vpcid, tags(*)"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworks"
+msgstr "listNetworks"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New request parameters: canusefordeploy (optional), forvpc (optional), tags "
+"(optional), vpcid (optional)"
+msgstr "新しいリクエストパラメーター: canusefordeploy (オプション), forvpc (オプション), tags (オプション), vpcid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "restartNetwork"
+msgstr "restartNetwork"
+
+#. Tag: para
+#, no-c-format
+msgid "enableStaticNat"
+msgstr "enableStaticNat"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: networkid (optional)"
+msgstr "新しいリクエストパラメーター: networkid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "createDiskOffering"
+msgstr "createDiskOffering"
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: storagetype (optional)"
+msgstr "新しいリクエストパラメーター: storagetype (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: storagetype"
+msgstr "新しいレスポンスパラメーター: storagetype"
+
+#. Tag: para
+#, no-c-format
+msgid "listDiskOfferings"
+msgstr "listDiskOfferings"
+
+#. Tag: para
+#, no-c-format
+msgid "updateDiskOffering"
+msgstr "updateDiskOffering"
+
+#. Tag: para
+#, no-c-format
+msgid "createFirewallRule"
+msgstr "createFirewallRule"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Changed request parameters: ipaddressid (old version - optional, new version"
+" - required)"
+msgstr "変更されたリクエストパラメーター: ipaddressid (古いバージョン - オプション, 新しいバージョン - 必須)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVirtualMachines"
+msgstr "listVirtualMachines"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New request parameters: isoid (optional), tags (optional), templateid "
+"(optional)"
+msgstr "新しいリクエストパラメーター: isoid (オプション), tags (オプション), templateid (オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateStorageNetworkIpRange"
+msgstr "updateStorageNetworkIpRange"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"New response parameters: id, endip, gateway, netmask, networkid, podid, "
+"startip, vlan, zoneid"
+msgstr "新しいレスポンスパラメーター: id, endip, gateway, netmask, networkid, podid, startip, vlan, zoneid"

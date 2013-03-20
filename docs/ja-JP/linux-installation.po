@@ -1,0 +1,120 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Linux OS Installation"
+msgstr "Linux オペレーティングシステムのインストール"
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to begin the Linux OS installation:"
+msgstr "次の手順に従って、Linux オペレーティングシステムのインストールを開始します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Download the script file cloud-set-guest-password:"
+msgstr "スクリプトファイルの cloud-set-guest-password をダウンロードします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Linux: <ulink url=\" http://cloudstack.org/dl/cloud-set-guest-password \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows: <ulink url=\" "
+"http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download"
+" \" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this file to /etc/init.d."
+msgstr "このファイルを/etc/init.d にコピーします。"
+
+#. Tag: para
+#, no-c-format
+msgid "On some Linux distributions, copy the file to /etc/rc.d/init.d."
+msgstr "一部の Linux ディストリビューションでは、このファイルを/etc/rc.d/init.d にコピーします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to make the script executable:"
+msgstr "次のコマンドを実行して、スクリプトを実行可能にします。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chmod +x /etc/init.d/cloud-set-guest-password"
+msgstr "chmod +x /etc/init.d/cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Depending on the Linux distribution, continue with the appropriate step."
+msgstr "Linux ディストリビューションに応じて、適切な手順を続行します。"
+
+#. Tag: para
+#, no-c-format
+msgid "On Fedora, CentOS/RHEL, and Debian, run:"
+msgstr "Fedora、CentOS/RHEL、および Debian:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chkconfig --add cloud-set-guest-password"
+msgstr "chkconfig --add cloud-set-guest-password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On Ubuntu with VMware tools, link the script file to the /etc/network/if-up "
+"and /etc/network/if-down folders, and run the script:"
+msgstr "Ubuntu で VMware tools を利用している場合、/etc/network/if-up と /etc/network/if-down フォルダにスクリプトファイルへのリンクを作成するため、以下のスクリプトを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password\n"
+"#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-down/cloud-set-guest-password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using Ubuntu 11.04, start by creating a directory called "
+"/var/lib/dhcp3 on your Ubuntu machine (works around a known issue with this "
+"version of Ubuntu). On all Ubuntu versions: Run “sudo update-rc.d cloud-set-"
+"guest-password defaults 98”. To test, run \"mkpasswd\" and check that it is "
+"generating a new password. If the “mkpasswd” command does not exist, run "
+"\"sudo apt-get install whois\" (or sudo apt-get install mkpasswd, depending "
+"on your Ubuntu version) and repeat."
+msgstr "Ubuntu 11.04 を使用する場合は、Ubuntu マシンに/var/lib/dhcp3 というディレクトリを作成します(このバージョンのUbuntuの既知の問題を回避します)。すべてのバージョンのUbuntuで、sudo update-rc.d cloud-set-guest-password defaults 98 を実行します。テストのために mkpasswd を実行して、新しいパスワードが作成されるか確認します。mkpasswdコマンドが存在しない場合は、sudo apt-get install whois(または使用している Ubuntu のバージョンに応じて sudo apt-get install mkpasswd) を実行して繰り返します。"

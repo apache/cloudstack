@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-04 14:32+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Cluster: KVM or XenServer"
+msgstr "クラスターの追加:KVM または XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps assume you have already installed the hypervisor on the hosts "
+"and logged in to the &PRODUCT; UI."
+msgstr "次の手順は、ハイパーバイザーをホストにインストール済みで &PRODUCT; ユーザーインターフェイスにログイン済みであることを前提としています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the cluster."
+msgstr "左側のナビゲーションバーで[Infrastructure]をクリックします。[Zones]で[View More]をクリックし、クラスターを追加するゾーンを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute tab."
+msgstr "[Compute] タブをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Clusters node of the diagram, click View All."
+msgstr "ダイアグラムの[Clusters]ノードの[View All]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Cluster."
+msgstr "[Add Cluster]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the hypervisor type for this cluster."
+msgstr "このクラスターのハイパーバイザーの種類を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the pod in which you want to create the cluster."
+msgstr "クラスターを作成するポッドを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Enter a name for the cluster. This can be text of your choosing and is not "
+"used by &PRODUCT;."
+msgstr "クラスターの名前を入力します。任意の、&PRODUCT; で使用されていないテキストを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "[OK]をクリックします。"

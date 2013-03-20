@@ -1,0 +1,205 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-03-19 14:12+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Preparation for Windows Server 2008 R2"
+msgstr "Windows Server 2008 R2 の Sysprep"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For Windows 2008 R2, you run Windows System Image Manager to create a custom"
+" sysprep response XML file. Windows System Image Manager is installed as "
+"part of the Windows Automated Installation Kit (AIK). Windows AIK can be "
+"downloaded from <ulink url=\"http://www.microsoft.com/en-"
+"us/download/details.aspx?id=9085\">Microsoft Download Center</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to run sysprep for Windows 2008 R2:"
+msgstr "Windows Server 2008 R2 で sysprep を実行するには、次の手順に従います。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The steps outlined here are derived from the excellent guide by Charity "
+"Shelbourne, originally published at <ulink "
+"url=\"http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-"
+"oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx\">Windows "
+"Server 2008 Sysprep Mini-Setup.</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download and install the Windows AIK"
+msgstr "Windows AIK をダウンロードしてインストールします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows AIK should not be installed on the Windows 2008 R2 VM you just "
+"created. Windows AIK should not be part of the template you create. It is "
+"only used to create the sysprep answer file."
+msgstr "注:Windows AIK は、今作成した Windows Server 2008 R2 仮想マシンにはインストールしないでください。Windows AIK は、作成するテンプレートに含めないでください。sysprep 応答ファイルの作成のみに使用します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the install.wim file in the \\sources directory of the Windows 2008 R2 "
+"installation DVD to the hard disk. This is a very large file and may take a "
+"long time to copy. Windows AIK requires the WIM file to be writable."
+msgstr "Windows Server 2008 R2 のインストール DVD の\\sources ディレクトリにある install.wim ファイルをハードディスクにコピーします。これは非常に大きいファイルであり、コピーに長い時間がかかる場合があります。Windows AIK を使用するには、WIM ファイルを書き込み可能にする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Start the Windows System Image Manager, which is part of the Windows AIK."
+msgstr "Windows AIK の一部である Windows システムイメージマネージャーを起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Windows Image pane, right click the Select a Windows image or catalog"
+" file option to load the install.wim file you just copied."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the Windows 2008 R2 Edition."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You may be prompted with a warning that the catalog file cannot be opened. "
+"Click Yes to create a new catalog file."
+msgstr "カタログファイルを開くことができないと警告するダイアログボックスが表示されることがあります。新しいカタログファイルを作成するには、[はい]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Answer File pane, right click to create a new answer file."
+msgstr "[応答ファイル]ペインで、右クリックして新しい応答ファイルを作成します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Generate the answer file from the Windows System Image Manager using the "
+"following steps:"
+msgstr "次の手順に従って、Windows システムイメージマネージャーから応答ファイルを作成します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The first page you need to automate is the Language and Country or Region "
+"Selection page. To automate this, expand Components in your Windows Image "
+"pane, right-click and add the Microsoft-Windows-International-Core setting "
+"to Pass 7 oobeSystem. In your Answer File pane, configure the InputLocale, "
+"SystemLocale, UILanguage, and UserLocale with the appropriate settings for "
+"your language and country or region. Should you have a question about any of"
+" these settings, you can right-click on the specific setting and select "
+"Help. This will open the appropriate CHM help file with more information, "
+"including examples on the setting you are attempting to configure."
+msgstr "自動化する必要がある最初のページは、言語および国や地域を選択するページです。これを自動化するには、 [Windows イメージ]ペインで[Components]を展開し、右クリックして[Microsoft-Windows-International-Core] 設定を[7 oobeSystem]に追加します。[応答ファイル]ペインで、使用する言語と国または地域に合わせて、 [InputLocale]、[SystemLocale]、[UILanguage]、および[UserLocale]を適切に構成します。これらの設定でわ からない点がある場合は、特定の設定を右クリックして[ヘルプ]をクリックします。すると、構成しようとしている設定の例を含む詳細情報が記載された、適切な CHM ヘルプファイルが開きます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to automate the Software License Terms Selection page, otherwise "
+"known as the End-User License Agreement (EULA). To do this, expand the "
+"Microsoft-Windows-Shell-Setup component. High-light the OOBE setting, and "
+"add the setting to the Pass 7 oobeSystem. In Settings, set HideEULAPage "
+"true."
+msgstr "ソフトウェアライセンス条項つまりエンドユーザー使用許諾契約書のページを自動化する必要があります。これを行うには、[Components]の[Microsoft-Windows-Shell-Setup]を展開します。[OOBE]を強調表示して、この設定を[7 oobeSystem]に追加します。[設定]で、[HideEULAPage]の横のボックスの一覧から[true]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the license key is properly set. If you use MAK key, you can just "
+"enter the MAK key on the Windows 2008 R2 VM. You need not input the MAK into"
+" the Windows System Image Manager. If you use KMS host for activation you "
+"need not enter the Product Key. Details of Windows Volume Activation can be "
+"found at <ulink url=\"http://technet.microsoft.com/en-"
+"us/library/bb892849.aspx\" />"
+msgstr "ライセンスキーが適切に設定されていることを確認します。MAK キーを使用する場合は、Windows 2008 R2 仮 想マシンに MAK キーを入力するだけで済みます。MAK を Windows システムイメージマネージャーに入力する 必要はありません。ライセンス認証に KMS ホストを使用する場合は、プロダクトキーを入力する必要はありません。Windows ボリュームライセンス認証について詳しくは、 <ulink url=\"http://technet.microsoft.com/ja-jp/library/bb892849.aspx\" /> を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to automate is the Change Administrator Password page. Expand the "
+"Microsoft-Windows-Shell-Setup component (if it is not still expanded), "
+"expand UserAccounts, right-click on AdministratorPassword, and add the "
+"setting to the Pass 7 oobeSystem configuration pass of your answer file. "
+"Under Settings, specify a password next to Value."
+msgstr "次に、管理者のパスワードの変更ページを自動化する必要があります。[Components]の [Microsoft-Windows-Shell-Setup]を展開して(まだ展開していない場合)、[UserAccounts]を展開し、 [AdministratorPassword]を右クリックして、設定を応答ファイルの oobeSystem 構成パスに追加します。[設定] で、[Value]の横にパスワードを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You may read the AIK documentation and set many more options that suit your "
+"deployment. The steps above are the minimum needed to make Windows "
+"unattended setup work."
+msgstr "AIK のドキュメントを参照して、環境に合うほかの多くのオプションを設定することができます。上の手順は、Windows の無人セットアップを実行するための最小限の内容です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Save the answer file as unattend.xml. You can ignore the warning messages "
+"that appear in the validation window."
+msgstr "応答ファイルを unattend.xml という名前で保存します。検証ウィンドウに表示される警告メッセージは無視できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the unattend.xml file into the c:\\windows\\system32\\sysprep directory"
+" of the Windows 2008 R2 Virtual Machine"
+msgstr "unattend.xml ファイルを Windows Server 2008 R2 仮想マシンの c:\\windows\\system32\\sysprep フォルダーにコピーします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you place the unattend.xml file in c:\\windows\\system32\\sysprep "
+"directory, you run the sysprep tool as follows:"
+msgstr "unattend.xml ファイルを c:\\windows\\system32\\sysprep ディレクトリに配置した後で、次のように sysprep ツールを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"cd c:\\Windows\\System32\\sysprep\n"
+"sysprep.exe /oobe /generalize /shutdown\n"
+msgstr "cd c:\\Windows\\System32\\sysprep\nsysprep.exe /oobe /generalize /shutdown\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Windows 2008 R2 VM will automatically shut down after sysprep is "
+"complete."
+msgstr "Windows Server 2008 R2 仮想マシンは、sysprep が完了すると自動的にシャットダウンします。"

@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-02-04 16:19+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Global Configuration Parameters"
+msgstr "グローバル構成パラメーターの設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides parameters that you can set to control many aspects of "
+"the cloud. When &PRODUCT; is first installed, and periodically thereafter, "
+"you might need to modify these settings."
+msgstr "&PRODUCT; には、クラウドのさまざまな側面を制御するために設定できるパラメーターが備わっています。&PRODUCT; を初めてインストールするとき、そしてその後で定期的に、これらの設定を変更する必要が出てくる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI as administrator."
+msgstr "ユーザーインターフェイスに管理者としてログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Global Settings."
+msgstr "左側のナビゲーションバーで[Global Settings]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose one of the following:"
+msgstr "[Select view]ボックスの一覧で次のどちらかを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Global Settings. This displays a list of the parameters with brief "
+"descriptions and current values."
+msgstr "Global Settings: パラメーターが、簡単な説明と現在の値と共に一覧表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hypervisor Capabilities. This displays a list of hypervisor versions with "
+"the maximum number of guests supported for each."
+msgstr "Hypervisor Capabilities: ハイパーバイザーのバージョンが、それぞれにサポートされるゲスト数の上限と共に一覧表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use the search box to narrow down the list to those you are interested in."
+msgstr "検索ボックスを使用して、関心のある項目のみが表示されるように一覧内容を絞り込みます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Edit icon to modify a value. If you are viewing Hypervisor "
+"Capabilities, you must click the name of the hypervisor first to display the"
+" editing screen."
+msgstr "値を変更するには[Edit]アイコンをクリックします。ハイパーバイザーの機能を表示する場合は、編集画面を開くためにまずハイパーバイザー名をクリックする必要があります。"

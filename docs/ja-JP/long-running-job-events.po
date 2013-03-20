@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-26 14:46+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Long Running Job Events"
+msgstr "長期間実行するジョブのイベント"
+
+#. Tag: para
+#, no-c-format
+msgid "The events log records three types of standard events."
+msgstr "イベントログには、3 種類の標準イベントが記録されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"INFO. This event is generated when an operation has been successfully "
+"performed."
+msgstr "INFO : 操作が正常に実行されたときに、このイベントが生成されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "WARN. This event is generated in the following circumstances."
+msgstr "WARN : このイベントは次の状況で生成されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "When a network is disconnected while monitoring a template download."
+msgstr "テンプレートダウンロードの監視中に、ネットワークが切断されたとき。"
+
+#. Tag: para
+#, no-c-format
+msgid "When a template download is abandoned."
+msgstr "テンプレートダウンロードが中止されたとき。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When an issue on the storage server causes the volumes to fail over to the "
+"mirror storage server."
+msgstr "ストレージサーバーの問題により、ミラーストレージサーバーにボリュームがフェールオーバーしたとき。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ERROR. This event is generated when an operation has not been successfully "
+"performed"
+msgstr "ERROR : 操作が正常に実行されなかったときに、このイベントが生成されます。"

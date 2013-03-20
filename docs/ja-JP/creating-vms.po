@@ -1,0 +1,124 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <arkray0701@gmail.com>, 2012.
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating VMs"
+msgstr "VMの作成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Virtual machines are usually created from a template. Users can also create "
+"blank virtual machines. A blank virtual machine is a virtual machine without"
+" an OS template. Users can attach an ISO file and install the OS from the CD"
+"/DVD-ROM."
+msgstr "仮想マシンは通常、テンプレートから作成されます。空の仮想マシンを作成することもできます。空の仮想マシンとは、オペレーティングシステムのテンプレートを伴わない仮想マシンです。ユーザーはISOファイルをアタッチし、CD/DVD-ROMからオペレーティングシステムをインストールできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create a VM without starting it. You can determine whether the VM "
+"needs to be started as part of the VM deployment. A request parameter, "
+"startVM, in the deployVm API provides this feature. For more information, "
+"see the Developer's Guide"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a VM from a template:"
+msgstr "テンプレートから仮想マシンを作成するには"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or user."
+msgstr "管理者またはユーザーとして&PRODUCT;ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Instances."
+msgstr "左側のナビゲーションバーで［Instances］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Instance."
+msgstr "［Add Instance］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select a zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select a template, then follow the steps in the wizard. For more information"
+" about how the templates came to be in this list, see <xref linkend"
+"=\"working-with-templates\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure that the hardware you have allows starting the selected service "
+"offering."
+msgstr "使用するハードウェアで、選択したサービスオファリングを開始できることを確認してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Submit and your VM will be created and started."
+msgstr "［Submit］をクリックし、仮想マシンを作成して開始します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For security reason, the internal name of the VM is visible only to the root"
+" admin."
+msgstr "セキュリティ上の理由から、内部の仮想マシン名は root 管理者のみ閲覧できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "To create a VM from an ISO:"
+msgstr "ISOから仮想マシンを作成するには"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer) Windows VMs running on XenServer require PV drivers, which may "
+"be provided in the template or added after the VM is created. The PV drivers"
+" are necessary for essential management functions such as mounting "
+"additional volumes and ISO images, live migration, and graceful shutdown."
+msgstr "(XenServer) Windows 仮想マシンを XenServer 上で動作させるにはテンプレートとして提供するか仮想マシンの作成後に追加する PV ドライバーが必要となります。管理サーバーでの追加ボリュームやISOイメージのマウント、ライブマイグレーション、グレースフルシャットダウンといった機能を利用するには PV ドライバーは必須となります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select ISO Boot, and follow the steps in the wizard."
+msgstr "［ISO Boot］を選択し、ウィザードの手順に従います。"

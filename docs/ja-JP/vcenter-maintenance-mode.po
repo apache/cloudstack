@@ -1,0 +1,105 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-03 02:35+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "vCenter and Maintenance Mode"
+msgstr "vCenter と保守モード"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To enter maintenance mode on a vCenter host, both vCenter and &PRODUCT; must"
+" be used in concert. &PRODUCT; and vCenter have separate maintenance modes "
+"that work closely together."
+msgstr "vCenter ホストで保守モードを開始するには、vCenter と &PRODUCT; が互いに連携して動作する必要があります。 &PRODUCT; と vCenter には、緊密に連携する別々の保守モードがあります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Place the host into &PRODUCT;'s \"scheduled maintenance\" mode. This does "
+"not invoke the vCenter maintenance mode, but only causes VMs to be migrated "
+"off the host"
+msgstr "ホストを &PRODUCT; の「計画保守」モードにします。これにより、vCenter の保守モードが開始されることはなく、ホストからの仮想マシンの移行が発生するだけです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the &PRODUCT; maintenance mode is requested, the host first moves into "
+"the Prepare for Maintenance state. In this state it cannot be the target of "
+"new guest VM starts. Then all VMs will be migrated off the server. Live "
+"migration will be used to move VMs off the host. This allows the guests to "
+"be migrated to other hosts with no disruption to the guests. After this "
+"migration is completed, the host will enter the Ready for Maintenance mode."
+msgstr "&PRODUCT; の保守モードが要求されると、まずホストは保守準備状態になります。この状態のホストは、新しいゲスト仮想マシンの起動対象になりません。次に、すべての仮想マシンがサーバーから移行されます。ライブマイグレーションを使用して、ホストから仮想マシンを移動します。これにより、ゲストの中断を伴わずに、ほかのホストにゲストを移行できます。この移行の完了後、ホストは保守準備完了モードになります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Wait for the \"Ready for Maintenance\" indicator to appear in the UI."
+msgstr "ユーザーインターフェイスに「保守準備完了」のインジケーターが表示されるのを待ちます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now use vCenter to perform whatever actions are necessary to maintain the "
+"host. During this time, the host cannot be the target of new VM allocations."
+msgstr "ここで vCenter を使用して、ホストの保守に必要な操作を実行します。この間、ホストは新しいゲスト仮想マシンの割り当て対象になりません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the maintenance tasks are complete, take the host out of maintenance "
+"mode as follows:"
+msgstr "保守タスクを完了したら、次のようにホストの保守モードを解除します。"
+
+#. Tag: para
+#, no-c-format
+msgid "First use vCenter to exit the vCenter maintenance mode."
+msgstr "まず vCenter を使用して、vCenter の保守モードを終了します。"
+
+#. Tag: para
+#, no-c-format
+msgid "This makes the host ready for &PRODUCT; to reactivate it."
+msgstr "これにより、&PRODUCT; による再アクティブ化の準備がホスト側で整います。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Then use &PRODUCT;'s administrator UI to cancel the &PRODUCT; maintenance "
+"mode"
+msgstr "次に、&PRODUCT; の管理者ユーザーインターフェイスを使用して、&PRODUCT; の保守モードをキャンセルしま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the host comes back online, the VMs that were migrated off of it may be"
+" migrated back to it manually and new VMs can be added."
+msgstr "ホストがオンラインに戻ると、ホストから移行されていた仮想マシンがホストに戻り、新しい仮想マシンを追加で きるようになります。"

@@ -1,0 +1,97 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:02+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accessing VMs"
+msgstr "仮想マシンへのアクセス"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Any user can access their own virtual machines. The administrator can access"
+" all VMs running in the cloud."
+msgstr "各ユーザーはそれぞれの仮想マシンにアクセスすることができます。また、管理者はクラウド上の起動中の全ての仮想マシンにアクセスすることができます。"
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM through the &PRODUCT; UI:"
+msgstr "&PRODUCT; UIからの仮想マシンへのアクセス"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "ユーザーもしくは管理者として &PRODUCT; UIからログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Instances, then click the name of a running VM."
+msgstr "インスタンスをクリックし、起動中の仮想マシンの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the View Console button <inlinegraphic fileref=\"images/view-console-"
+"button.png\" format=\"PNG\"></inlinegraphic>."
+msgstr "[View Console]アイコンをクリックします。 <inlinegraphic fileref=\"images/view-console-button.png\" format=\"PNG\"></inlinegraphic>."
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM directly over the network:"
+msgstr "ネットワークを介した仮想マシンへの直接アクセス:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VM must have some port open to incoming traffic. For example, in a basic"
+" zone, a new VM might be assigned to a security group which allows incoming "
+"traffic. This depends on what security group you picked when creating the "
+"VM. In other cases, you can open a port by setting up a port forwarding "
+"policy. See <xref linkend=\"ip-forwarding-firewalling\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a port is open but you can not access the VM using ssh, it’s possible "
+"that ssh is not already enabled on the VM. This will depend on whether ssh "
+"is enabled in the template you picked when creating the VM. Access the VM "
+"through the &PRODUCT; UI and enable ssh on the machine using the commands "
+"for the VM’s operating system."
+msgstr "ポートを開放していても仮想マシンへのsshを有効化していない場合、仮想マシンに対してsshを除くアクセスを許可することができます。これは仮想マシンの作成時にsshを有効化したテンプレートを利用するかによって異なります。仮想マシンのオペレーティングシステムにおいてssh越しのコマンド実行を許可している場合 &PRODUCT; UIからのアクセスが可能となります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the network has an external firewall device, you will need to create a "
+"firewall rule to allow access. See <xref linkend=\"ip-forwarding-"
+"firewalling\" />."
+msgstr ""

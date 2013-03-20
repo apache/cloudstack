@@ -1,0 +1,99 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-03 15:07+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding an Additional Guest Network"
+msgstr "ゲストネットワークの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者もしくはエンドユーザーとして &PRODUCT; UI にログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add guest network. Provide the following information:"
+msgstr "[Add guest network] をクリックし、以下の情報を入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: The name of the network. This will "
+"be user-visible."
+msgstr "<emphasis role=\"bold\">Name : </emphasis>ネットワークの名前です。この名前はユーザーから見ることができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Display Text</emphasis>: The description of the "
+"network. This will be user-visible."
+msgstr "<emphasis role=\"bold\">Display Text : </emphasis> ネットワークの詳細情報です。この情報はユーザーから見ることができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>. The name of the zone this network "
+"applies to. Each zone is a broadcast domain, and therefore each zone has a "
+"different IP range for the guest network. The administrator must configure "
+"the IP range for each zone."
+msgstr "<emphasis role=\"bold\"> Zone : </emphasis> ネットワークを適用するゾーンの名前です。各ゾーンはゲストネットワークに対し違うIPレンジを持ったブロードキャストドメインに属します。管理者は各ゾーンに対しIPレンジを設定する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network offering</emphasis>: If the administrator "
+"has configured multiple network offerings, select the one you want to use "
+"for this network."
+msgstr "<emphasis role=\"bold\"> Network offering : </emphasis> もし管理者によって複数のネットワークオファリングが設定されている場合、ここで利用したいネットワークを1つ選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Gateway</emphasis>: The gateway that the "
+"guests should use."
+msgstr "<emphasis role=\"bold\"> Guest Gateway : </emphasis> ゲストVMが利用するゲートウェイを設定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest Netmask</emphasis>: The netmask in use on the "
+"subnet the guests will use."
+msgstr "<emphasis role=\"bold\"> Guest Netmask : </emphasis> ゲストVMが利用するサブネットのネットマスクを設定します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create."
+msgstr "[Create] をクリックします。"

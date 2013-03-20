@@ -1,0 +1,51 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-26 14:10+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Provisioning and Authentication API"
+msgstr "プロビジョニングと認証 API"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; expects that a customer will have their own user provisioning "
+"infrastructure. It provides APIs to integrate with these existing systems "
+"where the systems call out to &PRODUCT; to add/remove users.."
+msgstr "&PRODUCT; では、顧客が独自のユーザープロビジョニングインフラストラクチャを持っていることが期待されます。したがって、そのような既存のシステムを統合する API が提供されます。これらのシステムから &PRODUCT; を呼び出し、ユーザーを追加および削除します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports pluggable authenticators. By default, &PRODUCT; assumes "
+"it is provisioned with the user’s password, and as a result authentication "
+"is done locally. However, external authentication is possible as well. For "
+"example, see Using an LDAP Server for User Authentication."
+msgstr "&PRODUCT; は、プラグ可能な認証子をサポートします。デフォルトでは、&PRODUCT; は、この認証子がユーザーのパスワードと共にプロビジョニングされ、その結果、認証がローカルで行われることを前提としてい ます。ただし、外部で認証することもできます。例については、「LDAP サーバーによるユーザー認証」を参照し てください。"

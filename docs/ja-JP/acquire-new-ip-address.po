@@ -1,0 +1,68 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-03 17:20+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Acquiring a New IP Address"
+msgstr "新しい IP アドレスの取得"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者もしくはエンドユーザーとして &PRODUCT; UI にログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network where you want to work with."
+msgstr "変更したいネットワークの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "[View IP Addresses] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Acquire New IP, and click Yes in the confirmation dialog."
+msgstr "[Acquire New IP] をクリックし、確認ダイアログで [Yes] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You are prompted for confirmation because, typically, IP addresses are a "
+"limited resource. Within a few moments, the new IP address should appear "
+"with the state Allocated. You can now use the IP address in port forwarding "
+"or static NAT rules."
+msgstr "一般的に IP アドレスは有限のリソースであるため確認を求められます。しばらくするとステータスが「Allocated」となり新しい IP アドレスが表示されます。これで新しい IP アドレスをポートフォワーディングやスタティック NAT ルールに利用できます。"

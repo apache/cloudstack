@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-30 03:20+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "HA-Enabled Virtual Machines"
+msgstr "高可用性が有効な仮想マシン"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The user can specify a virtual machine as HA-enabled. By default, all "
+"virtual router VMs and Elastic Load Balancing VMs are automatically "
+"configured as HA-enabled. When an HA-enabled VM crashes, &PRODUCT; detects "
+"the crash and restarts the VM automatically within the same Availability "
+"Zone. HA is never performed across different Availability Zones. &PRODUCT; "
+"has a conservative policy towards restarting VMs and ensures that there will"
+" never be two instances of the same VM running at the same time. The "
+"Management Server attempts to start the VM on another Host in the same "
+"cluster."
+msgstr "ユーザーは、仮想マシンで高可用性を有効に指定できます。デフォルトでは仮想ルーターの仮想マシンとシステム仮想マシンはすべて、 自動的に高可用性が有効なマシンに構成されます。高可用性が有効な仮想マシンがクラッシュすると、&PRODUCT;  がクラッシュを検出し、同じ利用可能ゾーン内で仮想マシンを再起動します。異なる利用可能ゾーンをまたがって高可用性を 有効にすることはできません。&PRODUCT; は、仮想マシンの再起動について慎重なポリシーを備えており、 同じ仮想マシンの 2 つのインスタンスは同時に実行されません。管理サーバーにより、同じクラスター内の別のホストで仮想マシンの起動が試行されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"HA features work with iSCSI or NFS primary storage. HA with local storage is"
+" not supported."
+msgstr "高可用性機能は、iSCSI または NFS のプライマリストレージで機能します。ローカルストレージでの高可用性はサポートされていません。"

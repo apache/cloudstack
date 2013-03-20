@@ -1,0 +1,102 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 11:10+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Suspending or Deleting a Project"
+msgstr "プロジェクトの一時停止または削除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a project is suspended, it retains the resources it owns, but they can "
+"no longer be used. No new resources or members can be added to a suspended "
+"project."
+msgstr "プロジェクトを一時停止にすると、その所有するリソースは保持されますが使用できなくなります。一時停止のプロジェクトに新しいリソースまたはメンバーを追加することはできません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a project is deleted, its resources are destroyed, and member accounts "
+"are removed from the project. The project’s status is shown as Disabled "
+"pending final deletion."
+msgstr "プロジェクトを削除すると、そのリソースは破棄され、プロジェクトからメンバーアカウントが削除されます。プロジェクトの状態は「Disabled pending final deletion」と表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A project can be suspended or deleted by the project administrator, the "
+"domain administrator of the domain the project belongs to or of its parent "
+"domain, or the &PRODUCT; root administrator."
+msgstr "プロジェクトを一時停止または削除できるのは、プロジェクト管理者、プロジェクトの存在するドメインまたは親ドメインのド メイン管理者、または &PRODUCT; ルート管理者です。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "&PRODUCT;ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "左側のナビゲーションバーで [Projects] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "[Select view] ボックスの一覧で [Projects] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project."
+msgstr "プロジェクトの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click one of the buttons:"
+msgstr "次のどちらかをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To delete, use <inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/delete-button.png\" /> </imageobject> <textobject> "
+"<phrase>deletebutton.png: Removes a project</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "削除するには [Delete project] をクリックしてください。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/delete-button.png\" /> </imageobject> <textobject> <phrase>deletebutton.png: Removes a project</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To suspend, use<inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/suspend-icon.png\" /> </imageobject> <textobject> "
+"<phrase>deletebutton.png: suspends a project</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "一時停止するには [Suspend project] をクリックしてください。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/suspend-icon.png\" /> </imageobject> <textobject> <phrase>deletebutton.png: suspends a project</phrase> </textobject> </inlinemediaobject>"

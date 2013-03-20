@@ -1,0 +1,69 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-25 03:19+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with ISOs"
+msgstr "ISO に関わる作業"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports ISOs and their attachment to guest VMs. An ISO is a read-"
+"only file that has an ISO/CD-ROM style file system. Users can upload their "
+"own ISOs and mount them on their guest VMs."
+msgstr "&PRODUCT; は、ISO および ISO のゲスト仮想マシンへのアタッチをサポートします。ISO は、ISO/CD-ROM 形式のファイルシステムの読み取り専用ファイルです。ユーザーは自分の ISO をアップロードして、自分のゲスト仮想マシンにマウントできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISOs are uploaded based on a URL. HTTP is the supported protocol. Once the "
+"ISO is available via HTTP specify an upload URL such as "
+"http://my.web.server/filename.iso."
+msgstr "ISO は、URL に基づいてアップロードされます。サポートされるプロトコルは HTTP です。ISO が HTTP 経由で利用できるようになったら、http://my.web.server/filename.iso のようなアップロード用の URL を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISOs may be public or private, like templates.ISOs are not hypervisor-"
+"specific. That is, a guest on vSphere can mount the exact same image that a "
+"guest on KVM can mount."
+msgstr "テンプレートのように、ISO をパブリックまたはプライベートにすることができます。ISO はハイパーバイザー固有ではありません。つまり、vSphere のゲストは、KVM のゲストがマウントできるのとまったく同じイメージをマウントできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"ISO images may be stored in the system and made available with a privacy "
+"level similar to templates. ISO images are classified as either bootable or "
+"not bootable. A bootable ISO image is one that contains an OS image. "
+"&PRODUCT; allows a user to boot a guest VM off of an ISO image. Users can "
+"also attach ISO images to guest VMs. For example, this enables installing PV"
+" drivers into Windows. ISO images are not hypervisor-specific."
+msgstr "ISO イメージは、システムに格納して、テンプレートと同様のプライバシーレベルを指定して使用することができます。ISO イメージは、起動可能または起動不可に分類されます。起動可能な ISO イメージは、オペレーティングシステムイメージを含むものです。&PRODUCT; では、ユーザーが ISO イメージからゲスト仮想マシンを起動することができます。また、ユーザーは ISO イメージをゲスト仮想マシンにアタッチすることもできます。たとえば、これにより PV ドライバーを Windows にインストールできます。ISO イメージは、ハイパーバイザー固有ではありませ ん。"

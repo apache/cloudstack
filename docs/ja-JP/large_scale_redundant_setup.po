@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-01 13:11+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Large-Scale Redundant Setup"
+msgstr "大規模な冗長セットアップ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates the network architecture of a large-scale &PRODUCT;"
+" deployment."
+msgstr "この図は、&PRODUCT; の大規模な展開のネットワークアーキテクチャを示しています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-3 switching layer is at the core of the data center. A router "
+"redundancy protocol like VRRP should be deployed. Typically high-end core "
+"switches also include firewall modules. Separate firewall appliances may "
+"also be used if the layer-3 switch does not have integrated firewall "
+"capabilities. The firewalls are configured in NAT mode. The firewalls "
+"provide the following functions:"
+msgstr "レイヤー3 スイッチレイヤーがデータセンターのコアにあります。VRRP のようなルーター冗長プロトコルを展開する必要があります。通常は、ハイエンドコアスイッチにファイアウォールモジュールも含まれます。レイヤー3 スイッチにファイアウォール機能が統合されていない場合は、別のファイアウォールアプライアンスを使用することもできます。 ファイアウォールは NAT モードで構成されます。ファイアウォールでは、次の機能が提供されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Forwards HTTP requests and API calls from the Internet to the Management "
+"Server. The Management Server resides on the management network."
+msgstr "HTTP 要求および API 呼び出しをインターネットから管理サーバーに転送します。管理サーバーは管理ネットワーク上に存在します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the cloud spans multiple zones, the firewalls should enable site-to-"
+"site VPN such that servers in different zones can directly reach each other."
+msgstr "クラウドに複数のゾーンが含まれる場合は、ファイアウォールでサイト間の VPN を許可して、異なるゾーンのサーバーが相互に直接通信できるようにする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-2 access switch layer is established for each pod. Multiple switches"
+" can be stacked to increase port count. In either case, redundant pairs of "
+"layer-2 switches should be deployed."
+msgstr "レイヤー2 アクセススイッチレイヤーをポッドごとに設定します。複数のスイッチをスタックして、ポート数を増やすこと ができます。いずれの場合も、レイヤー2 スイッチの冗長ペアを展開する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server cluster (including front-end load balancers, "
+"Management Server nodes, and the MySQL database) is connected to the "
+"management network through a pair of load balancers."
+msgstr "管理サーバークラスター(フロントエンド負荷分散装置、管理サーバーノード、MySQL データベースを含む)は、負荷分散装置のペアを通して管理ネットワークに接続されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage servers are connected to the management network."
+msgstr "セカンダリストレージサーバーは管理ネットワークに接続されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each pod contains storage and computing servers. Each storage and computing "
+"server should have redundant NICs connected to separate layer-2 access "
+"switches."
+msgstr "各ポッドには、ストレージサーバーとコンピューティングサーバーが含まれます。各ストレージサーバーおよびコンピューティングサーバーには、異なるレイヤー2 アクセススイッチに接続する冗長な NIC が必要です。"

@@ -1,0 +1,135 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Template from an Existing Virtual Machine"
+msgstr "既存の仮想マシンからのテンプレートの作成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you have at least one VM set up in the way you want, you can use it as "
+"the prototype for other VMs."
+msgstr "少なくとも 1 台の仮想マシンを希望どおりにセットアップすれば、それをほかの仮想マシンのプロトタイプとして使用できま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create and start a virtual machine using any of the techniques given in "
+"<xref linkend=\"creating-vms\" />."
+msgstr "<xref linkend=\"creating-vms\" /> の方法のどちらかを使用して、仮想マシンを作成して起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make any desired configuration changes on the running VM, then click Stop."
+msgstr "実行中の仮想マシンで必要な構成変更を行い、[Stop]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Wait for the VM to stop. When the status shows Stopped, go to the next step."
+msgstr "仮想マシンが停止するのを待ちます。状態が停止済みになったら、次の手順に進みます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create Template and provide the following:"
+msgstr "[Create Template]をクリックして、次の情報を入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name and Display Text</emphasis>. These will be "
+"shown in the UI, so choose something descriptive."
+msgstr "<emphasis role=\"bold\">Name および Display Text :</emphasis> これらはユーザーインターフェイスに表示されるため、わかりやすい言葉を選択しま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>. This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following."
+msgstr "<emphasis role=\"bold\">OS Type :</emphasis> これは、&PRODUCT; プラットフォームとハイパーバイザーで特定の処理を実行したり、想定に基づい てゲストのパフォーマンスを向上したりするのに役立ちます。次のいずれかのオプションを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "If the operating system of the stopped VM is listed, choose it."
+msgstr "停止している仮想マシンのオペレーティングシステムが一覧にある場合は、それを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "If the OS type of the stopped VM is not listed, choose Other."
+msgstr "停止している仮想マシンのオペレーティングシステムの種類が一覧にない場合は、[Other]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to boot from this template in PV mode, choose Other PV (32-bit) "
+"or Other PV (64-bit). This choice is available only for XenServere:"
+msgstr "PV モードでこのテンプレートから起動する場合は、[Other PV(32-bit)]または[Other PV(64-bit)]を選択します。この選択肢は、XenServer でのみ使用できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note: Generally you should not choose an older version of the OS than the "
+"version in the image. For example, choosing CentOS 5.4 to support a CentOS "
+"6.2 image will in general not work. In those cases you should choose Other."
+msgstr "注:通常は、イメージのオペレーティングシステムより古いバージョンを選択しないでください。たとえば、\nCentOS 6.2 イメージをサポートするために CentOS 5.4 を選択すると、通常は動作しません。このような場合は、 [Other]を選択する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>. Choose Yes to make this template "
+"accessible to all users of this &PRODUCT; installation. The template will "
+"appear in the Community Templates list. See <xref linkend=\"private-public-"
+"template\" />."
+msgstr "<emphasis role=\"bold\">Public :</emphasis> この &PRODUCT; 環境のすべてのユーザーがこのテンプレートにアクセスできるようにするには、このチェックボックスをオンにします。テンプレートが [Community Templates] の一覧に表示されます。<xref linkend=\"private-public-template\" />を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password Enabled</emphasis>. Choose Yes if your "
+"template has the &PRODUCT; password change script installed. See <xref "
+"linkend=\"add-password-management-to-templates\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr "[Add]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new template will be visible in the Templates section when the template "
+"creation process has been completed. The template is then available when "
+"creating a new VM."
+msgstr ""

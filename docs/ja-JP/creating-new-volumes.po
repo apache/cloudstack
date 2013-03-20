@@ -1,0 +1,150 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Volume"
+msgstr "新しいボリュームの作成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can add more data disk volumes to a guest VM at any time, up to the "
+"limits of your storage capacity. Both &PRODUCT; administrators and users can"
+" add volumes to VM instances. When you create a new volume, it is stored as "
+"an entity in &PRODUCT;, but the actual storage resources are not allocated "
+"on the physical storage device until you attach the volume. This "
+"optimization allows the &PRODUCT; to provision the volume nearest to the "
+"guest that will use it when the first attachment is made."
+msgstr "ストレージ容量の上限まで、いつでもゲスト仮想マシンにデータディスクボリュームを追加できます。&PRODUCT; 管理者とユーザーの両方が、仮想マシンインスタンスにボリュームを追加できます。新しいボリュームを作成するとエンティティとして &PRODUCT; に格納されますが、ボリュームをアタッチするまでは、実際のストレージリソースは物理ストレージデバイスに割り当てられません。この最適化により、最初のアタッチが行われるとき、ボリュームを使用するゲストに最も近い場所にボリュームが準備されます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Using Local Storage for Data Volumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create data volumes on local storage (supported with XenServer, KVM,"
+" and VMware). The data volume is placed on the same host as the VM instance "
+"that is attached to the data volume. These local data volumes can be "
+"attached to virtual machines, detached, re-attached, and deleted just as "
+"with the other types of data volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Local storage is ideal for scenarios where persistence of data volumes and "
+"HA is not required. Some of the benefits include reduced disk I/O latency "
+"and cost reduction from using inexpensive local disks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order for local volumes to be used, the feature must be enabled for the "
+"zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create a data disk offering for local storage. When a user creates a"
+" new VM, they can select this disk offering in order to cause the data disk "
+"volume to be placed in local storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can not migrate a VM that has a volume in local storage to a different "
+"host, nor migrate the volume itself away to a different host. If you want to"
+" put a host into maintenance mode, you must first stop any VMs with local "
+"data volumes on that host."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "To Create a New Volume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "ユーザーもしくは管理者として &PRODUCT; ユーザーインターフェイスからログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr "左側のナビゲーションバーで[Storage]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "[Select view]ボックスの一覧で[Volumes]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To create a new volume, click Add Volume, provide the following details, and"
+" click OK."
+msgstr "新しいボリュームを作成するには[Add Volume]をクリックして次の詳細情報を入力し、[OK]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Give the volume a unique name so you can find it later."
+msgstr "Name: 後で見つけられるように、ボリュームに一意の名前を付けます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Availability Zone. Where do you want the storage to reside? This should be "
+"close to the VM that will use the volume."
+msgstr "Availability Zone: ストレージの場所です。ボリュームを使用する仮想マシンに近い場所にする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Offering. Choose the characteristics of the storage."
+msgstr "Disk Offering: ストレージの特性を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new volume appears in the list of volumes with the state “Allocated.” "
+"The volume data is stored in &PRODUCT;, but the volume is not yet ready for "
+"use"
+msgstr "新しいボリュームがボリューム一覧に表示され、割り当て済みの状態になります。ボリュームデータは &PRODUCT; に格納されましたが、実際には使用する準備はできていません。"
+
+#. Tag: para
+#, no-c-format
+msgid "To start using the volume, continue to Attaching a Volume"
+msgstr "ボリュームを使用するには、「ボリュームのアタッチ」に進みます。"

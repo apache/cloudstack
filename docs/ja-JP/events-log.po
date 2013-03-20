@@ -1,0 +1,48 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-26 14:41+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Event Logs"
+msgstr "イベントログ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There are two types of events logged in the &PRODUCT; Event Log. Standard "
+"events log the success or failure of an event and can be used to identify "
+"jobs or processes that have failed. There are also long running job events. "
+"Events for asynchronous jobs log when a job is scheduled, when it starts, "
+"and when it completes. Other long running synchronous jobs log when a job "
+"starts, and when it completes. Long running synchronous and asynchronous "
+"event logs can be used to gain more information on the status of a pending "
+"job or can be used to identify a job that is hanging or has not started. The"
+" following sections provide more information on these events.."
+msgstr "2 種類のイベントが &PRODUCT; イベントログに記録されます。標準的なイベントについてはイベントの成功または失敗が記録され、失敗したジョブまたはプロセスを特定するために使用することができます。長期間実行するジョブのイベントもあります。非同期ジョブのイベントは、ジョブがスケジュールされたとき、ジョブが開始されたとき、およびジョブが完了したときに記録されます。そのほかの長期間実行する同期ジョブのイベントは、ジョブが開始されたときと完了したときに記録されます。長期間実行する同期ジョブと非同期ジョブのイベントログを使用して、保留中のジョブの状態に関する詳細情報を取得したり、ハングしている、または開始されていないジョブを特定したりできます。次に、これらのイベントに関してさらに説明します。"

@@ -1,0 +1,106 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-03-06 04:39+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Recovering a Lost Virtual Router"
+msgstr "喪失した仮想ルーターの復旧"
+
+#. Tag: title
+#, no-c-format
+msgid "Symptom"
+msgstr "症状"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A virtual router is running, but the host is disconnected. A virtual router "
+"no longer functions as expected."
+msgstr "仮想ルーターが起動中だがホストが切断され、仮想ルーターが予期せず動作しなくなる。"
+
+#. Tag: title
+#, no-c-format
+msgid "Cause"
+msgstr "原因"
+
+#. Tag: para
+#, no-c-format
+msgid "The Virtual router is lost or down."
+msgstr "仮想ルーターがダウン状態にあるか通信が切断された。"
+
+#. Tag: title
+#, no-c-format
+msgid "Solution"
+msgstr "解決方法"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are sure that a virtual router is down forever, or no longer "
+"functions as expected, destroy it. You must create one afresh while keeping "
+"the backup router up and running (it is assumed this is in a redundant "
+"router setup):"
+msgstr "仮想ルーターが恒久的にダウンしている、もしくは予期せず動作していないといったことが確認できたら削除してください。バックアップルーターが動作している場合、再度新しいルーターを作成します。(これにはルーターの冗長構成を組んでいる必要があります)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Force stop the router. Use the stopRouter API with forced=true parameter to "
+"do so."
+msgstr "強制的にルーターを停止させるには「stopRouter」API に 「forced=true」パラメーターを追加します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you continue with destroying this router, ensure that the backup "
+"router is running. Otherwise the network connection will be lost."
+msgstr "また、ルーターを削除する前に、バックアップのルーターが正常に動作していることを確認します。さもなければ、ネットワークの通信が喪失してしまします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Destroy the router by using the destroyRouter API."
+msgstr "「destoryRouter」API を利用しルーターを削除します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Recreate the missing router by using the restartNetwork API with "
+"cleanup=false parameter. For more information about redundant router setup, "
+"see Creating a New Network Offering."
+msgstr "「restartNetwork」API に「cleanup=false」パラメーターを追加してルーターを再構築します。ルーターの冗長構成に関する詳細情報は「Creating a New Network Offering」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information about the API syntax, see the API Reference at <ulink "
+"url=\"http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack\""
+" />API Reference."
+msgstr "また、API シンタックスのより詳細な情報は <ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack\"> API Reference </ulink>を参照してください。"

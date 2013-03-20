@@ -1,0 +1,338 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-03 01:54+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Time Zones"
+msgstr "タイムゾーン"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following time zone identifiers are accepted by &PRODUCT;. There are "
+"several places that have a time zone as a required or optional parameter. "
+"These include scheduling recurring snapshots, creating a user, and "
+"specifying the usage time zone in the Configuration table."
+msgstr "&PRODUCT; では、次のタイムゾーン識別子を使用できます。設定の一部で、必須またはオプションのパラメーターとしてタイムゾー ンを使用します。これには、構成テーブルにおける、定期スナップショットのスケジュール、ユーザーの作成、および使用タイムゾーンの指定が含まれます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Etc/GMT+12"
+msgstr "Etc/GMT+12"
+
+#. Tag: para
+#, no-c-format
+msgid "Etc/GMT+11"
+msgstr "Etc/GMT+11"
+
+#. Tag: para
+#, no-c-format
+msgid "Pacific/Samoa"
+msgstr "Pacific/Samoa"
+
+#. Tag: para
+#, no-c-format
+msgid "Pacific/Honolulu"
+msgstr "Pacific/Honolulu"
+
+#. Tag: para
+#, no-c-format
+msgid "US/Alaska"
+msgstr "US/Alaska"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Los_Angeles"
+msgstr "America/Los_Angeles"
+
+#. Tag: para
+#, no-c-format
+msgid "Mexico/BajaNorte"
+msgstr "Mexico/BajaNorte"
+
+#. Tag: para
+#, no-c-format
+msgid "US/Arizona"
+msgstr "US/Arizona"
+
+#. Tag: para
+#, no-c-format
+msgid "US/Mountain"
+msgstr "US/Mountain"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Chihuahua"
+msgstr "America/Chihuahua"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Chicago"
+msgstr "America/Chicago"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Costa_Rica"
+msgstr "America/Costa_Rica"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Mexico_City"
+msgstr "America/Mexico_City"
+
+#. Tag: para
+#, no-c-format
+msgid "Canada/Saskatchewan"
+msgstr "Canada/Saskatchewan"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Bogota"
+msgstr "America/Bogota"
+
+#. Tag: para
+#, no-c-format
+msgid "America/New_York"
+msgstr "America/New_York"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Caracas"
+msgstr "America/Caracas"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Asuncion"
+msgstr "America/Asuncion"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Cuiaba"
+msgstr "America/Cuiaba"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Halifax"
+msgstr "America/Halifax"
+
+#. Tag: para
+#, no-c-format
+msgid "America/La_Paz"
+msgstr "America/La_Paz"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Santiago"
+msgstr "America/Santiago"
+
+#. Tag: para
+#, no-c-format
+msgid "America/St_Johns"
+msgstr "America/St_Johns"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Araguaina"
+msgstr "America/Araguaina"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Argentina/Buenos_Aires"
+msgstr "America/Argentina/Buenos_Aires"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Cayenne"
+msgstr "America/Cayenne"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Godthab"
+msgstr "America/Godthab"
+
+#. Tag: para
+#, no-c-format
+msgid "America/Montevideo"
+msgstr "America/Montevideo"
+
+#. Tag: para
+#, no-c-format
+msgid "Etc/GMT+2"
+msgstr "Etc/GMT+2"
+
+#. Tag: para
+#, no-c-format
+msgid "Atlantic/Azores"
+msgstr "Atlantic/Azores"
+
+#. Tag: para
+#, no-c-format
+msgid "Atlantic/Cape_Verde"
+msgstr "Atlantic/Cape_Verde"
+
+#. Tag: para
+#, no-c-format
+msgid "Africa/Casablanca"
+msgstr "Africa/Casablanca"
+
+#. Tag: para
+#, no-c-format
+msgid "Etc/UTC"
+msgstr "Etc/UTC"
+
+#. Tag: para
+#, no-c-format
+msgid "Atlantic/Reykjavik"
+msgstr "Atlantic/Reykjavik"
+
+#. Tag: para
+#, no-c-format
+msgid "Europe/London"
+msgstr "Europe/London"
+
+#. Tag: para
+#, no-c-format
+msgid "CET"
+msgstr "CET"
+
+#. Tag: para
+#, no-c-format
+msgid "Europe/Bucharest"
+msgstr "Europe/Bucharest"
+
+#. Tag: para
+#, no-c-format
+msgid "Africa/Johannesburg"
+msgstr "Africa/Johannesburg"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Beirut"
+msgstr "Asia/Beirut"
+
+#. Tag: para
+#, no-c-format
+msgid "Africa/Cairo"
+msgstr "Africa/Cairo"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Jerusalem"
+msgstr "Asia/Jerusalem"
+
+#. Tag: para
+#, no-c-format
+msgid "Europe/Minsk"
+msgstr "Europe/Minsk"
+
+#. Tag: para
+#, no-c-format
+msgid "Europe/Moscow"
+msgstr "Europe/Moscow"
+
+#. Tag: para
+#, no-c-format
+msgid "Africa/Nairobi"
+msgstr "Africa/Nairobi"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Karachi"
+msgstr "Asia/Karachi"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Kolkata"
+msgstr "Asia/Kolkata"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Bangkok"
+msgstr "Asia/Bangkok"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Shanghai"
+msgstr "Asia/Shanghai"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Kuala_Lumpur"
+msgstr "Asia/Kuala_Lumpur"
+
+#. Tag: para
+#, no-c-format
+msgid "Australia/Perth"
+msgstr "Australia/Perth"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Taipei"
+msgstr "Asia/Taipei"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Tokyo"
+msgstr "Asia/Tokyo"
+
+#. Tag: para
+#, no-c-format
+msgid "Asia/Seoul"
+msgstr "Asia/Seoul"
+
+#. Tag: para
+#, no-c-format
+msgid "Australia/Adelaide"
+msgstr "Australia/Adelaide"
+
+#. Tag: para
+#, no-c-format
+msgid "Australia/Darwin"
+msgstr "Australia/Darwin"
+
+#. Tag: para
+#, no-c-format
+msgid "Australia/Brisbane"
+msgstr "Australia/Brisbane"
+
+#. Tag: para
+#, no-c-format
+msgid "Australia/Canberra"
+msgstr "Australia/Canberra"
+
+#. Tag: para
+#, no-c-format
+msgid "Pacific/Guam"
+msgstr "Pacific/Guam"
+
+#. Tag: para
+#, no-c-format
+msgid "Pacific/Auckland"
+msgstr "Pacific/Auckland"

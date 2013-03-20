@@ -1,0 +1,147 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 05:30+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Offerings"
+msgstr "ネットワークオファリング"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the most up-to-date list of supported network services, see the "
+"&PRODUCT; UI or call listNetworkServices."
+msgstr "サポートされるネットワークサービスのリストに関するアップデートは &PRODUCT; ユーザーインターフェイスか listNetworkServices の呼び出し結果を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "A network offering is a named set of network services, such as:"
+msgstr "ネットワークオファリングは、次のようなネットワークサービスのセットに名前を付けたものです。"
+
+#. Tag: para
+#, no-c-format
+msgid "DHCP"
+msgstr "DHCP"
+
+#. Tag: para
+#, no-c-format
+msgid "DNS"
+msgstr "DNS"
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr "送信元 NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr "静的 NAT"
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr "ポート転送"
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancing"
+msgstr "負荷分散"
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall"
+msgstr "ファイアウォール"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN"
+msgstr "VPN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Optional) Name one of several available providers to use for a given "
+"service, such as Juniper for the firewall"
+msgstr "(オプション)ファイアウォール向けに Juniper など、特定のサービスに使用する、使用可能なプロバイダーのいずれかの名前"
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Network tag to specify which physical network to use"
+msgstr "(オプション)使用する物理ネットワークを指定するネットワークタグ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When creating a new VM, the user chooses one of the available network "
+"offerings, and that determines which network services the VM can use."
+msgstr "新しい仮想マシンの作成時に、ユーザーは使用できるネットワークオファリングの中から 1 つ選択します。これで仮想マシンで使用できるネットワークサービスが決定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; administrator can create any number of custom network "
+"offerings, in addition to the default network offerings provided by "
+"&PRODUCT;. By creating multiple custom network offerings, you can set up "
+"your cloud to offer different classes of service on a single multi-tenant "
+"physical network. For example, while the underlying physical wiring may be "
+"the same for two tenants, tenant A may only need simple firewall protection "
+"for their website, while tenant B may be running a web server farm and "
+"require a scalable firewall solution, load balancing solution, and alternate"
+" networks for accessing the database backend."
+msgstr "&PRODUCT; 管理者は、&PRODUCT; によって提供されるデフォルトのネットワークオファリングのほかに、カスタムネットワークオファリングをいくつでも作成できます。複数のカスタムネットワークオファリングを作成することによって、単一のマルチテナント物理ネットワーク上でさまざまなクラスのサービスを提供するようにクラウドをセットアップできます。 たとえば、基になる物理的な有線接続は同じであっても、テナント A に は Web サイト用に単純なファイアウォールの保護のみを提供し、テナント B にはデータベースのバックエンドにアクセスするために、Web サー バーファームを運用し、スケーラブルなファイアウォールソリューション、 負荷分散ソリューション、および代替ネットワークを提供することができ ます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you create load balancing rules while using a network service offering "
+"that includes an external load balancer device such as NetScaler, and later "
+"change the network service offering to one that uses the &PRODUCT; virtual "
+"router, you must create a firewall rule on the virtual router for each of "
+"your existing load balancing rules so that they continue to function."
+msgstr "もし、負荷分散ルールを作成する際 NetScaler のような外部デバイスを含んだネットワークサービスオファリングを利用していた場合、また後にネットワークサービスオファリングを &PRODUCT; の仮想ルーターを利用するよう変更を加える場合、継続して機能を利用するためには全ての負荷分散ルールに対しファイアウォールルールを追加しなければなりません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When creating a new virtual network, the &PRODUCT; administrator chooses "
+"which network offering to enable for that network. Each virtual network is "
+"associated with one network offering. A virtual network can be upgraded or "
+"downgraded by changing its associated network offering. If you do this, be "
+"sure to reprogram the physical network to match."
+msgstr "新しい仮想ネットワークを作成するとき、&PRODUCT; 管理者はそのネッ トワークに対して有効にするネットワークオファリングを選択します。各\n仮想ネットワークは、1 つのネットワークオファリングに関連付けられます。仮想ネットワークは、その関連付けられたネットワークオファリングを変更することによって、アップグレードしたりダウングレードしたりできます。そうする場合は、合致する物理ネットワークを再プログラミングしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; also has internal network offerings for use by &PRODUCT; system "
+"VMs. These network offerings are not visible to users but can be modified by"
+" administrators."
+msgstr "&PRODUCT; には、&PRODUCT; のシステム仮想マシンで使用する内部ネットワークオファリングもあります。これらのネットワークオファリングはユーザーには表示されませんが、管理者が変更できます。"

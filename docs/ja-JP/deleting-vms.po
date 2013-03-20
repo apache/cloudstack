@@ -1,0 +1,72 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012-2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Deleting VMs"
+msgstr "VMの削除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users can delete their own virtual machines. A running virtual machine will "
+"be abruptly stopped before it is deleted. Administrators can delete any "
+"virtual machines."
+msgstr "ユーザーは独自の仮想マシンを削除でき、起動中の仮想マシンの場合は削除前に停止されます。管理者は全ての仮想マシンを削除することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid "To delete a virtual machine:"
+msgstr "仮想マシンの削除方法:"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "ユーザーもしくは管理者として &PRODUCT; UIからログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr "左側のナビゲーションから [Instances] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VM that you want to delete."
+msgstr "削除したい仮想マシンを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Destroy Instance button. <inlinemediaobject> <imageobject> "
+"<imagedata fileref=\"./images/destroy-instance.png\" /> </imageobject> "
+"<textobject> <phrase>Destroyinstance.png: button to destroy an "
+"instance</phrase> </textobject> </inlinemediaobject>"
+msgstr ""

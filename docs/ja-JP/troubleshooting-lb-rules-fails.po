@@ -1,0 +1,73 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+# Mineta Kenichi <>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-02-03 03:16+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Load balancer rules fail after changing network offering"
+msgstr "負荷分散ルールがネットワークオファリングを変更すると失敗する"
+
+#. Tag: title
+#, no-c-format
+msgid "Symptom"
+msgstr "症状"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After changing the network offering on a network, load balancer rules stop "
+"working."
+msgstr "あるネットワークのネットワークオファリングを変更した後で、負荷分散ルールが動かなくなります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Cause"
+msgstr "原因"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Load balancing rules were created while using a network service offering "
+"that includes an external load balancer device such as NetScaler, and later "
+"the network service offering changed to one that uses the &PRODUCT; virtual "
+"router."
+msgstr "NetScaler のような外部の負荷分散装置を含むネットワークサービスオファリングを使用しているときに負荷分散規則を作成し、後で &PRODUCT; 仮想ルーターを使用するネットワークサービスオファリングへとオファリングを変更しました。"
+
+#. Tag: title
+#, no-c-format
+msgid "Solution"
+msgstr "解決方法"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a firewall rule on the virtual router for each of your existing load "
+"balancing rules so that they continue to function."
+msgstr "仮想ルーターに既存の負荷分散ルールを再設定することで、再び機能するようになります。"

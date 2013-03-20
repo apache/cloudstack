@@ -1,0 +1,509 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <arkray0701@gmail.com>, 2012.
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic Zone Configuration"
+msgstr "基本ゾーンの構成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you select Basic in the Add Zone wizard and click Next, you will be "
+"asked to enter the following details. Then click Next."
+msgstr "ゾーンの追加ウィザードで［Basic］を選択して［Next］をクリックすると、次の項目の入力を求められます。入力後、［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> A name for the zone."
+msgstr "<emphasis role=\"bold\">Name:</emphasis> ゾーンの名前です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">DNS 1 and 2.</emphasis> These are DNS servers for "
+"use by guest VMs in the zone. These DNS servers will be accessed via the "
+"public network you will add later. The public IP addresses for the zone must"
+" have a route to the DNS server named here."
+msgstr "<emphasis role=\"bold\">DNS1およびDNS2:</emphasis> ゾーン内のゲスト仮想マシンで使用するDNSサーバーです。これらのDNSサーバーには、後で追加するパブリックネットワーク経由でアクセスします。ゾーンのパブリックIPアドレスから、ここで指定するDNSサーバーに通信できる必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis> These "
+"are DNS servers for use by system VMs in the zone (these are VMs used by "
+"&PRODUCT; itself, such as virtual routers, console proxies, and Secondary "
+"Storage VMs.) These DNS servers will be accessed via the management traffic "
+"network interface of the System VMs. The private IP address you provide for "
+"the pods must have a route to the internal DNS server named here."
+msgstr "<emphasis role=\"bold\">Internal DNS1およびInternal DNS2：</emphasis>これらのDNSサーバーは、ゾーン内のシステム仮想マシン(仮想ルーター、コンソールプロキシ、およびセカンダリストレージ仮想マシンなど、CloudStackにより使用される仮想マシン)によって使用されます。これらのDNSサーバーは、システム仮想マシンの管理トラフィックネットワークインターフェイスを介してアクセスされます。ポッドのプライベートIPアドレスから、ここで指定する内部DNSサーバーに通信できる必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1)"
+" Choose the hypervisor for the first cluster in the zone. You can add "
+"clusters with different hypervisors later, after you finish adding the zone."
+msgstr "<emphasis role=\"bold\">Hypervisor：</emphasis> (Version 3.0.1より)ゾーンの最初のクラスターのハイパーバイザーを選択します。ゾーンの追加後に、異なるハイパーバイザーを使用するクラスターを追加できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network Offering.</emphasis> Your choice here "
+"determines what network services will be available on the network for guest "
+"VMs."
+msgstr "<emphasis role=\"bold\">Network Offering：</emphasis>ここでの選択により、ゲスト仮想マシンのネットワークで使用できるネットワークサービスが決まります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Offering"
+msgstr "Network Offering"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "説明"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOfferingWithSGService"
+msgstr "DefaultSharedNetworkOfferingWithSGService"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to enable security groups for guest traffic isolation, choose "
+"this. (See Using Security Groups to Control Traffic to VMs.)"
+msgstr "ゲストトラフィックの分離のためにセキュリティグループを有効にする場合は、これを選択します(「セキュリティグループによる仮想マシンに対するトラフィックの制御」を参照)。"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOffering"
+msgstr "DefaultSharedNetworkOffering"
+
+#. Tag: para
+#, no-c-format
+msgid "If you do not need security groups, choose this."
+msgstr "セキュリティグループが必要ない場合は、これを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetscalerEIPandELBNetworkOffering"
+msgstr "DefaultSharedNetscalerEIPandELBNetworkOffering"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you have installed a Citrix NetScaler appliance as part of your zone "
+"network, and you will be using its Elastic IP and Elastic Load Balancing "
+"features, choose this. With the EIP and ELB features, a basic zone with "
+"security groups enabled can offer 1:1 static NAT and load balancing."
+msgstr "ゾーンネットワークの一部としてCitrix NetScalerアプライアンスを設置済みで、エラスティックIPおよびエラスティック負荷分散の機能を使用する場合は、これを選択します。エラスティックIPおよびエラスティック負荷分散の機能を使用すると、セキュリティグループが有効な基本ゾーンで1対1の静的NATおよび負荷分散を提供できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to"
+" assign a special domain name to the guest VM network, specify the DNS "
+"suffix."
+msgstr "<emphasis role=\"bold\">Network Domain：</emphasis>(オプション)ゲスト仮想マシンネットワークに特別なドメイン名を割り当てる場合は、DNSサフィックスを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public.</emphasis> A public zone is available to all"
+" users. A zone that is not public will be assigned to a particular domain. "
+"Only users in that domain will be allowed to create guest VMs in this zone."
+msgstr "<emphasis role=\"bold\">Public：</emphasis>すべてのユーザーがパブリックゾーンを利用できます。パブリックではないゾーンは、特定のドメインに割り当てられます。そのドメイン内のユーザーだけが、このゾーンにゲスト仮想マシンを作成することを許可されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose which traffic types will be carried by the physical network."
+msgstr "物理ネットワークにより伝送されるトラフィックの種類を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The traffic types are management, public, guest, and storage traffic. For "
+"more information about the types, roll over the icons to display their tool "
+"tips, or see Basic Zone Network Traffic Types. This screen starts out with "
+"some traffic types already assigned. To add more, drag and drop traffic "
+"types onto the network. You can also change the network name if desired."
+msgstr "トラフィックの種類は、管理、パブリック、ゲスト、およびストレージトラフィックです。種類について詳しくは、アイコンにマウスポインターを合わせてツールチップを表示するか、「基本ゾーンのネットワークトラフィックの種類」を参照してください。この画面は、いくつかのトラフィックの種類が既に割り当てられた状態で開きます。さらに追加するには、トラフィックの種類をネットワークにドラッグアンドドロップしてください。また、必要に応じてネットワーク名を変更することもできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"3. (Introduced in version 3.0.1) Assign a network traffic label to each "
+"traffic type on the physical network. These labels must match the labels you"
+" have already defined on the hypervisor host. To assign each label, click "
+"the Edit button under the traffic type icon. A popup dialog appears where "
+"you can type the label, then click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These traffic labels will be defined only for the hypervisor selected for "
+"the first cluster. For all other hypervisors, the labels can be configured "
+"after the zone is created."
+msgstr "これらのトラフィックラベルは、最初のクラスターに選択したハイパーバイザーのためにのみ定義します。ほかのすべてのハイパーバイザーについては、ゾーンを作成してからラベルを構成できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next."
+msgstr "［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(NetScaler only) If you chose the network offering for NetScaler, you have "
+"an additional screen to fill out. Provide the requested details to set up "
+"the NetScaler, then click Next."
+msgstr "(NetScalerのみ)NetScaler用のネットワークオファリングを選択する場合は、追加の表示画面があります。NetScalerのセットアップに必要な項目を入力したら、［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">IP address.</emphasis> The NSIP (NetScaler IP) "
+"address of the NetScaler device."
+msgstr "<emphasis role=\"bold\">IP address：</emphasis>NetScalerデバイスのNSIP(NetScaler IP)アドレスです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Username/Password.</emphasis> The authentication "
+"credentials to access the device. &PRODUCT; uses these credentials to access"
+" the device."
+msgstr "<emphasis role=\"bold\">UsernameおよびPassword：</emphasis>デバイスにアクセスするための認証資格情報です。CloudStackは、この資格情報を使用してデバイスにアクセスします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Type.</emphasis> NetScaler device type that is being"
+" added. It could be NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a "
+"comparison of the types, see About Using a NetScaler Load Balancer."
+msgstr "<emphasis role=\"bold\">Type：</emphasis>追加するNetScalerデバイスの種類です。［NetScaler VPX］、［NetScaler MPX］、または［NetScaler SDX］です。種類を比較するには、『CloudStack管理ガイド』を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public interface.</emphasis> Interface of NetScaler "
+"that is configured to be part of the public network."
+msgstr "<emphasis role=\"bold\">Public interface：</emphasis>パブリックネットワークの一部として構成されるNetScalerのインターフェイスです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private interface.</emphasis> Interface of NetScaler"
+" that is configured to be part of the private network."
+msgstr "<emphasis role=\"bold\">Private interface：</emphasis>プライベートネットワークの一部として構成されるNetScalerのインターフェイスです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Number of retries.</emphasis> Number of times to "
+"attempt a command on the device before considering the operation failed. "
+"Default is 2."
+msgstr "<emphasis role=\"bold\">Number of retries：</emphasis>操作が失敗したとみなす前にデバイスに対してコマンドを試行する回数です。デフォルトは2です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Capacity.</emphasis> Number of guest "
+"networks/accounts that will share this NetScaler device."
+msgstr "<emphasis role=\"bold\">Capacity：</emphasis>このNetScalerデバイスを共有するゲストネットワーク/アカウントの数です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Dedicated.</emphasis> When marked as dedicated, this"
+" device will be dedicated to a single account. When Dedicated is checked, "
+"the value in the Capacity field has no significance – implicitly, its value "
+"is 1."
+msgstr "<emphasis role=\"bold\">Dedicated：</emphasis>専用のデバイスは単一のアカウント専用になります。［Dedicated］チェックボックスをオンにすると、［Capacity］ボックスの値は無視され、暗黙的に1であるとみなされます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(NetScaler only) Configure the IP range for public traffic. The IPs in this "
+"range will be used for the static NAT capability which you enabled by "
+"selecting the network offering for NetScaler with EIP and ELB. Enter the "
+"following details, then click Add. If desired, you can repeat this step to "
+"add more IP ranges. When done, click Next."
+msgstr "(NetScalerのみ)パブリックトラフィックのIPアドレスの範囲を構成します。この範囲内のIPアドレスは、EIPおよびELBが有効なNetScalerのネットワークオファリングを選択することによって有効にする、静的NAT機能に使用されます。次の詳細情報を入力し、［Add］をクリックします。必要に応じてこの手順を繰り返し、さらにIPアドレスの範囲を追加できます。完了したら［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Gateway.</emphasis> The gateway in use for these IP "
+"addresses."
+msgstr "<emphasis role=\"bold\">Gateway：</emphasis>これらのIPアドレスに使用するゲートウェイです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Netmask.</emphasis> The netmask associated with this"
+" IP range."
+msgstr "<emphasis role=\"bold\">Netmask：</emphasis>このIPアドレスの範囲に関連付けるネットマスクです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLAN.</emphasis> The VLAN that will be used for "
+"public traffic."
+msgstr "<emphasis role=\"bold\">VLAN：</emphasis>パブリックトラフィックに使用するVLANです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start IP/End IP.</emphasis> A range of IP addresses "
+"that are assumed to be accessible from the Internet and will be allocated "
+"for access to guest VMs."
+msgstr "<emphasis role=\"bold\">Start IPおよびEnd IP：</emphasis>インターネットからアクセスできるとみなされるIPアドレスの範囲で、ゲスト仮想マシンへのアクセスのために割り当てます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new zone, &PRODUCT; adds the first pod for you. You can always add more"
+" pods later. For an overview of what a pod is, see <xref linkend=\"about-"
+"pods\" />."
+msgstr "新しいゾーンでは、&PRODUCT;により最初のポッドが自動的に追加されます。後でさらにポッドを追加できます。ポッドの概要については、「ポッドについて」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first pod, enter the following, then click Next:"
+msgstr "最初のポッドを構成するには、次の項目を入力して［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Pod Name.</emphasis> A name for the pod."
+msgstr "<emphasis role=\"bold\">Pod Name：</emphasis>ポッドの名前です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system gateway.</emphasis> The gateway for "
+"the hosts in that pod."
+msgstr "<emphasis role=\"bold\">Reserved system gateway：</emphasis>このポッド内のホストのゲートウェイです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system netmask.</emphasis> The network "
+"prefix that defines the pod's subnet. Use CIDR notation."
+msgstr "<emphasis role=\"bold\">Reserved system netmask：</emphasis>ポッドのサブネットを定義するネットワークプレフィックスです。CIDR表記を使用します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> The IP "
+"range in the management network that &PRODUCT; uses to manage various system"
+" VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more "
+"information, see System Reserved IP Addresses."
+msgstr "<emphasis role=\"bold\">Start Reserved System IPおよびEnd Reserved System IP：</emphasis>セカンダリストレージ仮想マシン、コンソールプロキシ仮想マシン、およびDHCPなどのさまざまなシステム仮想マシンを管理するために、CloudStackで使用する管理ネットワーク内のIPアドレスの範囲です。詳しくは、「システムにより予約済みのIPアドレス」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the network for guest traffic. Provide the following, then click "
+"Next:"
+msgstr "ゲストトラフィック用のネットワークを構成します。次の情報を指定してから、［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest gateway.</emphasis> The gateway that the "
+"guests should use."
+msgstr "<emphasis role=\"bold\">Guest gateway：</emphasis>ゲストが使用するゲートウェイです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest netmask.</emphasis> The netmask in use on the "
+"subnet the guests will use."
+msgstr "<emphasis role=\"bold\">Guest netmask：</emphasis>ゲストの使用するサブネット上で使用されるネットマスクです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest start IP/End IP.</emphasis> Enter the first "
+"and last IP addresses that define a range that &PRODUCT; can assign to "
+"guests."
+msgstr "<emphasis role=\"bold\">Guest start IPおよびGuest end IP：</emphasis>CloudStackがゲストに割り当てられるIPアドレスの範囲を定義する、最初と最後のIPアドレスを入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We strongly recommend the use of multiple NICs. If multiple NICs are used, "
+"they may be in a different subnet."
+msgstr "複数のNICを使用することを強くお勧めします。複数のNICを使用する場合は、別のサブネットに存在するIPアドレスを入力できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If one NIC is used, these IPs should be in the same CIDR as the pod CIDR."
+msgstr "NICを1つ使用する場合は、これらのIPアドレスは、ポッドのCIDRと同じCIDRに存在する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new pod, &PRODUCT; adds the first cluster for you. You can always add "
+"more clusters later. For an overview of what a cluster is, see About "
+"Clusters."
+msgstr "新しいポッドでは、&PRODUCT;により最初のクラスターが自動的に追加されます。後でさらにクラスターを追加できます。クラスターの概要については、「クラスターについて」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first cluster, enter the following, then click Next:"
+msgstr "最初のクラスターを構成するには、次の項目を入力して［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Version 3.0.0 only; in "
+"3.0.1, this field is read only) Choose the type of hypervisor software that "
+"all hosts in this cluster will run. If you choose VMware, additional fields "
+"appear so you can give information about a vSphere cluster. For vSphere "
+"servers, we recommend creating the cluster of hosts in vCenter and then "
+"adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere."
+msgstr "<emphasis role=\"bold\">Hypervisor：</emphasis>(Version 3.0.0のみ。3.0.1では読み取り専用)このクラスター内のすべてのホストで実行される、ハイパーバイザーソフトウェアの種類を選択します。VMwareを選択すると追加のフィールドが表示され、vSphereクラスターに関する情報を指定できます。vSphereサーバーの場合は、vCenterでホストのクラスターを作成した後、クラスター全体をCloudStackに追加することをお勧めします。「クラスターの追加：vSphere」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the "
+"cluster. This can be text of your choosing and is not used by &PRODUCT;."
+msgstr "<emphasis role=\"bold\">Cluster name：</emphasis>クラスターの名前を入力します。任意の、&PRODUCT;で使用されていないテキストを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first host for you. You can always add "
+"more hosts later. For an overview of what a host is, see About Hosts."
+msgstr "新しいクラスターでは、&PRODUCT;により最初のホストが自動的に追加されます。後でさらにホストを追加できます。ホストの概要については、「ホストについて」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you add a hypervisor host to &PRODUCT;, the host must not have any VMs "
+"already running."
+msgstr "&PRODUCT;を展開するときに、ハイパーバイザーに実行中の仮想マシンがあってはいけません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you can configure the host, you need to install the hypervisor "
+"software on the host. You will need to know which version of the hypervisor "
+"software version is supported by &PRODUCT; and what additional configuration"
+" is required to ensure the host will work with &PRODUCT;. To find these "
+"installation details, see:"
+msgstr "ホストを構成する前に、ハイパーバイザーソフトウェアをホストにインストールする必要があります。&PRODUCT;がサポートするハイパーバイザーソフトウェアのバージョン、およびホストを&PRODUCT;と連動させるために必要な追加構成を確認しておく必要があります。このインストールについて詳しくは、次のセクションを参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Installation and Configuration"
+msgstr "Citrix XenServerのインストールと構成"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr "VMware vSphereのインストールと構成"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM vSphere Installation and Configuration"
+msgstr "KVMのインストールと構成"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first host, enter the following, then click Next:"
+msgstr "最初のホストを構成するには、次の項目を入力して［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Name.</emphasis> The DNS name or IP address of "
+"the host."
+msgstr "<emphasis role=\"bold\">Host Name：</emphasis>ホストのDNS名またはIPアドレスです。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The username is root."
+msgstr "<emphasis role=\"bold\">Username：</emphasis>通常はrootです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password.</emphasis> This is the password for the "
+"user named above (from your XenServer or KVM install)."
+msgstr "<emphasis role=\"bold\">Password：</emphasis>上のユーザー名に対するパスワードです(XenServerまたはKVM側で指定したもの)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Tags.</emphasis> (Optional) Any labels that you"
+" use to categorize hosts for ease of maintenance. For example, you can set "
+"this to the cloud's HA tag (set in the ha.tag global configuration "
+"parameter) if you want this host to be used only for VMs with the \"high "
+"availability\" feature enabled. For more information, see HA-Enabled Virtual"
+" Machines as well as HA for Hosts."
+msgstr "<emphasis role=\"bold\">Host Tags : </emphasis> (オプション)ホストを分類して保守を簡単にするために使用するラベルです。例としてクラウドのHAタグを設定できます(ha.tag をグローバル 設定パラメーターに設定します)。もしこのホスト上で仮想マシンを「高可用性」機能を有効化したうえで利用したい場合、管理者ガイドの「HAホスト上での仮想マシンでのHAの有効化」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first primary storage server for you. "
+"You can always add more servers later. For an overview of what primary "
+"storage is, see About Primary Storage."
+msgstr "新しいクラスターでは、&PRODUCT; により最初のプライマリストレージサーバーが自動的に追加されます。後でさらにサーバーを追加できます。プライマリストレージの概要については、「プライマリストレージについて」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure the first primary storage server, enter the following, then "
+"click Next:"
+msgstr "最初のプライマリストレージサーバーを構成するには、次の項目を入力して［Next］をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the storage device."
+msgstr "<emphasis role=\"bold\">Name：</emphasis>ストレージデバイスの名前です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol.</emphasis> For XenServer, choose either "
+"NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint,CLVM, or RBD."
+" For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The "
+"remaining fields in the screen vary depending on what you choose here."
+msgstr "<emphasis role=\"bold\">Protocol :</emphasis> XenServer の場合は、[NFS]、[iSCSI]、または[PreSetup]を選択します。KVM の場合は、[NFS]、[SharedMountPoint]、[CLVM]または[RBD]を選択します。vSphere の場合は、[VMFS](iSCSI またはファイバーチャネル)または [NFS]を選択します。画面のそのほかのフィールドは、ここで選択したものにより異なります。"

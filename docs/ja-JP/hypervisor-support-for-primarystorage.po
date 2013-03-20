@@ -1,0 +1,188 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-03 02:10+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Hypervisor Support for Primary Storage"
+msgstr "ハイパーバイザーのプライマリストレージサポート"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following table shows storage options and parameters for different "
+"hypervisors."
+msgstr "次の表は各ハイパーバイザー毎のストレージオプションとパラメーターです。"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere"
+msgstr "VMware vSphere"
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer"
+msgstr "Citrix XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr "KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\"><emphasis role=\"bold\">Format for Disks, Templates,"
+" and Snapshots</emphasis></emphasis>"
+msgstr "<emphasis role=\"bold\"><emphasis role=\"bold\">Format for Disks, Templates と Snapshots</emphasis></emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "VMDK"
+msgstr "VMDK"
+
+#. Tag: para
+#, no-c-format
+msgid "VHD"
+msgstr "VHD"
+
+#. Tag: para
+#, no-c-format
+msgid "QCOW2"
+msgstr "QCOW2"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">iSCSI support</emphasis>"
+msgstr "<emphasis role=\"bold\">iSCSI support</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "VMFS"
+msgstr "VMFS"
+
+#. Tag: para
+#, no-c-format
+msgid "Clustered LVM"
+msgstr "Clustered LVM"
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Shared Mountpoint"
+msgstr "Yes, via Shared Mountpoint"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Fiber Channel support</emphasis>"
+msgstr "<emphasis role=\"bold\">Fiber Channel support</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Existing SR"
+msgstr "Yes, via Existing SR"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">NFS support</emphasis>"
+msgstr "<emphasis role=\"bold\">NFS support</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "Y"
+msgstr "Y"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Local storage support</emphasis>"
+msgstr "<emphasis role=\"bold\">Local storage support</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Storage over-provisioning</emphasis>"
+msgstr "<emphasis role=\"bold\">Storage over-provisioning</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "NFS and iSCSI"
+msgstr "NFS と iSCSI"
+
+#. Tag: para
+#, no-c-format
+msgid "NFS"
+msgstr "NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer uses a clustered LVM system to store VM images on iSCSI and Fiber "
+"Channel volumes and does not support over-provisioning in the hypervisor. "
+"The storage server itself, however, can support thin-provisioning. As a "
+"result the &PRODUCT; can still support storage over-provisioning by running "
+"on thin-provisioned storage volumes."
+msgstr "XenServer は iSCSI への仮想マシンイメージの展開にクラスタ型 LVM を利用しており、ストレージ自体がシン・プロビジョニングをサポートしていてもハイパーバイザーではオーバープロビジョニングをサポートしていません。その結果、&PRODUCT; ではシン・プロビジョニングが動作しているストレージボリュームを利用している場合においてオーバープロビジョニングをサポートします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM supports \"Shared Mountpoint\" storage. A shared mountpoint is a file "
+"system path local to each server in a given cluster. The path must be the "
+"same across all Hosts in the cluster, for example /mnt/primary1. This shared"
+" mountpoint is assumed to be a clustered filesystem such as OCFS2. In this "
+"case the &PRODUCT; does not attempt to mount or unmount the storage as is "
+"done with NFS. The &PRODUCT; requires that the administrator insure that the"
+" storage is available"
+msgstr "KVM は、「共有マウントポイント」ストレージをサポートします。共有マウントポイントは、特定のクラスターの各サーバーに対してローカルなファイルシステムパスです。パスは、たとえば/mnt/primary1 のようにして、クラスター内のすべてのホストで同じになるようにします。この共有マウントポイントは、OCFS2 のようなクラスターファイルシステムであると見なされま す。この場合は、&PRODUCT; は、NFS で行われるようなストレージのマウントやマウント解除を試行しません。&PRODUCT; では、ストレージが使用可能かどうかを管理者が確認する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With NFS storage, &PRODUCT; manages the overprovisioning. In this case the "
+"global configuration parameter storage.overprovisioning.factor controls the "
+"degree of overprovisioning. This is independent of hypervisor type."
+msgstr "NFS ストレージについては、&PRODUCT; でオーバープロビジョニングが管理されます。この場合は、グローバル構成パラメーターの storage.overprovisioning.factor によってオーバープロビジョニングの程度が制御されます。これはハイパーバイ ザーの種類とは関係ありません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Local storage is an option for primary storage for vSphere, XenServer, and "
+"KVM. When the local disk option is enabled, a local disk storage pool is "
+"automatically created on each host. To use local storage for the System "
+"Virtual Machines (such as the Virtual Router), set "
+"system.vm.use.local.storage to true in global configuration."
+msgstr "ローカルストレージは、vSphere、XenServer、および KVM のプライマリストレージオプションとして選択できます。ローカルディスクオプションが有効になっていると、ローカルディスクストレージプールが各ホストに自動的に作成されます。システム仮想マシン(仮想ルーターなど)にローカルストレージを使用するには、グローバル構成で system.vm.use.local.storage を true に設定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports multiple primary storage pools in a Cluster. For example,"
+" you could provision 2 NFS servers in primary storage. Or you could "
+"provision 1 iSCSI LUN initially and then add a second iSCSI LUN when the "
+"first approaches capacity."
+msgstr "&PRODUCT; では、1 つのクラスターに複数のプライマリストレージプールを設定できます。たとえば、プライマリストレージに 2 台の NFS サーバーを準備できます。または、最初に 1 つの iSCSI LUN を準備し、1 つ目の LUN の容量に近づいたとき に 2 つ目の iSCSI LUN を追加することもできます。"

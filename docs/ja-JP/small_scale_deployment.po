@@ -1,0 +1,66 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-02-01 13:06+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Small-Scale Deployment"
+msgstr "小規模な展開"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates the network architecture of a small-scale &PRODUCT;"
+" deployment."
+msgstr "この図は、&PRODUCT; の小規模な展開のネットワークアーキテクチャを示しています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A firewall provides a connection to the Internet. The firewall is configured"
+" in NAT mode. The firewall forwards HTTP requests and API calls from the "
+"Internet to the Management Server. The Management Server resides on the "
+"management network."
+msgstr "インターネットへの接続はファイアウォールを介して行われます。ファイアウォールは NAT モードで構成されます。 ファイアウォールは、HTTP 要求および API 呼び出しをインターネットから管理サーバーに転送します。管理サー バーは管理ネットワーク上に存在します。"
+
+#. Tag: para
+#, no-c-format
+msgid "A layer-2 switch connects all physical servers and storage."
+msgstr "レイヤー2 スイッチが、すべての物理サーバーとストレージを接続します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A single NFS server functions as both the primary and secondary storage."
+msgstr "1 台の NFS サーバーが、プライマリストレージおよびセカンダリストレージの両方として機能します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server is connected to the management network."
+msgstr "管理サーバーは管理ネットワークに接続されます。"

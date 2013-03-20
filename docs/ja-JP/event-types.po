@@ -1,0 +1,579 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-01-26 14:54+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Event Types"
+msgstr "イベントの種類"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.CREATE"
+msgstr "VM.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.EXTRACT"
+msgstr "TEMPLATE.EXTRACT"
+
+#. Tag: para
+#, no-c-format
+msgid "SG.REVOKE.INGRESS"
+msgstr "SG.REVOKE.INGRESS"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.DESTROY"
+msgstr "VM.DESTROY"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.UPLOAD"
+msgstr "TEMPLATE.UPLOAD"
+
+#. Tag: para
+#, no-c-format
+msgid "HOST.RECONNECT"
+msgstr "HOST.RECONNECT"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.START"
+msgstr "VM.START"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.CLEANUP"
+msgstr "TEMPLATE.CLEANUP"
+
+#. Tag: para
+#, no-c-format
+msgid "MAINT.CANCEL"
+msgstr "MAINT.CANCEL"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.STOP"
+msgstr "VM.STOP"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME.CREATE"
+msgstr "VOLUME.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "MAINT.CANCEL.PS"
+msgstr "MAINT.CANCEL.PS"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.REBOOT"
+msgstr "VM.REBOOT"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME.DELETE"
+msgstr "VOLUME.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "MAINT.PREPARE"
+msgstr "MAINT.PREPARE"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.UPGRADE"
+msgstr "VM.UPGRADE"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME.ATTACH"
+msgstr "VOLUME.ATTACH"
+
+#. Tag: para
+#, no-c-format
+msgid "MAINT.PREPARE.PS"
+msgstr "MAINT.PREPARE.PS"
+
+#. Tag: para
+#, no-c-format
+msgid "VM.RESETPASSWORD"
+msgstr "VM.RESETPASSWORD"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME.DETACH"
+msgstr "VOLUME.DETACH"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN.REMOTE.ACCESS.CREATE"
+msgstr "VPN.REMOTE.ACCESS.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.CREATE"
+msgstr "ROUTER.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME.UPLOAD"
+msgstr "VOLUME.UPLOAD"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN.USER.ADD"
+msgstr "VPN.USER.ADD"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.DESTROY"
+msgstr "ROUTER.DESTROY"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICEOFFERING.CREATE"
+msgstr "SERVICEOFFERING.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "VPN.USER.REMOVE"
+msgstr "VPN.USER.REMOVE"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.START"
+msgstr "ROUTER.START"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICEOFFERING.UPDATE"
+msgstr "SERVICEOFFERING.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.RESTART"
+msgstr "NETWORK.RESTART"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.STOP"
+msgstr "ROUTER.STOP"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICEOFFERING.DELETE"
+msgstr "SERVICEOFFERING.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "UPLOAD.CUSTOM.CERTIFICATE"
+msgstr "UPLOAD.CUSTOM.CERTIFICATE"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.REBOOT"
+msgstr "ROUTER.REBOOT"
+
+#. Tag: para
+#, no-c-format
+msgid "DOMAIN.CREATE"
+msgstr "DOMAIN.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "ROUTER.HA"
+msgstr "ROUTER.HA"
+
+#. Tag: para
+#, no-c-format
+msgid "DOMAIN.DELETE"
+msgstr "DOMAIN.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "STATICNAT.DISABLE"
+msgstr "STATICNAT.DISABLE"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.CREATE"
+msgstr "PROXY.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "DOMAIN.UPDATE"
+msgstr "DOMAIN.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.CREATE"
+msgstr "SSVM.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.DESTROY"
+msgstr "PROXY.DESTROY"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOT.CREATE"
+msgstr "SNAPSHOT.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.DESTROY"
+msgstr "SSVM.DESTROY"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.START"
+msgstr "PROXY.START"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOT.DELETE"
+msgstr "SNAPSHOT.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.START"
+msgstr "SSVM.START"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.STOP"
+msgstr "PROXY.STOP"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOTPOLICY.CREATE"
+msgstr "SNAPSHOTPOLICY.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.STOP"
+msgstr "SSVM.STOP"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.REBOOT"
+msgstr "PROXY.REBOOT"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOTPOLICY.UPDATE"
+msgstr "SNAPSHOTPOLICY.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.REBOOT"
+msgstr "SSVM.REBOOT"
+
+#. Tag: para
+#, no-c-format
+msgid "PROXY.HA"
+msgstr "PROXY.HA"
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOTPOLICY.DELETE"
+msgstr "SNAPSHOTPOLICY.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "SSVM.H"
+msgstr "SSVM.H"
+
+#. Tag: para
+#, no-c-format
+msgid "VNC.CONNECT"
+msgstr "VNC.CONNECT"
+
+#. Tag: para
+#, no-c-format
+msgid "VNC.DISCONNECT"
+msgstr "VNC.DISCONNECT"
+
+#. Tag: para
+#, no-c-format
+msgid "NET.IPASSIGN"
+msgstr "NET.IPASSIGN"
+
+#. Tag: para
+#, no-c-format
+msgid "NET.IPRELEASE"
+msgstr "NET.IPRELEASE"
+
+#. Tag: para
+#, no-c-format
+msgid "NET.RULEADD"
+msgstr "NET.RULEADD"
+
+#. Tag: para
+#, no-c-format
+msgid "NET.RULEDELETE"
+msgstr "NET.RULEDELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "NET.RULEMODIFY"
+msgstr "NET.RULEMODIFY"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.CREATE"
+msgstr "NETWORK.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.DELETE"
+msgstr "NETWORK.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "LB.ASSIGN.TO.RULE"
+msgstr "LB.ASSIGN.TO.RULE"
+
+#. Tag: para
+#, no-c-format
+msgid "LB.REMOVE.FROM.RULE"
+msgstr "LB.REMOVE.FROM.RULE"
+
+#. Tag: para
+#, no-c-format
+msgid "LB.CREATE"
+msgstr "LB.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "LB.DELETE"
+msgstr "LB.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "LB.UPDATE"
+msgstr "LB.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.LOGIN"
+msgstr "USER.LOGIN"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.LOGOUT"
+msgstr "USER.LOGOUT"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.CREATE"
+msgstr "USER.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.DELETE"
+msgstr "USER.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.UPDATE"
+msgstr "USER.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "USER.DISABLE"
+msgstr "USER.DISABLE"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.CREATE"
+msgstr "TEMPLATE.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.DELETE"
+msgstr "TEMPLATE.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.UPDATE"
+msgstr "TEMPLATE.UPDATE"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.COPY"
+msgstr "TEMPLATE.COPY"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.DOWNLOAD.START"
+msgstr "TEMPLATE.DOWNLOAD.START"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.DOWNLOAD.SUCCESS"
+msgstr "TEMPLATE.DOWNLOAD.SUCCESS"
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE.DOWNLOAD.FAILED"
+msgstr "TEMPLATE.DOWNLOAD.FAILED"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.CREATE"
+msgstr "ISO.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.DELETE"
+msgstr "ISO.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.COPY"
+msgstr "ISO.COPY"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.ATTACH"
+msgstr "ISO.ATTACH"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.DETACH"
+msgstr "ISO.DETACH"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.EXTRACT"
+msgstr "ISO.EXTRACT"
+
+#. Tag: para
+#, no-c-format
+msgid "ISO.UPLOAD"
+msgstr "ISO.UPLOAD"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICE.OFFERING.CREATE"
+msgstr "SERVICE.OFFERING.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICE.OFFERING.EDIT"
+msgstr "SERVICE.OFFERING.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "SERVICE.OFFERING.DELETE"
+msgstr "SERVICE.OFFERING.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "DISK.OFFERING.CREATE"
+msgstr "DISK.OFFERING.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "DISK.OFFERING.EDIT"
+msgstr "DISK.OFFERING.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "DISK.OFFERING.DELETE"
+msgstr "DISK.OFFERING.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.OFFERING.CREATE"
+msgstr "NETWORK.OFFERING.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.OFFERING.EDIT"
+msgstr "NETWORK.OFFERING.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK.OFFERING.DELETE"
+msgstr "NETWORK.OFFERING.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "POD.CREATE"
+msgstr "POD.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "POD.EDIT"
+msgstr "POD.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "POD.DELETE"
+msgstr "POD.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "ZONE.CREATE"
+msgstr "ZONE.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "ZONE.EDIT"
+msgstr "ZONE.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "ZONE.DELETE"
+msgstr "ZONE.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN.IP.RANGE.CREATE"
+msgstr "VLAN.IP.RANGE.CREATE"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN.IP.RANGE.DELETE"
+msgstr "VLAN.IP.RANGE.DELETE"
+
+#. Tag: para
+#, no-c-format
+msgid "CONFIGURATION.VALUE.EDIT"
+msgstr "CONFIGURATION.VALUE.EDIT"
+
+#. Tag: para
+#, no-c-format
+msgid "SG.AUTH.INGRESS"
+msgstr "SG.AUTH.INGRESS"

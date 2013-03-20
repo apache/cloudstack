@@ -1,0 +1,47 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-26 12:51+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Multiple System VM Support for VMware"
+msgstr "VMware のための複数のシステム仮想マシンのサポート"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Every &PRODUCT; zone has single System VM for template processing tasks such"
+" as downloading templates, uploading templates, and uploading ISOs. In a "
+"zone where VMware is being used, additional System VMs can be launched to "
+"process VMware-specific tasks such as taking snapshots and creating private "
+"templates. The &PRODUCT; management server launches additional System VMs "
+"for VMware-specific tasks as the load increases. The management server "
+"monitors and weights all commands sent to these System VMs and performs "
+"dynamic load balancing and scaling-up of more System VMs."
+msgstr "&PRODUCT; の各ゾーンには単一のシステム仮想マシンが存在します。この仮想マシンによって、テンプレートのダウンロードとアップロード、ISO のアップロードなどのテンプレート処理タスクが実行されます。VMware を使用するゾーンでは追加のシステム仮想マシンを起動して、スナップショットやプライベートテンプレートの作成などの VMware 特有のタスクを処理できます。負荷が増加すると、VMware 特有のタスクのために &PRODUCT; 管理サーバーにより追加のシステム仮想マシンが起動されます。これらのシステム仮想マシンに送信されるすべてのコマンドが管理サーバーにより監視および重み付けされ、追加のシステム仮想マシンの動的な負荷分散と拡張が実行されます。"

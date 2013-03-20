@@ -1,0 +1,136 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-03 14:39+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts, Users, and Domains"
+msgstr "アカウント、ユーザー、およびドメイン"
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts"
+msgstr "アカウント"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"An account typically represents a customer of the service provider or a "
+"department in a large organization. Multiple users can exist in an account."
+msgstr "アカウントは、通常、サービスプロバイダーの顧客や、大規模な組織の部門を表します。1 つのアカウントに複数のユー ザーを存在させることができます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domains"
+msgstr "ドメイン"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Accounts are grouped by domains. Domains usually contain multiple accounts "
+"that have some logical relationship to each other and a set of delegated "
+"administrators with some authority over the domain and its subdomains. For "
+"example, a service provider with several resellers could create a domain for"
+" each reseller."
+msgstr "アカウントはドメインによってグループ化されます。ドメインには、通常、相互に何らかの論理的な関係がある複数のアカウ ントと、ドメインおよびそのサブドメインに対して何らかの権限を持つ一連の委任管理者が含まれます。たとえば、複数の 販売代理店を持つサービスプロバイダーでは、販売代理店ごとにドメインを作成することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For each account created, the Cloud installation creates three different "
+"types of user accounts: root administrator, domain administrator, and user."
+msgstr "各アカウントはクラウドのインストール時に3つの違う種類のユーザーアカウントとして作成されます: ルート管理者、ドメイン管理者、ユーザー"
+
+#. Tag: title
+#, no-c-format
+msgid "Users"
+msgstr "ユーザー"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users are like aliases in the account. Users in the same account are not "
+"isolated from each other, but they are isolated from users in other "
+"accounts. Most installations need not surface the notion of users; they just"
+" have one user per account. The same user cannot belong to multiple "
+"accounts."
+msgstr "ユーザーは、アカウント内のエイリアスのようなものです。同じアカウントのユーザーは互いに分離されませんが、ほかのアカウントのユーザーからは分離されます。ほとんどのインストールでは、1 つのアカウントで複数のユーザーを使用することはないため、ユーザーの概念が問題になることはありません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Username is unique in a domain across accounts in that domain. The same "
+"username can exist in other domains, including sub-domains. Domain name can "
+"repeat only if the full pathname from root is unique. For example, you can "
+"create root/d1, as well as root/foo/d1, and root/sales/d1."
+msgstr "ユーザー名はドメインをまたぐアカウント内で一意です。同じユーザー名はサブドメインを含め他のドメイン上で存在することができます。ドメイン名はルートからのフルパス名が一意であれば繰り返す利用することができます。たとえば、root/foo/d1, root/sales/d1 と同様に root/d1 も利用することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Administrators are accounts with special privileges in the system. There may"
+" be multiple administrators in the system. Administrators can create or "
+"delete other administrators, and change the password for any user in the "
+"system."
+msgstr "管理者はシステム上で特別な権限を持つアカウントです。システムには複数の管理者が存在することができます。管理者は他の管理者を作成、削除することができ、システム上のユーザーのパスワードを変更することができます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domain Administrators"
+msgstr "ドメイン管理者"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Domain administrators can perform administrative operations for users who "
+"belong to that domain. Domain administrators do not have visibility into "
+"physical servers or other domains."
+msgstr "ドメイン管理者はドメインに所属するユーザーに対しての管理権限を持つことができます。ドメイン管理者は物理サーバーや他のドメインからは不可視です。"
+
+#. Tag: title
+#, no-c-format
+msgid "Root Administrator"
+msgstr "ルート管理者"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Root administrators have complete access to the system, including managing "
+"templates, service offerings, customer care administrators, and domains"
+msgstr "ルート管理者はシステムに対してテンプレート操作、サービスオファリング、ユーザー管理、ドメインなど完全なアクセス権限を持ちます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The resources belong to the account, not individual users in that account. "
+"For example, billing, resource limits, and so on are maintained by the "
+"account, not the users. A user can operate on any resource in the account "
+"provided the user has privileges for that operation. The privileges are "
+"determined by the role."
+msgstr "アカウントが所有するリソースはアカウント内のユーザー独自のものではありません。たとえば、課金、リソース制限などはアカウント単位で管理されユーザー単位ではありません。ユーザーはアカウントに割り当てられたあらゆるリソースを利用できその権限を持ちます。権限はその役割によって決定付けられます。"

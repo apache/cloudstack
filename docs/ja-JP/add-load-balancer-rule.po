@@ -1,0 +1,146 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-03-19 14:03+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Load Balancer Rule"
+msgstr "ロードバランサールールの追加"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者もしくはエンドユーザーとして &PRODUCT; UI にログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the name of the network where you want to load balance the traffic."
+msgstr "トラフィックの負荷分散をしたいしたいネットワークの名前をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr "[View IP Addresses] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the IP address for which you want to create the rule, then click the "
+"Configuration tab."
+msgstr "ルールを作成したい IP アドレスをクリックし、[Configuration] タブをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Load Balancing node of the diagram, click View All."
+msgstr "構成図のロードバランサーをクリックし、[View All] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a Basic zone, you can also create a load balancing rule without acquiring"
+" or selecting an IP address. &PRODUCT; internally assign an IP when you "
+"create the load balancing rule, which is listed in the IP Addresses page "
+"when the rule is created."
+msgstr "基本ゾーンでは IP アドレスを選択せずに負荷分散ルールを作成することもできます。 &PRODUCT; は負荷分散ルールの作成時に内部的に IP を割り当て、ルール作成時に割り当てられた IP アドレスがリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To do that, select the name of the network, then click Add Load Balancer "
+"tab. Continue with <xref linkend=\"config-lb\" />."
+msgstr "ネットワークの名前を選択し、[Add Load Balancer] タブをクリックします。詳細は <xref linkend=\"config-lb\" /> を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "Fill in the following:"
+msgstr "次の項目を入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: A name for the load balancer rule."
+msgstr "<emphasis role=\"bold\">Name : </emphasis> 負荷分散ルールの名前です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public Port</emphasis>: The port receiving incoming "
+"traffic to be balanced."
+msgstr "<emphasis role=\"bold\">Public Port : </emphasis> 負荷分散のための入力トラフィックを受信するポート番号です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private Port</emphasis>: The port that the VMs will "
+"use to receive the traffic."
+msgstr "<emphasis role=\"bold\">Private Port : </emphasis> 仮想マシンがトラフィックを受信するポート番号です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Algorithm</emphasis>: Choose the load balancing "
+"algorithm you want &PRODUCT; to use. &PRODUCT; supports a variety of well-"
+"known algorithms. If you are not familiar with these choices, you will find "
+"plenty of information about them on the Internet."
+msgstr "<emphasis role=\"bold\">Algorithm : </emphasis> &PRODUCT; で利用したい負荷分散アルゴリズムを選択します。 &PRODUCT; では様々なアルゴリズムをサポートしています。 これらのアルゴリズムに関して詳細を知りたい場合はインターネット上でより多くの情報を取得できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Stickiness</emphasis>: (Optional) Click Configure "
+"and choose the algorithm for the stickiness policy. See Sticky Session "
+"Policies for Load Balancer Rules."
+msgstr "<emphasis role=\"bold\">Stickiness : </emphasis> (オプション) [Configure] をクリックし、スティックネスポリシーを選択します。詳細は「Sticky Session Policies for Load Balancer Rules」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">AutoScale</emphasis>: Click Configure and complete "
+"the AutoScale configuration as explained in <xref linkend=\"autoscale\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click Add VMs, then select two or more VMs that will divide the load of "
+"incoming traffic, and click Apply."
+msgstr "[Add VMs] をクリックした後入力トラフィックの負荷を分散する2つ以上の仮想マシンを選択し、[Apply] をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new load balancer rule appears in the list. You can repeat these steps "
+"to add more load balancer rules for this IP address."
+msgstr "新しい負荷分散ルールがリスト表示され、IP アドレスに対する負荷分散ルールを引き続き追加することができます。"

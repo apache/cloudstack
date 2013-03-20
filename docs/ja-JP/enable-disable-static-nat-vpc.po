@@ -1,0 +1,156 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-05 04:00+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling or Disabling Static NAT on a VPC"
+msgstr "VPC での静的 NAT の有効化、無効化"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A static NAT rule maps a public IP address to the private IP address of a VM"
+" in a VPC to allow Internet traffic to it. This section tells how to enable "
+"or disable static NAT for a particular IP address in a VPC."
+msgstr "静的 NAT ルールは VPC 内の仮想マシンに割り当てられたプライベート IP に対しインターネットからのトラフィックを渡すためパブリック IP と関連付けられます。この章では VPC 上の特定 IP アドレスに対してどのように静的 NAT の有効化、無効化するか説明しています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If port forwarding rules are already in effect for an IP address, you cannot"
+" enable static NAT to that IP."
+msgstr "もし、すでにポートフォワーディングのルールが IP アドレスに反映されている場合、IP に対して静的 NAT を有効化することができません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a guest VM is part of more than one network, static NAT rules will "
+"function only if they are defined on the default network."
+msgstr "仮想マシンがいくつかのネットワークに所属している場合、静的 NAT のルールは デフォルトネットワークでしか機能しません。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者またはユーザーとして &PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "選択ビューから VPC を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "アカウントに対して作成された全ての VPC がページにリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to deploy the VMs."
+msgstr "仮想マシンを展開したい VPC の [Configure] ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC ページではダイアグラム上にリストされる作成された全ての層が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "設定アイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "以下のオプションが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr "ゲートウェイ"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "サイト間 VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "ネットワーク ACL"
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr "IP アドレスを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr "IP アドレスのページが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP you want to work with."
+msgstr "設定したい IP をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Details tab,click the Static NAT button.<inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> "
+"</imageobject> <textobject> <phrase>enable-disable.png: button to enable "
+"Statid NAT.</phrase> </textobject> </inlinemediaobject>The button toggles "
+"between Enable and Disable, depending on whether static NAT is currently "
+"enabled for the IP address."
+msgstr "詳細タブで [Static NAT] ボタンをクリックします。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject> <phrase>enable-disable.png: button to enable Statid NAT.</phrase> </textobject> </inlinemediaobject>ボタンは有効、無効のトグルボタンになっており、表示される状態は IP アドレスに対して現在静的 NAT が有効化されているかどうかによって変化します。"
+
+#. Tag: para
+#, no-c-format
+msgid "If you are enabling static NAT, a dialog appears as follows:"
+msgstr "静的 NAT を有効化すると以下のようなダイアログが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the tier and the destination VM, then click Apply."
+msgstr "層と対象となる仮想マシンを選択して [Apply] ボタンを押して下さい。"

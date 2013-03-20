@@ -1,0 +1,113 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <arkray0701@gmail.com>, 2012.
+#   <go.chiba@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-12-18 15:26+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Log In to the UI"
+msgstr "UIへのログイン"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides a web-based UI that can be used by both administrators "
+"and end users. The appropriate version of the UI is displayed depending on "
+"the credentials used to log in. The UI is available in popular browsers "
+"including IE7, IE8, IE9, Firefox 3.5+, Firefox 4, Safari 4, and Safari 5. "
+"The URL is: (substitute your own management server IP address)"
+msgstr "&PRODUCT; はWebベースのUIを管理者とエンドユーザーの両方に提供しています。ログインに使用したユーザーの権限に応じて適切なUIが表示されます。UIはIE7、IE8、IE9、Firefox 3.5以降、Firefox 4、Safari 4 そしてSafari 5に対応しています。URLは(あなたの環境の管理サーバーのIPアドレスに置き換えてください)"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://&lt;management-server-ip-address&gt;:8080/client"
+msgstr "http://&lt;management-server-ip-address&gt;:8080/client"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On a fresh Management Server installation, a guided tour splash screen "
+"appears. On later visits, you’ll see a login screen where you specify the "
+"following to proceed to your Dashboard:"
+msgstr "未設定の管理サーバーにアクセスすると、ガイドツアーのスプラッシュスクリーンが表示されます。以降のアクセス時には、ダッシュボードにアクセスするために下記の情報を入力するログイン画面が表示されます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Username"
+msgstr "ユーザー名"
+
+#. Tag: para
+#, no-c-format
+msgid "The user ID of your account. The default username is admin."
+msgstr "あなたのアカウントのユーザーID。デフォルトのユーザー名はadminです。"
+
+#. Tag: title
+#, no-c-format
+msgid "Password"
+msgstr "パスワード"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The password associated with the user ID. The password for the default "
+"username is password."
+msgstr "ユーザーIDに関連付けられたパスワード。デフォルトユーザーのパスワードはpasswordです。"
+
+#. Tag: title
+#, no-c-format
+msgid "Domain"
+msgstr "ドメイン"
+
+#. Tag: para
+#, no-c-format
+msgid "If you are a root user, leave this field blank."
+msgstr "もしもあなたがrootドメインのユーザーならば、フィールドは空白のままにします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are a user in the sub-domains, enter the full path to the domain, "
+"excluding the root domain."
+msgstr "もしもあなたがサブドメインのユーザーならば、rootドメインを除いた、そのドメインへのフルパスを入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, suppose multiple levels are created under the root domain, such"
+" as Comp1/hr. The users in the Comp1 domain should enter Comp1 in the Domain"
+" field, whereas the users in the Comp1/sales domain should enter "
+"Comp1/sales."
+msgstr "例えばrootドメインの下にComp1/hrといった複数階層があると仮定します。Comp1ドメインのユーザーはドメインフィールドにComp1と入力し、Comp1/salesドメインのユーザーはComp1/salesと入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more guidance about the choices that appear when you log in to this UI, "
+"see Logging In as the Root Administrator."
+msgstr "より詳細なUIへのログインのガイドラインに関しては「ルート管理者としてのログイン」を参照してください。"

@@ -1,0 +1,48 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-04 14:56+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Root Administrator's UI Overview"
+msgstr "Root 管理者 UI の概要"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; UI helps the &PRODUCT; administrator provision, view, and "
+"manage the cloud infrastructure, domains, user accounts, projects, and "
+"configuration settings. The first time you start the UI after a fresh "
+"Management Server installation, you can choose to follow a guided tour to "
+"provision your cloud infrastructure. On subsequent logins, the dashboard of "
+"the logged-in user appears. The various links in this screen and the "
+"navigation bar on the left provide access to a variety of administrative "
+"functions. The root administrator can also use the UI to perform all the "
+"same tasks that are present in the end-user’s UI."
+msgstr "&PRODUCT; UI は &PRODUCT; 管理者のプロビジョニングや確認、クラウドインフラストラクチャやドメイン、ユーザーアカウント、プロジェクト、構成設定の管理を手助けします。初回の管理サーバーのインストール時、クラウドインフラストラクチャのプロビジョニングのため、次のガイドツアーを利用できます。ログイン後、ユーザー毎のダッシュボードが表示され、様々なリンクや、様々な管理者機能へのナビゲーションバーが左側に表示されます。Root 管理者はエンドユーザーに提供されている UI のように全てのタスクを UI から利用することができます。"

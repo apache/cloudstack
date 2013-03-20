@@ -1,0 +1,104 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2012-12-17 13:09+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server Overview"
+msgstr "管理サーバーについて"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server is the &PRODUCT; software that manages cloud "
+"resources. By interacting with the Management Server through its UI or API, "
+"you can configure and manage your cloud infrastructure."
+msgstr "管理サーバーは、クラウドリソースを管理する CloudStack ソフトウェアです。ユーザーインターフェイスまたは API を介して 管理サーバーを操作することにより、クラウドインフラストラクチャを構成し管理できます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server runs on a dedicated server or VM. It controls "
+"allocation of virtual machines to hosts and assigns storage and IP addresses"
+" to the virtual machine instances. The Management Server runs in a Tomcat "
+"container and requires a MySQL database for persistence."
+msgstr "管理サーバーは専用のサーバーまたは仮想マシンです。ホストに対する仮想マシンの割り当てを制御し、ストレージと IP アドレスを仮想マシンインスタンスに割り当てます。CloudStack 管理サーバーは Tomcat コンテナー内で動作し、データ保 持のために MySQL データベースを必要とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The machine must meet the system requirements described in System "
+"Requirements."
+msgstr "このマシンは「4.3: 最小システム要件」にあるシステム要件を満たしている必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server:"
+msgstr "管理サーバー"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provides the web user interface for the administrator and a reference user "
+"interface for end users."
+msgstr "管理者とエンドユーザーに Web ユーザーインターフェイスを提供します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Provides the APIs for &PRODUCT;."
+msgstr "&PRODUCT; プラットフォームの API を提供します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the assignment of guest VMs to particular hosts."
+msgstr "特定ホストに対するゲスト仮想マシンの割り当てを管理します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages the assignment of public and private IP addresses to particular "
+"accounts."
+msgstr "特定アカウントに対するパブリックおよびプライベート IP アドレスの割り当てを管理します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Manages the allocation of storage to guests as virtual disks."
+msgstr "ゲストに対する仮想ディスクとしてのストレージの割り当てを管理します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Manages snapshots, templates, and ISO images, possibly replicating them "
+"across data centers."
+msgstr "スナップショット、テンプレート、および ISO イメージを管理し、場合によっては複数のデータセンターの間でそれらを 複製します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Provides a single point of configuration for the cloud."
+msgstr "クラウド構成のための単一の場を提供します。"

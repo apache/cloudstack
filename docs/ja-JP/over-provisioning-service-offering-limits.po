@@ -1,0 +1,74 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:04\n"
+"PO-Revision-Date: 2013-01-07 03:29+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Over-Provisioning and Service Offering Limits"
+msgstr "オーバープロビジョニングとサービスオファリングの制限"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio"
+" configured by the administrator. This is defined by the "
+"cpu.overprovisioning.factor global configuration variable."
+msgstr "&PRODUCT; では、管理者の構成するオーバープロビジョニング比率に基づいて、CPU オーバープロビジョニングを実行します。これは、「cpu.overprovisioning.factor」 グローバル構成変数によって定義されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio"
+" configured by the administrator. This is defined by the "
+"cpu.overprovisioning.factor global configuration variable"
+msgstr "&PRODUCT; では、管理者の構成するオーバープロビジョニング比率に基づいて、CPU オーバープロビジョニングを実行します。これは、「cpu.overprovisioning.factor」 グローバル構成変数によって定義されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Service offerings limits (e.g. 1 GHz, 1 core) are strictly enforced for core"
+" count. For example, a guest with a service offering of one core will have "
+"only one core available to it regardless of other activity on the Host."
+msgstr "サービスオファリングの制限(たとえば、1GHz、1 コアなど)は、コア数に厳密に適用されます。たとえば、1 コアを提供するサービスオファリングを使用するゲストは、ホスト上のほかのアクティビティにかかわりなく、使用できるコアは 1 つだけで す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Service offering limits for gigahertz are enforced only in the presence of "
+"contention for CPU resources. For example, suppose that a guest was created "
+"with a service offering of 1 GHz on a Host that has 2 GHz cores, and that "
+"guest is the only guest running on the Host. The guest will have the full 2 "
+"GHz available to it. When multiple guests are attempting to use the CPU a "
+"weighting factor is used to schedule CPU resources. The weight is based on "
+"the clock speed in the service offering. Guests receive a CPU allocation "
+"that is proportionate to the GHz in the service offering. For example, a "
+"guest created from a 2 GHz service offering will receive twice the CPU "
+"allocation as a guest created from a 1 GHz service offering. &PRODUCT; does "
+"not perform memory over-provisioning."
+msgstr "動作周波数に対するサービスオファリングの制限は、CPU リソースが競合する場合にのみ適用されます。たとえば、2GHz のコアを持つホスト上で 1GHz のサービスオファリングを使用するゲストを作成したとします。このゲストは、ホスト上で実行される唯一のゲストです。この場合は、ゲストは 2GHz すべてを使用できます。複数のゲストが CPU を使用しようとする場 合は、重み係数を使用して CPU リソースをスケジュールします。重みは、サービスオファリングのクロック速度に基づきま す。ゲストは、サービスオファリングの動作周波数に比例した CPU 割り当てを受けます。たとえば、2GHz のサービスオファリングで作成されたゲストは、1GHz のサービスオファリングで作成されたゲストの 2 倍の CPU 割り当てを受けます。"

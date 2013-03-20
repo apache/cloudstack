@@ -1,0 +1,411 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-04 16:47+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API commands in 3.0"
+msgstr "3.0 にて追加された API コマンド"
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.2"
+msgstr "3.0.2 にて追加"
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForSystemVm"
+msgstr "changeServiceForSystemVm"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Changes the service offering for a system VM (console proxy or secondary "
+"storage). The system VM must be in a \"Stopped\" state for this command to "
+"take effect."
+msgstr "システム仮想マシン(コンソールプロキシーやセカンダリストレージ)のサービスオファリングを変更します。このコマンドを反映させるにはシステム仮想マシンは停止状態である必要があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.1"
+msgstr "3.0.1 にて追加"
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.0"
+msgstr "3.0.0 にて追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"assignVirtualMachine (Move a user VM to another user under same domain.)"
+msgstr "assignVirtualMachine (ユーザーの仮想マシンを同一ドメインの他のユーザーに割り当てます)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"restoreVirtualMachine (Restore a VM to original template or specific "
+"snapshot)"
+msgstr "restoreVirtualMachine (オリジナルのテンプレートや特定のスナップショットから仮想マシンをリストアします)"
+
+#. Tag: para
+#, no-c-format
+msgid "createLBStickinessPolicy (Creates a Load Balancer stickiness policy )"
+msgstr "createLBStickinessPolicy (スティックネスポリシーの負荷分散装置を作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteLBStickinessPolicy (Deletes a LB stickiness policy.)"
+msgstr "deleteLBStickinessPolicy (スティックネスポリシーの負荷分散装置を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listLBStickinessPolicies (Lists LBStickiness policies.)"
+msgstr "listLBStickinessPolicies (スティックネスポリシーを持つ負荷分散装置をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "ldapConfig (Configure the LDAP context for this site.)"
+msgstr "ldapConfig (サイトにおける LDAP コンテキストを変更します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addSwift (Adds Swift.)"
+msgstr "addSwift (Swift を追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listSwifts (List Swift.)"
+msgstr "listSwifts (Swift をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVolume (Migrate volume)"
+msgstr "migrateVolume (ボリュームを移行します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateStoragePool (Updates a storage pool.)"
+msgstr "updateStoragePool (ストレージプールを更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"authorizeSecurityGroupEgress (Authorizes a particular egress rule for this "
+"security group)"
+msgstr "authorizeSecurityGroupEgress (セキュリティグループに対し特定の出力規則を認証します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"revokeSecurityGroupEgress (Deletes a particular egress rule from this "
+"security group)"
+msgstr "revokeSecurityGroupEgress (セキュリティグループに対し特定の出力規則を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkOffering (Creates a network offering.)"
+msgstr "createNetworkOffering (ネットワークオファリングを作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkOffering (Deletes a network offering.)"
+msgstr "deleteNetworkOffering (ネットワークオファリングを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "createProject (Creates a project)"
+msgstr "createProject (プロジェクトを作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProject (Deletes a project)"
+msgstr "deleteProject (プロジェクトを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateProject (Updates a project)"
+msgstr "updateProject (プロジェクトを更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid "activateProject (Activates a project)"
+msgstr "activateProject (プロジェクトを始動させます)"
+
+#. Tag: para
+#, no-c-format
+msgid "suspendProject (Suspends a project)"
+msgstr "suspendProject (プロジェクトを一時停止させます)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listProjects (Lists projects and provides detailed information for listed "
+"projects)"
+msgstr "listProjects (プロジェクトをリスト表示し、各プロジェクトに関する詳細情報を提示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addAccountToProject (Adds acoount to a project)"
+msgstr "addAccountToProject (プロジェクトにアカウントを追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteAccountFromProject (Deletes account from the project)"
+msgstr "deleteAccountFromProject (プロジェクトからアカウントを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectAccounts (Lists project's accounts)"
+msgstr "listProjectAccounts (プロジェクトに所属するアカウントをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listProjectInvitations (Lists an account's invitations to join projects)"
+msgstr "listProjectInvitations (プロジェクトに参加するための招待をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateProjectInvitation (Accepts or declines project invitation)"
+msgstr "updateProjectInvitation (プロジェクトの招待を受理もしくは拒否します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProjectInvitation (Deletes a project invitation)"
+msgstr "deleteProjectInvitation (プロジェクトの招待を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateHypervisorCapabilities (Updates a hypervisor capabilities.)"
+msgstr "updateHypervisorCapabilities (ハイパーバイザーの性能情報を更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listHypervisorCapabilities (Lists all hypervisor capabilities.)"
+msgstr "listHypervisorCapabilities (ハイパーバイザーの全ての性能情報をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "createPhysicalNetwork (Creates a physical network)"
+msgstr "createPhysicalNetwork (物理ネットワークを作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deletePhysicalNetwork (Deletes a Physical Network.)"
+msgstr "deletePhysicalNetwork (物理ネットワークを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listPhysicalNetworks (Lists physical networks)"
+msgstr "listPhysicalNetworks (物理ネットワークをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updatePhysicalNetwork (Updates a physical network)"
+msgstr "updatePhysicalNetwork (物理ネットワークを更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listSupportedNetworkServices (Lists all network services provided by "
+"&PRODUCT; or for the given Provider.)"
+msgstr "listSupportedNetworkServices (全ての &PRODUCT; もしくは特定のプロバイダーによって提供されるネットワークサービスをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"addNetworkServiceProvider (Adds a network serviceProvider to a physical "
+"network)"
+msgstr "addNetworkServiceProvider (物理ネットワークにネットワークサービスプロバイダーを追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkServiceProvider (Deletes a Network Service Provider.)"
+msgstr "deleteNetworkServiceProvider (ネットワークサービスプロバイダーを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listNetworkServiceProviders (Lists network serviceproviders for a given "
+"physical network.)"
+msgstr "listNetworkServiceProviders (物理ネットワークで提供されるサービスプロバイダーをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateNetworkServiceProvider (Updates a network serviceProvider of a "
+"physical network)"
+msgstr "updateNetworkServiceProvider (物理ネットワークのネットワークサービスプロバイダーを更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addTrafficType (Adds traffic type to a physical network)"
+msgstr "addTrafficType (物理ネットワークにトラフィックタイプを追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTrafficType (Deletes traffic type of a physical network)"
+msgstr "deleteTrafficType (物理ネットワークのトラフィックタイプを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listTrafficTypes (Lists traffic types of a given physical network.)"
+msgstr "listTrafficTypes (物理ネットワークで提供されるトラフィックタイプをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateTrafficType (Updates traffic type of a physical network)"
+msgstr "updateTrafficType (物理ネットワークのトラフィックタイプを更新します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listTrafficTypeImplementors (Lists implementors of implementor of a network "
+"traffic type or implementors of all network traffic types)"
+msgstr "listTrafficTypeImplementors (全てのネットワークトラフィックタイプの提供者もしくは特定トラフィックタイプの提供者をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "createStorageNetworkIpRange (Creates a Storage network IP range.)"
+msgstr "createStorageNetworkIpRange (ストレージネットワークの IP 範囲を作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStorageNetworkIpRange (Deletes a storage network IP Range.)"
+msgstr "deleteStorageNetworkIpRange (ストレージネットワークの IP 範囲を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listStorageNetworkIpRange (List a storage network IP range.)"
+msgstr "listStorageNetworkIpRange (ストレージネットワークの IP 範囲をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateStorageNetworkIpRange (Update a Storage network IP range, only allowed"
+" when no IPs in this range have been allocated.)"
+msgstr "updateStorageNetworkIpRange (ストレージネットワークの IP 範囲を更新します。範囲に対して IP が使用中でない場合のみ利用できます)"
+
+#. Tag: para
+#, no-c-format
+msgid "listUsageTypes (List Usage Types)"
+msgstr "listUsageTypes (利用タイプをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addF5LoadBalancer (Adds a F5 BigIP load balancer device)"
+msgstr "addF5LoadBalancer (F5 BigIP 負荷分散装置を追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "configureF5LoadBalancer (configures a F5 load balancer device)"
+msgstr "configureF5LoadBalancer (F5 負荷分散装置を設定します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteF5LoadBalancer ( delete a F5 load balancer device)"
+msgstr "deleteF5LoadBalancer (F5 負荷分散装置を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancers (lists F5 load balancer devices)"
+msgstr "listF5LoadBalancers (F5 負荷分散装置をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listF5LoadBalancerNetworks (lists network that are using a F5 load balancer "
+"device)"
+msgstr "listF5LoadBalancerNetworks (F5 負荷分散装置を利用しているネットワークをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addSrxFirewall (Adds a SRX firewall device)"
+msgstr "addSrxFirewall (SRX ファイアウォールを追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteSrxFirewall ( delete a SRX firewall device)"
+msgstr "deleteSrxFirewall (SRX ファイアウォールを削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewalls (lists SRX firewall devices in a physical network)"
+msgstr "listSrxFirewalls (物理ネットワーク上の SRX ファイアウォールをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listSrxFirewallNetworks (lists network that are using SRX firewall device)"
+msgstr "listSrxFirewallNetworks (SRX ファイアウォールを利用しているネットワークをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "addNetscalerLoadBalancer (Adds a netscaler load balancer device)"
+msgstr "addNetscalerLoadBalancer (NetScaler 負荷分散装置を追加します)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetscalerLoadBalancer ( delete a netscaler load balancer device)"
+msgstr "deleteNetscalerLoadBalancer (NetScaler 負荷分散装置を削除します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"configureNetscalerLoadBalancer (configures a netscaler load balancer device)"
+msgstr "configureNetscalerLoadBalancer (NetScaler 負荷分散装置を設定します)"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancers (lists netscaler load balancer devices)"
+msgstr "listNetscalerLoadBalancers (NetScaler 負荷分散装置をリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listNetscalerLoadBalancerNetworks (lists network that are using a netscaler "
+"load balancer device)"
+msgstr "listNetscalerLoadBalancerNetworks (NetScaler 負荷分散装置を利用しているネットワークをリスト表示します)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVirtualRouterElement (Create a virtual router element.)"
+msgstr "createVirtualRouterElement (仮想ルーターを作成します)"
+
+#. Tag: para
+#, no-c-format
+msgid "configureVirtualRouterElement (Configures a virtual router element.)"
+msgstr "configureVirtualRouterElement (仮想マシンを設定します)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listVirtualRouterElements (Lists all available virtual router elements.)"
+msgstr "listVirtualRouterElements (全ての利用可能な仮想ルーターをリスト表示します)"

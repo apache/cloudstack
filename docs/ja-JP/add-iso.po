@@ -1,0 +1,265 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-01-25 03:28+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding an ISO"
+msgstr "ISO の追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To make additional operating system or other software available for use with"
+" guest VMs, you can add an ISO. The ISO is typically thought of as an "
+"operating system image, but you can also add ISOs for other types of "
+"software, such as desktop applications that you want to be installed as part"
+" of a template."
+msgstr "追加のオペレーティングシステムやほかのソフトウェアをゲスト仮想マシンで使用できるようにするために、ISO を追加できます。ISO は通常、オペレーティングシステムのイメージと考えられていますが、テンプレートの一部としてインストールするデスクトップアプリケーションなど、ほかの種類のソフトウェアの ISO を追加することもできます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者またはユーザーとして &PRODUCT; ユーザーインターフェイスにログオンします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr "左側のナビゲーションバーで[Templates]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose ISOs."
+msgstr "[Select view]ボックスの一覧で[ISOs]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add ISO."
+msgstr "[Add ISO]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Add ISO screen, provide the following:"
+msgstr "[Add ISO]ダイアログボックスで、次の情報を入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name</emphasis>: Short name for the ISO image. For "
+"example, CentOS 6.2 64-bit."
+msgstr "<emphasis role=\"bold\">Name </emphasis>: ISO イメージの短い名前です(例:CentOS 6.2 64 bit)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Description</emphasis>: Display test for the ISO "
+"image. For example, CentOS 6.2 64-bit."
+msgstr "<emphasis role=\"bold\">Description </emphasis>: ISO イメージの表示テキストです(例:CentOS 6.2 64 bit)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">URL</emphasis>: The URL that hosts the ISO image. "
+"The Management Server must be able to access this location via HTTP. If "
+"needed you can place the ISO image directly on the Management Server"
+msgstr "<emphasis role=\"bold\">URL </emphasis>: ISO イメージをホストする URL です。管理サーバーは、HTTP 経由でこの場所にアクセスできる必要があり ます。必要に応じて、ISO イメージを直接管理サーバー上に配置することができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>: Choose the zone where you want the "
+"ISO to be available, or All Zones to make it available throughout &PRODUCT;."
+msgstr "<emphasis role=\"bold\">Zone </emphasis>: ISO を使用できるようにするゾーンを選択するか、[All Zones]を選択して &PRODUCT; 全体で使用できるよ うにします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Bootable</emphasis>: Whether or not a guest could "
+"boot off this ISO image. For example, a CentOS ISO is bootable, a Microsoft "
+"Office ISO is not bootable."
+msgstr "<emphasis role=\"bold\">Bootable </emphasis>: ゲストがこの ISO イメージから起動できるかどうかを指定します。たとえば、CentOS ISO は起動でき ますが、Microsoft Office ISO は起動できません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>: This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following."
+msgstr "<emphasis role=\"bold\">OS Type </emphasis>: これは、&PRODUCT; プラットフォームとハイパーバイザーで特定の処理を実行したり、想定に基づい てゲストのパフォーマンスを向上したりするのに役立ちます。次のいずれかのオプションを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the operating system of your desired ISO image is listed, choose it."
+msgstr "使用する ISO イメージのオペレーティングシステムが一覧にある場合は、それを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the OS Type of the ISO is not listed or if the ISO is not bootable, "
+"choose Other."
+msgstr "ISO のオペレーティングシステムの種類が一覧にない、または ISO が起動不可である場合は、[Other]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer only) If you want to boot from this ISO in PV mode, choose Other "
+"PV (32-bit) or Other PV (64-bit)"
+msgstr "(XenServer のみ)PV モードでこの ISO から起動する場合は、[Other PV(32-bit)]または[Other PV (64-bit)]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(KVM only) If you choose an OS that is PV-enabled, the VMs created from this"
+" ISO will have a SCSI (virtio) root disk. If the OS is not PV-enabled, the "
+"VMs will have an IDE root disk. The PV-enabled types are:"
+msgstr "(KVM のみ)PV に対応するオペレーティングシステムを選択する場合は、その ISO から作成する仮想マシンのルートディスクは SCSI(virtio)になります。PV に対応しないオペレーティングシステムの場合は、仮想 マシンのルートディスクは IDE になります。PV に対応しているオペレーティングシステム:"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 13"
+msgstr "Fedora 13"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 12"
+msgstr "Fedora 12"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 11"
+msgstr "Fedora 11"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 10"
+msgstr "Fedora 10"
+
+#. Tag: para
+#, no-c-format
+msgid "Fedora 9"
+msgstr "Fedora 9"
+
+#. Tag: para
+#, no-c-format
+msgid "Other PV"
+msgstr "Other PV"
+
+#. Tag: para
+#, no-c-format
+msgid "Debian GNU/Linux"
+msgstr "Debian GNU/Linux"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.3"
+msgstr "CentOS 5.3"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.4"
+msgstr "CentOS 5.4"
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS 5.5"
+msgstr "CentOS 5.5"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.3"
+msgstr "Red Hat Enterprise Linux 5.3"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.4"
+msgstr "Red Hat Enterprise Linux 5.4"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 5.5"
+msgstr "Red Hat Enterprise Linux 5.5"
+
+#. Tag: para
+#, no-c-format
+msgid "Red Hat Enterprise Linux 6"
+msgstr "Red Hat Enterprise Linux 6"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It is not recommended to choose an older version of the OS than the version "
+"in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image"
+" will usually not work. In these cases, choose Other."
+msgstr "注:通常は、イメージのオペレーティングシステムより古いバージョンを選択しないでください。たとえば、\nCentOS 6.2 イメージをサポートするために CentOS 5.4 を選択すると、通常は動作しません。このような場合は、 [Other]を選択する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Extractable</emphasis>: Choose Yes if the ISO should"
+" be available for extraction."
+msgstr "<emphasis role=\"bold\">Extractable :</emphasis> ISO が抽出可能である必要がある場合は、このチェックボックスをオンにします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>: Choose Yes if this ISO should be "
+"available to other users."
+msgstr "<emphasis role=\"bold\">Public :</emphasis> この ISO をほかのユーザーが使用できる必要がある場合は、このチェックボックスをオンにします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Featured</emphasis>: Choose Yes if you would like "
+"this ISO to be more prominent for users to select. The ISO will appear in "
+"the Featured ISOs list. Only an administrator can make an ISO Featured."
+msgstr "<emphasis role=\"bold\">Featured :</emphasis> ユーザーが ISO を選択するときに「おすすめの ISO」としてこの ISO を目立たせるには、このチェック ボックスをオンにします。ISO が[Featured ISOs]の一覧に表示されます。ISO をおすすめに設定できるのは管理者だけです。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "「OK」をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server will download the ISO. Depending on the size of the "
+"ISO, this may take a long time. The ISO status column will display Ready "
+"once it has been successfully downloaded into secondary storage. Clicking "
+"Refresh updates the download percentage."
+msgstr "管理サーバーが ISO をダウンロードします。ISO のサイズによっては、しばらく時間がかかることがあります。ISO が セカンダリストレージに正常にダウンロードされると、ISO の状態が準備完了になります。[Refresh]をクリックすると、 ダウンロードの進捗率が更新されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Important</emphasis>: Wait for the ISO to finish "
+"downloading. If you move on to the next task and try to use the ISO right "
+"away, it will appear to fail. The entire ISO must be available before "
+"&PRODUCT; can work with it."
+msgstr "<emphasis role=\"bold\">重要 :</emphasis> ISO のダウンロードが完了するまで次の操作をしないでください。次のタスクに進んで ISO をすぐ使用しようとすると、失敗します。&PRODUCT; で ISO 全体を利用できるようになってから、操作する必要があります。"

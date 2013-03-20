@@ -1,0 +1,1521 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <arkray0701@gmail.com>, 2012.
+#   <go.chiba@gmail.com>, 2012-2013.
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:03\n"
+"PO-Revision-Date: 2013-03-19 14:05+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Citrix XenServer Installation for &PRODUCT;"
+msgstr "&PRODUCT;のためのCitrix XenServerのインストール"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to use the Citrix XenServer hypervisor to run guest virtual "
+"machines, install XenServer 6.0 or XenServer 6.0.2 on the host(s) in your "
+"cloud. For an initial installation, follow the steps below. If you have "
+"previously installed XenServer and want to upgrade to another version, see "
+"<xref linkend=\"xenserver-version-upgrading\" />."
+msgstr "Citrix XenServer ハイパーバイザーを使用してゲスト仮想マシンを実行する場合は、XenServer 6.0 もしくは XenServer 6.0.2 をクラウド内のホストにインストールします。初回インストールの場合は、 次の手順に従ってください。XenServer をインストール済みで、別のバージョンにアップグレードする場合は、<xref linkend=\"xenserver-version-upgrading\" /> を参照してください。"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for XenServer Hosts"
+msgstr "XenServerホストのシステム要件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host must be certified as compatible with one of the following. See the "
+"Citrix Hardware Compatibility Guide: <ulink "
+"url=\"http://hcl.xensource.com\">http://hcl.xensource.com</ulink>"
+msgstr "ホストは 次に示す互換性のいづれかを認定されている必要があります。 <ulink url=\"http://hcl.xensource.com\">http://hcl.xensource.com</ulink> の『Citrix Hardware Compatibility Guide』を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6 SP2"
+msgstr "XenServer 5.6 SP2"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0"
+msgstr "XenServer 6.0"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0.2"
+msgstr "XenServer 6.0.2"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must re-install Citrix XenServer if you are going to re-use a host from "
+"a previous install."
+msgstr "前にインストールしたホストを再使用する場合は、Citrix XenServer を再インストールする必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr "ハードウェア仮想マシン(Intel-VTまたはAMD-Vが有効であること)をサポート する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure all the hotfixes provided by the hypervisor vendor are applied. "
+"Track the release of hypervisor patches through your hypervisor vendor’s "
+"support channel, and apply patches as soon as possible after they are "
+"released. &PRODUCT; will not track or notify you of required hypervisor "
+"patches. It is essential that your hosts are completely up to date with the "
+"provided hypervisor patches. The hypervisor vendor is likely to refuse to "
+"support any system that is not up to date with patches."
+msgstr "ハイパーバイザーの製造元が提供するすべての Hotfix を適用 したことを確認します。ハイパーバイザーの製造元のサポートチャネルを通じてパッチのリリース状況を確認し、パッチがリリースされたらできるだけ早く適用します。ハイパーバイザーの必須パッチについて &PRODUCT; が自動的に通知することはありません。ホストにハイパーバイザーの最新パッチを適用する ことは非常に重要です。最新パッチが適用されていないシステムは、おそらくハイパーバイザーの製造元からサポートを受けられません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogenous. The CPUs must be of the same "
+"type, count, and feature flags."
+msgstr "1つのクラスター内のホストは種類が同じである必要があります。つまり、CPUの種類と数が同じで、同じ機能フラグ である必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled in BIOS)"
+msgstr "ハードウェア仮想マシン(Intel-VTまたはAMD-VがBIOSで有効であること)をサポート する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "64-bit x86 CPU(多くのコアを用意することでパフォーマンスの向上が見込まれます)"
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr "完全仮想化のサポートが必要。"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "4GBのメモリ"
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr "36 GBのローカルディスク"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "最少1つ以上のNIC"
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP Address"
+msgstr "静的IPアドレス"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running"
+msgstr "&PRODUCT; が展開された際、ハイパーバイザーホストに既に動作しているVMが存在していない。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr "最新の Hotfix を適用しないと、データの破損や仮想マシンの喪失が生じる可能性があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer Installation Steps"
+msgstr "XenServerのインストール手順"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From <ulink "
+"url=\"https://www.citrix.com/English/ss/downloads/\">https://www.citrix.com/English/ss/downloads/</ulink>,"
+" download the appropriate version of XenServer for your &PRODUCT; version "
+"(see <xref linkend=\"system-requirements-xenserver-hosts\" />). Install it "
+"using the Citrix XenServer Installation Guide."
+msgstr "Citrix 社の Web サイト(https://www.citrix.com/English/ss/downloads/)から あなたの &PRODUCT; のバージョンに合った XenServer をダウンロードし、『Citrix XenServer インストールガイド』に従ってインス トールします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After installation, perform the following configuration steps, which are "
+"described in the next few sections:"
+msgstr "インストール後、次の手順に従い設定を行います。"
+
+#. Tag: para
+#, no-c-format
+msgid "Required"
+msgstr "必須"
+
+#. Tag: para
+#, no-c-format
+msgid "Optional"
+msgstr "オプション"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"config-xenserver-dom0-memory\" />"
+msgstr "<xref linkend=\"config-xenserver-dom0-memory\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-support-pkg-installation\" />"
+msgstr "<xref linkend=\"xenserver-support-pkg-installation\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-username-password\" />"
+msgstr "<xref linkend=\"xenserver-username-password\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up SR if not using NFS, iSCSI, or local disk; see <xref linkend"
+"=\"xenserver-primary-storage-setup\" />"
+msgstr "iSCSIやローカルディスク、NFSを利用しない場合SRをセットアップします。詳細は<xref linkend=\"xenserver-primary-storage-setup\" />を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-time-sync\" />"
+msgstr "<xref linkend=\"xenserver-time-sync\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-iscsi-multipath-setup\" />"
+msgstr "<xref linkend=\"xenserver-iscsi-multipath-setup\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-get-deploy-license\" />"
+msgstr "<xref linkend=\"xenserver-get-deploy-license\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-physical-network-setup\" />"
+msgstr "<xref linkend=\"xenserver-physical-network-setup\" />"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure XenServer dom0 Memory"
+msgstr "XenServer ドメイン0のメモリ設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the XenServer dom0 settings to allocate more memory to dom0. This "
+"can enable XenServer to handle larger numbers of virtual machines. We "
+"recommend 2940 MB of RAM for XenServer dom0. For instructions on how to do "
+"this, see <ulink "
+"url=\"http://support.citrix.com/article/CTX126531\">http://support.citrix.com/article/CTX126531</ulink>."
+" The article refers to XenServer 5.6, but the same information applies to "
+"XenServer 6.0."
+msgstr "XenServer の dom0 へのメモリ割り当てを増やすために、dom0 の設定を構成します。これにより、XenServer でより多くの仮想マシンを制御できるようになります。XenServer の dom0 に 2940MB の RAM を割り当てることをお勧めします。この方法について詳しくは、<ulink url=\"http://support.citrix.com/article/CTX126531\">http://support.citrix.com/article/CTX126531</ulink> を参照してください。 このアーティクルで言及されているのは XenServer 5.6 ですが、同じことが XenServer 6.0 にも当てはまります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Username and Password"
+msgstr "ユーザー名とパスワード"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All XenServers in a cluster must have the same username and password as "
+"configured in &PRODUCT;."
+msgstr "クラスター内のすべての XenServer に、&PRODUCT; に構成されたものと同じユーザー名およびパスワードが必要です。"
+
+#. Tag: title
+#, no-c-format
+msgid "Time Synchronization"
+msgstr "時刻同期"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host must be set to use NTP. All hosts in a pod must have the same time."
+msgstr "ホストはNTPを使用する必要があります。ポッド内のすべてのホストは時刻が同期される必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP."
+msgstr "NTPのインストール"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# yum install ntp"
+msgstr "# yum install ntp"
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the NTP configuration file to point to your NTP server."
+msgstr "使用する NTP サーバーを参照するように、NTP 構成ファイ ルを編集します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/ntp.conf"
+msgstr "# vi /etc/ntp.conf"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add one or more server lines in this file with the names of the NTP servers "
+"you want to use. For example:"
+msgstr "使用する NTP サーバーを参照するように、NTP 構成ファイルを編集します。例として Citrix が提供する次の NTP サーバーを使用できます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"server 0.xenserver.pool.ntp.org\n"
+"server 1.xenserver.pool.ntp.org\n"
+"server 2.xenserver.pool.ntp.org\n"
+"server 3.xenserver.pool.ntp.org\n"
+"    "
+msgstr "server 0.xenserver.pool.ntp.org\nserver 1.xenserver.pool.ntp.org\nserver 2.xenserver.pool.ntp.org\nserver 3.xenserver.pool.ntp.org\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the NTP client."
+msgstr "NTPクライアントの再起動"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service ntpd restart"
+msgstr "# service ntpd restart"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure NTP will start again upon reboot."
+msgstr "再起動時に NTP が再び開始されることを確認します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# chkconfig ntpd on"
+msgstr "# chkconfig ntpd on"
+
+#. Tag: title
+#, no-c-format
+msgid "Licensing"
+msgstr "ライセンス設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Citrix XenServer Free version provides 30 days usage without a license. "
+"Following the 30 day trial, XenServer requires a free activation and "
+"license. You can choose to install a license now or skip this step. If you "
+"skip this step, you will need to install a license when you activate and "
+"license the XenServer."
+msgstr "無償版の Citrix XenServer は、ライセンスなしで 30 日間使用できます。30 日の試用期間を過ぎると、無償のライセンス認 証が要求されます。ここでライセンスをインストールするか、この手順を省略するかを選択できます。この手順を省略する場合は、XenServer をアクティブ化してライセンスを有効にするときに、ライセンスをインストールする必要があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Getting and Deploying a License"
+msgstr "ライセンスの取得と展開"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you choose to install a license now you will need to use the XenCenter to"
+" activate and get a license."
+msgstr "ここでライセンスをインストールする場合は、XenCenter を使用して、ライセンスをアクティブ化して取得する必要がありま す。"
+
+#. Tag: para
+#, no-c-format
+msgid "In XenCenter, click Tools &gt; License manager."
+msgstr "XenCenter で、[ツール]>[ライセンスマネージャ]の順に選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select your XenServer and select Activate Free XenServer."
+msgstr "XenServer を選択し、[無償の XenServer のアクティブ化]を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Request a license."
+msgstr "ライセンスを要求します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can install the license with XenCenter or using the xe command line "
+"tool."
+msgstr "XenCenter または xe コマンドラインツールを使用して、ライセンスをインストールできます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Install &PRODUCT; XenServer Support Package (CSP)"
+msgstr "&PRODUCT; XenServer Support Pakcage(CSP)のインストール"
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional)"
+msgstr "(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To enable security groups, elastic load balancing, and elastic IP on "
+"XenServer, download and install the &PRODUCT; XenServer Support Package "
+"(CSP). After installing XenServer, perform the following additional steps on"
+" each XenServer host."
+msgstr "XenServer でセキュリティグループ、エラスティック負荷分散、およびエラスティック IP を有効にするには、&PRODUCT; XenServer Support Package(CSP)をダウンロードしてインストールします。XenServer をインストールしたら、各 XenServer ホストで次の追加手順を実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Download the CSP software onto the XenServer host from one of the following "
+"links:"
+msgstr "次のリンクのどちらかから XenServer ホストに CSP ソフトウェアをダウンロードします。"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0.2:"
+msgstr "XenServer 6.0.2 の場合:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-"
+"cloud-supp.tgz\">http://download.cloud.com/releases/3.0.1/XS-6.0.2"
+"/xenserver-cloud-supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 5.6 SP2:"
+msgstr "XenServer 5.6 SP2 の場合:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/2.2.0/xenserver-cloud-"
+"supp.tgz\">http://download.cloud.com/releases/2.2.0/xenserver-cloud-"
+"supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0:"
+msgstr "XenServer 6.0 の場合:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/3.0/xenserver-cloud-"
+"supp.tgz\">http://download.cloud.com/releases/3.0/xenserver-cloud-"
+"supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "Extract the file:"
+msgstr "ファイルの展開:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# tar xf xenserver-cloud-supp.tgz"
+msgstr "# tar xf xenserver-cloud-supp.tgz"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following script:"
+msgstr "以下スクリプトの実行:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+msgstr "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the XenServer host is part of a zone that uses basic networking, disable "
+"Open vSwitch (OVS):"
+msgstr "XenServer ホストが基本ネットワーク設定を使用するゾーンの一部である場合は、Open vSwitch(OVS)を無効にし ます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-switch-network-backend  bridge"
+msgstr "# xe-switch-network-backend  bridge"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the host machine when prompted."
+msgstr "再起動を促すメッセージが表示されたら、再起動を受け入れます。"
+
+#. Tag: para
+#, no-c-format
+msgid "The XenServer host is now ready to be added to &PRODUCT;."
+msgstr "これで、XenServer ホストを &PRODUCT; に追加する準備ができました。"
+
+#. Tag: title
+#, no-c-format
+msgid "Primary Storage Setup for XenServer"
+msgstr "XenServer 用のプライマリストレージのセットアップ"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; natively supports NFS, iSCSI and local storage. If you are using "
+"one of these storage types, there is no need to create the XenServer Storage"
+" Repository (\"SR\")."
+msgstr "&PRODUCT; は、NFS、iSCSI、およびローカルストレージをネイティブにサポートします。これらのストレージの種類のいずれ かを使用している場合、XenServer のストレージリポジトリを作成する必要はありません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If, however, you would like to use storage connected via some other "
+"technology, such as FiberChannel, you must set up the SR yourself. To do so,"
+" perform the following steps. If you have your hosts in a XenServer pool, "
+"perform the steps on the master node. If you are working with a single "
+"XenServer which is not part of a cluster, perform the steps on that "
+"XenServer."
+msgstr "ただし、ファイバーチャネルなどのほかの技術を介して接続されたストレージを使用する場合は、ストレージリポジトリを自分でセットアップする必要があります。これを行うには、次の手順に従います。XenServer プールにホストがある場合は、マスターノードで手順を実行します。クラスター化されていない単一の XenServer を使用する場合は、その XenServer で手順 を実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Connect FiberChannel cable to all hosts in the cluster and to the "
+"FiberChannel storage host."
+msgstr "ファイバーチャネルケーブルをクラスター内のすべてのホストとファイバーチャネルストレージホストに接続します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Rescan the SCSI bus. Either use the following command or use XenCenter to "
+"perform an HBA rescan."
+msgstr "SCSI バスを再スキャンします。次のコマンドまたは XenCenter を使用して、HBA 再スキャンを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# scsi-rescan"
+msgstr "# scsi-rescan"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step <xref linkend=\"rescan-scsi\" /> on every host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check to be sure you see the new SCSI disk."
+msgstr "新しいSCSIディスクを確認します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l"
+msgstr "# ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output should look like this, although the specific file name will be "
+"different (scsi-&lt;scsiID&gt;):"
+msgstr "出力は次のようになりますが、具体的なファイル名は異なります(scsi-&lt;scsiID&gt;):"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"lrwxrwxrwx 1 root root 9 Mar 16 13:47\n"
+"/dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -&gt; ../../sdc\n"
+"    "
+msgstr "lrwxrwxrwx 1 root root 9 Mar 16 13:47\n/dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -&gt; ../../sdc\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step <xref linkend=\"verify-scsi\" /> on every host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the storage server, run this command to get a unique ID for the new SR."
+msgstr "ストレージサーバーで次のコマンドを実行し、新しいストレージリポジトリの固有の ID を取得します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# uuidgen"
+msgstr "# uuidgen"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output should look like this, although the specific ID will be "
+"different:"
+msgstr "出力は次のようになりますが、具体的な ID は異なります。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "e6849e96-86c3-4f2c-8fcc-350cc711be3d"
+msgstr "e6849e96-86c3-4f2c-8fcc-350cc711be3d"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create the FiberChannel SR. In name-label, use the unique ID you just "
+"generated."
+msgstr "ファイバーチャネルのストレージリポジトリを作成します。名前ラベルには、生成した固有の ID を使用します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# xe sr-create type=lvmohba shared=true\n"
+"device-config:SCSIid=360a98000503365344e6f6177615a516b\n"
+"name-label=\"e6849e96-86c3-4f2c-8fcc-350cc711be3d\"\n"
+"    "
+msgstr "\n# xe sr-create type=lvmohba shared=true\ndevice-config:SCSIid=360a98000503365344e6f6177615a516b\nname-label=\"e6849e96-86c3-4f2c-8fcc-350cc711be3d\"\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This command returns a unique ID for the SR, like the following example "
+"(your ID will be different):"
+msgstr "このコマンドは、次の例のようにストレージリポジトリの固有の ID を戻します(実際の ID は異なります)。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "7a143820-e893-6c6a-236e-472da6ee66bf"
+msgstr "7a143820-e893-6c6a-236e-472da6ee66bf"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To create a human-readable description for the SR, use the following "
+"command. In uuid, use the SR ID returned by the previous command. In name-"
+"description, set whatever friendly text you prefer."
+msgstr "ストレージリポジトリについて人間が読める説明を作成するには、次のコマンドを使用します。UUID には、前のコマ ンドで戻されたストレージリポジトリ ID を使用します。名前の説明には、好みに合わせてわかりやすいテキストを設 定します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-"
+"description=\"Fiber Channel storage repository\""
+msgstr "# xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-description=\"Fiber Channel storage repository\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make note of the values you will need when you add this storage to &PRODUCT;"
+" later (see <xref linkend=\"primary-storage-add\" />). In the Add Primary "
+"Storage dialog, in Protocol, you will choose PreSetup. In SR Name-Label, you"
+" will enter the name-label you set earlier (in this example, e6849e96-86c3"
+"-4f2c-8fcc-350cc711be3d)."
+msgstr "このストレージを後で &PRODUCT; に追加するときに必要な値を控えておきます( <xref linkend=\"primary-storage-add\" />を参照)。[プライマリストレージの追加]ダイアログボックスの[プロトコル]ボックスの一覧で、[事前セットアップ]を選択しま す。[ストレージレポジトリ名前ラベル]ボックスには、前に設定した名前ラベルを入力します(この例では、 e6849e96-86c3-4f2c-8fcc-350cc711be3d)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you want to enable multipath I/O on a FiberChannel SAN, refer "
+"to the documentation provided by the SAN vendor."
+msgstr "(オプション)ファイバーチャネル SAN でマルチパス I/O を有効にする場合は、SAN の製造元が提供するドキュメントを参照してください。"
+
+#. Tag: title
+#, no-c-format
+msgid "iSCSI Multipath Setup for XenServer (Optional)"
+msgstr "XenServer の iSCSI マルチパスのセットアップ(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When setting up the storage repository on a Citrix XenServer, you can enable"
+" multipath I/O, which uses redundant physical components to provide greater "
+"reliability in the connection between the server and the SAN. To enable "
+"multipathing, use a SAN solution that is supported for Citrix servers and "
+"follow the procedures in Citrix documentation. The following links provide a"
+" starting point:"
+msgstr "Citrix XenServer でストレージリポジトリをセットアップするとき、マルチパス I/O を有効にできます。マルチパス I/O を使用すると、冗長な物理コンポーネントを使用してサーバーと SAN の接続の信頼性を高めることができます。マルチパスを有効にするには、Citrix サーバーでサポートされる SAN ソリューションを使用し、Citrix ドキュメントに記載されている手順に従います。基本情報については、次のリンクを参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://support.citrix.com/article/CTX118791\">http://support.citrix.com/article/CTX118791</ulink>"
+msgstr "<ulink url=\"http://support.citrix.com/article/CTX118791\">http://support.citrix.com/article/CTX118791</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://support.citrix.com/article/CTX125403\">http://support.citrix.com/article/CTX125403</ulink>"
+msgstr "<ulink url=\"http://support.citrix.com/article/CTX125403\">http://support.citrix.com/article/CTX125403</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can also ask your SAN vendor for advice about setting up your Citrix "
+"repository for multipathing."
+msgstr "マルチパスを使用した Citrix リポジトリのセットアップについて、SAN の製造元に助言を求めることもできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make note of the values you will need when you add this storage to the "
+"&PRODUCT; later (see <xref linkend=\"primary-storage-add\" />). In the Add "
+"Primary Storage dialog, in Protocol, you will choose PreSetup. In SR Name-"
+"Label, you will enter the same name used to create the SR."
+msgstr "このストレージを後で &PRODUCT; に追加するときに必要な値を控えておきます( <xref linkend=\"primary-storage-add\" />を参照)。[プライマリストレージの追加]ダイアログボックスの[プロトコル]ボックスの一覧で、[事前セットアップ]を選択します。[ストレージレポジトリ名前ラベル]ボックスには、ストレージリポジトリの作成に使用した名前と同じものを入力します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you encounter difficulty, address the support team for the SAN provided "
+"by your vendor. If they are not able to solve your issue, see Contacting "
+"Support."
+msgstr "問題が発生した場合は、SAN の製造元のサポート部門に問い合わせてください。問題が解決できない場合は、「サポート への問い合わせ」を参照してください。"
+
+#. Tag: title
+#, no-c-format
+msgid "Physical Networking Setup for XenServer"
+msgstr "XenServer の物理ネットワーク設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once XenServer has been installed, you may need to do some additional "
+"network configuration. At this point in the installation, you should have a "
+"plan for what NICs the host will have and what traffic each NIC will carry. "
+"The NICs should be cabled as necessary to implement your plan."
+msgstr "XenServer をインストールした後で、追加のネットワーク構成が必要な場合があります。この時点で、ホストの NIC の種類と 各 NIC が伝送するトラフィックについて、計画済みである必要があります。NIC は、計画に合わせて配線する必要がありま す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you plan on using NIC bonding, the NICs on all hosts in the cluster must "
+"be cabled exactly the same. For example, if eth0 is in the private bond on "
+"one host in a cluster, then eth0 must be in the private bond on all hosts in"
+" the cluster."
+msgstr "NIC ボンディングを使用する場合は、クラスター内のすべてのホスト上の NIC を完全に同じ配線にする必要があります。例えば、eth0 がクラスター内のあるホスト上のプライベートボンドにある場合、eth0 はクラスター内のすべてのホストでプライベートボンドに存在する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The IP address assigned for the management network interface must be static."
+" It can be set on the host itself or obtained via static DHCP."
+msgstr "管理ネットワークインターフェイス用に割り当てる IP アドレスは、静的である必要があります。この IP アドレスはホスト自体で設定したり、静的 DHCP 経由で取得したりできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; configures network traffic of various types to use different NICs "
+"or bonds on the XenServer host. You can control this process and provide "
+"input to the Management Server through the use of XenServer network name "
+"labels. The name labels are placed on physical interfaces or bonds and "
+"configured in &PRODUCT;. In some simple cases the name labels are not "
+"required."
+msgstr "&PRODUCT; では、XenServer ホストでさまざまな NIC またはボンドを使用できるように、各種のネットワークトラフィックが構成されます。XenServer のネットワーク名ラベルを使用して、このプロセスを制御し、管理サーバーに情報を提供できます。 &PRODUCT; で名前ラベルを物理インターフェイスまたはボンドに付けて構成します。簡単な構成の場合は、名前ラベルは必要ありません。"
+
+#. Tag: title
+#, no-c-format
+msgid ""
+"Configuring Public Network with a Dedicated NIC for XenServer (Optional)"
+msgstr "XenServer の専用 NIC を使用したパブリックネットワークの構成(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports the use of a second NIC (or bonded pair of NICs, "
+"described in <xref linkend=\"xenserver-nic-bonding\" />) for the public "
+"network. If bonding is not used, the public network can be on any NIC and "
+"can be on different NICs on the hosts in a cluster. For example, the public "
+"network can be on eth0 on node A and eth1 on node B. However, the XenServer "
+"name-label for the public network must be identical across all hosts. The "
+"following examples set the network label to \"cloud-public\". After the "
+"management server is installed and running you must configure it with the "
+"name of the chosen network label (e.g. \"cloud-public\"); this is discussed "
+"in <xref linkend=\"management-server-install-flow\" />."
+msgstr "CloudStack では、パブリックネットワークに 2 つ目の NIC(または NIC のボンドペア、「XenServer の NIC ボンディング(オプション)」を参照)を使用できます。ボンディングを使用しない場合、パブリックネットワークには任意の NIC で、 そしてクラスター内のホストの複数の NIC で接続できます。たとえば、パブリックネットワークにノード A では eth0 で、ノード B では eth1 で接続できます。ただし、XenServer のパブリックネットワーク名ラベルは、すべてのホスト間で同一でなければ なりません。次の例では、ネットワークラベルを「cloud-public」とします。管理サーバーをインストールして起動した後、選択したネットワーク名ラベル(「cloud-public」)を管理サーバーで構成する必要があります。詳しくは、<xref linkend=\"management-server-install-flow\" />を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using two NICs bonded together to create a public network, see "
+"<xref linkend=\"xenserver-nic-bonding\" />."
+msgstr "ボンドした 2 つの NIC を使用してパブリックネットワークを作成する場合は、<xref linkend=\"xenserver-nic-bonding\" />を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using a single dedicated NIC to provide public network access, "
+"follow this procedure on each new host that is added to &PRODUCT; before "
+"adding the host."
+msgstr "単一の専用 NIC を使用してパブリックネットワークアクセスを提供する場合は、この手順に従って &PRODUCT; に追加する 各新規ホストを設定してから、ホストを追加します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run xe network-list and find the public network. This is usually attached to"
+" the NIC that is public. Once you find the network make note of its UUID. "
+"Call this &lt;UUID-Public&gt;."
+msgstr "xe network-list を実行し、パブリックネットワークを検索します。これは通常、パブリックである NIC に接続され ています。ネットワークが見つかったら、その UUID を控えておきます。これを&lt; UUID-Public&gt;とします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command."
+msgstr "次のコマンドを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;"
+msgstr "# xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Multiple Guest Networks for XenServer (Optional)"
+msgstr "XenServer の複数のゲストネットワークの構成(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports the use of multiple guest networks with the XenServer "
+"hypervisor. Each network is assigned a name-label in XenServer. For example,"
+" you might have two networks with the labels \"cloud-guest\" and \"cloud-"
+"guest2\". After the management server is installed and running, you must add"
+" the networks and use these labels so that &PRODUCT; is aware of the "
+"networks."
+msgstr "&PRODUCT; は、XenServer ハイパーバイザーを使用する複数のゲストネットワークの使用をサポートします。各ネットワー クには XenServer の名前ラベルを割り当てます。たとえば、「cloud-guest」と「cloud-guest2」のラベルを持つ 2 つのネットワークがあるとします。管理サーバーをインストールして起動した後に、ネットワークを追加して、&PRODUCT; がネットワー クを認識するようにこれらのラベルを使用する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Follow this procedure on each new host before adding the host to &PRODUCT;:"
+msgstr "この手順に従って各新規ホストを設定してから、&PRODUCT; にホストを追加します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run xe network-list and find one of the guest networks. Once you find the "
+"network make note of its UUID. Call this &lt;UUID-Guest&gt;."
+msgstr "xe network-list を実行し、いずれかのゲストネットワークを検索します。ネットワークが見つかった場合は、そ の UUID を控えておきます。これを&lt;UUID-Guest&gt;とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run the following command, substituting your own name-label and uuid values."
+msgstr "次のコマンドを実行します。名前ラベルと UUID は実際の値で置き換えます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-"
+"Guest&gt;"
+msgstr "# xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-Guest&gt;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Repeat these steps for each additional guest network, using a different "
+"name-label and uuid each time."
+msgstr "追加する各ゲストネットワークに対して毎回異なる名前ラベルと UUID を使用して、この手順を繰り返します。"
+
+#. Tag: title
+#, no-c-format
+msgid "Separate Storage Network for XenServer (Optional)"
+msgstr "XenServer 用の個別のストレージネットワーク(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can optionally set up a separate storage network. This should be done "
+"first on the host, before implementing the bonding steps below. This can be "
+"done using one or two available NICs. With two NICs bonding may be done as "
+"above. It is the administrator's responsibility to set up a separate storage"
+" network."
+msgstr "個別のストレージネットワークを任意にセットアップできます。この設定をまずホストで行ってから、次のボンディング手順を 実行する必要があります。使用できる 1 つまたは 2 つの NIC を使用して実行できます。前に説明したとおり、NIC が 2 つある場合はボンディングを行えます。別個のストレージネットワークのセットアップは、管理者の責任において行います。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Give the storage network a different name-label than what will be given for "
+"other networks."
+msgstr "ストレージネットワークに、ほかのネットワークとは異なる名前ラベルを指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the separate storage network to work correctly, it must be the only "
+"interface that can ping the primary storage device's IP address. For "
+"example, if eth0 is the management network NIC, ping -I eth0 &lt;primary "
+"storage device IP&gt; must fail. In all deployments, secondary storage "
+"devices must be pingable from the management network NIC or bond. If a "
+"secondary storage device has been placed on the storage network, it must "
+"also be pingable via the storage network NIC or bond on the hosts as well."
+msgstr "プライマリストレージデバイスの IP アドレスに ping で通信できるインターフェイスでのみ、個別のストレージネットワークは正常に動作します。たとえば、eth0 が管理ネットワークの NIC である場合は、ping -I eth0 &lt; プライマリストレージデバ イスの IP アドレス &gt; は失敗します。すべての展開環境で、セカンダリストレージデバイスは管理ネットワークの NIC または ボンドから ping で通信できる必要があります。セカンダリストレージデバイスがストレージネットワークに配置されている場合は、ホスト上のストレージネットワークの NIC またはボンドを経由して ping で通信できる必要もあります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can set up two separate storage networks as well. For example, if you "
+"intend to implement iSCSI multipath, dedicate two non-bonded NICs to "
+"multipath. Each of the two networks needs a unique name-label."
+msgstr "個別のストレージネットワークを 2 つセットアップすることもできます。たとえば、iSCSI マルチパスを実装する場合は、ボンドしていない 2 つの NIC をマルチパス専用にします。2 つのネットワークのどちらにも、一意の名前ラベルが必要です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If no bonding is done, the administrator must set up and name-label the "
+"separate storage network on all hosts (masters and slaves)."
+msgstr "ボンドしない場合は、管理者はすべてのホスト(マスターとスレーブ)上に個別のストレージネットワークをセットアップし、名前ラベルを割り当てる必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Here is an example to set up eth5 to access a storage network on "
+"172.16.0.0/24."
+msgstr "次に、172.16.0.0/24 上のストレージネットワークにアクセスするように、eth5 をセットアップする例を示します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# xe pif-list host-name-label='hostname' device=eth5\n"
+"uuid(RO): ab0d3dd4-5744-8fae-9693-a022c7a3471d\n"
+"device ( RO): eth5\n"
+"#xe pif-reconfigure-ip DNS=172.16.3.3 gateway=172.16.0.1 IP=172.16.0.55 mode=static netmask=255.255.255.0 uuid=ab0d3dd4-5744-8fae-9693-a022c7a3471d"
+msgstr "\n# xe pif-list host-name-label='hostname' device=eth5\nuuid(RO): ab0d3dd4-5744-8fae-9693-a022c7a3471d\ndevice ( RO): eth5\n#xe pif-reconfigure-ip DNS=172.16.3.3 gateway=172.16.0.1 IP=172.16.0.55 mode=static netmask=255.255.255.0 uuid=ab0d3dd4-5744-8fae-9693-a022c7a3471d"
+
+#. Tag: title
+#, no-c-format
+msgid "NIC Bonding for XenServer (Optional)"
+msgstr "XenServer の NIC ボンディング(オプション)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer supports Source Level Balancing (SLB) NIC bonding. Two NICs can be"
+" bonded together to carry public, private, and guest traffic, or some "
+"combination of these. Separate storage networks are also possible. Here are "
+"some example supported configurations:"
+msgstr "XenServer では、SLB(Source Level Balancing)NIC ボンディングがサポートされます。パブリック、プライベート、およびゲストのトラフィック、またはこれらを組み合わせたトラフィックを伝送するために 2 つの NIC をボンドできます。個別のストレー ジネットワークも同じようにできます。次に、サポートされる構成例をいくつか挙げます。"
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, 2 NICs on storage"
+msgstr "プライベートに NIC を 2 つ、パブリックに NIC を 2 つ、ストレージに NIC を 2 つ"
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 1 NIC on public, storage uses management network"
+msgstr "プライベートに NIC を 2 つ、パブリックに NIC を 1 つ、ストレージは管理ネットワークの NIC を使用"
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, storage uses management network"
+msgstr "プライベートに NIC を 2 つ、パブリックに NIC を 2 つ、ストレージは管理ネットワークの NIC を使用"
+
+#. Tag: para
+#, no-c-format
+msgid "1 NIC for private, public, and storage"
+msgstr "プライベート、パブリック、およびストレージに NIC を 1 つ"
+
+#. Tag: para
+#, no-c-format
+msgid "All NIC bonding is optional."
+msgstr "NIC ボンディングはすべてオプションです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer expects all nodes in a cluster will have the same network cabling "
+"and same bonds implemented. In an installation the master will be the first "
+"host that was added to the cluster and the slave hosts will be all "
+"subsequent hosts added to the cluster. The bonds present on the master set "
+"the expectation for hosts added to the cluster later. The procedure to set "
+"up bonds on the master and slaves are different, and are described below. "
+"There are several important implications of this:"
+msgstr "XenServer では、クラスター内のすべてのノードに同じネットワーク配線と同じボンドが実装されることを想定します。マスターになるのは、展開時に最初にクラスターに追加したホストです。それ以降にクラスターに追加するホストはすべてスレーブホストです。マスターにボンドが存在するということは、後でクラスターにホストが追加されたことを想定させます。ボンドをセットアップする手順はマスターとスレーブで異なります。それぞれについて次に説明します。これには次のような重要な意味合いがあります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must set bonds on the first host added to a cluster. Then you must use "
+"xe commands as below to establish the same bonds in the second and "
+"subsequent hosts added to a cluster."
+msgstr "ボンドは最初にクラスターに追加したホストで設定する必要があります。次に、後述する xe コマンドを使用して、クラスターに追加した 2 番目以降のホストで同じボンドを設定する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Slave hosts in a cluster must be cabled exactly the same as the master. For "
+"example, if eth0 is in the private bond on the master, it must be in the "
+"management network for added slave hosts."
+msgstr "クラスター内のスレーブホストは、マスターと完全に同じに配線する必要があります。たとえば、eth0 がマスター上のプライベートボンドにある場合、追加するスレーブホストの管理ネットワークに eth0 が存在する必要があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Network Bonding"
+msgstr "管理ネットワークのボンディング"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator must bond the management network NICs prior to adding the "
+"host to &PRODUCT;."
+msgstr "管理者は、&PRODUCT; にホストを追加する前に、管理ネットワークの NIC をボンドする必要があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Private Bond on the First Host in the Cluster"
+msgstr "クラスターの最初のホストでのプライベートボンドの作成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use the following steps to create a bond in XenServer. These steps should be"
+" run on only the first host in a cluster. This example creates the cloud-"
+"private network with two physical NICs (eth0 and eth1) bonded into it."
+msgstr "次の手順に従って、XenServer でボンドを作成します。この手順は、クラスターの最初のホストのみで実行する必要があり ます。この例では、2 つの物理 NIC(eth0 および eth1)をボンドした cloud-private ネットワークを作成します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Find the physical NICs that you want to bond together."
+msgstr "ボンドする物理 NIC を検索します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pif-list host-name-label='hostname' device=eth0\n"
+"# xe pif-list host-name-label='hostname' device=eth1"
+msgstr "# xe pif-list host-name-label='hostname' device=eth0\n# xe pif-list host-name-label='hostname' device=eth1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These command shows the eth0 and eth1 NICs and their UUIDs. Substitute the "
+"ethX devices of your choice. Call the UUID's returned by the above command "
+"slave1-UUID and slave2-UUID."
+msgstr "これらのコマンドにより、eth0 および eth1 の NIC とその UUID が表示されます。デバイス ID は実際に設定するデバ イスのもので置き換えます。上のコマンドで返された UUID を slave1-UUID および slave2-UUID とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a new network for the bond. For example, a new network with name "
+"\"cloud-private\"."
+msgstr "ボンド用の新しいネットワークを作成します。たとえば、新しいネットワークの名前を「cloud-private」とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a "
+"network by a name you configure. You must use the same name-label for all "
+"hosts in the cloud for the management network.</emphasis>"
+msgstr "<emphasis role=\"bold\">このラベルは重要です。&PRODUCT; は管理者が構成した名前を使用してネットワークを検索します。管理ネット\nワークについてクラウド内のすべてのホストで同じ名前ラベルを使用する必要があります。</emphasis>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-create name-label=cloud-private\n"
+"# xe bond-create network-uuid=[uuid of cloud-private created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr "# xe network-create name-label=cloud-private\n# xe bond-create network-uuid=[uuid of cloud-private created above]\npif-uuids=[slave1-uuid],[slave2-uuid]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you have a bonded pair that can be recognized by &PRODUCT; as the "
+"management network."
+msgstr "これで、管理ネットワークとして &PRODUCT; で認識できるボンドペアを用意できました。"
+
+#. Tag: title
+#, no-c-format
+msgid "Public Network Bonding"
+msgstr "パブリックネットワークのボンディング"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Bonding can be implemented on a separate, public network. The administrator "
+"is responsible for creating a bond for the public network if that network "
+"will be bonded and will be separate from the management network."
+msgstr "ボンディングは、個別のパブリックネットワークで実装できます。パブリックネットワークでボンディングを使用し、管理ネットワークから分離する場合は、管理者はパブリックネットワーク用のボンドを作成する必要があります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Public Bond on the First Host in the Cluster"
+msgstr "クラスターの最初のホストでのパブリックボンドの作成"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps should be run on only the first host in a cluster. This example "
+"creates the cloud-public network with two physical NICs (eth2 and eth3) "
+"bonded into it."
+msgstr "この手順は、クラスターの最初のホストのみで実行する必要があります。この例では、2 つの物理 NIC(eth2 および eth3) をボンドした cloud-public ネットワークを作成します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"#xe pif-list host-name-label='hostname' device=eth2\n"
+"# xe pif-list host-name-label='hostname' device=eth3"
+msgstr "#xe pif-list host-name-label='hostname' device=eth2\n# xe pif-list host-name-label='hostname' device=eth3"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These command shows the eth2 and eth3 NICs and their UUIDs. Substitute the "
+"ethX devices of your choice. Call the UUID's returned by the above command "
+"slave1-UUID and slave2-UUID."
+msgstr "これらのコマンドにより、eth2 および eth3 の NIC とその UUID が表示されます。デバイス ID は実際に設定するデバイスのもので置き換えます。上のコマンドで返された UUID を slave1-UUID および slave2-UUID とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a new network for the bond. For example, a new network with name "
+"\"cloud-public\"."
+msgstr "ボンド用の新しいネットワークを作成します。たとえば、新しいネットワークの名前を「cloud-public」とします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a "
+"network by a name you configure. You must use the same name-label for all "
+"hosts in the cloud for the public network.</emphasis>"
+msgstr "<emphasis role=\"bold\">このラベルは重要です。&PRODUCT; は管理者が構成した名前を使用してネットワークを検索します。パブリックネッ\nトワークについてクラウド内のすべてのホストで同じ名前ラベルを使用する必要があります。</emphasis>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-create name-label=cloud-public\n"
+"# xe bond-create network-uuid=[uuid of cloud-public created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr "# xe network-create name-label=cloud-public\n# xe bond-create network-uuid=[uuid of cloud-public created above]\npif-uuids=[slave1-uuid],[slave2-uuid]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you have a bonded pair that can be recognized by &PRODUCT; as the public"
+" network."
+msgstr "これで、パブリックネットワークとして &PRODUCT; で認識できるボンドペアを用意できました。"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding More Hosts to the Cluster"
+msgstr "クラスターへのホストの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With the bonds (if any) established on the master, you should add "
+"additional, slave hosts. Run the following command for all additional hosts "
+"to be added to the cluster. This will cause the host to join the master in a"
+" single XenServer pool."
+msgstr "必要に応じてマスターにボンドを設定した場合は、スレーブホストを追加する必要があります。クラスターに追加するすべてのホストで次のコマンドを実行します。これで、ホストが単一の XenServer プールのマスターに加わります。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pool-join master-address=[master IP] master-username=root\n"
+"master-password=[your password]"
+msgstr "# xe pool-join master-address=[master IP] master-username=root\nmaster-password=[your password]"
+
+#. Tag: title
+#, no-c-format
+msgid "Complete the Bonding Setup Across the Cluster"
+msgstr "クラスター全体でのボンドセットアップの完了"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With all hosts added to the pool, run the cloud-setup-bond script. This "
+"script will complete the configuration and set up of the bonds across all "
+"hosts in the cluster."
+msgstr "プールにすべてのホストを追加したら、cloud-setup-bond スクリプトを実行します。このスクリプトにより、クラスター内のすべてのホストのボンドの構成とセットアップを完了します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the script from the Management Server in "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-"
+"bonding.sh to the master host and ensure it is executable."
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh スクリプトを管理サーバーから マスターホストにコピーし、スクリプトが実行可能であることを確認します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script:"
+msgstr "次のスクリプトを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ./cloud-setup-bonding.sh"
+msgstr "# ./cloud-setup-bonding.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "Now the bonds are set up and configured properly across the cluster."
+msgstr "これで、ボンドがセットアップされ、クラスター全体で適切に構成されました。"
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrading XenServer Versions"
+msgstr "XenServer バージョンのアップグレード"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section tells how to upgrade XenServer software on &PRODUCT; hosts. The"
+" actual upgrade is described in XenServer documentation, but there are some "
+"additional steps you must perform before and after the upgrade."
+msgstr "ここでは、&PRODUCT; ホスト上の XenServer ソフトウェアをアップグレードする方法について説明します。実際のアップグレードは XenServer のドキュメントで説明されていますが、アップグレードの前後に追加して実行する必要がある手順がいくつかあります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure the hardware is certified compatible with the new version of "
+"XenServer."
+msgstr "ハードウェアが新しいバージョンの XenServer との互換性を認定されていることを確認してください。"
+
+#. Tag: para
+#, no-c-format
+msgid "To upgrade XenServer:"
+msgstr "XenServer をアップグレードするには"
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade the database. On the Management Server node:"
+msgstr "データベースをアップグレードします。管理サーバーノードで次の手順を実行します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Back up the database:"
+msgstr "データベースをバックアップします。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# mysqldump --user=root --databases cloud &gt; cloud.backup.sql\n"
+"# mysqldump --user=root --databases cloud_usage &gt; cloud_usage.backup.sql"
+msgstr "# mysqldump --user=root --databases cloud &gt; cloud.backup.sql\n# mysqldump --user=root --databases cloud_usage &gt; cloud_usage.backup.sql"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You might need to change the OS type settings for VMs running on the "
+"upgraded hosts."
+msgstr "ここで、アップグレード対象のホスト上で動作している仮想マシンのOSタイプを変更する必要があるかもしれません。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 GA to XenServer 5.6 SP2, change any VMs "
+"that have the OS type CentOS 5.5 (32-bit), Oracle Enterprise Linux 5.5 "
+"(32-bit), or Red Hat Enterprise Linux 5.5 (32-bit) to Other Linux (32-bit). "
+"Change any VMs that have the 64-bit versions of these same OS types to Other"
+" Linux (64-bit)."
+msgstr "もし、XenServer 5.6 GA から XenServer 5.6 SP2 、または仮想マシンのOSタイプをCentOS 5.5 (32-bit)、Oracle Enterprise Linux 5.5 (32-bit) もしくは Red Hat Enterprise Linux 5.5 (32-bit) 、からその他のLinux (32-bit) にアップグレードする場合一度それらを同一のOSタイプからその他のLinux (64-bit) に変換する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 SP2 to XenServer 6.0.2, change any VMs "
+"that have the OS type CentOS 5.6 (32-bit), CentOS 5.7 (32-bit), Oracle "
+"Enterprise Linux 5.6 (32-bit), Oracle Enterprise Linux 5.7 (32-bit), Red Hat"
+" Enterprise Linux 5.6 (32-bit) , or Red Hat Enterprise Linux 5.7 (32-bit) to"
+" Other Linux (32-bit). Change any VMs that have the 64-bit versions of these"
+" same OS types to Other Linux (64-bit)."
+msgstr "もし、XenServer 5.6 SP2 から XenServer 6.0.2 、または仮想マシンのOSタイプをCentOS 5.6 (32-bit)、CentOS 5.7 (32-bit)、Oracle Enterprise Linux 5.6 (32-bit)、Oracle Enterprise Linux 5.7 (32-bit)、Red Hat Enterprise Linux 5.6 (32-bit) もしくは Red Hat Enterprise Linux 5.7 (32-bit) 、からその他のLinux (32-bit) にアップグレードする場合一度それらを同一のOSタイプからその他のLinux (64-bit) に変換する必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 to XenServer 6.0.2, do all of the above."
+msgstr "もし、上記の通り XenServer を 5.6 から 6.0.2 にアップグレードした場合"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restart the Management Server and Usage Server. You only need to do this "
+"once for all clusters."
+msgstr "管理サーバーと使用状況サーバーを再起動します。これはクラスター毎に一度だけ実施します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# service cloud-management start\n"
+"# service cloud-usage start"
+msgstr "# service cloud-management start\n# service cloud-usage start"
+
+#. Tag: para
+#, no-c-format
+msgid "Disconnect the XenServer cluster from &PRODUCT;."
+msgstr "&PRODUCT; から XenServer クラスターの接続を外します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as root."
+msgstr "root として &PRODUCT; UI からログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Unmanage."
+msgstr "XenServer クラスターに移動し、[Actions]、[Unmanage]の順にクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the cluster status until it shows Unmanaged."
+msgstr "クラスターの状態が[Unmanaged]になるまで監視します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Log in to one of the hosts in the cluster, and run this command to clean up "
+"the VLAN:"
+msgstr "クラスター上のホストにログインし、VLAN をクリーンするコマンドを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# . /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "# . /opt/xensource/bin/cloud-clean-vlan.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "Still logged in to the host, run the upgrade preparation script:"
+msgstr "ホストへログインしたまま、アップグレードのためのスクリプトを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-prepare-upgrade.sh"
+msgstr "# /opt/xensource/bin/cloud-prepare-upgrade.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: If you see the error \"can't eject CD,\" log in to the VM "
+"and umount the CD, then run the script again."
+msgstr "トラブルシューティング : もし「CDを取り除けません」といったエラーに遭遇した場合は、仮想マシンにログインし CD を umount した後、スクリプトを続行してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Upgrade the XenServer software on all hosts in the cluster. Upgrade the "
+"master first."
+msgstr "クラスター上の全てのホストの XenServer ソフトウェアをアップグレードし、最初のマスターとなるホストをアップグレードしてください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Live migrate all VMs on this host to other hosts. See the instructions for "
+"live migration in the Administrator's Guide."
+msgstr "他のホストの全ての仮想マシンをライブマイグレーションするには、Administrator's Guideの「Instructions for live migration」を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: You might see the following error when you migrate a VM:"
+msgstr "トラブルシューティング : 仮想マシンの移動時、以下のようなエラーメッセージを見るかもしれません。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"[root@xenserver-qa-2-49-4 ~]# xe vm-migrate live=true host=xenserver-qa-2-49-5 vm=i-2-8-VM\n"
+"You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.\n"
+"vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)"
+msgstr "[root@xenserver-qa-2-49-4 ~]# xe vm-migrate live=true host=xenserver-qa-2-49-5 vm=i-2-8-VM\nYou attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.\nvm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)"
+
+#. Tag: para
+#, no-c-format
+msgid "To solve this issue, run the following:"
+msgstr "この問題を解決するため、次を実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-"
+"49583d9f1a14"
+msgstr "# /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-49583d9f1a14"
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot the host."
+msgstr "ホストを再起動します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Upgrade to the newer version of XenServer. Use the steps in XenServer "
+"documentation."
+msgstr "XenServer のドキュメントを参考に XenServer を新しいバージョンにアップグレードします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After the upgrade is complete, copy the following files from the management "
+"server to this host, in the directory locations shown below:"
+msgstr "アップグレードの完了後、次に示される場所に示されるファイル群を管理サーバーからコピーします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this Management Server file..."
+msgstr "管理サーバーの以下のファイルを"
+
+#. Tag: para
+#, no-c-format
+msgid "...to this location on the XenServer host"
+msgstr "XenServer ホストにコピーします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/sm/NFSSR.py"
+msgstr "/opt/xensource/sm/NFSSR.py"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/setupxenserver.sh"
+msgstr "/opt/xensource/bin/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/make_migratable.sh"
+msgstr "/opt/xensource/bin/make_migratable.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "/opt/xensource/bin/cloud-clean-vlan.sh"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/setupxenserver.sh"
+msgstr "# /opt/xensource/bin/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: If you see the following error message, you can safely "
+"ignore it."
+msgstr "トラブルシューティング: 以下のエラーメッセージを確認した場合、安全にそれを無効化することができます。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory"
+msgstr "mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Plug in the storage repositories (physical block devices) to the XenServer "
+"host:"
+msgstr "ストレージリポジトリ(物理ブロックデバイス)を XenServer ホストに接続します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print"
+" $NF}'`; do xe pbd-plug uuid=$pbd ; done"
+msgstr "# for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; done"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note: If you add a host to this XenServer pool, you need to migrate all VMs "
+"on this host to other hosts, and eject this host from XenServer pool."
+msgstr "注意: XenServer プールにホストを追加した際は全ての仮想マシンを別ホストに移行させ、このホストを XenServer プールから取り外す必要があります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Repeat these steps to upgrade every host in the cluster to the same version "
+"of XenServer."
+msgstr "これらの手順をクラスター内の全てのホストを同じバージョンの XenServer にアップグレードするため実施します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run the following command on one host in the XenServer cluster to clean up "
+"the host tags:"
+msgstr "XenServer クラスター内の 1 台のホストで次のコマンドを実行し、ホストタグをクリーンアップします。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# for host in $(xe host-list | grep ^uuid | awk '{print $NF}') ; do xe host-"
+"param-clear uuid=$host param-name=tags; done;"
+msgstr "# for host in $(xe host-list | grep ^uuid | awk '{print $NF}') ; do xe host-param-clear uuid=$host param-name=tags; done;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "コマンドをコピーして実行するときは、単一の行として貼り付けたことを確認してください。 一部のドキュメントビューアーでは、コピーしたテキストに不要な改行が含まれる可能性があります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Reconnect the XenServer cluster to &PRODUCT;."
+msgstr "XenServer クラスターを &PRODUCT; に再接続します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Manage."
+msgstr "XenServer クラスターに移動し、[Actions]、[Manage]の順 にクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the status to see that all the hosts come up."
+msgstr "状態を監視し、すべてのホストが表示されるのを確認しま す。"
+
+#. Tag: para
+#, no-c-format
+msgid "After all hosts are up, run the following on one host in the cluster:"
+msgstr "すべてのホストが表示されたら、クラスター内の 1 台のホストで次のコマンドを実行します。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "# /opt/xensource/bin/cloud-clean-vlan.sh"

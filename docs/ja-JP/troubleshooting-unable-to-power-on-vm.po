@@ -1,0 +1,92 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+#   <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:05\n"
+"PO-Revision-Date: 2013-01-04 10:09+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Unable to power on virtual machine on VMware"
+msgstr "VMware 上で仮想マシンの電源が入らない"
+
+#. Tag: title
+#, no-c-format
+msgid "Symptom"
+msgstr "症状"
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual machine does not power on. You might see errors like:"
+msgstr "仮想マシンの電源が入らず、次のようなエラーが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Unable to open Swap File"
+msgstr "Unable to open Swap File"
+
+#. Tag: para
+#, no-c-format
+msgid "Unable to access a file since it is locked"
+msgstr "Unable to access a file since it is locked"
+
+#. Tag: para
+#, no-c-format
+msgid "Unable to access Virtual machine configuration"
+msgstr "Unable to access Virtual machine configuration"
+
+#. Tag: title
+#, no-c-format
+msgid "Cause"
+msgstr "原因"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A known issue on VMware machines. ESX hosts lock certain critical virtual "
+"machine files and file systems to prevent concurrent changes. Sometimes the "
+"files are not unlocked when the virtual machine is powered off. When a "
+"virtual machine attempts to power on, it can not access these critical "
+"files, and the virtual machine is unable to power on."
+msgstr "VMware のマシンでの既知の問題です。ESX ホストは重大な仮想マシンファイルと同時に変更のあったファイルシステムをロックしますがこれらのファイルは仮想マシンがパワーオフされた際正常にアンロックされないことがあります。その後、仮想マシンの電源を入れようとすると重大なファイルにアクセスすることができず、仮想マシンの電源を入れることができません。"
+
+#. Tag: title
+#, no-c-format
+msgid "Solution"
+msgstr "解決方法"
+
+#. Tag: para
+#, no-c-format
+msgid "See the following:"
+msgstr "次を参照してください。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=10051/\">VMware"
+" Knowledge Base Article</ulink>"
+msgstr "<ulink url=\"http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=10051/\">VMware Knowledge Base Article</ulink>"

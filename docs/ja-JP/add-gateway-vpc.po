@@ -1,0 +1,169 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Go Chiba <go.chiba@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-03-19T13:38:02\n"
+"PO-Revision-Date: 2013-02-28 16:29+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja_JP\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Private Gateway to a VPC"
+msgstr "VPC へのプライベートゲートウェイの追加"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A private gateway can be added by the root admin only. The VPC private "
+"network has 1:1 relationship with the NIC of the physical network. No "
+"gateways with duplicated VLAN and IP are allowed in the same data center."
+msgstr "プライベートゲートウェイはルート管理者のみ追加することができます。VPCのプライベートネットワークは物理ネットワークの NIC と1対1の関係があり、同一データセンター上でゲートウェイを持たない重複しない VLAN や IP が許容されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr "管理者もしくはエンドユーザーとして &PRODUCT; UI にログインします。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr "左側のナビゲーションから [Network] を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr "選択ビューから VPC を選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the VPCs that you have created for the account is listed in the page."
+msgstr "アカウントに対して作成された全ての VPC がページにリスト表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Configure button of the VPC to which you want to configure load "
+"balancing rules."
+msgstr "負荷分散ルールを構成したい VPC の構成ボタンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VPC page is displayed where all the tiers you created are listed in a "
+"diagram."
+msgstr "VPC ページではダイアグラム上にリストされる作成された全ての層が表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr "設定アイコンをクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr "以下のオプションが表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr "IP アドレス"
+
+#. Tag: para
+#, no-c-format
+msgid "Private Gateways"
+msgstr "プライベートゲートウェイ"
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr "サイト間 VPN"
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr "ネットワーク ACL"
+
+#. Tag: para
+#, no-c-format
+msgid "Select Private Gateways."
+msgstr "プライベートゲートウェイを選択します。"
+
+#. Tag: para
+#, no-c-format
+msgid "The Gateways page is displayed."
+msgstr "ゲートウェイのページに表示されます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add new gateway:"
+msgstr "[Add new gateway]をクリックします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr "以下の要素を指定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Physical Network</emphasis>: The physical network "
+"you have created in the zone."
+msgstr "<emphasis role=\"bold\">物理ネットワーク</emphasis>: \nゾーンに作成された物理ネットワークです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">IP Address</emphasis>: The IP address associated "
+"with the VPC gateway."
+msgstr "<emphasis role=\"bold\">IP アドレス</emphasis>: \nVPC ゲートウェイに割り当てられた IP アドレスです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Gateway</emphasis>: The gateway through which the "
+"traffic is routed to and from the VPC."
+msgstr "<emphasis role=\"bold\">ゲートウェイ</emphasis>: \nトラフィックが VPC に対し(もしくは VPC から)ルーティングされるゲートウェイです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Netmask</emphasis>: The netmask associated with the "
+"VPC gateway."
+msgstr "<emphasis role=\"bold\">ネットマスク</emphasis>: \nVPC ゲートウェイに割り当てられた IP に対してのネットマスクです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLAN</emphasis>: The VLAN associated with the VPC "
+"gateway."
+msgstr "<emphasis role=\"bold\">VLAN</emphasis>: \nVPC ゲートウェイに割り当てられた VLAN です。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new gateway appears in the list. You can repeat these steps to add more "
+"gateway for this VPC."
+msgstr "新しいゲートウェイがリスト上に表示されます。VPC に対しゲートウェイを追加するためこれらの手順を繰り返すこともできます。"
