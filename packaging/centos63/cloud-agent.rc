@@ -58,11 +58,12 @@ export JAVA_HOME
 
 SCP=""
 DCP=""
-ACP=`ls /usr/share/cloudstack-agent/cloud-plugin-hypervisor-kvm-*.jar`":"`ls /usr/share/cloudstack-agent/lib/* | tr '\n' ':'`
-JCP="/usr/share/java/commons-daemon.jar"
+ACP=`ls /usr/share/cloudstack-agent/cloud-plugin-hypervisor-kvm-*.jar`":"`ls /usr/share/cloudstack-agent/lib/*.jar | tr '\n' ':' | sed s'/.$//'`
+JCP="/usr/share/java/commons-daemon.jar:/usr/share/java/jna.jar"
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
+# We also need JNA in the classpath (from the distribution) for the Libvirt Java bindings
 export CLASSPATH="$SCP:$DCP:$ACP:$JCP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"
 
 start() {
