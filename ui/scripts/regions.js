@@ -105,9 +105,15 @@
           edit: {
             label: 'label.edit.region',
             action: function(args) {
+							var data = {
+							  id: args.context.regions[0].id,
+								name: args.data.name,
+								endpoint: args.data.endpoint
+							};							
+						
               $.ajax({
                 url: createURL('updateRegion'),
-                data: args.data,
+                data: data,
                 success: function(json) {
                   args.response.success();
                   $(window).trigger('cloudStack.refreshRegions');
@@ -154,11 +160,11 @@
             title: 'label.details',
             fields: [
               {
-                name: { label: 'label.name', isEditable: true },
+                id: { label: 'label.id' }
               },
               {
-                endpoint: { label: 'label.endpoint', isEditable: true },
-                id: { label: 'label.id', isEditable: true }
+							  name: { label: 'label.name', isEditable: true },
+                endpoint: { label: 'label.endpoint', isEditable: true }                
               }
             ],
             dataProvider: function(args) {								  
