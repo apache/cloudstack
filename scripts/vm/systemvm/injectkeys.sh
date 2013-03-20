@@ -63,7 +63,7 @@ inject_into_iso() {
 copy_priv_key() {
   local newprivkey=$1
   diff -q $newprivkey $(dirname $0)/id_rsa.cloud && return 0
-  sudo cp -fb $newprivkey $(dirname $0)/id_rsa.cloud
+  sudo cp -f $newprivkey $(dirname $0)/id_rsa.cloud
   sudo chmod 644 $(dirname $0)/id_rsa.cloud
   return $?
 }
