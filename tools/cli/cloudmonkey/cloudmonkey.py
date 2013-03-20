@@ -490,7 +490,7 @@ def main():
         sys.exit(0)
 
     shell = CloudMonkeyShell(sys.argv[0], options.cfile)
-    if len(args) > 1:
+    if len(args) > 0:
         shell.onecmd(' '.join(args))
     else:
         shell.cmdloop()
