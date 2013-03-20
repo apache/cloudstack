@@ -20,7 +20,7 @@
 # Cloud.com Bridge setup script.
 #
 
-settingsFile="/usr/share/cloud/bridge/conf/ec2-service.properties"
+settingsFile="/etc/cloudstack/management/ec2-service.properties"
 
 function readCurrentSettings () {
 	readVar managementServer
