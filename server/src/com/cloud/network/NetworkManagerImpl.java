@@ -1995,28 +1995,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (cidr != null && gateway != null) {
             userNetwork.setCidr(cidr);
             userNetwork.setGateway(gateway);
-            if (vlanId != null) {
-                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
-                userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                } else {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                }
-            }
         }
         
         if (ip6Cidr != null && ip6Gateway != null) {
             userNetwork.setIp6Cidr(ip6Cidr);
             userNetwork.setIp6Gateway(ip6Gateway);
-            if (vlanId != null) {
-                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+        }
+        
+        if (vlanId != null) {
+            userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+            userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+            if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                 userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                } else {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                }
+            } else {
+                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
             }
         }
         
