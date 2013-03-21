@@ -467,6 +467,13 @@ div.list-view div.toolbar div.section-switcher div.section-select label {
   opacity: 0.7;
 }
 
+.loading-overlay span {
+  display: block;
+  text-align: center;
+  margin: 155px 0 0 5px;
+  color: #4B4B4B;
+}
+
 .detail-view .ui-tabs-panel .loading-overlay {
   background-position: 50% 250px;
 }
