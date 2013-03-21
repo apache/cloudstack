@@ -460,6 +460,12 @@
     };
 		
     document.title = 'CloudStack';
+
+    if ($.cookie('loginUrl') != null || $.urlParam('loginUrl') != 0) {
+      // SSO
+      loginArgs.hideLoginScreen = true;
+    }
+    
     cloudStack.uiCustom.login(loginArgs);
 
     // Localization
