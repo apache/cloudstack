@@ -33,7 +33,7 @@ class TestSetupSuccess(cloudstackTestCase):
         
         zones = listZones.listZonesCmd()
         cls.zones_list = cls.apiClient.listZones(zones)
-        cls.retry = 50
+        cls.retry = 2
         
     def test_systemVmReady(self):
         """
