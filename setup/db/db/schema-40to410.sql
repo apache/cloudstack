@@ -261,7 +261,7 @@ CREATE TABLE  `cloud`.`region` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client');
+INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
 
