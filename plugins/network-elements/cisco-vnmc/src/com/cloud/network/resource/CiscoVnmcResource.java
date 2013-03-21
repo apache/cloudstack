@@ -229,7 +229,7 @@ public class CiscoVnmcResource implements ServerResource {
     /*
      * Login
      */
-    public boolean refreshVnmcConnection() {
+    private boolean refreshVnmcConnection() {
         boolean ret = false;
         try {
             ret = _connection.login();
@@ -360,7 +360,7 @@ public class CiscoVnmcResource implements ServerResource {
                             throw new Exception("Failed to delete ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
-                    	if (rule.getTrafficType() == TrafficType.Ingress) {
+                        if (rule.getTrafficType() == TrafficType.Ingress) {
                             String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                             if (!_connection.createTenantVDCIngressAclRule(tenant,
                                     Long.toString(rule.getId()), policyIdentifier,
@@ -368,9 +368,9 @@ public class CiscoVnmcResource implements ServerResource {
                                     Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp)) {
                                 throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                             }
-                    	} else {
+                        } else {
                             // TODO for egress
-                    	}
+                        }
                     }
                 }
             }
@@ -384,7 +384,7 @@ public class CiscoVnmcResource implements ServerResource {
             return new Answer(cmd, false, msg);
         }
 
-        return new Answer(cmd);
+        return new Answer(cmd, true, "Success");
     }
 
     /*
