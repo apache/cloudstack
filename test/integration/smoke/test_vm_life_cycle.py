@@ -20,7 +20,6 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
@@ -177,7 +176,7 @@ class TestDeployVM(cloudstackTestCase):
                         self.account
                         ]
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["simulator", "devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
@@ -231,6 +230,13 @@ class TestDeployVM(cloudstackTestCase):
                     self.virtual_machine.name,
                     "Check virtual machine name in listVirtualMachines"
                     )
+
+        self.assertEqual(
+            vm_response.state,
+            'Running',
+             msg="VM is not in Running state"
+        )
+
         return
 
     def tearDown(self):
@@ -997,5 +1003,3 @@ class TestVMLifeCycle(cloudstackTestCase):
                          "Check if ISO is detached from virtual machine"
                          )
         return
-
-

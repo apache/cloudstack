@@ -76,6 +76,11 @@ class TestSetupSuccess(cloudstackTestCase):
                 delay(60) #wait a minute for retry
             self.assertNotEqual(retry, 0, "builtIn templates not ready in zone %s"%z.name)
 
+    def test_deployVmWithBuiltIn(self):
+        """
+        Deploys a VM with the built-in CentOS template
+        """
+
     @classmethod
     def tearDownClass(cls):
         pass

@@ -17,18 +17,18 @@
   under the License.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-  xmlns:context="http://www.springframework.org/schema/context"
-  xmlns:tx="http://www.springframework.org/schema/tx" 
-  xmlns:aop="http://www.springframework.org/schema/aop"
-  xsi:schemaLocation="http://www.springframework.org/schema/beans
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx
                       http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
                       http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
                       http://www.springframework.org/schema/context
-                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
 
   <!--
@@ -36,9 +36,25 @@
   -->
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
   <bean id="encryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker" />
-
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" />
   <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
+
+  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" >
+    <property name="UserAuthenticators">
+      <list>
+        <ref bean="MD5UserAuthenticator"/>
+        <ref bean="LDAPUserAuthenticator"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id ="AccountManagerImpl" class="com.cloud.user.AccountManagerImpl">
+    <property name="UserAuthenticators">
+      <list>
+        <ref bean="MD5UserAuthenticator"/>
+        <ref bean="LDAPUserAuthenticator"/>
+      </list>
+    </property>
+  </bean>
 
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
@@ -52,30 +68,12 @@
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
-  <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
-  <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
-  <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
-  <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
-  <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" />
-  <bean id="UcsManager" class="com.cloud.ucs.manager.UcsManagerImpl" />
-  <bean id="UcsBladeDao" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
-  <bean id="UcsManagerDao" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
-
 
   <!--
       Network Elements
   -->
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
-  </bean>
-  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
-      <property name="name" value="BareMetalDhcp"/>
-  </bean>
-  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
-      <property name="name" value="BareMetalPxe"/>
-  </bean>
-  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
-      <property name="name" value="BareMetalUserdata"/>
   </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
@@ -86,17 +84,6 @@
   <bean id="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement">
     <property name="name" value="VpcVirtualRouter"/>
   </bean>
-  <!--
-  <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
-    <property name="name" value="NiciraNvp"/>
-  </bean>
-  -->
-  
-<!--
-  <bean id="BigSwitchVnsElementService" class="com.cloud.network.element.BigSwitchVnsElement">
-    <property name="name" value="BigSwitchVnsElementService"/>
-  </bean>
--->
 
   <!--
      Adapters
@@ -104,13 +91,9 @@
   <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
     <property name="name" value="FirstFitRouting"/>
   </bean>
-  
+
   <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
     <property name="name" value="HypervisorAdapter"/>
-  </bean>
-
-   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
-    <property name="name" value="BareMetalAdapter"/>
   </bean>
 
   <!--
@@ -120,11 +103,6 @@
   <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator">
     <property name="name" value="LocalStorage"/>
   </bean>
-  <!--
-  <bean id="FirstFitStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.FirstFitStoragePoolAllocator">
-    <property name="name" value="Storage"/>
-  </bean>
-  -->
 
   <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
     <property name="name" value="User First"/>
@@ -142,10 +120,6 @@
 
   <bean id="HypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
     <property name="name" value="HypervisorAdapter"/>
-  </bean>
-
-  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" >
-    <property name="name" value="BareMetalTemplateAdapter"/>
   </bean>
 
   <!--
@@ -195,6 +169,10 @@
     <property name="name" value="XCP Agent"/>
   </bean>
 
+  <bean id="SimulatorSecondaryStorageDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
+    <property name="name" value="SecondaryStorage"/>
+  </bean>
+
   <bean id="SecondaryStorageDiscoverer" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer">
     <property name="name" value="SecondaryStorage"/>
   </bean>
@@ -203,8 +181,8 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
-  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
-    <property name="name" value="Bare Metal Agent"/>
+  <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
+    <property name="name" value="Simulator Agent"/>
   </bean>
 
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
@@ -222,17 +200,9 @@
   <bean id="UserDispersingPlanner" class="com.cloud.deploy.UserDispersingPlanner">
     <property name="name" value="UserDispersing"/>
   </bean>
-  
+
   <bean id="UserConcentratedPodPlanner" class="com.cloud.deploy.UserConcentratedPodPlanner">
     <property name="name" value="UserConcentratedPod"/>
-  </bean>
-
-  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
-    <property name="name" value="BareMetal Fit"/>
-  </bean>
-
-  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
-    <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
 
   <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
@@ -270,15 +240,6 @@
   <bean id="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru">
     <property name="name" value="PrivateNetworkGuru"/>
   </bean>
-  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
-    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
-  </bean>
-  
-<!--
-  <bean id="BigSwitchVnsGuestNetworkGuru" class=".BigSwitchVnsGuestNetworkGuru">
-    <property name="name" value="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru"/>
-  </bean>
--->
 
   <!--
    Hypervisor Gurus
@@ -286,7 +247,7 @@
   <bean id="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru">
     <property name="name" value="XenServerGuru"/>
   </bean>
-  
+
   <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
     <property name="name" value="KVMGuru"/>
   </bean>
@@ -299,8 +260,11 @@
     <property name="name" value="OvmGuru"/>
   </bean>
 
-  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
-    <property name="name" value="BaremetalGuru"/>
+  <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
+    <property name="name" value="SimulatorGuru"/>
+  </bean>
+
+  <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl">
   </bean>
 
 </beans>

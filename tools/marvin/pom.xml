@@ -48,8 +48,8 @@
         <version>1.2.1</version>
         <executions>
           <execution>
-            <id>compile</id>
-            <phase>compile</phase>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -80,7 +80,6 @@
             </configuration>
           </execution>
         </executions>
-
       </plugin>
     </plugins>
   </build>
@@ -88,7 +87,9 @@
     <profile>
       <id>marvin</id>
       <activation>
-        <property><name>marvin.config</name></property>
+        <property>
+          <name>marvin.config</name>
+        </property>
       </activation>
       <build>
         <plugins>
@@ -96,24 +97,32 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.2.1</version>
-            <configuration>
-              <workingDirectory>${basedir}/marvin</workingDirectory>
-              <executable>python</executable>
-              <arguments>
-                <argument>deployAndRun.py</argument>
-                <argument>-c</argument>
-                <argument>${user.dir}/${marvin.config}</argument>
-                <argument>-t</argument>
-                <argument>/tmp/t.log</argument>
-                <argument>-r</argument>
-                <argument>/tmp/r.log</argument>
-                <argument>-f</argument>
-                <argument>${basedir}/marvin/testSetupSuccess.py</argument>
-              </arguments>
-            </configuration>
             <executions>
               <execution>
-                <phase>test</phase>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>deployAndRun.py</argument>
+                    <argument>-c</argument>
+                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>-t</argument>
+                    <argument>/tmp/t.log</argument>
+                    <argument>-r</argument>
+                    <argument>/tmp/r.log</argument>
+                    <argument>-f</argument>
+                    <argument>${basedir}/marvin/testSetupSuccess.py</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>integration-test</id>
+                <phase>integration-test</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
