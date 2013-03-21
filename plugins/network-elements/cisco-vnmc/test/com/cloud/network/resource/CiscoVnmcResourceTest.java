@@ -147,9 +147,11 @@ public class CiscoVnmcResourceTest {
     public void testFirewall() throws ConfigurationException, Exception {
         long vlanId = 123;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
+        List<String> cidrList = new ArrayList<String>();
+        cidrList.add("2.3.2.3/32");
         FirewallRuleTO active = new FirewallRuleTO(1,
                 null, "1.2.3.4", "tcp", 22, 22, false, false,
-                FirewallRule.Purpose.Firewall, null, null, null);
+                FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
         FirewallRuleTO revoked = new FirewallRuleTO(1,
                 null, "1.2.3.4", "tcp", 22, 22, true, false,
@@ -167,6 +169,10 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCIngressAclRule(
+                anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCEgressAclRule(
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);

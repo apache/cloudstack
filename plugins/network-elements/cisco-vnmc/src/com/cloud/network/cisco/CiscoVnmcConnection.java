@@ -143,6 +143,12 @@ public interface CiscoVnmcConnection {
             String destStartPort, String destEndPort, String destIp)
             throws ExecutionException;
 
+    public boolean createTenantVDCEgressAclRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceStartPort, String sourceEndPort, String sourceIp,
+            String destStartIp, String destEndIp)
+            throws ExecutionException;
+
     public boolean deleteTenantVDCAclRule(String tenantName,
             String identifier, String policyIdentifier) throws ExecutionException;
 

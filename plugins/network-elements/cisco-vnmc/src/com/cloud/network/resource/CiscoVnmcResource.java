@@ -336,7 +336,9 @@ public class CiscoVnmcResource implements ServerResource {
             if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
                 throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
             }
-            // TODO for egress
+            if (!_connection.createTenantVDCAclPolicySet(tenant, false)) {
+                throw new Exception("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+            }
 
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
@@ -344,7 +346,6 @@ public class CiscoVnmcResource implements ServerResource {
                 /*if (!_connection.deleteTenantVDCAclPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
                 }*/
-                // TODO for egress
 
                 if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier, true)) {
                     throw new Exception("Failed to create ACL ingress policy in VNMC for guest network with vlan " + vlanId);
@@ -352,16 +353,21 @@ public class CiscoVnmcResource implements ServerResource {
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
                     throw new Exception("Failed to associate ACL ingress policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
                 }
-                // TODO for egress
+                if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier, false)) {
+                    throw new Exception("Failed to create ACL egress policy in VNMC for guest network with vlan " + vlanId);
+                }
+                if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, false)) {
+                    throw new Exception("Failed to associate ACL egress policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                }
 
                 for (FirewallRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
                         if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), publicIp)) {
-                            throw new Exception("Failed to delete ACL ingress rule in VNMC for guest network with vlan " + vlanId);
+                            throw new Exception("Failed to delete ACL rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
+                        String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                         if (rule.getTrafficType() == TrafficType.Ingress) {
-                            String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                             if (!_connection.createTenantVDCIngressAclRule(tenant,
                                     Long.toString(rule.getId()), policyIdentifier,
                                     rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
@@ -369,7 +375,13 @@ public class CiscoVnmcResource implements ServerResource {
                                 throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                             }
                         } else {
-                            // TODO for egress
+                            if (!_connection.createTenantVDCEgressAclRule(tenant,
+                                    Long.toString(rule.getId()), policyIdentifier,
+                                    rule.getProtocol().toUpperCase(),
+                                    Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp,
+                                    externalIpRange[0], externalIpRange[1])) {
+                                throw new Exception("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
+                            }
                         }
                     }
                 }
