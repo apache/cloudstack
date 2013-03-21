@@ -33,11 +33,11 @@ class cloudManagementConfig(serviceCfgBase):
                raise CloudInternalException("Cannot get hostname, 'hostname --fqdn failed'")
 
         if self.syscfg.env.svrMode == "mycloud":
-            cfo = configFileOps("/usr/share/cloud/management/conf/environment.properties", self)
+            cfo = configFileOps("/usr/share/cloudstack-management/conf/environment.properties", self)
             cfo.addEntry("cloud-stack-components-specification", "components-cloudzones.xml")
             cfo.save()
 
-            cfo = configFileOps("/usr/share/cloud/management/conf/db.properties", self)
+            cfo = configFileOps("/usr/share/cloudstack-management/conf/db.properties", self)
             dbHost = cfo.getEntry("db.cloud.host")
             dbPort = cfo.getEntry("db.cloud.port")
             dbUser = cfo.getEntry("db.cloud.username")
