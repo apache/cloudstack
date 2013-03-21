@@ -23,6 +23,8 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 
+import com.cloud.utils.component.ComponentMethodProxyCache;
+
 public class TransactionContextBuilder implements MethodInterceptor {
 	public TransactionContextBuilder() {
 	}
@@ -69,14 +71,9 @@ public class TransactionContextBuilder implements MethodInterceptor {
         Class<?> clazz = method.getDeclaringClass();
         if(clazz.isInterface()) {
         	clazz = target.getClass();
-        	for(Method m : clazz.getMethods()) {
-        		// it is supposed that we need to check against type arguments,
-        		// this can be simplified by just checking method name
-        		if(m.getName().equals(method.getName())) {
-        			if(m.getAnnotation(DB.class) != null)
-        				return true;
-        		}
-        	}
+        	Method targetMethod = ComponentMethodProxyCache.getTargetMethod(method, target);
+			if(targetMethod != null && targetMethod.getAnnotation(DB.class) != null)
+				return true;
         }
         
         do {
