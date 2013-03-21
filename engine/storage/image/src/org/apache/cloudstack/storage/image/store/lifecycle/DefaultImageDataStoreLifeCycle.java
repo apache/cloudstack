@@ -86,27 +86,22 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
 
     @Override
-    public boolean maintain(long storeId) {
+    public boolean maintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
 
 
     @Override
-    public boolean cancelMaintain(long storeId) {
+    public boolean cancelMaintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
 
 
     @Override
-    public boolean deleteDataStore(long storeId) {
+    public boolean deleteDataStore(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
-
-
-  
-
-
 }

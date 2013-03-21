@@ -28,7 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.provider.ImageDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
@@ -57,21 +57,21 @@ public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
     @Override
     public ImageDataStore getImageDataStore(long dataStoreId) {
         ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
-        long providerId = dataStore.getProvider();
-        ImageDataStoreProvider provider = (ImageDataStoreProvider)providerManager.getDataStoreProviderById(providerId);
+        String providerName = dataStore.getProviderName();
+        ImageDataStoreProvider provider = (ImageDataStoreProvider)providerManager.getDataStoreProvider(providerName);
         ImageDataStore imgStore = DefaultImageDataStoreImpl.getDataStore(dataStore, 
-                driverMaps.get(provider.getUuid()), provider
+                driverMaps.get(provider.getName()), provider
                 );
         // TODO Auto-generated method stub
         return imgStore;
     }
 
     @Override
-    public boolean registerDriver(String uuid, ImageDataStoreDriver driver) {
-        if (driverMaps.containsKey(uuid)) {
+    public boolean registerDriver(String providerName, ImageDataStoreDriver driver) {
+        if (driverMaps.containsKey(providerName)) {
             return false;
         }
-        driverMaps.put(uuid, driver);
+        driverMaps.put(providerName, driver);
         return true;
     }
 

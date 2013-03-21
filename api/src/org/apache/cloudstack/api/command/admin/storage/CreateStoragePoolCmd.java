@@ -73,8 +73,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
     private Long zoneId;
     
     @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
-            required=false, description="the storage provider uuid")
-    private String storageProviderUuid;
+            required=false, description="the storage provider name")
+    private String storageProviderName;
     
     @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
             required=false, description="the scope of the storage: cluster or zone")
@@ -112,8 +112,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
         return zoneId;
     }
     
-    public String getStorageProviderUuid() {
-        return this.storageProviderUuid;
+    public String getStorageProviderName() {
+        return this.storageProviderName;
     }
     
     public String getScope() {

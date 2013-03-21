@@ -80,8 +80,8 @@ public class StoragePoolVO implements StoragePool{
     @Enumerated(value = EnumType.STRING)
     private StoragePoolStatus status;
 
-    @Column(name = "storage_provider_id", updatable = true, nullable = false)
-    private Long storageProviderId;
+    @Column(name = "storage_provider_name", updatable = true, nullable = false)
+    private String storageProviderName;
 
     @Column(name = "host_address")
     private String hostAddress;
@@ -180,12 +180,12 @@ public class StoragePoolVO implements StoragePool{
         return availableBytes;
     }
 
-    public Long getStorageProviderId() {
-        return storageProviderId;
+    public String getStorageProviderName() {
+        return storageProviderName;
     }
 
-    public void setStorageProviderId(Long provider) {
-        storageProviderId = provider;
+    public void setStorageProviderName(String providerName) {
+        storageProviderName = providerName;
     }
 
     public long getCapacityBytes() {

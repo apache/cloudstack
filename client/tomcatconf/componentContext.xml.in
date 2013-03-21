@@ -329,5 +329,8 @@
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
   </bean>
+
+  <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl">
+  </bean>
   
 </beans>

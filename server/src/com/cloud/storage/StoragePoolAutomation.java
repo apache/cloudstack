@@ -16,22 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package com.cloud.storage;
 
-import java.util.Map;
-import java.util.Set;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
-
-public interface DataStoreProvider {
-    public static enum DataStoreProviderType {
-        PRIMARY,
-        IMAGE
-    }
-    public DataStoreLifeCycle getDataStoreLifeCycle();
-    public DataStoreDriver getDataStoreDriver();
-    public HypervisorHostListener getHostListener();
-    public String getName();
-    public boolean configure(Map<String, Object> params);
-    public Set<DataStoreProviderType> getTypes();
-    
+public interface StoragePoolAutomation {
+    public boolean maintain(DataStore store);
+    public boolean cancelMaintain(DataStore store);
 }

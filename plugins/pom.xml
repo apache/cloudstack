@@ -57,6 +57,7 @@
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
     <module>storage/volume/solidfire</module>
+    <module>storage/volume/default</module>
     <module>alert-handlers/snmp-alerts</module>
   </modules>
 

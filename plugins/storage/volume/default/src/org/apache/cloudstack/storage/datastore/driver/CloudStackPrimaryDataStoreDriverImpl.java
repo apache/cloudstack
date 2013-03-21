@@ -71,9 +71,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class AncientPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
+public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
 	private static final Logger s_logger = Logger
-			.getLogger(AncientPrimaryDataStoreDriverImpl.class);
+			.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
 	@Inject DiskOfferingDao diskOfferingDao;
 	@Inject VMTemplateDao templateDao;
 	@Inject VolumeDao volumeDao;

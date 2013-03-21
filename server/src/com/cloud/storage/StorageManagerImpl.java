@@ -712,7 +712,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             DataStoreProvider provider = this.dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
-            DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
                 String name = (host.getName() + " Local Storage");
@@ -724,7 +724,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 params.put("localStorage", true);
                 params.put("details", pInfo.getDetails());
                 params.put("uuid", pInfo.getUuid());
-                params.put("providerId", provider.getId());
+                params.put("providerName", provider.getName());
                 
                 store = lifeCycle.initialize(params);
             } else {
@@ -748,15 +748,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd)
             throws ResourceInUseException, IllegalArgumentException,
             UnknownHostException, ResourceUnavailableException {
-        String providerUuid = cmd.getStorageProviderUuid();
+        String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr
-                .getDataStoreProviderByUuid(providerUuid);
+                .getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
             storeProvider = dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
             if (storeProvider == null) {
             throw new InvalidParameterValueException(
-                    "can't find storage provider: " + providerUuid);
+                    "can't find storage provider: " + providerName);
             }
         }
 
@@ -821,9 +821,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("tags", cmd.getTags());
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
-        params.put("providerId", storeProvider.getId());
+        params.put("providerName", storeProvider.getName());
 
-        DataStoreLifeCycle lifeCycle = storeProvider.getLifeCycle();
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
             store = lifeCycle.initialize(params);
@@ -948,9 +948,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.trace("Released lock for storage pool " + id);
 
         DataStoreProvider storeProvider = dataStoreProviderMgr
-                .getDataStoreProviderById(sPool.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = storeProvider.getLifeCycle();
-        lifeCycle.deleteDataStore(id);
+                .getDataStoreProvider(sPool.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                sPool.getId(), DataStoreRole.Primary);
+        lifeCycle.deleteDataStore(store);
 
         return false;
     }
@@ -963,8 +965,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(pool.getStorageProviderId());
-        HypervisorHostListener listener = hostListeners.get(provider.getUuid());
+                .getDataStoreProvider(pool.getStorageProviderName());
+        HypervisorHostListener listener = hostListeners.get(provider.getName());
         listener.hostConnect(hostId, pool.getId());
     }
 
@@ -1415,17 +1417,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(primaryStorage.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
-        lifeCycle.maintain(primaryStorage.getId());
+                .getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                primaryStorage.getId(), DataStoreRole.Primary);
+        lifeCycle.maintain(store);
 
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
-    }
-
-    private void setPoolStateToError(StoragePoolVO primaryStorage) {
-        primaryStorage.setStatus(StoragePoolStatus.ErrorInMaintenance);
-        _storagePoolDao.update(primaryStorage.getId(), primaryStorage);
     }
 
     @Override
@@ -1457,29 +1456,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(primaryStorage.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
-        lifeCycle.cancelMaintain(primaryStorage.getId());
+                .getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                primaryStorage.getId(), DataStoreRole.Primary);
+        lifeCycle.cancelMaintain(store);
+        
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    private boolean sendToVmResidesOn(StoragePoolVO PrimaryDataStoreVO,
-            Command cmd) {
-        ClusterVO cluster = _clusterDao.findById(PrimaryDataStoreVO
-                .getClusterId());
-        if ((cluster.getHypervisorType() == HypervisorType.KVM || cluster
-                .getHypervisorType() == HypervisorType.VMware)
-                && ((cmd instanceof ManageSnapshotCommand) || (cmd instanceof BackupSnapshotCommand))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    
-   
-    
     protected class StorageGarbageCollector implements Runnable {
 
         public StorageGarbageCollector() {
@@ -1845,9 +1831,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
 
     @Override
-    public synchronized boolean registerHostListener(String providerUuid,
+    public synchronized boolean registerHostListener(String providerName,
             HypervisorHostListener listener) {
-        hostListeners.put(providerUuid, listener);
+        hostListeners.put(providerName, listener);
         return true;
     }
 

@@ -2242,6 +2242,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteAlertsCmd.class);
         cmdList.add(ArchiveEventsCmd.class);
         cmdList.add(DeleteEventsCmd.class);
+        cmdList.add(ListStorageProvidersCmd.class);
         return cmdList;
     }
 

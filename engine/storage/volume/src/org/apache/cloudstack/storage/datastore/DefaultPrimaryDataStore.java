@@ -332,12 +332,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public Long getStorageProviderId() {
-        return this.pdsv.getStorageProviderId();
+    public boolean isInMaintenance() {
+        return this.getStatus() == StoragePoolStatus.Maintenance ? true : false;
     }
 
     @Override
-    public boolean isInMaintenance() {
-        return this.getStatus() == StoragePoolStatus.Maintenance ? true : false;
+    public String getStorageProviderName() {
+        return this.pdsv.getStorageProviderName();
     }
 }

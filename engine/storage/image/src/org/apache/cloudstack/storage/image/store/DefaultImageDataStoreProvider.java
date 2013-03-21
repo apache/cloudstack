@@ -18,12 +18,16 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.storage.datastore.provider.ImageDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.driver.DefaultImageDataStoreDriverImpl;
@@ -41,7 +45,7 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
     long id;
     String uuid;
     @Override
-    public DataStoreLifeCycle getLifeCycle() {
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
         return lifeCycle;
     }
 
@@ -51,23 +55,28 @@ public class DefaultImageDataStoreProvider implements ImageDataStoreProvider {
     }
 
     @Override
-    public String getUuid() {
-        return this.uuid;
-    }
-
-    @Override
-    public long getId() {
-        return this.id;
-    }
-
-    @Override
     public boolean configure(Map<String, Object> params) {
         lifeCycle = ComponentContext.inject(DefaultImageDataStoreLifeCycle.class);
         driver = ComponentContext.inject(DefaultImageDataStoreDriverImpl.class);
-        uuid = (String)params.get("uuid");
-        id = (Long)params.get("id");
-        storeMgr.registerDriver(uuid, driver);
+
+        storeMgr.registerDriver(this.getName(), driver);
         return true;
     }
 
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        types.add(DataStoreProviderType.IMAGE);
+        return types;
+    }
+
+    @Override
+    public DataStoreDriver getDataStoreDriver() {
+        return this.driver;
+    }
+
+    @Override
+    public HypervisorHostListener getHostListener() {
+        return null;
+    }
 }

@@ -16,24 +16,29 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;
 
-@Component
+
 public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
     private final String providerName = "default primary data store provider";
     protected PrimaryDataStoreDriver driver;
+    protected HypervisorHostListener listener;
     @Inject
     PrimaryDataStoreProviderManager storeMgr;
 
@@ -46,7 +51,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     }
 
     @Override
-    public DataStoreLifeCycle getLifeCycle() {
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
         return this.lifecyle;
     }
 
@@ -54,22 +59,25 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     public boolean configure(Map<String, Object> params) {
         lifecyle = ComponentContext.inject(DefaultPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(DefaultPrimaryDataStoreDriverImpl.class);
-        HypervisorHostListener listener = ComponentContext.inject(DefaultHostListener.class);
-        uuid = (String)params.get("uuid");
-        id = (Long)params.get("id");
-        storeMgr.registerDriver(uuid, this.driver);
-        storeMgr.registerHostListener(uuid, listener);
+        listener = ComponentContext.inject(DefaultHostListener.class);
         return true;
     }
 
     @Override
-    public String getUuid() {
-        return this.uuid;
+    public PrimaryDataStoreDriver getDataStoreDriver() {
+        return this.driver;
     }
 
     @Override
-    public long getId() {
-        return this.id;
+    public HypervisorHostListener getHostListener() {
+        return this.listener;
+    }
+    
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        types.add(DataStoreProviderType.PRIMARY);
+        return types;
     }
 
 }

@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
