@@ -14,32 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.entity.cloud;
-
-import java.util.Date;
-
-
+package org.apache.cloudstack.entity.infrastructure;
 
 /**
- * Base class for cloud resources.
+ *
  */
-public abstract class CloudResource {
-    protected Date removed;
-    protected Date created;
-
-
-    public Date getRemoved() {
-        return removed;
-    }
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-    public Date getCreated() {
-        return created;
-    }
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
+public class HostResource extends InfrastructureResource {
 
 }

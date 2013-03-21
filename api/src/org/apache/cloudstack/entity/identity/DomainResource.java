@@ -16,84 +16,64 @@
 // under the License.
 package org.apache.cloudstack.entity.identity;
 
-import java.util.Map;
+import java.util.List;
 
-import org.apache.cloudstack.entity.CloudResource;
-
-import com.cloud.user.Account.State;
+import com.cloud.domain.Domain.State;
 
 /**
- * Account Identity
+ * Domain Resource
  */
-public class AccountResource extends CloudResource {
+public class DomainResource {
 
     // attributes
     private String name;
-    private short type;
+    private String path;
     private State state;
     private String networkDomain;
-    private Long defaultZoneId;
-    private Map<String, String> details;
 
-    // relation
-    private DomainResource domain;
 
+    // relationship
+    private DomainResource parent;
+    private List<DomainResource> children;
+
+
+    public DomainResource getParent() {
+        return parent;
+    }
+    public void setParent(DomainResource parent) {
+        this.parent = parent;
+    }
+    public List<DomainResource> getChildren() {
+        return children;
+    }
+    public void setChildren(List<DomainResource> children) {
+        this.children = children;
+    }
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
-
-    public short getType() {
-        return type;
+    public String getPath() {
+        return path;
     }
-
-    public void setType(short type) {
-        this.type = type;
+    public void setPath(String path) {
+        this.path = path;
     }
-
     public State getState() {
         return state;
     }
-
     public void setState(State state) {
         this.state = state;
     }
-
     public String getNetworkDomain() {
         return networkDomain;
     }
-
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
 
-    public Long getDefaultZoneId() {
-        return defaultZoneId;
-    }
-
-    public void setDefaultZoneId(Long defaultZoneId) {
-        this.defaultZoneId = defaultZoneId;
-    }
-
-
-    public Map<String, String> getDetails() {
-        return details;
-    }
-
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
-    }
-
-    public DomainResource getDomain() {
-        return domain;
-    }
-
-    public void setDomain(DomainResource domain) {
-        this.domain = domain;
-    }
 
 
 

@@ -16,52 +16,11 @@
 // under the License.
 package org.apache.cloudstack.entity.cloud;
 
-import java.util.List;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.apache.cloudstack.entity.CloudResource;
-import org.apache.cloudstack.entity.identity.AccountResource;
-
 
 /**
- * InstanceGroup entity resource
+ *
  */
-@XmlRootElement(name = "instancegroup")
-public class InstanceGroupResource extends CloudResource {
-
-    // attributes
-    private String name;
-
-    // relationships
-    private AccountResource account;
-    private List<UserVmResource> vms;
-
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public AccountResource getAccount() {
-        return account;
-    }
-
-    public void setAccount(AccountResource account) {
-        this.account = account;
-    }
-
-    public List<UserVmResource> getVms() {
-        return vms;
-    }
-
-    public void setVms(List<UserVmResource> vms) {
-        this.vms = vms;
-    }
-
-
+public class DiskOfferingResource extends CloudResource {
 
 }

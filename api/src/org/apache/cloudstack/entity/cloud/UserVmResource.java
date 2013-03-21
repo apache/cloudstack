@@ -16,52 +16,42 @@
 // under the License.
 package org.apache.cloudstack.entity.cloud;
 
-import java.util.List;
-import javax.xml.bind.annotation.XmlRootElement;
-
-import org.apache.cloudstack.entity.CloudResource;
-import org.apache.cloudstack.entity.identity.AccountResource;
-
+import java.util.Map;
 
 /**
- * InstanceGroup entity resource
+ * User VM resource.
  */
-@XmlRootElement(name = "instancegroup")
-public class InstanceGroupResource extends CloudResource {
+public class UserVmResource extends VirtualMachineResource {
 
-    // attributes
-    private String name;
+    private Map<String, String> userData;
+    private String displayName;
 
-    // relationships
-    private AccountResource account;
-    private List<UserVmResource> vms;
+    // relationship
+    private InstanceGroupResource vmGroup;
 
-
-
-    public String getName() {
-        return name;
+    public Map<String, String> getUserData() {
+        return userData;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUserData(Map<String, String> userData) {
+        this.userData = userData;
     }
 
-    public AccountResource getAccount() {
-        return account;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setAccount(AccountResource account) {
-        this.account = account;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
-    public List<UserVmResource> getVms() {
-        return vms;
+    public InstanceGroupResource getVmGroup() {
+        return vmGroup;
     }
 
-    public void setVms(List<UserVmResource> vms) {
-        this.vms = vms;
+    public void setVmGroup(InstanceGroupResource vmGroup) {
+        this.vmGroup = vmGroup;
     }
-
 
 
 }
