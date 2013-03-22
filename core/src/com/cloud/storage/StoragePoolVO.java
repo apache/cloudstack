@@ -29,7 +29,6 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
@@ -77,9 +76,42 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value=EnumType.STRING)
     private StoragePoolStatus status;
     
+    @Column(name = "scope")
+    private String scope;
+    
+    /**
+     * @return the scope
+     */
+    public String getScope() {
+        return scope;
+    }
+
+    /**
+     * @param scope the scope to set
+     */
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    @Column(name = "storage_provider_id", updatable = true, nullable = false)
+    private Long storageProviderId;
     // TODO, disable persisency of storageProvider and storageType, javelin new code not
     // sync with the schema!
     
+    /**
+     * @return the storageProviderId
+     */
+    public Long getStorageProviderId() {
+        return storageProviderId;
+    }
+
+    /**
+     * @param storageProviderId the storageProviderId to set
+     */
+    public void setStorageProviderId(Long storageProviderId) {
+        this.storageProviderId = storageProviderId;
+    }
+
     // @Column(name="storage_provider", updatable=true, nullable=false)
     @Transient private String storageProvider;
     
