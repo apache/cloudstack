@@ -20,13 +20,15 @@
 -->
 <section id="ip-forwarding-firewalling">
   <title>IP Forwarding and Firewalling</title>
-  <para>By default, all incoming traffic to the public IP address is rejected. All outgoing traffic
-    from the guests is translated via NAT to the public IP address and is allowed.</para>
+  <para>By default, all incoming traffic to the public IP address is rejected.
+    All outgoing traffic from the guests is also blocked by default.</para>
+  <para>To allow outgoing traffic, follow the procedure in <xref linkend="egress-firewall-rule"/>.</para>
   <para>To allow incoming traffic, users may set up firewall rules and/or port forwarding rules. For
     example, you can use a firewall rule to open a range of ports on the public IP address, such as
     33 through 44. Then use port forwarding rules to direct traffic from individual ports within
     that range to specific ports on user VMs. For example, one port forwarding rule could route
     incoming traffic on the public IP's port 33 to port 100 on one user VM's private IP.</para>
-   <xi:include href="egress-firewall-rule.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="egress-firewall-rule.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="firewall-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="port-forwarding.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
