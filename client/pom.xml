@@ -234,6 +234,11 @@
       <artifactId>cloud-plugin-snmp-alerts</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-host-anti-affinity</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>

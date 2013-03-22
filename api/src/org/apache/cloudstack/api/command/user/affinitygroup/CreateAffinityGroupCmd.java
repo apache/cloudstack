@@ -43,10 +43,10 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "an account for the affinity group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an account for the affinity group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, description = "domainId of the account owning the affinity group", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "domainId of the account owning the affinity group", entityType = DomainResponse.class)
     private Long domainId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the affinity group")
