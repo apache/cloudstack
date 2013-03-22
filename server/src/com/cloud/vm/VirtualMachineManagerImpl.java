@@ -228,13 +228,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected NetworkDao _networkDao;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
+    public List<DeploymentPlanner> getPlanners() {
+		return _planners;
+	}
+	public void setPlanners(List<DeploymentPlanner> _planners) {
+		this._planners = _planners;
+	}
 
-    @Inject
     protected List<HostAllocator> _hostAllocators;
+    public List<HostAllocator> getHostAllocators() {
+		return _hostAllocators;
+	}
+	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+		this._hostAllocators = _hostAllocators;
+	}
 
-    @Inject
+	@Inject
     protected ResourceManager _resourceMgr;
 
     @Inject

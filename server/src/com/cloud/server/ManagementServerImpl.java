@@ -106,6 +106,7 @@ import org.apache.cloudstack.api.command.user.zone.*;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -233,8 +234,10 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.Manager;
@@ -370,9 +373,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    @Inject
     private List<HostAllocator> _hostAllocators;
-    @Inject
+
+	@Inject
     private ConfigurationManager _configMgr;
     @Inject
     private ResourceTagDao _resourceTagDao;
@@ -391,13 +394,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     S3Manager _s3Mgr;
 
-/*
-    @Inject
-    ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
-
-    @Inject
-    EventUtils	_forceEventUtilsRef;
-*/
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
@@ -405,7 +401,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private Map<String, Boolean> _availableIdsMap;
 
-    @Inject List<UserAuthenticator> _userAuthenticators;
+    List<UserAuthenticator> _userAuthenticators;
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
@@ -413,6 +409,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
+    
+    public List<UserAuthenticator> getUserAuthenticators() {
+    	return _userAuthenticators;
+    }
+    
+    public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
+    	_userAuthenticators = authenticators;
+    }
+    
+    public List<HostAllocator> getHostAllocators() {
+		return _hostAllocators;
+	}
+
+	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+		this._hostAllocators = _hostAllocators;
+	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
@@ -437,7 +449,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 		return true;
 	}
 
-    @Override
+	@Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 

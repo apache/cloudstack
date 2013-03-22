@@ -222,7 +222,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private AutoScaleManager _autoscaleMgr;
 
-    @Inject
     private List<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -232,10 +231,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     UserVO _systemUser;
     AccountVO _systemAccount;
 
-    @Inject
     List<SecurityChecker> _securityCheckers;
-    int _cleanupInterval;
+    
+	int _cleanupInterval;
 
+    public List<UserAuthenticator> getUserAuthenticators() {
+    	return _userAuthenticators;
+    }
+    
+    public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
+    	_userAuthenticators = authenticators;
+    }
+    
+    public List<SecurityChecker> getSecurityCheckers() {
+		return _securityCheckers;
+	}
+
+	public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
+		this._securityCheckers = securityCheckers;
+	}
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
