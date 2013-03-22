@@ -456,6 +456,11 @@
             context: cloudStack.context
           });
         });
+
+        window._reloadUI = function() {
+          $('#container').html('');
+          $('#container').cloudStack(window.cloudStack);
+        };
       }
     };
 		
