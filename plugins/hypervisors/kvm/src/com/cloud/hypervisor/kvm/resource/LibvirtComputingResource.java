@@ -3559,7 +3559,7 @@ ServerResource {
                     localStoragePool.getUuid(), cmd.getPrivateIpAddress(),
                     _localStoragePath, _localStoragePath,
                     StoragePoolType.Filesystem, localStoragePool.getCapacity(),
-                    localStoragePool.getUsed());
+                    localStoragePool.getAvailable());
 
             sscmd = new StartupStorageCommand();
             sscmd.setPoolInfo(pi);
