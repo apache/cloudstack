@@ -16,6 +16,98 @@
 // under the License.
 package com.cloud.server;
 
+import java.lang.reflect.Field;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.naming.ConfigurationException;
+
+import com.cloud.storage.dao.*;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.event.ActionEventUtils;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
+import org.apache.cloudstack.api.command.admin.account.*;
+import org.apache.cloudstack.api.command.admin.autoscale.*;
+import org.apache.cloudstack.api.command.admin.cluster.*;
+import org.apache.cloudstack.api.command.admin.config.*;
+import org.apache.cloudstack.api.command.admin.domain.*;
+import org.apache.cloudstack.api.command.admin.host.*;
+import org.apache.cloudstack.api.command.admin.ldap.*;
+import org.apache.cloudstack.api.command.admin.network.*;
+import org.apache.cloudstack.api.command.admin.offering.*;
+import org.apache.cloudstack.api.command.admin.pod.*;
+import org.apache.cloudstack.api.command.admin.region.*;
+import org.apache.cloudstack.api.command.admin.resource.*;
+import org.apache.cloudstack.api.command.admin.router.*;
+import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.admin.swift.*;
+import org.apache.cloudstack.api.command.admin.systemvm.*;
+import org.apache.cloudstack.api.command.admin.template.*;
+import org.apache.cloudstack.api.command.admin.usage.*;
+import org.apache.cloudstack.api.command.admin.user.*;
+import org.apache.cloudstack.api.command.admin.vlan.*;
+import org.apache.cloudstack.api.command.admin.vm.*;
+import org.apache.cloudstack.api.command.admin.vpc.*;
+import org.apache.cloudstack.api.command.admin.zone.*;
+import org.apache.cloudstack.api.command.user.account.*;
+import org.apache.cloudstack.api.command.user.address.*;
+import org.apache.cloudstack.api.command.user.autoscale.*;
+import org.apache.cloudstack.api.command.user.config.*;
+import org.apache.cloudstack.api.command.user.event.*;
+import org.apache.cloudstack.api.command.user.firewall.*;
+import org.apache.cloudstack.api.command.user.guest.*;
+import org.apache.cloudstack.api.command.user.iso.*;
+import org.apache.cloudstack.api.command.user.job.*;
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
+import org.apache.cloudstack.api.command.user.nat.*;
+import org.apache.cloudstack.api.command.user.network.*;
+import org.apache.cloudstack.api.command.user.offering.*;
+import org.apache.cloudstack.api.command.user.project.*;
+import org.apache.cloudstack.api.command.user.region.*;
+import org.apache.cloudstack.api.command.user.resource.*;
+import org.apache.cloudstack.api.command.user.securitygroup.*;
+import org.apache.cloudstack.api.command.user.snapshot.*;
+import org.apache.cloudstack.api.command.user.ssh.*;
+import org.apache.cloudstack.api.command.user.tag.*;
+import org.apache.cloudstack.api.command.user.template.*;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vmgroup.*;
+import org.apache.cloudstack.api.command.user.volume.*;
+import org.apache.cloudstack.api.command.user.vpc.*;
+import org.apache.cloudstack.api.command.user.vpn.*;
+import org.apache.cloudstack.api.command.user.zone.*;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -97,7 +189,15 @@ import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.*;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -324,9 +424,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    @Inject
     private List<HostAllocator> _hostAllocators;
-    @Inject
+
+	@Inject
     private ConfigurationManager _configMgr;
     @Inject
     private ResourceTagDao _resourceTagDao;
@@ -373,6 +473,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
+    
+    public List<HostAllocator> getHostAllocators() {
+		return _hostAllocators;
+	}
+
+	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+		this._hostAllocators = _hostAllocators;
+	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
@@ -406,7 +514,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 		return true;
 	}
 
-    @Override
+	@Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 

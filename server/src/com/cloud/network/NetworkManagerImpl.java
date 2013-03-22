@@ -243,16 +243,41 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject 
     List<NetworkGuru> _networkGurus;
+    public List<NetworkGuru> getNetworkGurus() {
+		return _networkGurus;
+	}
+	public void setNetworkGurus(List<NetworkGuru> _networkGurus) {
+		this._networkGurus = _networkGurus;
+	}
 
-    @Inject  protected List<NetworkElement> _networkElements;
+	List<NetworkElement> _networkElements;
+    public List<NetworkElement> getNetworkElements() {
+		return _networkElements;
+	}
+	public void setNetworkElements(List<NetworkElement> _networkElements) {
+		this._networkElements = _networkElements;
+	}
 
-    @Inject NetworkDomainDao _networkDomainDao;
-    @Inject List<IpDeployer> _ipDeployers;
-    @Inject List<DhcpServiceProvider> _dhcpProviders;
- 
-    @Inject
+	@Inject NetworkDomainDao _networkDomainDao;
+
+	List<IpDeployer> _ipDeployers;
+    public List<IpDeployer> getIpDeployers() {
+		return _ipDeployers;
+	}
+	public void setIpDeployers(List<IpDeployer> _ipDeployers) {
+		this._ipDeployers = _ipDeployers;
+	}
+
+	List<DhcpServiceProvider> _dhcpProviders;
+    public List<DhcpServiceProvider> getDhcpProviders() {
+		return _dhcpProviders;
+	}
+	public void setDhcpProviders(List<DhcpServiceProvider> _dhcpProviders) {
+		this._dhcpProviders = _dhcpProviders;
+	}
+
+	@Inject
     VMInstanceDao _vmDao;
     @Inject
     FirewallManager _firewallMgr;

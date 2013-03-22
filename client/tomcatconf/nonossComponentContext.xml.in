@@ -33,80 +33,47 @@
 
 
   <!--
-      Compose a CloudStack deployment with selected components here
+     Non-OSS deployment component configuration
   -->
   <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
   
-  <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" >
-    <property name="UserAuthenticators">
-        <list>
-            <ref bean="MD5UserAuthenticator"/>
-            <ref bean="LDAPUserAuthenticator"/>
-        </list>
-    </property>
-  </bean>
- 
-  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
-    <property name="GslbServiceProvider">
-      <ref bean="Netscaler"/>
-    </property>
-  </bean>
-  <bean id ="AccountManagerImpl" class="com.cloud.user.AccountManagerImpl">
-    <property name="UserAuthenticators">
-        <list>
-            <ref bean="MD5UserAuthenticator"/>
-            <ref bean="LDAPUserAuthenticator"/>
-        </list>
-    </property>
-  </bean>
-   
-  <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
-  <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
-  <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
-  <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" />
-
-  <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
-  <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl" />
-  <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
-  <bean id="premiumSecondaryStorageManagerImpl" class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl" />
-  <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
-
-  <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
-
-  <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
-
-  <!-- bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" / -->
-  <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
-  <bean id="NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
-  <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
-  <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
-  <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
-  <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
-  <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" /> 
   <!--
-      Network Elements
+    DAO with customized configuration under non-OSS deployment
   -->
-  <bean id="Ovs" class="com.cloud.network.element.OvsElement">
-    <property name="name" value="Ovs"/>
+  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="premium" value="true" />
+      </map>
+    </property>  
   </bean>
-  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
-    <property name="name" value="BareMetalDhcp"/>
+
+  <!--
+    VMware support components
+  -->  
+  <bean id="VmwareFencer" class="com.cloud.ha.VmwareFencer">
+    <property name="name" value="VMwareFenceBuilder"/>
   </bean>
-  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
-    <property name="name" value="BareMetalPxe"/>
+  <bean id="vmwareServerDiscoverer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer">
+    <property name="name" value="VMware Discover"/>
   </bean>
-  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
-      <property name="name" value="BareMetalUserdata"/>
+  <bean id="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru">
+    <property name="name" value="VMwareGuru"/>
   </bean>
-  <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
-    <property name="name" value="SecurityGroupProvider"/>
+  <bean id="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator">
+    <property name="name" value="VMwareInvestigator"/>
   </bean>
-  <bean id="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement">
-    <property name="name" value="VirtualRouter"/>
-  </bean>
-  <bean id="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement">
-    <property name="name" value="VpcVirtualRouter"/>
+  <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
+  <bean id="vmwareContextFactory" class="com.cloud.hypervisor.vmware.resource.VmwareContextFactory" />
+
+  <!--
+    Nicira support components
+  -->
+  <bean id="niciraNvpDaoImpl" class="com.cloud.network.dao.NiciraNvpDaoImpl" />
+  <bean id="niciraNvpNicMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" />
+  <bean id="niciraNvpRouterMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" />
+  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
+    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
   </bean>
   <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
     <property name="name" value="NiciraNvp"/>
@@ -115,240 +82,224 @@
     <property name="name" value="BigSwitchVns"/>
   </bean>
 
+  <!--
+    Netapp support components
+  -->  
+  <bean id="lunDaoImpl" class="com.cloud.netapp.dao.LunDaoImpl" />
+  <bean id="poolDaoImpl" class="com.cloud.netapp.dao.PoolDaoImpl" />
+  <bean id="netappVolumeDaoImpl" class="com.cloud.netapp.dao.VolumeDaoImpl" />
+  <bean id="NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
+
+  <!--
+   JuniperSRX support components
+  -->
   <bean id="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement">
     <property name="name" value="JuniperSRX"/>
   </bean>
+  
+  <!--
+    NetScalar support components
+  -->
+  <bean id="netScalerPodDaoImpl" class="com.cloud.network.dao.NetScalerPodDaoImpl" />
   <bean id="Netscaler" class="com.cloud.network.element.NetscalerElement">
     <property name="name" value="Netscaler"/>
   </bean>
+  
+  <!--
+    F5BigIP support components
+  -->
   <bean id="F5BigIP" class="com.cloud.network.element.F5ExternalLoadBalancerElement">
     <property name="name" value="F5BigIP"/>
   </bean>
+  
+  <!--
+    Cisco Nexus support components
+  -->  
+  <bean id="ciscoNexusVSMDeviceDaoImpl" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" />
   <bean id="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement">
     <property name="name" value="CiscoNexus1000vVSM"/>
   </bean>
-             
-  <!--
-     Adapters
-  -->
-  <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
-    <property name="name" value="FirstFitRouting"/>
-  </bean>
-  
-  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
-    <property name="name" value="HypervisorAdapter"/>
-  </bean>
   
   <!--
-    Storage pool allocators
+    BigSwitch support components
+  -->  
+  <bean id="bigSwitchVnsDaoImpl" class="com.cloud.network.dao.BigSwitchVnsDaoImpl" />
+  <bean id="bigSwitchVnsElement" class="com.cloud.network.element.BigSwitchVnsElement">
+    <property name="name" value="BigSwitchVnsElement"/>
+  </bean>
+
+  <!-- 
+    Managers & pluggable adapters configuration under non-OSS deployment
   -->
-  <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator">
-    <property name="name" value="LocalStorage"/>
-  </bean>
-  <!--
-  <bean id="FirstFitStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.FirstFitStoragePoolAllocator">
-    <property name="name" value="Storage"/>
-  </bean>
-  -->
-  <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
-    <property name="name" value="User First"/>
-  </bean>
-
-  <bean id="ConsoleProxyAllocator" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator">
-    <property name="name" value="Balance"/>
-  </bean>
-
-  <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-
-  <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
-    <property name="name" value="Basic"/>
-  </bean>
-
-  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" >
-    <property name="name" value="BareMetalTemplateAdapter"/>
-  </bean>
-
-  <!--
-    Authenticators
-  -->
-  <bean id="MD5UserAuthenticator" class="com.cloud.server.auth.MD5UserAuthenticator">
-    <property name="name" value="MD5"/>
-  </bean>
-
-  <bean id="LDAPUserAuthenticator" class="com.cloud.server.auth.LDAPUserAuthenticator">
-    <property name="name" value="LDAP"/>
-  </bean>
-
-  <!--
-    Investigators
-  -->
-  <bean id="CheckOnAgentInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator">
-    <property name="name" value="SimpleInvestigator"/>
-  </bean>
-
-  <bean id="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator">
-    <property name="name" value="XenServerInvestigator"/>
+  <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
+    <property name="UserAuthenticators">
+      <list>
+          <ref bean="MD5UserAuthenticator"/>
+          <ref bean="LDAPUserAuthenticator"/>
+      </list>
+    </property>
+    <property name="SecurityCheckers">
+      <list>
+          <ref bean="domainChecker"/>
+      </list>
+    </property>
   </bean>
   
-  <bean id="UserVmDomRInvestigator" class="com.cloud.ha.UserVmDomRInvestigator">
-    <property name="name" value="PingInvestigator"/>
+  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
+    <property name="UserAuthenticators">
+      <list>
+          <ref bean="MD5UserAuthenticator"/>
+          <ref bean="LDAPUserAuthenticator"/>
+      </list>
+    </property>
+    <property name="HostAllocators">
+      <list>
+          <ref bean="FirstFitRouting"/>
+      </list>
+    </property>
   </bean>
 
-  <bean id="ManagementIPSystemVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator">
-    <property name="name" value="ManagementIPSysVMInvestigator"/>
+  <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
+    <property name="StoragePoolAllocators">
+      <list>
+          <ref bean="LocalStoragePoolAllocator"/>
+          <ref bean="FirstFitStoragePoolAllocator"/>
+      </list>
+    </property>
   </bean>
 
-  <bean id="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator">
-    <property name="name" value="VMwareInvestigator"/>
-  </bean>
-
-  <!--
-    Fencers
-  -->
-  <bean id="XenServerFencer" class="com.cloud.ha.XenServerFencer">
-    <property name="name" value="XenServerFenceBuilder"/>
-  </bean>
-  <bean id="KVMFencer" class="com.cloud.ha.KVMFencer">
-    <property name="name" value="KVMFenceBuilder"/>
-  </bean>
-  <bean id="OvmFencer" class="com.cloud.ovm.hypervisor.OvmFencer">
-    <property name="name" value="OvmFenceBuilder"/>
-  </bean>
-  <bean id="VmwareFencer" class="com.cloud.ha.VmwareFencer">
-    <property name="name" value="VMwareFenceBuilder"/>
-  </bean>
-
-  <!--
-    Discovers
-  -->
-  <bean id="XcpServerDiscoverer" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer">
-    <property name="name" value="XCP Agent"/>
-  </bean>
-
-  <bean id="SecondaryStorageDiscoverer" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer">
-    <property name="name" value="SecondaryStorage"/>
-  </bean>
-
-  <bean id="KvmServerDiscoverer" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer">
-    <property name="name" value="KVM Agent"/>
-  </bean>
-
-  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
-    <property name="name" value="Bare Metal Agent"/>
-  </bean>
-
-
-  <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
-    <property name="name" value="SCVMMServer"/>
-  </bean>
-
-  <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
-    <property name="name" value="Ovm Discover"/>
-  </bean>
-  
-  <bean id="vmwareServerDiscoverer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer">
-    <property name="name" value="VMware Discover"/>
-  </bean>
-
-  <!--
-    Deployment planners
-  -->
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
     <property name="name" value="First Fit"/>
-  </bean>
-
-  <bean id="UserDispersingPlanner" class="com.cloud.deploy.UserDispersingPlanner">
-    <property name="name" value="UserDispersing"/>
-  </bean>
-  
-  <bean id="UserConcentratedPodPlanner" class="com.cloud.deploy.UserConcentratedPodPlanner">
-    <property name="name" value="UserConcentratedPod"/>
-  </bean>
-
-  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
-    <property name="name" value="BareMetal Fit"/>
-  </bean>
-    
-  <!--
-    Network Gurus
-  -->
-  <bean id="StorageNetworkGuru" class="com.cloud.network.guru.StorageNetworkGuru">
-    <property name="name" value="StorageNetworkGuru"/>
-  </bean>
-  <bean id="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru">
-    <property name="name" value="ExternalGuestNetworkGuru"/>
-  </bean>
-  <bean id="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru">
-    <property name="name" value="PublicNetworkGuru"/>
-  </bean>
-  <bean id="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru">
-    <property name="name" value="PodBasedNetworkGuru"/>
-  </bean>
-  <bean id="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru">
-    <property name="name" value="ControlNetworkGuru"/>
-  </bean>
-  <bean id="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru">
-    <property name="name" value="DirectNetworkGuru"/>
-  </bean>
-  <bean id="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru">
-    <property name="name" value="DirectPodBasedNetworkGuru"/>
-  </bean>
-  <bean id="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru">
-    <property name="name" value="OvsGuestNetworkGuru"/>
-  </bean>
-  <bean id="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru">
-    <property name="name" value="PrivateNetworkGuru"/>
-  </bean>
-  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
-    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
-  </bean>
-  <bean id="BigSwitchVnsGuestNetworkGuru" class="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru">
-    <property name="name" value="BigSwitchVnsGuestNetworkGuru"/>
-  </bean>
- 
-  <!--
-   Hypervisor Gurus
-  -->
-  <bean id="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru">
-    <property name="name" value="XenServerGuru"/>
+    <property name="StoragePoolAllocators">
+      <list>
+          <ref bean="LocalStoragePoolAllocator"/>
+          <ref bean="FirstFitStoragePoolAllocator"/>
+      </list>
+    </property>
+    <property name="HostAllocators">
+      <list>
+          <ref bean="FirstFitRouting"/>
+      </list>
+    </property>
   </bean>
   
-  <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
-    <property name="name" value="KVMGuru"/>
+  <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
+    <property name="PodAllocators">
+      <list>
+          <ref bean="UserConcentratedAllocator"/>
+      </list>
+    </property>
+    <property name="Discoverers">
+      <list>
+          <ref bean="XcpServerDiscoverer"/>
+          <ref bean="SecondaryStorageDiscoverer"/>
+          <ref bean="KvmServerDiscoverer"/>
+          <ref bean="BareMetalDiscoverer"/>
+          <ref bean="OvmDiscoverer"/>
+          <ref bean="vmwareServerDiscoverer"/>
+       </list>
+    </property>
+  </bean>
+
+  <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" >
+    <property name="Investigators">
+      <list>
+          <ref bean="CheckOnAgentInvestigator"/>
+          <ref bean="XenServerInvestigator"/>
+          <ref bean="VmwareInvestigator"/>
+          <ref bean="UserVmDomRInvestigator"/>
+          <ref bean="ManagementIPSystemVMInvestigator"/>
+      </list>
+    </property>
+    <property name="FenceBuilders">
+      <list>
+          <ref bean="XenServerFencer"/>
+          <ref bean="KVMFencer"/>
+          <ref bean="OvmFencer"/>
+          <ref bean="VmwareFencer"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" >
+    <property name="HostAllocators">
+      <list>
+          <ref bean="FirstFitRouting"/>
+      </list>
+    </property>
+    <property name="Planners">
+      <list>
+          <ref bean="FirstFitPlanner" />
+          <ref bean="UserDispersingPlanner" />
+          <ref bean="UserConcentratedPodPlanner" />
+          <ref bean="BareMetalPlanner" />
+      </list>
+    </property>
   </bean>
   
-  <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
-    <property name="name" value="OvmGuru"/>
-  </bean>
-  
-  <bean id="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru">
-    <property name="name" value="VMwareGuru"/>
-  </bean>
-  
-  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
-    <property name="name" value="BaremetalGuru"/>
+  <bean id="networkManagerImpl" class="com.cloud.network.NetworkManagerImpl" >
+    <property name="NetworkGurus">
+      <list>
+          <ref bean="StorageNetworkGuru"/>
+          <ref bean="ExternalGuestNetworkGuru"/>
+          <ref bean="PublicNetworkGuru"/>
+          <ref bean="PodBasedNetworkGuru"/>
+          <ref bean="DirectPodBasedNetworkGuru"/>
+          <ref bean="ControlNetworkGuru"/>
+          <ref bean="DirectNetworkGuru"/>
+          <ref bean="OvsGuestNetworkGuru"/>
+          <ref bean="PrivateNetworkGuru"/>
+      </list>
+    </property>
+    <property name="NetworkElements">
+      <list>
+          <ref bean="JuniperSRX"/>
+          <ref bean="Netscaler"/>
+          <ref bean="F5BigIP"/>
+          <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="bigSwitchVnsElement"/>
+          <ref bean="VirtualRouter"/>
+          <ref bean="Ovs"/>
+          <ref bean="SecurityGroupProvider"/>
+          <ref bean="VpcVirtualRouter"/>
+          <ref bean="BareMetalDhcp"/>
+          <ref bean="BareMetalPxe"/>
+          <ref bean="BareMetalUserdata"/>
+      </list>
+    </property>
+    <property name="IpDeployers">
+      <list>
+          <ref bean="elasticLoadBalancerElement"/>
+          <ref bean="VirtualRouter"/>
+          <ref bean="VpcVirtualRouter"/>
+      </list>
+    </property>
+    <property name="DhcpProviders">
+      <list>
+          <ref bean="VirtualRouter"/>
+          <ref bean="VpcVirtualRouter"/>
+          <ref bean="BareMetalDhcp"/>
+      </list>
+    </property>
   </bean>
 
-  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
-    <property name="name" value="BaremetalPlannerSelector"/>
-  </bean>
-
-  <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
-    <property name="name" value="HypervisorPlannerSelector"/>
-  </bean>
-
-  <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl">
-  </bean>
-
-  <!--
-    DAO with customized configuration
-  -->
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
-    <property name="configParams">
-      <map>
-        <entry key="premium" value="true" />
-      </map>
-    </property>  
+  <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
+    <property name="NetworkElements">
+      <list>
+          <ref bean="JuniperSRX"/>
+          <ref bean="Netscaler"/>
+          <ref bean="F5BigIP"/>
+          <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="bigSwitchVnsElement"/>
+          <ref bean="VirtualRouter"/>
+          <ref bean="Ovs"/>
+          <ref bean="SecurityGroupProvider"/>
+          <ref bean="VpcVirtualRouter"/>
+          <ref bean="BareMetalDhcp"/>
+          <ref bean="BareMetalPxe"/>
+          <ref bean="BareMetalUserdata"/>
+      </list>
+    </property>
   </bean>
 
 </beans>

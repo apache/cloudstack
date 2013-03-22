@@ -143,9 +143,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject List<NetworkElement> _networkElements;
-    
-    @Inject
+    List<NetworkElement> _networkElements;
+    public List<NetworkElement> getNetworkElements() {
+		return _networkElements;
+	}
+	public void setNetworkElements(List<NetworkElement> _networkElements) {
+		this._networkElements = _networkElements;
+	}
+
+	@Inject
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;

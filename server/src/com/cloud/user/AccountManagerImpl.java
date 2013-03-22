@@ -230,9 +230,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     UserVO _systemUser;
     AccountVO _systemAccount;
 
-    @Inject
     List<SecurityChecker> _securityCheckers;
-    int _cleanupInterval;
+    
+	int _cleanupInterval;
 
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
@@ -241,6 +241,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
+    
+    public List<SecurityChecker> getSecurityCheckers() {
+		return _securityCheckers;
+	}
+
+	public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
+		this._securityCheckers = securityCheckers;
+	}
     
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {

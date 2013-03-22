@@ -276,8 +276,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject
     ConfigurationDao _configDao;
     @Inject
     ManagementServer _msServer;
@@ -296,12 +294,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    // TODO : we don't have any instantiated pool discover, disable injection
-    // temporarily
-    // @Inject
-    protected List<StoragePoolDiscoverer> _discoverers;
+    @Inject protected ResourceTagDao _resourceTagDao;
 
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
+    protected List<StoragePoolAllocator> _storagePoolAllocators;
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+		return _storagePoolAllocators;
+	}
+	public void setStoragePoolAllocators(
+			List<StoragePoolAllocator> _storagePoolAllocators) {
+		this._storagePoolAllocators = _storagePoolAllocators;
+	}
+
+    protected List<StoragePoolDiscoverer> _discoverers;
+    public List<StoragePoolDiscoverer> getDiscoverers() {
+		return _discoverers;
+	}
+	public void setDiscoverers(List<StoragePoolDiscoverer> _discoverers) {
+		this._discoverers = _discoverers;
+	}
+
+	protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
