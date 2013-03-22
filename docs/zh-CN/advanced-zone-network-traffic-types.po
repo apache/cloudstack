@@ -40,7 +40,7 @@ msgid ""
 " the zone. Each physical network can carry one or more traffic types, and "
 "you need to let &PRODUCT; know which type of network traffic you want each "
 "network to carry. The traffic types in an advanced zone are:"
-msgstr "当使用高级网路时，在区域包含多种物理网络。每一个物理网络能够承载一种或者多种类型的流量。要让&PRODUCT;知道每种网络承载那种类型的流量。高级区域包含的流量类型："
+msgstr "当使用高级网路时，在区域包含多种物理网络。每一个物理网络能够承载一种或者多种类型的流量。要让 &PRODUCT; 知道每种网络承载那种类型的流量。高级区域包含的流量类型："
 
 #. Tag: para
 #, no-c-format
@@ -51,7 +51,7 @@ msgid ""
 "network, the administrator needs to reserve VLAN ranges to provide isolation"
 " for each &PRODUCT; account’s network (potentially a large number of VLANs)."
 " In a shared guest network, all guest VMs share a single network."
-msgstr "来宾。当用户允许VM时，他们产生来宾流量。来宾VM通过来宾网络进相关通讯。这个网络可以是隔离或者共享的；在隔离的来宾网络中，管理员需要为每一个&PRODUCT中隔离网络分配vlan范围；帐户的网络(潜在的大量的VLAN)。在一个共享来宾网络中，所有来宾VM共享一个网络。"
+msgstr "来宾。当用户允许VM时，他们产生来宾流量。来宾VM通过来宾网络进相关通讯。这个网络可以是隔离或者共享的；在隔离的来宾网络中，管理员需要为每一个 &PRODUCT; 中隔离网络分配 VLAN 范围；帐户的网络(潜在的大量的VLAN)。在一个共享来宾网络中，所有来宾VM共享一个网络。"
 
 #. Tag: para
 #, no-c-format

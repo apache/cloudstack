@@ -39,7 +39,7 @@ msgid ""
 "After the Management Server software is installed and running, you can run "
 "the &PRODUCT; user interface. This UI is there to help you provision, view, "
 "and manage your cloud infrastructure."
-msgstr "在管理服务器软件安装并且运行后, 你可以运行&PRODUCT的用户界面. 在这里通过UI,可以供给, 查看并管理你的云基础架构."
+msgstr "在管理服务器软件安装并且运行后, 你可以运行 &PRODUCT; 的用户界面. 在这里通过UI,可以供给, 查看并管理你的云基础架构."
 
 #. Tag: para
 #, no-c-format

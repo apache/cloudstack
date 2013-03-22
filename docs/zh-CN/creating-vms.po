@@ -61,7 +61,7 @@ msgstr "通过模板创建虚拟机实例"
 #. Tag: para
 #, no-c-format
 msgid "Log in to the &PRODUCT; UI as an administrator or user."
-msgstr "使用管理员或普通用户，登陆到 &PRODUCT。"
+msgstr "使用管理员或普通用户，登陆到 &PRODUCT; 。"
 
 #. Tag: para
 #, no-c-format

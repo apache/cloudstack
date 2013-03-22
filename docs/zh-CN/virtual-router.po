@@ -41,7 +41,7 @@ msgid ""
 "user has no direct access to the virtual router. Users can ping the virtual "
 "router and take actions that affect it (such as setting up port forwarding),"
 " but users do not have SSH access into the virtual router."
-msgstr "虚拟路由器是一个系统虚拟机。它经常在&PRODUCT服务方案中被使用；终端用户不能够直接访问虚拟路由器。用户可ping和影响它(比如设置端口转发)但是不能通过ssh访问"
+msgstr "虚拟路由器是一个系统虚拟机。它经常在 &PRODUCT; 服务方案中被使用；终端用户不能够直接访问虚拟路由器。用户可ping和影响它(比如设置端口转发)但是不能通过ssh访问"
 
 #. Tag: para
 #, no-c-format

@@ -38,7 +38,7 @@ msgid ""
 "The &PRODUCT; API is a low level API that has been used to implement the "
 "&PRODUCT; web UIs. It is also a good basis for implementing other popular "
 "APIs such as EC2/S3 and emerging DMTF standards."
-msgstr " &PRODUCT; API是用来实现&PRODUCT的一个低层次API；"
+msgstr " &PRODUCT; API是用来实现 &PRODUCT; 的一个低层次API；"
 
 #. Tag: para
 #, no-c-format

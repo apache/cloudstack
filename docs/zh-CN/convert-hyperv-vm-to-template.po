@@ -41,7 +41,7 @@ msgid ""
 "whatever XenServer version you are using with &PRODUCT;, but use XenCenter "
 "5.6 FP1 or SP2 (it is backwards compatible to 5.6). Additionally, it may "
 "help to have an attached NFS ISO SR."
-msgstr "要转换的Hyper-V虚拟机到的XenServer兼容&PRODUCT;模板，您将需要一个独立的XenServer主机连接的NFS VHD的SR。使用任何&PRODUCT支持的XenServer版本，单必须是XenCenter5.6 FP1或SP2(它是向后兼容5.6)。此外，它可以帮助你瓜子一个NFS ISO SR。"
+msgstr "要转换的Hyper-V虚拟机到的XenServer兼容&PRODUCT;模板，您将需要一个独立的XenServer主机连接的NFS VHD的SR。使用任何 &PRODUCT; 支持的XenServer版本，单必须是XenCenter5.6 FP1或SP2(它是向后兼容5.6)。此外，它可以帮助你瓜子一个NFS ISO SR。"
 
 #. Tag: para
 #, no-c-format

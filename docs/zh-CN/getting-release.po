@@ -39,7 +39,7 @@ msgid ""
 "You can download the latest &PRODUCT; release from the <ulink "
 "url=\"http://incubator.apache.org/cloudstack/downloads.html\"> Apache "
 "CloudStack project download page</ulink>."
-msgstr "你可以从 <ulink url=\"http://incubator.apache.org/cloudstack/downloads.html\"> Apache CloudStack project download page</ulink>下载最新的&PRODUCT。"
+msgstr "你可以从 <ulink url=\"http://incubator.apache.org/cloudstack/downloads.html\"> Apache CloudStack project download page</ulink>下载最新的&PRODUCT; "
 
 #. Tag: para
 #, no-c-format

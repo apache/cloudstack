@@ -184,7 +184,7 @@ msgid ""
 "In a new zone, &PRODUCT; adds the first pod for you. You can always add more"
 " pods later. For an overview of what a pod is, see <xref linkend=\"about-"
 "pods\" />."
-msgstr "在新的区域中，&PRODUCT;添加第一个机架。你可以添加更多的机架在以后。关于什么是机架，请参考<xref linkend=\"关于机架\" />。"
+msgstr "在新的区域中，&PRODUCT;添加第一个机架。你可以添加更多的机架在以后。关于什么是机架，请参考<xref linkend=\"about-pods\" />"
 
 #. Tag: para
 #, no-c-format
@@ -217,7 +217,7 @@ msgid ""
 "range in the management network that &PRODUCT; uses to manage various system"
 " VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more "
 "information, see <xref linkend=\"system-reserved-ip-addresses\" />."
-msgstr "<emphasis role=\"bold\">开始/结束 预留系统IP.</emphasis> 管理网络中的IP地址段，&PRODUCT; 用来管理各种系统虚拟机,  例如辅助存储系统虚拟机,控制代理系统虚拟机和DHCP.更多信息请参考 <xref linkend=\"系统预留ip地址\" />."
+msgstr "<emphasis role=\"bold\">开始/结束 预留系统IP.</emphasis> 管理网络中的IP地址段，&PRODUCT; 用来管理各种系统虚拟机,  例如辅助存储系统虚拟机,控制代理系统虚拟机和DHCP.更多信息请参考 <xref linkend=\"system-reserved-ip-addresses\" />."
 
 #. Tag: para
 #, no-c-format
