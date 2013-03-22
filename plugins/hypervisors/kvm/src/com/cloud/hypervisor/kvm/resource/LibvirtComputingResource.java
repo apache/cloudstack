@@ -2751,17 +2751,74 @@ ServerResource {
         return stats;
     }
 
+    protected String VPCNetworkUsage(final String privateIpAddress, final String publicIp,
+            final String option, final String vpcCIDR) {
+        Script getUsage = new Script(_routerProxyPath, s_logger);
+        getUsage.add("vpc_netusage.sh");
+        getUsage.add(privateIpAddress);
+        getUsage.add("-l", publicIp);
+
+        if (option.equals("get")) {
+            getUsage.add("-g");
+        } else if (option.equals("create")) {
+            getUsage.add("-c");
+            getUsage.add("-v", vpcCIDR);
+        } else if (option.equals("reset")) {
+            getUsage.add("-r");
+        } else if (option.equals("vpn")) {
+            getUsage.add("-n");
+        } else if (option.equals("remove")) {
+            getUsage.add("-d");
+        }
+
+        final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
+        String result = getUsage.execute(usageParser);
+        if (result != null) {
+            s_logger.debug("Failed to execute VPCNetworkUsage:" + result);
+            return null;
+        }
+        return usageParser.getLine();
+    }
+
+    protected long[] getVPCNetworkStats(String privateIP, String publicIp, String option) {
+        String result = VPCNetworkUsage(privateIP, publicIp, option, null);
+        long[] stats = new long[2];
+        if (result != null) {
+            String[] splitResult = result.split(":");
+            int i = 0;
+            while (i < splitResult.length - 1) {
+                stats[0] += (new Long(splitResult[i++])).longValue();
+                stats[1] += (new Long(splitResult[i++])).longValue();
+            }
+        }
+        return stats;
+    }
+
     private Answer execute(NetworkUsageCommand cmd) {
-        if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-            String result = networkUsage(cmd.getPrivateIP(), "create", null);
-            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L,
-                    0L);
+        if (cmd.isForVpc()) {
+            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
+                String result = VPCNetworkUsage(cmd.getPrivateIP(),cmd.getGatewayIP(), "create", cmd.getVpcCIDR());
+                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+                return answer;
+            } else if (cmd.getOption() != null && (cmd.getOption().equals("get") || cmd.getOption().equals("vpn"))) {
+                long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getGatewayIP(), cmd.getOption());
+                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
+                return answer;
+            } else {
+                String result = VPCNetworkUsage(cmd.getPrivateIP(),cmd.getGatewayIP(), cmd.getOption(), cmd.getVpcCIDR());
+                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+                return answer;
+            }
+        } else {
+            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
+                String result = networkUsage(cmd.getPrivateIP(), "create", null);
+                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+                return answer;
+            }
+            long[] stats = getNetworkStats(cmd.getPrivateIP());
+            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
             return answer;
         }
-        long[] stats = getNetworkStats(cmd.getPrivateIP());
-        NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0],
-                stats[1]);
-        return answer;
     }
 
     private Answer execute(RebootCommand cmd) {
