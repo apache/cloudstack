@@ -27,7 +27,7 @@
 
             args.response.success({
               data: regions ? regions : [
-                { id: -1, name: '(Default)' }
+                { id: -1, name: _l('label.no.data') }
               ]
             });
           }
