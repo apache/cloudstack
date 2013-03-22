@@ -25,8 +25,9 @@
 <chapter id="api-calls">
     <title>Calling the &PRODUCT; API</title>
     <xi:include href="making-api-request.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="enabling-api-call-expiration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="signing-api-requests.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="enabling-api-call-expiration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="api-throttling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="responses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="asynchronous-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
