@@ -3101,7 +3101,7 @@ ServerResource {
         ConsoleDef console = new ConsoleDef("pty", null, null, (short) 0);
         devices.addDevice(console);
 
-        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, vmTO.getVncAddr(), null,
+        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, null,
                 null);
         devices.addDevice(grap);
 
