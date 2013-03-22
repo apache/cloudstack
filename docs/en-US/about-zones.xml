@@ -23,7 +23,12 @@
 -->
 <section id="about-zones">
 	<title>About Zones</title>
-    <para>A zone is the largest organizational unit within a &PRODUCT; deployment. A zone typically corresponds to a single datacenter, although it is permissible to have multiple zones in a datacenter. The benefit of organizing infrastructure into zones is to provide physical isolation and redundancy. For example, each zone can have its own power supply and network uplink, and the zones can be widely separated geographically (though this is not required).</para>
+    <para>A zone is the second largest organizational unit within a &PRODUCT; deployment. A zone
+        typically corresponds to a single datacenter, although it is permissible to have multiple
+        zones in a datacenter. The benefit of organizing infrastructure into zones is to provide
+        physical isolation and redundancy. For example, each zone can have its own power supply and
+        network uplink, and the zones can be widely separated geographically (though this is not
+        required).</para>
     <para>A zone consists of:</para>
     <itemizedlist>
         <listitem><para>One or more pods. Each pod contains one or more clusters of hosts and one or more primary storage servers.</para></listitem>
@@ -46,5 +51,6 @@
         <listitem><para>How many primary storage servers to place in each cluster and total capacity for the storage servers.</para></listitem>
         <listitem><para>How much secondary storage to deploy in a zone.</para></listitem>
     </itemizedlist>
-    <para>When you add a new zone, you will be prompted to configure the zone’s physical network and add the first pod, cluster, host, primary storage, and secondary storage.</para>
+    <para>When you add a new zone using the &PRODUCT; UI, you will be prompted to configure the zone’s physical network
+        and add the first pod, cluster, host, primary storage, and secondary storage.</para>
 </section>

@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="added-API-commands-4.1">
-  <title>Added API Commands in 4.1-incubating</title>
+  <title>Added API Commands in 4.1</title>
   <itemizedlist>
     <listitem>
       <para>createEgressFirewallRules (creates an egress firewall rule on the guest network.)</para>
@@ -65,5 +65,10 @@
       <para>getUser (This API can only be used by the Admin. Get user details by using the API Key.)
       </para>
     </listitem>
+    <listitem><para>addRegion (Add a region)</para></listitem>
+    <listitem><para>removeRegion (Delete a region)</para></listitem>
+    <listitem><para>updateRegion (Modify attributes of a region)</para></listitem>
+    <listitem><para>listRegions (List regions)</para></listitem>
+    <listitem><para></para></listitem>
   </itemizedlist>
 </section>
