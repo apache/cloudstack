@@ -165,7 +165,14 @@ echo Doing CloudStack build
 cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
-mvn -P awsapi package -Dsystemvm
+
+if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
+    echo "Packaging nonoss components"
+   mvn -Pawsapi,systemvm -Dnonoss package
+else
+    echo "Packaging oss components"
+   mvn -Pawsapi package -Dsystemvm
+fi
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
