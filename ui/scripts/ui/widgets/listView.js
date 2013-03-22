@@ -648,7 +648,21 @@
     }
 
     // Actions column
-    if (actions && renderActionCol(actions)) {
+    var actionsArray = $.map(actions, function(v, k) {
+      if (k == 'add') {
+        v.isAdd = true;
+      }
+
+      return v;
+    });
+    var headerActionsArray = $.grep(
+      actionsArray,
+      function(action) {
+        return action.isHeader || action.isAdd;
+      }
+    );
+
+    if (actions && renderActionCol(actions) && actionsArray.length != headerActionsArray.length) {
       $thead.find('tr').append(
         $('<th></th>')
           .html(_l('label.actions'))
@@ -1014,7 +1028,21 @@
       $tr.data('jsonObj', dataItem);
       $tr.data('list-view-action-filter', options.actionFilter);
 
-      if (actions && renderActionCol(actions)) {
+      var actionsArray = $.map(actions, function(v, k) {
+        if (k == 'add') {
+          v.isAdd = true;
+        }
+
+        return v;
+      });
+      var headerActionsArray = $.grep(
+        actionsArray,
+        function(action) {
+          return action.isHeader || action.isAdd;
+        }
+      );
+
+      if (actions && renderActionCol(actions) && actionsArray.length != headerActionsArray.length) {
         var allowedActions = $.map(actions, function(value, key) {
           return key;
         });
