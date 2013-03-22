@@ -50,7 +50,10 @@
 							
             if(currentRegion != null)	{						
 						  $regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));   
-            }							
+            }		
+            else {
+              $regionSwitcherButton.find('.title').html('').attr('title', '');   
+            }						
           }
         }
       });
