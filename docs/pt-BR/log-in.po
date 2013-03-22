@@ -110,4 +110,4 @@ msgstr "Por exemplo, suponha que múltiplos níveis são criados sob o domínio 
 msgid ""
 "For more guidance about the choices that appear when you log in to this UI, "
 "see Logging In as the Root Administrator."
-msgstr "Para mais orientação sobre as escolhas apresentadas quando você faz login na interface de usuário, veja <xref linkend=\"log-in-root-admin.xml\">."
+msgstr "Para mais orientação sobre as escolhas apresentadas quando você faz login na interface de usuário, veja <xref linkend=\"log-in-root-admin\" />."

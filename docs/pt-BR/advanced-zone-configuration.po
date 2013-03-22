@@ -254,7 +254,7 @@ msgstr ""
 msgid ""
 "<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the "
 "cluster. This can be text of your choosing and is not used by &PRODUCT;."
-msgstr "(Versão 3.0.0 só, em 3.0.1, este campo é somente leitura) Escolha o tipo de software hypervisor que todos os anfitriões deste cluster será executado. Se você escolher a VMware, campos adicionais aparecem assim que você pode dar informações sobre um cluster vSphere. Para os servidores vSphere, recomendamos criar o cluster de hosts em vCenter e adicionando todo o cluster para &product;. Consulte Adicionar Cluster: vSphere."
+msgstr "(Versão 3.0.0 só, em 3.0.1, este campo é somente leitura) Escolha o tipo de software hypervisor que todos os anfitriões deste cluster será executado. Se você escolher a VMware, campos adicionais aparecem assim que você pode dar informações sobre um cluster vSphere. Para os servidores vSphere, recomendamos criar o cluster de hosts em vCenter e adicionando todo o cluster para &PRODUCT;. Consulte Adicionar Cluster: vSphere."
 
 #. Tag: para
 #, no-c-format
