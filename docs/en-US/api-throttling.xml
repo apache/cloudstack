@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="api-throttling">
+  <title>Limiting the Rate of API Requests</title>
+  <para>You can limit the rate at which API requests can be placed for each
+    account. This is useful to avoid malicious attacks on the Management Server, prevent
+    performance degradation, and provide fairness to all accounts.</para>
+  <para>If the number of API calls exceeds the threshold, an error message is returned for any additional API calls.
+    The caller will have to retry these API calls at another time.</para>
+  <section id="api-throttling-configure">
+    <title>Configuring the API Request Rate</title>
+    <para>To control the API request rate, use the following global configuration
+      settings:</para>
+    <itemizedlist>
+      <listitem><para>api.throttling.enabled - Enable/Disable API throttling. By default, this setting is false, so
+        API throttling is not enabled.</para></listitem>
+      <listitem><para>api.throttling.interval (in seconds) - Time interval during which the number of API requests is to be counted.
+        When the interval has passed, the API count is reset to 0.</para></listitem>
+      <listitem><para>api.throttling.max - Maximum number of APIs that can be placed within the api.throttling.interval period.</para></listitem>
+      <listitem><para>api.throttling.cachesize - Cache size for storing API counters.
+        Use a value higher than the total number of accounts managed by the cloud.
+        One cache entry is needed for each account, to store the running API total for that account.
+      </para></listitem>
+    </itemizedlist>
+  </section>
+  <section id="api-throttling-limitations">
+    <title>Limitations on API Throttling</title>
+    <para>The following limitations exist in the current implementation of this feature.</para>
+    <note><para>Even with these limitations, &PRODUCT; is still able to effectively use API throttling to
+      avoid malicious attacks causing denial of service.</para></note>
+    <para/>
+    <itemizedlist>
+      <listitem><para>In a deployment with multiple Management Servers,
+        the cache is not synchronized across them.
+        In this case, &PRODUCT; might not be able to
+        ensure that only the exact desired number of API requests are allowed.
+        In the worst case, the number of API calls that might be allowed is
+        (number of Management Servers) * (api.throttling.max).
+      </para></listitem>
+      <listitem><para>The API commands resetApiLimit and getApiLimit are limited to the
+        Management Server where the API is invoked.
+      </para></listitem>
+    </itemizedlist>        
+  </section>
+</section>
