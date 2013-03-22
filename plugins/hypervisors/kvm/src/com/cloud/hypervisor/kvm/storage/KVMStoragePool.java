@@ -39,6 +39,8 @@ public interface KVMStoragePool {
 
     public long getUsed();
 
+    public long getAvailable();
+
     public boolean refresh();
 
     public boolean isExternalSnapshot();

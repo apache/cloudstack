@@ -28,6 +28,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected String uri;
     protected long capacity;
     protected long used;
+    protected long available;
     protected String name;
     protected String localPath;
     protected PhysicalDiskFormat defaultFormat;
@@ -48,6 +49,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         this._storageAdaptor = adaptor;
         this.capacity = 0;
         this.used = 0;
+        this.available = 0;
         this._pool = pool;
 
     }
@@ -65,9 +67,17 @@ public class LibvirtStoragePool implements KVMStoragePool {
         this.used = used;
     }
 
+    public void setAvailable(long available) {
+        this.available = available;
+    }
+
     @Override
     public long getUsed() {
         return this.used;
+    }
+
+    public long getAvailable() {
+        return this.available;
     }
 
     public StoragePoolType getStoragePoolType() {

@@ -403,6 +403,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             pool.refresh();
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
+            pool.setAvailable(storage.getInfo().available);
 
             return pool;
         } catch (LibvirtException e) {
@@ -535,6 +536,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             pool.setCapacity(sp.getInfo().capacity);
             pool.setUsed(sp.getInfo().allocation);
+            pool.setAvailable(sp.getInfo().available);
   
             return pool;
         } catch (LibvirtException e) {
