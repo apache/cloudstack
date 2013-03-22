@@ -69,6 +69,7 @@ dictionary = {
 'label.action.disable.physical.network': '<fmt:message key="label.action.disable.physical.network"/>',
 'message.action.enable.physical.network': '<fmt:message key="message.action.enable.physical.network"/>',
 'message.action.disable.physical.network': '<fmt:message key="message.action.disable.physical.network"/>',
+'message.configure.all.traffic.types': '<fmt:message key="message.configure.all.traffic.types"/>',
 'label.ipaddress': '<fmt:message key="label.ipaddress"/>',
 'label.vcdcname': '<fmt:message key="label.vcdcname"/>',
 'label.vcipaddress': '<fmt:message key="label.vcipaddress"/>',
