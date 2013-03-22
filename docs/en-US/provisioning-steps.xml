@@ -23,8 +23,9 @@
 -->
 <chapter id="provisioning-steps">
     <title>Steps to Provisioning Your Cloud Infrastructure</title>
-    <para>This section tells how to add zones, pods, clusters, hosts, storage, and networks to your cloud. If you are unfamiliar with these entities, please begin by looking through <xref linkend="cloud-infrastructure-concepts" />.</para>
+    <para>This section tells how to add regions, zones, pods, clusters, hosts, storage, and networks to your cloud. If you are unfamiliar with these entities, please begin by looking through <xref linkend="cloud-infrastructure-concepts" />.</para>
     <xi:include href="provisioning-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="region-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="zone-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="pod-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="cluster-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
