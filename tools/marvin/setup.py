@@ -16,27 +16,41 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from setuptools import setup
-from sys import version
-import sys
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from distribute_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages
+
+VERSION = '0.1.0'
+
+import os
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read().strip()
 
 setup(name="Marvin",
-      version="0.1.0",
-      description="Marvin - Python client for testing cloudstack",
-      author="Edison Su",
-      author_email="Edison.Su@citrix.com",
-      maintainer="Prasanna Santhanam",
-      maintainer_email="Prasanna.Santhanam@citrix.com",
-      long_description="Marvin is the cloudstack testclient written around the python unittest framework",
-      platforms=("Any",),
-      url="http://jenkins.cloudstack.org:8080/job/marvin",
-      packages=["marvin", "marvin.cloudstackAPI", "marvin.integration",
-                "marvin.integration.lib", "marvin.sandbox",
-                "marvin.sandbox.advanced", "marvin.sandbox.basic"],
-      license="LICENSE.txt",
-      install_requires=[
-          "mysql-connector-python",
-          "paramiko",
-          "nose"
-      ],
-     )
+    version=VERSION,
+    description="Marvin - Python client for Apache CloudStack",
+    author="Edison Su",
+    author_email="Edison.Su@citrix.com",
+    maintainer="Prasanna Santhanam",
+    maintainer_email="Prasanna.Santhanam@citrix.com",
+    long_description="Marvin is the Apache CloudStack python client written around the unittest framework",
+    platforms=("Any",),
+    url="https://builds.apache.org/view/CloudStack/job/cloudstack-marvin/",
+    packages=["marvin", "marvin.cloudstackAPI", "marvin.integration",
+              "marvin.integration.lib", "marvin.sandbox",
+              "marvin.sandbox.advanced", "marvin.sandbox.basic"],
+    license="LICENSE.txt",
+    install_requires=[
+        "mysql-connector-python",
+        "paramiko",
+        "nose"
+    ],
+    py_modules=['marvin.marvinPlugin'],
+    zip_safe=False,
+    entry_points={
+        'nose.plugins': ['marvinPlugin = marvin.marvinPlugin:MarvinPlugin']
+    },
+)
