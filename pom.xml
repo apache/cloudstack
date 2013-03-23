@@ -103,7 +103,9 @@
       <unsubscribe>users-unsubscribe@cloudstack.apache.org</unsubscribe>
       <post>users@cloudstack.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-users</archive>
-      <otherArchives>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</otherArchives>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Developer List</name>
@@ -111,7 +113,9 @@
       <unsubscribe>dev-unsubscribe@cloudstack.apache.org</unsubscribe>
       <post>dev@cloudstack.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-dev</archive>
-      <otherArchives>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</otherArchives>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Commits List</name>
@@ -119,7 +123,9 @@
       <unsubscribe>commits-unsubscribe@cloudstack.apache.org</unsubscribe>
       <post>commits@cloudstack.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-commits</archive>
-      <otherArchives>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</otherArchives>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</otherArchive>
+      </otherArchives>
     </mailingList>
   </mailingLists>
 
