@@ -19,13 +19,13 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import org.junit.Test;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
+import org.junit.Test;
+
 import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
 
 public class LibvirtComputingResourceTest {
@@ -54,7 +54,7 @@ public class LibvirtComputingResourceTest {
         boolean haEnabled = false;
         boolean limitCpuUse = false;
 
-        String vncAddr = "1.2.3.4";
+        String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
 
         LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -79,7 +79,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "'/>\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";
@@ -129,7 +129,7 @@ public class LibvirtComputingResourceTest {
         boolean haEnabled = false;
         boolean limitCpuUse = false;
 
-        String vncAddr = "1.2.3.4";
+        String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
 
         LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -154,7 +154,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "'/>\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";
