@@ -31,3 +31,5 @@
 /usr/bin/cloud-setup-databases
 /usr/bin/cloud-migrate-databases
 /usr/share/cloudstack-management/*
+/usr/share/java/*
+/usr/share/tomcat6/lib/*
