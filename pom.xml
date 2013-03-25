@@ -340,16 +340,9 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/base.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/cleanup.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/definition.rb</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/preseed.cfg</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/zerodisk.sh</exclude>
+              <exclude>tools/appliance/definitions/devcloud/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
