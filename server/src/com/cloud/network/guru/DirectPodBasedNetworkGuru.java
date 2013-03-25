@@ -17,6 +17,7 @@
 package com.cloud.network.guru;
 
 import java.net.URI;
+import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -50,6 +51,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -155,11 +157,34 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         nic.setDns2(dc.getDns2());
     }
 
+    @DB
     protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            
+            PublicIp ip = null;
+            List<PodVlanMapVO> podRefs = _podVlanDao.listPodVlanMapsByPod(pod.getId());
+            String podRangeGateway = null;
+            if (!podRefs.isEmpty()) {
+                podRangeGateway = _vlanDao.findById(podRefs.get(0).getVlanDbId()).getVlanGateway();
+            }
+            //Get ip address from the placeholder and don't allocate a new one
+            if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                if (placeholderNic != null) {
+                    IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
+                    ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                    s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network + " and gateway " + podRangeGateway);
+                }
+            }
+            
+            if (ip == null) {
+                ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
+            }
+            
             nic.setIp4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);
             nic.setGateway(ip.getGateway());
@@ -171,6 +196,16 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             }
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
+            
+            //save the placeholder nic if the vm is the Virtual router
+            if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                if (placeholderNic == null) {
+                    s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " for the network " + network + " with the gateway " + podRangeGateway);
+                    _networkMgr.savePlaceholderNic(network, nic.getIp4Address());
+                }
+            }
+            txn.commit();
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());

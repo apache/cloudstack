@@ -259,4 +259,6 @@ public interface NetworkModel {
 	void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException;
 
 	String getStartIpv6Address(long id);
+
+    Nic getPlaceholderNic(Network network, Long podId);
 }

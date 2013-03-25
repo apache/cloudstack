@@ -44,7 +44,6 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
@@ -55,13 +54,15 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
-import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
 
 @Local(value = { NetworkGuru.class })
 public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
@@ -85,6 +86,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     Ipv6AddressManager _ipv6Mgr;
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
+    @Inject
+    NicDao _nicDao;
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
     
@@ -198,7 +201,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setStrategy(ReservationStrategy.Create);
         }
 
-        _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIpv4(), nic.getRequestedIpv6());
+        allocateDirectIp(nic, network, vm, dc, nic.getRequestedIpv4(), nic.getRequestedIpv6());
         nic.setStrategy(ReservationStrategy.Create);
 
         return nic;
@@ -208,9 +211,29 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null && nic.getIp6Address() == null) {
-            _networkMgr.allocateDirectIp(nic, dest.getDataCenter(), vm, network, null, null);
+            allocateDirectIp(nic, network, vm, dest.getDataCenter(), null, null);
             nic.setStrategy(ReservationStrategy.Create);
         }
+    }
+
+    @DB
+    protected void allocateDirectIp(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DataCenter dc, String requestedIp4Addr, String requestedIp6Addr)
+            throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException {
+        
+        //FIXME - save ipv6 informaiton in the placeholder nic
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _networkMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
+        //save the placeholder nic if the vm is the Virtual router
+        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+            Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+            if (placeholderNic == null) {
+                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + requestedIp6Addr + " for the network " + network);
+                _networkMgr.savePlaceholderNic(network, nic.getIp4Address());
+            }
+        }
+        txn.commit();
     }
 
     @Override
@@ -230,24 +253,32 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
     	
     	if (nic.getIp4Address() != null) {
-        IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
-        if (ip != null) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            _networkMgr.markIpAsUnavailable(ip.getId());
-            _ipAddressDao.unassignIpAddress(ip.getId());
-            //unassign nic secondary ip address
-            s_logger.debug("remove nic " + nic.getId() + " secondary ip ");
-            List<String> nicSecIps = null;
-            nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
-            for (String secIp: nicSecIps) {
-                IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
-                _networkMgr.markIpAsUnavailable(pubIp.getId());
-                _ipAddressDao.unassignIpAddress(pubIp.getId());
+            IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+            if (ip != null) {
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                
+                // if the ip address a part of placeholder, don't release it
+                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                if (placeholderNic != null && placeholderNic.getIp4Address().equalsIgnoreCase(ip.getAddress().addr())) {
+                    s_logger.debug("Not releasing direct ip " + ip.getId() +" yet as its ip is saved in the placeholder");
+                } else {
+                    _networkMgr.markIpAsUnavailable(ip.getId());
+                    _ipAddressDao.unassignIpAddress(ip.getId());
+                }
+               
+                //unassign nic secondary ip address
+                s_logger.debug("remove nic " + nic.getId() + " secondary ip ");
+                List<String> nicSecIps = null;
+                nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
+                for (String secIp: nicSecIps) {
+                    IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
+                    _networkMgr.markIpAsUnavailable(pubIp.getId());
+                    _ipAddressDao.unassignIpAddress(pubIp.getId());
+                }
+    
+                txn.commit();
             }
-
-            txn.commit();
-        }
     	}
     	
     	if (nic.getIp6Address() != null) {
@@ -261,7 +292,24 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
+    @DB
     public boolean trash(Network network, NetworkOffering offering, Account owner) {
+        //Have to remove all placeholder nics
+        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        for (Nic nic : nics) {
+            if (nic.getIp4Address() != null) {
+                s_logger.debug("Releasing ip " + nic.getIp4Address() + " of placeholder nic " + nic);
+                IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+                _networkMgr.markIpAsUnavailable(ip.getId());
+                _ipAddressDao.unassignIpAddress(ip.getId());
+                s_logger.debug("Removing placeholder nic " + nic);
+                _nicDao.remove(nic.getId());
+            }
+        }
+        
+        txn.commit();
         return true;
     }
 
