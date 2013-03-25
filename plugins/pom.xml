@@ -43,8 +43,8 @@
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
     <module>hypervisors/simulator</module>
-    <module>hypervisors/baremetal</module>
-    <module>hypervisors/ucs</module>
+    <!-- <module>hypervisors/baremetal</module>
+    <module>hypervisors/ucs</module> -->
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
     <module>network-elements/nicira-nvp</module>

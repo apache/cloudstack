@@ -59,17 +59,21 @@
   <!-- bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" / -->
   <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
   <bean id="NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
+  <!--
   <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
   <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
   <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
   <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
   <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" /> 
+  -->
   <!--
       Network Elements
   -->
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
   </bean>
+
+  <!--
   <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
     <property name="name" value="BareMetalDhcp"/>
   </bean>
@@ -79,6 +83,8 @@
   <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
       <property name="name" value="BareMetalUserdata"/>
   </bean>
+  -->
+
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
   </bean>
@@ -136,9 +142,11 @@
     <property name="name" value="Basic"/>
   </bean>
 
+  <!--
   <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" >
     <property name="name" value="BareMetalTemplateAdapter"/>
   </bean>
+  -->
 
   <!--
     Authenticators
@@ -205,10 +213,11 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
+  <!--
   <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
     <property name="name" value="Bare Metal Agent"/>
   </bean>
-
+  -->
 
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
     <property name="name" value="SCVMMServer"/>
@@ -237,9 +246,11 @@
     <property name="name" value="UserConcentratedPod"/>
   </bean>
 
+  <!--
   <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
   </bean>
+  -->
 
   <!--
     Network Gurus
@@ -294,6 +305,7 @@
     <property name="name" value="VMwareGuru"/>
   </bean>
 
+  <!--
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
   </bean>
@@ -301,6 +313,7 @@
   <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
     <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
+  -->
 
   <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
     <property name="name" value="HypervisorPlannerSelector"/>

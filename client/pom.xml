@@ -85,11 +85,14 @@
       <artifactId>cloud-plugin-hypervisor-xen</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- CLOUDSTACK-1773: Disabling BareMetal temporarily -->
+    <!--
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
       <version>${project.version}</version>
     </dependency>
+    -->
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
