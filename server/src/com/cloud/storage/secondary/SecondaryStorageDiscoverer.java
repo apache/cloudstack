@@ -30,6 +30,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.resource.LocalSecondaryStorageResource;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -47,8 +49,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.storage.resource.LocalSecondaryStorageResource;
-import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;

@@ -14,13 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.resource;
+package org.apache.cloudstack.storage.resource;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -46,8 +48,6 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.template.DownloadManager;
-import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.ComponentContext;
 

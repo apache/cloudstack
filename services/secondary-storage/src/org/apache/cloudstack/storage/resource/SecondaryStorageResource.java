@@ -14,11 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.resource;
+package org.apache.cloudstack.storage.resource;
+import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.resource.ServerResource;
+/**
+ *
+ * SecondaryStorageServerResource is a generic container to execute commands sent
+ */
+public interface SecondaryStorageResource extends ServerResource {
+    
+    public String getRootDir(ssCommand cmd);
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-
-public interface SecondaryStorageResourceHandler {
-	Answer executeRequest(Command cmd);
 }
