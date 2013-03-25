@@ -709,7 +709,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         	if(!file.canExecute()) {
         		s_logger.info("Some of the shell script files may not have executable bit set. Fixup...");
 
-        		String cmd = "chmod ugo+x " + scriptPath;
+        		String cmd = "sudo chmod ugo+x " + scriptPath;
         		s_logger.info("Executing " + cmd);
                 String result = Script.runSimpleBashScript(cmd);
                 if (result != null) {
