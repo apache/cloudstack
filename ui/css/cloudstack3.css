@@ -7022,6 +7022,42 @@ label.error {
   max-width: 91px;
 }
 
+/*** Add multiple pod ranges form*/
+.multi-wizard.zone-wizard .add-pod .info-desc {
+  margin-bottom: 26px;
+}
+
+.multi-wizard.zone-wizard .pod-edit {
+}
+
+.multi-wizard.zone-wizard .pod-edit span.message {
+  display: none;
+  text-decoration: underline;
+}
+
+.multi-wizard.zone-wizard .pod-edit .form-container {
+  height: 36px;
+}
+
+.multi-wizard.zone-wizard .pod-edit .form-container form {
+}
+
+.multi-wizard.zone-wizard .pod-edit .form-container form {
+}
+
+.multi-wizard.zone-wizard .pod-edit .form-container .form-item .name label {
+  width: 51px;
+}
+
+.multi-wizard.zone-wizard .pod-edit .form-container .form-item .name {
+  width: 58px;
+}
+
+.multi-wizard.zone-wizard .pod-edit .multi-edit .data-body {
+  height: 209px;
+  overflow: auto;
+}
+
 /*** Select container fields*/
 .multi-wizard.zone-wizard .select-container .field {
   width: 100%;

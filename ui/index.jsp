@@ -659,8 +659,7 @@ under the License.
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
           <!-- Step 3.3: Add pod -->
-          <div class="add-pod" zone-wizard-form="pod"
-               zone-wizard-step-id="addPod">
+          <div class="add-pod" zone-wizard-step-id="addPod">
             <ul class="subnav">
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
@@ -671,9 +670,7 @@ under the License.
             <div class="info-desc">
               <fmt:message key="message.add.pod.during.zone.creation"/>
             </div>
-            <div class="content input-area">
-              <div class="select-container"></div>
-            </div>
+            <div ui-custom="podIPRange"></div>
           </div>
           <!-- Step 3.4: Configure guest traffic -->
           <div class="setup-guest-traffic"
@@ -1659,6 +1656,7 @@ under the License.
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/regions.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/podEdit.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/ipRules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/enableStaticNAT.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/securityRules.js?t=<%=now%>"></script>

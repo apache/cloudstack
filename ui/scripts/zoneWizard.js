@@ -121,6 +121,31 @@
     },
 
     customUI: {
+      podIPRange: function(args) {
+        return cloudStack.uiCustom.podEdit({
+          form: {
+            fields: {
+              name: {
+                label: 'label.name',
+                validation: { required: true },
+                desc: 'message.tooltip.pod.name'
+              }
+            }
+          },
+          multiEdit: {
+            noSelect: true,
+            fields: {
+              'gateway': { edit: true, label: 'label.gateway' },
+              'netmask': { edit: true, label: 'label.netmask' },
+              'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
+              'startip': { edit: true, label: 'label.start.IP' },
+              'endip': { edit: true, label: 'label.end.IP' },
+              'add-rule': { label: 'label.add', addButton: true }
+            }
+          }
+        });
+      },
+
       publicTrafficIPRange: function(args) {
         var multiEditData = [];
         var totalIndex = 0;
