@@ -129,72 +129,79 @@ class Services:
 
 class TestDeployVM(cloudstackTestCase):
 
-    def setUp(self):
-
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
+    @classmethod
+    def setUpClass(cls):
+        cls.services = Services().services
+        cls.apiclient = super(TestDeployVM, cls).getClsTestClient().getApiClient()
         # Get Zone, Domain and templates
-        domain = get_domain(self.apiclient, self.services)
-        zone = get_zone(self.apiclient, self.services)
-        self.services['mode'] = zone.networktype
+        domain = get_domain(cls.apiclient, cls.services)
+        zone = get_zone(cls.apiclient, cls.services)
+        cls.services['mode'] = zone.networktype
 
-        #if local storage is enabled, alter the offerings to use localstorage
+        #If local storage is enabled, alter the offerings to use localstorage
         #this step is needed for devcloud
         if zone.localstorageenabled == True:
-            self.services["service_offerings"]["tiny"]["storagetype"] = 'local'
-            self.services["service_offerings"]["small"]["storagetype"] = 'local'
-            self.services["service_offerings"]["medium"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["tiny"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["small"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
         template = get_template(
-                            self.apiclient,
-                            zone.id,
-                            self.services["ostype"]
-                            )
+            cls.apiclient,
+            zone.id,
+            cls.services["ostype"]
+        )
         # Set Zones and disk offerings
-        self.services["small"]["zoneid"] = zone.id
-        self.services["small"]["template"] = template.id
+        cls.services["small"]["zoneid"] = zone.id
+        cls.services["small"]["template"] = template.id
 
-        self.services["medium"]["zoneid"] = zone.id
-        self.services["medium"]["template"] = template.id
-        self.services["iso"]["zoneid"] = zone.id
+        cls.services["medium"]["zoneid"] = zone.id
+        cls.services["medium"]["template"] = template.id
+        cls.services["iso"]["zoneid"] = zone.id
 
-        # Create Account, VMs, NAT Rules etc
-        self.account = Account.create(
-                            self.apiclient,
-                            self.services["account"],
-                            domainid=domain.id
-                            )
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=domain.id
+        )
 
-        self.service_offering = ServiceOffering.create(
-                                    self.apiclient,
-                                    self.services["service_offerings"]["tiny"]
-                                    )
-        # Cleanup
-        self.cleanup = [
-                        self.service_offering,
-                        self.account
-                        ]
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["tiny"]
+        )
+
+        cls.virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.account.name,
+            domainid=cls.account.account.domainid,
+            serviceofferingid=cls.service_offering.id,
+            mode=cls.services['mode']
+        )
+
+        cls.cleanup = [
+            cls.service_offering,
+            cls.account
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            cls.debug("Warning! Exception in tearDown: %s" % e)
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+
 
     @attr(tags = ["simulator", "devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
-
         # Validate the following:
         # 1. Virtual Machine is accessible via SSH
         # 2. listVirtualMachines returns accurate information
-        # 3. The Cloud Database contains the valid information
-
-        self.virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
-                                    self.services["small"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
-                                    serviceofferingid=self.service_offering.id,
-                                    mode=self.services['mode']
-                                )
-
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -204,46 +211,60 @@ class TestDeployVM(cloudstackTestCase):
                 "Verify listVirtualMachines response for virtual machine: %s" \
                 % self.virtual_machine.id
             )
-
         self.assertEqual(
                             isinstance(list_vm_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
                             "Check VM available in List Virtual Machines"
                         )
         vm_response = list_vm_response[0]
-
         self.assertEqual(
 
                             vm_response.id,
                             self.virtual_machine.id,
                             "Check virtual machine id in listVirtualMachines"
                         )
-
         self.assertEqual(
                     vm_response.name,
                     self.virtual_machine.name,
                     "Check virtual machine name in listVirtualMachines"
                     )
-
         self.assertEqual(
             vm_response.state,
             'Running',
              msg="VM is not in Running state"
         )
-
         return
 
+
+    @attr(tags = ["simulator", "advanced"])
+    def test_advZoneVirtualRouter(self):
+        """
+        Test advanced zone virtual router
+        1. Is Running
+        2. is in the account the VM was deployed in
+        3. Has a linklocalip, publicip and a guestip
+        @return:
+        """
+        routers = list_routers(self.apiclient, account=self.account.account.name)
+        self.assertTrue(len(routers) > 0, msg = "No virtual router found")
+        router = routers[0]
+
+        self.assertEqual(router.state, 'Running', msg="Router is not in running state")
+        self.assertEqual(router.account, self.account.account.name, msg="Router does not belong to the account")
+
+        #Has linklocal, public and guest ips
+        self.assertIsNotNone(router.linklocalip, msg="Router has no linklocal ip")
+        self.assertIsNotNone(router.publicip, msg="Router has no public ip")
+        self.assertIsNotNone(router.guestipaddress, msg="Router has no guest ip")
+
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+        pass
+
 
 
 class TestVMLifeCycle(cloudstackTestCase):
