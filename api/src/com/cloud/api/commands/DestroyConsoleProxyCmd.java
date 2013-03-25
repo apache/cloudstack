@@ -17,14 +17,12 @@
 package com.cloud.api.commands;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -82,12 +80,6 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = _consoleProxyService.destroyConsoleProxy(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy console proxy");
-        }
+        throw new UnsupportedServiceException("Use destroySystemVm API instead");
     }
 }
