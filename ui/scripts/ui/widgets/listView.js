@@ -648,13 +648,13 @@
     }
 
     // Actions column
-    var actionsArray = $.map(actions, function(v, k) {
+    var actionsArray = actions ? $.map(actions, function(v, k) {
       if (k == 'add') {
         v.isAdd = true;
       }
 
       return v;
-    });
+    }) : [];
     var headerActionsArray = $.grep(
       actionsArray,
       function(action) {
@@ -1028,13 +1028,13 @@
       $tr.data('jsonObj', dataItem);
       $tr.data('list-view-action-filter', options.actionFilter);
 
-      var actionsArray = $.map(actions, function(v, k) {
+      var actionsArray = actions ? $.map(actions, function(v, k) {
         if (k == 'add') {
           v.isAdd = true;
         }
 
         return v;
-      });
+      }) : [];
       var headerActionsArray = $.grep(
         actionsArray,
         function(action) {
