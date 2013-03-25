@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.resource;
+package org.apache.cloudstack.storage.resource;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -27,6 +27,10 @@ import java.util.Random;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -58,11 +62,7 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.template.DownloadManager;
-import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
-import com.cloud.storage.template.UploadManager;
-import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;

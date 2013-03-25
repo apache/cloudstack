@@ -270,6 +270,12 @@ class deployDataCenters():
         zoneCmd.allocationstate = allocation_state
         return self.apiClient.updateZone(zoneCmd)
 
+    def updateZoneDetails(self, zoneid, details):
+        zoneCmd = updateZone.updateZoneCmd()
+        zoneCmd.id = zoneid
+        zoneCmd.details = details
+        return self.apiClient.updateZone(zoneCmd)
+
     def createZones(self, zones):
         for zone in zones:
             createzone = createZone.createZoneCmd()
@@ -320,7 +326,15 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            self.enableZone(zoneId, "Enabled")
+            
+            enabled = getattr(zone, 'enabled', 'True')
+            if enabled == 'True' or enabled == 'None':
+                self.enableZone(zoneId, "Enabled")
+            details = getattr(zone, 'details')
+            if details is not None:
+                det = [d.__dict__ for d in details]
+                self.updateZoneDetails(zoneId, det)
+
         return
     
     def isEipElbZone(self, zone):
