@@ -711,12 +711,18 @@ public class LibvirtVMDef {
             _model = model;
         }
 
-        public void defEthernet(String targetName, String macAddr,  nicModel model) {
+        public void defEthernet(String targetName, String macAddr, nicModel model, String scriptPath) {
             _netType = guestNetType.ETHERNET;
             _networkName = targetName;
+            _sourceName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _scriptPath = scriptPath;
          }
+
+        public void defEthernet(String targetName, String macAddr, nicModel model) {
+            defEthernet(targetName, macAddr, model, null);
+        }
 
         public void setHostNetType(hostNicType hostNetType) {
             _hostNetType = hostNetType;
@@ -789,6 +795,9 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if (_scriptPath != null) {
+                netBuilder.append("<script path='" + _scriptPath + "'/>\n");
             }
             if (_virtualPortType != null) {
                 netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");

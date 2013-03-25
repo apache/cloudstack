@@ -1823,6 +1823,26 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
         NicProfile profile = new NicProfile(nic, network, null, null, null,
                 _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        /*
+         * We need to release the nics with a Create ReservationStrategy here
+         * because the nic is now being removed.
+         */
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                }
+                try {
+                    element.release(network, profile, vm, null);
+                } catch (ConcurrentOperationException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                } catch (ResourceUnavailableException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                }
+            }
+        }
+
         NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());

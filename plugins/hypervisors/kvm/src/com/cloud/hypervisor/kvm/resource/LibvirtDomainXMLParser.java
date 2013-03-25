@@ -111,6 +111,9 @@ public class LibvirtDomainXMLParser {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac,
                             nicModel.valueOf(model.toUpperCase()));
+                } else if (type.equalsIgnoreCase("ethernet"))  {
+                    String scriptPath = getAttrValue("script", "path", nic);
+                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath);
                 }
                 interfaces.add(def);
             }

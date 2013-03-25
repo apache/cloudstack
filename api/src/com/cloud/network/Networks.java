@@ -62,6 +62,7 @@ public class Networks {
         Vnet("vnet", Long.class),
         Storage("storage", Integer.class),
         Lswitch("lswitch", String.class),
+        Mido("mido", String.class),
         UnDecided(null, null);
 
         private String scheme;

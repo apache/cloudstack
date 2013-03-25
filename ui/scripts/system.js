@@ -4315,6 +4315,110 @@
                 notification: { poll: pollAsyncJobResult }
               }
             }
+          },
+
+
+          // MidoNet provider detailView
+          midoNet: {
+          id: 'midoNet',
+          label: 'label.midoNet',
+          isMaximized: true,
+          type: 'detailView',
+          fields: {
+            name: { label: 'label.name' },
+            //ipaddress: { label: 'label.ip.address' },
+            state: { label: 'label.status', indicator: { 'Enabled': 'on' } }
+          },
+          tabs: {
+            details: {
+              title: 'label.network',
+              fields: [
+                {
+                  name: { label: 'label.name' }
+                },
+                {
+                  id: { label: 'label.id' },
+                  state: { label: 'label.state' },
+                  physicalnetworkid: { label: 'label.physical.network.ID' },
+                  destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
+                  supportedServices: { label: 'label.supported.services' }
+                }
+                ],
+                dataProvider: function(args) {
+                  refreshNspData("MidoNet");
+                  args.response.success({
+                    actionFilter: virtualRouterProviderActionFilter,
+                    data: $.extend(nspMap["midoNet"], {
+                      supportedServices: nspMap["midoNet"].servicelist.join(', ')
+                    })
+                  });
+                }
+              },
+            },
+            actions: {
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["midoNet"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.enable.provider';
+                  },
+                  notification: function() {
+                    return 'label.enable.provider';
+                  }
+               },
+               notification: { poll: pollAsyncJobResult }
+             },
+             disable: {
+               label: 'label.disable.provider',
+               action: function(args) {
+               $.ajax({
+                 url: createURL("updateNetworkServiceProvider&id=" + nspMap["midoNet"].id + "&state=Disabled"),
+                 dataType: "json",
+                 success: function(json) {
+                   var jid = json.updatenetworkserviceproviderresponse.jobid;
+                     args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.disable.provider';
+                  },
+                  notification: function() {
+                    return 'label.disable.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
           }          
         }
       }
@@ -11353,6 +11457,9 @@
 							case "Netscaler":
 								nspMap["netscaler"] = items[i];
 								break;
+                            case "MidoNet":
+                                nspMap["midoNet"] = items[i];
+                                break;
 							case "F5BigIp":
 								nspMap["f5"] = items[i];
 								break;
@@ -11409,6 +11516,13 @@
 		else if(selectedZoneObj.networktype == "Advanced"){
 		  nspHardcodingArray.push(
 				{
+                    id: 'midoNet',
+                    name: 'MidoNet',
+                    state: nspMap.midoNet? nspMap.midoNet.state : 'Disabled'
+                }
+            );
+            nspHardcodingArray.push(
+                {
 					id: 'vpcVirtualRouter',
 					name: 'VPC Virtual Router',
 					state: nspMap.vpcVirtualRouter ? nspMap.vpcVirtualRouter.state : 'Disabled'
