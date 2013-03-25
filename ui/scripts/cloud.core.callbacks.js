@@ -59,7 +59,7 @@ $(document).ready(function() {
 	*/
 	if ($.urlParam('loginUrl') != 0) {	 
 		$.cookie('loginUrl', $.urlParam('loginUrl'), { expires: 1});
-	  document.location.href = '/client/';	
+		document.location.href = window.location.href.substring(0, window.location.href.indexOf('?'));	
 	}
 	
 	/* 
