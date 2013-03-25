@@ -204,7 +204,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements
         String hostPath = uri.getPath();
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
-            hostPath = hostPath.replace("/", "");
+            hostPath = hostPath.replaceFirst("/", "");
         }
         String userInfo = uri.getUserInfo();
         int port = uri.getPort();
