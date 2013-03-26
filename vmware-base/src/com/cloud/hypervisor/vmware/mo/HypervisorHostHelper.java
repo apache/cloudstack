@@ -163,7 +163,8 @@ public class HypervisorHostHelper {
     }
 
     public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName,
-            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstSize, boolean configureVServiceInNexus) throws Exception {
+            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstSize,
+            String gateway, boolean configureVServiceInNexus) throws Exception {
         Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
         String vsmIp = vsmCredentials.get("vsmip");
         String vsmUserName = vsmCredentials.get("vsmusername");
@@ -233,14 +234,16 @@ public class HypervisorHostHelper {
                 s_logger.info("Adding port profile configured over untagged VLAN.");
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, 0);
             } else {
-                s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
                 if (!configureVServiceInNexus) {
+                    s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
                     netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
                 } else {
                     String tenant = "vlan-" + vlanId.intValue();
                     String vdc = "root/" + tenant + "/VDC-" + tenant;
                     String esp = "ESP-" + tenant;
-                    netconfClient.addVServiceNode(vlanId.toString(), "10.1.1.1");
+                    s_logger.info("Adding vservice node in Nexus VSM for VLAN : " + vlanId.toString());
+                    netconfClient.addVServiceNode(vlanId.toString(), gateway);
+                    s_logger.info("Adding port profile with vservice details configured over VLAN : " + vlanId.toString());
                     netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue(), vdc, esp);
                 }
             }
@@ -410,7 +413,7 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
-            VirtualSwitchType vSwitchType, int numPorts, boolean configureVServiceInNexus) throws Exception {
+            VirtualSwitchType vSwitchType, int numPorts, String gateway, boolean configureVServiceInNexus) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -524,7 +527,7 @@ public class HypervisorHostHelper {
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
                 s_logger.info("Port profile " + networkName + " not found.");
-                createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize, configureVServiceInNexus);
+                createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize, gateway, configureVServiceInNexus);
                 bWaitPortGroupReady = true;
             } else {
                 s_logger.info("Port profile " + networkName + " found.");
