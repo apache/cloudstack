@@ -1177,6 +1177,24 @@
             validation: { required: true }  
 					},
 
+           scope: {
+                    label: 'label.scope',
+                    select: function(args) {
+
+            var scope = [
+                        { id: 'zone', description: _l('label.zone.wide') },
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'host', description: _l('label.host') }
+                      ];
+
+                      args.response.success({
+                        data: scope
+                      });
+
+                }
+
+              },
+
           protocol: {
             label: 'label.protocol',
             validation: { required: true }, 
@@ -3244,6 +3262,7 @@
           array1.push("&podId=" + args.data.returnedPod.id);
           array1.push("&clusterid=" + args.data.returnedCluster.id);
           array1.push("&name=" + todb(args.data.primaryStorage.name));
+          array1.push("&scope=" +todb(args.data.primaryStorage.scope));
 
 					var server = args.data.primaryStorage.server;
           var url = null;
