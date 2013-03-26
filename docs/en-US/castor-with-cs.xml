@@ -34,8 +34,7 @@
   <para>To configure CAStor:</para>
   <orderedlist>
     <listitem>
-      <para>Install &PRODUCT; 4.0.0-incubating by following the instructions given in the INSTALL.txt
-        file.</para>
+      <para>Install &PRODUCT; by following the instructions given in the INSTALL.txt file.</para>
       <note>
         <para>You can use the S3 storage system in &PRODUCT; without setting up and installing the
           compute components.</para>
