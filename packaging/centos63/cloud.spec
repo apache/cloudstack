@@ -33,8 +33,8 @@ Release:   %{_rel}%{dist}
 %endif
 Version:   %{_ver}
 License:   ASL 2.0
-Vendor:    Apache CloudStack <cloudstack-dev@incubator.apache.org>
-Packager:  Apache CloudStack <cloudstack-dev@incubator.apache.org>
+Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
+Packager:  Apache CloudStack <dev@cloudstack.apache.org>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
