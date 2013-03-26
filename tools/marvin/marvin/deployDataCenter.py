@@ -299,10 +299,11 @@ class deployDataCenters():
 
             if zone.networktype == "Basic":
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
-                
                 listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
                         if len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0 \
                         else "DefaultSharedNetworkOfferingWithSGService"
+                if zone.networkofferingname  is not None:
+                   listnetworkoffering.name = zone.networkofferingname 
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
