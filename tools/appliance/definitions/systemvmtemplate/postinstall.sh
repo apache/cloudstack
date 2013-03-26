@@ -168,8 +168,8 @@ configure_services() {
   mkdir -p /var/lib/haproxy
 
   # Get config files from master
-  snapshot_url="https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
-  snapshot_dir="/opt/incubator-cloudstack*"
+  snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
+  snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
