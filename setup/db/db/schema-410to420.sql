@@ -233,6 +233,7 @@ CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `gslb_rule_id` bigint unsigned NOT NULL,
   `lb_rule_id` bigint unsigned NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),
   CONSTRAINT `fk_gslb_rule_id` FOREIGN KEY(`gslb_rule_id`) REFERENCES `global_load_balancing_rules`(`id`) ON DELETE CASCADE,

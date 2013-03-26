@@ -40,6 +40,8 @@ public interface GlobalLoadBalancingRulesService {
     boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd);
 
 
+    GlobalLoadBalancerRule findById(long gslbRuleId);
+
     List<GlobalLoadBalancerRule> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd);
 
 }

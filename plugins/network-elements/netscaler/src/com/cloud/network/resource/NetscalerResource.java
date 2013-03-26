@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.network.resource;
 
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscalepolicy;
@@ -48,36 +41,6 @@ import com.cloud.agent.api.routing.*;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.*;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
-import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
-import com.cloud.agent.api.routing.CreateLoadBalancerApplianceCommand;
-import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
-import com.cloud.agent.api.routing.HealthCheckLBConfigAnswer;
-import com.cloud.agent.api.routing.HealthCheckLBConfigCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
-import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
-import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
-import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
-import com.cloud.agent.api.to.LoadBalancerTO.HealthCheckPolicyTO;
-import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -896,6 +859,7 @@ public class NetscalerResource implements ServerResource {
         String persistenceType = gslbCmd.getPersistenceType();
         String serviceType = gslbCmd.getServiceType();
         boolean forRevoke = gslbCmd.isForRevoke();
+        long gslbId = gslbCmd.getGslbId();
         List<SiteLoadBalancerConfig> sites = gslbCmd.getSiteDetails();
 
         String domainName = gslbCmd.getDomainName();
@@ -906,34 +870,35 @@ public class NetscalerResource implements ServerResource {
             if (!forRevoke) { //check if the global load balancer rule is being added
 
                 // Add a GSLB virtual server
-                GSLB.createVirtualServer(_netscalerService, vserverName, lbMethod, persistenceType, serviceType);
+                GSLB.createVirtualServer(_netscalerService, vserverName, lbMethod, persistenceType, gslbId, serviceType);
 
                 if (sites != null) { // check if there are any sites that are participating in global load balancing
                     for (SiteLoadBalancerConfig site : sites) {
 
                         String sitePrivateIP = site.getGslbProviderPrivateIp();
                         String sitePublicIP =  site.getGslbProviderPublicIp();
-                        String sitePublicPort = site.getPublicPort();
-                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP);
+                        String servicePublicIp = site.getServicePublicIp();
+                        String servicePublicPort = site.getServicePort();
+                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP, site.getDataCenterId());
 
                         // Add/Delete GSLB local and remote sites that are part of GSLB virtual server
                         if (!site.forRevoke()) {
                             String siteType = (site.isLocal()) ? "LOCAL" : "REMOTE";
                             if (GSLB.getSiteObject(_netscalerService, siteName) != null) {
-                                GSLB.updateSite(_netscalerService, siteType, siteName, site.getGslbProviderPrivateIp(),
+                                GSLB.updateSite(_netscalerService, siteName, siteType, site.getGslbProviderPrivateIp(),
                                         site.getGslbProviderPublicIp());
                             } else {
-                                GSLB.createSite(_netscalerService, siteType, siteName, site.getGslbProviderPrivateIp(),
+                                GSLB.createSite(_netscalerService, siteName, siteType, site.getGslbProviderPrivateIp(),
                                         site.getGslbProviderPublicIp());
                             }
                         }
 
                         // Add/Delete GSLB service corresponding the service running on each site
-                        String serviceName = GSLB.generateUniqueServiceName(siteName, sitePublicIP, sitePublicPort);
+                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
                         if (!site.forRevoke()) {
                             // create a 'gslbservice' object
                             GSLB.createService(_netscalerService, serviceName, site.getServiceType(),
-                                    sitePublicIP, sitePublicPort, siteName);
+                                    servicePublicIp, servicePublicPort, siteName);
 
                             // Bind 'gslbservice' service object to GSLB virtual server
                             GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName);
@@ -967,11 +932,12 @@ public class NetscalerResource implements ServerResource {
 
                         String sitePrivateIP = site.getGslbProviderPrivateIp();
                         String sitePublicIP =  site.getGslbProviderPublicIp();
-                        String sitePublicPort = site.getPublicPort();
-                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP);
+                        String servicePublicIp = site.getServicePublicIp();
+                        String servicePublicPort = site.getServicePort();
+                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP, site.getDataCenterId());
 
                         // remove binding between virtual server and services
-                        String serviceName = GSLB.generateUniqueServiceName(siteName, sitePublicIP, sitePublicPort);
+                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
                         GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
 
                         // delete service object
@@ -986,6 +952,9 @@ public class NetscalerResource implements ServerResource {
                 // delete GSLB virtual server
                 GSLB.deleteVirtualServer(_netscalerService, vserverName);
             }
+
+            saveConfiguration();
+
         } catch (Exception e) {
             if (shouldRetry(numRetries)) {
                 return retry(gslbCmd, numRetries);
@@ -1003,7 +972,7 @@ public class NetscalerResource implements ServerResource {
 
         // create a 'gslbsite' object representing a site
         private static void createSite(nitro_service client, String siteName,
-                                       String siteType, String siteIP, String sitePublicIP) {
+                                       String siteType, String siteIP, String sitePublicIP) throws  ExecutionException{
             try {
                 gslbsite site;
                 site = getSiteObject(client, siteName);
@@ -1032,9 +1001,11 @@ public class NetscalerResource implements ServerResource {
                     s_logger.debug("Successfully created GSLB site: " + siteName);
                 }
             } catch (Exception e) {
+                String errMsg = "Failed to create GSLB site: " + siteName + " due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Failed to create GSLB site: " + siteName + " due to " + e.getMessage());
+                    s_logger.debug(errMsg);
                 }
+                throw new ExecutionException(errMsg);
             }
         }
 
@@ -1094,7 +1065,8 @@ public class NetscalerResource implements ServerResource {
 
         // create a 'gslbvserver' object representing a globally load balanced service
         private static void createVirtualServer(nitro_service client, String vserverName, String lbMethod,
-                                         String persistenceType, String serviceType) {
+                                         String persistenceType, long persistenceId, String serviceType)
+                    throws ExecutionException {
             try {
                 gslbvserver vserver;
                 vserver = getVserverObject(client, vserverName);
@@ -1109,8 +1081,16 @@ public class NetscalerResource implements ServerResource {
                 vserver.set_name(vserverName);
                 vserver.set_lbmethod(lbMethod);
                 vserver.set_persistencetype(persistenceType);
+                if ("SOURCEIP".equalsIgnoreCase(persistenceType)) {
+                    vserver.set_persistenceid(persistenceId);
+                }
                 vserver.set_servicetype(serviceType);
+                vserver.set_state("ENABLED");
                 if (isUpdateSite) {
+                    if ("roundrobin".equalsIgnoreCase(lbMethod)) {
+                        vserver.set_netmask(null);
+                        vserver.set_v6netmasklen(null);
+                    }
                     gslbvserver.update(client, vserver);
                 } else {
                     gslbvserver.add(client, vserver);
@@ -1121,9 +1101,11 @@ public class NetscalerResource implements ServerResource {
                 }
 
             } catch (Exception e) {
+                String errMsg = "Failed to add GSLB virtual server: " + vserverName + " due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Failed to add GSLB virtual server: " + vserverName + " due to " + e.getMessage());
+                    s_logger.debug(errMsg);
                 }
+                throw new ExecutionException(errMsg);
             }
         }
 
@@ -1198,8 +1180,8 @@ public class NetscalerResource implements ServerResource {
         }
 
         // create, delete, update, get the GSLB services
-        private static void createService(nitro_service client, String serviceName, String serviceType, String publicIp,
-                                   String publicPort, String siteName) {
+        private static void createService(nitro_service client, String serviceName, String serviceType, String serviceIp,
+                                   String servicePort, String siteName) throws ExecutionException{
             try {
                 gslbservice service;
                 service = getServiceObject(client, serviceName);
@@ -1212,11 +1194,14 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 service.set_sitename(siteName);
-                service.set_publicip(publicIp);
-                service.set_publicport(Integer.getInteger(publicPort));
+                service.set_servername(serviceIp);
+                int port = Integer.parseInt(servicePort);
+                service.set_port(port);
                 service.set_servicename(serviceName);
                 service.set_servicetype(serviceType);
                 if (isUpdateSite) {
+                    service.set_viewip(null);
+                    service.set_viewname(null);
                     gslbservice.update(client, service);
                 } else {
                     gslbservice.add(client, service);
@@ -1225,9 +1210,11 @@ public class NetscalerResource implements ServerResource {
                     s_logger.debug("Successfully created service: " + serviceName + " at site: " + siteName);
                 }
             } catch (Exception e) {
+                String errMsg = "Failed to created service: " + serviceName + " at site: " + siteName;
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Failed to created service: " + serviceName + " at site: " + siteName);
+                    s_logger.debug(errMsg);
                 }
+                throw new ExecutionException(errMsg);
             }
         }
 
@@ -1275,20 +1262,24 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName) {
+        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
+                    throws ExecutionException {
             try {
                 gslbvserver_gslbservice_binding binding = new gslbvserver_gslbservice_binding();
                 binding.set_name(vserverName);
                 binding.set_servicename(serviceName);
+                gslbvserver_gslbservice_binding.add(client, binding);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully created service: " + serviceName + " and virtual server: "
                             + vserverName + " binding");
                 }
             } catch (Exception e) {
+                String errMsg = "Failed to create service: " + serviceName + " and virtual server: "
+                        + vserverName + " binding due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Failed to create service: " + serviceName + " and virtual server: "
-                            + vserverName + " binding due to " + e.getMessage());
+                    s_logger.debug(errMsg);
                 }
+                throw new ExecutionException(errMsg);
             }
         }
 
@@ -1389,8 +1380,8 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static String generateUniqueSiteName(String sitePrivateIp, String sitePublicIP) {
-            return "cloud-site-" + sitePrivateIp + "-" + sitePublicIP;
+        private static String generateUniqueSiteName(String sitePrivateIp, String sitePublicIP, long dataCenterId) {
+            return "cloudsite" + String.valueOf(dataCenterId);
         }
 
         private static String generateVirtualServerName(String domainName) {

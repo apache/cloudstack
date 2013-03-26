@@ -870,14 +870,14 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
         //return true if a NetScaler device is configured in the zone
-        return (nsGslbProvider == null);
+        return (nsGslbProvider != null);
     }
 
     @Override
     public String getZoneGslbProviderPublicIp(long zoneId) {
         ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
         if (nsGslbProvider != null) {
-            nsGslbProvider.getGslbSitePublicIP();
+            return nsGslbProvider.getGslbSitePublicIP();
         }
         return null;
     }
@@ -886,7 +886,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     public String getZoneGslbProviderPrivateIp(long zoneId) {
         ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
         if (nsGslbProvider != null) {
-            nsGslbProvider.getGslbSitePrivateIP();
+            return nsGslbProvider.getGslbSitePrivateIP();
         }
         return null;
     }

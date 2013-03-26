@@ -34,7 +34,7 @@ public class SiteLoadBalancerConfig {
     String servicePublicIp;
 
     // port corresponding to the site load balanced service
-    String port;
+    String servicePort;
 
     // Private IP corresponding to the GSLB service provider in the site.
     String gslbProviderPrivateIp;
@@ -42,16 +42,22 @@ public class SiteLoadBalancerConfig {
     // Public IP corresponding to the GSLB service provider in the site.
     String gslbProviderPublicIp;
 
-    public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String port) {
+    // zone id in which site is located
+    long dataCenterId;
+
+    public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String servicePort,
+                                  long dataCenterId) {
         this.revoked = revoked;
         this.serviceType = serviceType;
         this.servicePublicIp = servicePublicIp;
-        this.port = port;
+        this.servicePort = servicePort;
+        this.dataCenterId = dataCenterId;
     }
 
     public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, boolean local,
-                                  boolean revoked, String serviceType, String servicePublicIp, String port) {
-        this(revoked, serviceType, servicePublicIp, port);
+                                  boolean revoked, String serviceType, String servicePublicIp, String port,
+                                  long dataCenterId) {
+        this(revoked, serviceType, servicePublicIp, port, dataCenterId);
         this.gslbProviderPrivateIp = gslbProviderPrivateIp;
         this.gslbProviderPublicIp = gslbProviderPublicIP;
         this.local = local;
@@ -73,12 +79,12 @@ public class SiteLoadBalancerConfig {
         this.servicePublicIp = servicePublicIp;
     }
 
-    public String getPublicPort() {
-        return port;
+    public String getServicePort() {
+        return servicePort;
     }
 
-    public void setPublicPort(String port) {
-        this.port = port;
+    public void setServicePort(String port) {
+        this.servicePort = port;
     }
 
     public String getGslbProviderPrivateIp() {
@@ -91,6 +97,10 @@ public class SiteLoadBalancerConfig {
 
     public String getGslbProviderPublicIp() {
         return gslbProviderPublicIp;
+    }
+
+    public long getDataCenterId() {
+        return  dataCenterId;
     }
 
     public void setGslbProviderPublicIp(String publicIp) {

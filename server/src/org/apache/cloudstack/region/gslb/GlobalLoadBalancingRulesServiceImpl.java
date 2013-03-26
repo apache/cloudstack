@@ -28,6 +28,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.*;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
@@ -81,6 +82,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     AgentManager _agentMgr;
     @Inject
     protected GslbServiceProvider _gslbProvider;
+    @Inject
+    protected List<NetworkElement> _networkElements;
 
     @Override
     @DB
@@ -486,7 +489,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         assert(gslbRule != null);
 
         String lbMethod = gslbRule.getAlgorithm();
-        String persistenceMethod = gslbRule.getUuid();
+        String persistenceMethod = gslbRule.getPersistence();
         String serviceType = gslbRule.getServiceType();
 
         // each Gslb rule will have a FQDN, formed from the domain name associated with the gslb rule
@@ -496,7 +499,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         String gslbFqdn = domainName + providerDnsName;
 
         GlobalLoadBalancerConfigCommand gslbConfigCmd = new GlobalLoadBalancerConfigCommand(gslbFqdn,
-                lbMethod, persistenceMethod, serviceType, revoke);
+                lbMethod, persistenceMethod, serviceType, gslbRuleId, revoke);
 
         // list of the zones participating in global load balancing
         List<Long> gslbSiteIds = new ArrayList<Long>();
@@ -519,7 +522,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             IPAddressVO ip = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId());
             SiteLoadBalancerConfig siteLb = new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType,
-                    ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()));
+                    ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()),
+                    dataCenterId);
 
             siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId));
             siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId));
@@ -559,5 +563,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         }
 
         return _gslbProvider.isServiceEnabledInZone(zoneId);
+    }
+
+    @Override
+    public GlobalLoadBalancerRule findById(long gslbRuleId) {
+        return _gslbRuleDao.findById(gslbRuleId);
     }
 }

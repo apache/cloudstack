@@ -38,6 +38,9 @@ public class GlobalLoadBalancerConfigCommand extends Command {
     // session persistence type
     String persistenceType;
 
+    // unique Id given per gslb rule, that is uniquely represents glsb rule on all participant sites
+    long gslbId;
+
     // true if global load balancer rule is being deleted
     boolean revoked;
 
@@ -48,11 +51,13 @@ public class GlobalLoadBalancerConfigCommand extends Command {
                                                  String lbMethod,
                                                  String persistenceType,
                                                  String serviceType,
+                                                 long gslbId,
                                                  boolean revoked) {
         this.domainName = domainName;
         this.serviceType = serviceType;
         this.lbMethod = lbMethod;
         this.persistenceType = persistenceType;
+        this.gslbId = gslbId;
         this.revoked = revoked;
     }
 
@@ -74,6 +79,10 @@ public class GlobalLoadBalancerConfigCommand extends Command {
 
     public String getPersistenceType() {
         return persistenceType;
+    }
+
+    public long getGslbId() {
+        return this.gslbId;
     }
 
     public String getDomainName() {

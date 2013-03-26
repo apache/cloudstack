@@ -19,15 +19,14 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
@@ -51,7 +50,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name=ApiConstants.LOAD_BALANCER_RULE_LIST, type=CommandType.LIST, collectionType=CommandType.UUID,
-            entityType = LoadBalancerResponse.class, required=true, description="the list load balancer rules that " +
+            entityType = FirewallRuleResponse.class, required=true, description="the list load balancer rules that " +
             "will be assigned to gloabal load balacner rule")
     private List<Long> loadBalancerRulesIds;
 
@@ -115,15 +114,15 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.gslbSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        LoadBalancer lb = _lbService.findById(id);
-        if(lb == null){
+        GlobalLoadBalancerRule gslb = _gslbService.findById(id);
+        if(gslb == null){
             throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
         }
-        return lb.getNetworkId();
+        return gslb.getId();
     }
 }
