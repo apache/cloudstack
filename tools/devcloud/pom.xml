@@ -143,10 +143,10 @@
       </build>
     </profile>
     <profile>
-      <id>quicksvr</id>
+      <id>quickcloud</id>
       <activation>
         <property>
-          <name>quicksvr</name>
+          <name>quickcloud</name>
         </property>
       </activation>
       <build> 

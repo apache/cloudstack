@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.secondary;
+package org.apache.cloudstack.storage.resource;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -30,8 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.resource.LocalSecondaryStorageResource;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
