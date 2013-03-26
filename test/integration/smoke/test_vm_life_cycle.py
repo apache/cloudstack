@@ -262,9 +262,24 @@ class TestDeployVM(cloudstackTestCase):
         self.assertIsNotNone(router.publicip, msg="Router has no public ip")
         self.assertIsNotNone(router.guestipaddress, msg="Router has no guest ip")
 
+    @attr(hypervisor = ["simulator"])
+    @attr(mode = ["basic"])
+    def test_basicZoneVirtualRouter(self):
+        """
+        Tests for basic zone virtual router
+        1. Is Running
+        2. is in the account the VM was deployed in
+        @return:
+        """
+        routers = list_routers(self.apiclient, account=self.account.account.name)
+        self.assertTrue(len(routers) > 0, msg = "No virtual router found")
+        router = routers[0]
+
+        self.assertEqual(router.state, 'Running', msg="Router is not in running state")
+        self.assertEqual(router.account, self.account.account.name, msg="Router does not belong to the account")
+
     def tearDown(self):
         pass
-
 
 
 class TestVMLifeCycle(cloudstackTestCase):

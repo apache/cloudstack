@@ -16,10 +16,12 @@
 # under the License.
 
 import xml.dom.minidom
+import json
 from optparse import OptionParser
 from textwrap import dedent
 import os
 import sys
+
 class cmdParameterProperty(object):
     def __init__(self):
         self.name = None
@@ -97,6 +99,7 @@ class codeGenerator:
                 subclass += self.space + self.space + 'self.%s = None\n'%pro.name
         
         self.subclass.append(subclass)
+
     def generate(self, cmd):
        
         self.cmd = cmd
@@ -159,8 +162,7 @@ class codeGenerator:
         fp.close()
         self.code = ""
         self.subclass = []
-       
-        
+
     def finalize(self):
         '''generate an api call'''
         
@@ -215,8 +217,7 @@ class codeGenerator:
         fp.write(basecmd)
         fp.close()
         
-    
-    def constructResponse(self, response):
+    def constructResponseFromXML(self, response):
         paramProperty = cmdParameterProperty()
         paramProperty.name = getText(response.getElementsByTagName('name'))
         paramProperty.desc = getText(response.getElementsByTagName('description'))
@@ -224,7 +225,23 @@ class codeGenerator:
             '''This is a list'''
             paramProperty.name = paramProperty.name.split('(*)')[0]
             for subresponse in response.getElementsByTagName('arguments')[0].getElementsByTagName('arg'):
-                subProperty = self.constructResponse(subresponse)
+                subProperty = self.constructResponseFromXML(subresponse)
+                paramProperty.subProperties.append(subProperty)
+        return paramProperty
+
+    def constructResponseFromJSON(self, response):
+        paramProperty = cmdParameterProperty()
+        if response.has_key('name'):
+            paramProperty.name = response['name']
+        assert paramProperty.name
+
+        if response.has_key('description'):
+            paramProperty.desc = response['description']
+        if response.has_key('type') and response['type'] == 'list':
+            #Here list becomes a subproperty
+            paramProperty.name = paramProperty.name.split('(*)')[0]
+            for subresponse in response.getElementsByTagName('arguments')[0].getElementsByTagName('arg'):
+                subProperty = self.constructResponseFromXML(subresponse)
                 paramProperty.subProperties.append(subProperty)
         return paramProperty
 
@@ -269,17 +286,78 @@ class codeGenerator:
                 if response.parentNode != responseEle:
                     continue
             
-                paramProperty = self.constructResponse(response)
+                paramProperty = self.constructResponseFromXML(response)
                 csCmd.response.append(paramProperty)
             
             cmds.append(csCmd)
         return cmds
-    
-    def generateCode(self):
+
+    def loadCmdFromJSON(self, apiStream):
+        if apiStream is None:
+            raise Exception("No APIs found through discovery")
+
+        apiDict = json.loads(apiStream)
+        if not apiDict.has_key('listapisresponse'):
+            raise Exception("API discovery plugin response failed")
+        if not apiDict['listapisresponse'].has_key('count'):
+            raise Exception("Malformed api response")
+
+        apilist = apiDict['listapisresponse']['api']
+        cmds = []
+        for cmd in apilist:
+            csCmd = cloudStackCmd()
+            if cmd.has_key('name'):
+                csCmd.name = cmd['name']
+            assert csCmd.name
+
+            if cmd.has_key('description'):
+                csCmd.desc = cmd['description']
+
+            if cmd.has_key('async'):
+                csCmd.async = cmd['isasync']
+
+            for param in cmd['params']:
+                paramProperty = cmdParameterProperty()
+
+                if param.has_key('name'):
+                    paramProperty.name = param['name']
+                assert paramProperty.name
+
+                if param.has_key('required'):
+                    paramProperty.required = param.getElementsByTagName('required')
+
+                if param.has_key('description'):
+                    paramProperty.desc = param['description']
+
+                if param.has_key('type'):
+                    paramProperty.type = param['type']
+
+                csCmd.request.append(paramProperty)
+
+            for response in cmd['response']:
+                paramProperty = self.constructResponseFromJSON(response)
+                csCmd.response.append(paramProperty)
+
+            cmds.append(csCmd)
+        return cmds
+
+
+    def generateCodeFromXML(self):
         cmds = self.loadCmdFromXML()
         for cmd in cmds:
             self.generate(cmd)
         self.finalize()
+
+    def generateCodeFromJSON(self, apiJson):
+        """
+        Api Discovery plugin returns the supported APIs of a CloudStack endpoint.
+        @return: The classes in cloudstackAPI/ formed from api discovery json
+        """
+        with open(apiJson, 'r') as apiStream:
+            cmds = self.loadCmdFromJSON(apiStream)
+            for cmd in cmds:
+                self.generate(cmd)
+            self.finalize()
 
 def getText(elements):
     return elements[0].childNodes[0].nodeValue.strip()
@@ -315,5 +393,5 @@ if __name__ == "__main__":
             exit(2)
     
     cg = codeGenerator(folder, apiSpecFile)
-    cg.generateCode()
+    cg.generateCodeFromXML()
     
