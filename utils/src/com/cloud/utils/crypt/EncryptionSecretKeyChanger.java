@@ -54,7 +54,7 @@ public class EncryptionSecretKeyChanger {
 
 	private StandardPBEStringEncryptor oldEncryptor = new StandardPBEStringEncryptor();
 	private StandardPBEStringEncryptor newEncryptor = new StandardPBEStringEncryptor();
-	private static final String keyFile = "/etc/cloud/management/key";
+	private static final String keyFile = "/etc/cloudstack/management/key";
 
 	public static void main(String[] args){
 		List<String> argsList = Arrays.asList(args);
