@@ -57,6 +57,11 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-secondary-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -256,11 +261,6 @@
     </profile>
     <profile>
       <id>quickcloud</id>
-      <activation>
-        <property>
-          <name>quickcloud</name>
-        </property>
-      </activation>
       <build>
       <plugins>
       <plugin>
