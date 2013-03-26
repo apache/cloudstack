@@ -33,7 +33,6 @@
   <!--
     OSS deployment component configuration
   -->
-
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
   
@@ -103,7 +102,11 @@
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
+          
+  <!--
           <ref bean="BareMetalDiscoverer"/>
+  -->
+          
           <ref bean="OvmDiscoverer"/>
        </list>
     </property>
@@ -138,7 +141,11 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
+          
+<!--
           <ref bean="BareMetalPlanner" />
+-->
+    
       </list>
     </property>
   </bean>
@@ -163,9 +170,11 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+<!--          
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
+-->
       </list>
     </property>
     <property name="IpDeployers">
@@ -179,7 +188,9 @@
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+<!--          
           <ref bean="BareMetalDhcp"/>
+-->    
       </list>
     </property>
   </bean>
@@ -191,9 +202,11 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+<!--          
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
+-->    
       </list>
     </property>
   </bean>

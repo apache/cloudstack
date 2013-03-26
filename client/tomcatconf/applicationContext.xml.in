@@ -177,8 +177,6 @@
   <bean id="autoScaleVmGroupDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl" />
   <bean id="autoScaleVmGroupPolicyMapDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDaoImpl" />
   <bean id="autoScaleVmProfileDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl" />
-  <bean id="baremetalDhcpDaoImpl" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl" />
-  <bean id="baremetalPxeDaoImpl" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl" />
   <bean id="capacityDaoImpl" class="com.cloud.capacity.dao.CapacityDaoImpl" />
   <bean id="certificateDaoImpl" class="com.cloud.certificate.dao.CertificateDaoImpl" />
   <bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
@@ -382,15 +380,6 @@
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
   </bean>
-  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
-    <property name="name" value="BareMetalDhcp"/>
-  </bean>
-  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
-    <property name="name" value="BareMetalPxe"/>
-  </bean>
-  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
-      <property name="name" value="BareMetalUserdata"/>
-  </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
   </bean>
@@ -455,7 +444,6 @@
     <property name="name" value="Basic"/>
   </bean>
 
-  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" />
   <bean id="hyervisorTemplateAdapter" class="com.cloud.template.HyervisorTemplateAdapter" />
   <bean id="clusterAlertAdapter" class="com.cloud.alert.ClusterAlertAdapter" />
   <bean id="consoleProxyAlertAdapter" class="com.cloud.alert.ConsoleProxyAlertAdapter" />
@@ -509,10 +497,6 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
-  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
-    <property name="name" value="Bare Metal Agent"/>
-  </bean>
-
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
     <property name="name" value="SCVMMServer"/>
   </bean>
@@ -536,10 +520,6 @@
     <property name="name" value="UserConcentratedPod"/>
   </bean>
 
-  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
-    <property name="name" value="BareMetal Fit"/>
-  </bean>
-  
   <bean id="clusterBasedAgentLoadBalancerPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner">
     <property name="name" value="ClusterBasedAgentLoadBalancerPlanner"/>
   </bean>
@@ -590,14 +570,6 @@
     <property name="name" value="OvmGuru"/>
   </bean>
   
-  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
-    <property name="name" value="BaremetalGuru"/>
-  </bean>
-
-  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
-    <property name="name" value="BaremetalPlannerSelector"/>
-  </bean>
-
   <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
     <property name="name" value="HypervisorPlannerSelector"/>
   </bean>
@@ -619,12 +591,6 @@
 
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
 
-  <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
-  <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
-  <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
-  <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
-  <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" /> 
-    
   <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
   <bean id="asyncJobExecutorContextImpl" class="com.cloud.async.AsyncJobExecutorContextImpl" />
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
@@ -673,6 +639,49 @@
   <bean id="vpcVirtualNetworkApplianceManagerImpl" class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
 
   <!--
+    Baremetal components
+  -->
+<!--
+  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
+    <property name="name" value="BareMetalDhcp"/>
+  </bean>
+  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
+    <property name="name" value="BareMetalPxe"/>
+  </bean>
+  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
+      <property name="name" value="BareMetalUserdata"/>
+  </bean>
+
+  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" />
+
+  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
+    <property name="name" value="Bare Metal Agent"/>
+  </bean>
+
+  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
+    <property name="name" value="BareMetal Fit"/>
+  </bean>
+  
+  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
+    <property name="name" value="BaremetalGuru"/>
+  </bean>
+
+  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
+  </bean>
+
+  <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
+  <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
+  <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
+  <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
+  <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" /> 
+    
+  <bean id="bAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
+  <bean id="baremetalDhcpDaoImpl" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl" />
+  <bean id="baremetalPxeDaoImpl" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl" />
+-->
+
+  <!--
     Misc components
   -->
   <bean id="cloudZonesStartupProcessor" class="com.cloud.hypervisor.CloudZonesStartupProcessor" />
@@ -686,7 +695,6 @@
   <bean id="apiResponseHelper" class="com.cloud.api.ApiResponseHelper" />
   <bean id="apiServer" class="com.cloud.api.ApiServer" />
   <bean id="apiServlet" class="com.cloud.api.ApiServlet" />
-  <bean id="bAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
   <bean id="cloudOrchestrator" class="org.apache.cloudstack.platform.orchestration.CloudOrchestrator" />
   <bean id="clusterRestService" class="org.apache.cloudstack.engine.rest.service.api.ClusterRestService" />
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />

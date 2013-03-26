@@ -170,6 +170,7 @@
 
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
     <property name="name" value="First Fit"/>
+
     <property name="StoragePoolAllocators">
       <list>
           <ref bean="LocalStoragePoolAllocator"/>
@@ -194,7 +195,9 @@
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
+<!--          
           <ref bean="BareMetalDiscoverer"/>
+-->
           <ref bean="OvmDiscoverer"/>
           <ref bean="vmwareServerDiscoverer"/>
        </list>
@@ -232,7 +235,9 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
+<!--
           <ref bean="BareMetalPlanner" />
+-->
       </list>
     </property>
   </bean>
@@ -262,9 +267,11 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+<!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
+-->    
       </list>
     </property>
     <property name="IpDeployers">
@@ -278,7 +285,9 @@
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+<!--
           <ref bean="BareMetalDhcp"/>
+-->
       </list>
     </property>
   </bean>
@@ -295,9 +304,11 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+<!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
+-->    
       </list>
     </property>
   </bean>

@@ -3081,9 +3081,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
         DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
         if (dvo.getNetworkType() == NetworkType.Basic) {
+ 
+        	// Baremetal is currently disabled
+/*
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetaUserdataProvider", null, null);
+*/        
         }
         return null;
     }
