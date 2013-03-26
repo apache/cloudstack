@@ -66,7 +66,7 @@
       cloudstack-aws-api-register. If you do not have the source then download the script using the following command.
           </para>
           <para>
-              <programlisting>wget -O cloudstack-aws-api-register <ulink url="https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD">"https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD"</ulink>
+              <programlisting>wget -O cloudstack-aws-api-register <ulink url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=4.1">"https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=4.1"</ulink>
               </programlisting>
           </para>
           <para> Then execute it, using the access and secret keys that were obtained in step <xref linkend="obtain-access-secret-keys"/>. An example is shown below.</para>

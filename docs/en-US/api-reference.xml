@@ -19,6 +19,6 @@
     <section id="api-reference">
         <title>API Reference Documentation</title>
         <para>You can find all the API reference documentation at the below site:</para>
-        <para><ulink url="http://incubator.apache.org/cloudstack/docs/api/">http://incubator.apache.org/cloudstack/docs/api/</ulink></para>
+        <para><ulink url="http://cloudstack.apache.org/docs/api/">http://cloudstack.apache.org/docs/api/</ulink></para>
     </section>
 
