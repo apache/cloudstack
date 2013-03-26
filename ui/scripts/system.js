@@ -1350,42 +1350,7 @@
 															  var $form = $(this).closest("form");
 																var selectedNetworkOfferingId = $(this).val();
 																$(networkOfferingObjs).each(function(){
-																  if(this.id == selectedNetworkOfferingId) {																	  
-																		if(this.guestiptype == "Isolated") { //*** Isolated	***															  
-																			if(this.specifyipranges == false) {
-																				$form.find('.form-item[rel=startipv4]').hide();
-																				$form.find('.form-item[rel=endipv4]').hide();
-																			}
-																			else {
-																				$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
-																				$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');
-																			}																					
-                                      
-																		  var includingSourceNat = false;
-																			var serviceObjArray = this.service;
-																			for(var k = 0; k < serviceObjArray.length; k++) {
-																				if(serviceObjArray[k].name == "SourceNat") {
-																					includingSourceNat = true;
-																					break;
-																				}
-																			}																			
-																			if(includingSourceNat == true) { //Isolated with SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4gateway]'));	//make ip4gateway optional 	                                      							
-                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4Netmask]'));	//make ip4Netmask optional  		
-																			}
-																			else { //Isolated with no SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required
-																			}																
-																		}
-																		else {  //*** Shared ***
-																			$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
-																			$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');																			
-																			
-                                      cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
-																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required			
-																		}
-																		
+																  if(this.id == selectedNetworkOfferingId) {																		
 																		if(this.specifyvlan == false) {
 																		  $form.find('.form-item[rel=vlanId]').hide();
 																			cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]'));	//make vlanId optional 	 	
@@ -1411,13 +1376,11 @@
                             docID: 'helpGuestNetworkZoneNetmask'
                           },
                           startipv4: { 
-							label: 'IPv4 Start IP', 
-							validation: { required: true },
+							label: 'IPv4 Start IP', 							
                             docID: 'helpGuestNetworkZoneStartIP'
 						  },
                           endipv4: { 
-							label: 'IPv4 End IP', 
-							validation: { required: true },
+							label: 'IPv4 End IP', 							
                             docID: 'helpGuestNetworkZoneEndIP'
 						  },
 						//IPv4 (end)
@@ -1431,13 +1394,11 @@
                             label: 'IPv6 CIDR'
                           },
                           startipv6: { 
-							label: 'IPv6 Start IP', 
-							validation: { required: true },
+							label: 'IPv6 Start IP', 							
                             docID: 'helpGuestNetworkZoneStartIP'
 						  },
                           endipv6: { 
-							label: 'IPv6 End IP', 
-							validation: { required: true },
+							label: 'IPv6 End IP', 							
                             docID: 'helpGuestNetworkZoneEndIP'
 						  },
 						//IPv6 (end)
@@ -1449,7 +1410,17 @@
                         }
                       },
 
-                      action: function(args) { //Add guest network in advanced zone
+                      action: function(args) { //Add guest network in advanced zone											  
+												if (
+													((args.data.ip4gateway.length == 0) && (args.data.ip4Netmask.length == 0) && (args.data.startipv4.length == 0) && (args.data.endipv4.length == 0))
+													&& 
+													((args.data.ip6gateway.length == 0) && (args.data.ip6cidr.length == 0) && (args.data.startipv6.length == 0) && (args.data.endipv6.length == 0))
+												)
+												{
+												  args.response.error("Either IPv4 fields or IPv6 fields need to be filled when adding a guest network");
+													return;
+												}
+											
                         var $form = args.$form;
 
 												var array1 = [];
