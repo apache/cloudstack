@@ -46,7 +46,7 @@ public class EncryptionSecretKeyChecker extends AdapterBase implements SystemInt
     private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
 
     // Two possible locations with the new packaging naming
-    private static final String s_altKeyFile = "/etc/cloud/management/key";
+    private static final String s_altKeyFile = "/etc/cloudstack/management/key";
     private static final String s_keyFile = "/etc/cloudstack/management/key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();

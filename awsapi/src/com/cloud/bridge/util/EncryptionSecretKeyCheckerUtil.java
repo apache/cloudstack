@@ -36,7 +36,7 @@ import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 public class EncryptionSecretKeyCheckerUtil {
     private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyCheckerUtil.class);
     
-    private static final String s_keyFile = "/etc/cloud/management/key";
+    private static final String s_keyFile = "/etc/cloudstack/management/key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
