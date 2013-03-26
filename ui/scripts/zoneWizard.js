@@ -322,7 +322,9 @@
 
           if (args.data['network-model'] == 'Basic') {
             args.$form.find('[rel=networkOfferingId]').show();
-            args.$form.find('[rel=guestcidraddress]').hide();
+            args.$form.find('[rel=guestcidraddress]').hide();						
+						args.$form.find('[rel=ip6dns1]').hide();
+						args.$form.find('[rel=ip6dns2]').hide();
           }
           else { //args.data['network-model'] == 'Advanced'
             args.$form.find('[rel=networkOfferingId]').hide();
@@ -331,7 +333,10 @@
               args.$form.find('[rel=guestcidraddress]').show();
 						else //args.data["zone-advanced-sg-enabled"] ==	"on
 						  args.$form.find('[rel=guestcidraddress]').hide();
-          }													
+          					  
+						args.$form.find('[rel=ip6dns1]').show();
+						args.$form.find('[rel=ip6dns2]').show();
+					}													
 										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
