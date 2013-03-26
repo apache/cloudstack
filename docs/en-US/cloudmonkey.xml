@@ -24,7 +24,7 @@
 
 <section id="cloudmonkey">
     <title>CloudMonkey</title>
-    <para>CloudMonkey is the &PRODUCT; Command Line Interface (CLI). It is written in Python. CloudMonkey can be used both as an interactive shell and as a command line tool which simplifies &PRODUCT; configuration and management. It can be used with &PRODUCT; CloudStack 4.0-incubating and above</para>
+    <para>CloudMonkey is the &PRODUCT; Command Line Interface (CLI). It is written in Python. CloudMonkey can be used both as an interactive shell and as a command line tool which simplifies &PRODUCT; configuration and management. It can be used with &PRODUCT; releases since the 4.0.x branch.</para>
     <warning>
         <para>CloudMonkey is still under development and should be considered a Work In Progress (WIP), the wiki is the most up to date documentation:</para>
         <para><ulink url="https://cwiki.apache.org/CLOUDSTACK/cloudstack-cloudmonkey-cli.html">https://cwiki.apache.org/CLOUDSTACK/cloudstack-cloudmonkey-cli.html</ulink></para>
@@ -40,7 +40,7 @@
                 <para>Via the official Apache &PRODUCT; releases as well as the git repository.</para>
                     <programlisting>
     <![CDATA[
-$ git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git # (optional if using a release download)
+$ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git # (optional if using a release download)
 $ mvn clean install -P developer
 $ cd tools/cli # cloudmonkey-x.x.x.tar.gz will be built in dist
 $ python setup.py build
