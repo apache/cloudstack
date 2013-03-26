@@ -54,12 +54,11 @@
         addTrafficMonitor. Pass in the URL of the Traffic Sentinel as protocol + host + port
         (optional); for example, http://10.147.28.100:8080. For the addTrafficMonitor command
         syntax, see the API Reference at <ulink
-          url="http://incubator.apache.org/cloudstack/docs/api/index.html">API
+            url="http://cloudstack.apache.org/docs/api/index.html">API
         Documentation</ulink>.</para>
       <para>For information about how to call the &PRODUCT; API, see the Developer’s Guide at
-          <ulink
-          url="http://incubator.apache.org/cloudstack/docs/en-US/Apache_CloudStack/4.0.0-incubating/html/API_Developers_Guide/index.html"
-          >CloudStack API Developer's Guide</ulink>.</para>
+          <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">
+              &PRODUCT; API Developer's Guide</ulink>.</para>
     </listitem>
     <listitem>
       <para>Log in to the &PRODUCT; UI as administrator.</para>

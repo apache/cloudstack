@@ -30,7 +30,6 @@
         Apache CloudStack project download page</ulink>. 
     </para>
     <para>Prior releases are available via archive.apache.org as well. See the downloads page for more information on archived releases.</para>
-    </para>
     <para>You'll notice several links under the 'Latest release' section. A link to a file ending in <filename>tar.bz2</filename>, as well as a PGP/GPG signature, MD5, and SHA512 file.</para>
     <itemizedlist>
         <listitem><para>The <filename>tar.bz2</filename> file contains the Bzip2-compressed tarball with the source code.</para></listitem>
