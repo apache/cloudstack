@@ -807,6 +807,7 @@
               var hasSRXFirewall = false;
               var isVPC = false;
               var isAdvancedSGZone = false;
+              var type;
               var hiddenTabs = [];
 
               // Get network offering data
@@ -862,12 +863,24 @@
                   isAdvancedSGZone = zone.securitygroupsenabled;
                 }
               });
+ 
+               $.ajax({
+                 url:createURL('listNetworks'),
+                 data:{ id:args.context.networks[0].id },
+                 async:false,
+                 success:function(json){
+                   type = json.listnetworksresponse.network[0].type;
+
+                 }
+
+             });
+
 
               if (!networkOfferingHavingELB) {
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
+              if (isVPC || isAdvancedSGZone || hasSRXFirewall || type="Shared") {
                 hiddenTabs.push('egressRules');
                }
               
