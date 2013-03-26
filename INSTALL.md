@@ -1,7 +1,7 @@
 This document describes how to develop, build, package and install Apache CloudStack
 (Incubating). For more information please refer to the project's website:
 
-    http://incubator.apache.org/cloudstack
+    http://cloudstack.apache.org
 
 Apache CloudStack developers use various platforms for development, this guide
 was tested against a CentOS 6.2 x86_64 setup.
@@ -77,7 +77,7 @@ Start the MySQL service:
 
 You may get the source code from the repository hosted on Apache:
 
-    $ git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git
+    $ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git
 
 Or, you may fork a repository from the official Apache CloudStack mirror by
 Apache on [Github](https://github.com/apache/incubator-cloudstack)
