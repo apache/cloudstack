@@ -136,7 +136,7 @@
         $('<span>').html(
           // _l is not set yet, so localize directly to dictionary
           // [should fix in future]
-          dictionary['message.redirecting.region']
+          dictionary['label.loading'] + '...'
         )
       ));
     }
