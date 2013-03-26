@@ -34,7 +34,7 @@
         in the sections for <xref linkend="sect-source-buildrpm" /> or
         <xref linkend="sect-source-builddebs" /> you may find pre-built
         DEB and RPM packages for your convience linked from the 
-        <ulink url="http://incubator.apache.org/cloudstack/downloads.html">downloads</ulink>
+        <ulink url="http://cloudstack.apache.org/downloads.html">downloads</ulink>
         page.
     </para>
     <note>
