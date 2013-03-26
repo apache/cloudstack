@@ -880,7 +880,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone || hasSRXFirewall || type="Shared") {
+              if (isVPC || isAdvancedSGZone || hasSRXFirewall || type=="Shared") {
                 hiddenTabs.push('egressRules');
                }
               
