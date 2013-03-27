@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
+import com.cloud.agent.api.CleanupLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
@@ -100,6 +101,8 @@ public class CiscoVnmcResource implements ServerResource {
             return execute((ExternalNetworkResourceUsageCommand) cmd);
         } else if (cmd instanceof CreateLogicalEdgeFirewallCommand) {
             return execute((CreateLogicalEdgeFirewallCommand)cmd);
+        } else if (cmd instanceof CleanupLogicalEdgeFirewallCommand) {
+            return execute((CleanupLogicalEdgeFirewallCommand)cmd);
         } else if (cmd instanceof ConfigureNexusVsmForAsaCommand) {
             return execute((ConfigureNexusVsmForAsaCommand)cmd);
         } else if (cmd instanceof AssociateAsaWithLogicalEdgeFirewallCommand) {
@@ -704,6 +707,27 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (Throwable e) {
             String msg = "AssociateAsaWithLogicalEdgeFirewallCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd, true, "Success");
+    }
+
+    /*
+     * Cleanup
+     */
+    private synchronized Answer execute(CleanupLogicalEdgeFirewallCommand cmd) {
+        refreshVnmcConnection();
+        return execute(cmd, _numRetries);
+    }
+
+    private Answer execute(CleanupLogicalEdgeFirewallCommand cmd, int numRetries) {
+        String tenant = "vlan-" + cmd.getVlanId();
+        try {
+            _connection.deleteTenant(tenant);
+        } catch (Throwable e) {
+            String msg = "CleanupLogicalEdgeFirewallCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }

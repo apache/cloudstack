@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
+import com.cloud.agent.api.CleanupLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -401,16 +402,27 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return true;
     }
 
+    private boolean cleanupLogicalEdgeFirewall(long vlanId, long hostId) {
+        CleanupLogicalEdgeFirewallCommand cmd = new CleanupLogicalEdgeFirewallCommand(vlanId);
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+        return answer.getResult();
+    }
+
     @Override
     public boolean shutdown(Network network, ReservationContext context,
             boolean cleanup) throws ConcurrentOperationException,
             ResourceUnavailableException {
 
         unassignAsa1000vFromNetwork(network);
-        // disassociateAsaFromLogicalEdgeFirewall()
-        // delete ACL and NAT policies
-        // delete logical edge firewall
-        // delete tenant/VDC
+
+        String vlan = network.getBroadcastUri().getHost();
+        long vlanId = Long.parseLong(vlan);
+        List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
+        if (!devices.isEmpty()) {
+            CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
+            HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());            
+            cleanupLogicalEdgeFirewall(vlanId, ciscoVnmcHost.getId());
+        }
 
         return true;
     }
@@ -526,7 +538,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
     }
 
-
     @Override
     public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
             CiscoVnmcController ciscoVnmcResourceVO) {
@@ -540,7 +551,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         return response;
     }
-
 
     @Override
     public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
@@ -572,7 +582,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         return true;
     }
-
 
     @Override
     public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
