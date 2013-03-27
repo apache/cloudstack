@@ -81,6 +81,18 @@ public class ComponentContext implements ApplicationContextAware {
     	for(Map.Entry<String, ComponentLifecycle> entry : lifecyleComponents.entrySet()) {
     		classifiedComponents[entry.getValue().getRunLevel()].put(entry.getKey(), entry.getValue());
     	}
+
+        // Run the SystemIntegrityCheckers first
+        Map<String, SystemIntegrityChecker> integrityCheckers = getApplicationContext().getBeansOfType(SystemIntegrityChecker.class);
+        for (Entry<String,SystemIntegrityChecker> entry : integrityCheckers.entrySet() ){
+            s_logger.info ("Running SystemIntegrityChecker " + entry.getKey());
+            try {
+            	entry.getValue().check();
+            } catch(Throwable e) {
+            	s_logger.error("System integrity check failed. Refuse to startup");
+            	System.exit(1);
+            }
+        }
     	
     	// configuration phase
         Map<String, String> avoidMap = new HashMap<String, String>();
@@ -105,18 +117,6 @@ public class ComponentContext implements ApplicationContextAware {
                 avoidMap.put(implClassName, implClassName);
     		}
     	}
-    	
-        // Run the SystemIntegrityCheckers first
-        Map<String, SystemIntegrityChecker> integrityCheckers = getApplicationContext().getBeansOfType(SystemIntegrityChecker.class);
-        for (Entry<String,SystemIntegrityChecker> entry : integrityCheckers.entrySet() ){
-            s_logger.info ("Running SystemIntegrityChecker " + entry.getKey());
-            try {
-            	entry.getValue().check();
-            } catch(Throwable e) {
-            	s_logger.error("System integrity check failed. Refuse to startup");
-            	System.exit(1);
-            }
-        }
  
     	// starting phase
     	avoidMap.clear();

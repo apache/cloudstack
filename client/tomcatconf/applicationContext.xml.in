@@ -35,6 +35,7 @@
   <!--
     @DB support
   -->
+  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
 
@@ -688,7 +689,6 @@
   <bean id="apiServlet" class="com.cloud.api.ApiServlet" />
   <bean id="cloudOrchestrator" class="org.apache.cloudstack.platform.orchestration.CloudOrchestrator" />
   <bean id="clusterRestService" class="org.apache.cloudstack.engine.rest.service.api.ClusterRestService" />
-  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
   <bean id="consoleProxyServlet" class="com.cloud.servlet.ConsoleProxyServlet" />
   <bean id="dataCenterResourceManagerImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManagerImpl" />
   <bean id="dataDisk" class="org.apache.cloudstack.engine.subsystem.api.storage.type.DataDisk" />
