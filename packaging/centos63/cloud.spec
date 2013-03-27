@@ -120,6 +120,7 @@ Requires: jakarta-commons-daemon-jsvc
 Requires: perl
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
+Obsoletes: cloud-agent-libs < 4.1.0
 Obsoletes: cloud-test < 4.1.0
 Group: System Environment/Libraries
 %description agent
@@ -333,6 +334,12 @@ echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/cloud
 # user harcoded here, also hardcoded on wscript
 
+# save old configs if they exist (for upgrade). Otherwise we may lose them
+# when the old packages are erased. There are a lot of properties files here.
+if [ -d "%{_sysconfdir}/cloud" ] ; then
+    mv %{_sysconfdir}/cloud %{_sysconfdir}/cloud.rpmsave
+fi
+
 %post management
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
@@ -354,6 +361,52 @@ if getent passwd cloud | grep -q /var/lib/cloud; then
     sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
 fi
 
+# if saved configs from upgrade exist, copy them over
+if [ -d "%{_sysconfdir}/cloud.rpmsave/management" ]; then
+    cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
+    cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+fi
+
+# Choose server.xml and tomcat.conf links based on old config, if exists
+serverxml=%{_sysconfdir}/%{name}/management/server.xml
+oldserverxml=%{_sysconfdir}/cloud.rpmsave/management/server.xml
+if [ -L $oldserverxml ] ; then
+    if stat -c %N $oldserverxml | grep -q server-nonssl ; then
+        if [ -L $serverxml ]; then rm -f $serverxml; fi
+        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
+    elif stat -c %N $oldserverxml| grep -q server-ssl ; then
+        if [ -L $serverxml ]; then rm -f $serverxml; fi
+        ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
+    fi
+fi
+
+tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
+oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
+if [ -L $oldtomcatconf ] ; then
+    if stat -c %N $oldtomcatconf | grep -q tomcat6-nonssl ; then
+        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
+    elif stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
+        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+        ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
+    fi
+fi
+
+%pre agent
+
+# save old configs if they exist (for upgrade). Otherwise we may lose them
+# when the old packages are erased. There are a lot of properties files here.
+if [ -d "%{_sysconfdir}/cloud" ] ; then
+    mv %{_sysconfdir}/cloud %{_sysconfdir}/cloudr.rpmsave
+fi
+
+%post agent
+
+# if saved configs from upgrade exist, copy them over
+if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
+    mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
+    cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
+fi
 
 #%post awsapi
 #if [ -d "%{_datadir}/%{name}-management" ] ; then
