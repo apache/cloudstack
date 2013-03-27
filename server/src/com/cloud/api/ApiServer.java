@@ -433,16 +433,15 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
         Long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
 
-        BaseCmd realCmdObj = ComponentContext.getTargetObject(cmdObj);
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
-        if (realCmdObj instanceof BaseAsyncCmd) {
+        if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             String objectUuid = null;
-            if (realCmdObj instanceof BaseAsyncCreateCmd) {
+            if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
@@ -478,7 +477,7 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
-            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), realCmdObj.getClass().getName(),
+            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
@@ -502,22 +501,22 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (realCmdObj instanceof BaseListCmd && !(realCmdObj instanceof ListVMsCmd) && !(realCmdObj instanceof ListRoutersCmd)
-                    && !(realCmdObj instanceof ListSecurityGroupsCmd)
-                    && !(realCmdObj instanceof ListTagsCmd)
-                    && !(realCmdObj instanceof ListEventsCmd)
-                    && !(realCmdObj instanceof ListVMGroupsCmd)
-                    && !(realCmdObj instanceof ListProjectsCmd)
-                    && !(realCmdObj instanceof ListProjectAccountsCmd)
-                    && !(realCmdObj instanceof ListProjectInvitationsCmd)
-                    && !(realCmdObj instanceof ListHostsCmd)
-                    && !(realCmdObj instanceof ListVolumesCmd)
-                    && !(realCmdObj instanceof ListUsersCmd)
-                    && !(realCmdObj instanceof ListAccountsCmd)
-                    && !(realCmdObj instanceof ListStoragePoolsCmd)
-                    && !(realCmdObj instanceof ListDiskOfferingsCmd)
-                    && !(realCmdObj instanceof ListServiceOfferingsCmd)
-                    && !(realCmdObj instanceof ListZonesByCmd)
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
+                    && !(cmdObj instanceof ListSecurityGroupsCmd)
+                    && !(cmdObj instanceof ListTagsCmd)
+                    && !(cmdObj instanceof ListEventsCmd)
+                    && !(cmdObj instanceof ListVMGroupsCmd)
+                    && !(cmdObj instanceof ListProjectsCmd)
+                    && !(cmdObj instanceof ListProjectAccountsCmd)
+                    && !(cmdObj instanceof ListProjectInvitationsCmd)
+                    && !(cmdObj instanceof ListHostsCmd)
+                    && !(cmdObj instanceof ListVolumesCmd)
+                    && !(cmdObj instanceof ListUsersCmd)
+                    && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd)
+                    && !(cmdObj instanceof ListDiskOfferingsCmd)
+                    && !(cmdObj instanceof ListServiceOfferingsCmd)
+                    && !(cmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

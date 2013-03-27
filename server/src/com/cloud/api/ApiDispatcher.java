@@ -136,8 +136,7 @@ public class ApiDispatcher {
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
             
-            BaseCmd realCmdObj = ComponentContext.getTargetObject(cmd);
-            if (realCmdObj instanceof BaseAsyncCmd) {
+            if (cmd instanceof BaseAsyncCmd) {
 
                 BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
                 String startEventId = params.get("ctxStartEventId");
@@ -168,8 +167,6 @@ public class ApiDispatcher {
     public static void processParameters(BaseCmd cmd, Map<String, String> params) {
         Map<Object, AccessType> entitiesToAccess = new HashMap<Object, AccessType>();
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
-
-        cmd = ComponentContext.getTargetObject(cmd);
 
         if (cmd instanceof BaseListCmd) {
             Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);

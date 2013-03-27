@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.utils.component;
 
-public class ManagerBase extends ComponentLifecycleBase implements ComponentMethodInterceptable {
-	public ManagerBase() {
-		// set default run level for manager components
-		setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT_BOOTSTRAP);
-	}
+import java.lang.reflect.Method;
+
+public interface ComponentMethodInterceptor {
+	boolean needToIntercept(Method method);
+	
+    Object interceptStart(Method method, Object target);
+    void interceptComplete(Method method, Object target, Object objReturnedInInterceptStart);
+    void interceptException(Method method, Object target, Object objReturnedInInterceptStart);
 }

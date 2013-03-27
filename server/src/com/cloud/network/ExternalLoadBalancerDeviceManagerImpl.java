@@ -1104,7 +1104,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
-        if (!(ComponentContext.getTargetObject(element) instanceof IpDeployer)) {
+        if (!(element instanceof IpDeployer)) {
             s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
             return null;
         }

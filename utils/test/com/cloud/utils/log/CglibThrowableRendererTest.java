@@ -76,7 +76,7 @@ public class CglibThrowableRendererTest extends TestCase {
         Writer w = new CharArrayWriter();
         Logger alt = getAlternateLogger(w, null);
 
-        TestClass test = ComponentContext.inject(TestClass.class);
+        TestClass test = new TestClass();
         try {
             test.exception();
         } catch (Exception e) {
