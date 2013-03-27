@@ -30,9 +30,13 @@ import org.mockito.internal.matchers.Any;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
+import com.cloud.agent.api.CleanupLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenter;
@@ -66,6 +70,10 @@ import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.CiscoVnmcDao;
 import com.cloud.network.dao.NetworkAsa1000vMapDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
@@ -104,6 +112,7 @@ public class CiscoVnmcElementTest {
         _element._networkAsa1000vMapDao = _networkAsa1000vMapDao;
         _element._clusterVsmMapDao = _clusterVsmMapDao;
         _element._vsmDeviceDao = _vsmDeviceDao;
+        _element._vlanDao = _vlanDao;
 
         // Standard responses
         when(_networkModel.isProviderForNetwork(Provider.CiscoVnmc, 1L)).thenReturn(true);
@@ -150,13 +159,11 @@ public class CiscoVnmcElementTest {
         when(context.getAccount()).thenReturn(acc);
 
         DataCenter dc = mock(DataCenter.class);
-        when(_configMgr.getZone(network.getDataCenterId())).thenReturn(dc);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+        when(_configMgr.getZone(network.getDataCenterId())).thenReturn(dc);
 
-        @SuppressWarnings("unchecked")
-        List<CiscoVnmcControllerVO> devices = mock(List.class);
-        when(devices.isEmpty()).thenReturn(false);
-        when(devices.get(0)).thenReturn(mock(CiscoVnmcControllerVO.class));
+        List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+        devices.add(mock(CiscoVnmcControllerVO.class));
         when(_ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId())).thenReturn(devices);
 
         CiscoAsa1000vDeviceVO asaVO = mock(CiscoAsa1000vDeviceVO.class);
@@ -215,5 +222,180 @@ public class CiscoVnmcElementTest {
         when(_agentMgr.easySend(anyLong(), any(AssociateAsaWithLogicalEdgeFirewallCommand.class))).thenReturn(answer);
         
         assertTrue(_element.implement(network, offering, dest, context));
+    }
+
+    @Test
+    public void shutdownTest() throws ConcurrentOperationException, ResourceUnavailableException {
+    	URI uri = URI.create("vlan://123");
+
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getBroadcastUri()).thenReturn(uri);
+
+        ReservationContext context = mock(ReservationContext.class);
+
+        when(_networkAsa1000vMapDao.findByNetworkId(network.getId())).thenReturn(mock(NetworkAsa1000vMapVO.class));
+
+        List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+        devices.add(mock(CiscoVnmcControllerVO.class));
+        when(_ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId())).thenReturn(devices);
+
+        HostVO hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(1L);
+        when(_hostDao.findById(anyLong())).thenReturn(hostVO);
+
+        Answer answer = mock(Answer.class);
+        when(answer.getResult()).thenReturn(true);
+
+        when(_agentMgr.easySend(anyLong(), any(CleanupLogicalEdgeFirewallCommand.class))).thenReturn(answer);
+
+    	assertTrue(_element.shutdown(network, context, true));
+    }
+
+    @Test
+    public void applyFWRulesTest() throws ResourceUnavailableException {
+    	URI uri = URI.create("vlan://123");
+
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getBroadcastUri()).thenReturn(uri);
+        when(network.getCidr()).thenReturn("1.1.1.0/24");
+        when(network.getState()).thenReturn(Network.State.Implemented);
+
+        Ip ip = mock(Ip.class);
+        when(ip.addr()).thenReturn("1.2.3.4");
+
+        IpAddress ipAddress = mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(ip);
+
+        when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)).thenReturn(true);
+
+        List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+        devices.add(mock(CiscoVnmcControllerVO.class));
+        when(_ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId())).thenReturn(devices);
+
+        when(_networkAsa1000vMapDao.findByNetworkId(network.getId())).thenReturn(mock(NetworkAsa1000vMapVO.class));
+
+        HostVO hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(1L);
+        when(_hostDao.findById(anyLong())).thenReturn(hostVO);
+
+        FirewallRule rule = mock(FirewallRule.class);
+        when(rule.getSourceIpAddressId()).thenReturn(1L);
+        List<FirewallRule> rules = new ArrayList<FirewallRule>();
+        rules.add(rule);
+
+        Answer answer = mock(Answer.class);
+        when(answer.getResult()).thenReturn(true);
+
+        when(_agentMgr.easySend(anyLong(), any(SetFirewallRulesCommand.class))).thenReturn(answer);
+
+        assertTrue(_element.applyFWRules(network, rules));
+    }
+
+    @Test
+    public void applyPRulesTest() throws ResourceUnavailableException {
+    	URI uri = URI.create("vlan://123");
+
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getBroadcastUri()).thenReturn(uri);
+        when(network.getCidr()).thenReturn("1.1.1.0/24");
+        when(network.getState()).thenReturn(Network.State.Implemented);
+
+        Ip ip = mock(Ip.class);
+        when(ip.addr()).thenReturn("1.2.3.4");
+
+        IpAddress ipAddress = mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(ip);
+        when(ipAddress.getVlanId()).thenReturn(1L);
+
+        when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)).thenReturn(true);
+
+        List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+        devices.add(mock(CiscoVnmcControllerVO.class));
+        when(_ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId())).thenReturn(devices);
+
+        when(_networkAsa1000vMapDao.findByNetworkId(network.getId())).thenReturn(mock(NetworkAsa1000vMapVO.class));
+
+        HostVO hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(1L);
+        when(_hostDao.findById(anyLong())).thenReturn(hostVO);
+
+        VlanVO vlanVO = mock(VlanVO.class);
+        when(vlanVO.getVlanTag()).thenReturn(null);
+        when(_vlanDao.findById(anyLong())).thenReturn(vlanVO);
+
+        PortForwardingRule rule = mock(PortForwardingRule.class);
+        when(rule.getSourceIpAddressId()).thenReturn(1L);
+        when(rule.getDestinationIpAddress()).thenReturn(ip);
+        List<PortForwardingRule> rules = new ArrayList<PortForwardingRule>();
+        rules.add(rule);
+
+        Answer answer = mock(Answer.class);
+        when(answer.getResult()).thenReturn(true);
+
+        when(_agentMgr.easySend(anyLong(), any(SetPortForwardingRulesCommand.class))).thenReturn(answer);
+
+        assertTrue(_element.applyPFRules(network, rules));
+    }
+
+    @Test
+    public void applyStaticNatsTest() throws ResourceUnavailableException {
+    	URI uri = URI.create("vlan://123");
+
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getBroadcastUri()).thenReturn(uri);
+        when(network.getCidr()).thenReturn("1.1.1.0/24");
+        when(network.getState()).thenReturn(Network.State.Implemented);
+
+        Ip ip = mock(Ip.class);
+        when(ip.addr()).thenReturn("1.2.3.4");
+
+        IpAddress ipAddress = mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(ip);
+        when(ipAddress.getVlanId()).thenReturn(1L);
+
+        when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)).thenReturn(true);
+
+        List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+        devices.add(mock(CiscoVnmcControllerVO.class));
+        when(_ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId())).thenReturn(devices);
+
+        when(_networkAsa1000vMapDao.findByNetworkId(network.getId())).thenReturn(mock(NetworkAsa1000vMapVO.class));
+
+        HostVO hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(1L);
+        when(_hostDao.findById(anyLong())).thenReturn(hostVO);
+
+        VlanVO vlanVO = mock(VlanVO.class);
+        when(vlanVO.getVlanTag()).thenReturn(null);
+        when(_vlanDao.findById(anyLong())).thenReturn(vlanVO);
+
+        StaticNat rule = mock(StaticNat.class);
+        when(rule.getSourceIpAddressId()).thenReturn(1L);
+        when(rule.getDestIpAddress()).thenReturn("1.2.3.4");
+        when(rule.isForRevoke()).thenReturn(false);
+        List<StaticNat> rules = new ArrayList<StaticNat>();
+        rules.add(rule);
+
+        Answer answer = mock(Answer.class);
+        when(answer.getResult()).thenReturn(true);
+
+        when(_agentMgr.easySend(anyLong(), any(SetStaticNatRulesCommand.class))).thenReturn(answer);
+
+        assertTrue(_element.applyStaticNats(network, rules));
     }
 }
