@@ -9579,7 +9579,8 @@
                   url: createURL("createStoragePool" + array1.join("")),
                   dataType: "json",
                   success: function(json) {
-                    var item = json.createstoragepoolresponse.storagepool[0];
+                    var item = json.createstoragepoolresponse.storagepool;
+                    
                     args.response.success({
 										  data: item
 										});
