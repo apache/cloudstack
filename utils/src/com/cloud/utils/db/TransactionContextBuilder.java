@@ -18,65 +18,20 @@ package com.cloud.utils.db;
 
 import java.lang.reflect.Method;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
-import org.apache.log4j.Logger;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.reflect.MethodSignature;
+import com.cloud.utils.component.ComponentMethodInterceptor;
 
-import com.cloud.utils.component.ComponentMethodProxyCache;
-
-public class TransactionContextBuilder implements MethodInterceptor {
-	private static final Logger s_logger = Logger.getLogger(TransactionContextBuilder.class);
+public class TransactionContextBuilder implements ComponentMethodInterceptor {
 	public TransactionContextBuilder() {
 	}
 	
-	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
-		MethodSignature methodSignature = (MethodSignature)call.getSignature();
-        Method targetMethod = methodSignature.getMethod();
-        if(needToIntercept(targetMethod, call.getTarget())) {
-			Transaction txn = Transaction.open(call.getSignature().getName());
-			Object ret = null;
-			try {
-				 ret = call.proceed();
-			} finally {
-				txn.close();
-			}
-			return ret;
-        }
-        return call.proceed();
-	}
-
 	@Override
-	public Object invoke(MethodInvocation method) throws Throwable {
-		Method targetMethod = method.getMethod();
-		
-        if(needToIntercept(targetMethod, method.getThis())) {
-			Transaction txn = Transaction.open(targetMethod.getName());
-			Object ret = null;
-			try {
-				 ret = method.proceed();
-			} finally {
-				txn.close();
-			}
-			return ret;
-        }
-        return method.proceed();
-	}
-	
-	private boolean needToIntercept(Method method, Object target) {
+	public boolean needToIntercept(Method method) {
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return true;
         }
         
         Class<?> clazz = method.getDeclaringClass();
-        if(clazz.isInterface()) {
-        	clazz = target.getClass();
-        	Method targetMethod = ComponentMethodProxyCache.getTargetMethod(method, target);
-			if(targetMethod != null && targetMethod.getAnnotation(DB.class) != null)
-				return true;
-        }
         
         do {
             db = clazz.getAnnotation(DB.class);
@@ -87,5 +42,24 @@ public class TransactionContextBuilder implements MethodInterceptor {
         } while (clazz != Object.class && clazz != null);
         
         return false;
+    }
+
+	@Override
+    public Object interceptStart(Method method, Object target) {
+    	return Transaction.open(method.getName());
+    }
+    
+	@Override
+    public void interceptComplete(Method method, Object target, Object objReturnedInInterceptStart) {
+    	Transaction txn = (Transaction)objReturnedInInterceptStart;
+    	if(txn != null)
+    		txn.close();
+    }
+    
+	@Override
+    public void interceptException(Method method, Object target, Object objReturnedInInterceptStart) {
+    	Transaction txn = (Transaction)objReturnedInInterceptStart;
+    	if(txn != null)
+    		txn.close();
     }
 }

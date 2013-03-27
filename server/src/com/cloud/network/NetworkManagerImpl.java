@@ -611,10 +611,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
-                if (!(ComponentContext.getTargetObject(element) instanceof IpDeployingRequester)) {
+                if (!(element instanceof IpDeployingRequester)) {
                     throw new CloudRuntimeException("Element " + element + " is not a IpDeployingRequester!");
                 }
-                deployer = ((IpDeployingRequester)ComponentContext.getTargetObject(element)).getIpDeployer(network);
+                deployer = ((IpDeployingRequester)element).getIpDeployer(network);
                 if (deployer == null) {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -1594,13 +1594,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof DhcpServiceProvider)) {
+                    element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof UserDataServiceProvider)) {
+                    element instanceof UserDataServiceProvider) {
                 UserDataServiceProvider sp = (UserDataServiceProvider) element;
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
@@ -3678,15 +3678,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
-        assert ComponentContext.getTargetObject(element) instanceof StaticNatServiceProvider;
-        return (StaticNatServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof StaticNatServiceProvider;
+        return (StaticNatServiceProvider)element;
     }
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
-        assert ComponentContext.getTargetObject(element) instanceof LoadBalancingServiceProvider; 
-        return ( LoadBalancingServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof LoadBalancingServiceProvider; 
+        return (LoadBalancingServiceProvider)element;
     }
     @Override
     public boolean isNetworkInlineMode(Network network) {

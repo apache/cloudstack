@@ -65,6 +65,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentMethodInterceptable;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmManager;
@@ -77,7 +78,7 @@ import com.cloud.vm.dao.UserVmDao;
  *
  */
 @Component
-public class StatsCollector {
+public class StatsCollector implements ComponentMethodInterceptable {
 	public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
 	private static StatsCollector s_instance = null;
