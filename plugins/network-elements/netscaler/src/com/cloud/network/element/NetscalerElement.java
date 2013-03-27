@@ -16,35 +16,16 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
-import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
-import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
-import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
-import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
+import com.cloud.api.commands.*;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -56,40 +37,19 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.ExternalLoadBalancerDeviceManager;
-import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
-import com.cloud.network.IpAddress;
-import com.cloud.network.NetScalerPodVO;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.as.AutoScaleCounter;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
-import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
-import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.dao.NetScalerPodDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
-import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.*;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -110,10 +70,20 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.region.gslb.GslbServiceProvider;
+import org.apache.log4j.Logger;
 
-@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class})
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
-StaticNatServiceProvider {
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.*;
+
+@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class, GslbServiceProvider.class})
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider,
+        NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider,
+        GslbServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -149,6 +119,8 @@ StaticNatServiceProvider {
     NetScalerPodDao _netscalerPodDao;
     @Inject
     DataCenterIpAddressDao _privateIpAddressDao;
+    @Inject
+    ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -336,7 +308,26 @@ StaticNatServiceProvider {
             throw new InvalidParameterValueException(msg);
         }
 
-        ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource());
+        if (cmd.isGslbProvider()) {
+
+            if (!deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName()) &&
+                    !deviceName.equals(NetworkDevice.NetscalerMPXLoadBalancer.getName())) {
+                String msg = "Only Netscaler VPX or MPX load balancers can be specified as GSLB service provider";
+                s_logger.debug(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+
+            if (cmd.getSitePublicIp() == null || cmd.getSitePrivateIp() == null) {
+                String msg = "Public and Privae IP needs to provided for NetScaler that will be GSLB provider";
+                s_logger.debug(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+
+        ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(),
+                cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(), cmd.isGslbProvider(),
+                cmd.getSitePublicIp(), cmd.getSitePrivateIp());
+
         return lbDeviceVO;
     }
 
@@ -816,7 +807,6 @@ StaticNatServiceProvider {
         return null;
     }
 
-    @Override
     public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
 
         if (canHandle(network, Service.Lb)) {
@@ -831,10 +821,73 @@ StaticNatServiceProvider {
         return null;
     }
 
-    @Override
     public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
             throws ResourceUnavailableException {
         return super.getLBHealthChecks(network, rules);
+    }
 
+    @Override
+    public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
+            throws ResourceUnavailableException {
+
+        long zoneGslbProviderHosId = 0;
+
+        // find the NetScaler device configured as gslb service provider in the zone
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider == null) {
+            String msg = "Unable to find a NetScaler configured as gslb service provider in zone " + zoneId;
+            s_logger.debug(msg);
+            throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
+        }
+
+        // get the host Id corresponding to NetScaler acting as GSLB service provider in the zone
+        zoneGslbProviderHosId =  nsGslbProvider.getHostId();
+
+        // send gslb configuration to NetScaler device
+        Answer answer = _agentMgr.easySend(zoneGslbProviderHosId, gslbConfigCmd);
+        if (answer == null || !answer.getResult()) {
+            String msg = "Unable to apply global load balancer rule to the gslb service provider in zone " + zoneId;
+            s_logger.debug(msg);
+            throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
+        }
+
+        return true;
+    }
+
+    private ExternalLoadBalancerDeviceVO findGslbProvider(long zoneId) {
+        List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+        if (pNtwks.isEmpty() || pNtwks.size() > 1) {
+            throw new InvalidParameterValueException("Unable to get physical network in zone id = " + zoneId);
+        }
+        PhysicalNetworkVO physNetwork = pNtwks.get(0);
+        ExternalLoadBalancerDeviceVO nsGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
+                physNetwork.getId(), Provider.Netscaler.getName());
+        return nsGslbProvider;
+    }
+
+    @Override
+    public boolean isServiceEnabledInZone(long zoneId) {
+
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        //return true if a NetScaler device is configured in the zone
+        return (nsGslbProvider != null);
+    }
+
+    @Override
+    public String getZoneGslbProviderPublicIp(long zoneId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider != null) {
+            return nsGslbProvider.getGslbSitePublicIP();
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneGslbProviderPrivateIp(long zoneId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        if (nsGslbProvider != null) {
+            return nsGslbProvider.getGslbSitePrivateIP();
+        }
+        return null;
     }
 }

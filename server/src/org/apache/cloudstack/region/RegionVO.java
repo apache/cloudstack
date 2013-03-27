@@ -36,6 +36,18 @@ public class RegionVO implements Region{
     @Column(name="end_point")
     private String endPoint;
     
+
+    public boolean getGslbEnabled() {
+        return gslbEnabled;
+    }
+
+    public void setGslbEnabled(boolean gslbEnabled) {
+        this.gslbEnabled = gslbEnabled;
+    }
+
+    @Column(name="gslb_service_enabled")
+    private boolean gslbEnabled;
+
     public RegionVO() {
     }
     
@@ -43,6 +55,7 @@ public class RegionVO implements Region{
     	this.id = id;
     	this.name = name;
     	this.endPoint = endPoint;
+        this.gslbEnabled = true;
     }
 
 	public int getId() {
@@ -64,5 +77,11 @@ public class RegionVO implements Region{
 	public void setEndPoint(String endPoint) {
 		this.endPoint = endPoint;
 	}
+
+
+    @Override
+    public boolean checkIfServiceEnabled(Service service) {
+        return gslbEnabled;
+    }
 
 }

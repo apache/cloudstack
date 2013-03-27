@@ -20,16 +20,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 
+import javax.persistence.*;
 import java.util.UUID;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /**
  * ExternalLoadBalancerDeviceVO contains information on external load balancer devices (F5/Netscaler VPX,MPX,SDX) added into a deployment
@@ -73,6 +65,15 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     @Column(name="is_dedicated")
     private boolean isDedicatedDevice;
 
+    @Column(name="is_gslb_provider")
+    private boolean gslbProvider;
+
+    @Column(name="gslb_site_publicip")
+    private String gslbSitePublicIP;
+
+    @Column(name="gslb_site_privateip")
+    private String gslbSitePrivateIP;
+
     @Column(name = "parent_host_id")
     private long parentHostId;
 
@@ -93,7 +94,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     }
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
-            long capacity, boolean dedicated) {
+            long capacity, boolean dedicated, boolean gslbProvider) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.deviceName = device_name;
@@ -105,7 +106,9 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         this.isManagedDevice = false;
         this.state = LBDeviceState.Enabled;
         this.uuid = UUID.randomUUID().toString();
-
+        this.gslbProvider = gslbProvider;
+        this.gslbSitePublicIP = null;
+        this.gslbSitePrivateIP = null;
         if (device_name.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
             this.allocationState = LBDeviceAllocationState.Provider;
         }
@@ -113,7 +116,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
             long capacity, boolean dedicated, boolean managed, long parentHostId) {
-        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated);
+        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated, false);
         this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
     }
@@ -188,6 +191,30 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     public void setIsDedicatedDevice(boolean isDedicated) {
         isDedicatedDevice = isDedicated;
+    }
+
+    public boolean getGslbProvider() {
+        return gslbProvider;
+    }
+
+    public void setGslbProvider(boolean gslbProvider) {
+        gslbProvider = gslbProvider;
+    }
+
+    public void setGslbSitePublicIP(String gslbSitePublicIP) {
+        this.gslbSitePublicIP = gslbSitePublicIP;
+    }
+
+    public String getGslbSitePublicIP() {
+        return gslbSitePublicIP;
+    }
+
+    public void setGslbSitePrivateIP(String gslbSitePrivateIP) {
+        this.gslbSitePrivateIP = gslbSitePrivateIP;
+    }
+
+    public String getGslbSitePrivateIP() {
+        return gslbSitePrivateIP;
     }
 
     public String getUuid() {

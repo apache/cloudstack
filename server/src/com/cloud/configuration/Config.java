@@ -36,6 +36,10 @@ import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public enum Config {
 
 	// Alert
@@ -387,7 +391,9 @@ public enum Config {
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "600", "In second, timeout for create vm snapshot", null),
     VMSnapshotExpungeInterval("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.interval", "60", "The interval (in seconds) to wait before running the expunge thread.", null),
-    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null);
+    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null),
+
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null);
     
 	
 	private final String _category;

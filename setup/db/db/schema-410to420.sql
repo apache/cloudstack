@@ -201,3 +201,41 @@ CREATE VIEW `cloud`.`event_view` AS
         `cloud`.`projects` ON projects.project_account_id = event.account_id
             left join
         `cloud`.`event` eve ON event.start_id = eve.id;
+
+
+ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enalbed in the Region';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `gslb_site_publicip` varchar(255)  DEFAULT NULL COMMENT 'GSLB service Provider site public ip';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `gslb_site_privateip` varchar(255) DEFAULT NULL COMMENT 'GSLB service Provider site private ip';
+
+CREATE TABLE `cloud`.`global_load_balancing_rules` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `region_id`  int unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `algorithm` varchar(255) NOT NULL COMMENT 'load balancing algorithm used to distribbute traffic across zones',
+  `persistence` varchar(255) NOT NULL COMMENT 'session persistence used across the zone',
+  `service_type` varchar(255) NOT NULL COMMENT 'GSLB service type (tcp/udp)',
+  `gslb_domain_name` varchar(255) NOT NULL COMMENT 'DNS name for the GSLB service that is used to provide a FQDN for the GSLB service',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_global_load_balancing_rules_account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_global_load_balancing_rules_region_id` FOREIGN KEY(`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `gslb_rule_id` bigint unsigned NOT NULL,
+  `lb_rule_id` bigint unsigned NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),
+  CONSTRAINT `fk_gslb_rule_id` FOREIGN KEY(`gslb_rule_id`) REFERENCES `global_load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lb_rule_id` FOREIGN KEY(`lb_rule_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

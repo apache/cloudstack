@@ -551,6 +551,14 @@ updateRegion=1
 removeRegion=1
 listRegions=15
 
+#### GSLB (Global Server Load Balancing) commands
+createGlobalLoadBalancerRule=15
+deleteGlobalLoadBalancerRule=15
+updateGlobalLoadBalancerRule=15
+listGlobalLoadBalancerRules=15
+assignToGlobalLoadBalancerRule=15
+removeFromGlobalLoadBalancerRule=15
+
 ### VM Snapshot commands
 listVMSnapshot=15
 createVMSnapshot=15

@@ -122,6 +122,15 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.util.*;
 
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
@@ -189,7 +198,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     @Override
     @DB
-    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource) {
+    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url,
+                String username, String password, String deviceName, ServerResource resource, boolean gslbProvider,
+                String gslbSitePublicIp, String gslbSitePrivateIp) {
 
         PhysicalNetworkVO pNetwork = null;
         NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
@@ -204,15 +215,25 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (pNetwork == null) {
             throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
         }
-        zoneId = pNetwork.getDataCenterId();
 
+        zoneId = pNetwork.getDataCenterId();
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
-                    " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
-        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
-                    " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
+
+        if (gslbProvider) {
+            ExternalLoadBalancerDeviceVO zoneGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
+                    physicalNetworkId, ntwkDevice.getNetworkServiceProvder());
+            if (zoneGslbProvider != null) {
+                throw new CloudRuntimeException("There is a GSLB service provider configured in the zone alredy.");
+            }
+        } else {
+            ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+            if (ntwkSvcProvider == null) {
+                throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
+                        " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
+            } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
+                throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
+                        " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
+            }
         }
 
         URI uri;
@@ -253,11 +274,15 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     capacity = _defaultLbCapacity;
                 }
 
+                ExternalLoadBalancerDeviceVO lbDeviceVO;
                 txn.start();
-                ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
-                        deviceName, capacity, dedicatedUse);
+                lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkDevice.getNetworkServiceProvder(),
+                        deviceName, capacity, dedicatedUse, gslbProvider);
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
-
+                if (!gslbProvider) {
+                    lbDeviceVO.setGslbSitePrivateIP(gslbSitePublicIp);
+                    lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
+                }
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
                 _hostDetailDao.persist(hostDetail);
 
@@ -501,7 +526,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     "&publicipvlan=" + publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
                             ExternalLoadBalancerDeviceVO lbAppliance = null;
                             try {
-                                lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(), createLbAnswer.getServerResource());
+                                lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password,
+                                        createLbAnswer.getDeviceName(), createLbAnswer.getServerResource(), false,
+                                        null, null);
                             } catch (Exception e) {
                                 s_logger.error("Failed to add load balancer appliance in to cloudstack due to " + e.getMessage() + ". So provisioned load balancer appliance will be destroyed.");
                             }

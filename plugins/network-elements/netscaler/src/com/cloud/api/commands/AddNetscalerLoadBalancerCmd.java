@@ -15,23 +15,18 @@
 
 package com.cloud.api.commands;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.APICommand;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 @APICommand(name = "addNetscalerLoadBalancer", responseObject=NetscalerLoadBalancerResponse.class, description="Adds a netscaler load balancer device")
 public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
@@ -60,6 +55,18 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "Netscaler device type supports NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer")
     private String deviceType;
 
+    @Parameter(name = ApiConstants.GSLB_PROVIDER, type = CommandType.BOOLEAN, required = false,
+            description = "true if NetScaler device being added is for providing GSLB service")
+    private boolean  isGslbProvider;
+
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false,
+            description = "public IP of the site")
+    private String gslbSitePublicIp;
+
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false,
+            description = "public IP of the site")
+    private String gslbSitePrivateIp;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +89,18 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public String getDeviceType() {
         return deviceType;
+    }
+
+    public boolean isGslbProvider() {
+        return isGslbProvider;
+    }
+
+    public String getSitePublicIp() {
+        return gslbSitePublicIp;
+    }
+
+    public String getSitePrivateIp() {
+        return gslbSitePrivateIp;
     }
 
     /////////////////////////////////////////////////////

@@ -117,29 +117,12 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VpnUser;
-import com.cloud.network.as.AutoScalePolicy;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.network.as.AutoScaleVmProfileVO;
-import com.cloud.network.as.Condition;
-import com.cloud.network.as.ConditionVO;
-import com.cloud.network.as.Counter;
+import com.cloud.network.as.*;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -168,6 +151,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -220,6 +204,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.api.ResponseGenerator;                                                                                 
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -682,6 +667,19 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
+    }
+
+    @Override
+    public GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule) {
+        GlobalLoadBalancerResponse response = new GlobalLoadBalancerResponse();
+        response.setAlgorithm(globalLoadBalancerRule.getAlgorithm());
+        response.setStickyMethod(globalLoadBalancerRule.getPersistence());
+        response.setServiceDomainName(globalLoadBalancerRule.getGslbDomain());
+        response.setName(globalLoadBalancerRule.getName());
+        response.setDescription(globalLoadBalancerRule.getDescription());
+        response.setRegionIdId(globalLoadBalancerRule.getRegion());
+        response.setId(globalLoadBalancerRule.getUuid());
+        return response;
     }
 
     @Override

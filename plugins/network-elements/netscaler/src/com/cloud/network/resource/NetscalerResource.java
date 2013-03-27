@@ -16,17 +16,6 @@
 // under the License.
 package com.cloud.network.resource;
 
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscalepolicy;
@@ -35,23 +24,10 @@ import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup_lbmonitor_binding;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable_metric_binding;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_metric_binding;
-import com.citrix.netscaler.nitro.resource.config.lb.lbvserver;
-import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding;
-import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_servicegroup_binding;
-import com.citrix.netscaler.nitro.resource.config.network.Interface;
-import com.citrix.netscaler.nitro.resource.config.network.inat;
-import com.citrix.netscaler.nitro.resource.config.network.vlan;
-import com.citrix.netscaler.nitro.resource.config.network.vlan_interface_binding;
-import com.citrix.netscaler.nitro.resource.config.network.vlan_nsip_binding;
-import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
-import com.citrix.netscaler.nitro.resource.config.ns.nshardware;
-import com.citrix.netscaler.nitro.resource.config.ns.nsip;
-import com.citrix.netscaler.nitro.resource.config.ns.nstimer;
-import com.citrix.netscaler.nitro.resource.config.ns.nstimer_autoscalepolicy_binding;
+import com.citrix.netscaler.nitro.resource.config.gslb.*;
+import com.citrix.netscaler.nitro.resource.config.lb.*;
+import com.citrix.netscaler.nitro.resource.config.network.*;
+import com.citrix.netscaler.nitro.resource.config.ns.*;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
@@ -60,38 +36,12 @@ import com.citrix.sdx.nitro.resource.config.mps;
 import com.citrix.sdx.nitro.resource.config.ns;
 import com.citrix.sdx.nitro.resource.config.xen_vpx_image;
 import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
-import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
-import com.cloud.agent.api.routing.CreateLoadBalancerApplianceCommand;
-import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
-import com.cloud.agent.api.routing.HealthCheckLBConfigAnswer;
-import com.cloud.agent.api.routing.HealthCheckLBConfigCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.*;
+import com.cloud.agent.api.routing.*;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
-import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
-import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
-import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
-import com.cloud.agent.api.to.LoadBalancerTO.HealthCheckPolicyTO;
-import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.*;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -102,6 +52,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
+
+import javax.naming.ConfigurationException;
+import java.util.*;
 
 class NitroError {
     static final int NS_RESOURCE_EXISTS = 273;
@@ -109,6 +64,7 @@ class NitroError {
     static final int NS_NO_SERIVCE = 344;
     static final int NS_OPERATION_NOT_PERMITTED = 257;
     static final int NS_INTERFACE_ALREADY_BOUND_TO_VLAN = 2080;
+    static final int NS_GSLB_DOMAIN_ALREADY_BOUND = 1842;
 }
 
 public class NetscalerResource implements ServerResource {
@@ -401,9 +357,11 @@ public class NetscalerResource implements ServerResource {
             return execute((DestroyLoadBalancerApplianceCommand) cmd, numRetries);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             return execute((SetStaticNatRulesCommand) cmd, numRetries);
+        } else if (cmd instanceof GlobalLoadBalancerConfigCommand) {
+            return execute((GlobalLoadBalancerConfigCommand) cmd, numRetries);
         } else if (cmd instanceof HealthCheckLBConfigCommand) {
            return execute((HealthCheckLBConfigCommand) cmd, numRetries);
-        }else {
+        } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
@@ -895,6 +853,592 @@ public class NetscalerResource implements ServerResource {
             return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null, null);
         }
     }
+
+    private Answer execute(GlobalLoadBalancerConfigCommand gslbCmd, int numRetries) {
+
+        String lbMethod = gslbCmd.getLoadBalancerMethod();
+        String persistenceType = gslbCmd.getPersistenceType();
+        String serviceType = gslbCmd.getServiceType();
+        boolean forRevoke = gslbCmd.isForRevoke();
+        long gslbId = gslbCmd.getGslbId();
+        List<SiteLoadBalancerConfig> sites = gslbCmd.getSiteDetails();
+
+        String domainName = gslbCmd.getDomainName();
+        String vserverName = GSLB.generateVirtualServerName(domainName);
+
+        try {
+
+            if (!forRevoke) { //check if the global load balancer rule is being added
+
+                // Add a GSLB virtual server
+                GSLB.createVirtualServer(_netscalerService, vserverName, lbMethod, persistenceType, gslbId, serviceType);
+
+                if (sites != null) { // check if there are any sites that are participating in global load balancing
+                    for (SiteLoadBalancerConfig site : sites) {
+
+                        String sitePrivateIP = site.getGslbProviderPrivateIp();
+                        String sitePublicIP =  site.getGslbProviderPublicIp();
+                        String servicePublicIp = site.getServicePublicIp();
+                        String servicePublicPort = site.getServicePort();
+                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP, site.getDataCenterId());
+
+                        // Add/Delete GSLB local and remote sites that are part of GSLB virtual server
+                        if (!site.forRevoke()) {
+                            String siteType = (site.isLocal()) ? "LOCAL" : "REMOTE";
+                            if (GSLB.getSiteObject(_netscalerService, siteName) != null) {
+                                GSLB.updateSite(_netscalerService, siteType, siteName, site.getGslbProviderPrivateIp(),
+                                        site.getGslbProviderPublicIp());
+                            } else {
+                                GSLB.createSite(_netscalerService, siteName, siteType, site.getGslbProviderPrivateIp(),
+                                        site.getGslbProviderPublicIp());
+                            }
+                        }
+
+                        // Add/Delete GSLB service corresponding the service running on each site
+                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
+                        if (!site.forRevoke()) {
+                            // create a 'gslbservice' object
+                            GSLB.createService(_netscalerService, serviceName, site.getServiceType(),
+                                    servicePublicIp, servicePublicPort, siteName);
+
+                            // Bind 'gslbservice' service object to GSLB virtual server
+                            GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName);
+
+                        } else {
+                            // Unbind GSLB service with GSLB virtual server
+                            GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
+
+                            // delete 'gslbservice' object
+                            gslbservice service = GSLB.getServiceObject(_netscalerService, serviceName);
+                            GSLB.deleteService(_netscalerService, serviceName);
+                        }
+
+                        if (site.forRevoke()) { // delete the site if its for revoke
+                            GSLB.deleteSite(_netscalerService, siteName);
+                        }
+                    }
+                }
+
+                // Bind GSLB vserver to domain
+                GSLB.createVserverDomainBinding(_netscalerService, vserverName, domainName);
+
+            } else {  // global load balancer rule is being deleted, so clean up all objects created
+
+                // remove binding between virtual server and the domain name
+                GSLB.deleteVserverDomainBinding(_netscalerService, vserverName, domainName);
+
+                if (sites != null) {
+                    for (SiteLoadBalancerConfig site : sites) {
+
+                        String sitePrivateIP = site.getGslbProviderPrivateIp();
+                        String sitePublicIP =  site.getGslbProviderPublicIp();
+                        String servicePublicIp = site.getServicePublicIp();
+                        String servicePublicPort = site.getServicePort();
+                        String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP, site.getDataCenterId());
+
+                        // remove binding between virtual server and services
+                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
+                        GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
+
+                        // delete service object
+                        GSLB.deleteService(_netscalerService, serviceName);
+
+                        // delete GSLB site object
+                        GSLB.deleteSite(_netscalerService, siteName);
+                    }
+                }
+
+                // delete GSLB virtual server
+                GSLB.deleteVirtualServer(_netscalerService, vserverName);
+            }
+
+            saveConfiguration();
+
+        } catch (Exception e) {
+            String errMsg =  "Failed to apply GSLB configuration due to " + e.getMessage();
+            if (shouldRetry(numRetries)) {
+                return retry(gslbCmd, numRetries);
+            }
+            return new GlobalLoadBalancerConfigAnswer(false, errMsg);
+        }
+
+        return new GlobalLoadBalancerConfigAnswer(true, "Successfully applied GSLB configuration.");
+    }
+
+    /*
+     * convenience class to create/update/delete/get the GSLB specific NetScaler objects
+     *     - gslbsite
+     *     - gslbvserver
+     *     - gslbservice
+     *     - vserver-service binding
+     *     - vserver-domain bindings
+     */
+    private static class GSLB {
+
+        // create a 'gslbsite' object representing a site
+        private static void createSite(nitro_service client, String siteName,
+                                       String siteType, String siteIP, String sitePublicIP) throws  ExecutionException{
+            try {
+                gslbsite site;
+                site = getSiteObject(client, siteName);
+
+                boolean isUpdateSite = false;
+                if (site == null) {
+                    site = new gslbsite();
+                } else {
+                    isUpdateSite = true;
+                }
+
+                assert("LOCAL".equalsIgnoreCase(siteType) || "REMOTE".equalsIgnoreCase(siteType));
+                site.set_sitetype(siteType);
+                site.set_sitename(siteName);
+                site.set_siteipaddress(siteIP);
+                site.set_publicip(sitePublicIP);
+                site.set_metricexchange("ENABLED");
+                site.set_nwmetricexchange("ENABLED");
+                site.set_sessionexchange("ENABLED");
+                if (isUpdateSite) {
+                    gslbsite.update(client, site);
+                } else {
+                    gslbsite.add(client, site);
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully created GSLB site: " + siteName);
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to create GSLB site: " + siteName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // delete 'gslbsite' object representing a site
+        private static void deleteSite(nitro_service client, String siteName) throws ExecutionException{
+            try {
+                gslbsite site = getSiteObject(client, siteName);
+                if (site != null) {
+                    gslbsite_gslbservice_binding[] serviceBindings = gslbsite_gslbservice_binding.get(client, siteName);
+                    if (serviceBindings != null && serviceBindings.length > 0) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("There are services associated with GSLB site: "
+                                    + siteName + " so ignoring site deletion");
+                        }
+                    }
+                    gslbsite.delete(client, siteName);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully deleted GSLB site: " + siteName);
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.warn("Ignoring delete request for non existing  GSLB site: " + siteName);
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to delete GSLB site: " + siteName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // update 'gslbsite' object representing a site
+        private static void updateSite(nitro_service client, String siteType, String siteName,
+                                       String siteIP, String sitePublicIP) throws ExecutionException {
+            try {
+                gslbsite site;
+                site = getSiteObject(client, siteName);
+                if (site == null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.warn("Ignoring update request for non existing  GSLB site: " + siteName);
+                    }
+                    return;
+                }
+                assert ("LOCAL".equalsIgnoreCase(siteType) || "REMOTE".equalsIgnoreCase(siteType));
+                site.set_sitetype(siteType);
+                site.set_sitename(siteName);
+                site.set_siteipaddress(siteIP);
+                site.set_publicip(sitePublicIP);
+                site.set_metricexchange("ENABLED");
+                site.set_nwmetricexchange("ENABLED");
+                site.set_sessionexchange("ENABLED");
+                gslbsite.update(client, site);
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully updated GSLB site: " + siteName);
+                }
+
+            } catch (Exception e) {
+                String errMsg = "Failed to update GSLB site: " + siteName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // create a 'gslbvserver' object representing a globally load balanced service
+        private static void createVirtualServer(nitro_service client, String vserverName, String lbMethod,
+                                         String persistenceType, long persistenceId, String serviceType)
+                    throws ExecutionException {
+            try {
+                gslbvserver vserver;
+                vserver = getVserverObject(client, vserverName);
+
+                boolean isUpdateSite = false;
+                if (vserver == null) {
+                    vserver = new gslbvserver();
+                } else {
+                    isUpdateSite = true;
+                }
+
+                vserver.set_name(vserverName);
+                vserver.set_lbmethod(lbMethod);
+                vserver.set_persistencetype(persistenceType);
+                if ("SOURCEIP".equalsIgnoreCase(persistenceType)) {
+                    vserver.set_persistenceid(persistenceId);
+                }
+                vserver.set_servicetype(serviceType);
+                vserver.set_state("ENABLED");
+                vserver.set_cookietimeout(null);
+                vserver.set_domainname(null);
+                if (isUpdateSite) {
+                    if ("roundrobin".equalsIgnoreCase(lbMethod)) {
+                        vserver.set_netmask(null);
+                        vserver.set_v6netmasklen(null);
+                    }
+                    gslbvserver.update(client, vserver);
+                } else {
+                    gslbvserver.add(client, vserver);
+                }
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully added GSLB virtual server: " + vserverName);
+                }
+
+            } catch (Exception e) {
+                String errMsg = "Failed to add GSLB virtual server: " + vserverName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // delete 'gslbvserver' object representing a globally load balanced service
+        private static void deleteVirtualServer(nitro_service client, String vserverName) throws  ExecutionException {
+            try {
+                gslbvserver vserver = getVserverObject(client, vserverName);
+                if (vserver != null) {
+                    gslbvserver.delete(client, vserver);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully deleted GSLB virtual server: " + vserverName);
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.warn("Ignoring delete request for non existing  GSLB virtual server: " + vserverName);
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to delete GSLB virtual server: " + vserverName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // enable 'gslbvserver' object representing a globally load balanced service
+        private static void enableVirtualServer(nitro_service client, String vserverName) throws ExecutionException {
+            try {
+                gslbvserver vserver = getVserverObject(client, vserverName);
+                if (vserver != null) {
+                    gslbvserver.enable(client, vserver);
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to enable GSLB virtual server: " + vserverName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // disable 'gslbvserver' object representing a globally load balanced service
+        private static void disableVirtualServer(nitro_service client, String vserverName) throws ExecutionException{
+            try {
+                gslbvserver vserver = getVserverObject(client, vserverName);
+                if (vserver != null) {
+                    gslbvserver.disable(client, vserver);
+                }
+            } catch (Exception e) {
+                String errMsg =  "Failed to disable GSLB virtual server: " + vserverName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // update 'gslbvserver' object representing a globally load balanced service
+        private static void updateVirtualServer(nitro_service client, String vserverName, String lbMethod,
+                                                String persistenceType, String serviceType) throws ExecutionException {
+            try {
+                gslbvserver vServer = getVserverObject(client, vserverName);
+                if (vServer != null) {
+                    vServer.set_lbmethod(lbMethod);
+                    vServer.set_persistencetype(persistenceType);
+                    vServer.set_servicetype(serviceType);
+                    gslbvserver.update(client, vServer);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully updated GSLB virtual server: " + vserverName);
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to update GSLB virtual server: " + vserverName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // create, delete, update, get the GSLB services
+        private static void createService(nitro_service client, String serviceName, String serviceType, String serviceIp,
+                                   String servicePort, String siteName) throws ExecutionException{
+            try {
+                gslbservice service;
+                service = getServiceObject(client, serviceName);
+
+                boolean isUpdateSite = false;
+                if (service == null) {
+                    service = new gslbservice();
+                } else {
+                    isUpdateSite = true;
+                }
+
+                service.set_sitename(siteName);
+                service.set_servername(serviceIp);
+                int port = Integer.parseInt(servicePort);
+                service.set_port(port);
+                service.set_servicename(serviceName);
+                service.set_servicetype(serviceType);
+                if (isUpdateSite) {
+                    service.set_viewip(null);
+                    service.set_viewname(null);
+                    gslbservice.update(client, service);
+                } else {
+                    gslbservice.add(client, service);
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully created service: " + serviceName + " at site: " + siteName);
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to created service: " + serviceName + " at site: " + siteName;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        private static void deleteService(nitro_service client, String serviceName) throws ExecutionException {
+            try {
+                gslbservice service = getServiceObject(client, serviceName);
+                if (service != null) {
+                    gslbservice.delete(client, serviceName);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully deleted service: " + serviceName);
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.warn("Ignoring delete request for non existing  service: " + serviceName);
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to delete service: " + serviceName + " due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        private static void updateService(nitro_service client, String serviceName, String serviceType, String publicIp,
+                                          String publicPort, String siteName) throws ExecutionException {
+            try {
+                gslbservice service;
+                service = getServiceObject(client, serviceName);
+
+                if (service != null) {
+                    service.set_sitename(siteName);
+                    service.set_publicip(publicIp);
+                    service.set_publicport(Integer.getInteger(publicPort));
+                    service.set_servicename(serviceName);
+                    service.set_servicetype(serviceType);
+                    gslbservice.update(client, service);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully updated service: " + serviceName + " at site: " + siteName);
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to update service: " + serviceName + " at site: " + siteName;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
+                    throws ExecutionException {
+            try {
+                gslbvserver_gslbservice_binding binding = new gslbvserver_gslbservice_binding();
+                binding.set_name(vserverName);
+                binding.set_servicename(serviceName);
+                gslbvserver_gslbservice_binding.add(client, binding);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully created service: " + serviceName + " and virtual server: "
+                            + vserverName + " binding");
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to create service: " + serviceName + " and virtual server: "
+                        + vserverName + " binding due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        private static void deleteVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
+                    throws  ExecutionException {
+            try {
+                gslbvserver_gslbservice_binding[] bindings = gslbvserver_gslbservice_binding.get(client, vserverName);
+                if (bindings != null) {
+                    for (gslbvserver_gslbservice_binding binding: bindings) {
+                        if (binding.get_servicename().equalsIgnoreCase(serviceName) &&
+                                binding.get_name().equals(vserverName)) {
+                            gslbvserver_gslbservice_binding.delete(client, binding);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Successfully deleted service: " + serviceName + " and virtual server: "
+                                        + vserverName + " binding");
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to create service: " + serviceName + " and virtual server: "
+                        + vserverName + " binding due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // create, delete GSLB virtual server and domain bindings
+        private static void createVserverDomainBinding(nitro_service client, String vserverName, String domainName)
+                    throws ExecutionException {
+            String errMsg;
+            try {
+                gslbvserver_domain_binding binding = new gslbvserver_domain_binding();
+                binding.set_domainname(domainName);
+                binding.set_name(vserverName);
+                gslbvserver_domain_binding.add(client, binding);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully added virtual server: "
+                            + vserverName + " domain name: " + domainName + " binding");
+                }
+                return;
+            } catch (nitro_exception e) {
+                if (e.getErrorCode() == NitroError.NS_GSLB_DOMAIN_ALREADY_BOUND) {
+                    return;
+                }
+                errMsg = e.getMessage();
+            } catch (Exception e) {
+                errMsg = e.getMessage();
+            }
+            errMsg = "Failed to create virtual server: " + vserverName + " domain name: " + domainName + " binding" + errMsg;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(errMsg);
+            }
+            throw new ExecutionException(errMsg);
+        }
+
+        private static void deleteVserverDomainBinding(nitro_service client, String vserverName, String domainName)
+                        throws ExecutionException {
+            try {
+                gslbvserver_domain_binding[] bindings = gslbvserver_domain_binding.get(client, vserverName);
+                if (bindings != null) {
+                    for (gslbvserver_domain_binding binding: bindings) {
+                        if (binding.get_domainname().equalsIgnoreCase(domainName)) {
+                            gslbvserver_domain_binding.delete(client, binding);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Successfully deleted virtual server: " + vserverName + " and "
+                                        + " domain: " + domainName + " binding");
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to delete virtual server: "
+                        + vserverName + " and domain " + domainName +" binding due to " + e.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        // get 'gslbsite' object corresponding to a site name
+        private static gslbsite getSiteObject(nitro_service client, String siteName) {
+            try {
+                gslbsite site = gslbsite.get(client, siteName);
+                if (site != null) {
+                    return site;
+                }
+            } catch (Exception e) {
+
+            }
+            return null;
+        }
+
+        private static gslbvserver getVserverObject(nitro_service client, String vserverName) {
+            try {
+                gslbvserver vserver = gslbvserver.get(client, vserverName);
+                return vserver;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        private static gslbservice getServiceObject(nitro_service client, String serviceName) {
+            try {
+                gslbservice service = gslbservice.get(client, serviceName);
+                return service;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        private static String generateUniqueSiteName(String sitePrivateIp, String sitePublicIP, long dataCenterId) {
+            return "cloudsite" + String.valueOf(dataCenterId);
+        }
+
+        private static String generateVirtualServerName(String domainName) {
+            return "cloud-gslb-vserver-" + domainName;
+        }
+
+        private static String generateUniqueServiceName(String siteName, String publicIp, String publicPort) {
+            return "cloud-gslb-service-" + siteName + "-" + publicIp + "-" + publicPort;
+        }
+    }
+
 
     private void enableVPXInterfaces(String publicIf, String privateIf, ns ns_obj) {
         // enable VPX to use 10 gigabit Ethernet interfaces if public/private interface

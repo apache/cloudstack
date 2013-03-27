@@ -80,6 +80,10 @@ public class ApiConstants {
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";
+    public static final String GSLB_LB_METHOD = "gslblbmethod";
+    public static final String GSLB_SERVICE_DOMAIN_NAME = "gslbdomainname";
+    public static final String GSLB_SERVICE_TYPE = "gslbservicetype";
+    public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
@@ -329,6 +333,7 @@ public class ApiConstants {
     public static final String LOAD_BALANCER_DEVICE_STATE = "lbdevicestate";
     public static final String LOAD_BALANCER_DEVICE_CAPACITY = "lbdevicecapacity";
     public static final String LOAD_BALANCER_DEVICE_DEDICATED = "lbdevicededicated";
+    public static final String LOAD_BALANCER_RULE_LIST = "loadbalancerrulelist";
     public static final String FIREWALL_DEVICE_ID = "fwdeviceid";
     public static final String FIREWALL_DEVICE_NAME = "fwdevicename";
     public static final String FIREWALL_DEVICE_STATE = "fwdevicestate";
@@ -445,6 +450,9 @@ public class ApiConstants {
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String UCS_DN = "ucsdn";
+    public static final String GSLB_PROVIDER = "gslbprovider";
+    public static final String GSLB_PROVIDER_PUBLIC_IP = "gslbproviderpublicip";
+    public static final String GSLB_PROVIDER_PRIVATE_IP = "gslbproviderprivateip";
     public static final String VM_SNAPSHOT_DESCRIPTION = "description";
     public static final String VM_SNAPSHOT_DISPLAYNAME = "name";
     public static final String VM_SNAPSHOT_ID = "vmsnapshotid";
