@@ -125,7 +125,7 @@
                 label: 'Remove LDAP',
                 messages: {
                   notification: function(args) {
-                    return 'Event Deleted';
+                    return 'LDAP Configuration Deleted';
                   },
                   confirm: function() {
                     return 'Are you sure you want to delete the LDAP configuration?';
@@ -134,7 +134,7 @@
                 action: function(args) {
 
                   $.ajax({
-                       url:createURL("ldapRemove"  ),
+                       url:createURL("ldapRemove"),
                        success:function(json){
 
                   args.response.success();
