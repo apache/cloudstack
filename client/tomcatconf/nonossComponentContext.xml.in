@@ -326,6 +326,9 @@
     <property name="name" value="HypervisorPlannerSelector"/>
   </bean>
 
+  <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl">
+  </bean>
+
   <!--
     DAO with customized configuration
   -->
