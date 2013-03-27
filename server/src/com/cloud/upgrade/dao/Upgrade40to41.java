@@ -20,18 +20,14 @@ package com.cloud.upgrade.dao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
-
-import org.apache.log4j.Logger;
 
 public class Upgrade40to41 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade40to41.class);
@@ -64,7 +60,6 @@ public class Upgrade40to41 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         updateRegionEntries(conn);
-        upgradeEIPNetworkOfferings(conn);
         upgradeEgressFirewallRules(conn);
     }
 
@@ -92,39 +87,6 @@ public class Upgrade40to41 implements DbUpgrade {
             throw new CloudRuntimeException("Error while updating region entries", e);
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
-        }
-    }
-
-    private void upgradeEIPNetworkOfferings(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("select id, elastic_ip_service from `cloud`.`network_offerings` where traffic_type='Guest'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                // check if elastic IP service is enabled for network offering
-                if (rs.getLong(2) != 0) {
-                    //update network offering with eip_associate_public_ip set to true
-                    pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set eip_associate_public_ip=? where id=?");
-                    pstmt.setBoolean(1, true);
-                    pstmt.setLong(2, id);
-                    pstmt.executeUpdate();
-                }
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
                 if (pstmt != null) {
                     pstmt.close();
                 }
