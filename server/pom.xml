@@ -103,6 +103,14 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>resources</directory>
+        <includes>
+          <include>**/*.xml</include>
+        </includes>
+      </resource>
+    </resources>    
     <testResources>
       <testResource>
         <directory>test/resources</directory>
