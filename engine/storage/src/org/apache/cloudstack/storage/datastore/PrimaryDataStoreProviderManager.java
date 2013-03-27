@@ -26,6 +26,6 @@ public interface PrimaryDataStoreProviderManager {
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId);
     public PrimaryDataStore getPrimaryDataStore(String uuid);
 
-    boolean registerDriver(String uuid, PrimaryDataStoreDriver driver);
-    boolean registerHostListener(String uuid, HypervisorHostListener listener);
+    boolean registerDriver(String providerName, PrimaryDataStoreDriver driver);
+    boolean registerHostListener(String providerName, HypervisorHostListener listener);
 }

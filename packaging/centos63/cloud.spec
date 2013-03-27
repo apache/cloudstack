@@ -33,8 +33,8 @@ Release:   %{_rel}%{dist}
 %endif
 Version:   %{_ver}
 License:   ASL 2.0
-Vendor:    Apache CloudStack <cloudstack-dev@incubator.apache.org>
-Packager:  Apache CloudStack <cloudstack-dev@incubator.apache.org>
+Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
+Packager:  Apache CloudStack <dev@cloudstack.apache.org>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
@@ -165,7 +165,14 @@ echo Doing CloudStack build
 cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
-mvn -P awsapi package -Dsystemvm
+
+if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
+    echo "Packaging nonoss components"
+   mvn -Pawsapi,systemvm -Dnonoss package
+else
+    echo "Packaging oss components"
+   mvn -Pawsapi package -Dsystemvm
+fi
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -283,22 +290,35 @@ cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
 install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudapis.py
 
 # AWS API
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
-cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
 install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-setup-bridge
 install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
 cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
 
+for name in applicationContext.xml cloud-bridge.properties commons-logging.properties crypto.properties xes.keystore ec2-service.properties ; do
+  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/$name \
+    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
+done
+
+#Don't package the below for AWS API
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/db.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/LICENSE.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/log4j.properties
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/log4j-vmops.xml
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/META-INF
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/services.xml
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
-
 %preun management
-/sbin/service cloud-management stop || true
+/sbin/service cloudstack-management stop || true
 if [ "$1" == "0" ] ; then
-    /sbin/chkconfig --del cloud-management  > /dev/null 2>&1 || true
-    /sbin/service cloud-management stop > /dev/null 2>&1 || true
+    /sbin/chkconfig --del cloudstack-management  > /dev/null 2>&1 || true
+    /sbin/service cloudstack-management stop > /dev/null 2>&1 || true
 fi
 
 %pre management
@@ -315,8 +335,8 @@ rm -rf %{_localstatedir}/cache/cloud
 
 %post management
 if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add cloud-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
+    /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
 fi
 
 if [ -d "%{_datadir}/%{name}-management" ] ; then
@@ -370,6 +390,12 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/applicationContext.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/crypto.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/xes.keystore
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
@@ -443,7 +469,7 @@ fi
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
-%{_datadir}/%{name}-bridge/webapps/bridge
+%{_datadir}/%{name}-bridge/webapps/awsapi
 %attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge

@@ -19,12 +19,19 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
+import java.util.Set;
 
 
 public interface DataStoreProvider {
-    public DataStoreLifeCycle getLifeCycle();
+    public static enum DataStoreProviderType {
+        PRIMARY,
+        IMAGE
+    }
+    public DataStoreLifeCycle getDataStoreLifeCycle();
+    public DataStoreDriver getDataStoreDriver();
+    public HypervisorHostListener getHostListener();
     public String getName();
-    public String getUuid();
-    public long getId();
     public boolean configure(Map<String, Object> params);
+    public Set<DataStoreProviderType> getTypes();
+    
 }

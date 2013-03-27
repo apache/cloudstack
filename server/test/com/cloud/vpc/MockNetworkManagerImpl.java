@@ -83,6 +83,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -1411,4 +1412,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         // TODO Auto-generated method stub
         return false;
     }
+
+
+
+
+
+    @Override
+    public NicVO savePlaceholderNic(Network network, String ip4Address) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
 }

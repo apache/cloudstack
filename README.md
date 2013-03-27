@@ -17,12 +17,14 @@ Apache CloudStack offers three methods for managing cloud
 computing environments: an easy to use Web interface, command 
 line tools, and a full-featured RESTful API.
 
-Visit us at [cloudstack.org](http://incubator.apache.org/cloudstack).
+Visit us at [Apache CloudStack](http://cloudstack.apache.org).
 
 ## Mailing lists
-[Development Mailing List](mailto:cloudstack-dev-subscribe@incubator.apache.org)
-[Users Mailing list](mailto:cloudstack-users-subscribe@incubator.apache.org)
-[Commits mailing list](mailto:cloudstack-commits-subscribe@incubator.apache.org)
+[Development Mailing List](mailto:dev-subscribe@cloudstack.apache.org)
+[Users Mailing List](mailto:users-subscribe@cloudstack.apache.org)
+[Commits Mailing List](mailto:commits-subscribe@cloudstack.apache.org)
+[Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
+[Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
 # License
 

@@ -118,8 +118,12 @@
                           if (isSingleSelect) {
                             $select.siblings('.single-select:visible').find('input[type=checkbox]')
                               .attr('checked', false);
-                            
-                            $(this).closest('.select').find('input[type=radio]').click();
+
+                            if (!$('input[name=new-network]:visible').is(':checked')) {
+                              $(this).closest('.select').find('input[type=radio]').click();
+                            } else {
+                              $newNetwork.find('input[type=radio]').click();
+                            }
                           }
 
                           if ((!$otherSelects.size()) &&

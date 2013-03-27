@@ -27,11 +27,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,8 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
-import com.cloud.agent.api.to.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -167,13 +165,13 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -209,7 +207,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1702,15 +1699,30 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
             	if (guestNetwork.getCidr() != null) {
-            		String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-            		if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-            			defaultNetworkStartIp = startIp;
-            		} else if (s_logger.isDebugEnabled()){
-            			s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
-            					" is already allocated, can't use it for domain router; will get random ip address from the range");
-            		}
+            	    //Check the placeholder nic, and if it's ip address is not empty, allocate it from there
+            	    String requestedGateway = null;
+            	    if (guestNetwork.getGateway() != null) {
+            	        requestedGateway = guestNetwork.getGateway();
+            	    } else if (plan != null && plan.getPodId() != null) {
+            	        Pod pod = _configMgr.getPod(plan.getPodId());
+            	        requestedGateway = pod.getGateway();
+            	    }
+            	    Nic placeholder = _networkModel.getPlaceholderNic(guestNetwork, null);
+            	    if (placeholder != null) {
+            	        s_logger.debug("Requesting ip address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
+            	        defaultNetworkStartIp = placeholder.getIp4Address();
+            	    } else {
+            	        String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+                        if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                            defaultNetworkStartIp = startIp;
+                        } else if (s_logger.isDebugEnabled()){
+                            s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
+                                    " is already allocated, can't use it for domain router; will get random ip address from the range");
+                        }
+            	    }
             	}
             	
+            	//FIXME - get ipv6 stored in the placeholder
             	if (guestNetwork.getIp6Cidr() != null) {
             		String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
             		if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
@@ -2382,11 +2394,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 for (LoadBalancerVO lb : lbs) {
                     List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                     List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+                    List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
                     lbRules.add(loadBalancing);
                 }
             }
-   
+
             s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
             if (!lbRules.isEmpty()) {
                     createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
@@ -3284,7 +3297,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     for (LoadBalancerVO lb : lbs) {
                         List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                         List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList,policyList);
+                        List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId() );
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
                         lbRules.add(loadBalancing);
                     }
                     return sendLBRules(router, lbRules, network.getId());

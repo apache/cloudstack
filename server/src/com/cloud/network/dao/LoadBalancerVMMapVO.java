@@ -39,10 +39,14 @@ public class LoadBalancerVMMapVO implements InternalIdentity {
     @Column(name="instance_id")
     private long instanceId;
 
-    @Column(name="revoke")
+    @Column(name = "revoke")
     private boolean revoke = false;
 
-    public LoadBalancerVMMapVO() { }
+    @Column(name = "state")
+    private String state;
+
+    public LoadBalancerVMMapVO() {
+    }
 
     public LoadBalancerVMMapVO(long loadBalancerId, long instanceId) {
         this.loadBalancerId = loadBalancerId;
@@ -73,5 +77,13 @@ public class LoadBalancerVMMapVO implements InternalIdentity {
 
     public void setRevoke(boolean revoke) {
         this.revoke = revoke;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

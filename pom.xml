@@ -26,8 +26,8 @@
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</developerConnection>
   </scm>
   <issueManagement>
     <system>jira</system>
@@ -99,40 +99,49 @@
   <mailingLists>
     <mailingList>
       <name>Apache CloudStack User List</name>
-      <subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-users@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
+      <subscribe>users-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>users-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>users@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-users</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Developer List</name>
-      <subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-dev@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
+      <subscribe>dev-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>dev@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-dev</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Commits List</name>
-      <subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-commits@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
+      <subscribe>commits-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>commits@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-commits</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</otherArchive>
+      </otherArchives>
     </mailingList>
   </mailingLists>
 
   <developers>
     <developer>
       <name>The Apache CloudStack Team</name>
-      <email>cloudstack-dev@incubator.apache.org</email>
-      <url>http://incubator.apache.org/projects/cloudstack.html</url>
+      <email>dev@cloudstack.apache.org</email>
+      <url>http://cloudstack.apache.org/</url>
       <organization>Apache Software Foundation</organization>
       <organizationUrl>http://apache.org/</organizationUrl>
     </developer>
   </developers>
 
   <ciManagement>
-    <system>Jenkin</system>
-    <url>http://jenkins.cloudstack.org/</url>
+    <system>Jenkins</system>
+    <url>http://builds.apache.org/</url>
   </ciManagement>
 
   <licenses>
@@ -182,7 +191,6 @@
       <version>${cs.junit.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
@@ -222,14 +230,12 @@
       <version>1.9.5</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
       <version>${org.springframework.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjrt</artifactId>
@@ -276,7 +282,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore />
+                    <ignore/>
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -334,16 +340,9 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/base.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/cleanup.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/definition.rb</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/preseed.cfg</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/zerodisk.sh</exclude>
+              <exclude>tools/appliance/definitions/devcloud/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
@@ -508,114 +507,6 @@
       <modules>
         <module>vmware-base</module>
       </modules>
-    </profile>
-    <profile>
-      <id>simulator</id>
-      <activation>
-        <property>
-          <name>deploydb-simulator</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>properties-maven-plugin</artifactId>
-            <version>1.0-alpha-2</version>
-            <executions>
-              <execution>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>read-project-properties</goal>
-                </goals>
-                <configuration>
-                  <files>
-                    <file>${project.basedir}/utils/conf/db.properties</file>
-                    <file>${project.basedir}/utils/conf/db.properties.override</file>
-                  </files>
-                  <quiet>true</quiet>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- DatabaseCreator driver here -->
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
-            <dependencies>
-              <!-- specify the dependent jdbc driver here -->
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>commons-dbcp</groupId>
-                <artifactId>commons-dbcp</artifactId>
-                <version>${cs.dbcp.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>commons-pool</groupId>
-                <artifactId>commons-pool</artifactId>
-                <version>${cs.pool.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.jasypt</groupId>
-                <artifactId>jasypt</artifactId>
-                <version>${cs.jasypt.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-utils</artifactId>
-                <version>${project.version}</version>
-              </dependency>
-              <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-server</artifactId>
-                <version>${project.version}</version>
-              </dependency>
-            </dependencies>
-            <executions>
-              <execution>
-                <phase>process-resources</phase>
-                <id>create-schema</id>
-                <goals>
-                  <goal>java</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <includeProjectDependencies>false</includeProjectDependencies>
-              <includePluginDependencies>true</includePluginDependencies>
-              <executableDependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-server</artifactId>
-              </executableDependency>
-              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
-              <arguments>
-                <!-- db properties file -->
-                <argument>${project.basedir}/utils/conf/db.properties</argument>
-                <argument>${project.basedir}/utils/conf/db.properties.override</argument>
-                <!-- simulator sql files -->
-                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
-                <argument>${basedir}/target/db/templates.simulator.sql</argument>
-                <!-- database upgrade -->
-                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--database=simulator</argument>
-                <argument>--rootpassword=${db.root.password}</argument>
-                <!-- enable verbosity by -v or dash-dash-verbose -->
-              </arguments>
-              <systemProperties>
-                <systemProperty>
-                  <key>catalina.home</key>
-                  <value>${project.basedir}/utils</value>
-                </systemProperty>
-              </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 </project>

@@ -93,7 +93,6 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -1457,11 +1456,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (network.getGuestType() != Network.GuestType.Shared) {
             List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
             if (networkMap == null || networkMap.isEmpty()) {
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                throw new PermissionDeniedException("Unable to use network with id= " + network.getUuid() + ", permission denied");
             }
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getId() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
@@ -1644,6 +1643,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (usedIps.size() != 0) {
             allPossibleIps.removeAll(usedIps);
         }
+
+        String gateway = network.getGateway();
+        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
+            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
         return allPossibleIps;
     }
 
@@ -1989,4 +1993,26 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	}
 		return startIpv6;
 	}
+	
+    @Override
+    public NicVO getPlaceholderNic(Network network, Long podId) {
+        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
+        for (NicVO nic : nics) {
+            if (nic.getVmType() == null && nic.getReserver() == null && nic.getIp4Address() != null && !nic.getIp4Address().equals(network.getGateway())) {
+                if (podId == null) {
+                    return nic;
+                } else {
+                    //return nic only when its ip address belong to the pod range (for the Basic zone case)
+                    List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
+                    for (Vlan vlan : vlans) {
+                        IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
+                        if (ip != null && ip.getVlanId() == vlan.getId()) {
+                            return nic;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

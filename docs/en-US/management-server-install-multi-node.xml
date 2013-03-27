@@ -65,8 +65,7 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
       <para>Repeat these steps on each additional Management Server. </para>
     </listitem>
     <listitem>
-      <para>Be sure to configure a load balancer for the Management Servers. See Management Server
-        Load Balancing.</para>
+      <para>Be sure to configure a load balancer for the Management Servers. See <xref linkend="management-server-lb"/>.</para>
     </listitem>
   </orderedlist>
 </section>

@@ -188,6 +188,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability InlineMode = new Capability("InlineMode");
         public static final Capability SupportedTrafficDirection = new Capability("SupportedTrafficDirection");
         public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
+        public static final Capability HealthCheckPolicy = new Capability("HealthCheckPolicy");
 
         private String name;
 
@@ -235,6 +236,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Shutdown);
             s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
+            s_fsm.addTransition(State.Setup, Event.DestroyNetwork, State.Destroy);
+            s_fsm.addTransition(State.Allocated, Event.DestroyNetwork, State.Destroy);
         }
 
         public static StateMachine2<State, Network.Event, Network> getStateMachine() {

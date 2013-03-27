@@ -25,7 +25,7 @@
 <section id="building-with-maven-steps">
     <title>Building Steps</title>
     <para>&PRODUCT; uses git for source version control, first make sure you have the source code by pulling it:</para>
-    <programlisting>git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</programlisting>
+    <programlisting>git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git</programlisting>
     <para>Several Project Object Models (POM) are defined to deal with the various build targets of &PRODUCT;. Certain features require some packages that are not compatible with the Apache license and therefore need to be downloaded on your own. Check the wiki for additional information <ulink url="https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html">https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html</ulink>. In order to build all the open source targets of &PRODUCT; do:</para>
     <para><programlisting>mvn clean install</programlisting></para>
     <para>The resulting jar files will be in the target directory of the subdirectory of the compiled module.</para>

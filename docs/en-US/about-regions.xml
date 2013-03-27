@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="about-regions">
+  <title>About Regions</title>
+  <para>To increase reliability of the cloud, you can optionally group resources into multiple geographic regions.
+    A region is the largest available organizational unit within a &PRODUCT; deployment.
+    A region is made up of several availability zones, where each zone is roughly equivalent to a datacenter.
+    Each region is controlled by its own cluster of Management Servers, running in one of the zones.
+    The zones in a region are typically located in close geographical proximity.
+    Regions are a useful technique for providing fault tolerance and disaster recovery.</para>
+  <para>By grouping zones into regions, the cloud can achieve higher availability and scalability.
+    User accounts can span regions, so that users can deploy VMs in multiple, widely-dispersed regions.
+    Even if one of the regions becomes unavailable, the services are still available to the end-user through VMs deployed in another region.
+    And by grouping communities of zones under their own nearby Management Servers, the latency of communications within the cloud is reduced
+    compared to managing widely-dispersed zones from a single central Management Server.
+  </para>
+  <para>
+    Usage records can also be consolidated and tracked at the region level, creating reports or invoices for each geographic region.
+  </para>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="./images/region-overview.png" />
+    </imageobject>
+    <textobject><phrase>region-overview.png: Nested structure of a region.</phrase></textobject>
+  </mediaobject>
+  <para>Regions are visible to the end user. When a user starts a guest VM, the user must select a region for their guest.
+      Users might also be required to copy their private templates to additional regions to enable creation of guest VMs using their templates in those regions.</para>
+  </section>

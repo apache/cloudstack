@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="region-add">
+  <title>Adding Regions (optional)</title>
+    <para>Grouping your cloud resources into geographic regions is an optional step when provisioning the cloud.
+        For an overview of regions, see <xref linkend="about-regions"/>.</para>
+    <section id="region-first">
+        <title>The First Region: The Default Region</title>
+    <para>If you do not take action to define regions, then all the zones in your cloud will be
+            automatically grouped into a single default region. This region is assigned the region
+            ID of 1.</para>
+        <para>You can change the name or URL of the default region by using the API command updateRegion. For example:</para>
+        <programlisting>http://&lt;IP_of_Management_Server&gt;:8080/client/api?command=updateRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+    </section>
+    <section id="region-add-2">
+        <title>Adding a Region</title>
+        <para>Use these steps to add a second region in addition to the default region.</para>
+  <orderedlist>
+      <listitem><para>Each region has its own &PRODUCT; instance. Therefore, the first step of creating a new region
+                    is to install the Management Server software, on one or more nodes, in the
+                    geographic area where you want to set up the new region. Use the steps in the
+                    Installation guide. When you come to the step where you set up the database, use
+                    the additional command-line flag <code>-r &lt;region_id&gt;</code> to set a
+                    region ID for the new region. The default region is automatically assigned a
+                    region ID of 1, so your first additional region might be region 2.</para>
+      <programlisting>cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting>
+      </listitem>
+      <listitem><para>By the end of the installation procedure, the Management Server should have been started. Be sure that the Management Server installation was successful and complete.</para></listitem>
+      <listitem><para>Add region 2 to region 1. Use the API command addRegion. (For information about how to make an API call, see the Developer's Guide.)</para>
+        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_2_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+      </listitem>
+      <listitem><para>Now perform the same command in reverse, adding region 1 to region 2.</para>
+          <programlisting>http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+      </listitem>
+      <listitem><para>Copy the account, user, and domain tables from the region 1 database to the region 2 database.</para>
+          <para>In the following commands, it is assumed that you have set the root password on the
+              database, which is a &PRODUCT; recommended best practice. Substitute your own MySQL
+              root password.</para>
+          <orderedlist numeration="loweralpha">
+              <listitem><para>First, run this command to copy the contents of the database:</para>
+                <programlisting># mysqldump -u root -p&lt;mysql_password&gt; -h &lt;region1_db_host&gt; cloud account user domain &gt; region1.sql</programlisting>
+              </listitem>
+              <listitem><para>Then run this command to put the data onto the region 2 database:</para>
+                <programlisting># mysql -u root -p&lt;mysql_password&gt; -h &lt;region2_db_host&gt; cloud &lt; region1.sql</programlisting>
+              </listitem>
+          </orderedlist>
+      </listitem>
+      <listitem><para>Remove project accounts. Run these commands on the region 2 database:</para>
+          <programlisting>mysql&gt; delete from account where type = 5;</programlisting>
+      </listitem>
+      <listitem><para>Set the default zone as null:</para>
+          <programlisting>mysql&gt; update account set default_zone_id = null;</programlisting>
+      </listitem>
+      <listitem><para>Restart the Management Servers in region 2.</para></listitem>
+  </orderedlist>
+    </section>
+    <section id="region-add-n">
+        <title>Adding Third and Subsequent Regions</title>
+        <para>To add the third region, and subsequent additional regions, the steps are similar to those for adding the second region.
+            However, you must repeat certain steps additional times for each additional region:</para>
+        <orderedlist>
+            <listitem><para>Install &PRODUCT; in each additional region. Set the region ID for each region during the database setup step.</para>
+                <programlisting>cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting></listitem>
+            <listitem><para>Once the Management Server is running, add your new region to all existing regions by
+                    repeatedly calling the API command addRegion. For example, if you were adding
+                    region 3:</para>
+                <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+
+http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting></listitem>
+            <listitem><para>Repeat the procedure in reverse to add all existing regions to the new region. For example,
+                    for the third region, add the other two existing regions:</para>
+                <programlisting>http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+
+http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_2_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting></listitem>
+            <listitem><para>Copy the account, user, and domain tables from any existing region's database to the new
+                    region's database.</para>
+                <para>In the following commands, it is assumed that you have set the root password on the
+                    database, which is a &PRODUCT; recommended best practice. Substitute your own MySQL
+                    root password.</para>
+                <orderedlist numeration="loweralpha">
+                    <listitem><para>First, run this command to copy the contents of the database:</para>
+                        <programlisting># mysqldump -u root -p&lt;mysql_password&gt; -h &lt;region1_db_host&gt; cloud account user domain &gt; region1.sql</programlisting>
+                    </listitem>
+                    <listitem><para>Then run this command to put the data onto the new region's database. For example, for region
+                            3:</para>
+                        <programlisting># mysql -u root -p&lt;mysql_password&gt; -h &lt;region3_db_host&gt; cloud &lt; region1.sql</programlisting>
+                    </listitem>
+                </orderedlist>
+            </listitem>
+            <listitem><para>Remove project accounts. Run these commands on the region 2 database:</para>
+                <programlisting>mysql&gt; delete from account where type = 5;</programlisting>
+            </listitem>
+            <listitem><para>Set the default zone as null:</para>
+                <programlisting>mysql&gt; update account set default_zone_id = null;</programlisting>
+            </listitem>
+            <listitem><para>Restart the Management Servers in the new region.</para></listitem>
+        </orderedlist>
+    </section>
+    <section id="region-delete">
+        <title>Deleting a Region</title>
+        <para>To delete a region, use the API command removeRegion. Repeat the call to remove the region from all other regions. For example, to remove the 3rd region in a three-region cloud:</para>
+        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+
+http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+    </section>
+</section>

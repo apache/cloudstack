@@ -48,6 +48,8 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the Vpn User")
+    private String state;
 
     public void setId(String id) {
         this.id = id;
@@ -78,6 +80,14 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
 }

@@ -293,6 +293,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="network_uuid")
     private String networkUuid;
 
+    @Column(name="network_name")
+    private String networkName;
+
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     private TrafficType trafficType;
@@ -1165,6 +1168,16 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public void setNetworkId(long networkId) {
         this.networkId = networkId;
+    }
+
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
     }
 
 

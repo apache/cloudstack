@@ -19,7 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
-public class ClusterScope implements Scope {
+public class ClusterScope extends AbstractScope {
     private ScopeType type = ScopeType.CLUSTER;
     private Long clusterId;
     private Long podId;

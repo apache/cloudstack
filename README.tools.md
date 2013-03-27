@@ -61,7 +61,7 @@ Once installed per the Vagrant installation process, run:
         $ vagrant box add devcloud [path to devcloud.box]
 
 Then, either go into the devcloudbox folder of your checked out version of the
-CloudStack code (incubator-cloudstack/tools/devcloud/devcloudbox), or copy the
+CloudStack code (cloudstack/tools/devcloud/devcloudbox), or copy the
 contents of that folder to another location.
 
 Assuming the patched Vagrant installation is working, you then

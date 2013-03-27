@@ -19,14 +19,18 @@
 package org.apache.cloudstack.storage.image.store;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
-import org.apache.cloudstack.storage.datastore.provider.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
@@ -47,10 +51,9 @@ public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
     ImageDataStoreManager storeMgr;
     @Inject
     ImageDataStoreHelper helper;
-    long id;
-    String uuid;
+
     @Override
-    public DataStoreLifeCycle getLifeCycle() {
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
         return lifeCycle;
     }
 
@@ -60,22 +63,11 @@ public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
     }
 
     @Override
-    public String getUuid() {
-        return this.uuid;
-    }
-
-    @Override
-    public long getId() {
-        return this.id;
-    }
-
-    @Override
     public boolean configure(Map<String, Object> params) {
         lifeCycle = ComponentContext.inject(DefaultImageDataStoreLifeCycle.class);
         driver = ComponentContext.inject(AncientImageDataStoreDriverImpl.class);
-        uuid = (String)params.get("uuid");
-        id = (Long)params.get("id");
-        storeMgr.registerDriver(uuid, driver);
+
+        storeMgr.registerDriver(this.getName(), driver);
         
         Map<String, Object> infos = new HashMap<String, Object>();
         String dataStoreName = UUID.nameUUIDFromBytes(this.name.getBytes()).toString();
@@ -83,10 +75,27 @@ public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
         infos.put("uuid", dataStoreName);
         infos.put("protocol", "http");
         infos.put("scope", ScopeType.GLOBAL);
-        infos.put("provider", this.getId());
-        DataStoreLifeCycle lifeCycle = this.getLifeCycle();
+        infos.put("providerName", this.getName());
+        DataStoreLifeCycle lifeCycle = this.getDataStoreLifeCycle();
         lifeCycle.initialize(infos);
         return true;
+    }
+
+    @Override
+    public DataStoreDriver getDataStoreDriver() {
+        return this.driver;
+    }
+
+    @Override
+    public HypervisorHostListener getHostListener() {
+        return null;
+    }
+
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        types.add(DataStoreProviderType.IMAGE);
+        return types;
     }
 
 }

@@ -18,61 +18,63 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.HashSet;
 import java.util.Map;
-
-import javax.inject.Inject;
+import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.driver.AncientPrimaryDataStoreDriverImpl;
-import org.apache.cloudstack.storage.datastore.lifecycle.AncientPrimaryDataStoreLifeCycleImpl;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.storage.datastore.driver.CloudStackPrimaryDataStoreDriverImpl;
+import org.apache.cloudstack.storage.datastore.lifecycle.CloudStackPrimaryDataStoreLifeCycleImpl;
 
 import com.cloud.utils.component.ComponentContext;
 
-@Component
-public class AncientPrimaryDataStoreProviderImpl implements
+public class CloudStackPrimaryDataStoreProviderImpl implements
         PrimaryDataStoreProvider {
 
     private final String providerName = "ancient primary data store provider";
     protected PrimaryDataStoreDriver driver;
-    @Inject
-    PrimaryDataStoreProviderManager storeMgr;
+    protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecyle;
-    protected String uuid;
-    protected long id;
+
+    CloudStackPrimaryDataStoreProviderImpl() {
+        
+    }
+    
     @Override
     public String getName() {
         return providerName;
     }
 
     @Override
-    public DataStoreLifeCycle getLifeCycle() {
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
         return this.lifecyle;
     }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(AncientPrimaryDataStoreLifeCycleImpl.class);
-        driver = ComponentContext.inject(AncientPrimaryDataStoreDriverImpl.class);
-        uuid = (String)params.get("uuid");
-        id = (Long)params.get("id");
-        storeMgr.registerDriver(uuid, this.driver);
-        HypervisorHostListener listener = ComponentContext.inject(DefaultHostListener.class);
-        storeMgr.registerHostListener(uuid, listener);
+        lifecyle = ComponentContext.inject(CloudStackPrimaryDataStoreLifeCycleImpl.class);
+        driver = ComponentContext.inject(CloudStackPrimaryDataStoreDriverImpl.class);
+        listener = ComponentContext.inject(DefaultHostListener.class);
         return true;
     }
 
     @Override
-    public String getUuid() {
-        return this.uuid;
+    public PrimaryDataStoreDriver getDataStoreDriver() {
+        return this.driver;
     }
 
     @Override
-    public long getId() {
-        return this.id;
+    public HypervisorHostListener getHostListener() {
+        return this.listener;
     }
-
+    
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        types.add(DataStoreProviderType.PRIMARY);
+        return types;
+    }
 }

@@ -152,6 +152,9 @@ createLBStickinessPolicy=15
 deleteLBStickinessPolicy=15
 listLoadBalancerRules=15
 listLBStickinessPolicies=15
+listLBHealthCheckPolicies=15
+createLBHealthCheckPolicy=15
+deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
 
@@ -276,6 +279,7 @@ listAsyncJobs=15
 
 #### storage pools commands
 listStoragePools=3
+listStorageProviders=3
 createStoragePool=1
 updateStoragePool=1
 deleteStoragePool=1

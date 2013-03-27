@@ -133,7 +133,7 @@ public class StorageAllocatorTest {
 		storage.setCapacityBytes(20000);
 		storage.setHostAddress(UUID.randomUUID().toString());
 		storage.setPath(UUID.randomUUID().toString());
-		storage.setStorageProviderId(provider.getId());
+		storage.setStorageProviderName(provider.getName());
 		storage = storagePoolDao.persist(storage);
 		storagePoolId = storage.getId();
 
@@ -176,7 +176,7 @@ public class StorageAllocatorTest {
 			storage.setCapacityBytes(20000);
 			storage.setHostAddress(UUID.randomUUID().toString());
 			storage.setPath(UUID.randomUUID().toString());
-			storage.setStorageProviderId(provider.getId());
+			storage.setStorageProviderName(provider.getName());
 			StoragePoolVO newStorage = storagePoolDao.persist(storage);
 			newStorageId = newStorage.getId();
 			

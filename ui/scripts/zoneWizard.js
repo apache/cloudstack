@@ -322,7 +322,9 @@
 
           if (args.data['network-model'] == 'Basic') {
             args.$form.find('[rel=networkOfferingId]').show();
-            args.$form.find('[rel=guestcidraddress]').hide();
+            args.$form.find('[rel=guestcidraddress]').hide();						
+						args.$form.find('[rel=ip6dns1]').hide();
+						args.$form.find('[rel=ip6dns2]').hide();
           }
           else { //args.data['network-model'] == 'Advanced'
             args.$form.find('[rel=networkOfferingId]').hide();
@@ -331,7 +333,10 @@
               args.$form.find('[rel=guestcidraddress]').show();
 						else //args.data["zone-advanced-sg-enabled"] ==	"on
 						  args.$form.find('[rel=guestcidraddress]').hide();
-          }													
+          					  
+						args.$form.find('[rel=ip6dns1]').show();
+						args.$form.find('[rel=ip6dns2]').show();
+					}													
 										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
@@ -897,7 +902,7 @@
 
                             if(vSwitchEnabled) {
 
-                              items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                              items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
 
                               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
@@ -909,9 +914,9 @@
 
                   //  items.push({id: " ", description: " "});
                        else{
-                     items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
-                    items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
-                    items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                     items.push({id:"vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                    items.push({ id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                    items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
 
                    }
                     args.response.success({data: items});
@@ -1176,6 +1181,24 @@
             label: 'label.name',
             validation: { required: true }  
 					},
+
+           scope: {
+                    label: 'label.scope',
+                    select: function(args) {
+
+            var scope = [
+                        { id: 'zone', description: _l('label.zone.wide') },
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'host', description: _l('label.host') }
+                      ];
+
+                      args.response.success({
+                        data: scope
+                      });
+
+                }
+
+              },
 
           protocol: {
             label: 'label.protocol',
@@ -3244,6 +3267,7 @@
           array1.push("&podId=" + args.data.returnedPod.id);
           array1.push("&clusterid=" + args.data.returnedCluster.id);
           array1.push("&name=" + todb(args.data.primaryStorage.name));
+          array1.push("&scope=" + todb(args.data.primaryStorage.scope));
 
 					var server = args.data.primaryStorage.server;
           var url = null;

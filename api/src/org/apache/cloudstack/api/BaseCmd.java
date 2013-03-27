@@ -61,6 +61,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotService;
@@ -131,6 +132,7 @@ public abstract class BaseCmd {
     @Inject public UsageService _usageService;
     @Inject public NetworkUsageService _networkUsageService;
     @Inject public VMSnapshotService _vmSnapshotService;
+    @Inject public DataStoreProviderApiService dataStoreProviderApiService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

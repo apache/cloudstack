@@ -57,18 +57,18 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
-        long providerId = dataStoreVO.getStorageProviderId();
-        DataStoreProvider provider = providerManager.getDataStoreProviderById(providerId);
-        DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, driverMaps.get(provider.getUuid()), provider);
+        String providerName = dataStoreVO.getStorageProviderName();
+        DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);
+        DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
         return dataStore;
     }
     
     @Override
-    public boolean registerDriver(String uuid, PrimaryDataStoreDriver driver) {
-        if (driverMaps.get(uuid) != null) {
+    public boolean registerDriver(String providerName, PrimaryDataStoreDriver driver) {
+        if (driverMaps.get(providerName) != null) {
             return false;
         }
-        driverMaps.put(uuid, driver);
+        driverMaps.put(providerName, driver);
         return true;
     }
 
@@ -79,7 +79,7 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
     }
 
     @Override
-    public boolean registerHostListener(String uuid, HypervisorHostListener listener) {
-        return storageMgr.registerHostListener(uuid, listener);
+    public boolean registerHostListener(String providerName, HypervisorHostListener listener) {
+        return storageMgr.registerHostListener(providerName, listener);
     }
 }

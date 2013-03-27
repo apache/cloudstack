@@ -16,6 +16,8 @@
 # under the License.
 
 try:
-    from config import __version__
+    from config import __version__, __description__
+    from config import __maintainer__, __maintaineremail__
+    from config import __project__, __projecturl__, __projectemail__
 except ImportError, e:
     print e

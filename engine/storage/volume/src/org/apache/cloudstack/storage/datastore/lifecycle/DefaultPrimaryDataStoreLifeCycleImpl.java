@@ -60,8 +60,8 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
         
-        StoragePoolVO storeVO = primaryStoreHelper.createPrimaryDataStore(dsInfos); 
-        return providerMgr.getPrimaryDataStore(storeVO.getId());
+        DataStore store = primaryStoreHelper.createPrimaryDataStore(null); 
+        return providerMgr.getPrimaryDataStore(store.getId());
     }
 
     protected void attachCluster(DataStore store) {
@@ -114,26 +114,6 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
 
     @Override
-    public boolean maintain(long storeId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean cancelMaintain(long storeId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean deleteDataStore(long storeId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-
-
-    @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
         // TODO Auto-generated method stub
         return false;
@@ -142,6 +122,24 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     @Override
     public boolean attachHost(DataStore store, HostScope scope,
             StoragePoolInfo existingInfo) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean maintain(DataStore store) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean cancelMaintain(DataStore store) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean deleteDataStore(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }

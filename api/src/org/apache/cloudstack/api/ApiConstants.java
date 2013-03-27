@@ -460,6 +460,11 @@ public class ApiConstants {
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
     public static final String OLDER_THAN = "olderthan";
+    public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
+    public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
+    public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
+    public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
+    public static final String HEALTHCHECK_PINGPATH = "pingpath";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

@@ -22,5 +22,20 @@ if [ "$1" = configure ]; then
     else
         usermod -m -d /var/lib/cloudstack/management cloud
     fi
-    chown cloud /var/log/cloudstack/management
+
+    for i in /var/cache/cloudstack/management \
+        /var/cache/cloudstack/management/work \
+        /var/cache/cloudstack/management/temp \
+        /var/log/cloudstack/management \
+        /etc/cloudstack/management/Catalina \
+        /etc/cloudstack/management/Catalina/localhost \
+        /var/lib/cloudstack/management \
+        /etc/cloudstack/management/Catalina/localhost/client
+    do
+        chmod 0770 $i
+        chgrp cloud $i
+    done
+
+    chmod 0640 /etc/cloudstack/management/db.properties
+    chgrp cloud /etc/cloudstack/management/db.properties
 fi

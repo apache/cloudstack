@@ -22,13 +22,9 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-from cloudmonkey import __version__
-
-name = 'cloudmonkey'
-version = __version__
-requires = ['Pygments>=1.5',
-            'prettytable>=0.6',
-           ]
+from cloudmonkey import __version__, __description__
+from cloudmonkey import __maintainer__, __maintaineremail__
+from cloudmonkey import __project__, __projecturl__, __projectemail__
 
 try:
     import readline
@@ -36,20 +32,22 @@ except ImportError:
     requires.append('readline')
 
 setup(
-    name = name,
-    version = version,
-    author = "The Apache CloudStack Team",
-    author_email = "cloudstack-dev@incubator.apache.org",
-    maintainer = "Rohit Yadav",
-    maintainer_email = "bhaisaab@apache.org",
-    url = "http://incubator.apache.org/cloudstack",
-    description = "Command Line Interface for Apache CloudStack",
-    long_description = "cloudmonkey is a command line interface for Apache "
-                     "CloudStack powered by CloudStack Marvin",
+    name = 'cloudmonkey',
+    version = __version__,
+    author = __project__,
+    author_email = __projectemail__,
+    maintainer = __maintainer__,
+    maintainer_email = __maintaineremail__,
+    url = __projecturl__,
+    description = __description__,
+    long_description = "cloudmonkey is a CLI for Apache CloudStack",
     platforms = ("Any",),
     license = 'ASL 2.0',
     packages = find_packages(),
-    install_requires = requires,
+    install_requires = [
+        'Pygments>=1.5',
+        'prettytable>=0.6',
+    ],
     include_package_data = True,
     zip_safe = False,
     classifiers = [

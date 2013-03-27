@@ -19,7 +19,7 @@
 /etc/cloudstack/agent/environment.properties
 /etc/cloudstack/agent/log4j-cloud.xml
 /etc/init.d/cloudstack-agent
-/usr/bin/cloud-setup-agent
+/usr/bin/cloudstack-setup-agent
 /usr/bin/cloud-ssh
 /var/log/cloudstack/agent
 /usr/share/cloudstack-agent/lib/*

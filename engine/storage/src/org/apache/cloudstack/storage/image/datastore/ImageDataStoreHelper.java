@@ -34,14 +34,14 @@ public class ImageDataStoreHelper {
     @Inject
     ImageDataStoreDao imageStoreDao;
     public ImageDataStoreVO createImageDataStore(Map<String, Object> params) {
-        ImageDataStoreVO store = imageStoreDao.findByUuid((String)params.get("uuid"));
+        ImageDataStoreVO store = imageStoreDao.findByName((String)params.get("name"));
         if (store != null) {
             return store;
         }
         store = new ImageDataStoreVO();
         store.setName((String)params.get("name"));
         store.setProtocol((String)params.get("protocol"));
-        store.setProvider((Long)params.get("provider"));
+        store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store = imageStoreDao.persist(store);

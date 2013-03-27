@@ -25,8 +25,10 @@
 <chapter id="sys-reliability-and-ha">
     <title>System Reliability and High Availability</title>
     <xi:include href="ha-management-server.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="management-server-lb.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="ha-enabled-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
     <xi:include href="ha-for-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="primary-storage-outage-and-data-loss.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />     
-    <xi:include href="secondary-storage-outage-and-data-loss.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="secondary-storage-outage-and-data-loss.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="api-throttling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

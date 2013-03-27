@@ -31,11 +31,11 @@
 ### END INIT INFO
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-NAME=cloud-management
+NAME=cloudstack-management
 DESC="CloudStack-specific Tomcat servlet engine"
 DAEMON=/usr/bin/jsvc
-CATALINA_HOME=/usr/share/cloud/management
-DEFAULT=/etc/cloud/management/tomcat6.conf
+CATALINA_HOME=/usr/share/cloudstack/management
+DEFAULT=/etc/cloudstack/management/tomcat6.conf
 JVM_TMP=/tmp/$NAME-temp
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"
@@ -76,7 +76,7 @@ done
 export JAVA_HOME
 
 # Directory for per-instance configuration files and webapps
-CATALINA_BASE=/usr/share/cloud/management
+CATALINA_BASE=/usr/share/cloudstack/management
 
 # Use the Java security manager? (yes/no)
 TOMCAT6_SECURITY=no

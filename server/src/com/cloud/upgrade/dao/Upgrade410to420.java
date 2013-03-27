@@ -60,6 +60,7 @@ public class Upgrade410to420 implements DbUpgrade {
 	@Override
 	public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
+        createPlaceHolderNics(conn);
         PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -150,6 +151,43 @@ public class Upgrade410to420 implements DbUpgrade {
             try {
                 if (rsParams != null) {
                     rsParams.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    private void createPlaceHolderNics(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                    Long networkId = rs.getLong(1);
+                    String gateway = rs.getString(2);
+                    String ip = rs.getString(3);
+                    String uuid = UUID.randomUUID().toString();
+                    //Insert placeholder nic for each Domain router nic in Shared network
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder')");
+                    pstmt.setString(1, uuid);
+                    pstmt.setString(2, ip);
+                    pstmt.setString(3, gateway);
+                    pstmt.setLong(4, networkId);
+                    pstmt.executeUpdate();
+                    s_logger.debug("Created placeholder nic for the ipAddress " + ip);
+                
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create placeholder nics", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
                 }
                 if (pstmt != null) {
                     pstmt.close();
