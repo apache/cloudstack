@@ -1280,13 +1280,22 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                      * We update the router pair which the lower id router owned by this mgmt server, in order
                      * to prevent duplicate update of router status from cluster mgmt servers
                      */
-                    DomainRouterVO router = routers.get(0);
-                    if (routers.get(1).getId() < router.getId()) {
-                        router = routers.get(1);
+                    DomainRouterVO router0 = routers.get(0);
+                    DomainRouterVO router1 = routers.get(1);
+                    DomainRouterVO router = router0;
+                    if ((router0.getId() < router1.getId()) && router0.getHostId() != null) {
+                    	router = router0;
+                    } else {
+                    	router = router1;
+                    }
+                    if (router.getHostId() == null) {
+                    	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
+                    	continue;
                     }
                     HostVO host = _hostDao.findById(router.getHostId());
                     if (host == null || host.getManagementServerId() == null ||
                             host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to not belong to this mgmt server");
                         continue;
                     }
                 updateRoutersRedundantState(routers);
