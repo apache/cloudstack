@@ -21,7 +21,6 @@ import logging
 import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin import deployDataCenter
-from marvin import apiSynchronizer
 from nose.plugins.base import Plugin
 from functools import partial
 
@@ -39,10 +38,6 @@ class MarvinPlugin(Plugin):
         self.enabled = 1
         self.enableOpt = "--with-marvin"
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
-
-        if options.sync:
-            self.do_sync(options.config)
-            return
 
         if options.debug_log:
             self.logger = logging.getLogger("NoseTestExecuteEngine")
@@ -71,13 +66,6 @@ class MarvinPlugin(Plugin):
         
         self.testrunner = nose.core.TextTestRunner(stream=self.result_stream, descriptions=True, verbosity=2, config=config)
 
-    def do_sync(self, config):
-        """
-        Use the ApiDiscovery plugin exposed by the CloudStack mgmt server to rebuild the cloudStack API
-        """
-        apiSynchronizer.sync(config)
-
-    
     def options(self, parser, env):
         """
         Register command line options
@@ -96,9 +84,7 @@ class MarvinPlugin(Plugin):
                           help="The path to the testcase debug logs [DEBUG_LOG]")
         parser.add_option("--load", action="store_true", default=False, dest="load",
                           help="Only load the deployment configuration given")
-        parser.add_option("--sync", action="store_true", default=False, dest="sync",
-                          help="Sync the APIs from the CloudStack endpoint in marvin-config")
-        
+
         Plugin.options(self, parser, env)
  
     def __init__(self):

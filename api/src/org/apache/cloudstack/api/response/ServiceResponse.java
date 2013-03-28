@@ -16,13 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.List;
-
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 @SuppressWarnings("unused")
 public class ServiceResponse extends BaseResponse {
@@ -30,7 +29,7 @@ public class ServiceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME) @Param(description="the service name")
     private String name;
 
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="the service provider name")
+    @SerializedName(ApiConstants.PROVIDER) @Param(description="the service provider name", responseObject = ProviderResponse.class)
     private List<ProviderResponse> providers;
 
     @SerializedName("capability") @Param(description="the list of capabilities", responseObject = CapabilityResponse.class)

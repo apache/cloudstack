@@ -83,7 +83,76 @@
       </plugin>
     </plugins>
   </build>
+  <!-- Custom profiles for sync and integration tests-->
   <profiles>
+    <profile>
+      <id>sync</id>
+      <activation>
+        <property>
+          <name>endpoint</name>
+          <value>localhost</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>generate-sources</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>codegenerator.py</argument>
+                    <argument>-e</argument>
+                    <argument>${endpoint}</argument>
+                    <echo>Generating ${project.artifactId} API classes}</echo>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>package</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${exec.workingdir}</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>setup.py</argument>
+                    <argument>sdist</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>install</id>
+                <phase>install</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/dist</workingDirectory>
+                  <executable>pip</executable>
+                  <arguments>
+                    <argument>install</argument>
+                    <argument>--upgrade</argument>
+                    <argument>Marvin-0.1.0.tar.gz</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>marvin</id>
       <activation>
@@ -128,7 +197,7 @@
                 </goals>
                 <configuration>
                   <workingDirectory>${basedir}/marvin</workingDirectory>
-                  <executable>/usr/local/bin/nosetests</executable>
+                  <executable>nosetests</executable>
                   <arguments>
                     <argument>--with-marvin</argument>
                     <argument>--marvin-config</argument>

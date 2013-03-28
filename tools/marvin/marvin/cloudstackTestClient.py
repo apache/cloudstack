@@ -148,14 +148,6 @@ class cloudstackTestClient(object):
             return self.userApiClient
         return None
 
-    def synchronize(self):
-        """
-        synchronize the api from an endpoint
-        """
-        apiclient = self.getApiClient()
-        cmd = listApis.listApisCmd()
-        response = apiclient.listApis(cmd)
-
 
     '''FixME, httplib has issue if more than one thread submitted'''
     def submitCmdsAndWait(self, cmds, workers=1):
