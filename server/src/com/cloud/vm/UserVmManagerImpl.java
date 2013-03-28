@@ -32,22 +32,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
@@ -349,7 +339,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected SecurityGroupDao _securityGroupDao;
     @Inject
-    protected CapacityManager _capacityMgr;;
+    protected CapacityManager _capacityMgr;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
     @Inject
@@ -397,6 +387,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected String _instance;
     protected String _zone;
     protected boolean _instanceNameFlag;
+    protected int _scaleRetry;
 
     @Inject ConfigurationDao _configDao;
     private int _createprivatetemplatefromvolumewait;
@@ -1048,6 +1039,78 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
+    public UserVm
+    upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException {
+        Long vmId = cmd.getId();
+        Long newServiceOfferingId = cmd.getServiceOfferingId();
+        Account caller = UserContext.current().getCaller();
+
+        // Verify input parameters
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        if(vmInstance.getHypervisorType() != HypervisorType.XenServer){
+            throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Check that the specified service offering ID is valid
+        _itMgr.checkIfCanUpgrade(vmInstance, newServiceOfferingId);
+
+        //Check if its a scale "up"
+        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
+        ServiceOffering oldServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
+        if(newServiceOffering.getSpeed() <= oldServiceOffering.getSpeed()
+                && newServiceOffering.getRamSize() <= oldServiceOffering.getRamSize()){
+            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
+        }
+
+        // Dynamically upgrade the running vms
+        if(vmInstance.getState().equals(State.Running)){
+            boolean success = false;
+            int retry = _scaleRetry;
+            while (retry-- != 0) { // It's != so that it can match -1.
+                try{
+                    // #1 Check existing host has capacity
+                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - oldServiceOffering.getSpeed(),
+                            (newServiceOffering.getRamSize() - oldServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f,  false); // TO DO fill it with mem.
+
+                    // #2 migrate the vm if host doesn't have capacity
+                    if (!existingHostHasCapacity){
+                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId);
+                    }
+
+                    // #3 scale the vm now
+                    _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
+                    vmInstance = _vmInstanceDao.findById(vmId);
+                    vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
+                    success = true;
+                    return _vmDao.findById(vmInstance.getId());
+                }catch(InsufficientCapacityException e ){
+                    s_logger.warn("Received exception while scaling ",e);
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                } catch (VirtualMachineMigrationException e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                } catch (ManagementServerException e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                }finally{
+                    if(!success){
+                        _itMgr.upgradeVmDb(vmId, oldServiceOffering.getId()); // rollback
+                    }
+                }
+            }
+            if (!success)
+                return null;
+        }
+
+        return _vmDao.findById(vmInstance.getId());
+
+    }
+
+    @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId,
             String hostName, List<Long> vmIds) throws CloudRuntimeException {
         HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<Long, VmStatsEntry>();
@@ -1240,6 +1303,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
 
         value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
+
         if(value == null) {
             _instanceNameFlag = false;
         }
@@ -1247,6 +1311,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         {
             _instanceNameFlag = Boolean.parseBoolean(value);
         }
+
+       _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
 
         s_logger.info("User VM Manager is configured.");
 

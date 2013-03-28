@@ -43,6 +43,18 @@ def echo(fn):
     return wrapped
 
 @echo
+def add_to_VCPUs_params_live(session, args):
+    key = args['key']
+    value = args['value']
+    vmname = args['vmname']
+    try:
+        cmd = ["bash", "/opt/xensource/bin/Add-To-VCPUs-Params-Live.sh", vmname, key, value]
+        txt = util.pread2(cmd)
+    except:
+        return 'false'
+    return 'true'
+
+@echo
 def gethostvmstats(session, args):
     collect_host_stats = args['collectHostStats']
     consolidation_function = args['consolidationFunction']
@@ -1661,6 +1673,7 @@ if __name__ == "__main__":
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
+			    "add_to_VCPUs_params_live":add_to_VCPUs_params_live,
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
                             "bumpUpPriority":bumpUpPriority,

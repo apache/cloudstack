@@ -40,14 +40,14 @@ public class ScaleVmCommand extends Command {
 	}
 
 	public ScaleVmCommand(String vmName, int cpus,
-			Integer speed, long minRam, long maxRam) {
+			Integer speed, long minRam, long maxRam, boolean limitCpuUse) {
 		super();
 		this.vmName = vmName;
 		this.cpus = cpus;
-		//this.speed = speed;
+		this.speed = speed;
 		this.minRam = minRam;
 		this.maxRam = maxRam;
-		this.vm = new VirtualMachineTO(1L, vmName, null, cpus, null, minRam, maxRam, null, null, false, false, null);
+		this.vm = new VirtualMachineTO(1L, vmName, null, cpus, speed, minRam, maxRam, null, null, false, false, null);
 		/*vm.setName(vmName);
 		vm.setCpus(cpus);
 		vm.setRam(minRam, maxRam);*/

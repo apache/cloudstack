@@ -176,7 +176,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         AgentReportShutdowned,
         AgentReportMigrated,
         RevertRequested,
-        SnapshotRequested
+        SnapshotRequested,
     };
 
     public enum Type {

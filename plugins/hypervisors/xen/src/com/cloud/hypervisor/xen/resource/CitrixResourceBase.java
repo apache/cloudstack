@@ -53,6 +53,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.cloud.agent.api.*;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import com.cloud.agent.api.to.*;
 import com.cloud.network.rules.FirewallRule;
@@ -600,12 +601,93 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((RevertToVMSnapshotCommand)cmd);
         } else if (clazz == NetworkRulesVmSecondaryIpCommand.class) {
             return execute((NetworkRulesVmSecondaryIpCommand)cmd);
+        } else if (clazz == ScaleVmCommand.class) {
+            return execute((ScaleVmCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
+    protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
 
+        vm.setMemoryDynamicRange(conn, vmSpec.getMinRam() * 1024 * 1024, vmSpec.getMaxRam() * 1024 * 1024);
+        vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
+
+        Integer speed = vmSpec.getSpeed();
+        if (speed != null) {
+
+            int cpuWeight = _maxWeight; //cpu_weight
+
+            // weight based allocation
+
+            cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
+            if (cpuWeight > _maxWeight) {
+                cpuWeight = _maxWeight;
+            }
+
+            if (vmSpec.getLimitCpuUse()) {
+                long utilization = 0; // max CPU cap, default is unlimited
+                utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
+                vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization));
+            }
+            //vm.addToVCPUsParamsLive(conn, "weight", Integer.toString(cpuWeight));
+            callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", Integer.toString(cpuWeight), "vmname", vmSpec.getName() );
+        }
+    }
+
+    public ScaleVmAnswer execute(ScaleVmCommand cmd) {
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        String vmName = vmSpec.getName();
+        try {
+            Connection conn = getConnection();
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            // stop vm which is running on this host or is in halted state
+            Iterator<VM> iter = vms.iterator();
+            while ( iter.hasNext() ) {
+                VM vm = iter.next();
+                VM.Record vmr = vm.getRecord(conn);
+
+                if ((vmr.powerState == VmPowerState.HALTED) || (vmr.powerState == VmPowerState.RUNNING && !isRefNull(vmr.residentOn) && !vmr.residentOn.getUuid(conn).equals(_host.uuid))) {
+                    iter.remove();
+                }
+            }
+
+            if (vms.size() == 0) {
+                s_logger.info("No running VM " + vmName +" exists on XenServer" + _host.uuid);
+                return new ScaleVmAnswer(cmd, false, "VM does not exist");
+            }
+
+            for (VM vm : vms) {
+                VM.Record vmr = vm.getRecord(conn);
+                try {
+                    scaleVM(conn, vm, vmSpec, host);
+
+                } catch (Exception e) {
+                    String msg = "Catch exception " + e.getClass().getName() + " when scaling VM:" + vmName + " due to " + e.toString();
+                    s_logger.debug(msg);
+                    return new ScaleVmAnswer(cmd, false, msg);
+                }
+
+            }
+            String msg = "scaling VM " + vmName + " is successful on host " + host;
+            s_logger.debug(msg);
+            return new ScaleVmAnswer(cmd, true, msg);
+
+        } catch (XenAPIException e) {
+            String msg = "Upgrade Vm " + vmName + " fail due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new ScaleVmAnswer(cmd, false, msg);
+        } catch (XmlRpcException e) {
+            String msg = "Upgrade Vm " + vmName + " fail due to " + e.getMessage();
+            s_logger.warn(msg, e);
+            return new ScaleVmAnswer(cmd, false, msg);
+        } catch (Exception e) {
+            String msg = "Unable to upgrade " + vmName + " due to " + e.getMessage();
+            s_logger.warn(msg, e);
+            return new ScaleVmAnswer(cmd, false, msg);
+        }
+    }
 
     private Answer execute(RevertToVMSnapshotCommand cmd) {
         String vmName = cmd.getVmName();
