@@ -89,8 +89,8 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
-public class AncientSnasphotStrategy implements SnapshotStrategy {
-	private static final Logger s_logger = Logger.getLogger(AncientSnasphotStrategy.class);
+public class AncientSnapshotStrategy implements SnapshotStrategy {
+	private static final Logger s_logger = Logger.getLogger(AncientSnapshotStrategy.class);
 	@Inject
 	protected VolumeDao _volsDao;
 	@Inject
@@ -174,7 +174,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 
 	}
 
-	protected Void createSnapshotAsyncCallback(AsyncCallbackDispatcher<AncientSnasphotStrategy, CreateCmdResult> callback, 
+	protected Void createSnapshotAsyncCallback(AsyncCallbackDispatcher<AncientSnapshotStrategy, CreateCmdResult> callback, 
 			CreateSnapshotContext<CreateCmdResult> context) {
 		CreateCmdResult result = callback.getResult();
 		SnapshotObject snapshot = (SnapshotObject)context.snapshot;
@@ -293,7 +293,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 		try {
 		    CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(
 		            null, volume, snapshot, future);
-		    AsyncCallbackDispatcher<AncientSnasphotStrategy, CreateCmdResult> caller = AsyncCallbackDispatcher
+		    AsyncCallbackDispatcher<AncientSnapshotStrategy, CreateCmdResult> caller = AsyncCallbackDispatcher
 		            .create(this);
 		    caller.setCallback(
 		            caller.getTarget().createSnapshotAsyncCallback(null, null))
@@ -417,7 +417,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 			snapshotOnImageStore.processEvent(Event.CreateOnlyRequested);
 			CopySnapshotContext<CommandResult> context = new CopySnapshotContext<CommandResult>(null, snapshot,
 					snapshotOnImageStore, future);
-			AsyncCallbackDispatcher<AncientSnasphotStrategy, CopyCommandResult> caller = AsyncCallbackDispatcher
+			AsyncCallbackDispatcher<AncientSnapshotStrategy, CopyCommandResult> caller = AsyncCallbackDispatcher
 					.create(this);
 			caller.setCallback(
 					caller.getTarget().copySnapshotAsyncCallback(null, null))
@@ -448,7 +448,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 
 	}
 
-	protected Void copySnapshotAsyncCallback(AsyncCallbackDispatcher<AncientSnasphotStrategy, CopyCommandResult> callback, 
+	protected Void copySnapshotAsyncCallback(AsyncCallbackDispatcher<AncientSnapshotStrategy, CopyCommandResult> callback, 
 			CopySnapshotContext<CommandResult> context) {
 		CopyCommandResult result = callback.getResult();
 		SnapshotInfo destSnapshot = context.destSnapshot;
@@ -494,7 +494,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 			AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
 			DeleteSnapshotContext<CommandResult> context = new DeleteSnapshotContext<CommandResult>(null,
 					snapshotInfo, future);
-			AsyncCallbackDispatcher<AncientSnasphotStrategy, CommandResult> caller = AsyncCallbackDispatcher
+			AsyncCallbackDispatcher<AncientSnapshotStrategy, CommandResult> caller = AsyncCallbackDispatcher
 					.create(this);
 			caller.setCallback(
 					caller.getTarget().deleteSnapshotCallback(null, null))
@@ -513,7 +513,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 		}
 	}
 	
-	protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<AncientSnasphotStrategy, CommandResult> callback, 
+	protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<AncientSnapshotStrategy, CommandResult> callback, 
 			DeleteSnapshotContext<CommandResult> context) {
 		CommandResult result = callback.getResult();
 		AsyncCallFuture<SnapshotResult> future = context.future;
