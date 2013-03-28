@@ -1481,13 +1481,13 @@
 												
 												//IPv6 (begin)
 											    if(args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
-												  array1.push("&gateway=" + args.data.ip6gateway);
+												  array1.push("&ip6gateway=" + args.data.ip6gateway);
 												if(args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
-												  array1.push("&netmask=" + args.data.ip6cidr);
+												  array1.push("&ip6cidr=" + args.data.ip6cidr);
 												if(($form.find('.form-item[rel=startipv6]').css("display") != "none") && (args.data.startipv6 != null && args.data.startipv6.length > 0))
-												  array1.push("&startip=" + args.data.startipv6);
+												  array1.push("&startipv6=" + args.data.startipv6);
 												if(($form.find('.form-item[rel=endipv6]').css("display") != "none") && (args.data.endipv6 != null && args.data.endipv6.length > 0))
-												  array1.push("&endip=" + args.data.endipv6);
+												  array1.push("&endipv6=" + args.data.endipv6);
 												//IPv6 (end)
 												
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
