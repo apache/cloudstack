@@ -128,10 +128,15 @@
           dataType: "json",
           async: false,
           success: function(json) {										  
-            featuredTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-              if($.inArray(item.hypervisor, hypervisorArray) > -1)
-                return true;
-            });	
+            if(json.listtemplatesresponse.template == null) {
+						  featuredTemplateObjs = null;
+						}
+						else {
+							featuredTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+								if($.inArray(item.hypervisor, hypervisorArray) > -1)
+									return true;
+							});	
+						}
           }
         });
         $.ajax({
@@ -139,10 +144,15 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            communityTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-              if($.inArray(item.hypervisor, hypervisorArray) > -1)
-                return true;
-            });	
+					  if(json.listtemplatesresponse.template == null) {
+						  communityTemplateObjs = null;
+						}
+						else {
+							communityTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+								if($.inArray(item.hypervisor, hypervisorArray) > -1)
+									return true;
+							});	
+						}
           }
         });
         $.ajax({
@@ -150,10 +160,15 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            myTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-              if($.inArray(item.hypervisor, hypervisorArray) > -1)
-                return true;
-            });	
+					  if(json.listtemplatesresponse.template == null) {
+						  myTemplateObjs = null;
+						}
+						else {
+							myTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+								if($.inArray(item.hypervisor, hypervisorArray) > -1)
+									return true;
+							});	
+						}
           }
         });
       } else if (selectedTemplate == 'select-iso') {
@@ -162,7 +177,12 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            featuredIsoObjs = json.listisosresponse.iso;
+					  if(json.listisosresponse.iso == null) {
+						  featuredIsoObjs = null;
+						}
+						else {					
+              featuredIsoObjs = json.listisosresponse.iso;
+						}
           }
         });
         $.ajax({
@@ -170,7 +190,12 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            communityIsoObjs = json.listisosresponse.iso;
+					  if(json.listisosresponse.iso == null) {
+						  communityIsoObjs = null;
+						}
+						else {					 
+              communityIsoObjs = json.listisosresponse.iso;
+						}
           }
         });
         $.ajax({
@@ -178,7 +203,12 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            myIsoObjs = json.listisosresponse.iso;
+					  if(json.listisosresponse.iso == null) {
+						  myIsoObjs = null;
+						}
+						else {					
+              myIsoObjs = json.listisosresponse.iso;
+						}
           }
         });
       }
