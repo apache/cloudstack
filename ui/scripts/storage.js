@@ -34,6 +34,12 @@
         listView: {
           id: 'volumes',
           label: 'label.volumes',
+					preFilter: function(args) {
+					  var hiddenFields = [];
+					  if(isAdmin() != true)
+					    hiddenFields.push('hypervisor');
+						return hiddenFields;
+					},
           fields: {
             name: { label: 'label.name' },
             type: { label: 'label.type' },
@@ -1113,7 +1119,7 @@
                     hiddenFields = [];
                   }
                   else {
-                    hiddenFields = ["storage"];
+                    hiddenFields = ['storage', 'hypervisor'];
                   }
                   return hiddenFields;
                 },
