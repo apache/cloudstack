@@ -45,7 +45,8 @@
           <textobject>
             <phrase>remove-vpc.png: button to remove a VPC</phrase>
           </textobject>
-        </inlinemediaobject></para>
+        </inlinemediaobject>
+      </para>
       <para>You can edit the name and description of a VPC. To do that, select the VPC, then click
         the Edit button. <inlinemediaobject>
           <imageobject>
@@ -54,7 +55,8 @@
           <textobject>
             <phrase>edit-icon.png: button to edit a VPC</phrase>
           </textobject>
-        </inlinemediaobject></para>
+        </inlinemediaobject>
+      </para>
       <para>To restart a VPC, select the VPC, then click the Restart button.<inlinemediaobject>
           <imageobject>
             <imagedata fileref="./images/restart-vpc.png"/>
@@ -62,7 +64,8 @@
           <textobject>
             <phrase>restart-vpc.png: button to restart a VPC</phrase>
           </textobject>
-        </inlinemediaobject></para>
+        </inlinemediaobject>i
+      </para>
     </listitem>
   </orderedlist>
 </section>

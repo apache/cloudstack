@@ -1,17 +1,3 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
-#http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
 # 
 # Translators:
 # Go Chiba <go.chiba@gmail.com>, 2013.
@@ -19,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
 "POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:10+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"PO-Revision-Date: 2013-03-28 03:38+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -99,7 +85,7 @@ msgid ""
 "Choose an existing IP address or acquire a new IP address. See <xref linkend"
 "=\"acquire-new-ip-address\" />. Click the name of the IP address in the "
 "list."
-msgstr ""
+msgstr "既存の IP アドレスを選択するか、新しい IP アドレスを取得します(<xref linkend=\"acquire-new-ip-address\" /> を参照)。一覧内の IP アドレスをクリックします。"
 
 #. Tag: para
 #, no-c-format
@@ -136,7 +122,7 @@ msgstr "<emphasis role=\"bold\">Private Port :</emphasis> 転送されたパブ�
 msgid ""
 "<emphasis role=\"bold\">Protocol</emphasis>. The communication protocol in "
 "use between the two ports"
-msgstr ""
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: 2 つのポートの間で使用される通信プロトコルです。"
 
 #. Tag: para
 #, no-c-format

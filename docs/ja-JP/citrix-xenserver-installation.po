@@ -1,17 +1,3 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
-#http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
 # 
 # Translators:
 #   <arkray0701@gmail.com>, 2012.
@@ -21,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
 "POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:05+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"PO-Revision-Date: 2013-03-23 08:34+0000\n"
+"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -525,7 +511,7 @@ msgstr "# scsi-rescan"
 #. Tag: para
 #, no-c-format
 msgid "Repeat step <xref linkend=\"rescan-scsi\" /> on every host."
-msgstr ""
+msgstr "<xref linkend=\"rescan-scsi\" /> の手順を各ホスト上で繰り返します。"
 
 #. Tag: para
 #, no-c-format
@@ -555,7 +541,7 @@ msgstr "lrwxrwxrwx 1 root root 9 Mar 16 13:47\n/dev/disk/by-id/scsi-360a98000503
 #. Tag: para
 #, no-c-format
 msgid "Repeat step <xref linkend=\"verify-scsi\" /> on every host."
-msgstr ""
+msgstr "<xref linkend=\"verify-scsi\" /> の手順を各ホスト上で繰り返します。"
 
 #. Tag: para
 #, no-c-format
@@ -1508,7 +1494,7 @@ msgstr "XenServer クラスターに移動し、[Actions]、[Manage]の順 に�
 #. Tag: para
 #, no-c-format
 msgid "Watch the status to see that all the hosts come up."
-msgstr "状態を監視し、すべてのホストが表示されるのを確認しま す。"
+msgstr "状態を監視し、すべてのホストが表示されるのを確認します。"
 
 #. Tag: para
 #, no-c-format
