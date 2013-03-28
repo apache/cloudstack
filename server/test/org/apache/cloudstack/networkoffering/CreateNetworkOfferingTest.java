@@ -46,7 +46,6 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserContextInitializer;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -64,9 +63,6 @@ public class CreateNetworkOfferingTest extends TestCase{
     NetworkOfferingDao offDao;
     
     @Inject
-    UserContext usrCtx;
-    
-    @Inject
     UserContextInitializer usrCtxInit;
     
     @Inject
@@ -79,7 +75,6 @@ public class CreateNetworkOfferingTest extends TestCase{
         
         Mockito.when(offDao.persist(Mockito.any(NetworkOfferingVO.class))).thenReturn(new NetworkOfferingVO());
         Mockito.when(mapDao.persist(Mockito.any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
-        Mockito.when(usrCtx.current()).thenReturn(new UserContext());
     }
 
     //Test Shared network offerings
@@ -88,7 +83,6 @@ public class CreateNetworkOfferingTest extends TestCase{
         NetworkOfferingVO off = configMgr.createNetworkOffering("shared", "shared", TrafficType.Guest, null, true,
                 Availability.Optional, 200, null, false, Network.GuestType.Shared, false,
                 null, false, null, true, false);
-        
         assertNotNull("Shared network offering with specifyVlan=true failed to create ", off);
     }
     
