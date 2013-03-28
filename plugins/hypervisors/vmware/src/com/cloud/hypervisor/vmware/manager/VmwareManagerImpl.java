@@ -355,10 +355,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     String version = about.getApiVersion();
                     int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(HypervisorType.VMware, version);
                     if (hosts.size() > maxHostsPerCluster) {
-                        String msg = "vCenter cluster size is too big (current configured cluster size: " + maxHostsPerCluster + ")";
-                    s_logger.error(msg);
-                    throw new DiscoveredWithErrorException(msg);
-                }
+                        String msg = "Failed to add VMware cluster as size is too big, current size: " + hosts.size() + ", max. size: " + maxHostsPerCluster;
+                        s_logger.error(msg);
+                        throw new DiscoveredWithErrorException(msg);
+                    }
                 }
 
                 for(ManagedObjectReference morHost: hosts) {
