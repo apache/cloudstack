@@ -28,7 +28,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.*;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
@@ -80,10 +79,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     IPAddressDao _ipAddressDao;
     @Inject
     AgentManager _agentMgr;
-    @Inject
-    protected GslbServiceProvider _gslbProvider;
-    @Inject
-    protected List<NetworkElement> _networkElements;
+
+    protected GslbServiceProvider _gslbProvider = null;
+
 
     @Override
     @DB
