@@ -57,6 +57,9 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
+    
+    @SerializedName(ApiConstants.ID) @Param(description="the id of the remote access vpn")
+    private String id;
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
@@ -99,6 +102,10 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setId(String id) {
+        this.id = id;
     }
 
 }

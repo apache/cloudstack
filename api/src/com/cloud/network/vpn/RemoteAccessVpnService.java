@@ -45,6 +45,6 @@ public interface RemoteAccessVpnService {
 
     List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
 
-    RemoteAccessVpn getRemoteAccessVpn(long vpnId);
+    RemoteAccessVpn getRemoteAccessVpn(long vpnAddrId);
 
 }

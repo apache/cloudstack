@@ -390,3 +390,6 @@ CREATE VIEW `cloud`.`account_view` AS
         `cloud`.`async_job` ON async_job.instance_id = account.id
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
+
+ALTER TABLE remote_access_vpn ADD COLUMN `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id';
+ALTER TABLE remote_access_vpn ADD COLUMN `uuid` varchar(40) UNIQUE;

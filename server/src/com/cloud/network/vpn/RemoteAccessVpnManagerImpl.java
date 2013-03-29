@@ -108,6 +108,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
+    @DB
     public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall, long networkId) 
             throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
@@ -183,10 +184,17 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         long startIp = NetUtils.ip2Long(range[0]);
         String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
         String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewall, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT);
         vpnVO = new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(),
                 publicIpId, range[0], newIpRange, sharedSecret);
-        return _remoteAccessVpnDao.persist(vpnVO);
+        RemoteAccessVpn vpn = _remoteAccessVpnDao.persist(vpnVO);
+        
+        txn.commit();
+        return vpn;
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
@@ -217,7 +225,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override @DB
     public void destroyRemoteAccessVpn(long ipId, Account caller) throws ResourceUnavailableException {
-        RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(ipId);
+        RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
             s_logger.debug("vpn id=" + ipId + " does not exists ");
             return;
@@ -228,7 +236,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
 
         vpn.setState(RemoteAccessVpn.State.Removed);
-        _remoteAccessVpnDao.update(vpn.getServerAddressId(), vpn);
+        _remoteAccessVpnDao.update(vpn.getId(), vpn);
 
 
         boolean success = false;
@@ -273,7 +281,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 if (success) {
                     try {
                         txn.start();
-                        _remoteAccessVpnDao.remove(ipId);
+                        _remoteAccessVpnDao.remove(vpn.getId());
                         // Stop billing of VPN users when VPN is removed. VPN_User_ADD events will be generated when VPN is created again 
                         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
                         for(VpnUserVO user : vpnUsers){
@@ -363,17 +371,15 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @Override @DB
-    public RemoteAccessVpnVO startRemoteAccessVpn(long vpnId, boolean openFirewall) throws ResourceUnavailableException {
+    public RemoteAccessVpnVO startRemoteAccessVpn(long ipAddressId, boolean openFirewall) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
 
-        RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(vpnId);
+        RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipAddressId);
         if (vpn == null) {
-            throw new InvalidParameterValueException("Unable to find your vpn: " + vpnId);
+            throw new InvalidParameterValueException("Unable to find your vpn: " + ipAddressId);
         }
 
         _accountMgr.checkAccess(caller, null, true, vpn);
-
-
 
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
 
@@ -399,7 +405,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 vpn.setState(RemoteAccessVpn.State.Running);
-                _remoteAccessVpnDao.update(vpn.getServerAddressId(), vpn);
+                _remoteAccessVpnDao.update(vpn.getId(), vpn);
 
                 // Start billing of existing VPN users in ADD and Active state 
                 List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
@@ -607,8 +613,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @Override
-    public RemoteAccessVpn getRemoteAccessVpn(long vpnId) {
-        return _remoteAccessVpnDao.findById(vpnId);
+    public RemoteAccessVpn getRemoteAccessVpn(long vpnAddrId) {
+        return _remoteAccessVpnDao.findByPublicIpAddress(vpnAddrId);
     }
 
     public List<RemoteAccessVPNServiceProvider> getRemoteAccessVPNServiceProviders() {

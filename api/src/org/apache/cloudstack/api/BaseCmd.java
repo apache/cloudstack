@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.query.QueryService;
-import org.apache.cloudstack.region.RegionService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 

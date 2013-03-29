@@ -17,9 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,6 +25,9 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -61,6 +61,7 @@ public class Upgrade410to420 implements DbUpgrade {
 	public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
         createPlaceHolderNics(conn);
+        updateRemoteAccessVpn(conn);
         PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -184,6 +185,40 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void updateRemoteAccessVpn(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT vpn_server_addr_id FROM `cloud`.`remote_access_vpn`");
+            rs = pstmt.executeQuery();
+            long id=1;
+            while (rs.next()) {
+                    String uuid = UUID.randomUUID().toString();
+                    Long ipId = rs.getLong(1);
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
+                    pstmt.setString(1, uuid);
+                    pstmt.setLong(2, id);
+                    pstmt.setLong(3, ipId);
+                    pstmt.executeUpdate();
+                    id++;
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
         } finally {
             try {
                 if (rs != null) {

@@ -303,8 +303,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Inject
     VpnUserDao _vpnUsersDao;
     @Inject
-    RemoteAccessVpnDao _remoteAccessVpnDao;
-    @Inject
     RulesManager _rulesMgr;
     @Inject
     NetworkDao _networkDao;
@@ -2346,7 +2344,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
       
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
-                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
+                    RemoteAccessVpn vpn = _vpnDao.findByPublicIpAddress(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
                     }
