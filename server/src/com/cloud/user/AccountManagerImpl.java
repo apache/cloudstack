@@ -1181,6 +1181,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_ENABLE, eventDescription = "enabling account", async = true)
     public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
 
         // Check if account exists
@@ -1271,6 +1272,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_UPDATE, eventDescription = "updating account", async = true)
     public AccountVO updateAccount(UpdateAccountCmd cmd) {
         Long accountId = cmd.getId();
         Long domainId = cmd.getDomainId();

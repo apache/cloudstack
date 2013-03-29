@@ -2943,6 +2943,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_SSH_KEYPAIR, eventDescription = "registering ssh keypair", async = true)
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
         Account caller = UserContext.current().getCaller();
 
