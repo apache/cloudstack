@@ -61,12 +61,12 @@ CREATE TABLE  `cloud`.`object_datastore_ref` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`data_store_provider` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
-  `uuid` varchar(255) NOT NULL COMMENT 'uuid of primary data store provider',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- CREATE TABLE `cloud`.`data_store_provider` (
+--  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+--  `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
+--  `uuid` varchar(255) NOT NULL COMMENT 'uuid of primary data store provider',
+--  PRIMARY KEY(`id`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`image_data_store` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -79,7 +79,85 @@ CREATE TABLE `cloud`.`image_data_store` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE  `cloud`.`template_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `download_state` varchar(255),
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `url` varchar(255),
+  `state` varchar(255) NOT NULL,
+  `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
+  `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_template_store_ref__template_id` FOREIGN KEY `fk_template_store_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_store_ref__template_id`(`template_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
+
+-- Do we still need these columns? TODO, to delete them, remove FK constraints from snapshots table
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `swift_id`;
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id`;
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `sechost_id`;
+
+CREATE TABLE  `cloud`.`snapshot_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned NOT NULL,
+  `snapshot_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `install_path` varchar(255),
+  `state` varchar(255) NOT NULL,  
+  `destroyed` tinyint(1) COMMENT 'indicates whether the snapshot_store entry was destroyed by the user or not',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_snapshot_store_ref__store_id` FOREIGN KEY `fk_snapshot_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+  INDEX `i_snapshot_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_snapshot_store_ref__snapshot_id` FOREIGN KEY `fk_snapshot_store_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`),
+  INDEX `i_snapshot_store_ref__snapshot_id`(`snapshot_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`volume_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned NOT NULL,
+  `volume_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `download_state` varchar(255),
+  `checksum` varchar(255) COMMENT 'checksum for the data disk',
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `url` varchar(255),
+  `state` varchar(255) NOT NULL,  
+  `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
+  `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+  INDEX `i_volume_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_volume_store_ref__volume_id` FOREIGN KEY `fk_volume_store_ref__volume_id` (`volume_id`) REFERENCES `volumes` (`id`),
+  INDEX `i_volume_store_ref__volume_id`(`volume_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `is_volatile` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk';
 
