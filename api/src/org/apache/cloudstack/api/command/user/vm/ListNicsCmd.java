@@ -44,7 +44,7 @@ import com.cloud.vm.NicSecondaryIp;
 @APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class)
 public class ListNicsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNicsCmd.class.getName());
-    private static final String s_name = "listnics";
+    private static final String s_name = "listnicsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
