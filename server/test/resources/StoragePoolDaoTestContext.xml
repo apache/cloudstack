@@ -23,17 +23,19 @@
   <context:annotation-config />
 
   <!-- @DB support -->
-  <aop:config proxy-target-class="true">
-    <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
-      <aop:pointcut id="captureAnyMethod" expression="execution(* *(..))" />
-
-      <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod" />
-    </aop:aspect>
-
-  </aop:config>
+  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
-  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext"/>
+  <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+  <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
+    <property name="Interceptors">
+        <list>
+            <ref bean="transactionContextBuilder" />
+            <ref bean="actionEventInterceptor" />
+        </list>
+    </property>
+  </bean>
+
   <bean id="TestConfiguration" 
     class="com.cloud.storage.dao.StoragePoolDaoTestConfiguration" />
   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" >
