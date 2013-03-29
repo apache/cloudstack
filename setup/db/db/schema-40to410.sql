@@ -1652,3 +1652,10 @@ CREATE TABLE `cloud`.`ucs_manager` (
 
 
 SET foreign_key_checks = 1;
+
+UPDATE `cloud`.`configuration` SET value='KVM,XenServer,VMware,Ovm' WHERE name='hypervisor.list';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'concurrent.snapshots.threshold.perhost' , NULL, 'Limit number of snapshots that can be handled concurrently; default is NULL - unlimited.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.ipv6.search.retry.max' , 10000, 'The maximum number of retrying times to search for an available IPv6 address in the table');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.exclude.zones' , '', 'Traffic going into specified list of zones is not metered');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.include.zones' , 'EXTERNAL', 'Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty');
