@@ -2284,10 +2284,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // check that the affinity groups exist
-        for (Long affinityGroupId : affinityGroupIdList) {
-            AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
-            if (ag == null) {
-                throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+        if (affinityGroupIdList != null) {
+            for (Long affinityGroupId : affinityGroupIdList) {
+                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+                if (ag == null) {
+                    throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+                }
             }
         }
 
@@ -2582,7 +2584,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 
-        _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
+        if (affinityGroupIdList != null && !affinityGroupIdList.isEmpty()) {
+            _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
+        }
 
         return vm;
     }

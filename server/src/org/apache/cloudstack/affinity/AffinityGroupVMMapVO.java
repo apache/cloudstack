@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("affinity_group_vm_map"))
-@SecondaryTables({ @SecondaryTable(name = "affinity_group", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "affinity_group_id", referencedColumnName = "id") }) })
 public class AffinityGroupVMMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,9 +41,6 @@ public class AffinityGroupVMMapVO implements InternalIdentity {
 
     @Column(name = "instance_id")
     private long instanceId;
-
-    @Column(name = "name", table = "affinity_group", insertable = false, updatable = false)
-    private String groupName;
 
     public AffinityGroupVMMapVO() {
     }
@@ -67,8 +63,4 @@ public class AffinityGroupVMMapVO implements InternalIdentity {
         return instanceId;
     }
 
-
-    public String getGroupName() {
-        return groupName;
-    }
 }

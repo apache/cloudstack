@@ -703,8 +703,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
                 } catch (AffinityConflictException e2) {
-                    // TODO Auto-generated catch block
-                    e2.printStackTrace();
+                    s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+                    throw new CloudRuntimeException(
+                            "Unable to create deployment, affinity rules associted to the VM conflict");
+
                 }
 
                 if (dest == null) {
@@ -716,6 +718,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         continue;
                     }
                     throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                }
+
+                if (dest != null) {
+                    avoids.addHost(dest.getHost().getId());
+                    journal.record("Deployment found ", vmProfile, dest);
                 }
 
                 long destHostId = dest.getHost().getId();
@@ -1486,25 +1493,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         DeployDestination dest = null;
         while (true) {
-            for (DeploymentPlanner planner : _planners) {
-                if (planner.canHandle(profile, plan, excludes)) {
-                    dest = planner.plan(profile, plan, excludes);
-                } else {
-                    continue;
-                }
 
-                if (dest != null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Planner " + planner + " found " + dest + " for migrating to.");
-                    }
-                    break;
-                }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Planner " + planner + " was unable to find anything.");
-                }
+            try {
+                dest = _dpMgr.planDeployment(profile, plan, excludes);
+            } catch (AffinityConflictException e2) {
+                s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+                throw new CloudRuntimeException(
+                        "Unable to create deployment, affinity rules associted to the VM conflict");
             }
 
-            if (dest == null) {
+            if (dest != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Found destination " + dest + " for migrating to.");
+                }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find destination for migrating the vm " + profile);
+                }
                 throw new InsufficientServerCapacityException("Unable to find a server to migrate to.", host.getClusterId());
             }
 

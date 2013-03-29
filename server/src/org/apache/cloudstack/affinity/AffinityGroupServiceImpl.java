@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
 
 
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -77,28 +78,22 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
 
         //validate the affinityGroupType
-        String internalAffinityType = null;
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
         if (typeProcessorMap != null && !typeProcessorMap.isEmpty()) {
             if (!typeProcessorMap.containsKey(affinityGroupType)) {
                 throw new InvalidParameterValueException("Unable to create affinity group, invalid affinity group type"
                         + affinityGroupType);
-            } else {
-                AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
-                internalAffinityType = processor.getType();
             }
         } else {
             throw new InvalidParameterValueException(
                     "Unable to create affinity group, no Affinity Group Types configured");
         }
 
-        if (internalAffinityType == null) {
-            throw new InvalidParameterValueException(
-                    "Unable to create affinity group, Affinity Group Processor for type " + affinityGroupType
-                            + "is wrongly configured");
+        if (domainId == null) {
+            domainId = owner.getDomainId();
         }
 
-        AffinityGroupVO group = new AffinityGroupVO(affinityGroupName, internalAffinityType, description, domainId,
+        AffinityGroupVO group = new AffinityGroupVO(affinityGroupName, affinityGroupType, description, domainId,
                 owner.getId());
         _affinityGroupDao.persist(group);
 
@@ -174,8 +169,6 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         vmInstanceSearch.and("instanceId", vmInstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
 
         SearchBuilder<AffinityGroupVO> groupSearch = _affinityGroupDao.createSearchBuilder();
-        groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity()
-                .getAffinityGroupId(), JoinBuilder.JoinType.INNER);
 
         SearchCriteria<AffinityGroupVO> sc = groupSearch.create();
 
@@ -207,6 +200,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             }
             _accountMgr.checkAccess(caller, null, true, userVM);
             // add join to affinity_groups_vm_map
+            groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch
+                    .entity().getAffinityGroupId(), JoinBuilder.JoinType.INNER);
             sc.setJoinParameters("vmInstanceSearch", "instanceId", vmId);
         }
 
@@ -222,11 +217,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         if (componentMap.size() > 0) {
             for (Entry<String, AffinityGroupProcessor> entry : componentMap.entrySet()) {
-                Map<String, Object> params = entry.getValue().getConfigParams();
-                if (params.containsKey("type")) {
-                    types.add((String) params.get("type"));
-                }
-
+                types.add(entry.getValue().getType());
             }
 
         }
@@ -235,17 +226,13 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     protected Map<String, AffinityGroupProcessor> getAffinityTypeToProcessorMap() {
         Map<String, AffinityGroupProcessor> typeProcessorMap = new HashMap<String, AffinityGroupProcessor>();
-        Map<String, AffinityGroupProcessor> componentMap = ComponentContext.getComponentsOfType(AffinityGroupProcessor.class);
+        Map<String, AffinityGroupProcessor> componentMap = ComponentContext
+                .getComponentsOfType(AffinityGroupProcessor.class);
 
         if (componentMap.size() > 0) {
             for (Entry<String, AffinityGroupProcessor> entry : componentMap.entrySet()) {
-                Map<String, Object> params = entry.getValue().getConfigParams();
-                if (params.containsKey("type")) {
-                    typeProcessorMap.put((String) params.get("type"), entry.getValue());
-                }
-
+                typeProcessorMap.put(entry.getValue().getType(), entry.getValue());
             }
-
         }
         return typeProcessorMap;
     }
