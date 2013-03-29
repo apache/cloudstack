@@ -61,8 +61,12 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.user.Account;
@@ -135,6 +139,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VpcDao _vpcDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private VMTemplateHostDao _vmTemplateHostDao;
+
+    protected GenericSearchBuilder<VMTemplateHostVO, SumCount> templateSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -164,6 +172,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ResourceCountSearch.done();
 
+        templateSizeSearch = _vmTemplateHostDao.createSearchBuilder(SumCount.class);
+        templateSizeSearch.select("sum", Func.SUM, templateSizeSearch.entity().getSize());
+        templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.EQ);
+        templateSizeSearch.and("destroyed", templateSizeSearch.entity().getDestroyed(), Op.EQ);
+        SearchBuilder<VMTemplateVO> join1 = _vmTemplateDao.createSearchBuilder();
+        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
+        templateSizeSearch.join("templates", join1, templateSizeSearch.entity().getTemplateId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
+        templateSizeSearch.done();
+
         _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
         if (_resourceCountCheckInterval > 0) {
             _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
@@ -178,6 +195,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         projectResourceLimitMap.put(Resource.ResourceType.vpc, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVpcs.key())));
         projectResourceLimitMap.put(Resource.ResourceType.cpu, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
         projectResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimayStorage.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key())));
 
         accountResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
         accountResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
@@ -188,6 +207,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         accountResourceLimitMap.put(Resource.ResourceType.vpc, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVpcs.key())));
         accountResourceLimitMap.put(Resource.ResourceType.cpu, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
         accountResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimayStorage.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key())));
 
         return true;
     }
@@ -246,6 +267,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                // convert the value from GiB to bytes in case of primary or secondary storage.
+                if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                    value = value * ResourceType.bytesToGiB;
+                }
                 return value;
             }
         }
@@ -276,6 +301,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                    value = value * ResourceType.bytesToGiB;
+                }
                 return value;
             }
         }
@@ -548,6 +576,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
         }
 
+        //Convert max storage size from GiB to bytes
+        if (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) {
+            max = max * ResourceType.bytesToGiB;
+        }
+
         ResourceOwnerType ownerType = null;
         Long ownerId = null;
 
@@ -789,6 +822,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = countCpusForAccount(accountId);
         } else if (type == Resource.ResourceType.memory) {
             newCount = calculateMemoryForAccount(accountId);
+        } else if (type == Resource.ResourceType.primary_storage) {
+            newCount = _volumeDao.primaryStorageUsedForAccount(accountId);
+        } else if (type == Resource.ResourceType.secondary_storage) {
+            newCount = calculateSecondaryStorageForAccount(accountId);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }
@@ -845,6 +882,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             return 0;
         }
+    }
+
+    public long calculateSecondaryStorageForAccount(long accountId) {
+        long totalVolumesSize = _volumeDao.secondaryStorageUsedForAccount(accountId);
+        long totalSnapshotsSize = _snapshotDao.secondaryStorageUsedForAccount(accountId);
+        long totalTemplatesSize = 0;
+
+        SearchCriteria<SumCount> sc = templateSizeSearch.create();
+        sc.setParameters("downloadState", Status.DOWNLOADED);
+        sc.setParameters("destroyed", false);
+        sc.setJoinParameters("templates", "accountId", accountId);
+        List<SumCount> templates = _vmTemplateHostDao.customSearch(sc, null);
+        if (templates != null) {
+            totalTemplatesSize = templates.get(0).sum;
+        }
+
+        return totalVolumesSize + totalSnapshotsSize + totalTemplatesSize;
     }
 
     @Override

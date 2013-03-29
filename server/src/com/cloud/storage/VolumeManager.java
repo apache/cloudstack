@@ -61,7 +61,8 @@ public interface VolumeManager extends VolumeApiService {
 
     VolumeVO createVolume(CreateVolumeCmd cmd);
 
-    VolumeVO resizeVolume(ResizeVolumeCmd cmd);
+    VolumeVO resizeVolume(ResizeVolumeCmd cmd)
+            throws ResourceAllocationException;
 
     boolean deleteVolume(long volumeId, Account caller)
             throws ConcurrentOperationException;

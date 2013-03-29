@@ -133,6 +133,14 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.user.ResourceLimitService#calculateSecondaryStorageForAccount(long)
+     */
+    public long calculateSecondaryStorageForAccount(long accountId) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.user.ResourceLimitService#getResourceCount(com.cloud.user.Account, com.cloud.configuration.Resource.ResourceType)
      */
     @Override

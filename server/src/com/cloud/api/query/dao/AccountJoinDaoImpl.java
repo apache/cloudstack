@@ -175,6 +175,24 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setMemoryTotal(memoryTotal);
         accountResponse.setMemoryAvailable(memoryAvail);
 
+      //get resource limits for primary storage space and convert it from Bytes to GiB
+        long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getPrimaryStorageLimit(), account.getType(), ResourceType.primary_storage);
+        String primaryStorageLimitDisplay = (accountIsAdmin || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
+        long primaryStorageTotal = (account.getPrimaryStorageTotal() == null) ? 0 : (account.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
+        String primaryStorageAvail = (accountIsAdmin || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) - primaryStorageTotal);
+        accountResponse.setPrimaryStorageLimit(primaryStorageLimitDisplay);
+        accountResponse.setPrimaryStorageTotal(primaryStorageTotal);
+        accountResponse.setPrimaryStorageAvailable(primaryStorageAvail);
+
+        //get resource limits for secondary storage space and convert it from Bytes to GiB
+        long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getSecondaryStorageLimit(), account.getType(), ResourceType.secondary_storage);
+        String secondaryStorageLimitDisplay = (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
+        long secondaryStorageTotal = (account.getSecondaryStorageTotal() == null) ? 0 : (account.getSecondaryStorageTotal() / ResourceType.bytesToGiB);
+        String secondaryStorageAvail = (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
+        accountResponse.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
+        accountResponse.setSecondaryStorageTotal(secondaryStorageTotal);
+        accountResponse.setSecondaryStorageAvailable(secondaryStorageAvail);
+
         // adding all the users for an account as part of the response obj
         List<UserAccountJoinVO> usersForAccount = ApiDBUtils.findUserViewByAccountId(account.getId());
         List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(usersForAccount.toArray(new UserAccountJoinVO[usersForAccount.size()]));

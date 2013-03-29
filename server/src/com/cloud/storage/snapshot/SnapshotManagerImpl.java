@@ -123,19 +123,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
-
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
-import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
 
 @Component
 @Local(value = { SnapshotManager.class, SnapshotService.class })
@@ -209,6 +197,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private int _totalRetries;
     private int _pauseInterval;
     private int _backupsnapshotwait;
+    Boolean backup;
 
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
@@ -307,16 +296,21 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         					volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
         		}
 
-        		_resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+                _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
         	}
-        	
-        	Boolean backup = Boolean.parseBoolean(this._configDao.getValue(Config.BackupSnapshotAferTakingSnapshot.toString()));
         	if (backup) {
         		this.backupSnapshot(snapshotId);
         	}
         } catch(Exception e) {
-        	s_logger.debug("Failed to create snapshot", e);
-        	throw new CloudRuntimeException("Failed to create snapshot", e);
+            s_logger.debug("Failed to create snapshot", e);
+            if (backup) {
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage,
+                        new Long(volume.getSize()));
+            } else {
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage,
+                        new Long(volume.getSize()));
+            }
+            throw new CloudRuntimeException("Failed to create snapshot", e);
         }
 
         return snapshot;
@@ -539,7 +533,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         					snapshotCheck.getDataCenterId(), snapshotId, snapshotCheck.getName(), null, null, 0L,
         					snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
         		}
-        		_resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage,
+                        new Long(snapshotCheck.getSize()));
         	}
         	return result;
         } catch (Exception e) {
@@ -745,6 +741,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 if (_snapshotDao.expunge(snapshot.getId())) {
                     if (snapshot.getRecurringType() == Type.MANUAL) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
+                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage,
+                                new Long(snapshot.getSize()));
                     }
 
                     // Log event after successful deletion
@@ -995,23 +993,29 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         ClusterVO cluster = _clusterDao.findById(storagePoolVO.getClusterId());
         if (cluster != null && cluster.getHypervisorType() == HypervisorType.Ovm) {
-        	throw new InvalidParameterValueException("Ovm won't support taking snapshot");
+            throw new InvalidParameterValueException("Ovm won't support taking snapshot");
         }
-        
+
         // Verify permissions
         _accountMgr.checkAccess(caller, null, true, volume);
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
+
         try{
-        	_resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-        } catch (ResourceAllocationException e){
-        	if (snapshotType != Type.MANUAL){
-        		String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
-        		s_logger.warn(msg);
-        		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, 
-        				"Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
-        	}
-        	throw e;
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
+            if (backup) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
+            } else {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long(volume.getSize()));
+            }
+        } catch (ResourceAllocationException e) {
+            if (snapshotType != Type.MANUAL){
+                String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
+                s_logger.warn(msg);
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg,
+                        "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
+            }
+            throw e;
         }
 
         // Determine the name for this snapshot
@@ -1034,6 +1038,13 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: "+volumeId);
         }
+        if (backup) {
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
+                    new Long(volume.getSize()));
+        } else {
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                    new Long(volume.getSize()));
+        }
         return snapshot;
     }
 
@@ -1042,6 +1053,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
  
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+        backup = Boolean.parseBoolean(this._configDao.getValue(Config.BackupSnapshotAferTakingSnapshot.toString()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));

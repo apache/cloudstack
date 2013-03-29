@@ -893,16 +893,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @DB
     public boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
-    	List<HostVO> dstSecHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dstZone.getId());
-    	long tmpltId = template.getId();
+        List<HostVO> dstSecHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dstZone.getId());
+        long tmpltId = template.getId();
         long dstZoneId = dstZone.getId();
-    	if (dstSecHosts == null || dstSecHosts.isEmpty() ) {
-    		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
-    	}
+        if (dstSecHosts == null || dstSecHosts.isEmpty() ) {
+            throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
+        }
         AccountVO account = _accountDao.findById(template.getAccountId());
+        VMTemplateHostVO srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), tmpltId);
+
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
-               
-        // Event details        
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltHost.getSize()));
+
+        // Event details
         String copyEventType;
         String createEventType;
         if (template.getFormat().equals(ImageFormat.ISO)){
@@ -912,12 +915,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             copyEventType = EventTypes.EVENT_TEMPLATE_COPY;
             createEventType = EventTypes.EVENT_TEMPLATE_CREATE;
         }
-        
-        
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
-        VMTemplateHostVO srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), tmpltId);
+
         for ( HostVO dstSecHost : dstSecHosts ) {
             VMTemplateHostVO dstTmpltHost = null;
             try {
@@ -948,7 +949,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } finally {
             	txn.commit();
             }
-            
+
             if(_downloadMonitor.copyTemplate(template, srcSecHost, dstSecHost) ) {
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
             	
@@ -1711,6 +1712,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO privateTemplate = null;
         Long accountId = null;
         SnapshotVO snapshot = null;
+        VolumeVO volume = null;
 
         try {
             TemplateInfo tmplInfo = this.tmplFactory.getTemplate(templateId);
@@ -1725,6 +1727,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
                 future = this.imageSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
+               volume = _volumeDao.findById(volumeId);
                VolumeInfo volInfo = this.volFactory.getVolume(volumeId);
                future = this.imageSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
@@ -1757,7 +1760,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.debug("Failed to create template", e);
                 throw new CloudRuntimeException("Failed to create template", e);
             }
-            
+
         } finally {
             /*if (snapshot != null && snapshot.getSwiftId() != null
                     && secondaryStorageURL != null && zoneId != null
@@ -1773,8 +1776,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
                 // decrement resource count
                 if (accountId != null) {
-                    _resourceLimitMgr.decrementResourceCount(accountId,
-                            ResourceType.template);
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage,
+                            new Long(volume != null ? volume.getSize() : snapshot.getSize()));
                 }
                 txn.commit();
             }
@@ -1854,6 +1858,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         HypervisorType hyperType;
         VolumeVO volume = null;
+        SnapshotVO snapshot = null;
         VMTemplateVO privateTemplate = null;
         if (volumeId != null) { // create template from volume
             volume = this._volumeDao.findById(volumeId);
@@ -1879,7 +1884,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             hyperType = this._volumeDao.getHypervisorType(volumeId);
         } else { // create template from snapshot
-            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+            snapshot = _snapshotDao.findById(snapshotId);
             if (snapshot == null) {
                 throw new InvalidParameterValueException(
                         "Failed to create private template record, unable to find snapshot "
@@ -1911,8 +1916,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             hyperType = snapshot.getHypervisorType();
         }
 
-        _resourceLimitMgr.checkResourceLimit(templateOwner,
-                ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage,
+                new Long(volume != null ? volume.getSize() : snapshot.getSize()));
 
         if (!isAdmin || featured == null) {
             featured = Boolean.FALSE;
@@ -1973,8 +1979,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 this._templateDetailsDao.persist(template.getId(), cmd.getDetails());
             }
 
-            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(),
-                    ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
+                    new Long(volume != null ? volume.getSize() : snapshot.getSize()));
         }
 
         if (template != null) {

@@ -3571,8 +3571,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
 
-        // Get serviceOffering for Virtual Machine
+        // Get serviceOffering and Volumes for Virtual Machine
         ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
 
         //Remove vm from instance group
         removeInstanceFromInstanceGroup(cmd.getVmId());
@@ -3580,9 +3581,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // VV 2: check if account/domain is with in resource limits to create a new vm
         resourceLimitCheck(newAccount, new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
-        // VV 3: check if volumes are with in resource limits
+        // VV 3: check if volumes and primary storage space are with in resource limits
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume,
                 _volsDao.findByInstance(cmd.getVmId()).size());
+        Long totalVolumesSize = (long) 0;
+        for (VolumeVO volume : volumes) {
+            totalVolumesSize += volume.getSize();
+        }
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.primary_storage, totalVolumesSize);
 
         // VV 4: Check if new owner can use the vm template
         VirtualMachineTemplate template = _templateDao.findById(vm
@@ -3614,14 +3620,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _vmDao.persist(vm);
 
         // OS 2: update volume
-        List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
                     volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(), volume.getUuid());
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
+                    new Long(volume.getSize()));
             volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,
+                    new Long(volume.getSize()));
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
                     volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),

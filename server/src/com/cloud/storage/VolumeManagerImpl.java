@@ -146,6 +146,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -469,6 +470,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
         validateUrl(url);
 
+        // Check that the resource limit for secondary storage won't be exceeded
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url));
+
         return false;
     }
     
@@ -736,6 +741,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         // decrement it
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(),
                 ResourceType.volume);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url));
 
         txn.commit();
         return volume;
@@ -906,6 +913,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
         }
 
+        // Check that the resource limit for primary storage won't be exceeded
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage,
+                new Long(size));
+
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -974,6 +985,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         // decrement it
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(),
                 ResourceType.volume);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                new Long(volume.getSize()));
 
         txn.commit();
 
@@ -1006,6 +1019,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         + " as volume failed to create on the backend");
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(),
                         ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                        new Long(volume.getSize()));
             }
         }
     }
@@ -1013,7 +1028,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RESIZE, eventDescription = "resizing volume", async = true)
-    public VolumeVO resizeVolume(ResizeVolumeCmd cmd) {
+    public VolumeVO resizeVolume(ResizeVolumeCmd cmd)
+            throws ResourceAllocationException {
         Long newSize = null;
         boolean shrinkOk = cmd.getShrinkOk();
         
@@ -1149,6 +1165,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             + " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
         }
 
+        if (!shrinkOk) {
+            /* Check resource limit for this account on primary storage resource */
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
+                    ResourceType.primary_storage, new Long(newSize - currentSize));
+        }
+
         /*
          * get a list of hosts to send the commands to, try the system the
          * associated vm is running on first, then the last known place it ran.
@@ -1176,27 +1198,35 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         ResizeVolumePayload payload = new ResizeVolumePayload(newSize, shrinkOk, instanceName, hosts);
         
         try {
-        	VolumeInfo vol = this.volFactory.getVolume(volume.getId());
+            VolumeInfo vol = this.volFactory.getVolume(volume.getId());
             vol.addPayload(payload);
-            
-        	AsyncCallFuture<VolumeApiResult> future = this.volService.resize(vol);
-        	future.get();
-        	volume = _volsDao.findById(volume.getId());
 
-        	if (newDiskOffering != null) {
-        		volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
-        	}
-        	_volsDao.update(volume.getId(), volume);
+            AsyncCallFuture<VolumeApiResult> future = this.volService.resize(vol);
+            future.get();
+            volume = _volsDao.findById(volume.getId());
 
-        	return volume;
-		} catch (InterruptedException e) {
-			s_logger.debug("failed get resize volume result", e);
-		} catch (ExecutionException e) {
-			s_logger.debug("failed get resize volume result", e);
-		} catch (Exception e) {
-			s_logger.debug("failed get resize volume result", e);
-		}
-       
+            if (newDiskOffering != null) {
+                volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+            }
+            _volsDao.update(volume.getId(), volume);
+
+            /* Update resource count for the account on primary storage resource */
+            if (!shrinkOk) {
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                        new Long(newSize - currentSize));
+            } else {
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                        new Long(currentSize - newSize));
+            }
+            return volume;
+        } catch (InterruptedException e) {
+            s_logger.debug("failed get resize volume result", e);
+        } catch (ExecutionException e) {
+            s_logger.debug("failed get resize volume result", e);
+        } catch (Exception e) {
+            s_logger.debug("failed get resize volume result", e);
+        }
+
         return null;
     }
     
@@ -1243,9 +1273,19 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 VMInstanceVO vmInstance = this._vmInstanceDao.findById(instanceId);
                 if (instanceId == null
                         || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
-                    // Decrement the resource count for volumes belonging user VM's only
+                    // Decrement the resource count for volumes and primary storage belonging user VM's only
                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(),
                             ResourceType.volume);
+                    /* If volume is in primary storage, decrement primary storage count else decrement secondary
+                     storage count (in case of upload volume). */
+                    if (volume.getFolder() != null) {
+                        _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                                new Long(volume.getSize()));
+                    } else {
+                        _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
+                                ResourceType.secondary_storage.getOrdinal());
+                    }
+
                     // Log usage event for volumes belonging user VM's only
                     UsageEventVO usageEvent = new UsageEventVO(
                             EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
@@ -1317,6 +1357,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(),
                     ResourceType.volume);
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
+                    new Long(vol.getSize()));
         }
         return toDiskProfile(vol, offering);
     }
@@ -1364,6 +1406,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(),
                     ResourceType.volume);
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
+                    new Long(vol.getSize()));
         }
         return toDiskProfile(vol, offering);
     }
@@ -1435,6 +1479,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol = copyVolume(rootDiskPool
                     , volume, vm, rootDiskTmplt,  dcVO,
                     pod,  diskVO,  svo,  rootDiskHyperType);
+            if (vol != null) {
+                // Moving of Volume is successful, decrement the volume resource count from secondary for an account and increment it into primary storage under same account.
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(),
+                        ResourceType.secondary_storage, new Long(volume.getSize()));
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(),
+                        ResourceType.primary_storage, new Long(volume.getSize()));
+            }
         }
         return vol;
     }

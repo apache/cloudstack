@@ -50,6 +50,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
 import com.cloud.user.Account;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -82,7 +83,11 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 				throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + profile.getZoneId());
 			}
 		}
-		
+
+        // Check that the resource limit for secondary storage won't be exceeded
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+                ResourceType.secondary_storage, UriUtils.getRemoteSize(profile.getUrl()));
+
 		return profile;
 	}
 	
@@ -133,6 +138,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		}
 		
 		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(profile.getUrl()));
 		return template;
 	}
 
@@ -205,8 +212,10 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 					s_logger.debug("Failed to acquire lock when deleting template with ID: " + templateId);
 					success = false;
 				} else if (_tmpltDao.remove(templateId)) {
-					// Decrement the number of templates
-				    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                    // Decrement the number of templates and total secondary storage space used by the account.
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                    _resourceLimitMgr.recalculateResourceCount(accountId, template.getDomainId(),
+                            ResourceType.secondary_storage.getOrdinal());
 				}
 
 			} finally {

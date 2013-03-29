@@ -35,15 +35,20 @@ import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
-
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Component
 @Local (value={SnapshotDao.class})
@@ -53,19 +58,19 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
     private static final String GET_SECHOST_ID = "SELECT sechost_id FROM snapshots where volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
-    
+
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private SearchBuilder<SnapshotVO> ParentIdSearch;
-    private SearchBuilder<SnapshotVO> backupUuidSearch;   
+    private SearchBuilder<SnapshotVO> backupUuidSearch;
     private SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
     private SearchBuilder<SnapshotVO> HostIdSearch;
     private SearchBuilder<SnapshotVO> AccountIdSearch;
     private SearchBuilder<SnapshotVO> InstanceIdSearch;
     private SearchBuilder<SnapshotVO> StatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+    private GenericSearchBuilder<SnapshotVO, SumCount> secondaryStorageSearch;
     @Inject ResourceTagDao _tagsDao;
-    
     @Inject protected VMInstanceDao _instanceDao;
     @Inject protected VolumeDao _volumeDao;
 
@@ -187,23 +192,29 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         CountSnapshotsByAccount.and("removed", CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountSnapshotsByAccount.done();
         
-    	InstanceIdSearch = createSearchBuilder();
+        InstanceIdSearch = createSearchBuilder();
         InstanceIdSearch.and("status", InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
-    	
-    	SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
-    	instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
-    	
-    	SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
-    	volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
-    	volumeSearch.join("instanceVolumes", instanceSearch, instanceSearch.entity().getId(), volumeSearch.entity().getInstanceId(), JoinType.INNER);
-    	
-    	InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
-    	InstanceIdSearch.done();
+
+        SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
+        instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+        volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        volumeSearch.join("instanceVolumes", instanceSearch, instanceSearch.entity().getId(), volumeSearch.entity().getInstanceId(), JoinType.INNER);
+
+        InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
+        InstanceIdSearch.done();
+
+        secondaryStorageSearch = createSearchBuilder(SumCount.class);
+        secondaryStorageSearch.select("sum", Func.SUM, secondaryStorageSearch.entity().getSize());
+        secondaryStorageSearch.and("accountId", secondaryStorageSearch.entity().getAccountId(), Op.EQ);
+        secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
+        secondaryStorageSearch.done();
     }
-    
-    @Override 
+
+    @Override
     public Long getSecHostId(long volumeId) {
-        
+
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_SECHOST_ID;
@@ -330,5 +341,17 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         super.update(snapshotVO.getId(), snapshotVO);
         txn.commit();
         return true;
+    }
+
+    @Override
+    public long secondaryStorageUsedForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = secondaryStorageSearch.create();
+        sc.setParameters("accountId", accountId);
+        List<SumCount> storageSpace = customSearch(sc, null);
+        if (storageSpace != null) {
+            return storageSpace.get(0).sum;
+        } else {
+            return 0;
+        }
     }
 }

@@ -132,23 +132,41 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="4.0.0")
     private String vpcAvailable;
 
-    @SerializedName("cpulimit") @Param(description="the total number of cpu cores the account can own", since="4.1.0")
+    @SerializedName("cpulimit") @Param(description="the total number of cpu cores the account can own", since="4.2.0")
     private String cpuLimit;
 
-    @SerializedName("cputotal") @Param(description="the total number of cpu cores owned by account", since="4.1.0")
+    @SerializedName("cputotal") @Param(description="the total number of cpu cores owned by account", since="4.2.0")
     private Long cpuTotal;
 
-    @SerializedName("cpuavailable") @Param(description="the total number of cpu cores available to be created for this account", since="4.1.0")
+    @SerializedName("cpuavailable") @Param(description="the total number of cpu cores available to be created for this account", since="4.2.0")
     private String cpuAvailable;
 
-    @SerializedName("memorylimit") @Param(description="the total memory (in MB) the account can own", since="4.1.0")
+    @SerializedName("memorylimit") @Param(description="the total memory (in MB) the account can own", since="4.2.0")
     private String memoryLimit;
 
-    @SerializedName("memorytotal") @Param(description="the total memory (in MB) owned by account", since="4.1.0")
+    @SerializedName("memorytotal") @Param(description="the total memory (in MB) owned by account", since="4.2.0")
     private Long memoryTotal;
 
-    @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this account", since="4.1.0")
+    @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this account", since="4.2.0")
     private String memoryAvailable;
+
+    @SerializedName("primarystoragelimit") @Param(description="the total primary storage space (in GiB) the account can own", since="4.2.0")
+    private String primaryStorageLimit;
+
+    @SerializedName("primarystoragetotal") @Param(description="the total primary storage space (in GiB) owned by account", since="4.2.0")
+    private Long primaryStorageTotal;
+
+    @SerializedName("primarystorageavailable") @Param(description="the total primary storage space (in GiB) available to be used for this account", since="4.2.0")
+    private String primaryStorageAvailable;
+
+    @SerializedName("secondarystoragelimit") @Param(description="the total secondary storage space (in GiB) the account can own", since="4.2.0")
+    private String secondaryStorageLimit;
+
+    @SerializedName("secondarystoragetotal") @Param(description="the total secondary storage space (in GiB) owned by account", since="4.2.0")
+    private Long secondaryStorageTotal;
+
+    @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this account", since="4.2.0")
+    private String secondaryStorageAvailable;
 
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
@@ -334,6 +352,30 @@ public class AccountResponse extends BaseResponse {
 
     public void setMemoryAvailable(String memoryAvailable) {
         this.memoryAvailable = memoryAvailable;
+    }
+
+    public void setPrimaryStorageLimit(String primaryStorageLimit) {
+        this.primaryStorageLimit = primaryStorageLimit;
+    }
+
+    public void setPrimaryStorageTotal(Long primaryStorageTotal) {
+        this.primaryStorageTotal = primaryStorageTotal;
+    }
+
+    public void setPrimaryStorageAvailable(String primaryStorageAvailable) {
+        this.primaryStorageAvailable = primaryStorageAvailable;
+    }
+
+    public void setSecondaryStorageLimit(String secondaryStorageLimit) {
+        this.secondaryStorageLimit = secondaryStorageLimit;
+    }
+
+    public void setSecondaryStorageTotal(Long secondaryStorageTotal) {
+        this.secondaryStorageTotal = secondaryStorageTotal;
+    }
+
+    public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
+        this.secondaryStorageAvailable = secondaryStorageAvailable;
     }
 
     public void setDefaultZone(String defaultZoneId) {

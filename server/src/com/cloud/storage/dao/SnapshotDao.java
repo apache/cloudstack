@@ -40,7 +40,15 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
     List<SnapshotVO> listByHostId(Filter filter, long hostId);
     List<SnapshotVO> listByHostId(long hostId);
     public Long countSnapshotsForAccount(long accountId);
-	List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status);
-	List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status);
+    List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status);
+    List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status);
     List<SnapshotVO> listAllByStatus(Snapshot.State... status);
+    /**
+     * Gets the Total Secondary Storage space (in bytes) used by snapshots allocated for an account
+     *
+     * @param account
+     * @return total Secondary Storage space allocated
+     */
+    long secondaryStorageUsedForAccount(long accountId);
+
 }

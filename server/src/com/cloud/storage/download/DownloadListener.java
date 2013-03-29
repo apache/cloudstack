@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -36,28 +38,31 @@ import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
-
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.Event;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 
 /**
  * Monitor progress of template download to a single storage server
@@ -119,6 +124,9 @@ public class DownloadListener implements Listener {
 	private StorageManager _storageMgr;
 	private VMTemplateHostDao vmTemplateHostDao;
 	private VMTemplateDao _vmTemplateDao;
+	private ResourceLimitService _resourceLimitMgr;
+	private AccountManager _accountMgr;
+	private AlertManager _alertMgr;
 
 	private final DownloadMonitorImpl downloadMonitor;
 	
@@ -137,7 +145,7 @@ public class DownloadListener implements Listener {
 	private Long templateHostId;
 	private Long volumeHostId;
 	
-	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao) {
+	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
 		this.template = template;
@@ -151,10 +159,13 @@ public class DownloadListener implements Listener {
 		this.timeoutTask = new TimeoutTask(this);
 		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
 		this._vmTemplateDao = templateDao;
+		this._resourceLimitMgr = _resourceLimitMgr;
+		this._accountMgr = _accountMgr;
+		this._alertMgr = _alertMgr;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
 	
-	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StorageManager storageMgr) {
+	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StorageManager storageMgr, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
 		this.volume = volume;
@@ -169,6 +180,9 @@ public class DownloadListener implements Listener {
 		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
 		this._volumeDao = volumeDao;
 		this._storageMgr = storageMgr;
+		this._resourceLimitMgr = _resourceLimitMgr;
+		this._accountMgr = _accountMgr;
+		this._alertMgr = _alertMgr;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
 	
@@ -332,6 +346,24 @@ public class DownloadListener implements Listener {
 				templateDaoBuilder.setChecksum(answer.getCheckSum());
 				_vmTemplateDao.update(template.getId(), templateDaoBuilder);
 			}
+
+            if (answer.getTemplateSize() > 0) {
+                //long hostId = vmTemplateHostDao.findByTemplateId(template.getId()).getHostId();
+                long accountId = template.getAccountId();
+                try {
+                    _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
+                            com.cloud.configuration.Resource.ResourceType.secondary_storage,
+                            answer.getTemplateSize() - UriUtils.getRemoteSize(template.getUrl()));
+                } catch (ResourceAllocationException e) {
+                    s_logger.warn(e.getMessage());
+                    _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, sserver.getDataCenterId(),
+                            null, e.getMessage(), e.getMessage());
+                } finally {
+                    _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
+                            com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                }
+            }
+
 		} else {
 	        VolumeHostVO updateBuilder = volumeHostDao.createForUpdate();
 			updateBuilder.setDownloadPercent(answer.getDownloadPct());
@@ -350,6 +382,22 @@ public class DownloadListener implements Listener {
 			VolumeVO updateVolume = _volumeDao.createForUpdate();
 			updateVolume.setSize(answer.getTemplateSize());
 			_volumeDao.update(volume.getId(), updateVolume);
+
+            if (answer.getTemplateSize() > 0) {
+                try {
+                    String url = volumeHostDao.findByVolumeId(volume.getId()).getDownloadUrl();
+                    _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
+                            com.cloud.configuration.Resource.ResourceType.secondary_storage,
+                            answer.getTemplateSize() - UriUtils.getRemoteSize(url));
+                } catch (ResourceAllocationException e) {
+                    s_logger.warn(e.getMessage());
+                    _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(),
+                            volume.getPodId(), e.getMessage(), e.getMessage());
+                } finally {
+                    _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
+                            com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                }
+            }
 
 			/*if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
