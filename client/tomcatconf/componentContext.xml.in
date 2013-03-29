@@ -78,6 +78,7 @@
   <bean id="UcsManagerDao" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
   <bean id="affinityGroupServiceImpl" class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl"/>
+  <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl" />
    
   <!--
       Network Elements
@@ -240,19 +241,19 @@
   </bean>
 
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
-    <property name="name" value="First Fit"/>
+    <property name="name" value="FirstFitPlanner"/>
   </bean>
 
   <bean id="UserDispersingPlanner" class="com.cloud.deploy.UserDispersingPlanner">
-    <property name="name" value="UserDispersing"/>
+    <property name="name" value="UserDispersingPlanner"/>
   </bean>
   
   <bean id="UserConcentratedPodPlanner" class="com.cloud.deploy.UserConcentratedPodPlanner">
-    <property name="name" value="UserConcentratedPod"/>
+    <property name="name" value="UserConcentratedPodPlanner"/>
   </bean>
 
   <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
-    <property name="name" value="BareMetal Fit"/>
+    <property name="name" value="BareMetalPlanner"/>
   </bean>
     
   <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
@@ -333,5 +334,15 @@
 
   <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl">
   </bean>
+  
+  
+     
+  <!--
+    Network Gurus
+  -->
+    <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+    	<property name="name" value="HostAntiAffinityProcessor"/>
+ 	</bean>
+  
   
 </beans>

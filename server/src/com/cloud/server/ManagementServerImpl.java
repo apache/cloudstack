@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -44,6 +45,7 @@ import com.cloud.dc.*;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.*;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -358,6 +360,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private Map<String, Boolean> _availableIdsMap;
 
     List<UserAuthenticator> _userAuthenticators;
+
+    @Inject
+    protected List<DeploymentPlanner> _planners;
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
@@ -2184,6 +2189,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(CreateAffinityGroupCmd.class);
+        cmdList.add(DeleteAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupsCmd.class);
+        cmdList.add(UpdateVMAffinityGroupCmd.class);
         return cmdList;
     }
 
@@ -3246,6 +3255,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.info("Admin user enabled");
         }
 
+    }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
     }
 
 }
