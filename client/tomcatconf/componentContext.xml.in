@@ -155,7 +155,6 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
-
 <!--
           <ref bean="BareMetalPlanner" />
 -->
@@ -248,6 +247,4 @@
       </list>
     </property>
   </bean>
-
-
 </beans>
