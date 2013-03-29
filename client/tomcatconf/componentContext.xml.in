@@ -107,12 +107,6 @@
     <property name="name" value="NiciraNvp"/>
   </bean>
   -->
-  
-<!--
-  <bean id="BigSwitchVnsElementService" class="com.cloud.network.element.BigSwitchVnsElement">
-    <property name="name" value="BigSwitchVnsElementService"/>
-  </bean>
--->
                    
   <!--
      Adapters
@@ -296,12 +290,9 @@
   <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
     <property name="name" value="NiciraNvpGuestNetworkGuru"/>
   </bean>
-  
-<!--  
-  <bean id="BigSwitchVnsGuestNetworkGuru" class=".BigSwitchVnsGuestNetworkGuru">
-    <property name="name" value="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru"/>
+  <bean id="BigSwitchVnsGuestNetworkGuru" class="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru">
+    <property name="name" value="BigSwitchVnsGuestNetworkGuru"/>
   </bean>
--->
  
   <!--
    Hypervisor Gurus

@@ -1470,6 +1470,9 @@ dictionary = {
 'label.action.vmsnapshot.delete': '<fmt:message key="label.action.vmsnapshot.delete" />',
 'label.action.vmsnapshot.revert': '<fmt:message key="label.action.vmsnapshot.revert" />',
 'message.action.vmsnapshot.delete': '<fmt:message key="message.action.vmsnapshot.delete" />',
-'message.action.vmsnapshot.revert': '<fmt:message key="message.action.vmsnapshot.revert" />'
+'message.action.vmsnapshot.revert': '<fmt:message key="message.action.vmsnapshot.revert" />',
+'label.add.BigSwitchVns.device': '<fmt:message key="label.add.BigSwitchVns.device" />',
+'label.delete.BigSwitchVns': '<fmt:message key="label.delete.BigSwitchVns" />',
+'label.bigswitch.controller.address': '<fmt:message key="label.bigswitch.controller.address" />'
 };
 </script>

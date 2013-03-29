@@ -111,6 +111,9 @@
   <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
     <property name="name" value="NiciraNvp"/>
   </bean>
+  <bean id="BigSwitchVns" class="com.cloud.network.element.BigSwitchVnsElement">
+    <property name="name" value="BigSwitchVns"/>
+  </bean>
 
   <bean id="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement">
     <property name="name" value="JuniperSRX"/>
@@ -298,6 +301,9 @@
   </bean>
   <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
     <property name="name" value="NiciraNvpGuestNetworkGuru"/>
+  </bean>
+  <bean id="BigSwitchVnsGuestNetworkGuru" class="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru">
+    <property name="name" value="BigSwitchVnsGuestNetworkGuru"/>
   </bean>
  
   <!--

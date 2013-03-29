@@ -179,7 +179,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             name = name.substring(0, 63); // max length 64
         }
 
-        String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
+        String tenantId = context.getDomain().getName();
         List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
             s_logger.error("No BigSwitch Controller on physical network " + physicalNetworkId);
@@ -244,7 +244,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
         BigSwitchVnsDeviceVO bigswitchVnsDevice = devices.get(0);
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
 
-        String tenantId = profile.getNetworkDomain() + "-" + profile.getAccountId();
+        String tenantId = profile.getNetworkDomain();
 
         DeleteVnsNetworkCommand cmd = new DeleteVnsNetworkCommand(tenantId,
                         networkObject.getBroadcastUri().getSchemeSpecificPart());

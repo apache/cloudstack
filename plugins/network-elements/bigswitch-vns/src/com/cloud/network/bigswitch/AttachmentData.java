@@ -16,23 +16,35 @@
 // under the License.
 package com.cloud.network.bigswitch;
 
-public class Attachment {
-    private String id;
-    private String mac;
+public class AttachmentData {
+	private Attachment attachment;
 
-    public String getId() {
-        return id;
-    }
+	public Attachment getAttachment() {
+		return attachment;
+	}
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	public AttachmentData() {
+		this.attachment = new Attachment();
+	}
 
-    public String getMac() {
-        return mac;
-    }
+	public class Attachment {
+	    private String id;
+	    private String mac;
 
-    public void setMac(String mac) {
-        this.mac = mac;
-    }
+	    public String getId() {
+	        return id;
+	    }
+
+	    public void setId(String id) {
+	        this.id = id;
+	    }
+
+	    public String getMac() {
+	        return mac;
+	    }
+
+	    public void setMac(String mac) {
+	        this.mac = mac;
+	    }
+	}
 }
