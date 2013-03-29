@@ -163,7 +163,9 @@
     <property name="StoragePoolAllocators">
       <list>
           <ref bean="LocalStoragePoolAllocator"/>
-          <ref bean="FirstFitStoragePoolAllocator"/>
+          <ref bean="clusterScopeStoragePoolAllocator"/>
+          <ref bean="zoneWideStoragePoolAllocator"/>
+          <ref bean="garbageCollectingStoragePoolAllocator"/>
       </list>
     </property>
   </bean>
@@ -174,7 +176,9 @@
     <property name="StoragePoolAllocators">
       <list>
           <ref bean="LocalStoragePoolAllocator"/>
-          <ref bean="FirstFitStoragePoolAllocator"/>
+          <ref bean="clusterScopeStoragePoolAllocator"/>
+          <ref bean="zoneWideStoragePoolAllocator"/>
+          <ref bean="garbageCollectingStoragePoolAllocator"/>
       </list>
     </property>
     <property name="HostAllocators">
