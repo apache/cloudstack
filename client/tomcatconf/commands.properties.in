@@ -574,3 +574,4 @@ createAffinityGroup=15
 deleteAffinityGroup=15
 listAffinityGroups=15
 updateVMAffinityGroup=15
+listAffinityGroupTypes=15

@@ -16,7 +16,48 @@
 // under the License.
 package com.cloud.server;
 
+import java.lang.reflect.Field;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.event.ActionEventUtils;
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -367,6 +408,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
 
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    protected List<AffinityGroupProcessor> _affinityProcessors;
+
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
@@ -708,6 +755,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
+
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, excludes);
+            }
+        }
 
         for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -2193,6 +2249,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupTypesCmd.class);
+
         return cmdList;
     }
 

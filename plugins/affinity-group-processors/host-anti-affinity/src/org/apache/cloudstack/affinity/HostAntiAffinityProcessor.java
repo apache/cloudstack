@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -36,7 +35,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = AffinityGroupProcessor.class)
-public class HostAntiAffinityProcessor extends AdapterBase implements AffinityGroupProcessor {
+public class HostAntiAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
     private static final Logger s_logger = Logger.getLogger(HostAntiAffinityProcessor.class);
     @Inject
@@ -72,11 +71,6 @@ public class HostAntiAffinityProcessor extends AdapterBase implements AffinityGr
             }
         }
 
-    }
-
-    @Override
-    public String getType() {
-        return "HostAntiAffinity";
     }
 
 }

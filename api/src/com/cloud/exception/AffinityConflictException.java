@@ -1,9 +1,9 @@
 package com.cloud.exception;
 
-import com.cloud.exception.CloudException;
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-public class AffinityConflictException extends CloudException {
+public class AffinityConflictException extends CloudRuntimeException {
 
     private static final long serialVersionUID = SerialVersionUID.AffinityConflictException;
 
