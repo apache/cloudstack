@@ -1196,8 +1196,8 @@
                 return;
               }
 
-                // ZWPS not supported for Xenserver
-             if(selectedHypervisorObj.hypervisortype == "XenServer"){
+                // ZWPS is supported only for KVM as the hypervisor
+             if(selectedHypervisorObj.hypervisortype != "KVM"){
                        var scope=[];
                        scope.push({ id: 'cluster', description: _l('label.cluster') });
                        scope.push({ id: 'host', description: _l('label.host') });
