@@ -114,6 +114,7 @@ Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
+Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
