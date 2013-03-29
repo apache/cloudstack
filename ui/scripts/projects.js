@@ -71,7 +71,7 @@
             var resourceLimits = $.grep(
               json.listresourcelimitsresponse.resourcelimit,
               function(resourceLimit) {
-                return resourceLimit.resourcetype != 5 && resourceLimit.resourcetype != 8;
+                return resourceLimit.resourcetype != 5 && resourceLimit.resourcetype != 12;
               }
             );
             
@@ -111,7 +111,23 @@
                     7: {
                       id: 'vpc',
                       label: 'label.max.vpcs'
-                    }                    
+                    },
+                    8: {
+                        id: 'cpu',
+                        label: 'label.max.cpus'
+                    },
+                    9: {
+                        id: 'memory',
+                        label: 'label.max.memory'
+                    },
+                    10: {
+                        id: 'primary_storage',
+                        label: 'label.max.primary.storage'
+                    },
+                    11: {
+                        id: 'secondary_storage',
+                        label: 'label.max.secondary.storage'
+                    }
                   };
 
                   return {
