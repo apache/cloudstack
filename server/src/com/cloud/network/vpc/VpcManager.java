@@ -17,8 +17,11 @@
 package com.cloud.network.vpc;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -27,33 +30,27 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.vm.DomainRouterVO;
 
 
 public interface VpcManager extends VpcService{
 
     /**
-     * @param ntwkOffId
-     * @param cidr
-     * @param networkDomain
-     * @param networkOwner
-     * @param vpc TODO
-     * @param networkId TODO
-     * @param gateway TODO
+     * Returns all existing VPCs for a given account
+     * @param accountId
      * @return
      */
-    void validateNtkwOffForVpc(long ntwkOffId, String cidr, String networkDomain, Account networkOwner, 
-            Vpc vpc, Long networkId, String gateway);
-
-    
     List<? extends Vpc> getVpcsForAccount(long accountId);
 
+    
     /**
+     * Destroys the VPC
+     * 
      * @param vpc
      * @param caller TODO
      * @param callerUserId TODO
@@ -63,34 +60,19 @@ public interface VpcManager extends VpcService{
      */
     boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
-    /**
-     * @param vpcId
-     * @return
-     */
-    List<DomainRouterVO> getVpcRouters(long vpcId);
 
     /**
-     * @param zoneId
-     * @param provider
-     * @return
-     */
-    boolean vpcProviderEnabledInZone(long zoneId, String provider);
-
-    /**
-     * @param vpcId
-     * @return
-     */
-    VpcGateway getPrivateGatewayForVpc(long vpcId);
-
-
-    /**
+     * Returns true if the IP is allocated to the VPC; false otherwise
+     * 
      * @param ip
      * @return
      */
-    boolean ipUsedInVpc(IpAddress ip);
+    boolean isIpAllocatedToVpc(IpAddress ip);
 
 
     /**
+     * Disassociates the public IP address from VPC
+     * 
      * @param ipId
      * @param networkId
      */
@@ -98,6 +80,8 @@ public interface VpcManager extends VpcService{
 
 
     /**
+     * Creates guest network in the VPC
+     * 
      * @param ntwkOffId
      * @param name
      * @param displayText
@@ -125,9 +109,11 @@ public interface VpcManager extends VpcService{
 
 
     /**
+     * Assigns source nat public IP address to VPC
+     * 
      * @param owner
      * @param vpc
-     * @return
+     * @return public IP address object
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
@@ -135,6 +121,8 @@ public interface VpcManager extends VpcService{
 
 
     /**
+     * Validates network offering to find if it can be used for network creation in VPC
+     * 
      * @param guestNtwkOff
      * @param supportedSvcs TODO
      */
@@ -142,8 +130,36 @@ public interface VpcManager extends VpcService{
 
 
     /**
-     * @return
+     * @return list of hypervisors that are supported by VPC
      */
     List<HypervisorType> getSupportedVpcHypervisors();
+    
+    
+    /**
+     * Lists all the services and providers that the current VPC suppots
+     * @param vpcOffId
+     * @return map of Service to Provider(s) map 
+     */
+    Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId);
+    
+    
+    /**
+     * Returns VPC that is ready to be used
+     * @param vpcId
+     * @return VPC object
+     */
+    public Vpc getActiveVpc(long vpcId);
 
+
+    /**
+     * Performs network offering validation to determine if it can be used for network upgrade inside the VPC 
+     * @param networkId
+     * @param newNtwkOffId
+     * @param newCidr
+     * @param newNetworkDomain
+     * @param vpc
+     * @param gateway
+     * @param networkOwner TODO
+     */
+    void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner);
 }

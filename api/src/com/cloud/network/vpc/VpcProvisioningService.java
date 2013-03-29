@@ -16,45 +16,31 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.List;
+import java.util.Map;
 
-public interface VpcOffering extends InternalIdentity, Identity {
-    public enum State {
-        Disabled,
-        Enabled
-    }
-
-    public static final String defaultVPCOfferingName = "Default VPC offering";
-
-    /**
-     * 
-     * @return VPC offering name
-     */
-    String getName();
-
+public interface VpcProvisioningService {
+    
+    public VpcOffering getVpcOffering(long vpcOfferingId);
+    
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders);
+    
+    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr,
+            Boolean isDefault, String keyword, String state, Long startIndex, Long pageSizeVal);
     
     /**
-     * @return VPC offering display text
+     * @param offId
+     * @return
      */
-    String getDisplayText();
+    public boolean deleteVpcOffering(long offId);
     
-
     /**
-     * 
-     * @return VPC offering state
+     * @param vpcOffId
+     * @param vpcOfferingName
+     * @param displayText
+     * @param state
+     * @return
      */
-    State getState();
-
-    /**
-     * 
-     * @return true if offering is default - came with the cloudStack fresh install; false otherwise
-     */
-    boolean isDefault();
-
-    /**
-     * @return service offering id used by VPC virutal router
-     */
-    Long getServiceOfferingId();
+    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
 
 }

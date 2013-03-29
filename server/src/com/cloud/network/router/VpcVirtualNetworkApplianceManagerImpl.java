@@ -234,7 +234,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         long dcId = dest.getDataCenter().getId();
         
         DeploymentPlan plan = new DataCenterDeployment(dcId);
-        List<DomainRouterVO> routers = _routerDao.listByVpcId(vpcId);
+        List<DomainRouterVO> routers = getVpcRouters(vpcId);
         
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
@@ -1212,7 +1212,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         networks = super.createRouterNetworks(owner, isRedundant, plan, null, sourceNatIp);
 
         //2) allocate nic for private gateway if needed
-        VpcGateway privateGateway = _vpcMgr.getPrivateGatewayForVpc(vpcId);
+        PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(vpcId);
         if (privateGateway != null) {
             NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
             Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
@@ -1233,7 +1233,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         for (IPAddressVO ip : ips) {
             PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) 
-                    && _vpcMgr.ipUsedInVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
+                    && _vpcMgr.isIpAllocatedToVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 NicProfile publicNic = new NicProfile();
                 publicNic.setDefaultNic(false);
@@ -1314,7 +1314,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             long publicNtwkId = ip.getNetworkId();
             
             //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_vpcMgr.ipUsedInVpc(ip)) {
+            if (!_vpcMgr.isIpAllocatedToVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
                          
@@ -1334,7 +1334,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             long publicNtwkId = ip.getNetworkId();
             
             //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_vpcMgr.ipUsedInVpc(ip)) {
+            if (!_vpcMgr.isIpAllocatedToVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
                          
@@ -1376,4 +1376,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
     
+    @Override
+    public List<DomainRouterVO> getVpcRouters(long vpcId) {
+        return _routerDao.listByVpcId(vpcId);
+    }
+
 }

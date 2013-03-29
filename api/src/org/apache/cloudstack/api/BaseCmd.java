@@ -52,6 +52,7 @@ import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
@@ -132,6 +133,7 @@ public abstract class BaseCmd {
     @Inject public NetworkUsageService _networkUsageService;
     @Inject public VMSnapshotService _vmSnapshotService;
     @Inject public DataStoreProviderApiService dataStoreProviderApiService;
+    @Inject public VpcProvisioningService _vpcProvSvc;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

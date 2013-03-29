@@ -66,7 +66,7 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
 
     @Override
     public void execute(){
-        boolean result = _vpcService.deleteVpcOffering(getId());
+        boolean result = _vpcProvSvc.deleteVpcOffering(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

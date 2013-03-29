@@ -857,4 +857,10 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public boolean isProviderEnabledInZone(long zoneId, String provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

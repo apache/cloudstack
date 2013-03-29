@@ -1212,6 +1212,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         return isProviderEnabled(ntwkSvcProvider);
     }
+    
+    @Override
+    public boolean isProviderEnabledInZone(long zoneId, String provider)
+    {
+        //the provider has to be enabled at least in one network in the zone
+        for (PhysicalNetwork pNtwk : _physicalNetworkDao.listByZone(zoneId)) {
+            if (isProviderEnabledInPhysicalNetwork(pNtwk.getId(), provider)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     @Override
     public String getNetworkTag(HypervisorType hType, Network network) {

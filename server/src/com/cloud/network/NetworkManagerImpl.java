@@ -1528,7 +1528,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // associate a source NAT IP (if one isn't already associated with the network)
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (network.getGuestType() == Network.GuestType.Isolated
                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
                && !sharedSourceNat) {

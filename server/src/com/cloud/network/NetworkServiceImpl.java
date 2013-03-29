@@ -94,6 +94,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpc.PrivateIpVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
@@ -1714,6 +1715,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified network id doesn't exist in the system");
             ex.addProxyObject("networks", networkId, "networkId");
             throw ex;
+        }
+        
+        //perform below validation if the network is vpc network
+        if (network.getVpcId() != null && networkOfferingId != null) {
+            Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()));
         }
 
         // don't allow to update network in Destroy state

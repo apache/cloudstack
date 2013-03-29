@@ -129,14 +129,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Couldn't find network by id");
         }
 
-        Network result = null;
-        if (network.getVpcId() != null) {
-            result = _vpcService.updateVpcGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
+        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
                     callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
-        } else {
-            result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
-        }
+        
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
