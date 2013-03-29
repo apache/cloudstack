@@ -3066,8 +3066,8 @@ ServerResource {
 
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
             grd.setMemBalloning(true);
-            grd.setCurrentMem((int)vmTO.getMinRam()/1024);
-            grd.setMemorySize((int)vmTO.getMaxRam()/1024);
+            grd.setCurrentMem((long)vmTO.getMinRam()/1024);
+            grd.setMemorySize((long)vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);

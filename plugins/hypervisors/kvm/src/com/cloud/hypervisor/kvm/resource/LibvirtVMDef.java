@@ -113,7 +113,7 @@ public class LibvirtVMDef {
 
     public static class GuestResourceDef {
         private long _mem;
-        private int _currentMem = -1;
+        private long _currentMem = -1;
         private String _memBacking;
         private int _vcpu = -1;
         private boolean _memBalloning= false;
@@ -122,7 +122,7 @@ public class LibvirtVMDef {
             _mem = mem;
         }
 
-        public void setCurrentMem(int currMem) {
+        public void setCurrentMem(long currMem) {
             _currentMem = currMem;
         }
 
