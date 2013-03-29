@@ -1185,16 +1185,32 @@
            scope: {
                     label: 'label.scope',
                     select: function(args) {
+                    
+             var selectedHypervisorObj = {
+                hypervisortype: $.isArray(args.context.zones[0].hypervisor) ?
+                  // We want the cluster's hypervisor type
+                  args.context.zones[0].hypervisor[1] : args.context.zones[0].hypervisor
+              };
 
-            var scope = [
-                        { id: 'zone', description: _l('label.zone.wide') },
-                        { id: 'cluster', description: _l('label.cluster') },
-                        { id: 'host', description: _l('label.host') }
-                      ];
+              if(selectedHypervisorObj == null) {
+                return;
+              }
 
-                      args.response.success({
-                        data: scope
-                      });
+                // ZWPS not supported for Xenserver
+             if(selectedHypervisorObj.hypervisortype == "XenServer"){
+                       var scope=[];
+                       scope.push({ id: 'cluster', description: _l('label.cluster') });
+                       scope.push({ id: 'host', description: _l('label.host') });
+                       args.response.success({data: scope});
+                    }
+
+              else {
+                       var scope=[];
+                       scope.push({ id: 'zone', description: _l('label.zone.wide') });
+                       scope.push({ id: 'cluster', description: _l('label.cluster') });
+                       scope.push({ id: 'host', description: _l('label.host') });
+                       args.response.success({data: scope});
+                    }
 
                 }
 
