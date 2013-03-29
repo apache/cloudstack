@@ -129,7 +129,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
-        return this.getDataStoreProvider("ancient primary data store provider");
+        return this.getDataStoreProvider("cloudstack primary data store provider");
     }
 
     @Override

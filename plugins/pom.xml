@@ -58,8 +58,11 @@
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
+    <module>storage/image/default</module>
+    <module>storage/image/sample</module>    
     <module>storage/volume/solidfire</module>
     <module>storage/volume/default</module>
+    <module>storage/volume/sample</module>
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
   </modules>

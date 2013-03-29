@@ -121,7 +121,7 @@ public class StorageAllocatorTest {
 		cluster = clusterDao.persist(cluster);
 		clusterId = cluster.getId();
 
-		DataStoreProvider provider = providerMgr.getDataStoreProvider("ancient primary data store provider");
+		DataStoreProvider provider = providerMgr.getDataStoreProvider("cloudstack primary data store provider");
 		storage = new StoragePoolVO();
 		storage.setDataCenterId(dcId);
 		storage.setPodId(podId);
@@ -164,7 +164,7 @@ public class StorageAllocatorTest {
 		try {
 			createDb();
 			
-			DataStoreProvider provider = providerMgr.getDataStoreProvider("ancient primary data store provider");
+			DataStoreProvider provider = providerMgr.getDataStoreProvider("cloudstack primary data store provider");
 			storage = new StoragePoolVO();
 			storage.setDataCenterId(dcId);
 			storage.setPodId(podId);

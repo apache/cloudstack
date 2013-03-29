@@ -16,13 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.store;
+package org.apache.cloudstack.storage.datastore.provider;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -30,28 +28,22 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.storage.datastore.driver.SampleImageDataStoreDriverImpl;
+import org.apache.cloudstack.storage.datastore.lifecycle.SampleImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
-import org.apache.cloudstack.storage.image.driver.AncientImageDataStoreDriverImpl;
-import org.apache.cloudstack.storage.image.store.lifecycle.DefaultImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;
 
-@Component
-public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
-
-    private final String name = "ancient image data store";
+public class SampleImageDataStoreProvider implements ImageDataStoreProvider {
+    private final String name = "sample image data store provider";
     protected ImageDataStoreLifeCycle lifeCycle;
     protected ImageDataStoreDriver driver;
     @Inject
     ImageDataStoreManager storeMgr;
-    @Inject
-    ImageDataStoreHelper helper;
-
+    long id;
+    String uuid;
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
         return lifeCycle;
@@ -64,21 +56,18 @@ public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifeCycle = ComponentContext.inject(DefaultImageDataStoreLifeCycle.class);
-        driver = ComponentContext.inject(AncientImageDataStoreDriverImpl.class);
+        lifeCycle = ComponentContext.inject(SampleImageDataStoreLifeCycle.class);
+        driver = ComponentContext.inject(SampleImageDataStoreDriverImpl.class);
 
         storeMgr.registerDriver(this.getName(), driver);
-        
-        Map<String, Object> infos = new HashMap<String, Object>();
-        String dataStoreName = UUID.nameUUIDFromBytes(this.name.getBytes()).toString();
-        infos.put("name", dataStoreName);
-        infos.put("uuid", dataStoreName);
-        infos.put("protocol", "http");
-        infos.put("scope", ScopeType.GLOBAL);
-        infos.put("providerName", this.getName());
-        DataStoreLifeCycle lifeCycle = this.getDataStoreLifeCycle();
-        lifeCycle.initialize(infos);
         return true;
+    }
+
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        types.add(DataStoreProviderType.IMAGE);
+        return types;
     }
 
     @Override
@@ -90,12 +79,4 @@ public class AncientImageDataStoreProvider implements ImageDataStoreProvider {
     public HypervisorHostListener getHostListener() {
         return null;
     }
-
-    @Override
-    public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
-        types.add(DataStoreProviderType.IMAGE);
-        return types;
-    }
-
 }

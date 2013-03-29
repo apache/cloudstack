@@ -16,24 +16,60 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SolidfirePrimaryDataStoreProvider extends
-	DefaultPrimaryDatastoreProviderImpl {
-	private final String name = "Solidfre Primary Data Store Provider";
+public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvider {
+	private final String name = "Solidfire Primary Data Store Provider";
 
 
 	public SolidfirePrimaryDataStoreProvider() {
-	    
-		
+
+
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	@Override
 	public String getName() {
 		return name;
 	}
-	
-	
+
+    @Override
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public DataStoreDriver getDataStoreDriver() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public HypervisorHostListener getHostListener() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean configure(Map<String, Object> params) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
 }

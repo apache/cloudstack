@@ -43,7 +43,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePoolStatus;
 
-public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     EndPointSelector selector;
     @Inject
@@ -54,7 +54,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     PrimaryDataStoreHelper primaryStoreHelper;
     @Inject
     PrimaryDataStoreProviderManager providerMgr;
-    public DefaultPrimaryDataStoreLifeCycleImpl() {
+    public SamplePrimaryDataStoreLifeCycleImpl() {
     }
     
     @Override

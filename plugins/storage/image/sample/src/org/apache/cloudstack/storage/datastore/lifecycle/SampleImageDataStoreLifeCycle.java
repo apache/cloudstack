@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.image.store.lifecycle;
+package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import java.util.Map;
 
@@ -28,17 +28,18 @@ import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
+import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 
 import com.cloud.agent.api.StoragePoolInfo;
 
-public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
+public class SampleImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
     @Inject
 	protected ImageDataStoreDao imageStoreDao;
 	@Inject
 	ImageDataStoreHelper imageStoreHelper;
 	@Inject
 	ImageDataStoreManager imageStoreMgr;
-	public DefaultImageDataStoreLifeCycle() {
+	public SampleImageDataStoreLifeCycle() {
 	}
 
 

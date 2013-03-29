@@ -262,7 +262,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	
 	@Test
 	public void testCreatePrimaryStorage() {
-	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("sample primary data store provider");
         Map<String, Object> params = new HashMap<String, Object>();
         URI uri = null;
         try {
@@ -290,7 +290,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	}
 	
 	private DataStore createImageStore() {
-	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default image data store");
+	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("sample image data store provider");
         Map<String, Object> params = new HashMap<String, Object>();
         String name = UUID.randomUUID().toString();
         params.put("name", name);
@@ -310,7 +310,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 
 	public DataStore createPrimaryDataStore() {
 		try {
-		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("sample primary data store provider");
 		    Map<String, Object> params = new HashMap<String, Object>();
 		    URI uri = new URI(this.getPrimaryStorageUrl());
 		    params.put("url", this.getPrimaryStorageUrl());
@@ -331,7 +331,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		    lifeCycle.attachCluster(store, scope);
 		    
 		    /*
-		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("sample primary data store provider");
 		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
             
 		    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);

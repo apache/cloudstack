@@ -29,14 +29,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
-import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
+import org.apache.cloudstack.storage.datastore.driver.SamplePrimaryDataStoreDriverImpl;
+import org.apache.cloudstack.storage.datastore.lifecycle.SamplePrimaryDataStoreLifeCycleImpl;
 
 import com.cloud.utils.component.ComponentContext;
 
 
-public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
-    private final String providerName = "default primary data store provider";
+public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
+    private final String providerName = "sample primary data store provider";
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     @Inject
@@ -57,8 +57,8 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(DefaultPrimaryDataStoreLifeCycleImpl.class);
-        driver = ComponentContext.inject(DefaultPrimaryDataStoreDriverImpl.class);
+        lifecyle = ComponentContext.inject(SamplePrimaryDataStoreLifeCycleImpl.class);
+        driver = ComponentContext.inject(SamplePrimaryDataStoreDriverImpl.class);
         listener = ComponentContext.inject(DefaultHostListener.class);
         return true;
     }
@@ -72,7 +72,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     public HypervisorHostListener getHostListener() {
         return this.listener;
     }
-    
+
     @Override
     public Set<DataStoreProviderType> getTypes() {
         Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();

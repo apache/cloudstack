@@ -46,15 +46,15 @@ import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.Decoder;
 
 
-public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
-    private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreDriverImpl.class);
+public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
+    private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);
     @Inject
     EndPointSelector selector;
     @Inject
     StoragePoolHostDao storeHostDao;
     @Inject
     DataObjectManager dataObjMgr;
-    public DefaultPrimaryDataStoreDriverImpl() {
+    public SamplePrimaryDataStoreDriverImpl() {
         
     }
     
@@ -74,7 +74,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         
     }
     
-    public Void createAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
+    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
         CreateCmdResult result = null;
         CreateObjectAnswer volAnswer = (CreateObjectAnswer) callback.getResult();
         if (volAnswer.getResult()) {
@@ -94,13 +94,13 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     
         EndPoint ep = selector.select(vo);
         AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
-        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteCallback(null, null))
             .setContext(context);
         ep.sendMessageAsync(cmd, caller);
     }
     
-    public Void deleteCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {
+    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {
         CommandResult result = new CommandResult();
         Answer answer = callback.getResult();
         if (!answer.getResult()) {
@@ -165,7 +165,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         CreateObjectCommand createCmd = new CreateObjectCommand(vol.getUri());
         
         CreateVolumeContext<CreateCmdResult> context = new CreateVolumeContext<CreateCmdResult>(callback, vol);
-        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context)
             .setCallback(caller.getTarget().createAsyncCallback(null, null));
 

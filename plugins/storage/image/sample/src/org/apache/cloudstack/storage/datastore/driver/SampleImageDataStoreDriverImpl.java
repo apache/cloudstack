@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.driver;
+package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.Set;
 
@@ -38,12 +38,12 @@ import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import com.cloud.storage.dao.VMTemplateDao;
 
 //http-read-only based image store
-public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
+public class SampleImageDataStoreDriverImpl implements ImageDataStoreDriver {
     @Inject
     EndPointSelector selector;
     @Inject
     VMTemplateDao imageDataDao;
-    public DefaultImageDataStoreDriverImpl() {
+    public SampleImageDataStoreDriverImpl() {
     }
 
     @Override

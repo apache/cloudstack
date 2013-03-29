@@ -34,15 +34,15 @@ import com.cloud.utils.component.ComponentContext;
 public class CloudStackPrimaryDataStoreProviderImpl implements
         PrimaryDataStoreProvider {
 
-    private final String providerName = "ancient primary data store provider";
+    private final String providerName = "cloudstack primary data store provider";
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecyle;
 
     CloudStackPrimaryDataStoreProviderImpl() {
-        
+
     }
-    
+
     @Override
     public String getName() {
         return providerName;
@@ -70,7 +70,7 @@ public class CloudStackPrimaryDataStoreProviderImpl implements
     public HypervisorHostListener getHostListener() {
         return this.listener;
     }
-    
+
     @Override
     public Set<DataStoreProviderType> getTypes() {
         Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();

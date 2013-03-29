@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.driver;
+package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
 import java.util.Set;
@@ -64,9 +64,9 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
+public class CloudStackImageDataStoreDriverImpl implements ImageDataStoreDriver {
     private static final Logger s_logger = Logger
-            .getLogger(AncientImageDataStoreDriverImpl.class);
+            .getLogger(CloudStackImageDataStoreDriverImpl.class);
     @Inject
     VMTemplateZoneDao templateZoneDao;
     @Inject

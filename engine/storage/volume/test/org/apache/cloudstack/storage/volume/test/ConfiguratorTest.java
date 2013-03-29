@@ -79,12 +79,12 @@ public class ConfiguratorTest {
     
     @Test
     public void getProvider() {
-       // assertNotNull(providerMgr.getDataStoreProvider("default primary data store provider"));
+       // assertNotNull(providerMgr.getDataStoreProvider("sample primary data store provider"));
     }
     
     @Test
     public void createDataStore() {
-        /*PrimaryDataStoreProvider provider = providerMgr.getDataStoreProvider("default primary data store provider");
+        /*PrimaryDataStoreProvider provider = providerMgr.getDataStoreProvider("sample primary data store provider");
         Map<String, String> params = new HashMap<String, String>();
         params.put("url", "nfs://localhost/mnt");
         params.put("clusterId", "1");
