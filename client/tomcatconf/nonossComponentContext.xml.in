@@ -47,6 +47,11 @@
     </property>
   </bean>
  
+  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
+    <property name="GslbServiceProvider">
+      <ref bean="Netscaler"/>
+    </property>
+  </bean>
   <bean id ="AccountManagerImpl" class="com.cloud.user.AccountManagerImpl">
     <property name="UserAuthenticators">
         <list>
