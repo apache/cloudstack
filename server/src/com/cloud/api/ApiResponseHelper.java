@@ -270,10 +270,8 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
-<<<<<<< HEAD
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
-=======
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -304,7 +302,6 @@ import javax.inject.Inject;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
->>>>>>> More API changes
 
 @Component
 public class ApiResponseHelper implements ResponseGenerator {

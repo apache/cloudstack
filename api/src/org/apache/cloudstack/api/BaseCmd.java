@@ -61,6 +61,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotService;
