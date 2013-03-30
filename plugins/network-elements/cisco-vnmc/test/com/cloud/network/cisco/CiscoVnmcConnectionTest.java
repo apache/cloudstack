@@ -238,7 +238,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void assocAsa1000v() {
         try {
-            boolean result = connection.assocAsa1000v(tenantName, fwDns.get(0));
+            boolean result = connection.assignAsa1000v(tenantName, fwDns.get(0));
             assertTrue(result);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block

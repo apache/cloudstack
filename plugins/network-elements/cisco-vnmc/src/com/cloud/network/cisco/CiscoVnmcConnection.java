@@ -82,9 +82,9 @@ public interface CiscoVnmcConnection {
             String identifier, String policyIdentifier)
             throws ExecutionException;
 
-    public boolean createTenantVDCIngressAclRuleForDNat(String tenantName,
+    public boolean createTenantVDCAclRuleForDNat(String tenantName,
             String identifier, String policyIdentifier,
-            String publicIp)
+            String ipAddress)
             throws ExecutionException;
 
     public boolean createTenantVDCDNatPolicy(String tenantName, String identifier)
@@ -113,9 +113,9 @@ public interface CiscoVnmcConnection {
             String identifier, String policyIdentifier)
             throws ExecutionException;
 
-    public boolean createTenantVDCIngressAclRuleForPF(String tenantName,
+    public boolean createTenantVDCAclRuleForPF(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String publicIp,
+            String protocol, String ipAddress,
             String startPort, String endPort)
             throws ExecutionException;
 
@@ -152,8 +152,8 @@ public interface CiscoVnmcConnection {
     public boolean deleteTenantVDCAclRule(String tenantName,
             String identifier, String policyIdentifier) throws ExecutionException;
 
-    public boolean createTenantVDCAclPolicy(String tenantName, String identifier,
-            boolean ingress) throws ExecutionException;
+    public boolean createTenantVDCAclPolicy(String tenantName,
+            String identifier) throws ExecutionException;
 
     public boolean createTenantVDCAclPolicyRef(String tenantName, String identifier,
             boolean ingress) throws ExecutionException;
@@ -178,9 +178,9 @@ public interface CiscoVnmcConnection {
 
     public Map<String, String> listUnAssocAsa1000v() throws ExecutionException;
 
-    public boolean assocAsa1000v(String tenantName, String firewallDn)
+    public boolean assignAsa1000v(String tenantName, String firewallDn)
             throws ExecutionException;
 
-    public boolean disassocAsa1000v(String tenantName, String firewallDn)
+    public boolean unassignAsa1000v(String tenantName, String firewallDn)
             throws ExecutionException;
 }

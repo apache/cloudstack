@@ -334,8 +334,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             // create logical edge firewall in VNMC
-            //String insideIp = _networkMgr.acquireGuestIpAddress(network, null);
-            //if (!createLogicalEdgeFirewall(vlanId, insideIp, sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
             if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), publicGateways, ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
                 return false;
@@ -420,7 +418,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (!devices.isEmpty()) {
             CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
-            HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());            
+            HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
             cleanupLogicalEdgeFirewall(vlanId, ciscoVnmcHost.getId());
         }
 

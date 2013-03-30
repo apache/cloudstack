@@ -165,7 +165,7 @@ public class CiscoVnmcResourceTest {
         _resource.configure("CiscoVnmcResource", _parameters);
         _resource.setConnection(_connection);
         when(_connection.createTenantVDCAclPolicySet(anyString(), anyBoolean())).thenReturn(true);
-        when(_connection.createTenantVDCAclPolicy(anyString(), anyString(), anyBoolean())).thenReturn(true);
+        when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCIngressAclRule(
@@ -204,14 +204,14 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicySet(anyString(), anyBoolean())).thenReturn(true);
         when(_connection.createTenantVDCDNatPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatPolicyRef(anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCAclPolicy(anyString(), anyString(), anyBoolean())).thenReturn(true);
+        when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCDNatRule(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatIpPool(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatRule(anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCIngressAclRuleForDNat(anyString(),
+        when(_connection.createTenantVDCAclRuleForDNat(anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateNatPolicySet(anyString())).thenReturn(true);
 
@@ -241,7 +241,7 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicySet(anyString(), anyBoolean())).thenReturn(true);
         when(_connection.createTenantVDCPFPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFPolicyRef(anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCAclPolicy(anyString(), anyString(), anyBoolean())).thenReturn(true);
+        when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCPFRule(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
@@ -250,7 +250,7 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCPFRule(anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCIngressAclRuleForPF(anyString(),
+        when(_connection.createTenantVDCAclRuleForPF(anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateNatPolicySet(anyString())).thenReturn(true);
