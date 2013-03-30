@@ -124,6 +124,23 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
+            // if error is that pool is mounted, try to handle it
+            if (e.toString().contains("already mounted")) {
+                s_logger.error("Attempting to unmount old mount libvirt is unaware of at "+targetPath);
+                String result = Script.runSimpleBashScript("umount " + targetPath );
+                if (result == null) {
+                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    try {
+                        sp = conn.storagePoolCreateXML(spd.toString(), 0);
+                        s_logger.error("Succeeded in redefining storage");
+                        return sp;
+                    } catch (LibvirtException l) {
+                        s_logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
+                    }
+                } else {
+                    s_logger.error("Failed in unmounting and redefining storage");
+                }
+            }
             if (sp != null) {
                 try {
                     if (sp.isPersistent() == 1) {
@@ -134,8 +151,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to define nfs storage pool with: "
-                            + l.toString());
+                    s_logger.debug("Failed to undefine nfs storage pool with: "
+                        + l.toString());
                 }
             }
             return null;
@@ -593,6 +610,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return true;
         } catch (LibvirtException e) {
+            // handle ebusy error when pool is quickly destroyed
+            if (e.toString().contains("exit status 16")) {
+                String targetPath = _mountPoint + File.separator + uuid;
+                s_logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble"
+                               + "unmounting the pool. Trying umount location " + targetPath
+                               + "again in a few seconds");
+                String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath );
+                if (result == null) {
+                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    return true;
+                }
+                s_logger.error("failed in umount retry");
+            }
             throw new CloudRuntimeException(e.toString());
         }
     }
@@ -818,17 +848,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deleteStoragePool(KVMStoragePool pool) {
-        LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
-        StoragePool virtPool = libvirtPool.getPool();
-        try {
-            virtPool.destroy();
-            virtPool.undefine();
-            virtPool.free();
-        } catch (LibvirtException e) {
-            return false;
-        }
-
-        return true;
+        return deleteStoragePool(pool.getUuid());
     }
 
     public boolean deleteVbdByPath(String diskPath) {
