@@ -1218,10 +1218,23 @@ ServerResource {
         StorageFilerTO pool = cmd.getPool();
         String secondaryStorageUrl = cmd.getSecondaryStorageURL();
         KVMStoragePool secondaryStoragePool = null;
+        KVMStoragePool primaryPool = null;
         try {
-            KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(
-                    pool.getType(),
-                    pool.getUuid());
+            try {
+                primaryPool = _storagePoolMgr.getStoragePool(
+                     pool.getType(),
+                     pool.getUuid());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primaryPool = _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(),
+                                      cmd.getPool().getHost(), cmd.getPool().getPort(),
+                                      cmd.getPool().getPath(), cmd.getPool().getUserInfo(),
+                                      cmd.getPool().getType());
+                } else {
+                    return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
+                }
+            }
+
             String volumeName = UUID.randomUUID().toString();
 
             if (copyToSecondary) {
@@ -2155,6 +2168,7 @@ ServerResource {
         String secondaryStorageURL = cmd.getSecondaryStorageUrl();
 
         KVMStoragePool secondaryStorage = null;
+        KVMStoragePool primary = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
             String templateFolder = cmd.getAccountId() + File.separator
@@ -2164,9 +2178,21 @@ ServerResource {
             secondaryStorage = _storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageURL);
 
-            KVMStoragePool primary = _storagePoolMgr.getStoragePool(
+            try {
+                primary = _storagePoolMgr.getStoragePool(
                     cmd.getPool().getType(),
                     cmd.getPrimaryStoragePoolNameLabel());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primary = _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(),
+                                      cmd.getPool().getHost(), cmd.getPool().getPort(),
+                                      cmd.getPool().getPath(), cmd.getPool().getUserInfo(),
+                                      cmd.getPool().getType());
+                } else {
+                    return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
+                }
+            }
+
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             String tmpltPath = secondaryStorage.getLocalPath() + File.separator
                     + templateInstallFolder;
