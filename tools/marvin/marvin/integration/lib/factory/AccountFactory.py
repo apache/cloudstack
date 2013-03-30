@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.integration.lib.base import Account
 import hashlib
 from marvin.integration.lib.factory.CloudStackBaseFactory import *
+from marvin.integration.lib.base import Account
 from marvin.integration.lib.utils import random_gen
 
 class AccountFactory(CloudStackBaseFactory):

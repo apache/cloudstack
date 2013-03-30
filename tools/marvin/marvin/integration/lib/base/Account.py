@@ -23,7 +23,7 @@ from marvin.cloudstackAPI import updateAccount
 from marvin.cloudstackAPI import disableAccount
 from marvin.cloudstackAPI import deleteAccount
 
-class Account(CloudStackEntity):
+class Account(CloudStackEntity.CloudStackEntity):
 
 
     def __init__(self, items):

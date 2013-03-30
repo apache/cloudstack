@@ -20,8 +20,11 @@ class NetworkOfferingFactory(factory.Factory):
 
     FACTORY_FOR = NetworkOffering
 
-    displaytext = None
-    guestiptype = None
-    name = None
-    supportedservices = None
-    traffictype = None
+    displaytext = "Network Offering"
+    guestiptype = "Isolated"
+    name = "Network Offering"
+    supportedservices = "Dhcp,Dns,SourceNat,PortForwarding"
+    traffictype = "Guest"
+
+
+class DefaultIsolatedNetworkOffering

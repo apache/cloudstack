@@ -15,13 +15,24 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
+from marvin.integration.lib.factory.CloudStackBaseFactory import *
 from marvin.integration.lib.base import ServiceOffering
-class ServiceOfferingFactory(factory.Factory):
+from marvin.integration.lib.utils import random_gen
 
-    FACTORY_FOR = ServiceOffering
+class ServiceOfferingFactory(CloudStackBaseFactory):
 
-    cpunumber = None
-    cpuspeed = None
-    displaytext = None
-    memory = None
-    name = None
+    FACTORY_FOR = ServiceOffering.ServiceOffering
+
+    cpunumber = 1
+    cpuspeed = 1000 #Mhz
+    displaytext = "Service Offering"
+    memory = 512 #MB
+    name =  factory.Sequence(lambda n: "ServiceOffering" + random_gen())
+
+
+class SmallServiceOfferingFactory(ServiceOfferingFactory):
+    cpunumber = 1
+    cpuspeed = 100 #Mhz
+    memory = 100 #MB
+    displaytext = "Small Service Offering"
+    name = factory.Sequence(lambda n: "SmallServiceOffering" + random_gen())

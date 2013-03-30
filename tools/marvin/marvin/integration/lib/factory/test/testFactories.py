@@ -16,8 +16,11 @@
 # under the License.
 
 import unittest
-from marvin.integration.lib.factory import AccountFactory
-from marvin.integration.lib.base import Account
+from marvin.integration.lib.factory.AccountFactory import *
+from marvin.integration.lib.base.Account import *
+
+from marvin.integration.lib.factory.ServiceOfferingFactory import *
+from marvin.integration.lib.base.ServiceOffering import *
 from marvin.cloudstackTestClient import cloudstackTestClient
 
 class AccountFactoryTest(unittest.TestCase):
@@ -25,22 +28,37 @@ class AccountFactoryTest(unittest.TestCase):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
 
     def test_userAccountFactory(self):
-        af = AccountFactory.AccountFactory()
-        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        af = AccountFactory()
+        accnt = Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
         self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
     def test_adminAccountFactory(self):
-        af = AccountFactory.AccountFactory()
-        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        af = AdminAccountFactory()
+        accnt = Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
         self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
     def test_userAccountFactoryCustomArgs(self):
-        af = AccountFactory.AccountFactory(firstname='test', lastname='test')
-        accnt = Account.Account.create(apiclient=self.apiClient, AccountFactory=af)
+        af = AccountFactory(firstname='test', lastname='test')
+        accnt = Account.create(apiclient=self.apiClient, AccountFactory=af)
         self.assertTrue(accnt is not None, msg="no account created by factory")
         self.assertEqual(accnt.name, af.username, msg="account names are not same")
+
+    def tearDown(self):
+        pass
+
+
+class ServiceOfferingFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+
+    def test_serviceOfferingFactory(self):
+        sf = ServiceOfferingFactory()
+        soffering = ServiceOffering.create(apiclient=self.apiClient, ServiceOfferingFactory=sf)
+        self.assertTrue(soffering is not None, msg="no service offering was created")
+        self.assertEqual(soffering.name, sf.name, msg="error in service offering factory creation")
+
 
     def tearDown(self):
         pass

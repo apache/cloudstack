@@ -16,9 +16,26 @@
 # under the License.
 import factory
 from marvin.integration.lib.base import DiskOffering
+from marvin.integration.lib.utils import random_gen
+
 class DiskOfferingFactory(factory.Factory):
 
     FACTORY_FOR = DiskOffering
 
-    displaytext = None
-    name = None
+    displaytext = factory.Sequence(lambda n : "DiskOffering" + random_gen())
+    name = factory.Sequence(lambda n : "DiskOffering" + random_gen())
+
+
+class SharedDiskOfferingFactory(DiskOfferingFactory):
+
+    displaytext = "SharedDiskOffering"
+    name = factory.Sequence(lambda n : "SharedDiskOffering" + random_gen())
+    storagetype = "shared"
+    disksize = 10 #MB
+
+class LocalDiskOfferingFactory(DiskOfferingFactory):
+
+    displaytext = "LocalDiskOffering"
+    name = factory.Sequence(lambda n : "LocalDiskOffering" + random_gen())
+    storagetype = "local"
+    disksize = 10 #MB
