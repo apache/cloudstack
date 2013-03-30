@@ -26,6 +26,7 @@
 /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/*
 /usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh
 /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/*
+/usr/share/cloudstack-common/lib/*
 /usr/bin/cloud-set-guest-password
 /usr/bin/cloud-set-guest-sshkey
 /usr/lib/python2.?/*-packages/*

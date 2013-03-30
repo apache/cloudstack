@@ -116,6 +116,7 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
@@ -127,6 +128,8 @@ install:
 	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
 	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
+	install -D agent/target/dependencies/jasypt-1.9.0.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/lib/python2.7/dist-packages
