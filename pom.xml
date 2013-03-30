@@ -1,23 +1,14 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to you under
+  the Apache License, Version 2.0 (the "License"); you may not use this file except
+  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -34,8 +25,8 @@
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</developerConnection>
   </scm>
   <issueManagement>
     <system>jira</system>
@@ -43,7 +34,7 @@
   </issueManagement>
 
   <properties>
-    <!--skipTests>true</skipTests-->
+    <!--skipTests>true</skipTests -->
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -110,40 +101,49 @@
   <mailingLists>
     <mailingList>
       <name>Apache CloudStack User List</name>
-      <subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-users@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
+      <subscribe>users-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>users-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>users@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-users</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Developer List</name>
-      <subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-dev@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
+      <subscribe>dev-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>dev@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-dev</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Commits List</name>
-      <subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>cloudstack-commits@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
+      <subscribe>commits-subscribe@cloudstack.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@cloudstack.apache.org</unsubscribe>
+      <post>commits@cloudstack.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-commits</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</otherArchive>
+      </otherArchives>
     </mailingList>
   </mailingLists>
 
   <developers>
     <developer>
       <name>The Apache CloudStack Team</name>
-      <email>cloudstack-dev@incubator.apache.org</email>
-      <url>http://incubator.apache.org/projects/cloudstack.html</url>
+      <email>dev@cloudstack.apache.org</email>
+      <url>http://cloudstack.apache.org/</url>
       <organization>Apache Software Foundation</organization>
       <organizationUrl>http://apache.org/</organizationUrl>
     </developer>
   </developers>
 
   <ciManagement>
-    <system>Jenkin</system>
-    <url>http://jenkins.cloudstack.org/</url>
+    <system>Jenkins</system>
+    <url>http://builds.apache.org/</url>
   </ciManagement>
 
   <licenses>
@@ -170,9 +170,9 @@
     <module>engine</module>
     <module>plugins</module>
     <module>framework</module>
-    <module>services</module>
     <module>test</module>
     <module>client</module>
+    <module>services</module>
   </modules>
 
   <dependencyManagement>
@@ -207,6 +207,20 @@
       <artifactId>spring-web</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
+    <!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-expression</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-aop</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-tx</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-orm</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-oxm</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-webmvc</artifactId>
+      <version>${org.springframework.version}</version> </dependency> -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
@@ -238,6 +252,15 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>test/resources</directory>
+      </testResource>
+    </testResources>
+    <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
+    <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -306,7 +329,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore/>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -363,12 +386,14 @@
               <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+              <exclude>services/console-proxy/server/conf/agent.properties</exclude>
+              <exclude>services/console-proxy/server/conf/environment.properties</exclude>
+              <exclude>services/secondary-storage/conf/agent.properties</exclude>
+              <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
+              <exclude>tools/appliance/definitions/devcloud/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
@@ -527,6 +552,16 @@
       <modules>
         <module>developer</module>
         <module>tools</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>impatient</id>
+      <properties>
+        <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+      </properties>
+      <modules>
+        <module>developer</module>
+        <!--module>tools/devcloud</module -->
       </modules>
     </profile>
     <profile>

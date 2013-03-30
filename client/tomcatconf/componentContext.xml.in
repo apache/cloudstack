@@ -1,3 +1,4 @@
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements. See the NOTICE file
@@ -30,101 +31,41 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-  <!--
-    OSS deployment component configuration
-  -->
+
+<!--
+
+  OSS deployment configuration
+
+  OSS/non-OSS counter-exclusive components and related configurations should be put here
+  for example, configurationDaoImpl component, it has exclusive configuration settings in OSS and non-OSS deployment,
+  its component declaration should be put in both componentContext.xml.in and nonossComponentContext.xml.in, each with
+  independent configuration
+
+-->
+
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
 
-  <!--
-    Managers & pluggable adapters configuration under OSS deployment
-  -->
-  <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
-    <property name="UserAuthenticators">
-      <list>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="SecurityCheckers">
-      <list>
-          <ref bean="domainChecker"/>
-      </list>
-    </property>
-  </bean>
-
-<!--
-  <bean id="BigSwitchVnsElementService" class="com.cloud.network.element.BigSwitchVnsElement">
-    <property name="name" value="BigSwitchVnsElementService"/>
-  </bean>
--->
+  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
 
   <!--
-     Adapters
+    Nicira support components
   -->
-  <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
-    <property name="name" value="FirstFitRouting"/>
+  <bean id="niciraNvpDaoImpl" class="com.cloud.network.dao.NiciraNvpDaoImpl" />
+  <bean id="niciraNvpNicMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" />
+  <bean id="niciraNvpRouterMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" />
+  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
+    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
   </bean>
-
-  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
-    <property name="name" value="HypervisorAdapter"/>
-  </bean>
-
-   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
-    <property name="name" value="BareMetalAdapter"/>
+  <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
+    <property name="name" value="NiciraNvp"/>
   </bean>
 
   <!--
-    Storage pool allocators
+    Midonet support components
   -->
-
-  <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator">
-    <property name="name" value="LocalStorage"/>
-  </bean>
-  <!--
-  <bean id="FirstFitStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.FirstFitStoragePoolAllocator">
-    <property name="name" value="Storage"/>
-  </bean>
-  -->
-
-  <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
-    <property name="name" value="User First"/>
-  </bean>
-
-  <bean id="ConsoleProxyAllocator" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator">
-    <property name="name" value="Balance"/>
-  </bean>
-
-  <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-
-  <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
-    <property name="name" value="Basic"/>
-  </bean>
-
-  <bean id="HypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
-    <property name="name" value="HypervisorAdapter"/>
-  </bean>
-
-  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" >
-    <property name="name" value="BareMetalTemplateAdapter"/>
-  </bean>
-
-  <!--
-    Authenticators
-  -->
-  <bean id="MD5UserAuthenticator" class="com.cloud.server.auth.MD5UserAuthenticator">
-    <property name="name" value="MD5"/>
-  </bean>
-
-  <bean id="LDAPUserAuthenticator" class="com.cloud.server.auth.LDAPUserAuthenticator">
-    <property name="name" value="LDAP"/>
-  </bean>
-
-  <!--
-    Investigators
-  -->
-  <bean id="CheckOnAgentInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator">
-    <property name="name" value="SimpleInvestigator"/>
+  <bean id="MidoNetGuestNetworkGuru" class="com.cloud.network.guru.MidoNetGuestNetworkGuru">
+    <property name="name" value="MidoNetGuestNetworkGuru"/>
   </bean>
 
   <bean id="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator">
@@ -192,59 +133,65 @@
     <property name="name" value="Simulator Agent"/>
   </bean>
 
+<!--
 
-  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
-    <property name="name" value="Bare Metal Agent"/>
-  </bean>
+  Deployment configurations of various adapters
 
-  <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
-    <property name="name" value="SCVMMServer"/>
-  </bean>
+  It determines whether or not a adapter is activated or how it is loaded in order in its managing provider,
 
-  <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
-    <property name="name" value="Ovm Discover"/>
-  </bean>
+-->
 
-  <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
-    <property name="name" value="First Fit"/>
-    <property name="StoragePoolAllocators">
+  <!-- Security adapters -->
+  <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-          <ref bean="LocalStoragePoolAllocator"/>
-          <ref bean="clusterScopeStoragePoolAllocator"/>
-          <ref bean="zoneWideStoragePoolAllocator"/>
-          <ref bean="garbageCollectingStoragePoolAllocator"/>
-      </list>
-    </property>
-    <property name="HostAllocators">
-      <list>
-          <ref bean="FirstFitRouting"/>
+          <ref bean="SHA256SaltedUserAuthenticator"/>
+          <ref bean="MD5UserAuthenticator"/>
+          <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>
   </bean>
-
-  <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
-    <property name="PodAllocators">
+  <bean id="userPasswordEncoders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-          <ref bean="UserConcentratedAllocator"/>
+          <ref bean="SHA256SaltedUserAuthenticator"/>
+          <ref bean="MD5UserAuthenticator"/>
+          <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>
-    <property name="Discoverers">
+  </bean>
+
+  <bean id="securityCheckers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="domainChecker"/>
+      </list>
+    </property>
+  </bean>
+
+  <!-- Resource discoverers -->
+  <bean id="resourceDiscoverers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
+          <ref bean="LxcServerDiscoverer"/>
 
   <!--
           <ref bean="BareMetalDiscoverer"/>
   -->
 
           <ref bean="OvmDiscoverer"/>
-       </list>
+      </list>
     </property>
   </bean>
 
-  <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" >
-    <property name="Investigators">
+  <!-- HA adapters -->
+  <bean id="haInvestigators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="CheckOnAgentInvestigator"/>
           <ref bean="XenServerInvestigator"/>
@@ -252,7 +199,10 @@
           <ref bean="ManagementIPSystemVMInvestigator"/>
       </list>
     </property>
-    <property name="FenceBuilders">
+  </bean>
+
+  <bean id="haFenceBuilders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="XenServerFencer"/>
           <ref bean="KVMFencer"/>
@@ -261,61 +211,63 @@
     </property>
   </bean>
 
-  <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" >
-    <property name="HostAllocators">
-      <list>
-          <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-    <property name="Planners">
+  <!-- Deployment/allocation adapters -->
+  <bean id="deploymentPlanners" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
-
+          <ref bean="ImplicitDedicationPlanner" />
 <!--
           <ref bean="BareMetalPlanner" />
 -->
-
       </list>
     </property>
   </bean>
 
-  <bean id="networkManagerImpl" class="com.cloud.network.NetworkManagerImpl" >
-    <property name="NetworkGurus">
+  <bean id="podAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-          <ref bean="StorageNetworkGuru"/>
-          <ref bean="ExternalGuestNetworkGuru"/>
-          <ref bean="PublicNetworkGuru"/>
-          <ref bean="PodBasedNetworkGuru"/>
-          <ref bean="DirectPodBasedNetworkGuru"/>
-          <ref bean="ControlNetworkGuru"/>
-          <ref bean="DirectNetworkGuru"/>
-          <ref bean="OvsGuestNetworkGuru"/>
-          <ref bean="PrivateNetworkGuru"/>
+          <ref bean="UserConcentratedAllocator"/>
       </list>
     </property>
-    <property name="NetworkElements">
+  </bean>
+
+  <bean id="hostAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-          <ref bean="VirtualRouter"/>
-          <ref bean="Ovs"/>
-          <ref bean="SecurityGroupProvider"/>
-          <ref bean="VpcVirtualRouter"/>
-<!--
-          <ref bean="BareMetalDhcp"/>
-          <ref bean="BareMetalPxe"/>
-          <ref bean="BareMetalUserdata"/>
--->
+          <ref bean="FirstFitRouting"/>
       </list>
     </property>
-    <property name="IpDeployers">
+  </bean>
+
+  <bean id="storagePoolAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="LocalStoragePoolAllocator"/>
+          <ref bean="clusterScopeStoragePoolAllocator"/>
+          <ref bean="zoneWideStoragePoolAllocator"/>
+          <ref bean="garbageCollectingStoragePoolAllocator"/>
+      </list>
+    </property>
+  </bean>
+
+  <!-- Networking adapters -->
+  <bean id="ipDeployers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="elasticLoadBalancerElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp"/>
+          <ref bean="InternalLbVm"/>
       </list>
     </property>
-    <property name="DhcpProviders">
+  </bean>
+
+  <bean id="dhcpProviders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
@@ -353,6 +305,9 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp" />
+          <ref bean="MidoNetElement"/>
+          <ref bean="InternalLbVm"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
@@ -362,8 +317,20 @@
     </property>
   </bean>
 
-  <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
-    <property name="name" value="SimulatorGuru"/>
+  <!--
+   AffinityGroup Processors
+  -->
+  <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+	<property name="name" value="HostAntiAffinityProcessor"/>
+	<property name="type" value="host anti-affinity"/>
+  </bean>
+
+  <bean id="affinityProcessors" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="HostAntiAffinityProcessor" />
+      </list>
+    </property>
   </bean>
 
 </beans>

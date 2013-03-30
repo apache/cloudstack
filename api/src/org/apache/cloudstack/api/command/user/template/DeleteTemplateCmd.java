@@ -34,6 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
+
 @APICommand(name = "deleteTemplate", responseObject=SuccessResponse.class, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
