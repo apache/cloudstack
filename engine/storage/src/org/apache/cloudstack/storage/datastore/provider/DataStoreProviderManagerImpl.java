@@ -34,8 +34,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +55,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     protected Map<String, DataStoreProvider> providerMap = new HashMap<String, DataStoreProvider>();
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
+    @Inject
+    ImageDataStoreProviderManager imageDataStoreProviderMgr;
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
         return providerMap.get(name);
@@ -63,7 +67,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     public List<StorageProviderResponse> getPrimayrDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
@@ -76,7 +80,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         }
         return providers;
     }
-    
+
     public List<StorageProviderResponse> getImageDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
@@ -101,9 +105,9 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                 s_logger.debug("Failed to register data store provider, provider name: " + providerName + " is not unique");
                 return false;
             }
-            
+
             s_logger.debug("registering data store provider:" + provider.getName());
-            
+
             providerMap.put(providerName, provider);
             try {
                 boolean registrationResult = provider.configure(copyParams);
@@ -112,18 +116,21 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                     s_logger.debug("Failed to register data store provider: " + providerName);
                     return false;
                 }
-                
+
                 Set<DataStoreProviderType> types = provider.getTypes();
                 if (types.contains(DataStoreProviderType.PRIMARY)) {
                     primaryDataStoreProviderMgr.registerDriver(provider.getName(), (PrimaryDataStoreDriver)provider.getDataStoreDriver());
                     primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
+                }
+                else if  (types.contains(DataStoreProviderType.IMAGE)) {
+                    imageDataStoreProviderMgr.registerDriver(provider.getName(), (ImageDataStoreDriver)provider.getDataStoreDriver());
                 }
             } catch(Exception e) {
                 s_logger.debug("configure provider failed", e);
                 providerMap.remove(providerName);
             }
         }
-  
+
         return true;
     }
 

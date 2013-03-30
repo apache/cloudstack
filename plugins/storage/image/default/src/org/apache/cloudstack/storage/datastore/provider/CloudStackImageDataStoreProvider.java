@@ -35,7 +35,7 @@ import org.apache.cloudstack.storage.datastore.driver.CloudStackImageDataStoreDr
 import org.apache.cloudstack.storage.datastore.lifecycle.CloudStackImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +48,7 @@ public class CloudStackImageDataStoreProvider implements ImageDataStoreProvider 
     protected ImageDataStoreLifeCycle lifeCycle;
     protected ImageDataStoreDriver driver;
     @Inject
-    ImageDataStoreManager storeMgr;
+    ImageDataStoreProviderManager storeMgr;
     @Inject
     ImageDataStoreHelper helper;
 

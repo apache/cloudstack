@@ -41,7 +41,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.storage.encoding.EncodingType;
 
 
-public class DefaultImageDataStoreImpl implements ImageDataStore {
+public class ImageDataStoreImpl implements ImageDataStore {
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -51,7 +51,7 @@ public class DefaultImageDataStoreImpl implements ImageDataStore {
     protected ImageDataStoreProvider provider;
     boolean needDownloadToCacheStorage = false;
 
-    public DefaultImageDataStoreImpl() {
+    public ImageDataStoreImpl() {
      
     }
     
@@ -64,7 +64,7 @@ public class DefaultImageDataStoreImpl implements ImageDataStore {
 
     public static ImageDataStore getDataStore(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
             ImageDataStoreProvider provider) {
-        DefaultImageDataStoreImpl instance = (DefaultImageDataStoreImpl)ComponentContext.inject(DefaultImageDataStoreImpl.class);
+        ImageDataStoreImpl instance = (ImageDataStoreImpl)ComponentContext.inject(ImageDataStoreImpl.class);
         instance.configure(dataStoreVO, imageDataStoreDriver, provider);
         return instance;
     }

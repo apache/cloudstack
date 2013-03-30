@@ -27,7 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -37,7 +37,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
     PrimaryDataStoreProviderManager primaryStorMgr;
     @Inject
-    ImageDataStoreManager imageDataStoreMgr;
+    ImageDataStoreProviderManager imageDataStoreMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {

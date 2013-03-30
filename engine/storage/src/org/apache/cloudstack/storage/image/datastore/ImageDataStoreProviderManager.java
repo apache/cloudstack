@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 
-public interface ImageDataStoreManager {
+public interface ImageDataStoreProviderManager {
     ImageDataStore getImageDataStore(long dataStoreId);
     ImageDataStore getImageDataStore(String uuid);
     List<DataStore> getList();

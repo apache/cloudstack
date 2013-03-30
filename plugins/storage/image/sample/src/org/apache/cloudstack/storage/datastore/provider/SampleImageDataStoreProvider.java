@@ -31,7 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider
 import org.apache.cloudstack.storage.datastore.driver.SampleImageDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.SampleImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 
 import com.cloud.utils.component.ComponentContext;
@@ -41,7 +41,7 @@ public class SampleImageDataStoreProvider implements ImageDataStoreProvider {
     protected ImageDataStoreLifeCycle lifeCycle;
     protected ImageDataStoreDriver driver;
     @Inject
-    ImageDataStoreManager storeMgr;
+    ImageDataStoreProviderManager storeMgr;
     long id;
     String uuid;
     @Override

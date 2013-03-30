@@ -31,16 +31,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.store.DefaultImageDataStoreImpl;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreImpl;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
-public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
+public class ImageDataStoreProviderManagerImpl implements ImageDataStoreProviderManager {
     @Inject
     ImageDataStoreDao dataStoreDao;
     @Inject
@@ -59,7 +59,7 @@ public class ImageDataStoreManagerImpl implements ImageDataStoreManager {
         ImageDataStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         String providerName = dataStore.getProviderName();
         ImageDataStoreProvider provider = (ImageDataStoreProvider)providerManager.getDataStoreProvider(providerName);
-        ImageDataStore imgStore = DefaultImageDataStoreImpl.getDataStore(dataStore, 
+        ImageDataStore imgStore = ImageDataStoreImpl.getDataStore(dataStore, 
                 driverMaps.get(provider.getName()), provider
                 );
         // TODO Auto-generated method stub

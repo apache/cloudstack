@@ -731,7 +731,7 @@
   <bean id="dataObjectManagerImpl" class="org.apache.cloudstack.storage.datastore.DataObjectManagerImpl" />
   <bean id="dataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl" />
   <bean id="defaultEndPointSelector" class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
-  <bean id="defaultPrimaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.DefaultPrimaryDataStoreProviderManagerImpl" />
+  <bean id="primaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl" />
   <bean id="eventUtils" class="com.cloud.event.EventUtils" />
   <bean id="globalLoadBalancingRulesServiceImpl" class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
   <bean id="hypervsiorHostEndPointRpcServer" class="org.apache.cloudstack.storage.HypervsiorHostEndPointRpcServer" />

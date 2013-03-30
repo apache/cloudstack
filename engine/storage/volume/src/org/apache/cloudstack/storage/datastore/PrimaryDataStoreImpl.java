@@ -60,9 +60,9 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
-public class DefaultPrimaryDataStore implements PrimaryDataStore {
+public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger
-            .getLogger(DefaultPrimaryDataStore.class);
+            .getLogger(PrimaryDataStoreImpl.class);
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
     @Inject
@@ -82,7 +82,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     private VolumeDao volumeDao;
 
-    public	 DefaultPrimaryDataStore() {				
+    public	 PrimaryDataStoreImpl() {				
        
     }
     
@@ -93,10 +93,10 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         this.provider = provider;
     }
 
-    public static DefaultPrimaryDataStore createDataStore(
+    public static PrimaryDataStoreImpl createDataStore(
             StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
             DataStoreProvider provider) {
-        DefaultPrimaryDataStore dataStore = (DefaultPrimaryDataStore)ComponentContext.inject(DefaultPrimaryDataStore.class);
+        PrimaryDataStoreImpl dataStore = (PrimaryDataStoreImpl)ComponentContext.inject(PrimaryDataStoreImpl.class);
         dataStore.configure(pdsv, driver, provider);
         return dataStore;
     }

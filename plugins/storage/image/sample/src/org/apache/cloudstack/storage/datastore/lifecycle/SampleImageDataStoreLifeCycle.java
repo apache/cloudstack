@@ -25,7 +25,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
@@ -38,7 +38,7 @@ public class SampleImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 	@Inject
 	ImageDataStoreHelper imageStoreHelper;
 	@Inject
-	ImageDataStoreManager imageStoreMgr;
+	ImageDataStoreProviderManager imageStoreMgr;
 	public SampleImageDataStoreLifeCycle() {
 	}
 

@@ -28,7 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
@@ -39,7 +39,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.storage.StorageManager;
 
 @Component
-public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
+public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
     @Inject
     DataStoreProviderDao dataStoreProviderDao;
     @Inject
@@ -59,7 +59,7 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         String providerName = dataStoreVO.getStorageProviderName();
         DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);
-        DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
+        PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
         return dataStore;
     }
     
