@@ -40,7 +40,7 @@ CATALINA_TMPDIR="@MSENVIRON@/temp"
 
 # Use JAVA_OPTS to set java.library.path for libtcnative.so
 #JAVA_OPTS="-Djava.library.path=/usr/lib64"
-JAVA_OPTS="-Djava.awt.headless=true -Djavax.net.ssl.trustStore=/etc/cloud/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com -Dcom.sun.management.jmxremote.port=45219 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@ -XX:MaxPermSize=800m -XX:PermSize=512M"
+JAVA_OPTS="-Djava.awt.headless=true -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com -Dcom.sun.management.jmxremote.port=45219 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@ -XX:MaxPermSize=800m -XX:PermSize=512M"
 
 # What user should run tomcat
 TOMCAT_USER="@MSUSER@"

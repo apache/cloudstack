@@ -94,7 +94,7 @@
                maxThreads="150" scheme="https" secure="true" URIEncoding="UTF-8"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"
-               keystoreFile="/etc/cloud/management/cloudmanagementserver.keystore"
+               keystoreFile="/etc/cloudstack/management/cloudmanagementserver.keystore"
                keystorePass="vmops.com"/>
 			   
     <!-- Define an AJP 1.3 Connector on port 20400 -->
@@ -200,7 +200,7 @@
                maxThreads="150" scheme="https" secure="true"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"
-               keystoreFile="/etc/cloud/management/cloudmanagementserver.keystore"
+               keystoreFile="/etc/cloudstack/management/cloudmanagementserver.keystore"
                keystorePass="vmops.com"/>
 			   
     <!-- Define an AJP 1.3 Connector on port 20400 -->
