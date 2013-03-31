@@ -24,13 +24,11 @@ class ToLoadBalancerRule(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def assign(self, apiclient, id, virtualmachineids, **kwargs):
         cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.virtualmachineids = virtualmachineids
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         toloadbalancerrule = apiclient.assignToLoadBalancerRule(cmd)
+        return toloadbalancerrule

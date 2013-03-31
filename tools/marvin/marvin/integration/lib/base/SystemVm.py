@@ -31,43 +31,53 @@ class SystemVm(CloudStackEntity.CloudStackEntity):
 
     def migrate(self, apiclient, hostid, virtualmachineid, **kwargs):
         cmd = migrateSystemVm.migrateSystemVmCmd()
+        cmd.id = self.id
         cmd.hostid = hostid
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.migrateSystemVm(cmd)
+        return systemvm
 
 
     def stop(self, apiclient, id, **kwargs):
         cmd = stopSystemVm.stopSystemVmCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.stopSystemVm(cmd)
+        return systemvm
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSystemVms.listSystemVmsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.listSystemVms(cmd)
         return map(lambda e: SystemVm(e.__dict__), systemvm)
 
 
     def reboot(self, apiclient, id, **kwargs):
         cmd = rebootSystemVm.rebootSystemVmCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.rebootSystemVm(cmd)
+        return systemvm
 
 
     def start(self, apiclient, id, **kwargs):
         cmd = startSystemVm.startSystemVmCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.startSystemVm(cmd)
+        return systemvm
 
 
     def destroy(self, apiclient, id, **kwargs):
         cmd = destroySystemVm.destroySystemVmCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.destroySystemVm(cmd)
+        return systemvm

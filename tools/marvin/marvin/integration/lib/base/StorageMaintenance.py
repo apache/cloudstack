@@ -25,19 +25,19 @@ class StorageMaintenance(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def cancel(self, apiclient, id, **kwargs):
         cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagemaintenance = apiclient.cancelStorageMaintenance(cmd)
+        return storagemaintenance
 
 
     def enable(self, apiclient, id, **kwargs):
         cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagemaintenance = apiclient.enableStorageMaintenance(cmd)
+        return storagemaintenance

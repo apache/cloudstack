@@ -15,12 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
+from marvin.integration.lib.factory.CloudStackBaseFactory import *
 from marvin.integration.lib.base import DiskOffering
 from marvin.integration.lib.utils import random_gen
 
-class DiskOfferingFactory(factory.Factory):
+class DiskOfferingFactory(CloudStackBaseFactory):
 
-    FACTORY_FOR = DiskOffering
+    FACTORY_FOR = DiskOffering.DiskOffering
 
     displaytext = factory.Sequence(lambda n : "DiskOffering" + random_gen())
     name = factory.Sequence(lambda n : "DiskOffering" + random_gen())

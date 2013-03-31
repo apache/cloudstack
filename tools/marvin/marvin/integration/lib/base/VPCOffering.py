@@ -39,19 +39,23 @@ class VPCOffering(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVPCOfferings.listVPCOfferingsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpcoffering = apiclient.listVPCOfferings(cmd)
         return map(lambda e: VPCOffering(e.__dict__), vpcoffering)
 
 
     def update(self, apiclient, **kwargs):
         cmd = updateVPCOffering.updateVPCOfferingCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpcoffering = apiclient.updateVPCOffering(cmd)
+        return vpcoffering
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVPCOffering.deleteVPCOfferingCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpcoffering = apiclient.deleteVPCOffering(cmd)
+        return vpcoffering

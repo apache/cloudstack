@@ -38,13 +38,15 @@ class Snapshot(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSnapshots.listSnapshotsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshot = apiclient.listSnapshots(cmd)
         return map(lambda e: Snapshot(e.__dict__), snapshot)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteSnapshot.deleteSnapshotCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshot = apiclient.deleteSnapshot(cmd)
+        return snapshot

@@ -27,6 +27,6 @@ class Apis(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listApis.listApisCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         apis = apiclient.listApis(cmd)
         return map(lambda e: Apis(e.__dict__), apis)

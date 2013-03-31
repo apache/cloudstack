@@ -39,23 +39,27 @@ class PortForwardingRule(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         portforwardingrule = apiclient.listPortForwardingRules(cmd)
         return map(lambda e: PortForwardingRule(e.__dict__), portforwardingrule)
 
 
     def update(self, apiclient, publicport, protocol, ipaddressid, privateport, **kwargs):
         cmd = updatePortForwardingRule.updatePortForwardingRuleCmd()
+        cmd.id = self.id
         cmd.ipaddressid = ipaddressid
         cmd.privateport = privateport
         cmd.protocol = protocol
         cmd.publicport = publicport
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         portforwardingrule = apiclient.updatePortForwardingRule(cmd)
+        return portforwardingrule
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         portforwardingrule = apiclient.deletePortForwardingRule(cmd)
+        return portforwardingrule

@@ -27,6 +27,6 @@ class EventTypes(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listEventTypes.listEventTypesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         eventtypes = apiclient.listEventTypes(cmd)
         return map(lambda e: EventTypes(e.__dict__), eventtypes)

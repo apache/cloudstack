@@ -27,14 +27,16 @@ class Swift(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, url, **kwargs):
         cmd = addSwift.addSwiftCmd()
+        cmd.id = self.id
         cmd.url = url
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         swift = apiclient.addSwift(cmd)
+        return swift
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSwifts.listSwiftsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         swift = apiclient.listSwifts(cmd)
         return map(lambda e: Swift(e.__dict__), swift)

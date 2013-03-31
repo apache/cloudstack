@@ -27,6 +27,6 @@ class Capabilities(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listCapabilities.listCapabilitiesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         capabilities = apiclient.listCapabilities(cmd)
         return map(lambda e: Capabilities(e.__dict__), capabilities)

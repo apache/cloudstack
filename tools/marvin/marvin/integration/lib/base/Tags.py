@@ -38,14 +38,16 @@ class Tags(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listTags.listTagsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         tags = apiclient.listTags(cmd)
         return map(lambda e: Tags(e.__dict__), tags)
 
 
     def delete(self, apiclient, resourcetype, resourceids, **kwargs):
         cmd = deleteTags.deleteTagsCmd()
+        cmd.id = self.id
         cmd.resourceids = resourceids
         cmd.resourcetype = resourcetype
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         tags = apiclient.deleteTags(cmd)
+        return tags

@@ -33,23 +33,29 @@ class User(CloudStackEntity.CloudStackEntity):
 
     def enable(self, apiclient, id, **kwargs):
         cmd = enableUser.enableUserCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.enableUser(cmd)
+        return user
 
 
     def get(self, apiclient, userapikey, **kwargs):
         cmd = getUser.getUserCmd()
+        cmd.id = self.id
         cmd.userapikey = userapikey
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.getUser(cmd)
+        return user
 
 
     def lock(self, apiclient, id, **kwargs):
         cmd = lockUser.lockUserCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.lockUser(cmd)
+        return user
 
 
     @classmethod
@@ -64,27 +70,33 @@ class User(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listUsers.listUsersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.listUsers(cmd)
         return map(lambda e: User(e.__dict__), user)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateUser.updateUserCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.updateUser(cmd)
+        return user
 
 
     def disable(self, apiclient, id, **kwargs):
         cmd = disableUser.disableUserCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.disableUser(cmd)
+        return user
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteUser.deleteUserCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.deleteUser(cmd)
+        return user

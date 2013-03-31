@@ -15,29 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createLBStickinessPolicy
-from marvin.cloudstackAPI import deleteLBStickinessPolicy
+from marvin.cloudstackAPI import removeFromGlobalLoadBalancerRule
 
-class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
+class FromGlobalLoadBalancerRule(CloudStackEntity.CloudStackEntity):
 
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
-    @classmethod
-    def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
-        cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBStickinessPolicyFactory.__dict__.iteritems()]
-        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.createLBStickinessPolicy(cmd)
-        return LBStickinessPolicy(lbstickinesspolicy.__dict__)
-
-
-    def delete(self, apiclient, id, **kwargs):
-        cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
+    def remove(self, apiclient, loadbalancerrulelist, id, **kwargs):
+        cmd = removeFromGlobalLoadBalancerRule.removeFromGlobalLoadBalancerRuleCmd()
         cmd.id = self.id
         cmd.id = id
+        cmd.loadbalancerrulelist = loadbalancerrulelist
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)
-        return lbstickinesspolicy
+        fromgloballoadbalancerrule = apiclient.removeFromGlobalLoadBalancerRule(cmd)
+        return fromgloballoadbalancerrule

@@ -29,20 +29,24 @@ class ProjectInvitation(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listProjectInvitations.listProjectInvitationsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         projectinvitation = apiclient.listProjectInvitations(cmd)
         return map(lambda e: ProjectInvitation(e.__dict__), projectinvitation)
 
 
     def update(self, apiclient, projectid, **kwargs):
         cmd = updateProjectInvitation.updateProjectInvitationCmd()
+        cmd.id = self.id
         cmd.projectid = projectid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         projectinvitation = apiclient.updateProjectInvitation(cmd)
+        return projectinvitation
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteProjectInvitation.deleteProjectInvitationCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         projectinvitation = apiclient.deleteProjectInvitation(cmd)
+        return projectinvitation

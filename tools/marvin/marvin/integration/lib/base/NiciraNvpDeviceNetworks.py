@@ -28,6 +28,6 @@ class NiciraNvpDeviceNetworks(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, nvpdeviceid, **kwargs):
         cmd = listNiciraNvpDeviceNetworks.listNiciraNvpDeviceNetworksCmd()
         cmd.nvpdeviceid = nvpdeviceid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         niciranvpdevicenetworks = apiclient.listNiciraNvpDeviceNetworks(cmd)
         return map(lambda e: NiciraNvpDeviceNetworks(e.__dict__), niciranvpdevicenetworks)

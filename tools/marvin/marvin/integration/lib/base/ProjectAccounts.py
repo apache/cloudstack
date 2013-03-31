@@ -28,6 +28,6 @@ class ProjectAccounts(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, projectid, **kwargs):
         cmd = listProjectAccounts.listProjectAccountsCmd()
         cmd.projectid = projectid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         projectaccounts = apiclient.listProjectAccounts(cmd)
         return map(lambda e: ProjectAccounts(e.__dict__), projectaccounts)

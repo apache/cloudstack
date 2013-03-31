@@ -39,20 +39,24 @@ class StorageNetworkIpRange(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagenetworkiprange = apiclient.listStorageNetworkIpRange(cmd)
         return map(lambda e: StorageNetworkIpRange(e.__dict__), storagenetworkiprange)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateStorageNetworkIpRange.updateStorageNetworkIpRangeCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagenetworkiprange = apiclient.updateStorageNetworkIpRange(cmd)
+        return storagenetworkiprange
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteStorageNetworkIpRange.deleteStorageNetworkIpRangeCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagenetworkiprange = apiclient.deleteStorageNetworkIpRange(cmd)
+        return storagenetworkiprange

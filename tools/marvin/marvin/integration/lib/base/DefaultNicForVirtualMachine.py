@@ -26,7 +26,9 @@ class DefaultNicForVirtualMachine(CloudStackEntity.CloudStackEntity):
 
     def update(self, apiclient, nicid, virtualmachineid, **kwargs):
         cmd = updateDefaultNicForVirtualMachine.updateDefaultNicForVirtualMachineCmd()
+        cmd.id = self.id
         cmd.nicid = nicid
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         defaultnicforvirtualmachine = apiclient.updateDefaultNicForVirtualMachine(cmd)
+        return defaultnicforvirtualmachine

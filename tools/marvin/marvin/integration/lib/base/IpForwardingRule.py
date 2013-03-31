@@ -38,13 +38,15 @@ class IpForwardingRule(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listIpForwardingRules.listIpForwardingRulesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipforwardingrule = apiclient.listIpForwardingRules(cmd)
         return map(lambda e: IpForwardingRule(e.__dict__), ipforwardingrule)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteIpForwardingRule.deleteIpForwardingRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipforwardingrule = apiclient.deleteIpForwardingRule(cmd)
+        return ipforwardingrule

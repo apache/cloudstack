@@ -38,13 +38,15 @@ class EgressFirewallRule(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listEgressFirewallRules.listEgressFirewallRulesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         egressfirewallrule = apiclient.listEgressFirewallRules(cmd)
         return map(lambda e: EgressFirewallRule(e.__dict__), egressfirewallrule)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteEgressFirewallRule.deleteEgressFirewallRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         egressfirewallrule = apiclient.deleteEgressFirewallRule(cmd)
+        return egressfirewallrule

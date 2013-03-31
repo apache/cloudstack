@@ -39,20 +39,24 @@ class LoadBalancerRule(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.listLoadBalancerRules(cmd)
         return map(lambda e: LoadBalancerRule(e.__dict__), loadbalancerrule)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateLoadBalancerRule.updateLoadBalancerRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.updateLoadBalancerRule(cmd)
+        return loadbalancerrule
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteLoadBalancerRule.deleteLoadBalancerRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.deleteLoadBalancerRule(cmd)
+        return loadbalancerrule

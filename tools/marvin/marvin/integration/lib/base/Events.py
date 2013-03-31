@@ -28,12 +28,14 @@ class Events(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listEvents.listEventsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         events = apiclient.listEvents(cmd)
         return map(lambda e: Events(e.__dict__), events)
 
 
     def delete(self, apiclient, **kwargs):
         cmd = deleteEvents.deleteEventsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         events = apiclient.deleteEvents(cmd)
+        return events

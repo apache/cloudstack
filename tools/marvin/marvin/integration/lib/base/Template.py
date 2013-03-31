@@ -33,10 +33,12 @@ class Template(CloudStackEntity.CloudStackEntity):
 
     def prepare(self, apiclient, zoneid, templateid, **kwargs):
         cmd = prepareTemplate.prepareTemplateCmd()
+        cmd.id = self.id
         cmd.templateid = templateid
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.prepareTemplate(cmd)
+        return template
 
 
     @classmethod
@@ -50,6 +52,7 @@ class Template(CloudStackEntity.CloudStackEntity):
 
     def register(self, apiclient, name, format, url, hypervisor, zoneid, displaytext, ostypeid, **kwargs):
         cmd = registerTemplate.registerTemplateCmd()
+        cmd.id = self.id
         cmd.displaytext = displaytext
         cmd.format = format
         cmd.hypervisor = hypervisor
@@ -57,45 +60,54 @@ class Template(CloudStackEntity.CloudStackEntity):
         cmd.ostypeid = ostypeid
         cmd.url = url
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.registerTemplate(cmd)
+        return template
 
 
     @classmethod
     def list(self, apiclient, templatefilter, **kwargs):
         cmd = listTemplates.listTemplatesCmd()
         cmd.templatefilter = templatefilter
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.listTemplates(cmd)
         return map(lambda e: Template(e.__dict__), template)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.updateTemplate(cmd)
+        return template
 
 
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
         cmd = copyTemplate.copyTemplateCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.destzoneid = destzoneid
         cmd.sourcezoneid = sourcezoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.copyTemplate(cmd)
+        return template
 
 
     def extract(self, apiclient, id, mode, **kwargs):
         cmd = extractTemplate.extractTemplateCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.mode = mode
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.extractTemplate(cmd)
+        return template
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteTemplate.deleteTemplateCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.deleteTemplate(cmd)
+        return template

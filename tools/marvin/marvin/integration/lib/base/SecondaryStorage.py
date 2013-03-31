@@ -24,12 +24,10 @@ class SecondaryStorage(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def add(self, apiclient, url, **kwargs):
         cmd = addSecondaryStorage.addSecondaryStorageCmd()
+        cmd.id = self.id
         cmd.url = url
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         secondarystorage = apiclient.addSecondaryStorage(cmd)
+        return secondarystorage

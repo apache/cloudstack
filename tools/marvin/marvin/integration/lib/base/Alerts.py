@@ -28,12 +28,14 @@ class Alerts(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAlerts.listAlertsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         alerts = apiclient.listAlerts(cmd)
         return map(lambda e: Alerts(e.__dict__), alerts)
 
 
     def delete(self, apiclient, **kwargs):
         cmd = deleteAlerts.deleteAlertsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         alerts = apiclient.deleteAlerts(cmd)
+        return alerts

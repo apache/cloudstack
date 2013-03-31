@@ -28,25 +28,29 @@ class NiciraNvpDevice(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, username, physicalnetworkid, password, hostname, transportzoneuuid, **kwargs):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
+        cmd.id = self.id
         cmd.hostname = hostname
         cmd.password = password
         cmd.physicalnetworkid = physicalnetworkid
         cmd.transportzoneuuid = transportzoneuuid
         cmd.username = username
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         niciranvpdevice = apiclient.addNiciraNvpDevice(cmd)
+        return niciranvpdevice
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listNiciraNvpDevices.listNiciraNvpDevicesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         niciranvpdevice = apiclient.listNiciraNvpDevices(cmd)
         return map(lambda e: NiciraNvpDevice(e.__dict__), niciranvpdevice)
 
 
     def delete(self, apiclient, nvpdeviceid, **kwargs):
         cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
+        cmd.id = self.id
         cmd.nvpdeviceid = nvpdeviceid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         niciranvpdevice = apiclient.deleteNiciraNvpDevice(cmd)
+        return niciranvpdevice

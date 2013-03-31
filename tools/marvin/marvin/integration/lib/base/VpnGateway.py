@@ -38,13 +38,15 @@ class VpnGateway(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVpnGateways.listVpnGatewaysCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpngateway = apiclient.listVpnGateways(cmd)
         return map(lambda e: VpnGateway(e.__dict__), vpngateway)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVpnGateway.deleteVpnGatewayCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpngateway = apiclient.deleteVpnGateway(cmd)
+        return vpngateway

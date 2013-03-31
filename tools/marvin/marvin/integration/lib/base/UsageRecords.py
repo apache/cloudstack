@@ -30,14 +30,16 @@ class UsageRecords(CloudStackEntity.CloudStackEntity):
         cmd = listUsageRecords.listUsageRecordsCmd()
         cmd.enddate = enddate
         cmd.startdate = startdate
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         usagerecords = apiclient.listUsageRecords(cmd)
         return map(lambda e: UsageRecords(e.__dict__), usagerecords)
 
 
     def generate(self, apiclient, startdate, enddate, **kwargs):
         cmd = generateUsageRecords.generateUsageRecordsCmd()
+        cmd.id = self.id
         cmd.enddate = enddate
         cmd.startdate = startdate
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         usagerecords = apiclient.generateUsageRecords(cmd)
+        return usagerecords

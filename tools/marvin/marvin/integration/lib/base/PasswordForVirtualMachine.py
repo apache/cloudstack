@@ -24,12 +24,10 @@ class PasswordForVirtualMachine(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def reset(self, apiclient, id, **kwargs):
         cmd = resetPasswordForVirtualMachine.resetPasswordForVirtualMachineCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         passwordforvirtualmachine = apiclient.resetPasswordForVirtualMachine(cmd)
+        return passwordforvirtualmachine

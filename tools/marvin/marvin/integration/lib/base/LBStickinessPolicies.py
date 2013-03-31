@@ -28,6 +28,6 @@ class LBStickinessPolicies(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, lbruleid, **kwargs):
         cmd = listLBStickinessPolicies.listLBStickinessPoliciesCmd()
         cmd.lbruleid = lbruleid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbstickinesspolicies = apiclient.listLBStickinessPolicies(cmd)
         return map(lambda e: LBStickinessPolicies(e.__dict__), lbstickinesspolicies)

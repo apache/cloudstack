@@ -15,10 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createLBStickinessPolicy
-from marvin.cloudstackAPI import deleteLBStickinessPolicy
+from marvin.cloudstackAPI import listStorageProviders
 
-class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
+class StorageProviders(CloudStackEntity.CloudStackEntity):
 
 
     def __init__(self, items):
@@ -26,18 +25,9 @@ class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
-        cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBStickinessPolicyFactory.__dict__.iteritems()]
+    def list(self, apiclient, type, **kwargs):
+        cmd = listStorageProviders.listStorageProvidersCmd()
+        cmd.type = type
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.createLBStickinessPolicy(cmd)
-        return LBStickinessPolicy(lbstickinesspolicy.__dict__)
-
-
-    def delete(self, apiclient, id, **kwargs):
-        cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
-        cmd.id = self.id
-        cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)
-        return lbstickinesspolicy
+        storageproviders = apiclient.listStorageProviders(cmd)
+        return map(lambda e: StorageProviders(e.__dict__), storageproviders)

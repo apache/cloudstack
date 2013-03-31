@@ -30,35 +30,43 @@ class Router(CloudStackEntity.CloudStackEntity):
 
     def destroy(self, apiclient, id, **kwargs):
         cmd = destroyRouter.destroyRouterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.destroyRouter(cmd)
+        return router
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listRouters.listRoutersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.listRouters(cmd)
         return map(lambda e: Router(e.__dict__), router)
 
 
     def stop(self, apiclient, id, **kwargs):
         cmd = stopRouter.stopRouterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.stopRouter(cmd)
+        return router
 
 
     def reboot(self, apiclient, id, **kwargs):
         cmd = rebootRouter.rebootRouterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.rebootRouter(cmd)
+        return router
 
 
     def start(self, apiclient, id, **kwargs):
         cmd = startRouter.startRouterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.startRouter(cmd)
+        return router

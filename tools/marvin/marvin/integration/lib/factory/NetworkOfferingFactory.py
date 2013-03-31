@@ -15,16 +15,71 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
+from marvin.integration.lib.factory.CloudStackBaseFactory import *
 from marvin.integration.lib.base import NetworkOffering
-class NetworkOfferingFactory(factory.Factory):
+from marvin.integration.lib.utils import random_gen
 
-    FACTORY_FOR = NetworkOffering
+class NetworkOfferingFactory(CloudStackBaseFactory):
+
+    FACTORY_FOR = NetworkOffering.NetworkOffering
 
     displaytext = "Network Offering"
     guestiptype = "Isolated"
     name = "Network Offering"
     supportedservices = "Dhcp,Dns,SourceNat,PortForwarding"
-    traffictype = "Guest"
+    traffictype = "GUEST"
 
 
-class DefaultIsolatedNetworkOffering
+class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingFactory):
+    #FIXME: Service Capability Lists with CapabilityTypes (ElasticIP, RvR etc) needs handling
+
+    displaytext = factory.Sequence(lambda n : "DefaultIsolatedNetworkOfferingWithSourceNatService" + random_gen())
+    name = factory.Sequence(lambda n : "DefaultIsolatedNetworkOfferingWithSourceNatService" + random_gen())
+    supportedservices = "Lb,Dns,PortForwarding,StaticNat,Dhcp,Firewall,Vpn,UserData,SourceNat"
+    traffictype = "GUEST"
+    availability = "Optional"
+    guestiptype = "Isolated"
+
+    specifyVlan = False
+    specifyIpRanges = False
+    isPersistent = False
+    conserveMode = True
+
+    serviceProviderList = []
+    for service in map(lambda l: l.strip(' '), supportedservices.split(',')):
+        serviceProviderList.append(
+            {
+                'service': service,
+                'provider': 'VirtualRouter'
+            }
+        )
+
+
+class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
+
+    displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
+    name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
+    availability = "Optional"
+    supportedservices = "SecurityGroup, Dns, Dhcp, UserData"
+    guestiptype = "Shared"
+    traffictype = "GUEST"
+
+    specifyVlan = True
+    specifyIpRanges = True
+    isPersistent = False
+    conserveMode = True
+
+    serviceProviderList = []
+    for service in map(lambda l: l.strip(' '), supportedservices.split(',')):
+        if service == 'SecurityGroup':
+            provider = 'SecurityGroupProvider'
+        else:
+            provider = 'VirtualRouter'
+        serviceProviderList.append(
+            {
+                'service': service,
+                'provider': provider
+            }
+        )
+
+

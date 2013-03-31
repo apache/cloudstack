@@ -29,12 +29,14 @@ class SnapshotPolicies(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, volumeid, **kwargs):
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
         cmd.volumeid = volumeid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshotpolicies = apiclient.listSnapshotPolicies(cmd)
         return map(lambda e: SnapshotPolicies(e.__dict__), snapshotpolicies)
 
 
     def delete(self, apiclient, **kwargs):
         cmd = deleteSnapshotPolicies.deleteSnapshotPoliciesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshotpolicies = apiclient.deleteSnapshotPolicies(cmd)
+        return snapshotpolicies

@@ -26,7 +26,9 @@ class NicFromVirtualMachine(CloudStackEntity.CloudStackEntity):
 
     def remove(self, apiclient, nicid, virtualmachineid, **kwargs):
         cmd = removeNicFromVirtualMachine.removeNicFromVirtualMachineCmd()
+        cmd.id = self.id
         cmd.nicid = nicid
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         nicfromvirtualmachine = apiclient.removeNicFromVirtualMachine(cmd)
+        return nicfromvirtualmachine

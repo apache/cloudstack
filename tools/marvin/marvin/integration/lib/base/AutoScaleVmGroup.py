@@ -31,9 +31,11 @@ class AutoScaleVmGroup(CloudStackEntity.CloudStackEntity):
 
     def enable(self, apiclient, id, **kwargs):
         cmd = enableAutoScaleVmGroup.enableAutoScaleVmGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.enableAutoScaleVmGroup(cmd)
+        return autoscalevmgroup
 
 
     @classmethod
@@ -48,27 +50,33 @@ class AutoScaleVmGroup(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAutoScaleVmGroups.listAutoScaleVmGroupsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.listAutoScaleVmGroups(cmd)
         return map(lambda e: AutoScaleVmGroup(e.__dict__), autoscalevmgroup)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateAutoScaleVmGroup.updateAutoScaleVmGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.updateAutoScaleVmGroup(cmd)
+        return autoscalevmgroup
 
 
     def disable(self, apiclient, id, **kwargs):
         cmd = disableAutoScaleVmGroup.disableAutoScaleVmGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.disableAutoScaleVmGroup(cmd)
+        return autoscalevmgroup
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteAutoScaleVmGroup.deleteAutoScaleVmGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.deleteAutoScaleVmGroup(cmd)
+        return autoscalevmgroup

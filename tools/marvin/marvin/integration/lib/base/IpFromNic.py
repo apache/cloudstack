@@ -26,6 +26,8 @@ class IpFromNic(CloudStackEntity.CloudStackEntity):
 
     def remove(self, apiclient, id, **kwargs):
         cmd = removeIpFromNic.removeIpFromNicCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipfromnic = apiclient.removeIpFromNic(cmd)
+        return ipfromnic

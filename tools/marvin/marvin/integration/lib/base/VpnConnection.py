@@ -29,9 +29,11 @@ class VpnConnection(CloudStackEntity.CloudStackEntity):
 
     def reset(self, apiclient, id, **kwargs):
         cmd = resetVpnConnection.resetVpnConnectionCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnconnection = apiclient.resetVpnConnection(cmd)
+        return vpnconnection
 
 
     @classmethod
@@ -46,13 +48,15 @@ class VpnConnection(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVpnConnections.listVpnConnectionsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnconnection = apiclient.listVpnConnections(cmd)
         return map(lambda e: VpnConnection(e.__dict__), vpnconnection)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVpnConnection.deleteVpnConnectionCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnconnection = apiclient.deleteVpnConnection(cmd)
+        return vpnconnection

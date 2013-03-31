@@ -30,40 +30,48 @@ class Host(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, username, podid, url, hypervisor, zoneid, password, **kwargs):
         cmd = addHost.addHostCmd()
+        cmd.id = self.id
         cmd.hypervisor = hypervisor
         cmd.password = password
         cmd.podid = podid
         cmd.url = url
         cmd.username = username
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.addHost(cmd)
+        return host
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listHosts.listHostsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.listHosts(cmd)
         return map(lambda e: Host(e.__dict__), host)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateHost.updateHostCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.updateHost(cmd)
+        return host
 
 
     def reconnect(self, apiclient, id, **kwargs):
         cmd = reconnectHost.reconnectHostCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.reconnectHost(cmd)
+        return host
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteHost.deleteHostCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.deleteHost(cmd)
+        return host

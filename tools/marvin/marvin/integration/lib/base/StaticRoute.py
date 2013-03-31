@@ -38,13 +38,15 @@ class StaticRoute(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listStaticRoutes.listStaticRoutesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         staticroute = apiclient.listStaticRoutes(cmd)
         return map(lambda e: StaticRoute(e.__dict__), staticroute)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteStaticRoute.deleteStaticRouteCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         staticroute = apiclient.deleteStaticRoute(cmd)
+        return staticroute

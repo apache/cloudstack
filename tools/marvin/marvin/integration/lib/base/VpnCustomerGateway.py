@@ -39,25 +39,29 @@ class VpnCustomerGateway(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVpnCustomerGateways.listVpnCustomerGatewaysCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpncustomergateway = apiclient.listVpnCustomerGateways(cmd)
         return map(lambda e: VpnCustomerGateway(e.__dict__), vpncustomergateway)
 
 
     def update(self, apiclient, ikepolicy, cidrlist, gateway, ipsecpsk, esppolicy, id, **kwargs):
         cmd = updateVpnCustomerGateway.updateVpnCustomerGatewayCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.cidrlist = cidrlist
         cmd.esppolicy = esppolicy
         cmd.gateway = gateway
         cmd.ikepolicy = ikepolicy
         cmd.ipsecpsk = ipsecpsk
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpncustomergateway = apiclient.updateVpnCustomerGateway(cmd)
+        return vpncustomergateway
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVpnCustomerGateway.deleteVpnCustomerGatewayCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpncustomergateway = apiclient.deleteVpnCustomerGateway(cmd)
+        return vpncustomergateway

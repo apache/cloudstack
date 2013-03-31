@@ -38,12 +38,14 @@ class SecurityGroup(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSecurityGroups.listSecurityGroupsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         securitygroup = apiclient.listSecurityGroups(cmd)
         return map(lambda e: SecurityGroup(e.__dict__), securitygroup)
 
 
     def delete(self, apiclient, **kwargs):
         cmd = deleteSecurityGroup.deleteSecurityGroupCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         securitygroup = apiclient.deleteSecurityGroup(cmd)
+        return securitygroup

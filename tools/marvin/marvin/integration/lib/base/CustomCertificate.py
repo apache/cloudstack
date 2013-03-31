@@ -24,13 +24,11 @@ class CustomCertificate(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def upload(self, apiclient, domainsuffix, certificate, **kwargs):
         cmd = uploadCustomCertificate.uploadCustomCertificateCmd()
+        cmd.id = self.id
         cmd.certificate = certificate
         cmd.domainsuffix = domainsuffix
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         customcertificate = apiclient.uploadCustomCertificate(cmd)
+        return customcertificate

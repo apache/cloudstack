@@ -28,20 +28,24 @@ class NetworkDevice(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, **kwargs):
         cmd = addNetworkDevice.addNetworkDeviceCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkdevice = apiclient.addNetworkDevice(cmd)
+        return networkdevice
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listNetworkDevice.listNetworkDeviceCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkdevice = apiclient.listNetworkDevice(cmd)
         return map(lambda e: NetworkDevice(e.__dict__), networkdevice)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteNetworkDevice.deleteNetworkDeviceCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkdevice = apiclient.deleteNetworkDevice(cmd)
+        return networkdevice

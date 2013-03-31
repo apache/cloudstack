@@ -38,13 +38,15 @@ class PrivateGateway(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listPrivateGateways.listPrivateGatewaysCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         privategateway = apiclient.listPrivateGateways(cmd)
         return map(lambda e: PrivateGateway(e.__dict__), privategateway)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deletePrivateGateway.deletePrivateGatewayCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         privategateway = apiclient.deletePrivateGateway(cmd)
+        return privategateway

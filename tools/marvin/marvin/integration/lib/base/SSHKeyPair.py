@@ -38,22 +38,26 @@ class SSHKeyPair(CloudStackEntity.CloudStackEntity):
 
     def register(self, apiclient, publickey, name, **kwargs):
         cmd = registerSSHKeyPair.registerSSHKeyPairCmd()
+        cmd.id = self.id
         cmd.name = name
         cmd.publickey = publickey
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         sshkeypair = apiclient.registerSSHKeyPair(cmd)
+        return sshkeypair
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSSHKeyPairs.listSSHKeyPairsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         sshkeypair = apiclient.listSSHKeyPairs(cmd)
         return map(lambda e: SSHKeyPair(e.__dict__), sshkeypair)
 
 
     def delete(self, apiclient, name, **kwargs):
         cmd = deleteSSHKeyPair.deleteSSHKeyPairCmd()
+        cmd.id = self.id
         cmd.name = name
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         sshkeypair = apiclient.deleteSSHKeyPair(cmd)
+        return sshkeypair

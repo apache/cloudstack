@@ -38,13 +38,15 @@ class Counter(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listCounters.listCountersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         counter = apiclient.listCounters(cmd)
         return map(lambda e: Counter(e.__dict__), counter)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteCounter.deleteCounterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         counter = apiclient.deleteCounter(cmd)
+        return counter

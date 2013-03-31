@@ -24,12 +24,10 @@ class UserKeys(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def register(self, apiclient, id, **kwargs):
         cmd = registerUserKeys.registerUserKeysCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         userkeys = apiclient.registerUserKeys(cmd)
+        return userkeys

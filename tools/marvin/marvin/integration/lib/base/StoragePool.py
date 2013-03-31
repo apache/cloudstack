@@ -39,20 +39,24 @@ class StoragePool(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listStoragePools.listStoragePoolsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagepool = apiclient.listStoragePools(cmd)
         return map(lambda e: StoragePool(e.__dict__), storagepool)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateStoragePool.updateStoragePoolCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagepool = apiclient.updateStoragePool(cmd)
+        return storagepool
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteStoragePool.deleteStoragePoolCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagepool = apiclient.deleteStoragePool(cmd)
+        return storagepool

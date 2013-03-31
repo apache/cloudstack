@@ -29,32 +29,38 @@ class Cluster(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, clustername, hypervisor, zoneid, clustertype, podid, **kwargs):
         cmd = addCluster.addClusterCmd()
+        cmd.id = self.id
         cmd.clustername = clustername
         cmd.clustertype = clustertype
         cmd.hypervisor = hypervisor
         cmd.podid = podid
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.addCluster(cmd)
+        return cluster
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listClusters.listClustersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.listClusters(cmd)
         return map(lambda e: Cluster(e.__dict__), cluster)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateCluster.updateClusterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.updateCluster(cmd)
+        return cluster
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteCluster.deleteClusterCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.deleteCluster(cmd)
+        return cluster

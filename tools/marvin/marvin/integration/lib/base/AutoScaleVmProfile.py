@@ -39,20 +39,24 @@ class AutoScaleVmProfile(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAutoScaleVmProfiles.listAutoScaleVmProfilesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmprofile = apiclient.listAutoScaleVmProfiles(cmd)
         return map(lambda e: AutoScaleVmProfile(e.__dict__), autoscalevmprofile)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateAutoScaleVmProfile.updateAutoScaleVmProfileCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmprofile = apiclient.updateAutoScaleVmProfile(cmd)
+        return autoscalevmprofile
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteAutoScaleVmProfile.deleteAutoScaleVmProfileCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmprofile = apiclient.deleteAutoScaleVmProfile(cmd)
+        return autoscalevmprofile

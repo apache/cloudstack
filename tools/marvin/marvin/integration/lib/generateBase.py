@@ -27,7 +27,8 @@ grammar = ['create', 'list', 'delete', 'update',
            'start', 'restart', 'reboot', 'stop', 'reconnect',
            'cancel', 'destroy', 'revoke', 'mark', 'reset',
            'copy', 'extract', 'migrate', 'restore', 'suspend',
-           'get', 'query', 'prepare', 'deploy', 'upload', 'lock', 'disassociate']
+           'get', 'query', 'prepare', 'deploy', 'upload', 'lock',
+           'disassociate', 'scale']
 
 LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -136,12 +137,15 @@ def write_entity_classes(entities):
                 else:
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):'%(action))
                 body.append(tabspace*2 + 'cmd = %(module)s.%(command)s()'%{"module": details["apimodule"], "command": details["apicmd"]})
+                body.append(tabspace*2 + 'cmd.id = self.id')
                 for arg in details['args']:
                     body.append(tabspace*2 + 'cmd.%s = %s'%(arg, arg))
-                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.items]')
+                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.iteritems()]')
                 body.append(tabspace*2 + '%s = apiclient.%s(cmd)'%(entity.lower(), details['apimodule']))
                 if action in ['list']:
                     body.append(tabspace*2 + 'return map(lambda e: %s(e.__dict__), %s)'%(entity, entity.lower()))
+                else:
+                    body.append(tabspace*2 + 'return %s'%(entity.lower()))
             body.append('\n')
 
         imports = '\n'.join(imports)
@@ -149,7 +153,7 @@ def write_entity_classes(entities):
         code = imports + '\n\n' + body
 
         entitydict[entity] = code
-        write_entity_factory(entity, actions)
+        #write_entity_factory(entity, actions)
         with open("./base/%s.py"%entity, "w") as writer:
             writer.write(LICENSE)
             writer.write(code)

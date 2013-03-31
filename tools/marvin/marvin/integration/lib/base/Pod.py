@@ -39,20 +39,24 @@ class Pod(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listPods.listPodsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         pod = apiclient.listPods(cmd)
         return map(lambda e: Pod(e.__dict__), pod)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updatePod.updatePodCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         pod = apiclient.updatePod(cmd)
+        return pod
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deletePod.deletePodCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         pod = apiclient.deletePod(cmd)
+        return pod

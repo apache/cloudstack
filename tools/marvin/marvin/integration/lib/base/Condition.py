@@ -38,13 +38,15 @@ class Condition(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listConditions.listConditionsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         condition = apiclient.listConditions(cmd)
         return map(lambda e: Condition(e.__dict__), condition)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteCondition.deleteConditionCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         condition = apiclient.deleteCondition(cmd)
+        return condition

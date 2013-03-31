@@ -26,5 +26,7 @@ class Config(CloudStackEntity.CloudStackEntity):
 
     def ldap(self, apiclient, **kwargs):
         cmd = ldapConfig.ldapConfigCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         config = apiclient.ldapConfig(cmd)
+        return config

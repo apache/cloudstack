@@ -38,13 +38,15 @@ class VMSnapshot(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVMSnapshot.listVMSnapshotCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vmsnapshot = apiclient.listVMSnapshot(cmd)
         return map(lambda e: VMSnapshot(e.__dict__), vmsnapshot)
 
 
     def delete(self, apiclient, vmsnapshotid, **kwargs):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.id = self.id
         cmd.vmsnapshotid = vmsnapshotid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vmsnapshot = apiclient.deleteVMSnapshot(cmd)
+        return vmsnapshot

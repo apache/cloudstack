@@ -28,12 +28,14 @@ class HypervisorCapabilities(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         hypervisorcapabilities = apiclient.listHypervisorCapabilities(cmd)
         return map(lambda e: HypervisorCapabilities(e.__dict__), hypervisorcapabilities)
 
 
     def update(self, apiclient, **kwargs):
         cmd = updateHypervisorCapabilities.updateHypervisorCapabilitiesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         hypervisorcapabilities = apiclient.updateHypervisorCapabilities(cmd)
+        return hypervisorcapabilities

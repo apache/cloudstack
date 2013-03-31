@@ -27,6 +27,6 @@ class DomainChildren(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listDomainChildren.listDomainChildrenCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         domainchildren = apiclient.listDomainChildren(cmd)
         return map(lambda e: DomainChildren(e.__dict__), domainchildren)

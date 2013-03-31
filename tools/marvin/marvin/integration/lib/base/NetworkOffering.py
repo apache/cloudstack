@@ -39,19 +39,23 @@ class NetworkOffering(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listNetworkOfferings.listNetworkOfferingsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkoffering = apiclient.listNetworkOfferings(cmd)
         return map(lambda e: NetworkOffering(e.__dict__), networkoffering)
 
 
     def update(self, apiclient, **kwargs):
         cmd = updateNetworkOffering.updateNetworkOfferingCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkoffering = apiclient.updateNetworkOffering(cmd)
+        return networkoffering
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteNetworkOffering.deleteNetworkOfferingCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkoffering = apiclient.deleteNetworkOffering(cmd)
+        return networkoffering

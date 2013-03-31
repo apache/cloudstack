@@ -38,13 +38,15 @@ class FirewallRule(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listFirewallRules.listFirewallRulesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         firewallrule = apiclient.listFirewallRules(cmd)
         return map(lambda e: FirewallRule(e.__dict__), firewallrule)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteFirewallRule.deleteFirewallRuleCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         firewallrule = apiclient.deleteFirewallRule(cmd)
+        return firewallrule

@@ -28,6 +28,6 @@ class LoadBalancerRuleInstances(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, id, **kwargs):
         cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerruleinstances = apiclient.listLoadBalancerRuleInstances(cmd)
         return map(lambda e: LoadBalancerRuleInstances(e.__dict__), loadbalancerruleinstances)

@@ -24,13 +24,11 @@ class HostPassword(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def update(self, apiclient, username, password, **kwargs):
         cmd = updateHostPassword.updateHostPasswordCmd()
+        cmd.id = self.id
         cmd.password = password
         cmd.username = username
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         hostpassword = apiclient.updateHostPassword(cmd)
+        return hostpassword

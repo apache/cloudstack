@@ -33,10 +33,12 @@ class Volume(CloudStackEntity.CloudStackEntity):
 
     def migrate(self, apiclient, storageid, volumeid, **kwargs):
         cmd = migrateVolume.migrateVolumeCmd()
+        cmd.id = self.id
         cmd.storageid = storageid
         cmd.volumeid = volumeid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.migrateVolume(cmd)
+        return volume
 
 
     @classmethod
@@ -51,46 +53,56 @@ class Volume(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVolumes.listVolumesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.listVolumes(cmd)
         return map(lambda e: Volume(e.__dict__), volume)
 
 
     def upload(self, apiclient, url, zoneid, name, format, **kwargs):
         cmd = uploadVolume.uploadVolumeCmd()
+        cmd.id = self.id
         cmd.format = format
         cmd.name = name
         cmd.url = url
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.uploadVolume(cmd)
+        return volume
 
 
     def attach(self, apiclient, id, virtualmachineid, **kwargs):
         cmd = attachVolume.attachVolumeCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.attachVolume(cmd)
+        return volume
 
 
     def detach(self, apiclient, **kwargs):
         cmd = detachVolume.detachVolumeCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.detachVolume(cmd)
+        return volume
 
 
     def extract(self, apiclient, zoneid, id, mode, **kwargs):
         cmd = extractVolume.extractVolumeCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.mode = mode
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.extractVolume(cmd)
+        return volume
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVolume.deleteVolumeCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.deleteVolume(cmd)
+        return volume

@@ -39,20 +39,24 @@ class PhysicalNetwork(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         physicalnetwork = apiclient.listPhysicalNetworks(cmd)
         return map(lambda e: PhysicalNetwork(e.__dict__), physicalnetwork)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         physicalnetwork = apiclient.updatePhysicalNetwork(cmd)
+        return physicalnetwork
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deletePhysicalNetwork.deletePhysicalNetworkCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         physicalnetwork = apiclient.deletePhysicalNetwork(cmd)
+        return physicalnetwork

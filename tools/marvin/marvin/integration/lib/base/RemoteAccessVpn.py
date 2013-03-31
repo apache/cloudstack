@@ -39,13 +39,15 @@ class RemoteAccessVpn(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, publicipid, **kwargs):
         cmd = listRemoteAccessVpns.listRemoteAccessVpnsCmd()
         cmd.publicipid = publicipid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         remoteaccessvpn = apiclient.listRemoteAccessVpns(cmd)
         return map(lambda e: RemoteAccessVpn(e.__dict__), remoteaccessvpn)
 
 
     def delete(self, apiclient, publicipid, **kwargs):
         cmd = deleteRemoteAccessVpn.deleteRemoteAccessVpnCmd()
+        cmd.id = self.id
         cmd.publicipid = publicipid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         remoteaccessvpn = apiclient.deleteRemoteAccessVpn(cmd)
+        return remoteaccessvpn

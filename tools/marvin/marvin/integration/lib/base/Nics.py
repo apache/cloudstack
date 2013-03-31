@@ -28,6 +28,6 @@ class Nics(CloudStackEntity.CloudStackEntity):
     def list(self, apiclient, virtualmachineid, **kwargs):
         cmd = listNics.listNicsCmd()
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         nics = apiclient.listNics(cmd)
         return map(lambda e: Nics(e.__dict__), nics)

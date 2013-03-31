@@ -27,6 +27,6 @@ class OsCategories(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listOsCategories.listOsCategoriesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         oscategories = apiclient.listOsCategories(cmd)
         return map(lambda e: OsCategories(e.__dict__), oscategories)

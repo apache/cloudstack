@@ -28,13 +28,15 @@ class ResourceLimit(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listResourceLimits.listResourceLimitsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         resourcelimit = apiclient.listResourceLimits(cmd)
         return map(lambda e: ResourceLimit(e.__dict__), resourcelimit)
 
 
     def update(self, apiclient, resourcetype, **kwargs):
         cmd = updateResourceLimit.updateResourceLimitCmd()
+        cmd.id = self.id
         cmd.resourcetype = resourcetype
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         resourcelimit = apiclient.updateResourceLimit(cmd)
+        return resourcelimit

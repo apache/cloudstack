@@ -25,18 +25,18 @@ class IpAddress(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def disassociate(self, apiclient, id, **kwargs):
         cmd = disassociateIpAddress.disassociateIpAddressCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipaddress = apiclient.disassociateIpAddress(cmd)
+        return ipaddress
 
 
     def associate(self, apiclient, **kwargs):
         cmd = associateIpAddress.associateIpAddressCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipaddress = apiclient.associateIpAddress(cmd)
+        return ipaddress

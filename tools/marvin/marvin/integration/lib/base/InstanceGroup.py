@@ -39,20 +39,24 @@ class InstanceGroup(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listInstanceGroups.listInstanceGroupsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         instancegroup = apiclient.listInstanceGroups(cmd)
         return map(lambda e: InstanceGroup(e.__dict__), instancegroup)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateInstanceGroup.updateInstanceGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         instancegroup = apiclient.updateInstanceGroup(cmd)
+        return instancegroup
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteInstanceGroup.deleteInstanceGroupCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         instancegroup = apiclient.deleteInstanceGroup(cmd)
+        return instancegroup

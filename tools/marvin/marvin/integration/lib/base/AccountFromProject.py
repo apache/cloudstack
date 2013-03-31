@@ -24,13 +24,11 @@ class AccountFromProject(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def delete(self, apiclient, projectid, account, **kwargs):
         cmd = deleteAccountFromProject.deleteAccountFromProjectCmd()
+        cmd.id = self.id
         cmd.account = account
         cmd.projectid = projectid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         accountfromproject = apiclient.deleteAccountFromProject(cmd)
+        return accountfromproject

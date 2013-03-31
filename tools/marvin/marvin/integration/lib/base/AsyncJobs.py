@@ -27,6 +27,6 @@ class AsyncJobs(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAsyncJobs.listAsyncJobsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         asyncjobs = apiclient.listAsyncJobs(cmd)
         return map(lambda e: AsyncJobs(e.__dict__), asyncjobs)

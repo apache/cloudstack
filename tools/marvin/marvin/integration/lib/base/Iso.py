@@ -33,63 +33,77 @@ class Iso(CloudStackEntity.CloudStackEntity):
 
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
         cmd = copyIso.copyIsoCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.destzoneid = destzoneid
         cmd.sourcezoneid = sourcezoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.copyIso(cmd)
+        return iso
 
 
     def register(self, apiclient, url, displaytext, name, zoneid, **kwargs):
         cmd = registerIso.registerIsoCmd()
+        cmd.id = self.id
         cmd.displaytext = displaytext
         cmd.name = name
         cmd.url = url
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.registerIso(cmd)
+        return iso
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listIsos.listIsosCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.listIsos(cmd)
         return map(lambda e: Iso(e.__dict__), iso)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateIso.updateIsoCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.updateIso(cmd)
+        return iso
 
 
     def attach(self, apiclient, id, virtualmachineid, **kwargs):
         cmd = attachIso.attachIsoCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.attachIso(cmd)
+        return iso
 
 
     def detach(self, apiclient, virtualmachineid, **kwargs):
         cmd = detachIso.detachIsoCmd()
+        cmd.id = self.id
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.detachIso(cmd)
+        return iso
 
 
     def extract(self, apiclient, id, mode, **kwargs):
         cmd = extractIso.extractIsoCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.mode = mode
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.extractIso(cmd)
+        return iso
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteIso.deleteIsoCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.deleteIso(cmd)
+        return iso

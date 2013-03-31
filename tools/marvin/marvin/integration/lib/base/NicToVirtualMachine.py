@@ -26,7 +26,9 @@ class NicToVirtualMachine(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, networkid, virtualmachineid, **kwargs):
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
+        cmd.id = self.id
         cmd.networkid = networkid
         cmd.virtualmachineid = virtualmachineid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         nictovirtualmachine = apiclient.addNicToVirtualMachine(cmd)
+        return nictovirtualmachine

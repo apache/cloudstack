@@ -40,25 +40,31 @@ class VPC(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVPCs.listVPCsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.listVPCs(cmd)
         return map(lambda e: VPC(e.__dict__), vpc)
 
 
     def update(self, apiclient, **kwargs):
         cmd = updateVPC.updateVPCCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.updateVPC(cmd)
+        return vpc
 
 
     def restart(self, apiclient, **kwargs):
         cmd = restartVPC.restartVPCCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.restartVPC(cmd)
+        return vpc
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteVPC.deleteVPCCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.deleteVPC(cmd)
+        return vpc

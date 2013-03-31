@@ -28,22 +28,26 @@ class VpnUser(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, username, password, **kwargs):
         cmd = addVpnUser.addVpnUserCmd()
+        cmd.id = self.id
         cmd.password = password
         cmd.username = username
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnuser = apiclient.addVpnUser(cmd)
+        return vpnuser
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listVpnUsers.listVpnUsersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnuser = apiclient.listVpnUsers(cmd)
         return map(lambda e: VpnUser(e.__dict__), vpnuser)
 
 
     def remove(self, apiclient, username, **kwargs):
         cmd = removeVpnUser.removeVpnUserCmd()
+        cmd.id = self.id
         cmd.username = username
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpnuser = apiclient.removeVpnUser(cmd)
+        return vpnuser

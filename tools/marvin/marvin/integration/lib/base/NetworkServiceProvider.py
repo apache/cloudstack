@@ -29,29 +29,35 @@ class NetworkServiceProvider(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, physicalnetworkid, name, **kwargs):
         cmd = addNetworkServiceProvider.addNetworkServiceProviderCmd()
+        cmd.id = self.id
         cmd.name = name
         cmd.physicalnetworkid = physicalnetworkid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.addNetworkServiceProvider(cmd)
+        return networkserviceprovider
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.listNetworkServiceProviders(cmd)
         return map(lambda e: NetworkServiceProvider(e.__dict__), networkserviceprovider)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.updateNetworkServiceProvider(cmd)
+        return networkserviceprovider
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteNetworkServiceProvider.deleteNetworkServiceProviderCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.deleteNetworkServiceProvider(cmd)
+        return networkserviceprovider

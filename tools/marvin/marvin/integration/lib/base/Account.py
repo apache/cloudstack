@@ -32,16 +32,20 @@ class Account(CloudStackEntity.CloudStackEntity):
 
     def enable(self, apiclient, **kwargs):
         cmd = enableAccount.enableAccountCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.enableAccount(cmd)
+        return account
 
 
     def lock(self, apiclient, account, domainid, **kwargs):
         cmd = lockAccount.lockAccountCmd()
+        cmd.id = self.id
         cmd.account = account
         cmd.domainid = domainid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.lockAccount(cmd)
+        return account
 
 
     @classmethod
@@ -56,27 +60,33 @@ class Account(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAccounts.listAccountsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.listAccounts(cmd)
         return map(lambda e: Account(e.__dict__), account)
 
 
     def update(self, apiclient, newname, **kwargs):
         cmd = updateAccount.updateAccountCmd()
+        cmd.id = self.id
         cmd.newname = newname
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.updateAccount(cmd)
+        return account
 
 
     def disable(self, apiclient, lock, **kwargs):
         cmd = disableAccount.disableAccountCmd()
+        cmd.id = self.id
         cmd.lock = lock
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.disableAccount(cmd)
+        return account
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteAccount.deleteAccountCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.deleteAccount(cmd)
+        return account

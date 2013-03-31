@@ -28,23 +28,27 @@ class TrafficMonitor(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, url, zoneid, **kwargs):
         cmd = addTrafficMonitor.addTrafficMonitorCmd()
+        cmd.id = self.id
         cmd.url = url
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         trafficmonitor = apiclient.addTrafficMonitor(cmd)
+        return trafficmonitor
 
 
     @classmethod
     def list(self, apiclient, zoneid, **kwargs):
         cmd = listTrafficMonitors.listTrafficMonitorsCmd()
         cmd.zoneid = zoneid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         trafficmonitor = apiclient.listTrafficMonitors(cmd)
         return map(lambda e: TrafficMonitor(e.__dict__), trafficmonitor)
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteTrafficMonitor.deleteTrafficMonitorCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         trafficmonitor = apiclient.deleteTrafficMonitor(cmd)
+        return trafficmonitor

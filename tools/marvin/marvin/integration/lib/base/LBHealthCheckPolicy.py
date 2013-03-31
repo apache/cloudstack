@@ -15,10 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import createLBStickinessPolicy
-from marvin.cloudstackAPI import deleteLBStickinessPolicy
+from marvin.cloudstackAPI import createLBHealthCheckPolicy
+from marvin.cloudstackAPI import deleteLBHealthCheckPolicy
 
-class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
+class LBHealthCheckPolicy(CloudStackEntity.CloudStackEntity):
 
 
     def __init__(self, items):
@@ -26,18 +26,18 @@ class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
-        cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBStickinessPolicyFactory.__dict__.iteritems()]
+    def create(cls, apiclient, LBHealthCheckPolicyFactory, **kwargs):
+        cmd = createLBHealthCheckPolicy.createLBHealthCheckPolicyCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBHealthCheckPolicyFactory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.createLBStickinessPolicy(cmd)
-        return LBStickinessPolicy(lbstickinesspolicy.__dict__)
+        lbhealthcheckpolicy = apiclient.createLBHealthCheckPolicy(cmd)
+        return LBHealthCheckPolicy(lbhealthcheckpolicy.__dict__)
 
 
     def delete(self, apiclient, id, **kwargs):
-        cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
+        cmd = deleteLBHealthCheckPolicy.deleteLBHealthCheckPolicyCmd()
         cmd.id = self.id
         cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)
-        return lbstickinesspolicy
+        lbhealthcheckpolicy = apiclient.deleteLBHealthCheckPolicy(cmd)
+        return lbhealthcheckpolicy

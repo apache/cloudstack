@@ -28,22 +28,26 @@ class BigSwitchVnsDevice(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, physicalnetworkid, hostname, **kwargs):
         cmd = addBigSwitchVnsDevice.addBigSwitchVnsDeviceCmd()
+        cmd.id = self.id
         cmd.hostname = hostname
         cmd.physicalnetworkid = physicalnetworkid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         bigswitchvnsdevice = apiclient.addBigSwitchVnsDevice(cmd)
+        return bigswitchvnsdevice
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listBigSwitchVnsDevices.listBigSwitchVnsDevicesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         bigswitchvnsdevice = apiclient.listBigSwitchVnsDevices(cmd)
         return map(lambda e: BigSwitchVnsDevice(e.__dict__), bigswitchvnsdevice)
 
 
     def delete(self, apiclient, vnsdeviceid, **kwargs):
         cmd = deleteBigSwitchVnsDevice.deleteBigSwitchVnsDeviceCmd()
+        cmd.id = self.id
         cmd.vnsdeviceid = vnsdeviceid
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         bigswitchvnsdevice = apiclient.deleteBigSwitchVnsDevice(cmd)
+        return bigswitchvnsdevice

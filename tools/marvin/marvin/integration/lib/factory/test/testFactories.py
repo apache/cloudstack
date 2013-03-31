@@ -16,12 +16,16 @@
 # under the License.
 
 import unittest
+from marvin.cloudstackTestClient import cloudstackTestClient
+
 from marvin.integration.lib.factory.AccountFactory import *
 from marvin.integration.lib.base.Account import *
 
 from marvin.integration.lib.factory.ServiceOfferingFactory import *
 from marvin.integration.lib.base.ServiceOffering import *
-from marvin.cloudstackTestClient import cloudstackTestClient
+
+from marvin.integration.lib.factory.NetworkOfferingFactory import *
+from marvin.integration.lib.base.NetworkOffering import *
 
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
@@ -45,6 +49,14 @@ class AccountFactoryTest(unittest.TestCase):
         self.assertTrue(accnt is not None, msg="no account created by factory")
         self.assertEqual(accnt.name, af.username, msg="account names are not same")
 
+    @unittest.skip("Job Queue gets stuck on this")
+    def test_disableAccountPostFactoryGeneration(self):
+        af = DomainAdminFactory()
+        domadmin = Account.create(apiclient=self.apiClient, AccountFactory=af)
+        self.assertTrue(domadmin is not None, msg="no account was created")
+        self.assertEqual(domadmin.name, af.username, msg = "account names don't match")
+        domadmin.disable(self.apiClient, lock=True)
+
     def tearDown(self):
         pass
 
@@ -62,3 +74,16 @@ class ServiceOfferingFactoryTest(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+
+class NetworkOfferingFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+
+    def test_defaultSourceNatOfferingFactory(self):
+        snatOfferingFactory = DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory()
+        snatOffering = NetworkOffering.create(apiclient=self.apiClient, NetworkOfferingFactory=snatOfferingFactory)
+        self.assertTrue(snatOffering is not None, msg = "no network offering was created")
+        self.assertEqual(snatOffering.name, snatOfferingFactory.name, msg="error in network offering factory creation")
+
+        snatOffering.update(self.apiClient, state='Enabled')

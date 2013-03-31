@@ -26,5 +26,7 @@ class Remove(CloudStackEntity.CloudStackEntity):
 
     def ldap(self, apiclient, **kwargs):
         cmd = ldapRemove.ldapRemoveCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         remove = apiclient.ldapRemove(cmd)
+        return remove

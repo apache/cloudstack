@@ -25,18 +25,18 @@ class ApiLimit(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-
     def reset(self, apiclient, **kwargs):
         cmd = resetApiLimit.resetApiLimitCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         apilimit = apiclient.resetApiLimit(cmd)
+        return apilimit
 
 
     def get(self, apiclient, **kwargs):
         cmd = getApiLimit.getApiLimitCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         apilimit = apiclient.getApiLimit(cmd)
+        return apilimit
 

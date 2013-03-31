@@ -26,7 +26,9 @@ class SSHKeyForVirtualMachine(CloudStackEntity.CloudStackEntity):
 
     def reset(self, apiclient, keypair, id, **kwargs):
         cmd = resetSSHKeyForVirtualMachine.resetSSHKeyForVirtualMachineCmd()
+        cmd.id = self.id
         cmd.id = id
         cmd.keypair = keypair
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         sshkeyforvirtualmachine = apiclient.resetSSHKeyForVirtualMachine(cmd)
+        return sshkeyforvirtualmachine

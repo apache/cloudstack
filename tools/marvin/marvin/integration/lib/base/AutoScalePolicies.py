@@ -27,6 +27,6 @@ class AutoScalePolicies(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listAutoScalePolicies.listAutoScalePoliciesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalepolicies = apiclient.listAutoScalePolicies(cmd)
         return map(lambda e: AutoScalePolicies(e.__dict__), autoscalepolicies)

@@ -31,9 +31,11 @@ class Project(CloudStackEntity.CloudStackEntity):
 
     def suspend(self, apiclient, id, **kwargs):
         cmd = suspendProject.suspendProjectCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.suspendProject(cmd)
+        return project
 
 
     @classmethod
@@ -48,27 +50,33 @@ class Project(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listProjects.listProjectsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.listProjects(cmd)
         return map(lambda e: Project(e.__dict__), project)
 
 
     def update(self, apiclient, id, **kwargs):
         cmd = updateProject.updateProjectCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.updateProject(cmd)
+        return project
 
 
     def activate(self, apiclient, id, **kwargs):
         cmd = activateProject.activateProjectCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.activateProject(cmd)
+        return project
 
 
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteProject.deleteProjectCmd()
+        cmd.id = self.id
         cmd.id = id
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.deleteProject(cmd)
+        return project

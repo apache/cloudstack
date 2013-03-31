@@ -27,16 +27,18 @@ class S3(CloudStackEntity.CloudStackEntity):
 
     def add(self, apiclient, secretkey, accesskey, bucket, **kwargs):
         cmd = addS3.addS3Cmd()
+        cmd.id = self.id
         cmd.accesskey = accesskey
         cmd.bucket = bucket
         cmd.secretkey = secretkey
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         s3 = apiclient.addS3(cmd)
+        return s3
 
 
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listS3s.listS3sCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         s3 = apiclient.listS3s(cmd)
         return map(lambda e: S3(e.__dict__), s3)

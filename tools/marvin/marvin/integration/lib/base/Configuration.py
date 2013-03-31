@@ -28,13 +28,15 @@ class Configuration(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listConfigurations.listConfigurationsCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         configuration = apiclient.listConfigurations(cmd)
         return map(lambda e: Configuration(e.__dict__), configuration)
 
 
     def update(self, apiclient, name, **kwargs):
         cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.id = self.id
         cmd.name = name
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         configuration = apiclient.updateConfiguration(cmd)
+        return configuration

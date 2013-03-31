@@ -27,6 +27,6 @@ class OsTypes(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listOsTypes.listOsTypesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ostypes = apiclient.listOsTypes(cmd)
         return map(lambda e: OsTypes(e.__dict__), ostypes)

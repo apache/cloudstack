@@ -27,6 +27,6 @@ class UsageTypes(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listUsageTypes.listUsageTypesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         usagetypes = apiclient.listUsageTypes(cmd)
         return map(lambda e: UsageTypes(e.__dict__), usagetypes)

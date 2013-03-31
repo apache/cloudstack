@@ -27,6 +27,6 @@ class SupportedNetworkServices(CloudStackEntity.CloudStackEntity):
     @classmethod
     def list(self, apiclient, **kwargs):
         cmd = listSupportedNetworkServices.listSupportedNetworkServicesCmd()
-        [setattr(cmd, key, value) for key,value in kwargs.items]
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         supportednetworkservices = apiclient.listSupportedNetworkServices(cmd)
         return map(lambda e: SupportedNetworkServices(e.__dict__), supportednetworkservices)
