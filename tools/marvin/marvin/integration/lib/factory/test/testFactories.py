@@ -19,13 +19,13 @@ import unittest
 from marvin.cloudstackTestClient import cloudstackTestClient
 
 from marvin.integration.lib.factory.AccountFactory import *
-from marvin.integration.lib.base.Account import *
+from marvin.integration.lib.base.Account import Account
 
 from marvin.integration.lib.factory.ServiceOfferingFactory import *
-from marvin.integration.lib.base.ServiceOffering import *
+from marvin.integration.lib.base.ServiceOffering import ServiceOffering
 
 from marvin.integration.lib.factory.NetworkOfferingFactory import *
-from marvin.integration.lib.base.NetworkOffering import *
+from marvin.integration.lib.base.NetworkOffering import NetworkOffering
 
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
@@ -86,4 +86,10 @@ class NetworkOfferingFactoryTest(unittest.TestCase):
         self.assertTrue(snatOffering is not None, msg = "no network offering was created")
         self.assertEqual(snatOffering.name, snatOfferingFactory.name, msg="error in network offering factory creation")
 
-        snatOffering.update(self.apiClient, state='Enabled')
+    def test_defaultSGOfferingEnable(self):
+        sgOfferingFactory = DefaultSharedNetworkOfferingWithSGServiceFactory()
+        sgOffering = NetworkOffering.create(apiclient=self.apiClient, NetworkOfferingFactory=sgOfferingFactory)
+        sgOffering.update(self.apiClient, state='Enabled')
+
+    def tearDown(self):
+        pass

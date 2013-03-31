@@ -60,7 +60,7 @@ class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
     displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
     name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
     availability = "Optional"
-    supportedservices = "SecurityGroup, Dns, Dhcp, UserData"
+    supportedservices = "SecurityGroup,Dns,Dhcp,UserData"
     guestiptype = "Shared"
     traffictype = "GUEST"
 
