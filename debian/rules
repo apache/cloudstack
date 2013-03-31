@@ -38,12 +38,12 @@ build-indep-stamp: configure
         -Dcs.replace.properties=replace.properties.tmp
 	touch $@
 
-clean: 
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp configure-stamp
 	rm -f replace.properties.tmp
-	dh_clean 
+	dh_clean
 
 install:
 	dh_testdir
@@ -75,6 +75,8 @@ install:
 	# cloudstack-management
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
@@ -89,13 +91,17 @@ install:
 	cp -r client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+
+	# nast hack for a couple of configuration files
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
+	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
+
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/Catalina/localhost/client
 	mkdir -p ${DESTDIR}/usr/share/tomcat6/lib
-	mkdir -p ${DESTDIR}/usr/share/java
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloud-update-xenserver-licenses
-	install -D server/target/cloud-server-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/java/$(PACKAGE)-server.jar
 	ln -s /usr/share/tomcat6/bin $(DESTDIR)/usr/share/$(PACKAGE)-management/bin
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
 	ln -s ../../../usr/share/tomcat6/lib $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
@@ -108,6 +114,7 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
@@ -119,6 +126,8 @@ install:
 	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
 	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
+	install -D agent/target/dependencies/jasypt-1.9.0.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/lib/python2.7/dist-packages

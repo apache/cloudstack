@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -5,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,18 +17,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloudstack-common/vms/systemvm.iso
-/usr/share/cloudstack-common/scripts/installer/*
-/usr/share/cloudstack-common/scripts/network/*
-/usr/share/cloudstack-common/scripts/storage/*
-/usr/share/cloudstack-common/scripts/util/*
-/usr/share/cloudstack-common/scripts/vm/network/*
-/usr/share/cloudstack-common/scripts/vm/systemvm/*
-/usr/share/cloudstack-common/scripts/vm/pingtest.sh
-/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/*
-/usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh
-/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/*
-/usr/share/cloudstack-common/lib/*
-/usr/bin/cloud-set-guest-password
-/usr/bin/cloud-set-guest-sshkey
-/usr/lib/python2.?/*-packages/*
+set -e
+
+case "$1" in
+    configure)
+        # We copy the db.properties file from the management server to the usage server
+        # This used to be a symlink, but we don't do that anymore
+        if [ -f "/etc/cloud/management/db.properties" ]; then
+            cp -a /etc/cloud/management/db.properties /etc/cloudstack/usage/db.properties
+        fi
+
+        # We also retain the log4j configuration
+        if [ -f "/etc/cloud/usage/log4j-cloud_usage.xml" ]; then
+            cp -a /etc/cloud/usage/log4j-cloud_usage.xml /etc/cloudstack/usage/log4j-cloud_usage.xml
+        fi
+        ;;
+esac
+
+exit 0
