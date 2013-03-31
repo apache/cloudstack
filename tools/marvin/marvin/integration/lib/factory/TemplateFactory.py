@@ -16,10 +16,17 @@
 # under the License.
 import factory
 from marvin.integration.lib.base import Template
-class TemplateFactory(factory.Factory):
+from marvin.integration.lib.factory.CloudStackBaseFactory import CloudStackBaseFactory
 
-    FACTORY_FOR = Template
+class TemplateFactory(CloudStackBaseFactory):
+
+    FACTORY_FOR = Template.Template
 
     displaytext = None
     name = None
     ostypeid = None
+
+class DefaultBuiltInTemplateFactory(TemplateFactory):
+    ostype = 'CentOS 5.3 (64-bit)'
+    displaytext = 'CentOS 5.3 (64-bit)'
+    name = 'CentOS 5.3 (64-bit)'

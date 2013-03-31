@@ -17,6 +17,7 @@
 
 import unittest
 from marvin.cloudstackTestClient import cloudstackTestClient
+from marvin.integration.lib.common import get_template
 
 from marvin.integration.lib.factory.AccountFactory import *
 from marvin.integration.lib.base.Account import Account
@@ -26,6 +27,13 @@ from marvin.integration.lib.base.ServiceOffering import ServiceOffering
 
 from marvin.integration.lib.factory.NetworkOfferingFactory import *
 from marvin.integration.lib.base.NetworkOffering import NetworkOffering
+
+from marvin.integration.lib.base.Zone import Zone
+
+from marvin.integration.lib.factory.TemplateFactory import *
+
+from marvin.integration.lib.factory.VirtualMachineFactory import *
+from marvin.integration.lib.base.VirtualMachine import VirtualMachine
 
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
@@ -93,3 +101,19 @@ class NetworkOfferingFactoryTest(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+class VirtualMachineFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+
+    def tearDown(self):
+        pass
+
+    def test_virtualMachineDeploy(self):
+        sf = ServiceOfferingFactory()
+        tf = DefaultBuiltInTemplateFactory()
+        zones = Zone.list(apiclient=self.apiClient)
+        template = get_template(apiclient=self.apiClient, zoneid = zones[0].id, ostype=tf.ostype)
+        vmf = VirtualMachineFactory(serviceofferingid = sf.id, templateid = template.id, zoneid = zones[0].id)
+
+        vm = VirtualMachine.create(apiclient=self.apiClient, VirtualMachineFactory=vmf)

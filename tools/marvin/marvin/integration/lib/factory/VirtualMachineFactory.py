@@ -14,11 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 import factory
 from marvin.integration.lib.base import VirtualMachine
-class VirtualMachineFactory(factory.Factory):
+from marvin.integration.lib.factory.CloudStackBaseFactory import CloudStackBaseFactory
 
-    FACTORY_FOR = VirtualMachine
+class VirtualMachineFactory(CloudStackBaseFactory):
+
+    FACTORY_FOR = VirtualMachine.VirtualMachine
 
     serviceofferingid = None
     templateid = None

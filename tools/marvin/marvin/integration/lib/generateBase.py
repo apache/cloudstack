@@ -137,7 +137,8 @@ def write_entity_classes(entities):
                 else:
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):'%(action))
                 body.append(tabspace*2 + 'cmd = %(module)s.%(command)s()'%{"module": details["apimodule"], "command": details["apicmd"]})
-                body.append(tabspace*2 + 'cmd.id = self.id')
+                if action not in ['create', 'list', 'deploy']:
+                    body.append(tabspace*2 + 'cmd.id = self.id')
                 for arg in details['args']:
                     body.append(tabspace*2 + 'cmd.%s = %s'%(arg, arg))
                 body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.iteritems()]')
