@@ -100,10 +100,8 @@ install:
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/Catalina/localhost/client
 	mkdir -p ${DESTDIR}/usr/share/tomcat6/lib
-	mkdir -p ${DESTDIR}/usr/share/java
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloud-update-xenserver-licenses
-	install -D server/target/cloud-server-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/java/$(PACKAGE)-server.jar
 	ln -s /usr/share/tomcat6/bin $(DESTDIR)/usr/share/$(PACKAGE)-management/bin
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
 	ln -s ../../../usr/share/tomcat6/lib $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
