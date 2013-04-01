@@ -79,6 +79,16 @@ CREATE TABLE `cloud`.`image_data_store` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`image_data_store_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_image_data_store_details__store_id` FOREIGN KEY `fk_image_data_store__store_id`(`store_id`) REFERENCES `image_data_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_image_data_store__name__value`(`name`(128), `value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE  `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
