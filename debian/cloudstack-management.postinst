@@ -20,7 +20,7 @@ if [ "$1" = configure ]; then
     if ! getent passwd cloud >/dev/null; then
         adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
     else
-        usermod -m -d /var/lib/cloudstack/management cloud
+        usermod -m -d /var/lib/cloudstack/management cloud || true
     fi
 
     for i in /var/cache/cloudstack/management \
@@ -35,6 +35,20 @@ if [ "$1" = configure ]; then
         chmod 0770 $i
         chgrp cloud $i
     done
+
+    OLDCONFDIR="/etc/cloud/management"
+    NEWCONFDIR="/etc/cloudstack/management"
+    CONFFILES="db.properties db-enc.properties cloud.keystore key"
+
+    # Copy old configuration so the admin doesn't have to do that
+    # Only do so when we are installing for the first time
+    if [ -z "$2" ]; then
+        for FILE in $CONFFILES; do
+            if [ -f "$OLDCONFDIR/${FILE}" ]; then
+                cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
+            fi
+        done
+    fi
 
     chmod 0640 /etc/cloudstack/management/db.properties
     chgrp cloud /etc/cloudstack/management/db.properties

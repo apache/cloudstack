@@ -17,12 +17,14 @@
 package com.cloud.usage;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.util.Log4jConfigurer;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
@@ -75,12 +77,21 @@ public class UsageServer {
     static private void initLog4j() {
     	File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
     	if (file != null) {
-        s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+	        System.out.println("log4j configuration found at " + file.getAbsolutePath());
+	        try {
+				Log4jConfigurer.initLogging(file.getAbsolutePath());
+			} catch (FileNotFoundException e) {
+			}
+	        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+	        
 	    } else {
 	        file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
 	        if (file != null) {
-	            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+		        System.out.println("log4j configuration found at " + file.getAbsolutePath());
+		        try {
+					Log4jConfigurer.initLogging(file.getAbsolutePath());
+				} catch (FileNotFoundException e) {
+				}
 	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
 	        }
 	    }
