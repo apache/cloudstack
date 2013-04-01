@@ -79,9 +79,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         CREATE_IP_POOL("create-ip-pool.xml", "policy-mgr"),
 
         CREATE_PF_RULE("create-pf-rule.xml", "policy-mgr"),
-        CREATE_ACL_RULE_FOR_PF("create-ingress-acl-rule-for-pf.xml", "policy-mgr"),
+        CREATE_ACL_RULE_FOR_PF("create-acl-rule-for-pf.xml", "policy-mgr"),
         CREATE_DNAT_RULE("create-dnat-rule.xml", "policy-mgr"),
-        CREATE_ACL_RULE_FOR_DNAT("create-ingress-acl-rule-for-dnat.xml", "policy-mgr"),
+        CREATE_ACL_RULE_FOR_DNAT("create-acl-rule-for-dnat.xml", "policy-mgr"),
         CREATE_SOURCE_NAT_RULE("create-source-nat-rule.xml", "policy-mgr"),
 
         CREATE_ACL_POLICY_SET("create-acl-policy-set.xml", "policy-mgr"),
