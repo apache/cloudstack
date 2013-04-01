@@ -18,15 +18,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<section id="topology-req">
-  <title>Topology Requirements</title>
-  <xi:include href="security-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="runtime-internal-comm-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="storage-nw-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="external-fw-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="adv-zone-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="xenserver-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="vmware-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="kvm-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="lxc-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+<section id="lxc-topology-req">
+  <title>LXC Topology Requirements</title>
+  <para>The Management Servers communicate with LXC hosts on port 22 (ssh).</para>
 </section>
