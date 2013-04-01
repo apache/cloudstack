@@ -23,10 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.UUID;
 
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -134,18 +135,18 @@ public class KVMStoragePoolManager {
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
             return adaptor.createDiskFromTemplate(template, name,
-                    KVMPhysicalDisk.PhysicalDiskFormat.RAW, template.getSize(), destPool);
+                    PhysicalDiskFormat.RAW, template.getSize(), destPool);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
             return adaptor.createDiskFromTemplate(template, name,
-                                       KVMPhysicalDisk.PhysicalDiskFormat.RAW, template.getSize(),
+                                       PhysicalDiskFormat.RAW, template.getSize(),
                                        destPool);
-        } else if (template.getFormat() == KVMPhysicalDisk.PhysicalDiskFormat.DIR) {
+        } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
             return adaptor.createDiskFromTemplate(template, name,
-                    KVMPhysicalDisk.PhysicalDiskFormat.DIR,
+                    PhysicalDiskFormat.DIR,
                     template.getSize(), destPool);
         } else {
             return adaptor.createDiskFromTemplate(template, name,
-                    KVMPhysicalDisk.PhysicalDiskFormat.QCOW2,
+                    PhysicalDiskFormat.QCOW2,
             template.getSize(), destPool);
         }
     }

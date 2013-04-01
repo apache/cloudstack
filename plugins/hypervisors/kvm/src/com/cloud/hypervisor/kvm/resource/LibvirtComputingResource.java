@@ -57,6 +57,10 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -193,7 +197,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -1418,12 +1421,12 @@ ServerResource {
         StoragePoolType poolType = pool.getType();
         PhysicalDiskFormat volFormat = vol.getFormat();
          
-        if(pool.getType() == StoragePoolType.CLVM && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.RAW) {
+        if(pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                   || poolType == StoragePoolType.SharedMountPoint
                   || poolType == StoragePoolType.Filesystem)
-                  && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.QCOW2 ) {
+                  && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
         return null;
@@ -2230,14 +2233,25 @@ ServerResource {
                 }
             } else {
                 s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + cmd.getUniqueName());
-                Script.runSimpleBashScript("qemu-img convert"
-                        + " -f raw -O qcow2 "
-                        + KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(),
+
+                QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(),
                                 primary.getSourcePort(),
                                 primary.getAuthUserName(),
                                 primary.getAuthSecret(),
-                                disk.getPath())
-                                + " " + tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
+                                disk.getPath()));
+                srcFile.setFormat(PhysicalDiskFormat.RAW);
+
+                QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
+                destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+                QemuImg q = new QemuImg();
+                try {
+                    q.convert(srcFile, destFile);
+                } catch (QemuImgException e) {
+                    s_logger.error("Failed to create new template while converting "
+                                    + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                }
+
                 File templateProp = new File(tmpltPath + "/template.properties");
                 if (!templateProp.exists()) {
                     templateProp.createNewFile();

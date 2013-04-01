@@ -460,20 +460,7 @@ public class Script implements Callable<String> {
     }
 
     public static String runSimpleBashScript(String command) {
-
-        Script s = new Script("/bin/bash");
-        s.add("-c");
-        s.add(command);
-
-        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        if (s.execute(parser) != null)
-            return null;
-
-        String result = parser.getLine();
-        if (result == null || result.trim().isEmpty())
-            return null;
-        else
-            return result.trim();
+        return Script.runSimpleBashScript(command, 0);
     }
     
     public static String runSimpleBashScript(String command, int timeout) {
@@ -493,10 +480,4 @@ public class Script implements Callable<String> {
             return result.trim();
     }
 
-    public static void main(String[] args) {
-        String path = findScript(".", "try.sh");
-        Script script = new Script(path, 5000, s_logger);
-        script.execute();
-        System.exit(1);
-    }
 }
