@@ -76,7 +76,44 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
+        updateCluster_details(conn);
     }
+
+    //update the cluster_details table with default overcommit ratios.
+    private void updateCluster_details(Connection conn) {
+        PreparedStatement pstmt = null;
+        PreparedStatement pstmt1 = null;
+        PreparedStatement pstmt2 =null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`cluster`");
+            pstmt1=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', '1')");
+            pstmt2=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', '1')");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                //update cluster_details table with the default overcommit ratios.
+                pstmt1.setLong(1,id);
+                pstmt1.execute();
+                pstmt2.setLong(1,id);
+                pstmt2.execute();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update cluster_details with default overcommit ratios.", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
 
 	@Override
 	public File[] getCleanupScripts() {
