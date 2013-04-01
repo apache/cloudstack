@@ -499,6 +499,10 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
+  <bean id="LxcServerDiscoverer" class="com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer">
+    <property name="name" value="Lxc Discover"/>
+  </bean>
+
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
     <property name="name" value="SCVMMServer"/>
   </bean>
@@ -566,6 +570,10 @@
   
   <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
     <property name="name" value="KVMGuru"/>
+  </bean>
+
+  <bean id="LXCGuru" class="com.cloud.hypervisor.LXCGuru">
+    <property name="name" value="LXCGuru"/>
   </bean>
 
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">

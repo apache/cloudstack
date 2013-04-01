@@ -114,28 +114,34 @@
       }
     });
 
-		if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
-		  trafficType.xennetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
-		  trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
-		  trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
-	        if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
-                   trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];	
+    if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
+      trafficType.xennetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
+      trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
+      trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
+      trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.lxcnetworklabel == null || trafficType.lxcnetworklabel == 0)
+      trafficType.lxcnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+
     return trafficType;
   };
 
   var updateTrafficLabels = function(trafficType, labels, complete) {
     var array1 = [];
-		if(labels.xennetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&xennetworklabel=" + labels.xennetworklabel);
-		if(labels.kvmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
-		if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-	        if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
-                  array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel); 		
-		$.ajax({
+    if(labels.xennetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&xennetworklabel=" + labels.xennetworklabel);
+    if(labels.kvmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
+    if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
+    if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
+    if(labels.lxcnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
+
+    $.ajax({
       url: createURL('updateTrafficType' + array1.join("")),
       data: {
         id: trafficType.id       
@@ -463,7 +469,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label',isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label',isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label',isEditable: true }
                   }
                 ],
 
@@ -483,6 +490,7 @@
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                       selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -636,7 +644,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -795,7 +804,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true } 
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {
@@ -811,6 +821,7 @@
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                       selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedManagementNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
                       args.response.success({ data: selectedManagementNetworkObj });
                     }
                   });
@@ -928,7 +939,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) { //physical network + Guest traffic type       
@@ -964,6 +976,7 @@
 											selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
 											selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
                                                                                         selectedPhysicalNetworkObj["ovmnetworklabel"] = trafficType.ovmnetworklabel;
+                                                                                        selectedPhysicalNetworkObj["lxcnetworklabel"] = trafficType.lxcnetworklabel;
 
 											args.response.success({
 												actionFilter: function() {
@@ -9489,6 +9502,13 @@
                         var items = [];
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "ocfs2", description: "ocfs2"});
+                        args.response.success({data: items});
+                      }
+                      else if(selectedClusterObj.hypervisortype == "LXC") {
+                        var items = [];
+                        items.push({id: "nfs", description: "nfs"});
+                        items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+                        items.push({id: "rbd", description: "RBD"});
                         args.response.success({data: items});
                       }
                       else {

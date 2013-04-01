@@ -390,7 +390,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             disk.setSize(vol.getInfo().allocation);
             disk.setVirtualSize(vol.getInfo().capacity);
             if (voldef.getFormat() == null) {
-                disk.setFormat(pool.getDefaultFormat());
+                File diskDir = new File(disk.getPath());
+                if (diskDir.exists() && diskDir.isDirectory()) {
+                    disk.setFormat(PhysicalDiskFormat.DIR);
+                } else if (volumeUuid.endsWith("tar") || volumeUuid.endsWith(("TAR"))) {
+                    disk.setFormat(PhysicalDiskFormat.TAR);
+                } else {
+                    disk.setFormat(pool.getDefaultFormat());
+                }
             } else if (pool.getType() == StoragePoolType.RBD) {
                 disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.RAW);
             } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
@@ -590,6 +597,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
         } else if (format == PhysicalDiskFormat.RAW) {
             libvirtformat = LibvirtStorageVolumeDef.volFormat.RAW;
+        } else if (format == PhysicalDiskFormat.DIR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
+        } else if (format == PhysicalDiskFormat.TAR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
         }
 
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name,
@@ -640,7 +651,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         if (destPool.getType() != StoragePoolType.RBD) {
             disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
 
-            if (format == PhysicalDiskFormat.QCOW2) {
+            if (template.getFormat() == PhysicalDiskFormat.TAR) {
+                Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath());
+            } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
+                Script.runSimpleBashScript("mkdir -p " + disk.getPath());
+                Script.runSimpleBashScript("chmod 755 " + disk.getPath());
+                Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath());
+            } else if (format == PhysicalDiskFormat.QCOW2) {
                 Script.runSimpleBashScript("qemu-img create -f "
                         + template.getFormat() + " -b  " + template.getPath() + " "
                         + disk.getPath());
@@ -724,7 +741,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         KVMPhysicalDisk newDisk;
         if (destPool.getType() != StoragePoolType.RBD) {
-            newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
+            if (disk.getFormat() == PhysicalDiskFormat.TAR) {
+                newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, disk.getVirtualSize());
+            } else {
+                newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
+            }
         } else {
             newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
             newDisk.setFormat(PhysicalDiskFormat.RAW);
@@ -739,7 +760,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         PhysicalDiskFormat destFormat = newDisk.getFormat();
 
         if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
-            if (sourceFormat.equals(destFormat) && 
+            if (sourceFormat == PhysicalDiskFormat.TAR) {
+                Script.runSimpleBashScript("tar -x -f " + sourcePath + " -C " + destPath);
+
+            } else if (sourceFormat == PhysicalDiskFormat.DIR) {
+                Script.runSimpleBashScript("mkdir -p " + destPath);
+                Script.runSimpleBashScript("chmod 755 " + destPath);
+                Script.runSimpleBashScript("cp -p -r " + sourcePath + "/* " + destPath);
+
+            } else if (sourceFormat.equals(destFormat) &&
                 Script.runSimpleBashScript("qemu-img info " + sourcePath + "|grep backing") == null) {
                 Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
 

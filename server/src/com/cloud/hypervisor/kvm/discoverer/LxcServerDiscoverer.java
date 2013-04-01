@@ -14,32 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+package com.cloud.hypervisor.kvm.discoverer;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.resource.Discoverer;
+import org.apache.log4j.Logger;
 
-public class RebootCommand extends Command {
-    String vmName;
+import javax.ejb.Local;
 
-    protected RebootCommand() {
-    }
+@Local(value=Discoverer.class)
+public class LxcServerDiscoverer extends LibvirtServerDiscoverer {
+    private static final Logger s_logger = Logger.getLogger(LxcServerDiscoverer.class);
 
-    public RebootCommand(VirtualMachine vm) {
-        vmName = vm.getInstanceName();
-    }
-
-    public RebootCommand(String vmName) {
-        this.vmName = vmName;
-    }
-
-    public String getVmName() {
-        return vmName;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return Hypervisor.HypervisorType.LXC;
     }
 
 }

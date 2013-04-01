@@ -116,17 +116,20 @@ public class LibvirtDomainXMLParser {
 
             Element graphic = (Element) devices
                     .getElementsByTagName("graphics").item(0);
-            String port = graphic.getAttribute("port");
-            if (port != null) {
-                try {
-                    vncPort = Integer.parseInt(port);
-                    if (vncPort != -1) {
-                        vncPort = vncPort - 5900;
-                    } else {
+
+            if (graphic != null) {
+                String port = graphic.getAttribute("port");
+                if (port != null) {
+                    try {
+                        vncPort = Integer.parseInt(port);
+                        if (vncPort != -1) {
+                            vncPort = vncPort - 5900;
+                        } else {
+                            vncPort = null;
+                        }
+                    } catch (NumberFormatException nfe) {
                         vncPort = null;
                     }
-                } catch (NumberFormatException nfe) {
-                    vncPort = null;
                 }
             }
 

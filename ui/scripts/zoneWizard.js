@@ -53,6 +53,9 @@
       case 'Ovm':
         hypervisorAttr = 'ovmnetworklabel';
         break;
+      case 'LXC':
+        hypervisorAttr = 'lxcnetworklabel';
+        break;
     }
 
     trafficLabelStr = trafficLabel ? '&' + hypervisorAttr + '=' + trafficLabel : '';
@@ -395,6 +398,7 @@
 										nonSupportedHypervisors["VMware"] = 1;
 										nonSupportedHypervisors["BareMetal"] = 1;
 										nonSupportedHypervisors["Ovm"] = 1;
+										nonSupportedHypervisors["LXC"] = 1;
 									}
 									
 									if(items != null) {
@@ -1254,6 +1258,12 @@
                 var items = [];
                 items.push({id: "nfs", description: "nfs"});
                 items.push({id: "ocfs2", description: "ocfs2"});
+                args.response.success({data: items});
+              }
+              else if(selectedClusterObj.hypervisortype == "LXC") {
+                var items = [];
+                items.push({id: "nfs", description: "nfs"});
+                items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
                 args.response.success({data: items});
               }
               else {

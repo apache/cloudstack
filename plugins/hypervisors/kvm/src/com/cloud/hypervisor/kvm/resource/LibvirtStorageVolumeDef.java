@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 public class LibvirtStorageVolumeDef {
     public enum volFormat {
-        RAW("raw"), QCOW2("qcow2"), DIR("dir");
+        RAW("raw"), QCOW2("qcow2"), DIR("dir"), TAR("tar");
         private String _format;
 
         volFormat(String format) {
@@ -38,6 +38,10 @@ public class LibvirtStorageVolumeDef {
                 return RAW;
             } else if (format.equalsIgnoreCase("qcow2")) {
                 return QCOW2;
+            } else if (format.equalsIgnoreCase("dir")) {
+                return DIR;
+            } else if (format.equalsIgnoreCase("tar")) {
+                return TAR;
             }
             return null;
         }

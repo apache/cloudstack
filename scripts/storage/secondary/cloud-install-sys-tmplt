@@ -157,6 +157,10 @@ then
    then
       ext="ova"
       templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
+   elif [ "$hyper" == "lxc" ]
+   then
+      ext="qcow2"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"LXC\" and removed is null"`)
    else
       usage
       failed 2
