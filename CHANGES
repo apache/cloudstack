@@ -1,12 +1,14 @@
 Apache CloudStack (Incubating) CHANGES
 ======================================
 
-Full release notes for each release are located in the project's documentation website:  http://incubator.apache.org/cloudstack/docs
+Full release notes for each release are located in the project's documentation website:  
+http://cloudstack.apache.org/docs
 
-Version 4.1.0-incubating
+Version 4.1.0
 ------------------------
 
-This is the second major release of CloudStack from within the Apache Software Foundation. 
+This is the second major release of CloudStack from within the Apache Software Foundation, and the
+first major release as a Top-Level Project (TLP). 
 
 Build Tool Changes:
 
@@ -278,4 +280,3 @@ Bug Fixes:
 Security Fixes:
 
  * CVE-2012-4501: Apache CloudStack configuration vulnerability
-

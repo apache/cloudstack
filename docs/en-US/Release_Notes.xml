@@ -24,26 +24,24 @@
     <title>Submitting Feedback and Getting Help</title>
     <para>The Apache CloudStack project has mailing lists for users and developers. These are the
       official channels of communication for the project and are the best way to get answers about
-      using and contributing to CloudStack. It's a good idea to subscribe to the cloudstack-users
-      mailing list if you've deployed or are deploying CloudStack into production, and even for test
-      deployments.</para>
-    <para>The CloudStack developer's mailing list (cloudstack-dev) is for discussions about
-      CloudStack development, and is the best list for discussing possible bugs in CloudStack.
+      using and contributing to CloudStack. It's a good idea to subscribe to the 
+      users@cloudstack.apache.org mailing list if you've deployed or are deploying 
+      CloudStack into production, and even for test deployments.</para>
+  <para>The CloudStack developer's mailing list (dev@cloudstack.apache.org) is for discussions 
+      about CloudStack development, and is the best list for discussing possible bugs in CloudStack.
       Anyone contributing to CloudStack should be on this mailing list.</para>
-    <para>You can also report bugs in CloudStack using the <ulink
-        url="https://issues.apache.org/jira/secure/CreateIssue!default.jspa">Apache Defect Tracking
-        System</ulink>.</para>
-    <para>To posts to the lists, you'll need to be subscribed. See the <ulink
-        url="http://incubator.apache.org/cloudstack/mailing-lists.html">CloudStack Web site</ulink>
+  <para>You can also report bugs in CloudStack using the 
+      <ulink url="https://issues.apache.org/jira/secure/CreateIssue!default.jspa">Apache 
+          Defect Tracking System</ulink>.</para>
+  <para>To posts to the lists, you'll need to be subscribed. See the 
+      <ulink url="http://cloudstack.apache.org/mailing-lists.html">CloudStack Web site</ulink>
       for instructions.</para>
   </chapter>
   <chapter id="upgrade-instructions">
     <title>Upgrade Instructions</title>
     <section id="upgrade-from-3.0.2-to-4.0">
-      <title>Upgrade from 3.0.2 to 4.0.0-incubating</title>
-      <para>Perform the following to upgrade from version 3.0.2 to version 4.0.0-incubating. Note
-        that some of the steps here are only required if you're using a specific hypervisor. The
-        steps that are hypervisor-specific are called out with a note.</para>
+        <title>Upgrade from 3.0.2 to 4.1.0</title>
+        <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.1.0. Sections that are hypervisor-specific will be called out with a note.</para>
       <orderedlist>
         <listitem>
           <para>Ensure that you query your IP address usage records and process them or make a
@@ -57,14 +55,12 @@
         <listitem>
           <note>
             <para>The following upgrade instructions apply only if you're using VMware hosts. If
-              you're not using VMware hosts, skip this step and move on to step 3: stopping all
-              usage servers.</para>
+                you're not using VMware hosts, skip this step and move on to <xref linkend="stopping-usage-servers" />.</para>
           </note>
           <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>While running the existing 3.0.2 system, log in to the UI as root
-                administrator.</para>
+              <para>While running the existing 3.0.2 system, log in to the UI as root administrator.</para>
             </listitem>
             <listitem>
               <para>In the left navigation bar, click Templates.</para>
@@ -144,7 +140,7 @@
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem>
+        <listitem id="stopping-usage-servers">
           <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
           <programlisting># service cloud-usage stop</programlisting>
         </listitem>
@@ -188,7 +184,7 @@
               <filename>/etc/cloud/management/components.xml</filename> the changes will be
             preserved in the upgrade. However, you need to do the following steps to place these
             changes in a new version of the file which is compatible with version
-            4.0.0-incubating.</para>
+            4.1.0.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
               <para>Make a backup copy of <filename>/etc/cloud/management/components.xml</filename>.
@@ -315,9 +311,9 @@
         </listitem>
         <listitem>
           <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2
-            and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.0.0-incubating
-            Installation Guide.</para>
+            supported by CloudStack 4.1.0. The supported versions are XenServer 5.6 SP2
+            and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.1.0
+            Installation Guide under "Upgrading XenServer Versions."</para>
         </listitem>
         <listitem>
           <para>Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to
@@ -471,8 +467,8 @@
           issues are seen, try clearing your browser cache and reloading the UI page.</para>
       </note>
     </section>
-    <section id="upgrade-from-2.2.x-to-4.0">
-      <title>Upgrade from 2.2.14 to 4.0.0-incubating</title>
+    <section id="upgrade-from-2.2.x-to-4.1">
+      <title>Upgrade from 2.2.14 to 4.1.0</title>
       <orderedlist>
         <listitem>
           <para>Ensure that you query your IPaddress usage records and process them; for example,
@@ -480,18 +476,18 @@
           <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
             of the usage types. Instead of a single record with the assignment and release dates,
             separate records are generated per aggregation period with start and end dates. After
-            upgrading to 4.0.0-incubating, any existing IP address usage records in the old format
+            upgrading to 4.1.0, any existing IP address usage records in the old format
             will no longer be available.</para>
         </listitem>
         <listitem>
           <para>If you are using version 2.2.0 - 2.2.13, first upgrade to 2.2.14 by using the
-            instructions in the 2.2.14 Release Notes.</para>
+              instructions in the <ulink url="http://download.cloud.com/releases/2.2.0/CloudStack2.2.14ReleaseNotes.pdf">2.2.14 Release Notes</ulink>.</para>
           <warning>
             <title>KVM Hosts</title>
             <para>If KVM hypervisor is used in your cloud, be sure you completed the step to insert
               a valid username and password into the host_details table on each KVM node as
               described in the 2.2.14 Release Notes. This step is critical, as the database will be
-              encrypted after the upgrade to 4.0.0-incubating.</para>
+              encrypted after the upgrade to 4.1.0.</para>
           </warning>
         </listitem>
         <listitem>
@@ -528,8 +524,8 @@
                   <tbody>
                     <row>
                       <entry><para>XenServer</para></entry>
-                      <entry><para>Name: systemvm-xenserver-3.0.0</para>
-                        <para>Description: systemvm-xenserver-3.0.0</para>
+                      <entry><para>Name: systemvm-xenserver-4.1.0</para>
+                        <para>Description: systemvm-xenserver-4.1.0</para>
                         <para>URL:
                           http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
