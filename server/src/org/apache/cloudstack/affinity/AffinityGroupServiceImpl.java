@@ -308,8 +308,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
             }
         }
-        _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
-
+        if (affinityGroupIds != null && !affinityGroupIds.isEmpty()) {
+            _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
+        }
         // APIResponseHelper will pull out the updated affinitygroups.
         return vmInstance;
 
