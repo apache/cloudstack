@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.storage.datastore.driver.CloudStackImageDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.CloudStackImageDataStoreLifeCycle;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
@@ -39,6 +38,7 @@ import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManag
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.component.ComponentContext;
 
 @Component

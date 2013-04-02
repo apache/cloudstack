@@ -45,6 +45,17 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -107,8 +118,10 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.ObjectStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.S3VO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -167,7 +180,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     StorageManager                           _storageMgr;
     @Inject
     protected SecondaryStorageVmManager      _secondaryStorageMgr;
-
+    @Inject
+    DataStoreProviderManager                 _dataStoreProviderMgr;
+    @Inject
+    protected RegionDao                  _regionDao;
     @Inject
     protected DataCenterDao                  _dcDao;
     @Inject
@@ -206,6 +222,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected HighAvailabilityManager        _haMgr;
     @Inject
     protected StorageService                 _storageSvr;
+    @Inject
+    DataStoreManager _dataStoreMgr;
+
 
     protected List<? extends Discoverer> _discoverers;
     public List<? extends Discoverer> getDiscoverers() {
@@ -639,6 +658,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), true);
     }
 
+
+
+
+
     @Override
 	public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd)
 			throws IllegalArgumentException, DiscoveryException,
@@ -667,6 +690,96 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<S3VO> listS3s(final ListS3sCmd cmd) {
         return this._s3Mgr.listS3s(cmd);
+    }
+
+    @Override
+    public ObjectStore discoverObjectStore(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
+        String providerName = cmd.getImageProviderName();
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+
+        if (storeProvider == null) {
+            storeProvider = _dataStoreProviderMgr.getDefaultImageDataStoreProvider();
+            if (storeProvider == null) {
+            throw new InvalidParameterValueException(
+                    "can't find image store provider: " + providerName);
+            }
+        }
+
+        Long dcId = cmd.getZoneId();
+        Long regionId = cmd.getRegionId();
+        String url = cmd.getUrl();
+        Map details = cmd.getDetails();
+
+        ScopeType scopeType = ScopeType.ZONE;
+        String scope = cmd.getScope();
+        if (scope != null) {
+            try {
+                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
+            } catch (Exception e) {
+                throw new InvalidParameterValueException("invalid scope"
+                        + scope);
+            }
+        }
+        if (scopeType == ScopeType.ZONE && dcId == null) {
+            throw new InvalidParameterValueException(
+                    "zone id can't be null, if scope is zone");
+        } else if (scopeType == ScopeType.REGION && regionId == null) {
+            throw new InvalidParameterValueException(
+                    "region id can't be null, if scope is region");
+        }
+
+        if ( dcId != null ){
+            // Check if the zone exists in the system
+            DataCenterVO zone = _dcDao.findById(dcId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Can't find zone by id "
+                        + dcId);
+            }
+
+            Account account = UserContext.current().getCaller();
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState()
+                    && !_accountMgr.isRootAdmin(account.getType())) {
+                PermissionDeniedException ex = new PermissionDeniedException(
+                        "Cannot perform this operation, Zone with specified id is currently disabled");
+                ex.addProxyObject(zone, dcId, "dcId");
+                throw ex;
+            }
+        }
+
+        if ( regionId != null ){
+            // Check if the region exists in the system
+            RegionVO region = _regionDao.findById(regionId.intValue());
+            if (region == null) {
+                throw new InvalidParameterValueException("Can't find region by id "
+                        + regionId);
+            }
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("zoneId", dcId);
+        params.put("regionId", regionId);
+        params.put("url", cmd.getUrl());
+        params.put("name", cmd.getUrl());
+        params.put("details", details);
+        params.put("providerName", storeProvider.getName());
+
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+        DataStore store = null;
+        try {
+            store = lifeCycle.initialize(params);
+
+            if (scopeType == ScopeType.ZONE) {
+                ZoneScope zoneScope = new ZoneScope(dcId);
+                lifeCycle.attachZone(store, zoneScope);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to add data store", e);
+            throw new CloudRuntimeException("Failed to add data store", e);
+        }
+
+        return (ObjectStore)_dataStoreMgr.getDataStore(store.getId(),
+                DataStoreRole.Image);
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,

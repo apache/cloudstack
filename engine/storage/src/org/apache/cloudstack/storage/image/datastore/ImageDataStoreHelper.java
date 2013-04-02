@@ -22,11 +22,11 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -44,16 +44,17 @@ public class ImageDataStoreHelper {
         store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
+        store.setUrl((String)params.get("url"));
         store = imageStoreDao.persist(store);
         return store;
     }
-    
+
     public boolean deleteImageDataStore(long id) {
         ImageDataStoreVO store = imageStoreDao.findById(id);
         if (store == null) {
             throw new CloudRuntimeException("can't find image store:" + id);
         }
-        
+
         imageStoreDao.remove(id);
         return true;
     }

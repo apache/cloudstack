@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.storage.ScopeType;
+
 
 public class ClusterScope extends AbstractScope {
     private ScopeType type = ScopeType.CLUSTER;

@@ -28,11 +28,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.Status;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 
 import com.cloud.utils.db.DB;

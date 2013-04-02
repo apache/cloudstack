@@ -73,7 +73,9 @@ CREATE TABLE `cloud`.`image_data_store` (
   `name` varchar(255) NOT NULL COMMENT 'name of data store',
   `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_data_store_provider',
   `protocol` varchar(255) NOT NULL COMMENT 'protocol of data store',
+  `url` varchar(255) COMMENT 'url for image data store',
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
+  `region_id` bigint unsigned  COMMENT 'region id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
   PRIMARY KEY(`id`)

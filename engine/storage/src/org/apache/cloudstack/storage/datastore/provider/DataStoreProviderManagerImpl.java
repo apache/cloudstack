@@ -139,6 +139,12 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         return this.getDataStoreProvider("cloudstack primary data store provider");
     }
 
+
+    @Override
+    public DataStoreProvider getDefaultImageDataStoreProvider() {
+        return this.getDataStoreProvider("cloudstack image data store provider");
+    }
+
     @Override
     public List<StorageProviderResponse> getDataStoreProviders(String type) {
         if (type == null) {

@@ -26,11 +26,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
+import com.cloud.storage.ObjectStore;
+import com.cloud.storage.ScopeType;
 
 @Entity
 @Table(name = "image_data_store")
-public class ImageDataStoreVO {
+public class ImageDataStoreVO implements ObjectStore {
     @Id
     @TableGenerator(name = "image_data_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "image_data_store_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
@@ -38,24 +40,30 @@ public class ImageDataStoreVO {
 
     @Column(name = "name", nullable = false)
     private String name;
-    
+
     @Column(name = "uuid", nullable = false)
     private String uuid;
-    
+
     @Column(name = "protocol", nullable = false)
     private String protocol;
 
+    @Column(name = "url", nullable = false)
+    private String url;
+
     @Column(name = "image_provider_name", nullable = false)
     private String providerName;
-    
+
     @Column(name = "data_center_id")
     private long dcId;
-    
+
+    @Column(name = "region_id")
+    private long regionId;
+
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
-    
-    
+
+
     public long getId() {
         return this.id;
     }
@@ -75,36 +83,55 @@ public class ImageDataStoreVO {
     public void setProviderName(String provider) {
         this.providerName = provider;
     }
-    
+
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
-    
+
     public String getProtocol() {
         return this.protocol;
     }
-    
-    public void setDcId(long dcId) {
+
+    public void setDataCenterId(long dcId) {
         this.dcId = dcId;
     }
-    
-    public long getDcId() {
+
+    public Long getDataCenterId() {
         return this.dcId;
     }
-    
+
+
+    public Long getRegionId() {
+        return regionId;
+    }
+
+    public void setRegionId(long regionId) {
+        this.regionId = regionId;
+    }
+
     public ScopeType getScope() {
         return this.scope;
     }
-    
+
     public void setScope(ScopeType scope) {
         this.scope = scope;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String getUuid() {
         return this.uuid;
     }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+
 }

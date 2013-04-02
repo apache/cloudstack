@@ -52,9 +52,9 @@ public class ImageDataStoreImpl implements ImageDataStore {
     boolean needDownloadToCacheStorage = false;
 
     public ImageDataStoreImpl() {
-     
+
     }
-    
+
     protected void configure(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
             ImageDataStoreProvider provider) {
         this.driver = imageDataStoreDriver;
@@ -99,7 +99,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
 
     @Override
     public Scope getScope() {
-        return new ZoneScope(imageDataStoreVO.getDcId());
+        return new ZoneScope(imageDataStoreVO.getDataCenterId());
     }
 
     @Override
@@ -142,4 +142,33 @@ public class ImageDataStoreImpl implements ImageDataStore {
         // TODO Auto-generated method stub
         return false;
     }
+
+    @Override
+    public String getName() {
+        return imageDataStoreVO.getName();
+    }
+
+    @Override
+    public Long getDataCenterId() {
+        return imageDataStoreVO.getDataCenterId();
+    }
+
+    @Override
+    public Long getRegionId() {
+        return imageDataStoreVO.getRegionId();
+    }
+
+    @Override
+    public String getProviderName() {
+        return imageDataStoreVO.getProviderName();
+    }
+
+    @Override
+    public String getProtocol() {
+        return imageDataStoreVO.getProtocol();
+    }
+
+
+
+
 }

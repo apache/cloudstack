@@ -49,6 +49,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.ObjectStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.template.VirtualMachineTemplate;
@@ -607,5 +608,13 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    @Override
+    public ObjectStore discoverObjectStore(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

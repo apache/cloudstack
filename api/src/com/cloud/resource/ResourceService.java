@@ -38,6 +38,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.storage.ObjectStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.utils.Pair;
@@ -100,7 +101,10 @@ public interface ResourceService {
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
 
     S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
-    
+
+    ObjectStore discoverObjectStore(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd);

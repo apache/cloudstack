@@ -26,7 +26,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
-public interface ImageDataStore extends DataStore {
+import com.cloud.storage.ObjectStore;
+
+public interface ImageDataStore extends DataStore, ObjectStore {
     TemplateInfo getTemplate(long templateId);
     VolumeInfo getVolume(long volumeId);
     SnapshotInfo getSnapshot(long snapshotId);

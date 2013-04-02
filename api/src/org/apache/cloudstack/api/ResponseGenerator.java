@@ -326,6 +326,8 @@ public interface ResponseGenerator {
 
     RegionResponse createRegionResponse(Region region);
 
+    ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
+
     /**
      * @param resourceTag
      * @param keyValueOnly TODO
@@ -384,7 +386,7 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
-    
+
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);

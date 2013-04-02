@@ -16,6 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -29,23 +34,88 @@ import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManag
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageDataStoreLifeCycle;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
+import com.cloud.resource.Discoverer;
+import com.cloud.resource.ResourceListener;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ServerResource;
+import com.cloud.storage.ScopeType;
+import com.cloud.utils.UriUtils;
 
 public class CloudStackImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
+
+    private static final Logger s_logger = Logger
+            .getLogger(CloudStackImageDataStoreLifeCycle.class);
+    @Inject
+    protected ResourceManager _resourceMgr;
     @Inject
 	protected ImageDataStoreDao imageStoreDao;
 	@Inject
 	ImageDataStoreHelper imageStoreHelper;
 	@Inject
 	ImageDataStoreProviderManager imageStoreMgr;
+
+    protected List<? extends Discoverer> _discoverers;
+    public List<? extends Discoverer> getDiscoverers() {
+        return _discoverers;
+    }
+    public void setDiscoverers(List<? extends Discoverer> _discoverers) {
+        this._discoverers = _discoverers;
+    }
+
 	public CloudStackImageDataStoreLifeCycle() {
 	}
 
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        ImageDataStoreVO ids = imageStoreHelper.createImageDataStore(dsInfos);
+
+        Long dcId = (Long) dsInfos.get("zoneId");
+        String url = (String) dsInfos.get("url");
+        String providerName = (String)dsInfos.get("providerName");
+
+        s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
+
+        URI uri = null;
+        try {
+            uri = new URI(UriUtils.encodeURIComponent(url));
+            if (uri.getScheme() == null) {
+                throw new InvalidParameterValueException("uri.scheme is null "
+                        + url + ", add nfs:// as a prefix");
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("")
+                        || uri.getPath() == null
+                        || uri.getPath().equalsIgnoreCase("")) {
+                    throw new InvalidParameterValueException(
+                            "Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+                }
+            }
+        } catch (URISyntaxException e) {
+            throw new InvalidParameterValueException(url
+                    + " is not a valid uri");
+        }
+
+        if ( dcId == null ){
+            throw new InvalidParameterValueException("DataCenter id is null, and cloudstack default image storehas to be associated with a data center");
+        }
+
+
+        Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
+        imageStoreParameters.put("name", url);
+        imageStoreParameters.put("zoneId", dcId);
+        imageStoreParameters.put("url", url);
+        imageStoreParameters.put("protocol", uri.getScheme().toLowerCase());
+        imageStoreParameters.put("scope", ScopeType.ZONE);
+        imageStoreParameters.put("providerName", providerName);
+
+        ImageDataStoreVO ids = imageStoreHelper.createImageDataStore(imageStoreParameters);
         return imageStoreMgr.getImageDataStore(ids.getId());
     }
 
