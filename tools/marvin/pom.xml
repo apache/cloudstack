@@ -86,7 +86,7 @@
   <!-- Custom profiles for sync and integration tests-->
   <profiles>
     <profile>
-      <id>sync</id>
+      <id>marvin.sync</id>
       <activation>
         <property>
           <name>endpoint</name>
@@ -154,7 +154,10 @@
       </build>
     </profile>
     <profile>
-      <id>marvin</id>
+      <id>marvin.setup</id>
+      <properties>
+        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
+     </properties>
       <activation>
         <property>
           <name>marvin.config</name>
@@ -179,7 +182,7 @@
                   <arguments>
                     <argument>deployAndRun.py</argument>
                     <argument>-c</argument>
-                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>${marvin.config}</argument>
                     <argument>-t</argument>
                     <argument>/tmp/t.log</argument>
                     <argument>-r</argument>
@@ -189,6 +192,30 @@
                   </arguments>
                 </configuration>
               </execution>
+              </executions>
+            </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>marvin.test</id>
+      <properties>
+        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
+        <tag>simulator</tag>
+        <test>test/integration/smoke</test>
+      </properties>
+      <activation>
+        <property>
+          <name>marvin.config</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
               <execution>
                 <id>integration-test</id>
                 <phase>integration-test</phase>
@@ -201,11 +228,12 @@
                   <arguments>
                     <argument>--with-marvin</argument>
                     <argument>--marvin-config</argument>
-                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>${marvin.config}</argument>
                     <argument>--load</argument>
                     <argument>-a</argument>
-                    <argument>tags=simulator</argument>
-                    <argument>${basedir}/../../test/integration/smoke/test_vm_life_cycle.py</argument>
+                    <argument>tags=${tag}</argument>
+                    <argument>${user.dir}/${test}</argument>
+                    <argument>-v</argument>
                   </arguments>
                 </configuration>
               </execution>
