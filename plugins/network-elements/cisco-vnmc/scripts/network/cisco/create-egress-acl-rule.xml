@@ -192,10 +192,10 @@ under the License.
     aclrulename="dummy"
     descr=value
     actiontype="drop" or "permit"
-    protocolvalue = "TCP" or UDP or ICMP
-    deststartip="source start ip"
-    destendip="source end ip"
-    sourcestartport="start port at destination"
-    sourceendport="end port at destination"
-    sourceip="public ip at destination"
+    protocolvalue = "TCP" or "UDP"
+    deststartip="destination start ip"
+    destendip="destination end ip"
+    sourcestartport="start port at source"
+    sourceendport="end port at source"
+    sourceip="source ip"
 --!>

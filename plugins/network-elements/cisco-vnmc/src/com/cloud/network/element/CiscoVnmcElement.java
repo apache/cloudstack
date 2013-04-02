@@ -187,7 +187,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress,egress");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
@@ -650,7 +652,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         for (FirewallRule rule : rules) {
             IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getPurpose(), rule.getTrafficType());
             rulesTO.add(ruleTO);
         }
 

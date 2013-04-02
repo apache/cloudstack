@@ -93,6 +93,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         CREATE_ACL_POLICY_REF("create-acl-policy-ref.xml", "policy-mgr"),
         CREATE_INGRESS_ACL_RULE("create-ingress-acl-rule.xml", "policy-mgr"),
         CREATE_EGRESS_ACL_RULE("create-egress-acl-rule.xml", "policy-mgr"),
+        CREATE_GENERIC_INGRESS_ACL_RULE("create-generic-ingress-acl-rule.xml", "policy-mgr"),
+        CREATE_GENERIC_EGRESS_ACL_RULE("create-generic-egress-acl-rule.xml", "policy-mgr"),
 
         DELETE_RULE("delete-rule.xml", "policy-mgr"),
 
@@ -674,10 +676,11 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
             String destStartPort, String destEndPort, String destIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_INGRESS_ACL_RULE.getService();
+
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
-        xml = replaceXmlValue(xml, "descr", "Ingress ACL policy for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Ingress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
         xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
@@ -698,21 +701,78 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
+    public boolean createTenantVDCIngressAclRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceStartIp, String sourceEndIp,
+            String destIp) throws ExecutionException {
+        String xml = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getXml();
+        String service = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getService();
+
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "Ingress ACL rule for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "actiontype", "permit");
+        xml = replaceXmlValue(xml, "protocolvalue", protocol);
+        xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
+        xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
+
+        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
+        int order = 100;
+        if (rules != null) {
+            order += rules.size();
+        }
+        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
             String protocol, String sourceStartPort, String sourceEndPort, String sourceIp,
             String destStartIp, String destEndIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_EGRESS_ACL_RULE.getService();
+
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
-        xml = replaceXmlValue(xml, "descr", "Egress ACL policy for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
+        xml = replaceXmlValue(xml, "deststartip", destStartIp);
+        xml = replaceXmlValue(xml, "destendip", destEndIp);
         xml = replaceXmlValue(xml, "sourcestartport", sourceStartPort);
         xml = replaceXmlValue(xml, "sourceendport", sourceEndPort);
         xml = replaceXmlValue(xml, "sourceip", sourceIp);
+
+        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
+        int order = 100;
+        if (rules != null) {
+            order += rules.size();
+        }
+        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCEgressAclRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceIp,
+            String destStartIp, String destEndIp) throws ExecutionException {
+        String xml = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getXml();
+        String service = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getService();
+
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "actiontype", "permit");
+        xml = replaceXmlValue(xml, "protocolvalue", protocol);
         xml = replaceXmlValue(xml, "deststartip", destStartIp);
         xml = replaceXmlValue(xml, "destendip", destEndIp);
 
