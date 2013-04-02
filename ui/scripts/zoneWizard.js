@@ -1204,7 +1204,7 @@
              if(selectedHypervisorObj.hypervisortype != "KVM"){
                        var scope=[];
                        scope.push({ id: 'cluster', description: _l('label.cluster') });
-                       scope.push({ id: 'host', description: _l('label.host') });
+                       //scope.push({ id: 'host', description: _l('label.host') });
                        args.response.success({data: scope});
                     }
 
@@ -1212,7 +1212,7 @@
                        var scope=[];
                        scope.push({ id: 'zone', description: _l('label.zone.wide') });
                        scope.push({ id: 'cluster', description: _l('label.cluster') });
-                       scope.push({ id: 'host', description: _l('label.host') });
+                      // scope.push({ id: 'host', description: _l('label.host') });
                        args.response.success({data: scope});
                     }
 
