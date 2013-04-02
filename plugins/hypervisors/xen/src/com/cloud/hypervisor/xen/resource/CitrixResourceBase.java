@@ -262,6 +262,7 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadAsyncResult;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.ConsoleProtocol;
 import com.xensource.xenapi.Types.IpConfigurationMode;
@@ -6452,7 +6453,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             success = true;
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (Exception e) {
-            String msg = e.getMessage();
+            String msg = "";
+            if(e instanceof BadAsyncResult){
+                String licenseKeyWord = "LICENCE_RESTRICTION";
+                BadAsyncResult errorResult = (BadAsyncResult)e;
+                if(errorResult.shortDescription != null && errorResult.shortDescription.contains(licenseKeyWord)){
+                    msg = licenseKeyWord;
+                }
+            }else{
+                msg = e.getMessage();
+            }
             s_logger.error("Creating VM Snapshot " + cmd.getTarget().getSnapshotName() + " failed due to: " + msg);
             return new CreateVMSnapshotAnswer(cmd, false, msg);
         } finally {

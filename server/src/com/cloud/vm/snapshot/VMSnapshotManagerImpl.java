@@ -367,9 +367,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 processAnswer(vmSnapshot, userVm, answer, hostId);
                 s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
             }else{
-                String errMsg = answer.getDetails();
-                s_logger.error("Agent reports creating vm snapshot " + vmSnapshot.getName() + " failed for vm: " + userVm.getInstanceName() + " due to " + errMsg);
+                
+                String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
+                if(answer != null && answer.getDetails() != null)
+                    errMsg = errMsg + " due to " + answer.getDetails();
+                s_logger.error(errMsg);
                 vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+                throw new CloudRuntimeException(errMsg);
             }
             return vmSnapshot;
         } catch (Exception e) {
