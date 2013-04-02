@@ -169,6 +169,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
@@ -288,6 +290,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected DownloadMonitor _downloadMonitor;
     @Inject
     protected ResourceTagDao _resourceTagDao;
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
@@ -1669,6 +1673,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
+        // if target VM has associated VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if(vmSnapshots.size() > 0){
+            throw new InvalidParameterValueException(
+                    "Unable to attach volume, please specify a VM that does not have VM snapshots");           
+        }
+        
         // permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
 
@@ -1824,6 +1835,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 && vm.getState() != State.Destroyed) {
             throw new InvalidParameterValueException(
                     "Please specify a VM that is either running or stopped.");
+        }
+
+        // Check if the VM has VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if(vmSnapshots.size() > 0){
+            throw new InvalidParameterValueException(
+                    "Unable to detach volume, the specified volume is attached to a VM that has VM snapshots.");           
         }
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
