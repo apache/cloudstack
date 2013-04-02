@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
-
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
@@ -43,45 +42,26 @@ public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }
+
         UserAccount user = _userAccountDao.getUserAccount(username, domainId);
         if (user == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
             return false;
         }
         
-       
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Error", e);
-        }
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
-
-        // make sure our MD5 hash value is 32 digits long...
-        StringBuffer sb = new StringBuffer();
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0');
-        }
-        sb.append(pwStr);
-        
-        
-        // Will: The MD5Authenticator is now a straight pass-through comparison of the
-        // the passwords because we will not assume that the password passed in has
-        // already been MD5 hashed.  I am keeping the above code in case this requirement changes
-        // or people need examples of how to MD5 hash passwords in java.
-        if (!user.getPassword().equals(sb.toString())) {
+        if (!user.getPassword().equals(password)) {
             s_logger.debug("Password does not match");
             return false;
         }
 		return true;
 	}
 
+    @Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
+        if (name == null) {
+            name = "PLAINTEXT";
+        }
 		super.configure(name, params);
 		return true;
 	}

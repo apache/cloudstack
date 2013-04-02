@@ -44,6 +44,9 @@ public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
+        if (name == null) {
+            name = "SHA256SALT";
+        }
         super.configure(name, params);
         return true;
     }

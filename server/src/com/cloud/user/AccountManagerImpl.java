@@ -222,6 +222,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject VolumeManager volumeMgr;
 
     private List<UserAuthenticator> _userAuthenticators;
+    List<UserAuthenticator> _userPasswordEncoders;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -241,7 +242,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
-    
+
+    public List<UserAuthenticator> getUserPasswordEncoders() {
+        return _userPasswordEncoders;
+    }
+
+    public void setUserPasswordEncoders(List<UserAuthenticator> encoders) {
+        _userPasswordEncoders = encoders;
+    }
+
     public List<SecurityChecker> getSecurityCheckers() {
 		return _securityCheckers;
 	}
@@ -947,7 +956,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (password != null) {
             String encodedPassword = null;
-            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            for (Iterator<UserAuthenticator> en = _userPasswordEncoders.iterator(); en.hasNext();) {
                 UserAuthenticator authenticator = en.next();
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
@@ -1733,7 +1742,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         String encodedPassword = null;
-        for (UserAuthenticator  authenticator : _userAuthenticators) {
+        for (UserAuthenticator  authenticator : _userPasswordEncoders) {
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;

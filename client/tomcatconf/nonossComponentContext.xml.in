@@ -131,34 +131,6 @@
   <!-- 
     Managers & pluggable adapters configuration under non-OSS deployment
   -->
-  <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
-    <property name="UserAuthenticators">
-      <list>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="SecurityCheckers">
-      <list>
-          <ref bean="domainChecker"/>
-      </list>
-    </property>
-  </bean>
-  
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
-    <property name="UserAuthenticators">
-      <list>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="HostAllocators">
-      <list>
-          <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-  </bean>
-
   <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
     <property name="StoragePoolAllocators">
       <list>
