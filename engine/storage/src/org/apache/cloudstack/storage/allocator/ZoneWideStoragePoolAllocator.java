@@ -56,7 +56,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 			VirtualMachineProfile<? extends VirtualMachine> vmProfile,
 			DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 		List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-		HypervisorType hypervisor = vmProfile.getHypervisorType();
+		HypervisorType hypervisor = dskCh.getHypersorType();
 		if (hypervisor != null) {
 			if (hypervisor != HypervisorType.KVM) {
 				s_logger.debug("Only kvm supports zone wide storage");
