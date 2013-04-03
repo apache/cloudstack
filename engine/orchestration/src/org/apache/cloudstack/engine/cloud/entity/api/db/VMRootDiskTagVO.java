@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = "vm_root_disk_tags")
 public class VMRootDiskTagVO implements InternalIdentity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

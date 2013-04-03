@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 public interface VMNetworkMapDao extends GenericDao<VMNetworkMapVO, Long>{
 
     void persist(long vmId, List<Long> networks);
-    
+
     List<Long> getNetworks(long vmId);
 
 }

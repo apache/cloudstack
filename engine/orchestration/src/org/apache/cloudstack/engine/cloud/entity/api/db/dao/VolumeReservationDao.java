@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 public interface VolumeReservationDao extends GenericDao<VolumeReservationVO, Long>{
 
    VolumeReservationVO findByVmId(long vmId);
-   
+
    List<VolumeReservationVO> listVolumeReservation(long vmReservationId);
 
 }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.structure;
 
 import java.util.ArrayList;
@@ -25,12 +25,12 @@ import com.cloud.utils.xmlobject.XmlObjectParser;
 
 public class UcsProfile {
     private String dn;
-    
+
     public static UcsProfile fromXmlObject(XmlObject xo) {
         UcsProfile p = new UcsProfile();
         return xo.evaluateObject(p);
     }
-    
+
     public static List<UcsProfile> fromXmlString(String xmlstr) {
         List<UcsProfile> ps = new ArrayList<UcsProfile>();
         XmlObject xo = XmlObjectParser.parseFromString(xmlstr);

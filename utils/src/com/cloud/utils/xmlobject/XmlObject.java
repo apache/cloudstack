@@ -32,14 +32,14 @@ public class XmlObject {
     private Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
-    
+
     XmlObject() {
     }
-    
+
     public XmlObject(String tag) {
         this.tag = tag;
     }
-    
+
     public XmlObject putElement(String key, Object e) {
         if (e == null) {
             throw new IllegalArgumentException(String.format("element[%s] can not be null", key));
@@ -60,17 +60,17 @@ public class XmlObject {
                 elements.put(key, lst);
             }
         }
-        
+
         return this;
     }
-    
+
     private Object recurGet(XmlObject obj, Iterator<String> it) {
         String key = it.next();
         Object e = obj.elements.get(key);
         if (e == null) {
             return null;
         }
-        
+
         if (!it.hasNext()) {
             return e;
         } else {
@@ -80,14 +80,14 @@ public class XmlObject {
             return recurGet((XmlObject) e, it);
         }
     }
-    
+
     public <T> T get(String elementStr) {
         String[] strs = elementStr.split("\\.");
         List<String> lst = new ArrayList<String>(strs.length);
         Collections.addAll(lst, strs);
         return (T)recurGet(this, lst.iterator());
     }
-    
+
     public <T> List<T> getAsList(String elementStr) {
         Object e = get(elementStr);
         if (e instanceof List) {
@@ -97,7 +97,7 @@ public class XmlObject {
         lst.add(e);
         return lst;
     }
-    
+
     public String getText() {
         return text;
     }
@@ -115,7 +115,7 @@ public class XmlObject {
         this.tag = tag;
         return this;
     }
-    
+
     public String dump() {
         StringBuilder sb = new StringBuilder();
         sb.append("<").append(tag);
@@ -133,11 +133,11 @@ public class XmlObject {
                 throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key, val.getClass().getName()));
             }
         }
-        
+
         if (!children.isEmpty() && text != null) {
             throw new CloudRuntimeException(String.format("element %s cannot have both text[%s] and child elements", tag, text));
         }
-        
+
         if (!children.isEmpty()) {
             sb.append(">");
             for (XmlObject x : children) {
@@ -155,7 +155,7 @@ public class XmlObject {
         }
         return sb.toString();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<" + tag);
@@ -167,7 +167,7 @@ public class XmlObject {
             }
             sb.append(String.format(" %s=\"%s\"", key, value.toString()));
         }
-        
+
         if (text == null || "".equals(text.trim())) {
             sb.append(" />");
         } else {
@@ -175,7 +175,7 @@ public class XmlObject {
         }
         return sb.toString();
     }
-    
+
     public <T> T evaluateObject(T obj) {
         Class<?> clazz = obj.getClass();
         try {

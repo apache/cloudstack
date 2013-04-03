@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 public interface VMComputeTagDao extends GenericDao<VMComputeTagVO, Long>{
 
     void persist(long vmId, List<String> computeTags);
-    
+
     List<String> getComputeTags(long vmId);
 
 }

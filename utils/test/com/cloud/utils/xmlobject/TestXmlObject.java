@@ -27,12 +27,12 @@ public class TestXmlObject {
     void p(String str) {
         System.out.println(str);
     }
-    
+
     @Test
     public void test() {
-    	
-    	// deprecated, since we no longer use component.xml.in any more
-    	/*
+
+	// deprecated, since we no longer use component.xml.in any more
+	/*
         XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
         p(xo.getTag());
         p((String) xo.get("system-integrity-checker.checker").toString());
