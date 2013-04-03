@@ -240,6 +240,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        VirtualMachine.State.getStateMachine().registerListener(this);
         return true;
     }
 
@@ -308,9 +309,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
             }
         }
-        if (affinityGroupIds != null && !affinityGroupIds.isEmpty()) {
-            _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
-        }
+        _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
         // APIResponseHelper will pull out the updated affinitygroups.
         return vmInstance;
 
