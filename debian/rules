@@ -125,7 +125,7 @@ install:
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
-	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D services/console-proxy/server/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.0.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
