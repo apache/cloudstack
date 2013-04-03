@@ -279,6 +279,26 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <version>1.7</version>
         <executions>
+          <!-- Copy the systemvm in the package phase as it is generated 
+               by console-proxy in the package phase. 
+          -->
+          <execution>
+            <id>copy-systemvm</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
+                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
+                    <include name="systemvm.zip" />
+                    <include name="systemvm.iso" />
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
           <execution>
             <id>generate-resource</id>
             <phase>generate-resources</phase>
@@ -304,12 +324,6 @@
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*" />
-                  </fileset>
-                </copy>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
-                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
-                    <include name="systemvm.zip" />
-                    <include name="systemvm.iso" />
                   </fileset>
                 </copy>
                 <copy todir="${basedir}/target/generated-webapp">

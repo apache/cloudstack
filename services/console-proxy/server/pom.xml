@@ -139,6 +139,18 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+            <filesets>
+                <fileset>
+                    <directory>dist</directory>
+                    <followSymlinks>false</followSymlinks>
+                </fileset>
+            </filesets>
+        </configuration>
+    </plugin>
 <!-- Leave this to the systemvm profile
      Enable using the -P systemvm flag
       <plugin>
