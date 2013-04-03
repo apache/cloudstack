@@ -1773,6 +1773,11 @@ div.list-view td.state.off span {
   background-position: 100% -431px;
 }
 
+.detail-view .detail-group .button.add {
+  float: left;
+  margin: 6px 0 17px 13px;
+}
+
 /*List-view: subselect dropdown*/
 .list-view .subselect {
   width: 116px;
@@ -2733,7 +2738,8 @@ div.toolbar div.button.add,
 div.toolbar div.button.refresh,
 div.toolbar div.button.add,
 div.toolbar div.button.main-action,
-.toolbar div.button.header-action {
+.toolbar div.button.header-action,
+.detail-group .button.add {
   /*+placement:shift 0px 5px;*/
   position: relative;
   left: 0px;
@@ -2765,7 +2771,8 @@ div.toolbar div.button.main-action,
 div.toolbar div.button.add:hover,
 div.toolbar div.button.refresh:hover,
 div.toolbar div.button.main-action:hover,
-.toolbar div.button.header-action:hover {
+.toolbar div.button.header-action:hover,
+.detail-group .button.add:hover {
   background-position: 0 -132px;
   border-left: 1px solid #585D60;
 }
@@ -2795,7 +2802,8 @@ div.toolbar div.button.refresh span {
   background-repeat: no-repeat;
 }
 
-div.toolbar div.button.add span {
+div.toolbar div.button.add span,
+.detail-group .button.add span.icon {
   padding: 0px 0 0px 18px;
   background: url(../images/icons.png) no-repeat -626px -209px;
   /*+placement:shift 0px 0px;*/
