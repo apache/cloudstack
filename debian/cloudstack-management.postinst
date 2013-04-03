@@ -38,7 +38,7 @@ if [ "$1" = configure ]; then
 
     OLDCONFDIR="/etc/cloud/management"
     NEWCONFDIR="/etc/cloudstack/management"
-    CONFFILES="db.properties db-enc.properties cloud.keystore key"
+    CONFFILES="db.properties cloud.keystore key"
 
     # Copy old configuration so the admin doesn't have to do that
     # Only do so when we are installing for the first time
