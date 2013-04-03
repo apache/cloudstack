@@ -771,6 +771,7 @@
     var hiddenFields;
     var context = detailViewArgs ? detailViewArgs.context : cloudStack.context;
     var isMultiple = tabData.multiple || tabData.isMultiple;
+    var actions = tabData.actions;
 
     if (isMultiple) {
       context[tabData.id] = data;
@@ -1073,6 +1074,29 @@
                   );
               }
             });
+
+            // Add item action
+            if (tabData.multiple && tabData.actions && tabData.actions.add) {
+              $tabContent.append(
+                $('<div>').addClass('button add').append(
+                  $('<span>').addClass('icon').html('&nbsp;'),
+                  $('<span>').html(_l(tabData.actions.add.label))
+                ).click(function() {
+                  uiActions.standard(
+                    $detailView,
+                    { actions: tabData.actions, actionName: 'add' }, {
+                      noRefresh: true,
+                      complete: function(args) {
+                        loadTabContent(
+                          $detailView.find('div.detail-group:visible'),
+                          $detailView.data('view-args')
+                        );
+                      }
+                    }
+                  )
+                })
+              );
+            }
 
             return true;
           }

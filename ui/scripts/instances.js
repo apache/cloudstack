@@ -1227,6 +1227,62 @@
           nics: {
             title: 'label.nics',
             multiple: true,
+            actions: {
+              add: {
+                label: 'Add network to VM',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you would like to add a new VM NIC for this network.';
+                  },
+                  notification: function(args) {
+                    return 'Add network to VM';
+                  }
+                },
+                createForm: {
+                  title: 'Add network to VM',
+                  desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                  fields: {
+                    networkid: {
+                      label: 'label.network',
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL('listNetworks'),
+                          data: {
+                            listAll: true,
+                            zoneid: args.context.instances[0].zoneid
+                          },
+                          success: function(json) {
+                            args.response.success({
+                              data: $.map(json.listnetworksresponse.network, function(network) {
+                                return {
+                                  id: network.id,
+                                  description: network.name
+                                };
+                              })
+                            });
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('addNicToVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      networkid: args.data.networkid
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.addnictovirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            },
             fields: [
               {
                 name: { label: 'label.name', header: true },
