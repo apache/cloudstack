@@ -329,31 +329,6 @@
                 <copy todir="${basedir}/target/generated-webapp">
                   <fileset dir="${basedir}/../ui" />
                 </copy>
-                <copy overwrite="true"
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in" />
-                  </fileset>
-                  <globmapper from="*.in" to="*" />
-                  <filterchain>
-                    <filterreader
-                      classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile"
-                        value="${cs.replace.properties}" />
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in" />
-                  </fileset>
-                  <globmapper from="*.in" to="*" />
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}" />
-                    </filterreader>
-                  </filterchain>
-                </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">
                     <include name="*.in" />
