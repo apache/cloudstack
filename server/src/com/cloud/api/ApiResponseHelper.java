@@ -142,6 +142,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.ImageDataStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -892,8 +893,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ObjectStoreResponse createObjectStoreResponse(ObjectStore os) {
-        // TODO Auto-generated method stub
-        return null;
+        List<ImageDataStoreJoinVO> viewStores = ApiDBUtils.newImageStoreView(os);
+        List<ObjectStoreResponse> listStores = ViewResponseHelper.createObjectStoreResponse(viewStores.toArray(new ImageDataStoreJoinVO[viewStores.size()]));
+        assert listStores != null && listStores.size() == 1 : "There should be one image data store returned";
+        return listStores.get(0);
+
+
     }
 
 

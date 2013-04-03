@@ -28,6 +28,16 @@ public class ObjectStoreDetailResponse extends BaseResponse {
     @SerializedName("value") @Param(description="detail property value of the object store")
     private String value;
 
+    public ObjectStoreDetailResponse(){
+        super();
+    }
+
+    public ObjectStoreDetailResponse(String name, String val){
+        super();
+        this.name = name;
+        this.value = val;
+    }
+
     public String getName() {
         return name;
     }
@@ -44,5 +54,33 @@ public class ObjectStoreDetailResponse extends BaseResponse {
         this.value = value;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        String oid = this.getName();
+        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ObjectStoreDetailResponse other = (ObjectStoreDetailResponse) obj;
+        String oid = this.getName();
+        if (oid == null) {
+            if (other.getName() != null)
+                return false;
+        } else if (!oid.equals(other.getName()))
+            return false;
+        else if ( this.getValue().equals(other.getValue()))
+            return false;
+        return true;
+    }
 
 }

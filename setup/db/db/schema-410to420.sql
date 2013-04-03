@@ -91,7 +91,33 @@ CREATE TABLE `cloud`.`image_data_store_details` (
   INDEX `i_image_data_store__name__value`(`name`(128), `value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+DROP VIEW IF EXISTS `cloud`.`image_data_store_view`;
+CREATE VIEW `cloud`.`image_data_store_view` AS
+    select 
+        image_data_store.id,
+        image_data_store.uuid,
+        image_data_store.name,
+        image_data_store.provider_name,
+        image_data_store.protocol,
+        image_data_store.url,
+        image_data_store.scope,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        region.id region_id,
+        region.name region_name,
+        image_data_store_details.name detail_name,
+        image_data_store_details.value detail_value
+    from
+        `cloud`.`image_data_store`
+            left join
+        `cloud`.`data_center` ON image_data_store.data_center_id = data_center.id
+            left join
+        `cloud`.`region` ON image_data_store.region_id = region.id
+            left join
+        `cloud`.`image_data_store_details` ON image_data_store_details.store_id = image_data_store.id;
+            
+            
 CREATE TABLE  `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `store_id` bigint unsigned NOT NULL,

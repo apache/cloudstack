@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-
-import javax.persistence.Column;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -27,8 +26,6 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.ObjectStore;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=ObjectStore.class)
@@ -43,7 +40,7 @@ public class ObjectStoreResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName("regionid") @Param(description="the Region ID of the object store")
-    private String regionId;
+    private Long regionId;
 
     @SerializedName("regionname") @Param(description="the Region name of the object store")
     private String regionName;
@@ -54,16 +51,22 @@ public class ObjectStoreResponse extends BaseResponse {
     @SerializedName("url") @Param(description="the url of the object store")
     private String url;
 
+    @SerializedName("protocol") @Param(description="the protocol of the object store")
+    private String protocol;
+
     @SerializedName("providername") @Param(description="the provider name of the object store")
     private String providerName;
 
     @SerializedName("scope") @Param(description="the scope of the object store")
-    private ScopeType type;
+    private ScopeType scope;
 
     @SerializedName("details") @Param(description="the details of the object store")
-    private String details;
+    private Set<ObjectStoreDetailResponse> details;
 
 
+    public ObjectStoreResponse(){
+        this.details = new LinkedHashSet<ObjectStoreDetailResponse>();
+    }
 
     @Override
     public String getObjectId() {
@@ -95,11 +98,11 @@ public class ObjectStoreResponse extends BaseResponse {
     }
 
 
-    public String getRegionId() {
+    public Long getRegionId() {
         return regionId;
     }
 
-    public void setRegionId(String regionId) {
+    public void setRegionId(Long regionId) {
         this.regionId = regionId;
     }
 
@@ -135,20 +138,33 @@ public class ObjectStoreResponse extends BaseResponse {
         this.providerName = providerName;
     }
 
-    public ScopeType getType() {
-        return type;
+    public ScopeType getScope() {
+        return scope;
     }
 
-    public void setType(ScopeType type) {
-        this.type = type;
+    public void setScope(ScopeType type) {
+        this.scope = type;
     }
 
-    public String getDetails() {
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Set<ObjectStoreDetailResponse> getDetails() {
         return details;
     }
 
-    public void setDetails(String details) {
+    public void setDetails(Set<ObjectStoreDetailResponse> details) {
         this.details = details;
+    }
+
+    public void addDetail(ObjectStoreDetailResponse detail){
+        this.details.add(detail);
     }
 
 
