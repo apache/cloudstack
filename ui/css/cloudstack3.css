@@ -11761,6 +11761,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .updateResourceLimits:hover .icon {
   background-position: -100px -614px;
 }
+ 
+.addVlanRange .icon {
+  background-position: -168px -31px;
+}
+
+
+.addVlanRange:hover .icon {
+  background-position: -168px -613px;
+}
 
 .resize .icon,
 .updateResourceCount .icon {

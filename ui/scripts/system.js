@@ -898,7 +898,59 @@
                   });
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
+              },
+
+             addVlanRange:{
+                   label:'Add VLAN Range',
+                   title:'Add VLAN Range',
+
+                    messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to add another VLAN Range to this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range added';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Add VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&vlan=" + todb(args.data.startvlan) + "-" + todb(args.data.endvlan));
+
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
+                   }
+                  });
+
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+
+               }
+
+ 
             },
 
             tabFilter: function(args) {
@@ -980,7 +1032,7 @@
 
 											args.response.success({
 												actionFilter: function() {
-													var allowedActions = ['edit'];
+													var allowedActions = ['edit' , 'addVlanRange'];
 													return allowedActions;
 												},
 												data: selectedPhysicalNetworkObj
