@@ -363,9 +363,12 @@ if getent passwd cloud | grep -q /var/lib/cloud; then
 fi
 
 # if saved configs from upgrade exist, copy them over
-if [ -d "%{_sysconfdir}/cloud.rpmsave/management" ]; then
+if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
+    mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
     cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
 fi
 
 # Choose server.xml and tomcat.conf links based on old config, if exists
@@ -407,6 +410,8 @@ fi
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
 #%post awsapi
