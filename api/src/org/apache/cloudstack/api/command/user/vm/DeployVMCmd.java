@@ -174,15 +174,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     private Boolean startVm;
 
     @ACL
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
-            + "Should be passed only when vm is created from a zone with Basic Network support."
-            + " Mutually exclusive with securitygroupnames parameter")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine."
+            + " Mutually exclusive with affinitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
     @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
-            + " Should be passed only when vm is created from a zone with Basic Network support. "
-            + "Mutually exclusive with securitygroupids parameter")
+            + "Mutually exclusive with affinitygroupids parameter")
     private List<String> affinityGroupNameList;
 
 

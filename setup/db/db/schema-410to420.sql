@@ -166,76 +166,7 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE nic_secondary_ips (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `uuid` varchar(40),
-  `vmId` bigint unsigned COMMENT 'vm instance id',
-  `nicId` bigint unsigned NOT NULL,
-  `ip4_address` char(40) COMMENT 'ip4 address',
-  `ip6_address` char(40) COMMENT 'ip6 address',
-  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
-  `created` datetime NOT NULL COMMENT 'date created',
-  `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to   account table',
-  `domain_id` bigint unsigned NOT NULL COMMENT 'the domain that the owner belongs to',
-   PRIMARY KEY (`id`),
-   CONSTRAINT `fk_nic_secondary_ip__vmId` FOREIGN KEY `fk_nic_secondary_ip__vmId`(`vmId`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
-   CONSTRAINT `fk_nic_secondary_ip__networks_id` FOREIGN KEY `fk_nic_secondary_ip__networks_id`(`network_id`) REFERENCES `networks`(`id`),
-   CONSTRAINT `uc_nic_secondary_ip__uuid` UNIQUE (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `cloud`.`nics` ADD COLUMN secondary_ip SMALLINT DEFAULT '0' COMMENT 'secondary ips configured for the nic';
-ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN dnat_vmip VARCHAR(40);
-
-ALTER TABLE `cloud`.`alert` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
-ALTER TABLE `cloud`.`event` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.interval', '86400', 'The interval (in seconds) to wait before running the alert purge thread');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.delay', '0', 'Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts');
-
-DROP VIEW IF EXISTS `cloud`.`event_view`;
-CREATE VIEW `cloud`.`event_view` AS
-    select
-        event.id,
-        event.uuid,
-        event.type,
-        event.state,
-        event.description,
-        event.created,
-        event.level,
-        event.parameters,
-        event.start_id,
-        eve.uuid start_uuid,
-        event.user_id,
-        event.archived,
-        user.username user_name,
-        account.id account_id,
-        account.uuid account_uuid,
-        account.account_name account_name,
-        account.type account_type,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        projects.id project_id,
-        projects.uuid project_uuid,
-        projects.name project_name
-    from
-        `cloud`.`event`
-            inner join
-        `cloud`.`account` ON event.account_id = account.id
-            inner join
-        `cloud`.`domain` ON event.domain_id = domain.id
-            inner join
-        `cloud`.`user` ON event.user_id = user.id
-            left join
-        `cloud`.`projects` ON projects.project_account_id = event.account_id
-            left join
-        `cloud`.`event` eve ON event.start_id = eve.id;
-
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) NOT NULL DEFAULT 'FirstFitPlanner'  COMMENT 'Planner heuristics used to deploy a VM of this offering';
-
--- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;
-
 
 CREATE TABLE nic_secondary_ips (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
@@ -539,3 +470,5 @@ CREATE TABLE `cloud`.`vm_snapshots` (
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `vm_snapshot_enabled` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'Whether VM snapshot is supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hypervisor_type` in ('VMware', 'XenServer');
 
+-- Re-enable foreign key checking, at the end of the upgrade path
+SET foreign_key_checks = 1;			
