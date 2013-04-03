@@ -235,6 +235,7 @@
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
           <ref bean="NiciraNvpGuestNetworkGuru" />
+          <ref bean="MidoNetGuestNetworkGuru" />
       </list>
     </property>
     <property name="NetworkElements">
@@ -244,6 +245,7 @@
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
           <ref bean="NiciraNvp" />
+          <ref bean="MidoNetElement" />
           <ref bean="bigSwitchVnsElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="Ovs"/>
@@ -282,6 +284,7 @@
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
           <ref bean="NiciraNvp" />
+          <ref bean="MidoNetElement" />
           <ref bean="bigSwitchVnsElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="Ovs"/>
@@ -295,5 +298,17 @@
       </list>
     </property>
   </bean>
+
+  <!--
+    Midonet support components
+  -->
+  <bean id="MidoNetGuestNetworkGuru" class="com.cloud.network.guru.MidoNetGuestNetworkGuru">
+    <property name="name" value="MidoNetGuestNetworkGuru"/>
+  </bean>
+  <bean id="MidoNetElement" class="com.cloud.network.element.MidoNetElement">
+    <property name="name" value="MidoNetElement"/>
+  </bean>
+
+
 
 </beans>

@@ -141,6 +141,7 @@
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
           <ref bean="NiciraNvpGuestNetworkGuru"/>
+          <ref bean="MidoNetGuestNetworkGuru"/>
       </list>
     </property>
     <property name="NetworkElements">
@@ -150,6 +151,7 @@
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp"/>
+          <ref bean="MidoNetElement"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
@@ -183,6 +185,7 @@
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
+          <ref bean="MidoNetElement"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
@@ -205,6 +208,16 @@
   </bean>
   <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
     <property name="name" value="NiciraNvp"/>
+  </bean>
+
+  <!-- 
+    Midonet support components
+  -->
+  <bean id="MidoNetGuestNetworkGuru" class="com.cloud.network.guru.MidoNetGuestNetworkGuru">
+    <property name="name" value="MidoNetGuestNetworkGuru"/>
+  </bean>
+  <bean id="MidoNetElement" class="com.cloud.network.element.MidoNetElement">
+    <property name="name" value="MidoNetElement"/>
   </bean>
   
 
