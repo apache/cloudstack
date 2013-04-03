@@ -78,6 +78,10 @@
   <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
     <property name="name" value="NiciraNvp"/>
   </bean>
+  
+  <!--
+      BigSwitch Components
+  -->
   <bean id="BigSwitchVns" class="com.cloud.network.element.BigSwitchVnsElement">
     <property name="name" value="BigSwitchVns"/>
   </bean>
@@ -230,6 +234,7 @@
           <ref bean="DirectNetworkGuru"/>
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
+          <ref bean="NiciraNvpGuestNetworkGuru" />
       </list>
     </property>
     <property name="NetworkElements">
@@ -238,6 +243,7 @@
           <ref bean="Netscaler"/>
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="NiciraNvp" />
           <ref bean="bigSwitchVnsElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="Ovs"/>
@@ -275,6 +281,7 @@
           <ref bean="Netscaler"/>
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="NiciraNvp" />
           <ref bean="bigSwitchVnsElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="Ovs"/>
