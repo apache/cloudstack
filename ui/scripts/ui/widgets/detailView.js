@@ -1087,10 +1087,12 @@
                     { actions: tabData.actions, actionName: 'add' }, {
                       noRefresh: true,
                       complete: function(args) {
-                        loadTabContent(
-                          $detailView.find('div.detail-group:visible'),
-                          $detailView.data('view-args')
-                        );
+                        if ($detailView.is(':visible')) {
+                          loadTabContent(
+                            $detailView.find('div.detail-group:visible'),
+                            $detailView.data('view-args')
+                          );
+                        }
                       }
                     }
                   )
