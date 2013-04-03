@@ -56,7 +56,8 @@ config_fields['core']['log_file'] = expanduser(config_dir + '/log')
 # ui
 config_fields['ui']['color'] = 'true'
 config_fields['ui']['prompt'] = '> '
-config_fields['ui']['tabularize'] = 'false'
+config_fields['ui']['tabularize'] = 'false' # deprecate - REMOVE
+config_fields['ui']['display'] = 'default' # default display mechanism
 
 # server
 config_fields['server']['host'] = 'localhost'
@@ -111,9 +112,19 @@ def read_config(get_attr, set_attr, config_file):
     for section in config_fields.keys():
         for key in config_fields[section].keys():
             try:
+                if( key == "tabularize" ): # this key is deprecated
+                    print "\ntabularize config parameter is deprecated:",
+                    print "please switch to display =",
+                    print "[default,json,tabularize]\n"
                 set_attr(key, config.get(section, key))
             except Exception:
-                missing_keys.append(key)
+                if( key == "tabularize" ): # this key is deprecated
+                    set_attr( key, "false" ) # set default
+                elif( key == "display" ): # this key is deprecated
+                    config = write_config(get_attr, config_file, True)
+                    set_attr( key, "default" ) # set default
+                else:
+                    missing_keys.append(key)
 
     if len(missing_keys) > 0:
         print "Please fix `%s` in %s" % (', '.join(missing_keys), config_file)
