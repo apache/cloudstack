@@ -1774,8 +1774,13 @@ div.list-view td.state.off span {
 }
 
 .detail-view .detail-group .button.add {
+  clear: both;
+  margin: 0px 21px 13px 0 !important;
+}
+
+.detail-view .details.group-multiple {
   float: left;
-  margin: 6px 0 17px 13px;
+  width: 100%;
 }
 
 /*List-view: subselect dropdown*/

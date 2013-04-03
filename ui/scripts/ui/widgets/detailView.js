@@ -1077,7 +1077,7 @@
 
             // Add item action
             if (tabData.multiple && tabData.actions && tabData.actions.add) {
-              $tabContent.append(
+              $tabContent.prepend(
                 $('<div>').addClass('button add').append(
                   $('<span>').addClass('icon').html('&nbsp;'),
                   $('<span>').html(_l(tabData.actions.add.label))
