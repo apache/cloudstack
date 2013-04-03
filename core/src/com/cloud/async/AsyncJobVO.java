@@ -32,7 +32,6 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="async_job")
@@ -120,7 +119,6 @@ public class AsyncJobVO implements AsyncJob {
     @Transient
     private boolean fromPreviousSession = false;
 
-    
     public AsyncJobVO() {
         this.uuid = UUID.randomUUID().toString();
     }

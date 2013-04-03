@@ -86,26 +86,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final int HEARTBEAT_INTERVAL = 2000;
     private static final int GC_INTERVAL = 10000;				// 10 seconds
 
-    @Inject private AsyncJobExecutorContext _context;
     @Inject private SyncQueueManager _queueMgr;
     @Inject private ClusterManager _clusterMgr;
     @Inject private AccountManager _accountMgr;
     @Inject private AccountDao _accountDao;
     @Inject private AsyncJobDao _jobDao;
     @Inject private ConfigurationDao _configDao;
+
     private long _jobExpireSeconds = 86400;						// 1 day
-    private long _jobCancelThresholdSeconds = 3600;         // 1 hour (for cancelling the jobs blocking other jobs)
+    private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
 
     @Inject private ApiDispatcher _dispatcher;
 
     private final ScheduledExecutorService _heartbeatScheduler =
             Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
     private ExecutorService _executor;
-
-    @Override
-    public AsyncJobExecutorContext getExecutorContext() {
-        return _context;
-    }
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {

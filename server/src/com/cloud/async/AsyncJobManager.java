@@ -23,10 +23,8 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
     
-	public AsyncJobExecutorContext getExecutorContext();
-	
-	   public AsyncJobVO getAsyncJob(long jobId);
-	    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
+	public AsyncJobVO getAsyncJob(long jobId);
+	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
 	
 	public List<? extends AsyncJob> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId);
 	
