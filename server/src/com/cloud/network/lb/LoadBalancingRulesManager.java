@@ -16,23 +16,23 @@
 // under the License.
 package com.cloud.network.lb;
 
+import java.util.List;
+
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
-
-import java.util.List;
+import com.cloud.user.UserContext;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
 
-    LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException;
+    LoadBalancer createPublicLoadBalancer(String xId, String name, String description, 
+            int srcPortStart, int srcPortEnd, int defPortStart, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
+            throws NetworkRuleConflictException;
 
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
     boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId);
@@ -47,7 +47,6 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
      * @return true if removal is successful
      */
     boolean removeVmFromLoadBalancers(long vmId);
-    boolean applyRules(Network network, FirewallRule.Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException ;
     boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
     String getLBCapability(long networkid, String capabilityName);
     boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException;

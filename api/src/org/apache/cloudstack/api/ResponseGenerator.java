@@ -19,6 +19,7 @@ package org.apache.cloudstack.api;
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -50,6 +51,7 @@ import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -148,6 +150,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
@@ -392,4 +395,6 @@ public interface ResponseGenerator {
     NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
             Long nicId, Long networkId);
     public NicResponse createNicResponse(Nic result);
+
+    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(LoadBalancer lb, Map<Ip, UserVm> lbInstances);
 }

@@ -358,8 +358,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
 
-            if (!_routerMgr.applyFirewallRules(network, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+            if (!_routerMgr.applyLoadBalancingRules(network, rules, routers)) {
+                throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;
             }

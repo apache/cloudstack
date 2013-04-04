@@ -36,6 +36,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
@@ -400,6 +401,12 @@ VpcVirtualNetworkApplianceService {
     public List<DomainRouterVO> getVpcRouters(long vpcId) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

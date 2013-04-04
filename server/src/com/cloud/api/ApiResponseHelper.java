@@ -42,6 +42,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -204,10 +207,12 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.ApplicationLoadBalancerRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -261,6 +266,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
@@ -721,7 +727,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, loadBalancer.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, loadBalancer.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
@@ -3619,5 +3625,70 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setIsDefault(result.isDefaultNic());
         return response;
+    }
+    
+    @Override
+    public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(LoadBalancer lb, Map<Ip, UserVm> lbInstances) {
+
+        ApplicationLoadBalancerResponse lbResponse = new ApplicationLoadBalancerResponse();
+        lbResponse.setId(lb.getUuid());
+        lbResponse.setName(lb.getName());
+        lbResponse.setDescription(lb.getDescription());
+        lbResponse.setAlgorithm(lb.getAlgorithm());
+        Network nw = ApiDBUtils.findNetworkById(lb.getNetworkId());
+        lbResponse.setNetworkId(nw.getUuid());
+        populateOwner(lbResponse, lb);
+        
+        if (lb.getScheme() == Scheme.Internal) {
+            ApplicationLoadBalancerRule ruleInternal = (ApplicationLoadBalancerRule)lb;
+            lbResponse.setSourceIp(ruleInternal.getSourceIpAddress().addr());
+            lbResponse.setSourceIpNetworkId(ruleInternal.getSourceIpNetworkUuid());
+        } else {
+            //for public, populate the ip information from the ip address
+            IpAddress publicIp = ApiDBUtils.findIpAddressById(lb.getSourceIpAddressId());
+            lbResponse.setSourceIp(publicIp.getAddress().addr());
+            Network ntwk = ApiDBUtils.findNetworkById(publicIp.getNetworkId());
+            lbResponse.setSourceIpNetworkId(ntwk.getUuid());
+        }
+        
+        //set load balancer rules information (only one rule per load balancer in this release)
+        List<ApplicationLoadBalancerRuleResponse> ruleResponses = new ArrayList<ApplicationLoadBalancerRuleResponse>();
+        ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
+        ruleResponse.setInstancePort(lb.getDefaultPortStart());
+        ruleResponse.setSourcePort(lb.getSourcePortStart());
+        String stateToSet = lb.getState().toString();
+        if (stateToSet.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        ruleResponse.setState(stateToSet);
+        ruleResponse.setObjectName("loadbalancerrule");
+        ruleResponses.add(ruleResponse);
+        lbResponse.setLbRules(ruleResponses);
+        
+        //set Lb instances information
+        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
+        for (Ip ip : lbInstances.keySet()) {
+            ApplicationLoadBalancerInstanceResponse instanceResponse = new ApplicationLoadBalancerInstanceResponse();
+            instanceResponse.setIpAddress(ip.addr());
+            UserVm vm = lbInstances.get(ip);
+            instanceResponse.setId(vm.getUuid());
+            instanceResponse.setName(vm.getInstanceName());
+            instanceResponse.setObjectName("loadbalancerinstance");
+            instanceResponses.add(instanceResponse);
+        }
+        
+        lbResponse.setLbInstances(instanceResponses);
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, lb.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        lbResponse.setTags(tagResponses);
+
+        lbResponse.setObjectName("loadbalancer");
+        return lbResponse;
     }
 }

@@ -2033,4 +2033,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         return null;
     }
+    
+    @Override
+    public IpAddress getPublicIpAddress(String ipAddress, long networkId) {
+        return _ipAddressDao.findByIpAndSourceNetworkId(networkId, ipAddress);
+    }
 }

@@ -331,7 +331,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         return sendCommandsToRouter(elbVm, cmds);
     }
     
-    protected DomainRouterVO findElbVmForLb(FirewallRule lb) {//TODO: use a table to lookup
+    protected DomainRouterVO findElbVmForLb(LoadBalancingRule lb) {//TODO: use a table to lookup
         ElasticLbVmMapVO map = _elbVmMapDao.findOneByIp(lb.getSourceIpAddressId());
         if (map == null) {
             return null;
@@ -342,14 +342,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
     @Override
     public boolean applyLoadBalancerRules(Network network,
-            List<? extends FirewallRule> rules)
+            List<LoadBalancingRule> rules)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             return true;
-        }
-        if (rules.get(0).getPurpose() != Purpose.LoadBalancing) {
-            s_logger.warn("ELB: Not handling non-LB firewall rules");
-            return false;
         }
         
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
@@ -656,7 +652,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             LoadBalancer result = null;
             try {
                 lb.setSourceIpAddressId(ipId);
-                result = _lbMgr.createLoadBalancer(lb, false);
+                
+                result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(), 
+                        lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), ipId.longValue(),
+                        lb.getProtocol(), lb.getAlgorithm(), false, UserContext.current());
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {

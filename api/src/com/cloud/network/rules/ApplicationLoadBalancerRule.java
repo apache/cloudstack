@@ -14,15 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.network.rules;
 
-/**
- * Definition for a LoadBalancer
- */
-public interface LoadBalancer extends FirewallRule, LoadBalancerContainer {
-    
-    int getDefaultPortStart();
-
-    int getDefaultPortEnd();
-
+public interface ApplicationLoadBalancerRule extends ApplicationLoadBalancerContainer, LoadBalancer{
+    int getInstancePort();
 }

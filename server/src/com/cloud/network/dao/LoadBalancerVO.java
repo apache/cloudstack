@@ -19,6 +19,8 @@ package com.cloud.network.dao;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
@@ -26,6 +28,12 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.net.NetUtils;
 
+/**
+ * This VO represent Public Load Balancer
+ * It references source ip address by its Id. 
+ * To get the VO for Internal Load Balancer rule, please refer to LoadBalancerRuleVO
+ *
+ */
 @Entity
 @Table(name=("load_balancing_rules"))
 @DiscriminatorValue(value="LoadBalancing")
@@ -46,6 +54,10 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     
     @Column(name="default_port_end")
     private int defaultPortEnd;
+    
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="scheme")
+    Scheme scheme;
 
     public LoadBalancerVO() { 
     }
@@ -57,6 +69,19 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
         this.algorithm = algorithm;
         this.defaultPortStart = dstPort;
         this.defaultPortEnd = dstPort;
+        this.scheme = Scheme.Public;
+    }
+    
+    
+    protected LoadBalancerVO(String xId, String name, String description, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
+        super(xId, null, srcPort, dstPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null,
+                null, null, null); 
+        this.name = name;
+        this.description = description;
+        this.algorithm = algorithm;
+        this.defaultPortStart = dstPort;
+        this.defaultPortEnd = dstPort;
+        this.scheme = Scheme.Internal;
     }
     
     @Override
@@ -94,5 +119,10 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    @Override
+    public Scheme getScheme() {
+        return scheme;
     }  
 }

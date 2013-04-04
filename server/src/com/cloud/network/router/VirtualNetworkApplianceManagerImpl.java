@@ -3316,6 +3316,31 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         });
     }
+    
+    
+    @Override
+    public boolean applyLoadBalancingRules(Network network, final List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No lb rules to be applied for network " + network.getId());
+            return true;
+        }
+        return applyRules(network, routers, "loadbalancing rules", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                // for load balancer we have to resend all lb rules for the network
+                List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
+                List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                for (LoadBalancerVO lb : lbs) {
+                    List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                    List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                    List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId() );
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
+                    lbRules.add(loadBalancing);
+                }
+                return sendLBRules(router, lbRules, network.getId());  
+            }
+        });
+    }
 
     protected boolean sendLBRules(VirtualRouter router, List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);

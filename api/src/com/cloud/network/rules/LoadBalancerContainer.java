@@ -16,13 +16,18 @@
 // under the License.
 package com.cloud.network.rules;
 
-/**
- * Definition for a LoadBalancer
- */
-public interface LoadBalancer extends FirewallRule, LoadBalancerContainer {
+public interface LoadBalancerContainer {
     
-    int getDefaultPortStart();
+    public enum Scheme {
+        Public, Internal;
+    }
 
-    int getDefaultPortEnd();
+    String getName();
+
+    String getDescription();
+    
+    String getAlgorithm();
+    
+    Scheme getScheme();
 
 }

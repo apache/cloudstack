@@ -89,5 +89,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
     void setVpcId(Long vpcId);
     String getVmIp();
     void setVmIp(String vmIp);
+    
+    Long getNetworkId();
 
 }

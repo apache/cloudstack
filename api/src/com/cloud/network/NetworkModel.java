@@ -263,4 +263,7 @@ public interface NetworkModel {
     boolean isProviderEnabledInZone(long zoneId, String provider);
 
     Nic getPlaceholderNicForRouter(Network network, Long podId);
+    
+    IpAddress getPublicIpAddress(String ipAddress, long networkId);
+
 }
