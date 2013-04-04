@@ -4001,7 +4001,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     		DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
     		return zone.getAllocationState();
     	}    	
-    }    
+    }   
 
     @Override
     public AllocationState findPodAllocationState(HostPodVO pod){

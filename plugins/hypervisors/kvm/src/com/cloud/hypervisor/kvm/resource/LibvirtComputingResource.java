@@ -666,6 +666,9 @@ ServerResource {
         if (_localStoragePath == null) {
             _localStoragePath = "/var/lib/libvirt/images/";
         }
+        
+        File storagePath = new File(_localStoragePath);
+        _localStoragePath = storagePath.getAbsolutePath();
 
         _localStorageUUID = (String) params.get("local.storage.uuid");
         if (_localStorageUUID == null) {

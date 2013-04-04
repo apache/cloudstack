@@ -51,6 +51,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     @Override
 	protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 	    
+        s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
 		long dcId = plan.getDataCenterId();

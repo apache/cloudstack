@@ -62,7 +62,13 @@ public class Upgrade410to420 implements DbUpgrade {
         upgradeVmwareLabels(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
-        PreparedStatement sql = null;
+        updateSystemVmTemplates(conn);
+        updateCluster_details(conn);
+        updatePrimaryStore(conn);
+    }
+	
+	private void updateSystemVmTemplates(Connection conn) {
+	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
             sql.executeUpdate();
@@ -76,8 +82,39 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-        updateCluster_details(conn);
-    }
+	}
+	
+	private void updatePrimaryStore(Connection conn) {
+	    PreparedStatement sql = null;
+	    PreparedStatement sql2 = null;
+        try {
+            sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
+            sql.setString(1, "ancient primary data store provider");
+            sql.setString(2, "HOST");
+            sql.executeUpdate();
+            
+            sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
+            sql2.setString(1, "ancient primary data store provider");
+            sql2.setString(2, "CLUSTER");
+            sql2.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+                }
+            }
+            
+            if (sql2 != null) {
+                try {
+                    sql2.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+	}
 
     //update the cluster_details table with default overcommit ratios.
     private void updateCluster_details(Connection conn) {
