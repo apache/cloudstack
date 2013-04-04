@@ -24,5 +24,5 @@ public interface AgentMonitorService extends Listener {
     public Long getAgentPingTime(long agentId);
     public void pingBy(long agentId);
     public void signalStop();
-    public void startMonitoring();
+    public void startMonitoring(long pingTimeout);
 }

@@ -668,7 +668,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean start() {
         startDirectlyConnectedHosts();
         if (_monitor != null) {
-            _monitor.startMonitoring();
+            _monitor.startMonitoring(_pingTimeout);
         }
         if (_connection != null) {
             _connection.start();
