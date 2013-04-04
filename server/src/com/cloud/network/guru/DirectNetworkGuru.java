@@ -227,10 +227,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         _networkMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
         //save the placeholder nic if the vm is the Virtual router
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+            Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
             if (placeholderNic == null) {
                 s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + requestedIp6Addr + " for the network " + network);
-                _networkMgr.savePlaceholderNic(network, nic.getIp4Address());
+                _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), VirtualMachine.Type.DomainRouter);
             }
         }
         txn.commit();
@@ -259,7 +259,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 txn.start();
                 
                 // if the ip address a part of placeholder, don't release it
-                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                 if (placeholderNic != null && placeholderNic.getIp4Address().equalsIgnoreCase(ip.getAddress().addr())) {
                     s_logger.debug("Not releasing direct ip " + ip.getId() +" yet as its ip is saved in the placeholder");
                 } else {

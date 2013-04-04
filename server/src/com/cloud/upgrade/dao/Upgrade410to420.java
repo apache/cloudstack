@@ -248,7 +248,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     String ip = rs.getString(3);
                     String uuid = UUID.randomUUID().toString();
                     //Insert placeholder nic for each Domain router nic in Shared network
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder')");
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
                     pstmt.setString(1, uuid);
                     pstmt.setString(2, ip);
                     pstmt.setString(3, gateway);

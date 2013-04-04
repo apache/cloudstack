@@ -3488,6 +3488,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network,
     							 String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
+        //This method allocates direct ip for the Shared network in Advance zones
     	boolean ipv4 = false, ipv6 = false;
     	
     	Transaction txn = Transaction.currentTxn();
@@ -3500,7 +3501,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     			
     			//Get ip address from the placeholder and don't allocate a new one
     			if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
-    			    Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+    			    Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
     			    if (placeholderNic != null) {
     			        IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
                         ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
@@ -3756,11 +3757,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         
         @Override
-        public NicVO savePlaceholderNic(Network network, String ip4Address) {
+        public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
             NicVO nic = new NicVO(null, null, network.getId(), null); 
             nic.setIp4Address(ip4Address);
             nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
             nic.setState(Nic.State.Reserved);
+            nic.setVmType(vmType);
             return _nicDao.persist(nic);
         }
         

@@ -65,4 +65,5 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     
     List<NicVO> listPlaceholderNicsByNetworkId(long networkId);
     
+    List<NicVO> listPlaceholderNicsByNetworkIdAndVmType(long networkId, VirtualMachine.Type vmType);
 }

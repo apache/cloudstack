@@ -1708,15 +1708,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
             	if (guestNetwork.getCidr() != null) {
-            	    //Check the placeholder nic, and if it's ip address is not empty, allocate it from there
-            	    String requestedGateway = null;
-            	    if (guestNetwork.getGateway() != null) {
-            	        requestedGateway = guestNetwork.getGateway();
-            	    } else if (plan != null && plan.getPodId() != null) {
-            	        Pod pod = _configMgr.getPod(plan.getPodId());
-            	        requestedGateway = pod.getGateway();
-            	    }
-            	    Nic placeholder = _networkModel.getPlaceholderNic(guestNetwork, null);
+            	    Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
             	    if (placeholder != null) {
             	        s_logger.debug("Requesting ip address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
             	        defaultNetworkStartIp = placeholder.getIp4Address();

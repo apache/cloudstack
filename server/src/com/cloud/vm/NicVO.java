@@ -29,11 +29,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "nics")
@@ -359,5 +357,9 @@ public class NicVO implements Nic {
 
     public void setSecondaryIp(boolean secondaryIp) {
         this.secondaryIp = secondaryIp;
+    }
+
+    public void setVmType(VirtualMachine.Type vmType) {
+        this.vmType = vmType;
     }
 }

@@ -55,6 +55,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -345,6 +346,6 @@ public interface NetworkManager  {
     String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
     boolean removeVmSecondaryIpsOfNic(long nicId);
 
-    NicVO savePlaceholderNic(Network network, String ip4Address);
+    NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType);
 
 }

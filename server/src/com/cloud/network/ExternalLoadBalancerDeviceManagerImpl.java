@@ -111,7 +111,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -119,18 +118,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.util.*;
 
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
@@ -783,7 +774,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // If a NIC doesn't exist for the load balancing IP address, create one
                 loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
                 if (loadBalancingIpNic == null) {
-                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress);
+                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress, null);
                 }
 
                 // Save a mapping between the source IP address and the load balancing IP address NIC
@@ -992,7 +983,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (add) {
 		    // on restart network, network could have already been implemented. If already implemented then return
-            Nic selfipNic = _networkModel.getPlaceholderNic(guestConfig, null);
+            Nic selfipNic = getPlaceholderNic(guestConfig);
             if (selfipNic != null) {
 		    return true;
             }
@@ -1006,7 +997,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
         } else {
             // get the self-ip used by the load balancer
-            Nic selfipNic = _networkModel.getPlaceholderNic(guestConfig, null);
+            Nic selfipNic = getPlaceholderNic(guestConfig);
             if (selfipNic == null) {
                 s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network." +
                         " Either network implement failed half way through or already network shutdown is completed. So just returning.");
@@ -1034,10 +1025,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (add) {
             // Insert a new NIC for this guest network to reserve the self IP
-            _networkMgr.savePlaceholderNic(guestConfig, selfIp);
+            _networkMgr.savePlaceholderNic(guestConfig, selfIp, null);
         } else {
             // release the self-ip obtained from guest network
-            Nic selfipNic = _networkModel.getPlaceholderNic(guestConfig, null);
+            Nic selfipNic = getPlaceholderNic(guestConfig);
             _nicDao.remove(selfipNic.getId());
 
             // release the load balancer allocated for the network
@@ -1211,4 +1202,15 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return answer.getLoadBalancers();
     }
 
+    private NicVO getPlaceholderNic(Network network) {
+        List<NicVO> guestIps = _nicDao.listByNetworkId(network.getId());
+        for (NicVO guestIp : guestIps) {
+            // only external firewall and external load balancer will create NicVO with PlaceHolder reservation strategy
+            if (guestIp.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && guestIp.getVmType() == null
+                    && guestIp.getReserver() == null && !guestIp.getIp4Address().equals(network.getGateway())) {
+                return guestIp;
+            }
+        }
+        return null;
+    }
 }
