@@ -123,7 +123,7 @@ public class ViewResponseHelper {
                 // first time encountering this vm
                 userVmData = ApiDBUtils.newUserVmResponse(objectName, userVm, details, caller);
             } else{
-                // update nics, securitygroups, tags for 1 to many mapping fields
+                // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(userVmData, userVm);
             }
             vmDataList.put(userVm.getId(), userVmData);
