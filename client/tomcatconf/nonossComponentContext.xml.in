@@ -163,8 +163,20 @@
   <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
       <list>
+          <ref bean="SHA256SaltedUserAuthenticator"/>
           <ref bean="MD5UserAuthenticator"/>
           <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="PlainTextUserAuthenticator"/>
+      </list>
+    </property>
+  </bean>
+  <bean id="userPasswordEncoders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="SHA256SaltedUserAuthenticator"/>
+          <ref bean="MD5UserAuthenticator"/>
+          <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>
   </bean>

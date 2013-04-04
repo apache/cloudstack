@@ -392,54 +392,6 @@
     <property name="name" value="PLAINTEXT"/>
   </bean>
 
-  <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
-    <property name="UserAuthenticators">
-      <list>
-          <ref bean="SHA256SaltedUserAuthenticator"/>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-          <ref bean="PlainTextUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="UserPasswordEncoders">
-      <list>
-          <ref bean="SHA256SaltedUserAuthenticator"/>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-          <ref bean="PlainTextUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="SecurityCheckers">
-      <list>
-          <ref bean="domainChecker"/>
-      </list>
-    </property>
-  </bean>
-
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
-    <property name="UserAuthenticators">
-      <list>
-          <ref bean="SHA256SaltedUserAuthenticator"/>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-          <ref bean="PlainTextUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="UserPasswordEncoders">
-      <list>
-          <ref bean="SHA256SaltedUserAuthenticator"/>
-          <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
-          <ref bean="PlainTextUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="HostAllocators">
-      <list>
-          <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-  </bean>
-
   <!--
       Network Elements
   -->
@@ -649,11 +601,13 @@
   -->
   <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
     <property name="UserAuthenticators" value="#{userAuthenticators.Adapters}" />
+    <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="SecurityCheckers" value="#{securityCheckers.Adapters}" />
   </bean>
   
   <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
     <property name="UserAuthenticators" value="#{userAuthenticators.Adapters}" />
+    <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
   </bean>
 
