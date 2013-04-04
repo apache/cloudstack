@@ -2009,6 +2009,31 @@ div.detail-group.actions td {
   vertical-align: middle;
 }
 
+.details.group-multiple div.detail-group.actions {
+  float: right;
+  max-width: 75%;
+  height: 23px;
+  position: relative;
+  margin: -15px 0 -5px;
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions {
+  display: block;
+  height: 35px;
+  padding: 0;
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions td {
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions .action {
+  float: right;
+  /*+placement:shift 2px 7px;*/
+  position: relative;
+  left: 2px;
+  top: 7px;
+}
+
 .detail-group table td.detail-actions {
   width: 59%;
   height: 26px;

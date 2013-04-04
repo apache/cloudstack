@@ -1281,6 +1281,25 @@
                   });
                 },
                 notification: { poll: pollAsyncJobResult }
+              },
+
+              // Remove NIC/Network from VM
+              remove: {
+                label: 'label.action.delete.network',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.network';
+                  },
+                  notification: function(args) {
+                    return 'label.action.delete.network';
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                notification: {
+                  poll: function(args) { args.complete(); }
+                }
               }
             },
             fields: [

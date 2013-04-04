@@ -698,7 +698,10 @@
 
       $.each(actions, function(key, value) {
         if ($.inArray(key, allowedActions) == -1 ||
-           (key == 'edit' && options.compact)) return true;
+            (options.ignoreAddAction && key == 'add') ||
+            (key == 'edit' && options.compact)) {
+          return true;
+        }
 
         var $action = $('<div></div>')
               .addClass('action').addClass(key)
@@ -1072,6 +1075,18 @@
                       ); 
                     })
                   );
+              }
+
+              // Add action bar
+              if (tabData.actions) {
+                var $actions = makeActionButtons(tabData.actions, {
+                  actionFilter: tabData.actions.actionFilter,
+                  data: item,
+                  context: $detailView.data('view-args').context,
+                  ignoreAddAction: true
+                });
+
+                $fieldContent.find('th').append($actions);
               }
             });
 
