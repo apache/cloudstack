@@ -399,6 +399,13 @@ if [ -L $oldtomcatconf ] ; then
     fi
 fi
 
+%preun agent
+/sbin/service cloudstack-agent stop || true
+if [ "$1" == "0" ] ; then
+    /sbin/chkconfig --del cloudstack-agent > /dev/null 2>&1 || true
+    /sbin/service cloudstack-agent stop > /dev/null 2>&1 || true
+fi
+
 %pre agent
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
@@ -408,6 +415,10 @@ if [ -d "%{_sysconfdir}/cloud" ] ; then
 fi
 
 %post agent
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
+fi
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
