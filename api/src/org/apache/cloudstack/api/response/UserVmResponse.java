@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -169,10 +170,15 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
     private String keyPairName;
 
+    @SerializedName("affinitygroup")
+    @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
+    private Set<AffinityGroupResponse> affinityGroupList;
+
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
+        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
     }
 
     public void setHypervisor(String hypervisor) {
@@ -379,6 +385,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setKeyPairName(String keyPairName) {
         this.keyPairName = keyPairName;
+    }
+
+    public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {
+        this.affinityGroupList = affinityGroups;
+    }
+
+    public void addAffinityGroup(AffinityGroupResponse affinityGroup) {
+        this.affinityGroupList.add(affinityGroup);
     }
 
 }

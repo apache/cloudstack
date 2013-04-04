@@ -482,7 +482,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
+        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
     }
 
     public enum LDAPParams {
