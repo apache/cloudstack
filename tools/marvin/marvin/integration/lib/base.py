@@ -1882,6 +1882,17 @@ class PublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVlanIpRanges(cmd))
 
+    @classmethod
+    def dedicate(cls, apiclient, id, zoneid, account=None, domainid=None, projectid=None):
+        """Dedicate VLAN IP range"""
+
+        cmd = dedicatePublicIpRange.dedicatePublicIpRangeCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        cmd.zoneid = zoneid
+        return PublicIpRange(apiclient.dedicatePublicIpRange(cmd).__dict__)
 
 class SecondaryStorage:
     """Manage Secondary storage"""

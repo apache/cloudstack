@@ -40,7 +40,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -544,7 +546,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#deleteAccountSpecificVirtualRanges(long)
      */
     @Override
-    public boolean deleteAccountSpecificVirtualRanges(long accountId) {
+    public boolean releaseAccountSpecificVirtualRanges(long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -612,6 +614,34 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd)
+			throws ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean releasePublicIpRange(long userId, long vlanDbId,
+			Account caller) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Vlan dedicatePublicIpRange(Long vlanDbId, String accountName,
+			Long domainId, Long zoneId, Long projectId)
+			throws ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 
 }

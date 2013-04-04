@@ -56,7 +56,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -2306,9 +2308,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
         }
 
-        // if it's an account specific range, associate ip address list to the account
-        boolean associateIpRangeToAccount = false;
-
         if (forVirtualNetwork) {
             if (vlanOwner != null) {
 
@@ -2316,8 +2315,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 //check resource limits
                 _resourceLimitMgr.checkResourceLimit(vlanOwner, ResourceType.public_ip, accountIpRange);
-                
-                associateIpRangeToAccount = true;
             }
         }
 
@@ -2332,21 +2329,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
 
         txn.commit();
-        if (associateIpRangeToAccount) {
-            _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
-        }
-
-        // Associate ips to the network
-        if (associateIpRangeToAccount) {
-            if (network.getState() == Network.State.Implemented) {
-                s_logger.debug("Applying ip associations for vlan id=" + vlanId + " in network " + network);
-                if (!_networkMgr.applyIpAssociations(network, false)) {
-                    s_logger.warn("Failed to apply ip associations for vlan id=1 as a part of add vlan range for account id=" + vlanOwner.getId());
-                }
-            } else {
-                s_logger.trace("Network id=" + network.getId() + " is not Implemented, no need to apply ipAssociations");
-            }
-        }
 
         return vlan;
     }
@@ -2693,6 +2675,156 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             // Delete the VLAN
             return _vlanDao.expunge(vlanDbId);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_DEDICATE, eventDescription = "dedicating vlan ip range", async = false)
+    public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException {
+        Long vlanDbId = cmd.getId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long zoneId = cmd.getZoneId();
+        Long projectId = cmd.getProjectId();
+
+        Vlan vlan = dedicatePublicIpRange(vlanDbId, accountName, domainId, zoneId, projectId);
+
+        return vlan;
+    }
+
+    @Override
+    @DB
+    public Vlan dedicatePublicIpRange(Long vlanDbId, String accountName, Long domainId, Long zoneId, Long projectId) throws ResourceAllocationException {
+        // Check if account is valid
+        Account vlanOwner = null;
+        if (projectId != null) {
+            if (accountName != null) {
+                throw new InvalidParameterValueException("accountName and projectId are mutually exclusive");
+            }
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            vlanOwner = _accountMgr.getAccount(project.getProjectAccountId());
+        }
+
+        if ((accountName != null) && (domainId != null)) {
+            vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
+            if (vlanOwner == null) {
+                throw new InvalidParameterValueException("Please specify a valid account");
+            }
+        }
+
+        // Check if range is valid
+        VlanVO vlan = _vlanDao.findById(vlanDbId);
+        if (vlan == null) {
+            throw new InvalidParameterValueException("Please specify a valid Public IP range id");
+        }
+
+        // Check if range has already been dedicated
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
+        if (maps != null && !maps.isEmpty()) {
+            throw new InvalidParameterValueException("Specified Public IP range has already been dedicated");
+        }
+
+        // Verify that zone exists and is advanced
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        }
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Public IP range can be dedicated to an account only in the zone of type " + NetworkType.Advanced);
+        }
+
+        // Check Public IP resource limits
+        int accountPublicIpRange = _publicIpAddressDao.countIPs(zoneId, vlanDbId, false);
+        _resourceLimitMgr.checkResourceLimit(vlanOwner, ResourceType.public_ip, accountPublicIpRange);
+
+        // Check if any of the Public IP addresses is allocated to another account
+        List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
+        for (IPAddressVO ip : ips) {
+            Long allocatedToAccountId = ip.getAllocatedToAccountId();
+            if (allocatedToAccountId != null) {
+                Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
+                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName))
+                        throw new InvalidParameterValueException("Public IP address in range is already allocated to another account");
+            }
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        // Create an AccountVlanMapVO entry
+        AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
+        _accountVlanMapDao.persist(accountVlanMapVO);
+
+        txn.commit();
+
+        return vlan;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_RELEASE, eventDescription = "releasing a public ip range", async = false)
+    public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
+        Long vlanDbId = cmd.getId();
+
+        VlanVO vlan = _vlanDao.findById(vlanDbId);
+        if (vlan == null) {
+            throw new InvalidParameterValueException("Please specify a valid IP range id.");
+        }
+
+        return releasePublicIpRange(vlanDbId, UserContext.current().getCallerUserId(), UserContext.current().getCaller());
+    }
+
+    @Override
+    @DB
+    public boolean releasePublicIpRange(long vlanDbId, long userId, Account caller) {
+        VlanVO vlan = _vlanDao.findById(vlanDbId);
+
+        List<AccountVlanMapVO> acctVln = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
+        // Verify range is dedicated
+        if (acctVln == null || acctVln.isEmpty()) {
+            throw new InvalidParameterValueException("Can't release Public IP range " + vlanDbId + " as it not dedicated to any account");
+        }
+
+        // Check if range has any allocated public IPs
+        long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
+        boolean success = true;
+        if (allocIpCount > 0) {
+            try {
+                vlan = _vlanDao.acquireInLockTable(vlanDbId, 30);
+                if (vlan == null) {
+                    throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("lock vlan " + vlanDbId + " is acquired");
+                }
+                List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
+                for (IPAddressVO ip : ips) {
+                    // Disassociate allocated IP's that are not in use
+                    if ( !ip.isOneToOneNat() && !(ip.isSourceNat() && _networkModel.getNetwork(ip.getAssociatedWithNetworkId()) != null) &&
+                            !(_firewallDao.countRulesByIpId(ip.getId()) > 0) ) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Releasing Public IP addresses" + ip  +" of vlan " + vlanDbId + " as part of Public IP" +
+                                    " range release to the system pool");
+                        }
+                        success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
+                    }
+                }
+                if (!success) {
+                    s_logger.warn("Some Public IP addresses that were not in use failed to be released as a part of" +
+                            " vlan " + vlanDbId + "release to the system pool");
+                }
+            } finally {
+                _vlanDao.releaseFromLockTable(vlanDbId);
+            }
+        }
+
+        // A Public IP range can only be dedicated to one account at a time
+        if (_accountVlanMapDao.remove(acctVln.get(0).getId())) {
+            return true;
         } else {
             return false;
         }
@@ -3957,14 +4089,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public boolean deleteAccountSpecificVirtualRanges(long accountId) {
+    public boolean releaseAccountSpecificVirtualRanges(long accountId) {
         List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
         boolean result = true;
         if (maps != null && !maps.isEmpty()) {
             Transaction txn = Transaction.currentTxn();
             txn.start();
             for (AccountVlanMapVO map : maps) {
-                if (!deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), map.getVlanDbId(), 
+                if (!releasePublicIpRange(map.getVlanDbId(), _accountMgr.getSystemUser().getId(),
                         _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
                     result = false;
                 }
@@ -3972,10 +4104,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (result) {
                 txn.commit();
             } else {
-                s_logger.error("Failed to delete account specific virtual ip ranges for account id=" + accountId);
+                s_logger.error("Failed to release account specific virtual ip ranges for account id=" + accountId);
             }
         } else {
-            s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to delete");
+            s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to release");
         }
         return result;
     }

@@ -30,6 +30,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -149,6 +150,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
+    boolean releasePublicIpRange(long userId, long vlanDbId, Account caller);
+
+    Vlan dedicatePublicIpRange(Long vlanDbId, String accountName, Long domainId, Long zoneId, Long projectId) throws ResourceAllocationException;
+
     /**
      * Converts a comma separated list of tags to a List
      * 
@@ -210,7 +215,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     ClusterVO getCluster(long id);
 
-    boolean deleteAccountSpecificVirtualRanges(long accountId);
+    boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
