@@ -26,20 +26,23 @@ import com.cloud.network.as.Counter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.Ip;
 
 public class LoadBalancingRule {
     private LoadBalancer lb;
+    private Ip sourceIp;
     private List<LbDestination> destinations;
     private List<LbStickinessPolicy> stickinessPolicies;
     private LbAutoScaleVmGroup autoScaleVmGroup;
     private List<LbHealthCheckPolicy> healthCheckPolicies;
 
     public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations,
-            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies) {
+            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
         this.healthCheckPolicies = healthCheckPolicies;
+        this.sourceIp = sourceIp;
     }
 
     public long getId() {
@@ -72,10 +75,6 @@ public class LoadBalancingRule {
 
     public String getXid() {
         return lb.getXid();
-    }
-
-    public Long getSourceIpAddressId() {
-        return lb.getSourceIpAddressId();
     }
 
     public Integer getSourcePortStart() {
@@ -413,6 +412,10 @@ public class LoadBalancingRule {
         public String getCurrentState() {
             return currentState;
         }
+    }
+
+    public Ip getSourceIp() {
+        return sourceIp;
     }
 
 }

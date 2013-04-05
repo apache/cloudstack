@@ -676,7 +676,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String lbUuid = rule.getUuid();
-            String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 

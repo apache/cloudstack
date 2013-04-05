@@ -336,8 +336,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
          * Regular config like destinations need not be packed for applying
          * autoscale config as of today.
          */
-	List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-        LoadBalancingRule rule = new LoadBalancingRule(lb, null, policyList, null);
+        List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
+        Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+        LoadBalancingRule rule = new LoadBalancingRule(lb, null, policyList, null, sourceIp);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
 
         if (!isRollBackAllowedForProvider(lb)) {
@@ -529,8 +530,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 cmd.getStickinessMethodName(), cmd.getparamList(), cmd.getDescription());
         List<LbStickinessPolicy> policyList = new ArrayList<LbStickinessPolicy>();
         policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
+        Ip sourceIp = _networkModel.getPublicIpAddress(loadBalancer.getSourceIpAddressId()).getAddress();
         LoadBalancingRule lbRule = new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()),
-                policyList, null);
+                policyList, null, sourceIp);
         if (!validateRule(lbRule)) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed "
                     + cmd.getLbRuleId());
@@ -847,7 +849,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         // adding to lbrules list only if the LB rule
                         // hashealtChecks
                         if (hcPolicyList != null && hcPolicyList.size() > 0) {
-                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, null, hcPolicyList);
+                            Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, null, hcPolicyList, sourceIp);
                             lbrules.add(loadBalancing);
                         }
                     }
@@ -1387,8 +1390,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
+        Ip sourceIp = _networkModel.getPublicIpAddress(newRule.getSourceIpAddressId()).getAddress();
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
-                new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>());
+                new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp);
         if (!validateRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
@@ -1495,7 +1499,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     private LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
 
         List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, null, policyList, null);
+        Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, null, policyList, null, sourceIp);
 
         if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(lb.getId())) {
             // Get the associated VmGroup

@@ -2035,7 +2035,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
     
     @Override
-    public IpAddress getPublicIpAddress(String ipAddress, long networkId) {
-        return _ipAddressDao.findByIpAndSourceNetworkId(networkId, ipAddress);
+    public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
+        List<? extends Network> networks = _networksDao.listByZoneAndTrafficType(zoneId, TrafficType.Public);
+        if (networks.isEmpty() || networks.size() > 1) {
+            throw new CloudRuntimeException("Can't find public network in the zone specified");
+        }
+        
+        return _ipAddressDao.findByIpAndSourceNetworkId(networks.get(0).getId(), ipAddress);
     }
 }

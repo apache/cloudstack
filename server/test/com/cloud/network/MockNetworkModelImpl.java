@@ -852,7 +852,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public IpAddress getPublicIpAddress(String ipAddress, long networkId) {
+    public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }

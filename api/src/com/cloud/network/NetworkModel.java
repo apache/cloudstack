@@ -264,6 +264,6 @@ public interface NetworkModel {
 
     Nic getPlaceholderNicForRouter(Network network, Long podId);
     
-    IpAddress getPublicIpAddress(String ipAddress, long networkId);
+    IpAddress getPublicIpAddress(String ipAddress, long zoneId);
 
 }
