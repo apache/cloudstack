@@ -463,9 +463,9 @@
               <target if="${quickcloud}">
                 <echo>quickcloud</echo>
                 <replaceregexp
-                  file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
-                  match="classpath:componentContext.xml"
-                  replace="classpath:quickCloudComponentContext.xml" byline="true" />
+                    file="${basedir}/target/generated-webapp/WEB-INF/classes/applicationContext.xml"
+                  match="com.cloud.consoleproxy.ConsoleProxyManagerImpl"
+                  replace="com.cloud.consoleproxy.StaticConsoleProxyManager" byline="true" />
               </target>
             </configuration>
           </execution>
