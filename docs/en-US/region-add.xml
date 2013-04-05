@@ -52,7 +52,7 @@
         <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_2_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
       </listitem>
       <listitem><para>Now perform the same command in reverse, adding region 1 to region 2.</para>
-          <programlisting>http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+          <programlisting>http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
       </listitem>
       <listitem><para>Copy the account, user, and domain tables from the region 1 database to the region 2 database.</para>
           <para>In the following commands, it is assumed that you have set the root password on the
@@ -121,8 +121,8 @@ http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegio
     <section id="region-delete">
         <title>Deleting a Region</title>
         <para>To delete a region, use the API command removeRegion. Repeat the call to remove the region from all other regions. For example, to remove the 3rd region in a three-region cloud:</para>
-        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
 
-http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
     </section>
 </section>
