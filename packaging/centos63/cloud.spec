@@ -236,7 +236,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties db-enc.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
+            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -248,8 +248,7 @@ mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classe
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
-install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.9.0.jar
-install -D client/target/pythonlibs/jasypt-1.8.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.8.jar
+install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
@@ -457,7 +456,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/db-enc.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
@@ -489,8 +487,6 @@ fi
 %{_datadir}/%{name}-management/setup/db/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
-%{_javadir}/jasypt-1.9.0.jar
-%{_javadir}/jasypt-1.8.jar
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
@@ -517,6 +513,7 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 %doc LICENSE
 %doc NOTICE
 
