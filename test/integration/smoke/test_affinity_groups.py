@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,13 +20,13 @@
 
 import marvin
 from marvin.cloudstackTestCase import *
-from marvin.remoteSSHClient import remoteSSHClient 
+from marvin.remoteSSHClient import remoteSSHClient
 import hashlib
 import random
 
 class TestDeployVmWithAffinityGroup(cloudstackTestCase):
     """
-    This test deploys a virtual machine into a user account 
+    This test deploys a virtual machine into a user account
     using the small service offering and builtin template
     """
     def setUp(self):
@@ -57,7 +57,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 				   %s"%(self.acctResponse.account.account, \
 						self.acctResponse.account.username, \
 						self.acctResponse.account.id))
-		
+
 
 		self.zone = listZones.listZonesCmd()
 		self.zone.uuid = self.apiClient.listZones(self.zone)[0].id
@@ -68,7 +68,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 		self.template = listTemplates.listTemplatesCmd()
 		self.template.templatefilter = 'featured'
 		self.template.name = 'CentOS'
-		self.template.uuid = self.apiClient.listTemplates(self.template)[0].id        
+		self.template.uuid = self.apiClient.listTemplates(self.template)[0].id
 
     def test_DeployVm(self):
         """
@@ -76,8 +76,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         deploying on CloudStack. We will be assuming a single zone is available
         and is configured and all templates are Ready
 
-        The hardcoded values are used only for brevity. 
-		
+        The hardcoded values are used only for brevity.
+
 		First create the host anti-affinity group for this account
         """
 	createAGCmd = createAffinityGroup.createAffinityGroupCmd()
@@ -85,11 +85,11 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 	createAGCmd.type = 'host anti-affinity'
 	createAGCmd.account = self.acct.account
 	createAGCmd.domainid = self.acct.domainid
-		
+
 	createAGResponse = self.apiClient.createAffinityGroup(createAGCmd)
 	self.debug("AffinityGroup %s was created in the job %s"%(createAGResponse.id, createAGResponse.jobid))
-    
-	
+
+
 	deployVmCmd = deployVirtualMachine.deployVirtualMachineCmd()
 	deployVmCmd.zoneid = self.zone.uuid
 	deployVmCmd.templateid = self.template.uuid #CentOS 5.6 builtin
@@ -128,7 +128,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
 	deployVm2Response = self.apiClient.deployVirtualMachine(deployVm2Cmd)
 	self.debug("VM2 %s was deployed in the job %s"%(deployVm2Response.id, deployVm2Response.jobid))
-	
+
 	# At this point our VM is expected to be Running. Let's find out what
 	# listVirtualMachines tells us about VMs in this account
 
@@ -143,11 +143,11 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 	self.assertEqual(vm2.state, "Running", "Check if VM has reached Running state in CS")
 
 	VM2hostid = vm2.hostid
-	
-	self.assertNotEqual(VM1hostid, VM2hostid, "The hosts of the 2 VM's in the host anti-affinity group are not different, test failed")                         
-	
+
+	self.assertNotEqual(VM1hostid, VM2hostid, "The hosts of the 2 VM's in the host anti-affinity group are not different, test failed")
+
     def tearDown(self):
-    	"""
+	"""
 		And finally let us cleanup the resources we created by deleting the
 		account. All good unittests are atomic and rerunnable this way
 		"""
