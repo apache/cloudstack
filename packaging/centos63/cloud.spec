@@ -454,7 +454,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/db-enc.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
