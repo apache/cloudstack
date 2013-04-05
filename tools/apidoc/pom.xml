@@ -43,7 +43,6 @@
                         <configuration>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>-x</argument>
                                 <argument>./build-apidoc.sh</argument>
                                 <argument>${client.config.jars}</argument>
                                 <argument>${client.config.jars}</argument>
@@ -63,7 +62,7 @@
                             <workingDirectory>target</workingDirectory>
                             <executable>tar</executable>
                             <arguments>
-                                <argument>-cvjf</argument>
+                                <argument>-cjf</argument>
                                 <argument>apidoc.tar.bz2</argument>
                                 <argument>xmldoc</argument>
                             </arguments>
