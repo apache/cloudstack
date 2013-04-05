@@ -2276,10 +2276,6 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             name='The Apache Software Foundation' 
             url='http://www.apache.org/'/>  
         <organisation
-            id='person:Thomas.Nagy'
-            name='Thomas Nagy'
-            url='http://code.google.com/p/waf/'/>
-        <organisation
             id='person:Clinton.Begin'
             name='Clinton Begin'
             url='http://code.google.com/p/mybatis/' />
@@ -2456,16 +2452,6 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
     </primary-notice>
     <primary-organisation id='apache.org'/> 
-    <within dir='.'>
-        <with-license id='BSD3ClauseGeneric'>
-            <copyright-notice>
-Copyright (c) 2005-2010 Thomas Nagy
-            </copyright-notice>
-            <by-organisation id="person:Thomas.Nagy">
-                <resource name="waf"/>
-            </by-organisation>
-        </with-license>
-    </within>
     <within dir='patches/systemvm/debian/config/etc/apache2'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
@@ -2643,16 +2629,6 @@ Copyright (c) 2012 John Resig, Jörn Zaefferer
             <by-organisation id='person:jorn.zaefferer'>
                 <resource name="qunit.css" source='http://docs.jquery.com/QUnit' />
                 <resource name="qunit.js" source='http://docs.jquery.com/QUnit' />
-            </by-organisation>
-        </with-license>
-    </within>
-    <within dir='awsapi'>
-        <with-license id='BSD3ClauseGeneric'>
-            <copyright-notice>
-Copyright (c) 2005-2010 Thomas Nagy
-            </copyright-notice>
-            <by-organisation id="person:Thomas.Nagy">
-                <resource name="waf"/>
             </by-organisation>
         </with-license>
     </within>
