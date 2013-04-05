@@ -26,6 +26,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
@@ -69,6 +71,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -327,6 +330,7 @@ public class ApiDBUtils {
     static ClusterDetailsDao _clusterDetailsDao;
     static NicSecondaryIpDao _nicSecondaryIpDao;
     static AffinityGroupDao _affinityGroupDao;
+    static AffinityGroupJoinDao _affinityGroupJoinDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -431,6 +435,7 @@ public class ApiDBUtils {
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject private AffinityGroupDao affinityGroupDao;
+    @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
 
     @PostConstruct
     void init() {
@@ -534,6 +539,7 @@ public class ApiDBUtils {
         _vmSnapshotDao = vmSnapshotDao;
         _nicSecondaryIpDao = nicSecondaryIpDao;
         _affinityGroupDao = affinityGroupDao;
+        _affinityGroupJoinDao = affinityGroupJoinDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1539,5 +1545,13 @@ public class ApiDBUtils {
 
     public static AffinityGroup getAffinityGroup(String groupName, long accountId) {
         return _affinityGroupDao.findByAccountAndName(accountId, groupName);
+    }
+
+    public static AffinityGroupResponse newAffinityGroupResponse(AffinityGroupJoinVO group) {
+        return _affinityGroupJoinDao.newAffinityGroupResponse(group);
+    }
+
+    public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
+        return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
 }

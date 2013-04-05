@@ -77,9 +77,6 @@
   <bean id="UcsBladeDao" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
   <bean id="UcsManagerDao" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
-  <bean id="affinityGroupServiceImpl" class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl"/>
-  <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl" />
-   
   <!--
       Network Elements
   -->

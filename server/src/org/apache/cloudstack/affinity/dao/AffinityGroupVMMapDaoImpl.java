@@ -37,7 +37,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
 
-@Component
 @Local(value = { AffinityGroupVMMapDao.class })
 public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMapVO, Long> implements
         AffinityGroupVMMapDao {

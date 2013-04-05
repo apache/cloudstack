@@ -16,23 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class)
 public class ListAffinityGroupsCmd extends BaseListCmd {
@@ -83,22 +76,11 @@ public class ListAffinityGroupsCmd extends BaseListCmd {
     @Override
     public void execute(){
 
-        Pair<List<? extends AffinityGroup>, Integer> result = _affinityGroupService.listAffinityGroups(id,
-                affinityGroupName,
+        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
                 affinityGroupType, virtualMachineId, this.getStartIndex(), this.getPageSizeVal());
-        if (result != null) {
-            ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
-            List<AffinityGroupResponse> groupResponses = new ArrayList<AffinityGroupResponse>();
-            for (AffinityGroup group : result.first()) {
-                AffinityGroupResponse groupResponse = _responseGenerator.createAffinityGroupResponse(group);
-                groupResponses.add(groupResponse);
-            }
-            response.setResponses(groupResponses, result.second());
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to search for affinity groups");
-        }
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
+
     }
 
     @Override

@@ -26,7 +26,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Component
 @Local(value = { AffinityGroupDao.class })
 public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> implements AffinityGroupDao {
     private SearchBuilder<AffinityGroupVO> AccountIdSearch;

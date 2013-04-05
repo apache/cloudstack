@@ -27,6 +27,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -69,6 +74,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
@@ -86,6 +92,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -138,6 +145,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -245,6 +253,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    private AffinityGroupJoinDao _affinityGroupJoinDao;
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
@@ -2328,5 +2342,99 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return false;
     }
 
+    @Override
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
+                affinityGroupName, affinityGroupType, vmId, startIndex, pageSize);
+        ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
+        List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
+        response.setResponses(agResponses, result.second());
+        return response;
+    }
+
+
+    public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
+            String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+
+        Account caller = UserContext.current().getCaller();
+
+        Long accountId = caller.getAccountId();
+        Long domainId = caller.getDomainId();
+
+        if (vmId != null) {
+            UserVmVO userVM = _userVmDao.findById(vmId);
+            if (userVM == null){
+                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance "
+                        + vmId + "; instance not found.");
+            }
+            _accountMgr.checkAccess(caller, null, true, userVM);
+            return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
+        }
+
+        Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
+        SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
+        groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
+                                                                               // distinct
+
+        SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
+
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
+        }
+
+        if (affinityGroupName != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
+        }
+
+        if (affinityGroupType != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
+        }
+
+
+        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
+                searchFilter);
+        // search group details by ids
+        Integer count = uniqueGroupsPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueGroupsPair;
+        }
+        List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
+        Long[] vrIds = new Long[uniqueGroups.size()];
+        int i = 0;
+        for (AffinityGroupJoinVO v : uniqueGroups) {
+            vrIds[i++] = v.getId();
+        }
+        List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(vrs, count);
+
+    }
+
+    private Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsByVM(long vmId, long pageInd, long pageSize) {
+        Filter sf = new Filter(SecurityGroupVMMapVO.class, null, true, pageInd, pageSize);
+        Pair<List<AffinityGroupVMMapVO>, Integer> agVmMappingPair = _affinityGroupVMMapDao.listByInstanceId(vmId, sf);
+        Integer count = agVmMappingPair.second();
+        if (count.intValue() == 0) {
+            // handle empty result cases
+            return new Pair<List<AffinityGroupJoinVO>, Integer>(new ArrayList<AffinityGroupJoinVO>(), count);
+        }
+        List<AffinityGroupVMMapVO> agVmMappings = agVmMappingPair.first();
+        Long[] agIds = new Long[agVmMappings.size()];
+        int i = 0;
+        for (AffinityGroupVMMapVO agVm : agVmMappings) {
+            agIds[i++] = agVm.getAffinityGroupId();
+        }
+        List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+    }
 
 }
