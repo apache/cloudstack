@@ -25,8 +25,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
@@ -90,6 +88,10 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     @Override
 	public Pair<AfterScanAction, Object> scanPool(Long pool) {
 		long dataCenterId = pool.longValue();
+        if (!isSecondaryStorageVmRequired(dataCenterId)) {
+            return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+        }
+
 		Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _maxExecutionTimeMs);
 
 		_cmdExecLogDao.expungeExpiredRecords(cutTime);

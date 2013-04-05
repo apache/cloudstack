@@ -1464,7 +1464,7 @@ SecondaryStorageResource {
         if (_eth1ip != null) { //can only happen inside service vm
             params.put("private.network.device", "eth1");
         } else {
-            s_logger.warn("Wait, what's going on? eth1ip is null!!");
+            s_logger.warn("eth1ip parameter has not been configured, assuming that we are not inside a system vm");
         }
         String eth2ip = (String) params.get("eth2ip");
         if (eth2ip != null) {
@@ -1479,8 +1479,8 @@ SecondaryStorageResource {
         }
 
         _storageIp = (String) params.get("storageip");
-        if (_storageIp == null) {
-            s_logger.warn("Wait, there is no storageip in /proc/cmdline, something wrong!");
+        if (_storageIp == null && _inSystemVM) {
+            s_logger.warn("There is no storageip in /proc/cmdline, something wrong!");
         }
         _storageNetmask = (String) params.get("storagenetmask");
         _storageGateway = (String) params.get("storagegateway");
