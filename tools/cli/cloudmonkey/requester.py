@@ -138,9 +138,9 @@ def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
                 time.sleep(pollperiod)
             else:
                 response, error = monkeyrequest(command, request, isasync,
-                                            asyncblock, logger,
-                                            host, port,  apikey, secretkey,
-                                            timeout, protocol, path)
+                                                asyncblock, logger,
+                                                host, port,  apikey, secretkey,
+                                                timeout, protocol, path)
 
             responsekeys = filter(lambda x: 'response' in x, response.keys())
 
@@ -161,15 +161,16 @@ def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
                 sys.stdout.flush()
 
             if jobresultcode != 0:
-                error = "Error: resultcode %d for jobid %s" % (jobresultcode, jobid)
+                error = "Error: resultcode %d for jobid %s" % (jobresultcode,
+                                                               jobid)
                 logger_debug(logger, "%s" % (error))
                 return response, error
             else:
                 # if we get a valid respons resultcode give back results
                 response, error = monkeyrequest(command, request, isasync,
-                            asyncblock, logger,
-                            host, port,  apikey, secretkey,
-                            timeout, protocol, path)
+                                                asyncblock, logger,
+                                                host, port,  apikey, secretkey,
+                                                timeout, protocol, path)
                 logger_debug(logger, "Ok: %s" % (jobid))
                 return response, error
 
