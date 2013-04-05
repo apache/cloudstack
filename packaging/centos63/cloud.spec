@@ -153,13 +153,9 @@ Provides: cloud-aws-api
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-#%package docs
-#Summary: Apache CloudStack documentation
-#%description docs
-#Apache CloudStack documentations
-
 %prep
 echo Doing CloudStack build
+
 %setup -q -n %{name}-%{_maventag}
 
 %build
@@ -169,10 +165,10 @@ echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-    echo "Packaging nonoss components"
+    echo "Executing mvn packaging for NONOSS ..."
    mvn -Pawsapi,systemvm -Dnonoss package
 else
-    echo "Packaging oss components"
+    echo "Executing mvn packaging for OSS ..."
    mvn -Pawsapi package -Dsystemvm
 fi
 
@@ -328,6 +324,10 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+
+%pre awsapi
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
 /sbin/service cloudstack-management stop || true
@@ -543,10 +543,6 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
 %{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
-
-#%files docs
-#%doc LICENSE
-#%doc NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
