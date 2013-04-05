@@ -1026,7 +1026,7 @@ Done restarting router(s).
       </informaltable>
     </section>
     <section id="known-issues-4.1">
-      <title>Known Issues in 4.0.0-incubating</title>
+      <title>Known Issues in 4.1.0</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
           <colspec colwidth="1*" colname="1" colnum="1"/>
@@ -1042,6 +1042,12 @@ Done restarting router(s).
             </row>
           </thead>
           <tbody>
+              <row>
+                  <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747">CLOUDSTACK-1747</ulink></para></entry>
+                  <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
+                      <para>Due to tooling changes between 4.1 and 4.2, CloudStack's database is created using the 4.0 schema and updated to the 4.1 schema when the management server starts for the first time. It's OK to see the same schema if the management server has not started yet.</para>
+                  </entry>
+              </row>
             <row>
               <entry><para>CLOUDSTACK-301</para></entry>
               <entry><para>Nexus 1000v DVS integration is not functional</para>
