@@ -21,10 +21,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.junit.Before;
@@ -34,15 +31,15 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.cloud.event.EventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -68,6 +65,12 @@ public class AffinityApiUnitTest {
     AffinityGroupDao _groupDao;
 
     @Inject
+    EventUtils _eventUtils;
+
+    @Inject
+    AccountDao _accountDao;
+
+    @Inject
     UserVmDao _vmDao;
 
     @Inject
@@ -81,8 +84,13 @@ public class AffinityApiUnitTest {
 
     }
 
+
+
     @Before
     public void testSetUp() {
+
+        ComponentContext.initComponentsLifeCycle();
+
         AccountVO acct = new AccountVO(200L);
         acct.setType(Account.ACCOUNT_TYPE_NORMAL);
         acct.setAccountName("user");
@@ -92,6 +100,9 @@ public class AffinityApiUnitTest {
 
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");
+
+        when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
+
     }
 
     @Test

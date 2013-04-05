@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.utils.component;
 
-public class ManagerBase extends ComponentLifecycleBase {
+public class ManagerBase extends ComponentLifecycleBase implements ComponentMethodInterceptable {
 	public ManagerBase() {
 		// set default run level for manager components
 		setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT_BOOTSTRAP);

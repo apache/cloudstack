@@ -75,3 +75,11 @@ docs/runbook/tmp
 docs/runbook/publish
 .project
 Gemfile.lock
+debian/tmp
+debian/files
+debian/cloudstack-*/*
+debian/*.substvars
+debian/*.debhelper
+replace.properties.tmp
+build-indep-stamp
+configure-stamp

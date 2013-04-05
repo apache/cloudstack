@@ -277,6 +277,10 @@ public enum Config {
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
 
+    // Midonet
+    MidoNetAPIServerAddress("Network", ManagementServer.class, String.class, "midonet.apiserver.address", "http://localhost:8081", "Specify the address at which the Midonet API server can be contacted (if using Midonet)", null),
+    MidoNetProviderRouterId("Network", ManagementServer.class, String.class, "midonet.providerrouter.id", "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5", "Specifies the UUID of the Midonet provider router (if using Midonet)", null),
+
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
@@ -323,7 +327,7 @@ public enum Config {
 	DefaultMaxAccountVpcs("Account Defaults", ManagementServer.class, Long.class, "max.account.vpcs", "20", "The default maximum number of vpcs that can be created for an account", null),
 	DefaultMaxAccountCpus("Account Defaults", ManagementServer.class, Long.class, "max.account.cpus", "40", "The default maximum number of cpu cores that can be used for an account", null),
 	DefaultMaxAccountMemory("Account Defaults", ManagementServer.class, Long.class, "max.account.memory", "40960", "The default maximum memory (in MB) that can be used for an account", null),
-	DefaultMaxAccountPrimayStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an account", null),
+	DefaultMaxAccountPrimaryStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an account", null),
 	DefaultMaxAccountSecondaryStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.secondary.storage", "400", "The default maximum secondary storage space (in GiB) that can be used for an account", null),
 
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
@@ -350,7 +354,7 @@ public enum Config {
     DefaultMaxProjectVpcs("Project Defaults", ManagementServer.class, Long.class, "max.project.vpcs", "20", "The default maximum number of vpcs that can be created for a project", null),
     DefaultMaxProjectCpus("Project Defaults", ManagementServer.class, Long.class, "max.project.cpus", "40", "The default maximum number of cpu cores that can be used for a project", null),
     DefaultMaxProjectMemory("Project Defaults", ManagementServer.class, Long.class, "max.project.memory", "40960", "The default maximum memory (in MB) that can be used for a project", null),
-    DefaultMaxProjectPrimayStorage("Project Defaults", ManagementServer.class, Long.class, "max.project.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an project", null),
+    DefaultMaxProjectPrimaryStorage("Project Defaults", ManagementServer.class, Long.class, "max.project.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an project", null),
     DefaultMaxProjectSecondaryStorage("Project Defaults", ManagementServer.class, Long.class, "max.project.secondary.storage", "400", "The default maximum secondary storage space (in GiB) that can be used for an project", null),
 
     ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),

@@ -37,6 +37,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -76,6 +77,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    NetworkModel _ntwkModel;
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -322,7 +325,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
 
-        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(gateway.getVpcId());
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
             s_logger.debug(this.getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " +
                     "router doesn't exist in the vpc id=" + gateway.getVpcId());
@@ -345,7 +348,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
 
-        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(gateway.getVpcId());
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
             s_logger.debug(this.getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " +
                     "router doesn't exist in the vpc id=" + gateway.getVpcId());
@@ -361,10 +364,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         return _vpcRouterMgr.destroyPrivateGateway(gateway, router);
     }
 
-    @Override
-    protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
-        return  _vpcMgr.getVpcRouters(network.getVpcId());
-    }
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) 
@@ -377,7 +376,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             }
         }
         if (canHandle) {
-            List<DomainRouterVO> routers = getRouters(network, null);
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug(this.getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " +
                         "router doesn't exist in the network " + network.getId());
@@ -446,12 +445,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Long vpcId = ip.getVpcId();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
 
-        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
+        if (!_ntwkModel.isProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
             throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
                     DataCenter.class, vpc.getZoneId());
         }
 
-        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(ip.getVpcId());
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
                     DataCenter.class, vpc.getZoneId());
@@ -474,12 +473,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Long vpcId = ip.getVpcId();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
 
-        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
+        if (!_ntwkModel.isProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
             throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
                     DataCenter.class, vpc.getZoneId());
         }
 
-        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(ip.getVpcId());
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
                     DataCenter.class, vpc.getZoneId());

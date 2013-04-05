@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.manager;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -38,7 +38,7 @@ public class UcsHttpClient {
         try {
             int result = client.executeMethod(post);
             if (result != 200) {
-               throw new CloudRuntimeException("Call failed: " + post.getResponseBodyAsString()); 
+               throw new CloudRuntimeException("Call failed: " + post.getResponseBodyAsString());
             }
             String res = post.getResponseBodyAsString();
             if (res.contains("errorCode")) {

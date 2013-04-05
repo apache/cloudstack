@@ -22,4 +22,8 @@ public class ControlClusterStatus {
     public boolean getStatus() {
         return healthy;
     }
+
+    public void setStatus(boolean status) {
+	this.healthy = status;
+    }
 }

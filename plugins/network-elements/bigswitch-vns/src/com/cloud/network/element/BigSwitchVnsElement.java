@@ -76,7 +76,6 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.resource.BigSwitchVnsResource;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -139,7 +138,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
-
+/*
         if (!_networkModel.isProviderForNetwork(getProvider(),
                 network.getId())) {
             s_logger.debug("BigSwitchVnsElement is not a provider for network "
@@ -154,7 +153,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
                     + network.getDisplayText());
             return false;
         }
-
+*/
         return true;
     }
 
@@ -198,7 +197,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         }
 
         String mac = nic.getMacAddress();
-        String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
+        String tenantId = context.getDomain().getName();
 
         List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao
                 .listByPhysicalNetwork(network.getPhysicalNetworkId());
@@ -242,7 +241,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
             return false;
         }
 
-        String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
+        String tenantId = context.getDomain().getName();
 
         List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao
                 .listByPhysicalNetwork(network.getPhysicalNetworkId());
@@ -462,8 +461,9 @@ public class BigSwitchVnsElement extends AdapterBase implements
         HostVO bigswitchHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
         Long hostId = bigswitchHost.getId();
 
-        bigswitchHost.setResourceState(ResourceState.Maintenance);
-        _hostDao.update(hostId, bigswitchHost);
+        //bigswitchHost.setResourceState(ResourceState.Maintenance);
+        //_hostDao.update(hostId, bigswitchHost);
+        _hostDao.remove(hostId);
         _resourceMgr.deleteHost(hostId, false, false);
 
         _bigswitchVnsDao.remove(bigswitchVnsDeviceId);

@@ -53,6 +53,9 @@
       case 'Ovm':
         hypervisorAttr = 'ovmnetworklabel';
         break;
+      case 'LXC':
+        hypervisorAttr = 'lxcnetworklabel';
+        break;
     }
 
     trafficLabelStr = trafficLabel ? '&' + hypervisorAttr + '=' + trafficLabel : '';
@@ -395,6 +398,7 @@
 										nonSupportedHypervisors["VMware"] = 1;
 										nonSupportedHypervisors["BareMetal"] = 1;
 										nonSupportedHypervisors["Ovm"] = 1;
+										nonSupportedHypervisors["LXC"] = 1;
 									}
 									
 									if(items != null) {
@@ -1185,16 +1189,32 @@
            scope: {
                     label: 'label.scope',
                     select: function(args) {
+                    
+             var selectedHypervisorObj = {
+                hypervisortype: $.isArray(args.context.zones[0].hypervisor) ?
+                  // We want the cluster's hypervisor type
+                  args.context.zones[0].hypervisor[1] : args.context.zones[0].hypervisor
+              };
 
-            var scope = [
-                        { id: 'zone', description: _l('label.zone.wide') },
-                        { id: 'cluster', description: _l('label.cluster') },
-                        { id: 'host', description: _l('label.host') }
-                      ];
+              if(selectedHypervisorObj == null) {
+                return;
+              }
 
-                      args.response.success({
-                        data: scope
-                      });
+                // ZWPS is supported only for KVM as the hypervisor
+             if(selectedHypervisorObj.hypervisortype != "KVM"){
+                       var scope=[];
+                       scope.push({ id: 'cluster', description: _l('label.cluster') });
+                       //scope.push({ id: 'host', description: _l('label.host') });
+                       args.response.success({data: scope});
+                    }
+
+              else {
+                       var scope=[];
+                       scope.push({ id: 'zone', description: _l('label.zone.wide') });
+                       scope.push({ id: 'cluster', description: _l('label.cluster') });
+                      // scope.push({ id: 'host', description: _l('label.host') });
+                       args.response.success({data: scope});
+                    }
 
                 }
 
@@ -1238,6 +1258,12 @@
                 var items = [];
                 items.push({id: "nfs", description: "nfs"});
                 items.push({id: "ocfs2", description: "ocfs2"});
+                args.response.success({data: items});
+              }
+              else if(selectedClusterObj.hypervisortype == "LXC") {
+                var items = [];
+                items.push({id: "nfs", description: "nfs"});
+                items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
                 args.response.success({data: items});
               }
               else {

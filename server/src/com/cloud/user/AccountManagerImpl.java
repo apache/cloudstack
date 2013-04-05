@@ -225,6 +225,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private AffinityGroupDao _affinityGroupDao;
 
     private List<UserAuthenticator> _userAuthenticators;
+    List<UserAuthenticator> _userPasswordEncoders;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -233,9 +234,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     UserVO _systemUser;
     AccountVO _systemAccount;
 
-    @Inject
     List<SecurityChecker> _securityCheckers;
-    int _cleanupInterval;
+    
+	int _cleanupInterval;
 
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
@@ -245,6 +246,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     	_userAuthenticators = authenticators;
     }
 
+    public List<UserAuthenticator> getUserPasswordEncoders() {
+        return _userPasswordEncoders;
+    }
+
+    public void setUserPasswordEncoders(List<UserAuthenticator> encoders) {
+        _userPasswordEncoders = encoders;
+    }
+
+    public List<SecurityChecker> getSecurityCheckers() {
+		return _securityCheckers;
+	}
+
+	public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
+		this._securityCheckers = securityCheckers;
+	}
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
@@ -946,7 +963,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (password != null) {
             String encodedPassword = null;
-            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            for (Iterator<UserAuthenticator> en = _userPasswordEncoders.iterator(); en.hasNext();) {
                 UserAuthenticator authenticator = en.next();
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
@@ -1179,6 +1196,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_ENABLE, eventDescription = "enabling account", async = true)
     public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
 
         // Check if account exists
@@ -1269,6 +1287,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_UPDATE, eventDescription = "updating account", async = true)
     public AccountVO updateAccount(UpdateAccountCmd cmd) {
         Long accountId = cmd.getId();
         Long domainId = cmd.getDomainId();
@@ -1730,7 +1749,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         String encodedPassword = null;
-        for (UserAuthenticator  authenticator : _userAuthenticators) {
+        for (UserAuthenticator  authenticator : _userPasswordEncoders) {
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;

@@ -46,7 +46,12 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserContextInitializer;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/createNetworkOffering.xml")
@@ -63,18 +68,24 @@ public class CreateNetworkOfferingTest extends TestCase{
     NetworkOfferingDao offDao;
     
     @Inject
-    UserContextInitializer usrCtxInit;
+    NetworkOfferingServiceMapDao mapDao;
     
     @Inject
-    NetworkOfferingServiceMapDao mapDao;
+    AccountManager accountMgr;
     
     @Before
     public void setUp() {
+    	ComponentContext.initComponentsLifeCycle();
+    	
         ConfigurationVO configVO = new ConfigurationVO("200", "200","200","200","200","200");
         Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(configVO);
         
         Mockito.when(offDao.persist(Mockito.any(NetworkOfferingVO.class))).thenReturn(new NetworkOfferingVO());
         Mockito.when(mapDao.persist(Mockito.any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
+        Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
+        Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
+
+        UserContext.registerContext(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
     }
 
     //Test Shared network offerings

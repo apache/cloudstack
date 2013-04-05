@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -173,7 +174,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             }
             //Get ip address from the placeholder and don't allocate a new one
             if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                 if (placeholderNic != null) {
                     IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
                     ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
@@ -199,10 +200,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             
             //save the placeholder nic if the vm is the Virtual router
             if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+                Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                 if (placeholderNic == null) {
-                    s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " for the network " + network + " with the gateway " + podRangeGateway);
-                    _networkMgr.savePlaceholderNic(network, nic.getIp4Address());
+                    s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " for the network " + network);
+                    _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), VirtualMachine.Type.DomainRouter);
                 }
             }
             txn.commit();

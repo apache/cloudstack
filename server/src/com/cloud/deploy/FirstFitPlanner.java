@@ -102,13 +102,25 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StorageManager _storageMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject protected ClusterDetailsDao _clusterDetailsDao;
+    
+    protected List<StoragePoolAllocator> _storagePoolAllocators;
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+		return _storagePoolAllocators;
+	}
+	public void setStoragePoolAllocators(
+			List<StoragePoolAllocator> _storagePoolAllocators) {
+		this._storagePoolAllocators = _storagePoolAllocators;
+	}
 
-    //@com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
-    @Inject protected List<StoragePoolAllocator> _storagePoolAllocators;
+	protected List<HostAllocator> _hostAllocators;
+    public List<HostAllocator> getHostAllocators() {
+		return _hostAllocators;
+	}
+	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+		this._hostAllocators = _hostAllocators;
+	}
 
-    //@com.cloud.utils.component.Inject(adapter=HostAllocator.class)
-    @Inject protected List<HostAllocator> _hostAllocators;
-    protected String _allocationAlgorithm = "random";
+	protected String _allocationAlgorithm = "random";
 
 
     @Override

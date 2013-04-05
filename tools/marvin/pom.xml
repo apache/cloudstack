@@ -48,8 +48,8 @@
         <version>1.2.1</version>
         <executions>
           <execution>
-            <id>compile</id>
-            <phase>compile</phase>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -65,8 +65,8 @@
             </configuration>
           </execution>
           <execution>
-            <id>package</id>
-            <phase>package</phase>
+            <id>install</id>
+            <phase>install</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -80,15 +80,18 @@
             </configuration>
           </execution>
         </executions>
-
       </plugin>
     </plugins>
   </build>
+  <!-- Custom profiles for sync and integration tests-->
   <profiles>
     <profile>
-      <id>marvin</id>
+      <id>marvin.sync</id>
       <activation>
-        <property><name>marvin.config</name></property>
+        <property>
+          <name>endpoint</name>
+          <value>localhost</value>
+        </property>
       </activation>
       <build>
         <plugins>
@@ -96,27 +99,143 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.2.1</version>
-            <configuration>
-              <workingDirectory>${basedir}/marvin</workingDirectory>
-              <executable>python</executable>
-              <arguments>
-                <argument>deployAndRun.py</argument>
-                <argument>-c</argument>
-                <argument>${user.dir}/${marvin.config}</argument>
-                <argument>-t</argument>
-                <argument>/tmp/t.log</argument>
-                <argument>-r</argument>
-                <argument>/tmp/r.log</argument>
-                <argument>-f</argument>
-                <argument>${basedir}/marvin/testSetupSuccess.py</argument>
-              </arguments>
-            </configuration>
             <executions>
               <execution>
-                <phase>test</phase>
+                <id>generate-sources</id>
+                <phase>generate-sources</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>codegenerator.py</argument>
+                    <argument>-e</argument>
+                    <argument>${endpoint}</argument>
+                    <echo>Generating ${project.artifactId} API classes}</echo>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>package</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${exec.workingdir}</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>setup.py</argument>
+                    <argument>sdist</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>install</id>
+                <phase>install</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/dist</workingDirectory>
+                  <executable>pip</executable>
+                  <arguments>
+                    <argument>install</argument>
+                    <argument>--upgrade</argument>
+                    <argument>Marvin-0.1.0.tar.gz</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>marvin.setup</id>
+      <properties>
+        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
+     </properties>
+      <activation>
+        <property>
+          <name>marvin.config</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>deployAndRun.py</argument>
+                    <argument>-c</argument>
+                    <argument>${marvin.config}</argument>
+                    <argument>-t</argument>
+                    <argument>/tmp/t.log</argument>
+                    <argument>-r</argument>
+                    <argument>/tmp/r.log</argument>
+                    <argument>-f</argument>
+                    <argument>${basedir}/marvin/testSetupSuccess.py</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              </executions>
+            </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>marvin.test</id>
+      <properties>
+        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
+        <tag>simulator</tag>
+        <test>test/integration/smoke</test>
+      </properties>
+      <activation>
+        <property>
+          <name>marvin.config</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>integration-test</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>nosetests</executable>
+                  <arguments>
+                    <argument>--with-marvin</argument>
+                    <argument>--marvin-config</argument>
+                    <argument>${marvin.config}</argument>
+                    <argument>--load</argument>
+                    <argument>-a</argument>
+                    <argument>tags=${tag}</argument>
+                    <argument>${user.dir}/${test}</argument>
+                    <argument>-v</argument>
+                  </arguments>
+                </configuration>
               </execution>
             </executions>
           </plugin>

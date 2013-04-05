@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 public interface VMRootDiskTagDao extends GenericDao<VMRootDiskTagVO, Long>{
 
     void persist(long vmId, List<String> diskTags);
-    
+
     List<String> getRootDiskTags(long vmId);
 
 }

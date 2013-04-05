@@ -38,18 +38,18 @@ import com.cloud.utils.db.Transaction;
 public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> implements VMRootDiskTagDao {
 
     protected SearchBuilder<VMRootDiskTagVO> VmIdSearch;
-    
+
     public VMRootDiskTagDaoImpl() {
     }
-    
+
     @PostConstruct
     public void init() {
         VmIdSearch = createSearchBuilder();
         VmIdSearch.and("vmId", VmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         VmIdSearch.done();
-        
+
     }
-    
+
     @Override
     public void persist(long vmId, List<String> rootDiskTags) {
         Transaction txn = Transaction.currentTxn();
@@ -58,7 +58,7 @@ public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> 
         SearchCriteria<VMRootDiskTagVO> sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
         expunge(sc);
-        
+
         for (String tag : rootDiskTags) {
             if(tag != null){
                 tag = tag.trim();
@@ -76,7 +76,7 @@ public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> 
     public List<String> getRootDiskTags(long vmId) {
         SearchCriteria<VMRootDiskTagVO> sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
-        
+
         List<VMRootDiskTagVO> results = search(sc, null);
         List<String> computeTags = new ArrayList<String>(results.size());
         for (VMRootDiskTagVO result : results) {
@@ -84,5 +84,5 @@ public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> 
         }
         return computeTags;
     }
-    
+
 }

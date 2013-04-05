@@ -92,7 +92,6 @@ import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -143,9 +142,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject List<NetworkElement> _networkElements;
-    
-    @Inject
+    List<NetworkElement> _networkElements;
+    public List<NetworkElement> getNetworkElements() {
+		return _networkElements;
+	}
+	public void setNetworkElements(List<NetworkElement> _networkElements) {
+		this._networkElements = _networkElements;
+	}
+
+	@Inject
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;
@@ -398,9 +403,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Network network = _networksDao.findById(networkId);
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
         NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
-        if (ComponentContext.getTargetObject(oldElement) instanceof IpDeployingRequester && ComponentContext.getTargetObject(newElement) instanceof IpDeployingRequester) {
-        	IpDeployer oldIpDeployer = ((IpDeployingRequester)ComponentContext.getTargetObject(oldElement)).getIpDeployer(network);
-        	IpDeployer newIpDeployer = ((IpDeployingRequester)ComponentContext.getTargetObject(newElement)).getIpDeployer(network);
+        if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
         	if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
         		throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
         	}
@@ -1206,6 +1211,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         return isProviderEnabled(ntwkSvcProvider);
     }
+    
+    @Override
+    public boolean isProviderEnabledInZone(long zoneId, String provider)
+    {
+        //the provider has to be enabled at least in one network in the zone
+        for (PhysicalNetwork pNtwk : _physicalNetworkDao.listByZone(zoneId)) {
+            if (isProviderEnabledInPhysicalNetwork(pNtwk.getId(), provider)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     @Override
     public String getNetworkTag(HypervisorType hType, Network network) {
@@ -1993,12 +2011,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	}
 		return startIpv6;
 	}
-	
+    
     @Override
-    public NicVO getPlaceholderNic(Network network, Long podId) {
-        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
+    public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
+        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
         for (NicVO nic : nics) {
-            if (nic.getVmType() == null && nic.getReserver() == null && nic.getIp4Address() != null && !nic.getIp4Address().equals(network.getGateway())) {
+            if (nic.getReserver() == null && nic.getIp4Address() != null) {
                 if (podId == null) {
                     return nic;
                 } else {

@@ -33,16 +33,16 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 @Path("/zone/{id}")
 public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event> {
-	
-	
+
+
 	private DataCenterResourceManager manager;
 
 	private EngineDataCenterVO dataCenterVO;
-	
-	
+
+
 	public ZoneEntityImpl(String dataCenterId, DataCenterResourceManager manager) {
 		this.manager = manager;
-    	this.dataCenterVO = this.manager.loadDataCenter(dataCenterId);
+	this.dataCenterVO = this.manager.loadDataCenter(dataCenterId);
     }
 
 	@Override
@@ -53,47 +53,47 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
 
     @Override
     public long getId() {
-    	return dataCenterVO.getId();
+	return dataCenterVO.getId();
     }
 
     @Override
     public boolean enable() {
-    	try {
+	try {
 			manager.changeState(this, Event.EnableRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
     }
 
     @Override
     public boolean disable() {
-    	try {
+	try {
 			manager.changeState(this, Event.DisableRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
     }
 
     @Override
     public boolean deactivate() {
-    	try {
+	try {
 			manager.changeState(this, Event.DeactivateRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
     }
 
     @Override
     public boolean reactivate() {
-    	try {
+	try {
 			manager.changeState(this, Event.ActivatedRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
     }
 
     @Override
@@ -123,24 +123,24 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         return dataCenterVO.getOwner();
     }
 
-    
+
     public void setOwner(String owner) {
-    	dataCenterVO.setOwner(owner);
+	dataCenterVO.setOwner(owner);
     }
-    
+
     @Override
     public Map<String, String> getDetails() {
-    	return dataCenterVO.getDetails();
+	return dataCenterVO.getDetails();
 	}
 
     public void setDetails(Map<String,String> details) {
-    	dataCenterVO.setDetails(details);
+	dataCenterVO.setDetails(details);
     }
 
-    
+
     @Override
     public void addDetail(String name, String value) {
-    	dataCenterVO.setDetail(name, value);
+	dataCenterVO.setDetail(name, value);
     }
 
     @Override

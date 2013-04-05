@@ -476,6 +476,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
+        vmSnapshotResponse.setObjectName("vmsnapshot");
         return vmSnapshotResponse;
     }
 
@@ -1221,6 +1222,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateOwner(vpnResponse, vpn);
 
         vpnResponse.setState(vpn.getState().toString());
+        vpnResponse.setId(vpn.getUuid());
         vpnResponse.setObjectName("remoteaccessvpn");
 
         return vpnResponse;

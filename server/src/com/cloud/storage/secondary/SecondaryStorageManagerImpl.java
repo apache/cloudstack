@@ -742,12 +742,17 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     return true;
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm");
+                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId + " system.vm.use.local.storage: " + _useLocalStorage +
+                        		"If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
                     }
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Zone host is ready, but secondary storage vm template: " + template.getId() + " is not ready on secondary storage: " + secHost.getId());
+                    if (template == null) {
+                        s_logger.debug("Zone host is ready, but secondary storage vm template does not exist");
+                    } else {
+                        s_logger.debug("Zone host is ready, but secondary storage vm template: " + template.getId() + " is not ready on secondary storage: " + secHost.getId());
+                    }
                 }
             }
         }

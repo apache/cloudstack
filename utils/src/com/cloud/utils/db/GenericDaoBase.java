@@ -71,6 +71,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.ComponentMethodInterceptable;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -114,7 +115,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
  * 
  **/
 @DB
-public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID> {
+public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
     private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
@@ -193,15 +194,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     ( (Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
         }
 
-/*        
-        s_daoMaps.put(_entityBeanType, ComponentContext.getComponent(this.getClass()));
+        s_daoMaps.put(_entityBeanType, this);
         Class<?>[] interphaces = _entityBeanType.getInterfaces();
         if (interphaces != null) {
             for (Class<?> interphace : interphaces) {
-                s_daoMaps.put(interphace, ComponentContext.getComponent(this.getClass()));
+                s_daoMaps.put(interphace, this);
             }
         }
-*/  
+  
         _table = DbUtil.getTableName(_entityBeanType);
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
@@ -1750,25 +1750,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        Class<?> daoInterface = null;
-        for(Class<?> intf : this.getClass().getInterfaces()) {
-        	if(GenericDao.class.isAssignableFrom(intf)) {
-        		daoInterface = intf;
-        		break;
-        	}
-        }
- 
-        if(daoInterface != null) {
-        	s_logger.info("Register dao interface in GenericDaoBase entity-DAO map. " + daoInterface.getName());
-	        s_daoMaps.put(_entityBeanType, (GenericDao<?, ? extends Serializable>) ComponentContext.getComponent(daoInterface));
-	        Class<?>[] interphaces = _entityBeanType.getInterfaces();
-	        if (interphaces != null) {
-	            for (Class<?> interphace : interphaces) {
-	                s_daoMaps.put(interphace,  (GenericDao<?, ? extends Serializable>) ComponentContext.getComponent(daoInterface));
-	            }
-	        }
-	    }
-       
         final String value = (String)params.get("lock.timeout");
         _timeoutSeconds = NumbersUtil.parseInt(value, 300);
 

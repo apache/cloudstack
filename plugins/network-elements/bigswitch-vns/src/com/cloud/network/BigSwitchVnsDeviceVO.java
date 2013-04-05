@@ -25,9 +25,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
 @Table(name="external_bigswitch_vns_devices")
-public class BigSwitchVnsDeviceVO {
+public class BigSwitchVnsDeviceVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

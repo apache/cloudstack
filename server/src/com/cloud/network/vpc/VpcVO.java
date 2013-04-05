@@ -26,9 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vpc")
@@ -93,11 +91,6 @@ public class VpcVO implements Vpc {
         this.state = State.Enabled;
         this.networkDomain = networkDomain;
         this.vpcOfferingId = vpcOffId;
-    }
-    
-    @Override
-    public boolean readyToUse() {
-        return state == State.Enabled;
     }
 
     @Override

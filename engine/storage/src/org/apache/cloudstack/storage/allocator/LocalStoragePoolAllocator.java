@@ -69,11 +69,12 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
- 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
-        }
+        s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
 
+        if (!dskCh.useLocalStorage()) {
+            return suitablePools;
+        }
+        
         // data disk and host identified from deploying vm (attach volume case)
         if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
             List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());

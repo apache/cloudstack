@@ -116,11 +116,23 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     ClusterDetailsDao _clusterDetailsDao;
     long _serverId;
 
-    @Inject
     List<Investigator> _investigators;
-    @Inject
-    List<FenceBuilder> _fenceBuilders;
-    @Inject
+    public List<Investigator> getInvestigators() {
+		return _investigators;
+	}
+	public void setInvestigators(List<Investigator> _investigators) {
+		this._investigators = _investigators;
+	}
+
+	List<FenceBuilder> _fenceBuilders;
+    public List<FenceBuilder> getFenceBuilders() {
+		return _fenceBuilders;
+	}
+	public void setFenceBuilders(List<FenceBuilder> _fenceBuilders) {
+		this._fenceBuilders = _fenceBuilders;
+	}
+
+	@Inject
     AgentManager _agentMgr;
     @Inject
     AlertManager _alertMgr;

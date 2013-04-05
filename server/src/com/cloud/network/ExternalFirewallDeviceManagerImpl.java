@@ -483,7 +483,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         if (add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
             // Insert a new NIC for this guest network to reserve the gateway address
-            _networkMgr.savePlaceholderNic(network,  network.getGateway());
+            _networkMgr.savePlaceholderNic(network,  network.getGateway(), null);
         }
         
         // Delete any mappings used for inline external load balancers in this network
@@ -501,7 +501,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (!add) {
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
-                if (nic.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && nic.getIp4Address().equals(network.getGateway())) {
+                if (nic.getVmType() == null && nic.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && nic.getIp4Address().equals(network.getGateway())) {
                     s_logger.debug("Removing placeholder nic " + nic + " for the network " + network);
                     _nicDao.remove(nic.getId());
                 }

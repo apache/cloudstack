@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.database;
 
 import javax.ejb.Local;
@@ -28,4 +28,3 @@ import com.cloud.utils.db.GenericDaoBase;
 @DB(txn = false)
 public class UcsManagerDaoImpl  extends GenericDaoBase<UcsManagerVO, Long> implements UcsManagerDao {
 }
-

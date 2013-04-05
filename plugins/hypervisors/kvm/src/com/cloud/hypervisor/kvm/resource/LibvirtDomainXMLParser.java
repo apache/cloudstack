@@ -25,6 +25,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -110,23 +111,29 @@ public class LibvirtDomainXMLParser {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac,
                             nicModel.valueOf(model.toUpperCase()));
+                } else if (type.equalsIgnoreCase("ethernet"))  {
+                    String scriptPath = getAttrValue("script", "path", nic);
+                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath);
                 }
                 interfaces.add(def);
             }
 
             Element graphic = (Element) devices
                     .getElementsByTagName("graphics").item(0);
-            String port = graphic.getAttribute("port");
-            if (port != null) {
-                try {
-                    vncPort = Integer.parseInt(port);
-                    if (vncPort != -1) {
-                        vncPort = vncPort - 5900;
-                    } else {
+
+            if (graphic != null) {
+                String port = graphic.getAttribute("port");
+                if (port != null) {
+                    try {
+                        vncPort = Integer.parseInt(port);
+                        if (vncPort != -1) {
+                            vncPort = vncPort - 5900;
+                        } else {
+                            vncPort = null;
+                        }
+                    } catch (NumberFormatException nfe) {
                         vncPort = null;
                     }
-                } catch (NumberFormatException nfe) {
-                    vncPort = null;
                 }
             }
 

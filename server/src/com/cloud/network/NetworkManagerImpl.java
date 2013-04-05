@@ -243,16 +243,41 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject 
     List<NetworkGuru> _networkGurus;
+    public List<NetworkGuru> getNetworkGurus() {
+		return _networkGurus;
+	}
+	public void setNetworkGurus(List<NetworkGuru> _networkGurus) {
+		this._networkGurus = _networkGurus;
+	}
 
-    @Inject  protected List<NetworkElement> _networkElements;
+	List<NetworkElement> _networkElements;
+    public List<NetworkElement> getNetworkElements() {
+		return _networkElements;
+	}
+	public void setNetworkElements(List<NetworkElement> _networkElements) {
+		this._networkElements = _networkElements;
+	}
 
-    @Inject NetworkDomainDao _networkDomainDao;
-    @Inject List<IpDeployer> _ipDeployers;
-    @Inject List<DhcpServiceProvider> _dhcpProviders;
- 
-    @Inject
+	@Inject NetworkDomainDao _networkDomainDao;
+
+	List<IpDeployer> _ipDeployers;
+    public List<IpDeployer> getIpDeployers() {
+		return _ipDeployers;
+	}
+	public void setIpDeployers(List<IpDeployer> _ipDeployers) {
+		this._ipDeployers = _ipDeployers;
+	}
+
+	List<DhcpServiceProvider> _dhcpProviders;
+    public List<DhcpServiceProvider> getDhcpProviders() {
+		return _dhcpProviders;
+	}
+	public void setDhcpProviders(List<DhcpServiceProvider> _dhcpProviders) {
+		this._dhcpProviders = _dhcpProviders;
+	}
+
+	@Inject
     VMInstanceDao _vmDao;
     @Inject
     FirewallManager _firewallMgr;
@@ -586,10 +611,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
-                if (!(ComponentContext.getTargetObject(element) instanceof IpDeployingRequester)) {
+                if (!(element instanceof IpDeployingRequester)) {
                     throw new CloudRuntimeException("Element " + element + " is not a IpDeployingRequester!");
                 }
-                deployer = ((IpDeployingRequester)ComponentContext.getTargetObject(element)).getIpDeployer(network);
+                deployer = ((IpDeployingRequester)element).getIpDeployer(network);
                 if (deployer == null) {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -1503,7 +1528,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // associate a source NAT IP (if one isn't already associated with the network)
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (network.getGuestType() == Network.GuestType.Isolated
                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
                && !sharedSourceNat) {
@@ -1569,13 +1593,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof DhcpServiceProvider)) {
+                    element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof UserDataServiceProvider)) {
+                    element instanceof UserDataServiceProvider) {
                 UserDataServiceProvider sp = (UserDataServiceProvider) element;
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
@@ -1799,6 +1823,26 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
         NicProfile profile = new NicProfile(nic, network, null, null, null,
                 _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        /*
+         * We need to release the nics with a Create ReservationStrategy here
+         * because the nic is now being removed.
+         */
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                }
+                try {
+                    element.release(network, profile, vm, null);
+                } catch (ConcurrentOperationException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                } catch (ResourceUnavailableException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                }
+            }
+        }
+
         NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
@@ -3444,6 +3488,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network,
     							 String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
+        //This method allocates direct ip for the Shared network in Advance zones
     	boolean ipv4 = false, ipv6 = false;
     	
     	Transaction txn = Transaction.currentTxn();
@@ -3456,7 +3501,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     			
     			//Get ip address from the placeholder and don't allocate a new one
     			if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
-    			    Nic placeholderNic = _networkModel.getPlaceholderNic(network, null);
+    			    Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
     			    if (placeholderNic != null) {
     			        IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
                         ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
@@ -3653,15 +3698,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
-        assert ComponentContext.getTargetObject(element) instanceof StaticNatServiceProvider;
-        return (StaticNatServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof StaticNatServiceProvider;
+        return (StaticNatServiceProvider)element;
     }
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
-        assert ComponentContext.getTargetObject(element) instanceof LoadBalancingServiceProvider; 
-        return ( LoadBalancingServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof LoadBalancingServiceProvider; 
+        return (LoadBalancingServiceProvider)element;
     }
     @Override
     public boolean isNetworkInlineMode(Network network) {
@@ -3712,11 +3757,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         
         @Override
-        public NicVO savePlaceholderNic(Network network, String ip4Address) {
+        public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
             NicVO nic = new NicVO(null, null, network.getId(), null); 
             nic.setIp4Address(ip4Address);
             nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
             nic.setState(Nic.State.Reserved);
+            nic.setVmType(vmType);
             return _nicDao.persist(nic);
         }
         

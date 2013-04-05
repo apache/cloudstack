@@ -27,6 +27,14 @@ under the License.
 dictionary = {
 'message.redirecting.region': '<fmt:message key="message.redirecting.region"/>',
 'label.use.vm.ip': '<fmt:message key="label.use.vm.ip"/>',
+'label.cpu.limits': '<fmt:message key="label.cpu.limits"/>',
+'label.memory.limits': '<fmt:message key="label.memory.limits"/>',
+'label.primary.storage.limits': '<fmt:message key="label.primary.storage.limits"/>',
+'label.secondary.storage.limits': '<fmt:message key="label.secondary.storage.limits"/>',
+'label.max.cpus': '<fmt:message key="label.max.cpus"/>',
+'label.max.memory': '<fmt:message key="label.max.memory"/>',
+'label.max.primary.storage': '<fmt:message key="label.max.primary.storage"/>',
+'label.max.secondary.storage': '<fmt:message key="label.max.secondary.storage"/>',
 'label.add.region': '<fmt:message key="label.add.region"/>',
 'label.remove.region': '<fmt:message key="label.remove.region"/>',
 'message.remove.region': '<fmt:message key="message.remove.region"/>',
@@ -1462,6 +1470,9 @@ dictionary = {
 'label.action.vmsnapshot.delete': '<fmt:message key="label.action.vmsnapshot.delete" />',
 'label.action.vmsnapshot.revert': '<fmt:message key="label.action.vmsnapshot.revert" />',
 'message.action.vmsnapshot.delete': '<fmt:message key="message.action.vmsnapshot.delete" />',
-'message.action.vmsnapshot.revert': '<fmt:message key="message.action.vmsnapshot.revert" />'
+'message.action.vmsnapshot.revert': '<fmt:message key="message.action.vmsnapshot.revert" />',
+'label.add.BigSwitchVns.device': '<fmt:message key="label.add.BigSwitchVns.device" />',
+'label.delete.BigSwitchVns': '<fmt:message key="label.delete.BigSwitchVns" />',
+'label.bigswitch.controller.address': '<fmt:message key="label.bigswitch.controller.address" />'
 };
 </script>

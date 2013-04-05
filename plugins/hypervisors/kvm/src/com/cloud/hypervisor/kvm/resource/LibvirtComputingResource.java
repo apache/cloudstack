@@ -57,6 +57,10 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -182,6 +186,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
@@ -192,7 +197,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -323,9 +327,11 @@ ServerResource {
                     + "            <uuid>{1}</uuid>" + "        </domain>"
                     + "    </domainsnapshot>");
 
-    protected String _hypervisorType;
+    protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
     protected String _hypervisorPath;
+    protected String _networkDirectSourceMode;
+    protected String _networkDirectDevice;
     protected String _sysvmISOPath;
     protected String _privNwName;
     protected String _privBridgeName;
@@ -392,6 +398,7 @@ ServerResource {
 
     private Map<String, Object> getDeveloperProperties()
             throws ConfigurationException {
+
         final File file = PropertiesUtil.findConfigFile("developer.properties");
         if (file == null) {
             throw new ConfigurationException(
@@ -445,6 +452,14 @@ ServerResource {
 
     protected String getDefaultDomrScriptsDir() {
         return "scripts/network/domr/kvm";
+    }
+
+    protected String getNetworkDirectSourceMode() {
+        return _networkDirectSourceMode;
+    }
+
+    protected String getNetworkDirectDevice() {
+        return _networkDirectDevice;
     }
 
     @Override
@@ -586,15 +601,19 @@ ServerResource {
 
         String instance = (String) params.get("instance");
 
-        _hypervisorType = (String) params.get("hypervisor.type");
-        if (_hypervisorType == null) {
-            _hypervisorType = "kvm";
+        _hypervisorType = HypervisorType.getType((String) params.get("hypervisor.type"));
+        if (_hypervisorType == HypervisorType.None) {
+            _hypervisorType = HypervisorType.KVM;
         }
 
         _hypervisorURI = (String) params.get("hypervisor.uri");
         if (_hypervisorURI == null) {
-            _hypervisorURI = "qemu:///system";
+            _hypervisorURI = LibvirtConnection.getHypervisorURI(_hypervisorType.toString());
         }
+
+        _networkDirectSourceMode = (String) params.get("network.direct.source.mode");
+        _networkDirectDevice = (String) params.get("network.direct.device");
+
         String startMac = (String) params.get("private.macaddr.start");
         if (startMac == null) {
             startMac = "00:16:3e:77:e2:a0";
@@ -647,6 +666,9 @@ ServerResource {
         if (_localStoragePath == null) {
             _localStoragePath = "/var/lib/libvirt/images/";
         }
+        
+        File storagePath = new File(_localStoragePath);
+        _localStoragePath = storagePath.getAbsolutePath();
 
         _localStorageUUID = (String) params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
@@ -680,12 +702,14 @@ ServerResource {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        /* Does node support HVM guest? If not, exit */
-        if (!IsHVMEnabled(conn)) {
-            throw new ConfigurationException(
-                    "NO HVM support on this machine, please make sure: "
-                            + "1. VT/SVM is supported by your CPU, or is enabled in BIOS. "
-                            + "2. kvm modules are loaded (kvm, kvm_amd|kvm_intel)");
+        if (HypervisorType.KVM == _hypervisorType) {
+            /* Does node support HVM guest? If not, exit */
+            if (!IsHVMEnabled(conn)) {
+                throw new ConfigurationException(
+                        "NO HVM support on this machine, please make sure: "
+                                + "1. VT/SVM is supported by your CPU, or is enabled in BIOS. "
+                                + "2. kvm modules are loaded (kvm, kvm_amd|kvm_intel)");
+            }
         }
 
         _hypervisorPath = getHypervisorPath(conn);
@@ -1218,10 +1242,23 @@ ServerResource {
         StorageFilerTO pool = cmd.getPool();
         String secondaryStorageUrl = cmd.getSecondaryStorageURL();
         KVMStoragePool secondaryStoragePool = null;
+        KVMStoragePool primaryPool = null;
         try {
-            KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(
-                    pool.getType(),
-                    pool.getUuid());
+            try {
+                primaryPool = _storagePoolMgr.getStoragePool(
+                     pool.getType(),
+                     pool.getUuid());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primaryPool = _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(),
+                                      cmd.getPool().getHost(), cmd.getPool().getPort(),
+                                      cmd.getPool().getPath(), cmd.getPool().getUserInfo(),
+                                      cmd.getPool().getType());
+                } else {
+                    return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
+                }
+            }
+
             String volumeName = UUID.randomUUID().toString();
 
             if (copyToSecondary) {
@@ -1387,12 +1424,12 @@ ServerResource {
         StoragePoolType poolType = pool.getType();
         PhysicalDiskFormat volFormat = vol.getFormat();
          
-        if(pool.getType() == StoragePoolType.CLVM && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.RAW) {
+        if(pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                   || poolType == StoragePoolType.SharedMountPoint
                   || poolType == StoragePoolType.Filesystem)
-                  && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.QCOW2 ) {
+                  && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
         return null;
@@ -1501,7 +1538,7 @@ ServerResource {
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             Domain vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             Integer nicnum = 0;
@@ -1530,7 +1567,7 @@ ServerResource {
         NicTO nic = cmd.getNic();
         String vmName = cmd.getInstanceName();
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(vmName);
             Domain vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             for (InterfaceDef pluggedNic : pluggedNics) {
@@ -1568,7 +1605,7 @@ ServerResource {
         }
 
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
             Domain vm = getDomain(conn, routerName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
             InterfaceDef routerNic = null;
@@ -1609,7 +1646,7 @@ ServerResource {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
             Domain vm = getDomain(conn, routerName);
             String [][] rules = cmd.generateFwRules();
             String[] aclRules = rules[0];
@@ -1648,7 +1685,7 @@ ServerResource {
         IpAddressTO pubIP = cmd.getIpAddress();
 
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
             Domain vm = getDomain(conn, routerName);
             Integer devNum = 0;
             String pubVlan = pubIP.getVlanId();
@@ -1694,7 +1731,7 @@ ServerResource {
         String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
             IpAddressTO[] ips = cmd.getIpAddresses();
             Domain vm = getDomain(conn, routerName);
             Integer devNum = 0;
@@ -1742,7 +1779,7 @@ ServerResource {
         String[] results = new String[cmd.getIpAddresses().length];
         Connect conn;
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
             List<InterfaceDef> nics = getInterfaces(conn, routerName);
             Map<String, Integer> vlanAllocatedToVM = new HashMap<String, Integer>();
             Integer nicPos = 0;
@@ -1799,7 +1836,7 @@ ServerResource {
         String snapshotPath = cmd.getSnapshotPath();
         String vmName = cmd.getVmName();
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             DomainInfo.DomainState state = null;
             Domain vm = null;
             if (vmName != null) {
@@ -1888,7 +1925,7 @@ ServerResource {
         String vmName = cmd.getVmName();
         KVMStoragePool secondaryStoragePool = null;
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
 
             secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(
                     secondaryStoragePoolUrl);
@@ -2155,8 +2192,9 @@ ServerResource {
         String secondaryStorageURL = cmd.getSecondaryStorageUrl();
 
         KVMStoragePool secondaryStorage = null;
+        KVMStoragePool primary = null;
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             String templateFolder = cmd.getAccountId() + File.separator
                     + cmd.getTemplateId() + File.separator;
             String templateInstallFolder = "/template/tmpl/" + templateFolder;
@@ -2164,9 +2202,21 @@ ServerResource {
             secondaryStorage = _storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageURL);
 
-            KVMStoragePool primary = _storagePoolMgr.getStoragePool(
+            try {
+                primary = _storagePoolMgr.getStoragePool(
                     cmd.getPool().getType(),
                     cmd.getPrimaryStoragePoolNameLabel());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primary = _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(),
+                                      cmd.getPool().getHost(), cmd.getPool().getPort(),
+                                      cmd.getPool().getPath(), cmd.getPool().getUserInfo(),
+                                      cmd.getPool().getType());
+                } else {
+                    return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
+                }
+            }
+
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             String tmpltPath = secondaryStorage.getLocalPath() + File.separator
                     + templateInstallFolder;
@@ -2186,14 +2236,25 @@ ServerResource {
                 }
             } else {
                 s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + cmd.getUniqueName());
-                Script.runSimpleBashScript("qemu-img convert"
-                        + " -f raw -O qcow2 "
-                        + KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(),
+
+                QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(),
                                 primary.getSourcePort(),
                                 primary.getAuthUserName(),
                                 primary.getAuthSecret(),
-                                disk.getPath())
-                                + " " + tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
+                                disk.getPath()));
+                srcFile.setFormat(PhysicalDiskFormat.RAW);
+
+                QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
+                destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+                QemuImg q = new QemuImg();
+                try {
+                    q.convert(srcFile, destFile);
+                } catch (QemuImgException e) {
+                    s_logger.error("Failed to create new template while converting "
+                                    + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                }
+
                 File templateProp = new File(tmpltPath + "/template.properties");
                 if (!templateProp.exists()) {
                     templateProp.createNewFile();
@@ -2331,7 +2392,7 @@ ServerResource {
         String vif = null;
         String brname = null;
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             List<InterfaceDef> nics = getInterfaces(conn, cmd.getVmName());
             vif = nics.get(0).getDevName();
             brname = nics.get(0).getBrName();
@@ -2365,7 +2426,7 @@ ServerResource {
 
     protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getName());
             Integer vncPort = getVncPort(conn, cmd.getName());
             return new GetVncPortAnswer(cmd, _privateIp, 5900 + vncPort);
         } catch (LibvirtException e) {
@@ -2436,7 +2497,7 @@ ServerResource {
 
     private Answer execute(AttachIsoCommand cmd) {
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             attachOrDetachISO(conn, cmd.getVmName(), cmd.getIsoPath(),
                     cmd.isAttach());
         } catch (LibvirtException e) {
@@ -2452,7 +2513,7 @@ ServerResource {
 
     private AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             KVMStoragePool primary = _storagePoolMgr.getStoragePool(
                     cmd.getPooltype(),
                     cmd.getPoolUuid());
@@ -2504,7 +2565,7 @@ ServerResource {
 
     private Answer execute(CheckVirtualMachineCommand cmd) {
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             final State state = getVmState(conn, cmd.getVmName());
             Integer vncPort = null;
             if (state == State.Running) {
@@ -2573,7 +2634,7 @@ ServerResource {
         Domain destDomain = null;
         Connect conn = null;
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
             dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
                     .getBytes()));
@@ -2633,7 +2694,7 @@ ServerResource {
 
         NicTO[] nics = vm.getNics();
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(vm.getName());
             for (NicTO nic : nics) {
                 getVifDriver(nic.getType()).plug(nic, null);
             }
@@ -2828,7 +2889,7 @@ ServerResource {
         }
 
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             final String result = rebootVM(conn, cmd.getVmName());
             if (result == null) {
                 Integer vncPort = null;
@@ -2866,8 +2927,8 @@ ServerResource {
         List<String> vmNames = cmd.getVmNames();
         try {
             HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
-            Connect conn = LibvirtConnection.getConnection();
             for (String vmName : vmNames) {
+                Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
                 VmStatsEntry statEntry = getVmStat(conn, vmName);
                 if (statEntry == null) {
                     continue;
@@ -2891,7 +2952,7 @@ ServerResource {
             _vms.put(vmName, State.Stopping);
         }
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
 
             List<DiskDef> disks = getDisks(conn, vmName);
             List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
@@ -3021,14 +3082,22 @@ ServerResource {
 
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
-        vm.setHvsType(_hypervisorType);
         vm.setDomainName(vmTO.getName());
         vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes())
                 .toString());
         vm.setDomDescription(vmTO.getOs());
 
         GuestDef guest = new GuestDef();
-        guest.setGuestType(GuestDef.guestType.KVM);
+
+        if (HypervisorType.LXC == _hypervisorType &&
+            VirtualMachine.Type.User == vmTO.getType()) {
+            // LXC domain is only valid for user VMs. Use KVM for system VMs.
+            guest.setGuestType(GuestDef.guestType.LXC);
+            vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
+        } else {
+            guest.setGuestType(GuestDef.guestType.KVM);
+            vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+        }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
         guest.setBootOrder(GuestDef.bootOrder.CDROM);
@@ -3040,8 +3109,8 @@ ServerResource {
 
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
             grd.setMemBalloning(true);
-            grd.setCurrentMem((int)vmTO.getMinRam()/1024);
-            grd.setMemorySize((int)vmTO.getMaxRam()/1024);
+            grd.setCurrentMem((long)vmTO.getMinRam()/1024);
+            grd.setMemorySize((long)vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
@@ -3089,6 +3158,7 @@ ServerResource {
 
         DevicesDef devices = new DevicesDef();
         devices.setEmulatorPath(_hypervisorPath);
+        devices.setGuestType(guest.getGuestType());
 
         SerialDef serial = new SerialDef("pty", null, (short) 0);
         devices.addDevice(serial);
@@ -3134,12 +3204,13 @@ ServerResource {
         State state = State.Stopped;
         Connect conn = null;
         try {
-            conn = LibvirtConnection.getConnection();
             synchronized (_vms) {
                 _vms.put(vmName, State.Starting);
             }
 
             vm = createVMFromSpec(vmSpec);
+
+            conn = LibvirtConnection.getConnectionByType(vm.getHvsType());
 
             createVbd(conn, vmSpec, vmName, vm);
 
@@ -3305,6 +3376,22 @@ ServerResource {
                 vm.getDevices().addDevice(iso);
             }
         }
+
+        // For LXC, find and add the root filesystem
+        if (HypervisorType.LXC.toString().toLowerCase().equals(vm.getHvsType())) {
+            for (VolumeTO volume : disks) {
+                if (volume.getType() == Volume.Type.ROOT) {
+                    KVMStoragePool pool = _storagePoolMgr.getStoragePool(
+                            volume.getPoolType(),
+                            volume.getPoolUuid());
+                    KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(volume.getPath());
+                    FilesystemDef rootFs = new FilesystemDef(physicalDisk.getPath(), "/");
+                    vm.getDevices().addDevice(rootFs);
+                    break;
+                }
+            }
+        }
+
     }
 
     private VolumeTO getVolume(VirtualMachineTO vmSpec, Volume.Type type) {
@@ -3539,7 +3626,7 @@ ServerResource {
 
         final StartupRoutingCommand cmd = new StartupRoutingCommand(
                 (Integer) info.get(0), (Long) info.get(1), (Long) info.get(2),
-                (Long) info.get(4), (String) info.get(3), HypervisorType.KVM,
+                (Long) info.get(4), (String) info.get(3), _hypervisorType,
                 RouterPrivateIpStrategy.HostLocal);
         cmd.setStateChanges(changes);
         fillNetworkInformation(cmd);
@@ -3695,7 +3782,7 @@ ServerResource {
         Domain dm = null;
         for (; i < 5; i++) {
             try {
-                Connect conn = LibvirtConnection.getConnection();
+                Connect conn = LibvirtConnection.getConnectionByVmName(vm);
                 dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vm
                         .getBytes()));
                 DomainInfo.DomainState vps = dm.getInfo().state;
@@ -3767,16 +3854,30 @@ ServerResource {
 
     private HashMap<String, State> getAllVms() {
         final HashMap<String, State> vmStates = new HashMap<String, State>();
+        Connect conn = null;
+
+        try {
+            conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
+            vmStates.putAll(getAllVms(conn));
+        } catch (LibvirtException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+        }
+
+        try {
+            conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
+            vmStates.putAll(getAllVms(conn));
+        } catch (LibvirtException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+        }
+
+        return vmStates;
+    }
+
+    private HashMap<String, State> getAllVms(Connect conn) {
+        final HashMap<String, State> vmStates = new HashMap<String, State>();
 
         String[] vms = null;
         int[] ids = null;
-        Connect conn = null;
-        try {
-            conn = LibvirtConnection.getConnection();
-        } catch (LibvirtException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
-            return vmStates;
-        }
 
         try {
             ids = conn.listDomains();
@@ -4227,9 +4328,11 @@ ServerResource {
     }
 
     private void cleanupVMNetworks(Connect conn, List<InterfaceDef> nics) {
-        for (InterfaceDef nic : nics) {
-            if (nic.getHostNetType() == hostNicType.VNET) {
-                cleanupVnet(conn, getVnetIdFromBrName(nic.getBrName()));
+        if (nics != null) {
+            for (InterfaceDef nic : nics) {
+                if (nic.getHostNetType() == hostNicType.VNET) {
+                    cleanupVnet(conn, getVnetIdFromBrName(nic.getBrName()));
+                }
             }
         }
     }
@@ -4441,7 +4544,7 @@ ServerResource {
         }
 
         List<InterfaceDef> intfs = getInterfaces(conn, vmName);
-        if (intfs.size() < nic.getDeviceId()) {
+        if (intfs.size() == 0 || intfs.size() < nic.getDeviceId()) {
             return false;
         }
 
@@ -4539,7 +4642,7 @@ ServerResource {
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
         cmd.add("--nicsecips", secIps);
-        if (rules != null) {
+        if (newRules != null && !newRules.isEmpty()) {
             cmd.add("--rules", newRules);
         }
         String result = cmd.execute();
@@ -4647,7 +4750,7 @@ ServerResource {
         boolean success = false;
         Connect conn;
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             success = default_network_rules_for_systemvm(conn, cmd.getVmName());
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
@@ -4660,7 +4763,7 @@ ServerResource {
         boolean success = false;
         Connect conn;
         try {
-            conn = LibvirtConnection.getConnection();
+            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             success = network_rules_vmSecondaryIp(conn, cmd.getVmName(), cmd.getVmSecIp(), cmd.getAction());
         } catch (LibvirtException e) {
             // TODO Auto-generated catch block

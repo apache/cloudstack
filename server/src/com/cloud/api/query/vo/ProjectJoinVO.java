@@ -25,9 +25,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.projects.Project.State;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;

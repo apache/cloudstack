@@ -41,6 +41,10 @@ public class BigSwitchVnsDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_NAME) @Param(description="the controller Ip address")
     private String hostName;
 
+    public String getId() {
+        return this.id;
+    }
+
     public void setId(String vnsDeviceId) {
         this.id = vnsDeviceId;
     }

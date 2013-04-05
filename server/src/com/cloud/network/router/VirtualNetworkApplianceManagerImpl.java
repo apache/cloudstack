@@ -303,8 +303,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Inject
     VpnUserDao _vpnUsersDao;
     @Inject
-    RemoteAccessVpnDao _remoteAccessVpnDao;
-    @Inject
     RulesManager _rulesMgr;
     @Inject
     NetworkDao _networkDao;
@@ -1529,9 +1527,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId,
                         null, networks, false, null);
 
-                _routerDao.addRouterToGuestNetwork(router, guestNetwork);
-                routers.add(router);
-            }
+                    if (router != null) {
+                        _routerDao.addRouterToGuestNetwork(router, guestNetwork);
+                        routers.add(router);
+                    }
+                }
             }
         } finally {
             if (lock != null) {
@@ -1708,15 +1708,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
             	if (guestNetwork.getCidr() != null) {
-            	    //Check the placeholder nic, and if it's ip address is not empty, allocate it from there
-            	    String requestedGateway = null;
-            	    if (guestNetwork.getGateway() != null) {
-            	        requestedGateway = guestNetwork.getGateway();
-            	    } else if (plan != null && plan.getPodId() != null) {
-            	        Pod pod = _configMgr.getPod(plan.getPodId());
-            	        requestedGateway = pod.getGateway();
-            	    }
-            	    Nic placeholder = _networkModel.getPlaceholderNic(guestNetwork, null);
+            	    Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
             	    if (placeholder != null) {
             	        s_logger.debug("Requesting ip address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
             	        defaultNetworkStartIp = placeholder.getIp4Address();
@@ -2346,7 +2338,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
       
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
-                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
+                    RemoteAccessVpn vpn = _vpnDao.findByPublicIpAddress(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
                     }

@@ -30,37 +30,12 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
-import com.cloud.configuration.dao.ResourceCountDaoImpl;
-import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Service;
-import com.cloud.network.dao.FirewallRulesDaoImpl;
-import com.cloud.network.dao.IPAddressDaoImpl;
-import com.cloud.network.dao.PhysicalNetworkDaoImpl;
-import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcManagerImpl;
-import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
-import com.cloud.network.vpc.dao.StaticRouteDaoImpl;
-import com.cloud.network.vpc.dao.VpcGatewayDaoImpl;
-import com.cloud.network.vpc.dao.VpcOfferingDaoImpl;
-import com.cloud.server.ManagementService;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
-import com.cloud.user.MockAccountManagerImpl;
-import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.component.ComponentContext;
-
-import com.cloud.vm.dao.DomainRouterDaoImpl;
-import com.cloud.vpc.dao.MockNetworkDaoImpl;
-import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
-import com.cloud.vpc.dao.MockNetworkOfferingServiceMapDaoImpl;
-import com.cloud.vpc.dao.MockNetworkServiceMapDaoImpl;
-import com.cloud.vpc.dao.MockVpcDaoImpl;
-import com.cloud.vpc.dao.MockVpcOfferingDaoImpl;
-import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
@@ -180,7 +155,7 @@ public class VpcApiUnitTest extends TestCase{
         //1) correct network offering
         boolean result = false;
         try {
-            _vpcService.validateNtkwOffForVpc(1, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
             s_logger.debug("Validate network offering: Test passed: the offering is valid for vpc creation");
         } catch (Exception ex) {
@@ -191,7 +166,7 @@ public class VpcApiUnitTest extends TestCase{
         result = false;
         String msg = null;
         try {
-            _vpcService.validateNtkwOffForVpc(2, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 2, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
         } catch (InvalidParameterValueException ex) {
             msg = ex.getMessage();
@@ -207,7 +182,7 @@ public class VpcApiUnitTest extends TestCase{
         result = false;
         msg = null;
         try {
-            _vpcService.validateNtkwOffForVpc(3, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 3, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
         } catch (InvalidParameterValueException ex) {
             msg = ex.getMessage();
@@ -222,7 +197,7 @@ public class VpcApiUnitTest extends TestCase{
         //4) invalid offering - guest type shared
         result = false;
         try {
-            _vpcService.validateNtkwOffForVpc(4, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 4, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
         } catch (InvalidParameterValueException ex) {
             msg = ex.getMessage();
@@ -237,7 +212,7 @@ public class VpcApiUnitTest extends TestCase{
         //5) Invalid offering - no redundant router support
         result = false;
         try {
-            _vpcService.validateNtkwOffForVpc(5, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 5, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
         } catch (InvalidParameterValueException ex) {
             msg = ex.getMessage();
@@ -252,7 +227,7 @@ public class VpcApiUnitTest extends TestCase{
         //6) Only one network in the VPC can support LB service - negative scenario
         result = false;
         try {
-            _vpcService.validateNtkwOffForVpc(6, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 6, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
             result = true;
             s_logger.debug("Validate network offering: Test passed: the offering is valid for vpc creation");
         } catch (InvalidParameterValueException ex) {

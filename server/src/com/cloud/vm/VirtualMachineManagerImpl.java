@@ -210,13 +210,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
+    public List<DeploymentPlanner> getPlanners() {
+		return _planners;
+	}
+	public void setPlanners(List<DeploymentPlanner> _planners) {
+		this._planners = _planners;
+	}
 
-    @Inject
     protected List<HostAllocator> _hostAllocators;
+    public List<HostAllocator> getHostAllocators() {
+		return _hostAllocators;
+	}
+	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+		this._hostAllocators = _hostAllocators;
+	}
 
-    @Inject
+	@Inject
     protected ResourceManager _resourceMgr;
 
     @Inject
@@ -790,7 +800,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm.getInstanceName());
+                            StopCommand cmd = new StopCommand(vm);
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
@@ -872,7 +882,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, boolean force) {
         VMInstanceVO vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
+        StopCommand stop = new StopCommand(vm);
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), stop);
             if (!answer.getResult()) {
@@ -1057,8 +1067,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-
-        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
+        
+        StopCommand stop = new StopCommand(vm);
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -1376,7 +1386,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (!checkVmOnHost(vm, dstHostId)) {
                     s_logger.error("Unable to complete migration for " + vm);
                     try {
-                        _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                        _agentMgr.send(srcHostId, new Commands(cleanup(vm)), null);
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
@@ -1395,7 +1405,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone "
                         + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
                 try {
-                    _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    _agentMgr.send(dstHostId, new Commands(cleanup(vm)), null);
                 } catch (AgentUnavailableException ae) {
                     s_logger.info("Looks like the destination Host is unavailable for cleanup");
                 }
@@ -1612,6 +1622,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId) {
         VirtualMachineGuru<? extends VMInstanceVO> guru = _vmGurus.get(type);
         return guru.findById(vmId);
+    }
+
+    public Command cleanup(VirtualMachine vm) {
+        return new StopCommand(vm);
     }
 
     public Command cleanup(String vmName) {
@@ -1983,7 +1997,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      */
     protected Command compareState(long hostId, VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean trackExternalChange) {
         State agentState = info.state;
-        final String agentName = info.name;
         final State serverState = vm.getState();
         final String serverName = vm.getInstanceName();
 
@@ -2086,7 +2099,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             s_logger.debug("State matches but the agent said stopped so let's send a cleanup command anyways.");
-            return cleanup(agentName);
+            return cleanup(vm);
         }
 
         if (agentState == State.Shutdowned) {
@@ -2104,8 +2117,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     return null;
                 }
             } else {
-                s_logger.debug("Sending cleanup to a shutdowned vm: " + agentName);
-                command = cleanup(agentName);
+                s_logger.debug("Sending cleanup to a shutdowned vm: " + vm.getInstanceName());
+                command = cleanup(vm);
             }
         } else if (agentState == State.Stopped) {
             // This state means the VM on the agent was detected previously
@@ -2123,7 +2136,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("Ignoring VM in starting mode: " + vm.getInstanceName());
                 _haMgr.scheduleRestart(vm, false);
             }
-            command = cleanup(agentName);
+            command = cleanup(vm);
         } else if (agentState == State.Running) {
             if (serverState == State.Starting) {
                 if (fullSync) {
@@ -2149,7 +2162,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("server VM state " + serverState + " does not meet expectation of a running VM report from agent");
 
                 // just be careful not to stop VM for things we don't handle
-                // command = cleanup(agentName);
+                // command = cleanup(vm);
             }
         }
         return command;

@@ -44,8 +44,6 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -54,7 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
 @Local(value = {GlobalLoadBalancingRulesService.class})
 public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingRulesService {
 
@@ -80,9 +77,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     IPAddressDao _ipAddressDao;
     @Inject
     AgentManager _agentMgr;
-    @Autowired(required=false)
-    protected GslbServiceProvider _gslbProvider;
 
+    protected GslbServiceProvider _gslbProvider=null;
+    public void setGslbServiceProvider(GslbServiceProvider provider) {
+        this._gslbProvider = provider;
+    }
 
     @Override
     @DB

@@ -27,7 +27,7 @@ public interface SyncQueueManager extends Manager {
     public List<SyncQueueItemVO> dequeueFromAny(Long msid, int maxItems);
     public void purgeItem(long queueItemId);
     public void returnItem(long queueItemId);
-    
+
 	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
 

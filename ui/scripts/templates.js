@@ -237,6 +237,10 @@
                         //formatSelect.append("<option value='RAW'>RAW</option>");
                         items.push({id:'RAW', description: 'RAW'});
                       }
+                      else if(args.hypervisor == "LXC") {
+                        //formatSelect.append("<option value='TAR'>TAR</option>");
+                        items.push({id:'TAR', description: 'TAR'});
+                      }
                       args.response.success({data: items});
                     }
                   },

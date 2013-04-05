@@ -184,6 +184,50 @@
 								});
 							}
 
+              if(args.data.cpuLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=8&max=" + args.data.cpuLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["cpuLimit"] = args.data.cpuLimit;
+									}
+								});
+							}
+
+              if(args.data.memoryLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=9&max=" + args.data.memoryLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["memoryLimit"] = args.data.memoryLimit;
+									}
+								});
+							}
+
+              if(args.data.primaryStorageLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=10&max=" + args.data.primaryStorageLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["primaryStorageLimit"] = args.data.primaryStorageLimit;
+									}
+								});
+							}
+
+              if(args.data.secondaryStorageLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=11&max=" + args.data.secondaryStorageLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["secondaryStorageLimit"] = args.data.secondaryStorageLimit;
+									}
+								});
+							}
+
               args.response.success({data: domainObj});
             }
           },
@@ -348,6 +392,42 @@
 											return false;
 									}
                 },
+                cpuLimit: {
+                  label: 'label.cpu.limits',
+                  isEditable: function(context) {
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+  										  return true;
+  										else
+  											return false;
+  									}
+                },
+                memoryLimit: {
+                  label: 'label.memory.limits',
+                  isEditable: function(context) {
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
+                },
+                primaryStorageLimit: {
+                  label: 'label.primary.storage.limits',
+                  isEditable: function(context) {
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+  										  return true;
+  										else
+  											return false;
+  									}
+                },
+                secondaryStorageLimit: {
+                  label: 'label.secondary.storage.limits',
+                  isEditable: function(context) {
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+  										  return true;
+  										else
+  											return false;
+  									}
+                },
                 accountTotal: { label: 'label.accounts' },
                 vmTotal: { label: 'label.instances' },
                 volumeTotal: { label: 'label.volumes' }
@@ -440,6 +520,18 @@
                         break;
                       case "7":
                         domainObj["vpcLimit"] = limit.max;
+                        break;
+                      case "8":
+                        domainObj["cpuLimit"] = limit.max;
+                        break;
+                      case "9":
+                        domainObj["memoryLimit"] = limit.max;
+                        break;
+                      case "10":
+                        domainObj["primaryStorageLimit"] = limit.max;
+                        break;
+                      case "7":
+                        domainObj["secondaryStorageLimit"] = limit.max;
                         break;
                       }
                     }

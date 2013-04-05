@@ -348,6 +348,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements
                     new String(storageHost + hostPath).getBytes()).toString();
         }
 
+
         List<StoragePoolVO> spHandles = primaryDataStoreDao
                 .findIfDuplicatePoolsExistByUUID(uuid);
         if ((spHandles != null) && (spHandles.size() > 0)) {
@@ -357,6 +358,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements
             throw new CloudRuntimeException(
                     "Another active pool with the same uuid already exists");
         }
+
 
         String poolName = (String) dsInfos.get("name");
 

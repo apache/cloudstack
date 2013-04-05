@@ -110,7 +110,7 @@ public class SecurityGroupManagerTestConfiguration {
         return Mockito.mock(NetworkModel.class);
     }
 
-    @Bean 
+    @Bean
     public AgentManager agentManager() {
         return Mockito.mock(AgentManager.class);
     }
