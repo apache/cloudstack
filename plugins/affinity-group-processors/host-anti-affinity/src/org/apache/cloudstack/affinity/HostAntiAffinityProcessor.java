@@ -65,8 +65,13 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
 
             for (Long groupVMId : groupVMIds) {
                 VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-                if (groupVM != null && !groupVM.isRemoved() && groupVM.getHostId() != null) {
-                    avoid.addHost(groupVM.getHostId());
+                if (groupVM != null && !groupVM.isRemoved()) {
+                    if (groupVM.getHostId() != null) {
+                        avoid.addHost(groupVM.getHostId());
+                    } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
+                            && groupVM.getLastHostId() != null) {
+                        avoid.addHost(groupVM.getLastHostId());
+                    }
                 }
             }
         }

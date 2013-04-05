@@ -17,6 +17,7 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,6 +25,7 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.serializer.Param;
@@ -31,7 +33,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = AffinityGroup.class)
-public class AffinityGroupResponse extends BaseResponse implements ControlledEntityResponse {
+public class AffinityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the affinity group")
     private String id;
@@ -55,8 +57,12 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledEnt
     @Param(description = "the type of the affinity group")
     private String type;
 
+    @SerializedName("virtualmachine")
+    @Param(description = "virtual machines associated with this affinity group ", responseObject = UserVmResponse.class)
+    private Set<UserVmResponse> vmList;
 
     public AffinityGroupResponse() {
+        this.vmList = new LinkedHashSet<UserVmResponse>();
     }
 
     @Override
@@ -134,6 +140,14 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledEnt
     public void setProjectName(String projectName) {
         // TODO Auto-generated method stub
 
+    }
+
+    public void setVMList(Set<UserVmResponse> vmList) {
+        this.vmList = vmList;
+    }
+
+    public void addVM(UserVmResponse vm) {
+        this.vmList.add(vm);
     }
 
 }

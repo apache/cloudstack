@@ -648,6 +648,38 @@ CREATE VIEW `cloud`.`user_vm_view` AS
 			left join
         `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
 
-			
+DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
+CREATE VIEW `cloud`.`affinity_group_view` AS
+    select 
+        affinity_group.id id,
+        affinity_group.name name,
+        affinity_group.description description,
+        affinity_group.uuid uuid,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        vm_instance.id vm_id,
+        vm_instance.uuid vm_uuid,
+        vm_instance.name vm_name,
+        vm_instance.state vm_state,
+        user_vm.display_name vm_display_name
+    from
+        `cloud`.`affinity_group`
+            inner join
+        `cloud`.`account` ON affinity_group.account_id = account.id
+            inner join
+        `cloud`.`domain` ON affinity_group.domain_id = domain.id
+            left join
+        `cloud`.`affinity_group_vm_map` ON affinity_group.id = affinity_group_vm_map.affinity_group_id
+            left join
+        `cloud`.`vm_instance` ON vm_instance.id = affinity_group_vm_map.instance_id
+            left join
+		`cloud`.`user_vm` ON user_vm.id = vm_instance.id;
+		
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			

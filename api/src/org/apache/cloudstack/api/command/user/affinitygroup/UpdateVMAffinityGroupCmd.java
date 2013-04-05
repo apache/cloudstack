@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -27,6 +28,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
@@ -131,8 +133,12 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
             InsufficientCapacityException, ServerApiException {
         UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
+        ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
+        dc.add(VMDetails.valueOf("affgrp"));
+        EnumSet<VMDetails> details = EnumSet.copyOf(dc);
+
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
