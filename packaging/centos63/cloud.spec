@@ -33,8 +33,8 @@ Release:   %{_rel}%{dist}
 %endif
 Version:   %{_ver}
 License:   ASL 2.0
-Vendor:    Apache CloudStack <cloudstack-dev@incubator.apache.org>
-Packager:  Apache CloudStack <cloudstack-dev@incubator.apache.org>
+Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
+Packager:  Apache CloudStack <dev@cloudstack.apache.org>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
@@ -152,11 +152,6 @@ Provides: cloud-aws-api
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-%package docs
-Summary: Apache CloudStack documentation
-%description docs
-Apache CloudStack documentations
-
 %prep
 echo Doing CloudStack build
 
@@ -268,13 +263,14 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
-install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
+install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
@@ -513,8 +509,8 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
-%attr(0644,root,root) %{_datadir}/%{name}-agent/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
+%dir %{_datadir}/%{name}-agent/plugins
 %{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
@@ -546,10 +542,6 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
 %{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
-
-%files docs
-%doc LICENSE
-%doc NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
