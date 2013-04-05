@@ -510,6 +510,7 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 %doc LICENSE
 %doc NOTICE
 
