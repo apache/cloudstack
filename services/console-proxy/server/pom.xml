@@ -280,11 +280,14 @@
             <argument>zone=1</argument>
             <argument>pod=1</argument>
             <argument>host=192.168.56.1</argument>
+            <argument>guid=ConsoleProxy.1</argument>
           </arguments>
           <systemProperties>
             <systemProperty>
               <key>javax.net.ssl.trustStore</key>
               <value>certs/realhostip.keystore</value>
+              <key>log.home</key>
+              <value>${PWD}/</value>
             </systemProperty>
           </systemProperties>
         </configuration>

@@ -81,11 +81,19 @@
             <argument>zone=1</argument>
             <argument>pod=1</argument>
             <argument>host=192.168.56.1</argument>
+            <argument>name=192.168.56.10</argument>
+            <argument>eth1ip=192.168.56.10</argument>
+            <argument>eth2ip=192.168.56.10</argument>
+            <argument>guid=SecondaryStorage.1</argument>
+            <argument>secondary.storage.vm=false</argument>
+            <argument>instance=Secondary</argument>
           </arguments>
           <systemProperties>
             <systemProperty>
               <key>javax.net.ssl.trustStore</key>
               <value>certs/realhostip.keystore</value>
+              <key>log.home</key>
+              <value>${PWD}/</value>
             </systemProperty>
           </systemProperties>
         </configuration>
