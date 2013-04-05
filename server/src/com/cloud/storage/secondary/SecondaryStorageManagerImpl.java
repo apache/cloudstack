@@ -472,7 +472,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     }
 
-    private boolean isSecondaryStorageVmRequired(long dcId) {
+    protected boolean isSecondaryStorageVmRequired(long dcId) {
         DataCenterVO dc = _dcDao.findById(dcId);
         _dcDao.loadDetails(dc);
         String ssvmReq = dc.getDetail(ZoneConfig.EnableSecStorageVm.key());

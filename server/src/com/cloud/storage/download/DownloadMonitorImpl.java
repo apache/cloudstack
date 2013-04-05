@@ -851,7 +851,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
                 toBeDownloaded.remove(tmplt);
                 if (tmpltHost != null) {
-                    s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
+                    s_logger.info("Template Sync found " + tmplt.getName() + " already in the template host table");
                     if (tmpltHost.getDownloadState() != Status.DOWNLOADED) {
                         tmpltHost.setErrorString("");
                     }
@@ -911,10 +911,12 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 continue;
             }
             if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
+                s_logger.info("Template Sync did not find " + tmplt.getName() + " ready on server " + sserverId
+                        + ", will request download to start/resume shortly");
 
             } else if (tmpltHost == null) {
-                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
+                s_logger.info("Template Sync did not find " + tmplt.getName() + " on the server " + sserverId
+                        + ", will request download shortly");
                 VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateHostDao.persist(templtHost);
                 VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
@@ -964,6 +966,9 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
                     downloadTemplateToStorage(tmplt, ssHost);
+                } else {
+                    s_logger.info("Skipping download of template " + tmplt.getName() + " since we don't have any "
+                            + tmplt.getHypervisorType() + " hypervisors");
                 }
             }
         }
