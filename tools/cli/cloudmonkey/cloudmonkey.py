@@ -168,32 +168,32 @@ class CloudMonkeyShell(cmd.Cmd, object):
         #             result_filter - filterset
         # description: prints result as a json object
         def print_result_json(result, result_filter=None):
-            tfilter = {} # temp var to hold a dict of the filters
-            tresult = copy.deepcopy(result) # dupe the result to filter
-            if result_filter != None:
+            tfilter = {}  # temp var to hold a dict of the filters
+            tresult = copy.deepcopy(result)  # dupe the result to filter
+            if result_filter is not None:
                 for res in result_filter:
-                    tfilter[ res ] = 1
+                    tfilter[res] = 1
                 myresults = {}
                 for okey, oval in result.iteritems():
-                    if isinstance( oval, dict ):
+                    if isinstance(oval, dict):
                         for tkey in x:
                             if tkey not in tfilter:
                                 try:
-                                    del( tresult[okey][x][tkey] )
+                                    del(tresult[okey][x][tkey])
                                 except:
                                     pass
-                    elif isinstance( oval, list ):
-                        for x in range( len( oval ) ):
-                            if isinstance( oval[x], dict ):
+                    elif isinstance(oval, list):
+                        for x in range(len(oval)):
+                            if isinstance(oval[x], dict):
                                 for tkey in oval[x]:
                                     if tkey not in tfilter:
                                         try:
-                                            del( tresult[okey][x][tkey] )
+                                            del(tresult[okey][x][tkey])
                                         except:
                                             pass
                             else:
                                 try:
-                                    del( tresult[ okey ][ x ] )
+                                    del(tresult[okey][x])
                                 except:
                                     pass
             print json.dumps(tresult,
@@ -240,7 +240,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
         def print_result_as_list(result, result_filter=None):
             for node in result:
                 # Tabular print if it's a list of dict and tabularize is true
-                if isinstance(node, dict) and (self.display == 'tabularize' or self.tabularize == 'true'):
+                if isinstance(node, dict) and (self.display == 'tabularize' or
+                                               self.tabularize == 'true'):
                     print_result_tabular(result, result_filter)
                     break
                 self.print_result(node)
@@ -363,7 +364,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
                     autocompletions = uuids
                     search_string = value
 
-        if (self.display == "tabularize" or self.display == "json" or self.tabularize == "true") and subject != "":
+        if subject != "" and (self.display == "tabularize" or
+                              self.display == "json" or
+                              self.tabularize == "true"):
             autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
 
@@ -504,6 +507,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         self.monkeyprint("Bye!")
         return self.do_EOF(args)
 
+
 class MonkeyParser(OptionParser):
     def format_help(self, formatter=None):
         if formatter is None:
@@ -516,6 +520,7 @@ class MonkeyParser(OptionParser):
         result.append(self.format_option_help(formatter))
         result.append("\nTry cloudmonkey [help|?]\n")
         return "".join(result)
+
 
 def main():
     parser = MonkeyParser()
