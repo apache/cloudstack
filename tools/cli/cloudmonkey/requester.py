@@ -32,7 +32,7 @@ try:
     import types
     import urllib
     import urllib2
-    from urllib2 import urlopen, HTTPError
+    from urllib2 import urlopen, HTTPError, URLError
 
 except ImportError, e:
     print "Import error in %s : %s" % (__name__, e)
@@ -80,10 +80,12 @@ def make_request(command, args, logger, host, port,
         response = connection.read()
     except HTTPError, e:
         error = "%s: %s" % (e.msg, e.info().getheader('X-Description'))
+    except URLError, e:
+        error = e.reason
 
     logger_debug(logger, "Response received: %s" % response)
     if error is not None:
-        logger_debug(logger, "Error: error is not None, %s" % (error))
+        logger_debug(logger, "Error: %s" % (error))
         return response, error
 
     return response, error
@@ -91,7 +93,6 @@ def make_request(command, args, logger, host, port,
 
 def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
                   apikey, secretkey, timeout, protocol, path):
-    fcommand = command
     response = None
     error = None
     logger_debug(logger, "======== START Request ========")
@@ -133,9 +134,7 @@ def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
             timeout = timeout - pollperiod
             logger_debug(logger, "Job %s to timeout in %ds" % (jobid, timeout))
             sys.stdout.flush()
-            if re.match("queryAsyncJobResult", fcommand):
-                # logger_debug(logger, "%d loop: Job %s" % (progress, jobid))
-                # sys.stdout.flush()
+            if re.match("queryAsyncJobResult", command):
                 time.sleep(pollperiod)
             else:
                 response, error = monkeyrequest(command, request, isasync,
