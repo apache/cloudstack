@@ -312,6 +312,20 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 
+#License files from whisker
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
@@ -487,8 +501,8 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
@@ -498,8 +512,8 @@ fi
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
 %dir %{_datadir}/%{name}-agent/plugins
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
 %files common
 %dir %attr(0755,root,root) %{_libdir}/python2.6/site-packages/cloudutils
@@ -511,8 +525,8 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
@@ -520,15 +534,15 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir /var/log/%{name}/usage
 %dir %{_sysconfdir}/%{name}/usage
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
 %files cli
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudapis.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/__init__.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
 #%files docs
 #%doc LICENSE
@@ -540,8 +554,8 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
 
 %changelog
