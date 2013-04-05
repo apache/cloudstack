@@ -503,7 +503,7 @@
     <property name="name" value="XCP Agent"/>
   </bean>
 
-  <bean id="SecondaryStorageDiscoverer" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer">
+  <bean id="SecondaryStorageDiscoverer" class="org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer">
     <property name="name" value="SecondaryStorage"/>
   </bean>
 
