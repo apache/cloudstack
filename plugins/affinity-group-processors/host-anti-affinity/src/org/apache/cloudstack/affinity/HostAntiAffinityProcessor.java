@@ -68,9 +68,18 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                 if (groupVM != null && !groupVM.isRemoved()) {
                     if (groupVM.getHostId() != null) {
                         avoid.addHost(groupVM.getHostId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM "
+                                    + groupVM.getId() + " is present on the host");
+                        }
                     } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
                             && groupVM.getLastHostId() != null) {
                         avoid.addHost(groupVM.getLastHostId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM "
+                                    + groupVM.getId() + " is present on the host, in Stopped state");
+                        }
+
                     }
                 }
             }
