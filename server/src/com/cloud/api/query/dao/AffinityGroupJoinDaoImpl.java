@@ -25,13 +25,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -72,13 +69,9 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
         // update vm information
         long instanceId = vag.getVmId();
         if (instanceId > 0) {
-            UserVmResponse resp = new UserVmResponse();
-            resp.setObjectName("virtualmachine");
-            resp.setId(vag.getVmUuid());
-            resp.setName(vag.getVmName());
-            resp.setDisplayName(vag.getVmDisplayName());
-            resp.setState(vag.getVmState().toString());
-            agResponse.addVM(resp);
+            List<String> vmIdList = new ArrayList<String>();
+            vmIdList.add(vag.getVmUuid());
+            agResponse.setVMIdList(vmIdList);
         }
 
         agResponse.setObjectName("affinitygroup");
@@ -90,13 +83,7 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
         // update vm information
         long instanceId = vag.getVmId();
         if (instanceId > 0) {
-            UserVmResponse resp = new UserVmResponse();
-            resp.setObjectName("virtualmachine");
-            resp.setId(vag.getVmUuid());
-            resp.setName(vag.getVmName());
-            resp.setDisplayName(vag.getVmDisplayName());
-            resp.setState(vag.getVmState().toString());
-            vagData.addVM(resp);
+            vagData.addVMId(vag.getVmUuid());
         }
         return vagData;
     }
