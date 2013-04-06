@@ -162,7 +162,8 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
   `affinity_group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_agvm__group_id` FOREIGN KEY(`affinity_group_id`) REFERENCES `affinity_group`(`id`)  
+  CONSTRAINT `fk_agvm__group_id` FOREIGN KEY(`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_affinity_group_vm_map___instance_id` FOREIGN KEY(`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -57,12 +59,12 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the type of the affinity group")
     private String type;
 
-    @SerializedName("virtualmachine")
-    @Param(description = "virtual machines associated with this affinity group ", responseObject = UserVmResponse.class)
-    private Set<UserVmResponse> vmList;
+    @SerializedName("virtualmachineIds")
+    @Param(description = "virtual machine Ids associated with this affinity group ")
+    private List<String> vmIdList;
 
     public AffinityGroupResponse() {
-        this.vmList = new LinkedHashSet<UserVmResponse>();
+        this.vmIdList = new ArrayList<String>();
     }
 
     @Override
@@ -142,12 +144,12 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
 
     }
 
-    public void setVMList(Set<UserVmResponse> vmList) {
-        this.vmList = vmList;
+    public void setVMIdList(List<String> vmIdList) {
+        this.vmIdList = vmIdList;
     }
 
-    public void addVM(UserVmResponse vm) {
-        this.vmList.add(vm);
+    public void addVMId(String vmId) {
+        this.vmIdList.add(vmId);
     }
 
 }
