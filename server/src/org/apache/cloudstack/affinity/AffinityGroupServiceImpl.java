@@ -310,6 +310,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Updated VM :" + vmId + " affinity groups to =" + affinityGroupIds);
+        }
         // APIResponseHelper will pull out the updated affinitygroups.
         return vmInstance;
 
