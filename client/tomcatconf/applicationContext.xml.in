@@ -786,6 +786,9 @@
   <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
   <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl" />
+  <bean id="cloudStackImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl" />
+  <bean id="s3ImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl" />
+  <bean id="swiftImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl" />  
 
 
 <!--=======================================================================================================-->

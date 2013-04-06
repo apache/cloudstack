@@ -29,7 +29,7 @@ public interface DataStoreLifeCycle {
     public boolean attachCluster(DataStore store, ClusterScope scope);
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
     boolean attachZone(DataStore dataStore, ZoneScope scope);
-    
+
     public boolean dettach();
 
     public boolean unmanaged();

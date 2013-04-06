@@ -80,7 +80,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
@@ -142,7 +142,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.ImageDataStoreJoinVO;
+import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -237,7 +237,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.ObjectStore;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -892,9 +892,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 
     @Override
-    public ObjectStoreResponse createObjectStoreResponse(ObjectStore os) {
-        List<ImageDataStoreJoinVO> viewStores = ApiDBUtils.newImageStoreView(os);
-        List<ObjectStoreResponse> listStores = ViewResponseHelper.createObjectStoreResponse(viewStores.toArray(new ImageDataStoreJoinVO[viewStores.size()]));
+    public ImageStoreResponse createImageStoreResponse(ImageStore os) {
+        List<ImageStoreJoinVO> viewStores = ApiDBUtils.newImageStoreView(os);
+        List<ImageStoreResponse> listStores = ViewResponseHelper.createObjectStoreResponse(viewStores.toArray(new ImageStoreJoinVO[viewStores.size()]));
         assert listStores != null && listStores.size() == 1 : "There should be one image data store returned";
         return listStores.get(0);
 

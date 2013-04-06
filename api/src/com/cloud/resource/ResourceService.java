@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
@@ -38,7 +39,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
-import com.cloud.storage.ObjectStore;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.utils.Pair;
@@ -102,7 +103,7 @@ public interface ResourceService {
 
     S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
 
-    ObjectStore discoverObjectStore(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);

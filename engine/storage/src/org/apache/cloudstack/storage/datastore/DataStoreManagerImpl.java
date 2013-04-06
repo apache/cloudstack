@@ -27,7 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -37,14 +37,14 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
     PrimaryDataStoreProviderManager primaryStorMgr;
     @Inject
-    ImageDataStoreProviderManager imageDataStoreMgr;
+    ImageStoreProviderManager imageDataStoreMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
             return primaryStorMgr.getPrimaryDataStore(storeId);
         } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(storeId);
+            return imageDataStoreMgr.getImageStore(storeId);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
@@ -58,7 +58,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         if (role == DataStoreRole.Primary) {
             return primaryStorMgr.getPrimaryDataStore(uuid);
         } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(uuid);
+            return imageDataStoreMgr.getImageStore(uuid);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }

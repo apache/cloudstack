@@ -46,6 +46,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.log4j.Logger;
@@ -89,11 +90,12 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     private static final Logger LOGGER = Logger.getLogger(S3ManagerImpl.class);
 
-    @Inject 
+    @Inject
     private AgentManager agentManager;
 
     @Inject
     private S3Dao s3Dao;
+
 
     @Inject
     private VMTemplateZoneDao vmTemplateZoneDao;
@@ -121,7 +123,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     public S3ManagerImpl() {
     }
-    
+
     private void verifyConnection(final S3TO s3) throws DiscoveryException {
 
         if (!canConnect(s3)) {
@@ -245,6 +247,26 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
         return this.s3Dao.persist(s3VO);
 
+    }
+
+
+    @Override
+    public void verifyS3Fields(Map<String, String> params) throws DiscoveryException {
+        final S3VO s3VO = new S3VO(UUID.randomUUID().toString(),
+                params.get(ApiConstants.S3_ACCESS_KEY),
+                params.get(ApiConstants.S3_SECRET_KEY),
+                params.get(ApiConstants.S3_END_POINT),
+                params.get(ApiConstants.S3_BUCKET_NAME),
+                Boolean.valueOf(params.get(ApiConstants.S3_HTTPS_FLAG)),
+                Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
+
+        this.validateFields(s3VO);
+
+        final S3TO s3 = s3VO.toS3TO();
+        this.verifyConnection(s3);
+        this.verifyBuckets(s3);
     }
 
     @Override

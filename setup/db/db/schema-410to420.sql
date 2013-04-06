@@ -68,54 +68,53 @@ CREATE TABLE  `cloud`.`object_datastore_ref` (
 --  PRIMARY KEY(`id`)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`image_data_store` (
+CREATE TABLE `cloud`.`image_store` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of data store',
-  `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_data_store_provider',
+  `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_store_provider',
   `protocol` varchar(255) NOT NULL COMMENT 'protocol of data store',
   `url` varchar(255) COMMENT 'url for image data store',
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
-  `region_id` bigint unsigned  COMMENT 'region id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
+  `state` varchar(30) COMMENT 'state of data store',
+  `created` datetime COMMENT 'date the image store first signed on',
+  `removed` datetime COMMENT 'date removed if not null',  
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`image_data_store_details` (
+CREATE TABLE `cloud`.`image_store_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
   `value` varchar(255) NOT NULL COMMENT 'value of the detail',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_image_data_store_details__store_id` FOREIGN KEY `fk_image_data_store__store_id`(`store_id`) REFERENCES `image_data_store`(`id`) ON DELETE CASCADE,
-  INDEX `i_image_data_store__name__value`(`name`(128), `value`(128))
+  CONSTRAINT `fk_image_store_details__store_id` FOREIGN KEY `fk_image_store__store_id`(`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_image_store__name__value`(`name`(128), `value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP VIEW IF EXISTS `cloud`.`image_data_store_view`;
-CREATE VIEW `cloud`.`image_data_store_view` AS
+DROP VIEW IF EXISTS `cloud`.`image_store_view`;
+CREATE VIEW `cloud`.`image_store_view` AS
     select 
-        image_data_store.id,
-        image_data_store.uuid,
-        image_data_store.name,
-        image_data_store.provider_name,
-        image_data_store.protocol,
-        image_data_store.url,
-        image_data_store.scope,
+        image_store.id,
+        image_store.uuid,
+        image_store.name,
+        image_store.image_provider_name,
+        image_store.protocol,
+        image_store.url,
+        image_store.scope,
+        image_store.state,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
-        region.id region_id,
-        region.name region_name,
-        image_data_store_details.name detail_name,
-        image_data_store_details.value detail_value
+        image_store_details.name detail_name,
+        image_store_details.value detail_value
     from
-        `cloud`.`image_data_store`
+        `cloud`.`image_store`
             left join
-        `cloud`.`data_center` ON image_data_store.data_center_id = data_center.id
+        `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
-        `cloud`.`region` ON image_data_store.region_id = region.id
-            left join
-        `cloud`.`image_data_store_details` ON image_data_store_details.store_id = image_data_store.id;
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
             
             
 CREATE TABLE  `cloud`.`template_store_ref` (

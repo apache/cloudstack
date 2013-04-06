@@ -58,6 +58,7 @@
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
+    <module>storage/image/swift</module>
     <module>storage/image/default</module>
     <module>storage/image/sample</module>    
     <module>storage/volume/solidfire</module>

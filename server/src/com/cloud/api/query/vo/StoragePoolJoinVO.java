@@ -25,13 +25,14 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import com.cloud.org.Cluster;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
 
 /**
  * Storage Pool DB view.
@@ -125,7 +126,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
-    
+
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;

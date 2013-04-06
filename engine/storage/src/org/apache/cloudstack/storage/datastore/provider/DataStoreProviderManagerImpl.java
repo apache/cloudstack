@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.response.StorageProviderResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
+import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreProviderManager;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -56,7 +56,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
-    ImageDataStoreProviderManager imageDataStoreProviderMgr;
+    ImageStoreProviderManager imageDataStoreProviderMgr;
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
         return providerMap.get(name);
@@ -84,7 +84,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public List<StorageProviderResponse> getImageDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
-            if (provider instanceof ImageDataStoreProvider) {
+            if (provider instanceof ImageStoreProvider) {
                 StorageProviderResponse response = new StorageProviderResponse();
                 response.setName(provider.getName());
                 response.setType(DataStoreProvider.DataStoreProviderType.IMAGE.toString());
@@ -123,7 +123,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                     primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
                 }
                 else if  (types.contains(DataStoreProviderType.IMAGE)) {
-                    imageDataStoreProviderMgr.registerDriver(provider.getName(), (ImageDataStoreDriver)provider.getDataStoreDriver());
+                    imageDataStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
                 }
             } catch(Exception e) {
                 s_logger.debug("configure provider failed", e);
@@ -142,7 +142,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public DataStoreProvider getDefaultImageDataStoreProvider() {
-        return this.getDataStoreProvider("cloudstack image data store provider");
+        return this.getDataStoreProvider("cloudstack image store provider");
     }
 
     @Override

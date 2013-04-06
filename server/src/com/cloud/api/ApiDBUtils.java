@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -56,7 +56,7 @@ import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.ImageDataStoreJoinDao;
+import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
@@ -75,7 +75,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.ImageDataStoreJoinVO;
+import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -208,6 +208,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -365,7 +366,7 @@ public class ApiDBUtils {
     static HostJoinDao _hostJoinDao;
     static VolumeJoinDao _volJoinDao;
     static StoragePoolJoinDao _poolJoinDao;
-    static ImageDataStoreJoinDao _imageStoreJoinDao;
+    static ImageStoreJoinDao _imageStoreJoinDao;
     static AccountJoinDao _accountJoinDao;
     static AsyncJobJoinDao _jobJoinDao;
 
@@ -470,7 +471,7 @@ public class ApiDBUtils {
     @Inject private HostJoinDao hostJoinDao;
     @Inject private VolumeJoinDao volJoinDao;
     @Inject private StoragePoolJoinDao poolJoinDao;
-    @Inject private ImageDataStoreJoinDao imageStoreJoinDao;
+    @Inject private ImageStoreJoinDao imageStoreJoinDao;
     @Inject private AccountJoinDao accountJoinDao;
     @Inject private AsyncJobJoinDao jobJoinDao;
 
@@ -1541,16 +1542,16 @@ public class ApiDBUtils {
         return _poolJoinDao.newStoragePoolView(vr);
     }
 
-    public static ObjectStoreResponse newImageStoreResponse(ImageDataStoreJoinVO vr) {
-        return _imageStoreJoinDao.newObjectStoreResponse(vr);
+    public static ImageStoreResponse newImageStoreResponse(ImageStoreJoinVO vr) {
+        return _imageStoreJoinDao.newImageStoreResponse(vr);
     }
 
-    public static ObjectStoreResponse fillImageStoreDetails(ObjectStoreResponse vrData, ImageDataStoreJoinVO vr){
-        return _imageStoreJoinDao.setObjectStoreResponse(vrData, vr);
+    public static ImageStoreResponse fillImageStoreDetails(ImageStoreResponse vrData, ImageStoreJoinVO vr){
+        return _imageStoreJoinDao.setImageStoreResponse(vrData, vr);
     }
 
-    public static List<ImageDataStoreJoinVO> newImageStoreView(ObjectStore vr){
-        return _imageStoreJoinDao.newObjectStoreView(vr);
+    public static List<ImageStoreJoinVO> newImageStoreView(ImageStore vr){
+        return _imageStoreJoinDao.newImageStoreView(vr);
     }
 
 

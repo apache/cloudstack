@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -52,7 +52,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.ImageDataStoreJoinVO;
+import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -265,11 +265,11 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<ObjectStoreResponse> createObjectStoreResponse(ImageDataStoreJoinVO... stores) {
-        Hashtable<Long, ObjectStoreResponse> vrDataList = new Hashtable<Long, ObjectStoreResponse>();
+    public static List<ImageStoreResponse> createObjectStoreResponse(ImageStoreJoinVO... stores) {
+        Hashtable<Long, ImageStoreResponse> vrDataList = new Hashtable<Long, ImageStoreResponse>();
         // Initialise the vrdatalist with the input data
-        for (ImageDataStoreJoinVO vr : stores) {
-            ObjectStoreResponse vrData = vrDataList.get(vr.getId());
+        for (ImageStoreJoinVO vr : stores) {
+            ImageStoreResponse vrData = vrDataList.get(vr.getId());
             if ( vrData == null ){
                 // first time encountering this vm
                 vrData = ApiDBUtils.newImageStoreResponse(vr);
@@ -280,7 +280,7 @@ public class ViewResponseHelper {
             }
             vrDataList.put(vr.getId(), vrData);
         }
-        return new ArrayList<ObjectStoreResponse>(vrDataList.values());
+        return new ArrayList<ImageStoreResponse>(vrDataList.values());
     }
 
 

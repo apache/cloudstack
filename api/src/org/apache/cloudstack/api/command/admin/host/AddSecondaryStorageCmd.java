@@ -25,16 +25,13 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
-import com.cloud.storage.ObjectStore;
 import com.cloud.user.Account;
 
 @APICommand(name = "addSecondaryStorage", description="Adds secondary storage.", responseObject=HostResponse.class)
@@ -113,14 +110,17 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        try{
-            ObjectStore result = _resourceService.discoverObjectStore(this);
-            ObjectStoreResponse storeResponse = null;
-            if (result != null ) {
-                    storeResponse = _responseGenerator.createObjectStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
-                    this.setResponseObject(storeResponse);
+        try {
+            List<? extends Host> result = _resourceService.discoverHosts(this);
+            HostResponse hostResponse = null;
+            if (result != null && result.size() > 0) {
+                for (Host host : result) {
+                    // There should only be one secondary storage host per add
+                    hostResponse = _responseGenerator.createHostResponse(host);
+                    hostResponse.setResponseName(getCommandName());
+                    hostResponse.setObjectName("secondarystorage");
+                    this.setResponseObject(hostResponse);
+                }
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
@@ -128,5 +128,6 @@ public class AddSecondaryStorageCmd extends BaseCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+
     }
 }

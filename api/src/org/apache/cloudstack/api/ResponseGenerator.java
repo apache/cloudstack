@@ -326,7 +326,7 @@ public interface ResponseGenerator {
 
     RegionResponse createRegionResponse(Region region);
 
-    ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
+    ImageStoreResponse createImageStoreResponse(ImageStore os);
 
     /**
      * @param resourceTag

@@ -18,19 +18,19 @@ package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreInfo;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
 public class TemplateTO {
     private final String path;
     private final String uuid;
     private  DiskFormat diskType;
-    private final ImageDataStoreTO imageDataStore;
+    private final ImageStoreTO imageDataStore;
 
     public TemplateTO(TemplateInfo template) {
         this.path = null;
         this.uuid = template.getUuid();
         //this.diskType = template.getDiskType();
-        this.imageDataStore = new ImageDataStoreTO((ImageDataStoreInfo)template.getDataStore());
+        this.imageDataStore = new ImageStoreTO((ImageStoreInfo)template.getDataStore());
     }
     
     public String getPath() {
@@ -45,7 +45,7 @@ public class TemplateTO {
         return this.diskType;
     }
     
-    public ImageDataStoreTO getImageDataStore() {
+    public ImageStoreTO getImageDataStore() {
         return this.imageDataStore;
     }
 }
