@@ -43,6 +43,20 @@
   
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+
+  <!--
+    Nicira support components
+  -->
+  <bean id="niciraNvpDaoImpl" class="com.cloud.network.dao.NiciraNvpDaoImpl" />
+  <bean id="niciraNvpNicMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" />
+  <bean id="niciraNvpRouterMappingDaoImpl" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" />
+  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
+    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
+  </bean>
+  <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
+    <property name="name" value="NiciraNvp"/>
+  </bean>
+
   
 <!--
 
@@ -184,6 +198,7 @@
           <ref bean="DirectNetworkGuru"/>
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
+          <ref bean="NiciraNvpGuestNetworkGuru"/>
       </list>
     </property>
   </bean>
@@ -195,6 +210,7 @@
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp"/>
 <!--          
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>

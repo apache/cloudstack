@@ -273,6 +273,7 @@
           <ref bean="DirectNetworkGuru"/>
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
+          <ref bean="NiciraNvpGuestNetworkGuru"/>
       </list>
     </property>
   </bean>
@@ -280,6 +281,7 @@
   <bean id="networkElements" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
       <list>
+          <ref bean="NiciraNvp"/>
           <ref bean="JuniperSRX"/>
           <ref bean="Netscaler"/>
           <ref bean="F5BigIP"/>
