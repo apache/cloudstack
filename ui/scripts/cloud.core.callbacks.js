@@ -73,10 +73,10 @@ $(document).ready(function() {
 			}
 		});
 	}
-	else if(window.name != null && window.name.indexOf("command=login") != -1) {	//from region switching	  
+	else if(window.name != null && window.name.indexOf("&domain=") != -1) {	//from region switching	  
 	  g_loginCmdText = window.name;		
 		$.ajax({
-			url: clientApiUrl + "?" + window.name,
+			url: clientApiUrl + "?command=login" + window.name + "&response=json",
 			dataType: "json",
 			async: false,
 			success: function(json) {

@@ -250,12 +250,12 @@
         else {
           array1.push("&domain=" + encodeURIComponent("/"));
         }
-
-				g_loginCmdText = "command=login" + array1.join("") + "&response=json";				
+				
+        g_loginCmdText = array1.join("");			
 				
         $.ajax({
           type: "POST",
-          data: g_loginCmdText,					
+          data: "command=login" + g_loginCmdText + "&response=json",					
           dataType: "json",
           async: false,
           success: function(json) {			
@@ -466,7 +466,7 @@
     document.title = 'CloudStack';
 
     if ($.urlParam('loginUrl') != 0
-		||(window.name != null && window.name.indexOf("command=login") != -1)) {
+		||(window.name != null && window.name.indexOf("&domain=") != -1)) {
       // SSO
       loginArgs.hideLoginScreen = true;
     }
