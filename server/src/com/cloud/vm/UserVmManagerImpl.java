@@ -222,7 +222,9 @@ import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -699,22 +701,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
-
-
-
-    private void checkVMSnapshots(UserVmVO vm, Long volumeId, boolean attach) {
-        // Check that if vm has any VM snapshot
-        /*Long vmId = vm.getId();
-        List<VMSnapshotVO> listSnapshot = _vmSnapshotDao.listByInstanceId(vmId,
-                VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
-        if (listSnapshot != null && listSnapshot.size() != 0) {
-            throw new InvalidParameterValueException(
-                        "The VM has VM snapshots, do not allowed to attach volume. Please delete the VM snapshots first.");
-        }*/
-    }
-
-
-
     private UserVm rebootVirtualMachine(long userId, long vmId)
             throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
@@ -777,7 +763,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
 
         // remove diskAndMemory VM snapshots
-        /* List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
             if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
                 if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
@@ -787,7 +773,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
 
             }
-        }*/
+        }
 
         _itMgr.upgradeVmDb(vmId, svcOffId);
 
