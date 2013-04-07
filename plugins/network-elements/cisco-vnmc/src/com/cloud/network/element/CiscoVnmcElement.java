@@ -116,6 +116,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -213,9 +214,11 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return Provider.CiscoVnmc;
     }
 
-    private boolean createLogicalEdgeFirewall(long vlanId, String gateway,
-            String publicIp, List<String> publicGateways, long hostId) {
-        CreateLogicalEdgeFirewallCommand cmd = new CreateLogicalEdgeFirewallCommand(vlanId, publicIp, gateway, "255.255.255.0", "255.255.255.0");
+    private boolean createLogicalEdgeFirewall(long vlanId,
+            String gateway, String gatewayNetmask,
+            String publicIp, String publicNetmask,
+            List<String> publicGateways, long hostId) {
+        CreateLogicalEdgeFirewallCommand cmd = new CreateLogicalEdgeFirewallCommand(vlanId, publicIp, gateway, publicNetmask, gatewayNetmask);
         for (String publicGateway : publicGateways) {
             cmd.getPublicGateways().add(publicGateway);
         }
@@ -336,7 +339,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             // create logical edge firewall in VNMC
-            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), publicGateways, ciscoVnmcHost.getId())) {
+            String gatewayNetmask = NetUtils.getCidrNetmask(network.getCidr());
+            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), gatewayNetmask,
+                    sourceNatIp.getAddress().addr(), sourceNatIp.getNetmask(), publicGateways, ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
                 return false;
             }

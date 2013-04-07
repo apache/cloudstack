@@ -443,6 +443,10 @@ public class CiscoVnmcResource implements ServerResource {
                 throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
+            if (!_connection.createTenantVDCAclPolicySet(tenant, false)) {
+                throw new Exception("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+            }
+
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 

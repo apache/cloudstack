@@ -181,7 +181,7 @@ public interface CiscoVnmcConnection {
             throws ExecutionException;
 
     public boolean createEdgeFirewall(String tenantName, String publicIp,
-            String insideIp, String insideSubnet, String outsideSubnet)
+            String insideIp, String publicSubnet, String insideSubnet)
             throws ExecutionException;
 
     public boolean deleteEdgeFirewall(String tenantName) throws ExecutionException;

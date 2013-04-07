@@ -1226,7 +1226,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createEdgeFirewall(String tenantName, String publicIp, String insideIp, 
-            String insideSubnet, String outsideSubnet) throws ExecutionException {
+            String publicSubnet, String insideSubnet) throws ExecutionException {
         String xml = VnmcXml.CREATE_EDGE_FIREWALL.getXml();
         String service = VnmcXml.CREATE_EDGE_FIREWALL.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -1248,7 +1248,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "insideip", insideIp);
         xml = replaceXmlValue(xml, "publicip", publicIp);
         xml = replaceXmlValue(xml, "insidesubnet", insideSubnet);
-        xml = replaceXmlValue(xml, "outsidesubnet", outsideSubnet);
+        xml = replaceXmlValue(xml, "outsidesubnet", publicSubnet);
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
