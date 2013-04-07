@@ -115,6 +115,11 @@
       // Use this for checking the session, to bypass login screen
       bypassLoginCheck: function(args) { //determine to show or bypass login screen
 			  if (g_loginResponse == null) { //show login screen
+				  /*
+					but if this is a 2nd browser window (of the same domain), login screen still won't show because $.cookie('sessionKey') is valid for 2nd browser window (of the same domain) as well.
+					i.e. calling listCapabilities API with g_sessionKey from $.cookie('sessionKey') will succeed, 
+					then userValid will be set to true, then an user object (instead of "false") will be returned, then login screen will be bypassed.          				
+					*/
 					g_mySession = $.cookie('JSESSIONID');
 					g_sessionKey = $.cookie('sessionKey');
 					g_role = $.cookie('role');        
@@ -176,8 +181,7 @@
 						
             userValid = true;
           },
-          error: function(xmlHTTP) {
-            logout(false);
+          error: function(xmlHTTP) { //override default error handling, do nothing instead of showing error "unable to verify user credentials" on login screen          
           },
           beforeSend : function(XMLHttpResponse) {					  
 						return true;
