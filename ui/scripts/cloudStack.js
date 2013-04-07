@@ -251,12 +251,11 @@
           array1.push("&domain=" + encodeURIComponent("/"));
         }
 
-				g_regionUrlParam = '?loginUrl=' + escape("command=login" + array1.join("") + "&response=json");
-				$.cookie('loginUrl', escape("command=login" + array1.join("") + "&response=json"), { expires: 1});
+				g_loginCmdText = "command=login" + array1.join("") + "&response=json";				
 				
         $.ajax({
           type: "POST",
-          data: "command=login" + array1.join("") + "&response=json",					
+          data: g_loginCmdText,					
           dataType: "json",
           async: false,
           success: function(json) {			
@@ -386,7 +385,8 @@
 						g_timezoneoffset = null;
 						g_timezone = null;
 						g_supportELB = null;						
-						g_regionUrlParam = null;
+						g_loginCmdText = null;
+						window.name = '';
 						
 						$.cookie('JSESSIONID', null);
 						$.cookie('sessionKey', null);
@@ -398,8 +398,7 @@
 						$.cookie('timezoneoffset', null);
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
-						$.cookie('loginUrl', null);
-												
+																	
 						if(onLogoutCallback()) {	 //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
               document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
 						}
@@ -466,7 +465,8 @@
 		
     document.title = 'CloudStack';
 
-    if ($.cookie('loginUrl') != null || $.urlParam('loginUrl') != 0) {
+    if ($.urlParam('loginUrl') != 0
+		||(window.name != null && window.name.indexOf("command=login") != -1)) {
       // SSO
       loginArgs.hideLoginScreen = true;
     }
