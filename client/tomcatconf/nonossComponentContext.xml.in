@@ -134,6 +134,9 @@
   <!--
     Cisco VNMC support components
   -->
+  <bean id="ciscoVnmcDaoImpl" class="com.cloud.network.dao.CiscoVnmcDaoImpl" />
+  <bean id="ciscoAsa1000vDaoImpl" class="com.cloud.network.dao.CiscoAsa1000vDaoImpl" />
+  <bean id="networkAsa1000vMapDaoImpl" class="com.cloud.network.dao.NetworkAsa1000vMapDaoImpl" />
   <bean id="CiscoVNMC" class="com.cloud.network.element.CiscoVnmcElement">
     <property name="name" value="CiscoVNMC"/>
   </bean>
@@ -326,6 +329,7 @@
           <ref bean="Netscaler"/>
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="CiscoVNMC"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement" />
           <ref bean="bigSwitchVnsElement"/>
