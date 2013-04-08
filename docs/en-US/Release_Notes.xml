@@ -71,7 +71,7 @@
                               <programlisting language="Bash">$ sudo apt-get update</programlisting>
                           </listitem>
                           <listitem>
-                              <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para> ###
+                              <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para>
                               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
                               <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
                               <para>When prompted whether you wish to keep your configuration, say Yes.</para>
