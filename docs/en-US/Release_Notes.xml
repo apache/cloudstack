@@ -35,9 +35,16 @@
           <title>Upgrade from 4.0.x to 4.1.0</title>
           <para>This section will guide you from Apache CloudStack 4.0.x versions (4.0.0-incubating, 4.0.1-incubating, and 4.0.2) to &PRODUCT; 4.1.0.</para>
           <para>Any steps that are hypervisor-specific will be called out with a note.</para>
+                  <warning><title>Package Structure Changes</title>
+                  <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x releases. If you've compiled your own packages, you'll notice that the package names and the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
+                  <para>However, this <emphasis>does</emphasis> mean that the procedure is not as simple as an <command>apt-get upgrade</command> or <command>yum update</command>, so please follow this section carefully.</para>
+              </warning>
+              <para>We recommend reading through this section once or twice before beginning your upgrade procedure, and working through it on a test system before working on a production system.</para>
           <orderedlist>
               <listitem>
-                  <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.0 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
+                  <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
+                  <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.0 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
+                  <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
               </listitem>
               <listitem>
                   <para>Stop your management server or servers. Run this on all management server hosts:</para>
@@ -46,6 +53,41 @@
               <listitem>
                   <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
                   <programlisting># mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
+              </listitem>
+              <listitem id="upgrade-deb-packages">
+                  <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
+                  <note><title>Community Packages</title>
+                      <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and APT repository, substitute your own URL for the ones used in these examples.</para>
+                  </note>
+                      <orderedlist id="debsteps">
+                          <listitem><para>Start by opening <filename>/etc/apt/sources.list.d/cloudstack.list</filename>.</para>
+                              <para>This file should have one line, which contains:</para>
+                              <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
+                              <para>We'll change it to point to the new package repository:</para>
+                              <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.1</programlisting>
+                          </listitem>
+                          <listitem>
+                              <para>Now update your apt package list:</para>
+                              <programlisting language="Bash">$ sudo apt-get update</programlisting>
+                          </listitem>
+                          <listitem>
+                              <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para> ###
+                              <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
+                              <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
+                              <para>When prompted whether you wish to keep your configuration, say Yes.</para>
+                          </listitem>
+                          <listitem>
+                              <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
+                              <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
+                              <para>If not, add the line.</para>
+                          </listitem>
+                          <listitem>
+                              <para>Restart the agent:</para>
+                          </listitem>
+                      </orderedlist>
+              </listitem>
+              <listitem id="upgrade-rpm-packages">
+              <para>###</para> 
               </listitem>
           </orderedlist>
       </section>
@@ -1049,11 +1091,9 @@ Done restarting router(s).
                   </entry>
               </row>
             <row>
-              <entry><para>CLOUDSTACK-301</para></entry>
-              <entry><para>Nexus 1000v DVS integration is not functional</para>
-                <para>This source code release includes some partial functionality to support the
-                  Cisco Nexus 1000v Distributed Virtual Switch within a VMware hypervisor
-                  environment. The functionality is not complete at this time.</para>
+                <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824">CLOUDSTACK-1824</ulink></para></entry>
+              <entry><para>Service CloudStack-Management is being displayed as cloud-management service </para>
+                <para>Many scripts and text entries have references to cloud-management rather than cloudstack-management due to the changeover between 4.0 and 4.1 to rename services. This is a minor issue and should be corrected by 4.2.</para>
               </entry>
             </row>
           </tbody>
