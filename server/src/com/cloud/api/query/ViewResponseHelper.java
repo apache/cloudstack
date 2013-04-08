@@ -265,7 +265,7 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<ImageStoreResponse> createObjectStoreResponse(ImageStoreJoinVO... stores) {
+    public static List<ImageStoreResponse> createImageStoreResponse(ImageStoreJoinVO... stores) {
         Hashtable<Long, ImageStoreResponse> vrDataList = new Hashtable<Long, ImageStoreResponse>();
         // Initialise the vrdatalist with the input data
         for (ImageStoreJoinVO vr : stores) {

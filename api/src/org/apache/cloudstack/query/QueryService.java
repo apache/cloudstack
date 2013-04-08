@@ -18,6 +18,7 @@ package org.apache.cloudstack.query;
 
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -87,6 +89,8 @@ public interface QueryService {
     public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
 
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd);
+
+    public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
 
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 

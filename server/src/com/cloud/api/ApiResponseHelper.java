@@ -894,7 +894,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ImageStoreResponse createImageStoreResponse(ImageStore os) {
         List<ImageStoreJoinVO> viewStores = ApiDBUtils.newImageStoreView(os);
-        List<ImageStoreResponse> listStores = ViewResponseHelper.createObjectStoreResponse(viewStores.toArray(new ImageStoreJoinVO[viewStores.size()]));
+        List<ImageStoreResponse> listStores = ViewResponseHelper.createImageStoreResponse(viewStores.toArray(new ImageStoreJoinVO[viewStores.size()]));
         assert listStores != null && listStores.size() == 1 : "There should be one image data store returned";
         return listStores.get(0);
 

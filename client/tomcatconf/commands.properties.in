@@ -243,6 +243,10 @@ listS3s=1
 
 #### image store commands
 addImageStore=1
+listImageStores=1
+deleteImageStore=1
+enableImageStore=1
+
 
 #### host commands
 addHost=3
