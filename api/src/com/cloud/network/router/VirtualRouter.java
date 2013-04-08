@@ -23,7 +23,7 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface VirtualRouter extends VirtualMachine {
 	public enum Role {
-		VIRTUAL_ROUTER, LB
+		VIRTUAL_ROUTER, LB, InternalLB
 	}
     Role getRole();
     boolean getIsRedundantRouter();

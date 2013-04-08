@@ -244,7 +244,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
      * number like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here
      * last character is non-digit but from known characters .
      */
-    private boolean containsOnlyNumbers(String str, String endChar) {
+    private static boolean containsOnlyNumbers(String str, String endChar) {
         if (str == null)
             return false;
 
@@ -273,7 +273,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return true;
     }
 
-    private boolean validateHAProxyLBRule(LoadBalancingRule rule) {
+    public static boolean validateHAProxyLBRule(LoadBalancingRule rule) {
         String timeEndChar = "dhms";
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
@@ -460,7 +460,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return capabilities;
     }
 
-    private static String getHAProxyStickinessCapability() {
+    public static String getHAProxyStickinessCapability() {
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>(1);
 
