@@ -127,6 +127,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
@@ -207,7 +208,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.ApplicationLoadBalancerRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
@@ -3628,7 +3628,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(LoadBalancer lb, Map<Ip, UserVm> lbInstances) {
+    public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances) {
 
         ApplicationLoadBalancerResponse lbResponse = new ApplicationLoadBalancerResponse();
         lbResponse.setId(lb.getUuid());
@@ -3640,9 +3640,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateOwner(lbResponse, lb);
         
         if (lb.getScheme() == Scheme.Internal) {
-            ApplicationLoadBalancerRule ruleInternal = (ApplicationLoadBalancerRule)lb;
-            lbResponse.setSourceIp(ruleInternal.getSourceIpAddress().addr());
-            lbResponse.setSourceIpNetworkId(ruleInternal.getSourceIpNetworkUuid());
+            lbResponse.setSourceIp(lb.getSourceIp().addr());
+            //TODO - create the view for the load balancer rule to reflect the network uuid
+            Network network = ApiDBUtils.findNetworkById(lb.getNetworkId());
+            lbResponse.setSourceIpNetworkId(network.getUuid());
         } else {
             //for public, populate the ip information from the ip address
             IpAddress publicIp = ApiDBUtils.findIpAddressById(lb.getSourceIpAddressId());

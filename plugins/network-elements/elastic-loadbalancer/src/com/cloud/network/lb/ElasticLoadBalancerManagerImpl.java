@@ -656,8 +656,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
                 lb.setSourceIpAddressId(ipId);
                 
                 result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(), 
-                        lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), ipId.longValue(),
-                        lb.getProtocol(), lb.getAlgorithm(), false, UserContext.current());
+                        lb.getSourcePortStart(), lb.getDefaultPortStart(), ipId.longValue(), lb.getProtocol(),
+                        lb.getAlgorithm(), false, UserContext.current());
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {

@@ -26,14 +26,17 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.log4j.Logger;
 
-import com.cloud.network.rules.ApplicationLoadBalancerRule;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listLoadBalancers", description = "Lists Load Balancers", responseObject = ApplicationLoadBalancerResponse.class)
 public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListApplicationLoadBalancersCmd.class.getName());
 
     private static final String s_name = "listloadbalancerssresponse";
 
@@ -47,6 +50,20 @@ public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd 
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the Load Balancer")
     private String loadBalancerName;
+    
+    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source ip address of the Load Balancer")
+    private String sourceIp;
+
+    @Parameter(name=ApiConstants.SOURCE_IP_NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class, 
+            description="the network id of the source ip address")
+    private Long sourceIpNetworkId;
+    
+    @Parameter(name = ApiConstants.SCHEME, type = CommandType.STRING, description = "the scheme of the Load Balancer. Supported value is Internal in the current release")
+    private String scheme;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class, 
+            description="the network id of the Load Balancer")
+    private Long networkId;
 
 
     // ///////////////////////////////////////////////////
@@ -61,19 +78,44 @@ public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd 
         return loadBalancerName;
     }
 
+    public String getLoadBalancerName() {
+        return loadBalancerName;
+    }
 
-    // ///////////////////////////////////////////////////
-    // ///////////// API Implementation///////////////////
-    // ///////////////////////////////////////////////////
+    public String getSourceIp() {
+        return sourceIp;
+    }
+
+    public Long getSourceIpNetworkId() {
+        return sourceIpNetworkId;
+    }
 
     @Override
     public String getCommandName() {
         return s_name;
     }
+    
+    public Scheme getScheme() {
+        if (scheme != null) {
+            if (scheme.equalsIgnoreCase(Scheme.Internal.toString())) {
+                return Scheme.Internal;
+            } else {
+                throw new InvalidParameterValueException("Invalid value for scheme. Supported value is Internal");
+            }
+        }
+        return null;
+    }
+    
+    public Long getNetworkId() {
+        return networkId;
+    }
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        Pair<List<? extends ApplicationLoadBalancerRule>, Integer> loadBalancers = _appLbService.listApplicationLoadBalancers();
+        Pair<List<? extends ApplicationLoadBalancerRule>, Integer> loadBalancers = _appLbService.listApplicationLoadBalancers(this);
         ListResponse<ApplicationLoadBalancerResponse> response = new ListResponse<ApplicationLoadBalancerResponse>();
         List<ApplicationLoadBalancerResponse> lbResponses = new ArrayList<ApplicationLoadBalancerResponse>();
         for (ApplicationLoadBalancerRule loadBalancer : loadBalancers.first()) {

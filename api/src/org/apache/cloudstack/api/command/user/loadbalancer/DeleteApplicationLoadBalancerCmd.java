@@ -24,12 +24,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteLoadBalancer", description="Deletes a load balancer", responseObject=SuccessResponse.class)
@@ -64,7 +64,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getId());
+        ApplicationLoadBalancerRule lb = _entityMgr.findById(ApplicationLoadBalancerRule.class, getId());
         if (lb != null) {
             return lb.getAccountId();
         } else {
@@ -102,7 +102,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        LoadBalancer lb = _lbService.findById(id);
+        ApplicationLoadBalancerRule lb = _appLbService.findById(id);
         if(lb == null){
             throw new InvalidParameterValueException("Unable to find load balancer by id ");
         }

@@ -31,7 +31,7 @@ import com.cloud.user.UserContext;
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
 
     LoadBalancer createPublicLoadBalancer(String xId, String name, String description, 
-            int srcPortStart, int srcPortEnd, int defPortStart, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
+            int srcPort, int destPort, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
             throws NetworkRuleConflictException;
 
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
@@ -51,4 +51,8 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
     String getLBCapability(long networkid, String capabilityName);
     boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException;
     boolean revokeLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+
+    boolean validateLbRule(LoadBalancingRule lbRule);
+
+    void removeLBRule(LoadBalancer rule);
 }

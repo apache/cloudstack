@@ -19,9 +19,10 @@ package org.apache.cloudstack.network.lb;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
+
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.network.rules.ApplicationLoadBalancerRule;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
@@ -33,6 +34,8 @@ public interface ApplicationLoadBalancerService {
     
     boolean deleteApplicationLoadBalancer(long id);
     
-    Pair<List<? extends ApplicationLoadBalancerRule>, Integer> listApplicationLoadBalancers();
+    Pair<List<? extends ApplicationLoadBalancerRule>, Integer> listApplicationLoadBalancers(ListApplicationLoadBalancersCmd cmd);
+    
+    ApplicationLoadBalancerRule findById(long ruleId);
 
 }

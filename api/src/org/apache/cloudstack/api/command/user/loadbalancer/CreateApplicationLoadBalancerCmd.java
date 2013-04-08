@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
@@ -36,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -73,7 +73,8 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SOURCE_IP, type=CommandType.STRING, description="the source ip address the network traffic will be load balanced from")
     private String sourceIp;
     
-    @Parameter(name=ApiConstants.SOURCE_IP_NETWORK_ID, type=CommandType.LONG, required=true, description="the network id of the source ip address")
+    @Parameter(name=ApiConstants.SOURCE_IP_NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class, required=true,
+            description="the network id of the source ip address")
     private Long sourceIpNetworkId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the load balancer." +
@@ -108,7 +109,6 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public Integer getPrivatePort() {
         return instancePort;
     }
-
 
     public long getNetworkId() {
         return networkId;
@@ -184,7 +184,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
         if (scheme.equalsIgnoreCase(Scheme.Internal.toString())) {
             return Scheme.Internal;
         } else {
-            throw new InvalidParameterValueException("Invalid value for sheme. Supported value is Internal");
+            throw new InvalidParameterValueException("Invalid value for scheme. Supported value is Internal");
         }
     }
     
@@ -203,11 +203,11 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
-        LoadBalancer rule = null;
+        ApplicationLoadBalancerRule rule = null;
         try {
             UserContext.current().setEventDetails("Load Balancer Id: " + getEntityId());
             // State might be different after the rule is applied, so get new object here
-            rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
+            rule = _entityMgr.findById(ApplicationLoadBalancerRule.class, getEntityId());
             ApplicationLoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerContainerReponse(rule, _lbService.getLbInstances(getEntityId()));
             setResponseObject(lbResponse);
             lbResponse.setResponseName(getCommandName());
@@ -224,8 +224,8 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public void create() {
         try {
             
-            LoadBalancer result = _appLbService.createApplicationLoadBalancer(getName(), getDescription(), getScheme(), getSourceIpNetworkId(), getSourceIp(), getSourcePort(),
-                    getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId());
+            ApplicationLoadBalancerRule result = _appLbService.createApplicationLoadBalancer(getName(), getDescription(), getScheme(),
+                    getSourceIpNetworkId(), getSourceIp(), getSourcePort(), getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         }catch (NetworkRuleConflictException e) {

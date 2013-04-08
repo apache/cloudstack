@@ -450,7 +450,7 @@ UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hype
 
 
 ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address` varchar(40) COMMENT 'source ip address for the load balancer rule';
-ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address_network_id` varchar(40) COMMENT 'the UUID of the network where source ip belongs to';
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address_network_id` bigint unsigned COMMENT 'the id of the network where source ip belongs to';
 ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `scheme` varchar(40) NOT NULL COMMENT 'load balancer scheme; can be Internal or Public';
 UPDATE `cloud`.`load_balancing_rules` SET `scheme`='Public';
 

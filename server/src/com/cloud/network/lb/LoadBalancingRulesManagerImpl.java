@@ -39,6 +39,8 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleI
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -241,6 +243,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     UserDao _userDao;
     @Inject
     List<LoadBalancingServiceProvider> _lbProviders;
+    @Inject ApplicationLoadBalancerRuleDao _appLbRuleDao;
 
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
@@ -337,7 +340,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
          * autoscale config as of today.
          */
         List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-        Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+        Ip sourceIp = getSourceIp(lb);
         LoadBalancingRule rule = new LoadBalancingRule(lb, null, policyList, null, sourceIp);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
 
@@ -355,6 +358,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         return true;
+    }
+
+    private Ip getSourceIp(LoadBalancer lb) {
+        Ip sourceIp = null;
+        if (lb.getScheme() == Scheme.Public) {
+            sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+        } else if (lb.getScheme() == Scheme.Internal) {
+            ApplicationLoadBalancerRuleVO appLbRule = _appLbRuleDao.findById(lb.getId());
+            sourceIp = appLbRule.getSourceIp();
+        }
+        return sourceIp;
     }
 
     @Override
@@ -530,10 +544,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 cmd.getStickinessMethodName(), cmd.getparamList(), cmd.getDescription());
         List<LbStickinessPolicy> policyList = new ArrayList<LbStickinessPolicy>();
         policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
-        Ip sourceIp = _networkModel.getPublicIpAddress(loadBalancer.getSourceIpAddressId()).getAddress();
+        Ip sourceIp = getSourceIp(loadBalancer);
         LoadBalancingRule lbRule = new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()),
                 policyList, null, sourceIp);
-        if (!validateRule(lbRule)) {
+        if (!validateLbRule(lbRule)) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed "
                     + cmd.getLbRuleId());
         }
@@ -616,7 +630,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return policy;
     }
 
-    private boolean validateRule(LoadBalancingRule lbRule) {
+    @Override
+    public boolean validateLbRule(LoadBalancingRule lbRule) {
         Network network = _networkDao.findById(lbRule.getNetworkId());
         Purpose purpose = lbRule.getPurpose();
         if (purpose != Purpose.LoadBalancing) {
@@ -849,7 +864,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         // adding to lbrules list only if the LB rule
                         // hashealtChecks
                         if (hcPolicyList != null && hcPolicyList.size() > 0) {
-                            Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                            Ip sourceIp = getSourceIp(lb);
                             LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, null, hcPolicyList, sourceIp);
                             lbrules.add(loadBalancing);
                         }
@@ -1250,16 +1265,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd, Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall)
             throws NetworkRuleConflictException, InsufficientAddressCapacityException {
         Account lbOwner = _accountMgr.getAccount(lbOwnerId);
-
-        if (!NetUtils.isValidPort(defPortEnd)) {
-            throw new InvalidParameterValueException("privatePort is an invalid value: " + defPortEnd);
-        }
-        if (defPortStart > defPortEnd) {
-            throw new InvalidParameterValueException("private port range is invalid: " + defPortStart + "-"
-                    + defPortEnd);
-        }
-        if ((algorithm == null) || !NetUtils.isValidAlgorithm(algorithm)) {
-            throw new InvalidParameterValueException("Invalid algorithm: " + algorithm);
+        
+        if (srcPortStart != srcPortEnd) {
+            throw new InvalidParameterValueException("Port ranges are not supported by the load balancer");
         }
 
         IPAddressVO ipVO = null;
@@ -1314,7 +1322,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                             + network);
                 }
 
-                result = createPublicLoadBalancer(xId, name, description, srcPortStart, srcPortEnd, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, UserContext.current());
+                result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, UserContext.current());
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
                 if (ex instanceof NetworkRuleConflictException) {
@@ -1344,8 +1352,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @DB
     @Override
     public LoadBalancer createPublicLoadBalancer(String xId, String name, String description, 
-            int srcPortStart, int srcPortEnd, int defPortStart, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
+            int srcPort, int destPort, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
             throws NetworkRuleConflictException {
+        
+        if (!NetUtils.isValidPort(destPort)) {
+            throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
+        }
+       
+        if ((algorithm == null) || !NetUtils.isValidAlgorithm(algorithm)) {
+            throw new InvalidParameterValueException("Invalid algorithm: " + algorithm);
+        }
 
         IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
         // make sure ip address exists
@@ -1360,6 +1376,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
             throw ex;
         }
+        
+        _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
+
 
         Long networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
@@ -1368,12 +1387,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
             throw ex;
         }
-
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, protocol,
-                Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
+        
         NetworkVO network = _networkDao.findById(networkId);
-        _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
-
         // verify that lb service is supported by the network
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
@@ -1382,26 +1397,30 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw ex;
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPort, srcPort, protocol,
+                Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
-                sourceIpId, srcPortEnd, srcPortStart, algorithm,
+                sourceIpId, srcPort, srcPort, algorithm,
                 network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
-        Ip sourceIp = _networkModel.getPublicIpAddress(newRule.getSourceIpAddressId()).getAddress();
+        Ip sourceIp = getSourceIp(newRule);
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
                 new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp);
-        if (!validateRule(loadBalancing)) {
+        if (!validateLbRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         newRule = _lbDao.persist(newRule);
 
+        //create rule for all CIDRs
         if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), srcPortStart,
-                    srcPortEnd, protocol, null, null, newRule.getId(), networkId);
+            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), srcPort,
+                    srcPort, protocol, null, null, newRule.getId(), networkId);
         }
 
         boolean success = true;
@@ -1412,7 +1431,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port "
-                    + srcPortStart + ", private port " + defPortStart + " is added successfully.");
+                    + srcPort + ", private port " + destPort + " is added successfully.");
             UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(),
                     ipAddr.getDataCenterId(), newRule.getId(), null, LoadBalancingRule.class.getName(),
@@ -1499,7 +1518,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     private LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
 
         List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-        Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+        Ip sourceIp = getSourceIp(lb);
         LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, null, policyList, null, sourceIp);
 
         if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(lb.getId())) {
@@ -1984,7 +2003,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return _lbDao.findById(lbId);
     }
 
-    protected void removeLBRule(LoadBalancerVO rule) {
+    @Override
+    public void removeLBRule(LoadBalancer rule) {
         // remove the rule
         _lbDao.remove(rule.getId());
     }

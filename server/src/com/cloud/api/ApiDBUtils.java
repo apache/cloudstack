@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
@@ -483,6 +484,7 @@ public class ApiDBUtils {
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject private VpcProvisioningService vpcProvSvc;
+    @Inject private ApplicationLoadBalancerRuleDao _appLbDao;
     @PostConstruct
     void init() {
         _ms = ms;

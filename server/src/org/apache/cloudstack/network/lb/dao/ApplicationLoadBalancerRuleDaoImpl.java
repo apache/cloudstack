@@ -15,8 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.rules;
+package org.apache.cloudstack.network.lb.dao;
 
-public interface ApplicationLoadBalancerRule extends ApplicationLoadBalancerContainer, LoadBalancer{
-    int getInstancePort();
+import javax.ejb.Local;
+
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.db.GenericDaoBase;
+
+@Component
+@Local(value = { ApplicationLoadBalancerRuleDao.class })
+public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<ApplicationLoadBalancerRuleVO, Long> implements ApplicationLoadBalancerRuleDao{
+
 }
