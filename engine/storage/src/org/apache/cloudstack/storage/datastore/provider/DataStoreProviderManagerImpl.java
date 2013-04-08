@@ -18,21 +18,28 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.response.StorageProviderResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
-import org.apache.cloudstack.storage.datastore.db.DataStoreProviderVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
@@ -44,15 +51,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Inject
     DataStoreProviderDao providerDao;
     protected Map<String, DataStoreProvider> providerMap = new HashMap<String, DataStoreProvider>();
-    @Override
-    public DataStoreProvider getDataStoreProviderByUuid(String uuid) {
-        return providerMap.get(uuid);
-    }
-
+    @Inject
+    PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
-        DataStoreProviderVO dspv = providerDao.findByName(name);
-        return providerMap.get(dspv.getUuid());
+        return providerMap.get(name);
     }
 
     @Override
@@ -60,45 +63,64 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         // TODO Auto-generated method stub
         return null;
     }
+    
+    public List<StorageProviderResponse> getPrimayrDataStoreProviders() {
+        List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
+        for (DataStoreProvider provider : providerMap.values()) {
+            if (provider instanceof PrimaryDataStoreProvider) {
+                StorageProviderResponse response = new StorageProviderResponse();
+                response.setName(provider.getName());
+                response.setType(DataStoreProvider.DataStoreProviderType.PRIMARY.toString());
+                providers.add(response);
+            }
+        }
+        return providers;
+    }
+    
+    public List<StorageProviderResponse> getImageDataStoreProviders() {
+        List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
+        for (DataStoreProvider provider : providerMap.values()) {
+            if (provider instanceof ImageDataStoreProvider) {
+                StorageProviderResponse response = new StorageProviderResponse();
+                response.setName(provider.getName());
+                response.setType(DataStoreProvider.DataStoreProviderType.IMAGE.toString());
+                providers.add(response);
+            }
+        }
+        return providers;
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params)
     		throws ConfigurationException {
         Map<String, Object> copyParams = new HashMap<String, Object>(params);
 
-    	//TODO: hold global lock
-        List<DataStoreProviderVO> providerVos = providerDao.listAll();
         for (DataStoreProvider provider : providers) {
-            boolean existingProvider = false;
-            DataStoreProviderVO providerVO = null;
-            for (DataStoreProviderVO prov : providerVos) {
-                if (prov.getName().equalsIgnoreCase(provider.getName())) {
-                    existingProvider = true;
-                    providerVO = prov;
-                    break;
-                }
+            String providerName = provider.getName();
+            if (providerMap.get(providerName) != null) {
+                s_logger.debug("Failed to register data store provider, provider name: " + providerName + " is not unique");
+                return false;
             }
-            String uuid = null;
-            if (!existingProvider) {
-                uuid = UUID.nameUUIDFromBytes(provider.getName().getBytes()).toString();
-                providerVO = new DataStoreProviderVO();
-                providerVO.setName(provider.getName());
-                providerVO.setUuid(uuid);
-                providerVO = providerDao.persist(providerVO);
-            } else {
-                uuid = providerVO.getUuid();
-            }
-            copyParams.put("uuid", uuid);
-            copyParams.put("id", providerVO.getId());
-            providerMap.put(uuid, provider);
+            
+            s_logger.debug("registering data store provider:" + provider.getName());
+            
+            providerMap.put(providerName, provider);
             try {
                 boolean registrationResult = provider.configure(copyParams);
                 if (!registrationResult) {
-                    providerMap.remove(uuid);
+                    providerMap.remove(providerName);
+                    s_logger.debug("Failed to register data store provider: " + providerName);
+                    return false;
+                }
+                
+                Set<DataStoreProviderType> types = provider.getTypes();
+                if (types.contains(DataStoreProviderType.PRIMARY)) {
+                    primaryDataStoreProviderMgr.registerDriver(provider.getName(), (PrimaryDataStoreDriver)provider.getDataStoreDriver());
+                    primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
                 }
             } catch(Exception e) {
                 s_logger.debug("configure provider failed", e);
-                providerMap.remove(uuid);
+                providerMap.remove(providerName);
             }
         }
   
@@ -106,13 +128,21 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     }
 
     @Override
-    public DataStoreProvider getDataStoreProviderById(long id) {
-        DataStoreProviderVO provider = providerDao.findById(id);
-        return providerMap.get(provider.getUuid());
+    public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
+        return this.getDataStoreProvider("ancient primary data store provider");
     }
 
     @Override
-    public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
-        return this.getDataStoreProvider("ancient primary data store provider");
+    public List<StorageProviderResponse> getDataStoreProviders(String type) {
+        if (type == null) {
+            throw new InvalidParameterValueException("Invalid parameter, need to specify type: either primary or image");
+        }
+        if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.PRIMARY.toString())) {
+            return this.getPrimayrDataStoreProviders();
+        } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.IMAGE.toString())) {
+            return this.getImageDataStoreProviders();
+        } else {
+            throw new InvalidParameterValueException("Invalid parameter: " + type);
+        }
     }
 }

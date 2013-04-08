@@ -98,7 +98,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
 
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcService.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders());
+        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders());
         if (vpcOff != null) {
             this.setEntityId(vpcOff.getId());
             this.setEntityUuid(vpcOff.getUuid());
@@ -109,7 +109,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
 
     @Override
     public void execute() {
-        VpcOffering vpc = _vpcService.getVpcOffering(this.getEntityId());
+        VpcOffering vpc = _vpcProvSvc.getVpcOffering(this.getEntityId());
         if (vpc != null) {
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(vpc);
             response.setResponseName(getCommandName());

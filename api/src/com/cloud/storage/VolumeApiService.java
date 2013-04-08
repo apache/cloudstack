@@ -59,9 +59,10 @@ public interface VolumeApiService {
      * @param cmd
      *            the API command wrapping the criteria
      * @return the volume object
+     * @throws ResourceAllocationException
      */
-    Volume resizeVolume(ResizeVolumeCmd cmd);
-    
+    Volume resizeVolume(ResizeVolumeCmd cmd) throws ResourceAllocationException;
+
     Volume migrateVolume(MigrateVolumeCmd cmd) throws ConcurrentOperationException;
 
     /**

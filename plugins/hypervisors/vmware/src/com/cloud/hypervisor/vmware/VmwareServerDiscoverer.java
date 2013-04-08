@@ -140,14 +140,14 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			return null;
 		}
 
-		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         if (hosts != null && hosts.size() > 0) {
             int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(hosts.get(0).getHypervisorType(), hosts.get(0).getHypervisorVersion());
-            if (hosts.size() > maxHostsPerCluster) {
-                   String msg = "VMware cluster " + cluster.getName() + " is too big to add new host now. (current configured cluster size: " + maxHostsPerCluster + ")";
-			s_logger.error(msg);
-			throw new DiscoveredWithErrorException(msg);
-		}
+            if (hosts.size() >= maxHostsPerCluster) {
+                String msg = "VMware cluster " + cluster.getName() + " is too big to add new host, current size: " + hosts.size() + ", max. size: " + maxHostsPerCluster;
+                s_logger.error(msg);
+                throw new DiscoveredWithErrorException(msg);
+            }
         }
 
 		String privateTrafficLabel = null;
@@ -260,7 +260,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
 			if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
-			}
+            }
             String vsmIp = _urlParams.get("vsmipaddress");
             String vsmUser = _urlParams.get("vsmusername");
             String vsmPassword = _urlParams.get("vsmpassword");

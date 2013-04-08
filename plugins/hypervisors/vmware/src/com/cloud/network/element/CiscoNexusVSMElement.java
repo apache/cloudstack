@@ -259,7 +259,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         cmdList.add(DeleteCiscoNexusVSMCmd.class);
         return cmdList;
     }
-    
+
     @DB
     public boolean validateVsmCluster(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
         if(vsmIp != null && vsmUser != null && vsmPassword != null) {
@@ -339,7 +339,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                 }
             }
             s_logger.error(msg);
-            // Cleaning up the cluster record as addCluster operation failed because Nexus dvSwitch credentials are supplied.
+            // Cleaning up the cluster record as addCluster operation failed because of invalid credentials of Nexus dvSwitch.
             _clusterDao.remove(clusterId);
             throw new CloudRuntimeException(msg);
         }

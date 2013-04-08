@@ -47,9 +47,9 @@ import com.cloud.host.Host.Type;
 import com.cloud.network.bigswitch.BigSwitchVnsApi;
 import com.cloud.network.bigswitch.BigSwitchVnsApiException;
 import com.cloud.network.bigswitch.ControlClusterStatus;
-import com.cloud.network.bigswitch.Attachment;
-import com.cloud.network.bigswitch.Network;
-import com.cloud.network.bigswitch.Port;
+import com.cloud.network.bigswitch.AttachmentData;
+import com.cloud.network.bigswitch.NetworkData;
+import com.cloud.network.bigswitch.PortData;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
@@ -193,15 +193,15 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
     }
 
     private Answer executeRequest(CreateVnsNetworkCommand cmd, int numRetries) {
-        Network network = new Network();
-        network.setTenant_id(cmd.getTenantUuid());
-        network.setUuid(cmd.getNetworkUuid());
-        network.setDisplay_name(truncate("vns-cloudstack-" + cmd.getName(), 64));
-        network.setVlan(cmd.getVlan());
+        NetworkData network = new NetworkData();
+        network.getNetwork().setTenant_id(cmd.getTenantUuid());
+        network.getNetwork().setUuid(cmd.getNetworkUuid());
+        network.getNetwork().setDisplay_name(truncate("vns-cloudstack-" + cmd.getName(), 64));
+        network.getNetwork().setVlan(cmd.getVlan());
 
         try {
             _bigswitchVnsApi.createNetwork(network);
-            return new CreateVnsNetworkAnswer(cmd, true, "VNS " + network.getUuid() + " created");
+            return new CreateVnsNetworkAnswer(cmd, true, "VNS " + network.getNetwork().getUuid() + " created");
         } catch (BigSwitchVnsApiException e) {
                 if (numRetries > 0) {
                         return retry(cmd, --numRetries);
@@ -228,17 +228,17 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
     }
 
     private Answer executeRequest(CreateVnsPortCommand cmd, int numRetries) {
-        Port port = new Port();
-        port.setId(cmd.getPortUuid());
-        port.setName(cmd.getPortName());
-        port.setTenant_id(cmd.getTenantUuid());
+        PortData port = new PortData();
+        port.getPort().setId(cmd.getPortUuid());
+        port.getPort().setName(cmd.getPortName());
+        port.getPort().setTenant_id(cmd.getTenantUuid());
 
         try {
             _bigswitchVnsApi.createPort(cmd.getNetworkUuid(), port);
             try {
-                Attachment attachment = new Attachment();
-                attachment.setId(cmd.getPortUuid());
-                attachment.setMac(cmd.getMac());
+                AttachmentData attachment = new AttachmentData();
+                attachment.getAttachment().setId(cmd.getPortUuid());
+                attachment.getAttachment().setMac(cmd.getMac());
                 _bigswitchVnsApi.modifyPortAttachment(cmd.getTenantUuid(),
                                 cmd.getNetworkUuid(), cmd.getPortUuid(), attachment);
 
@@ -279,10 +279,10 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
     }
 
     private Answer executeRequest(UpdateVnsPortCommand cmd, int numRetries) {
-        Port port = new Port();
-        port.setId(cmd.getPortUuid());
-        port.setName(cmd.getPortName());
-        port.setTenant_id(cmd.getTenantUuid());
+        PortData port = new PortData();
+        port.getPort().setId(cmd.getPortUuid());
+        port.getPort().setName(cmd.getPortName());
+        port.getPort().setTenant_id(cmd.getTenantUuid());
 
         try {
             _bigswitchVnsApi.modifyPort(cmd.getNetworkUuid(), port);

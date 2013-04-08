@@ -133,7 +133,7 @@ public class BackupSnapshotCommandTest {
         }
 
         @Override
-        public Long getStorageProviderId() {
+        public String getStorageProviderName() {
             // TODO Auto-generated method stub
             return null;
         }

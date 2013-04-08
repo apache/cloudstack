@@ -40,7 +40,7 @@ DISKSPACE=5120000  #free disk space required in kilobytes
 dbHost=
 dbUser=
 dbPassword=
-jasypt='/usr/share/java/jasypt-1.9.0.jar'
+jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.0.jar'
 while getopts 'm:h:f:u:Ft:e:s:o:r:d' OPTION
 do
   case $OPTION in
@@ -157,6 +157,10 @@ then
    then
       ext="ova"
       templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
+   elif [ "$hyper" == "lxc" ]
+   then
+      ext="qcow2"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"LXC\" and removed is null"`)
    else
       usage
       failed 2

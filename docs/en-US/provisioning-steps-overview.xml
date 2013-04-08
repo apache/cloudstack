@@ -26,12 +26,13 @@
 	<para>After the Management Server is installed and running, you can add the compute resources for it to manage. For an overview of how a &PRODUCT; cloud infrastructure is organized, see <xref linkend="cloud-infrastructure-overview" />.</para>
 	<para>To provision the cloud infrastructure, or to scale it up at any time, follow these procedures:</para>
 	<orderedlist>
-		<listitem><para>Add a zone. See <xref linkend="zone-add" />.</para></listitem>
-		<listitem><para>Add more pods (optional). See <xref linkend="pod-add" />.</para></listitem>
-		<listitem><para>Add more clusters (optional). See <xref linkend="cluster-add" />.</para></listitem>
-		<listitem><para>Add more hosts (optional). See <xref linkend="host-add" />.</para></listitem>
-		<listitem><para>Add primary storage. See <xref linkend="primary-storage-add" />.</para></listitem>
-		<listitem><para>Add secondary storage. See <xref linkend="secondary-storage-add" />.</para></listitem>
+		<listitem><para>Define regions (optional). See <xref linkend="region-add"/>.</para></listitem>
+		<listitem><para>Add a zone to the region. See <xref linkend="zone-add" />.</para></listitem>
+		<listitem><para>Add more pods to the zone (optional). See <xref linkend="pod-add" />.</para></listitem>
+		<listitem><para>Add more clusters to the pod (optional). See <xref linkend="cluster-add" />.</para></listitem>
+		<listitem><para>Add more hosts to the cluster (optional). See <xref linkend="host-add" />.</para></listitem>
+		<listitem><para>Add primary storage to the cluster. See <xref linkend="primary-storage-add" />.</para></listitem>
+		<listitem><para>Add secondary storage to the zone. See <xref linkend="secondary-storage-add" />.</para></listitem>
 		<listitem><para>Initialize and test the new cloud. See <xref linkend="initialize-and-test" />.</para></listitem>
 	</orderedlist>
 	<para>When you have finished these steps, you will have a deployment with the following basic structure:</para>

@@ -221,4 +221,21 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return findOneBy(sc);
     }
 
+    @Override
+    public List<NicVO> listPlaceholderNicsByNetworkId(long networkId) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("strategy", Nic.ReservationStrategy.PlaceHolder.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<NicVO> listPlaceholderNicsByNetworkIdAndVmType(long networkId, VirtualMachine.Type vmType) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("strategy", Nic.ReservationStrategy.PlaceHolder.toString());
+        sc.setParameters("vmType", vmType);
+        return listBy(sc);
+    }
+
 }

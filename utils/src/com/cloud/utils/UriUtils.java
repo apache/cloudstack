@@ -17,9 +17,13 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -77,5 +81,34 @@ public class UriUtils {
 
         // no need to do URL component encoding
         return url;
+    }
+
+    // Get the size of a file from URL response header.
+    public static Long getRemoteSize(String url) {
+        Long remoteSize = (long) 0;
+        HttpURLConnection httpConn = null;
+        HttpsURLConnection httpsConn = null;
+        try {
+            URI uri = new URI(url);
+            if(uri.getScheme().equalsIgnoreCase("http")) {
+                httpConn = (HttpURLConnection) uri.toURL().openConnection();
+                remoteSize = Long.parseLong(httpConn.getHeaderField("content-length"));
+            }
+            else if(uri.getScheme().equalsIgnoreCase("https")) {
+                httpsConn = (HttpsURLConnection) uri.toURL().openConnection();
+                remoteSize = Long.parseLong(httpsConn.getHeaderField("content-length"));
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL " + url);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to establish connection with URL " + url);
+        } finally {
+            if (httpConn != null) {
+                httpConn.disconnect();
+            } else if (httpsConn != null) {
+                httpsConn.disconnect();
+            }
+        }
+        return remoteSize;
     }
 }

@@ -33,7 +33,7 @@ class TestSetupSuccess(cloudstackTestCase):
         
         zones = listZones.listZonesCmd()
         cls.zones_list = cls.apiClient.listZones(zones)
-        cls.retry = 50
+        cls.retry = 2
         
     def test_systemVmReady(self):
         """
@@ -75,7 +75,12 @@ class TestSetupSuccess(cloudstackTestCase):
                 retry = retry - 1
                 delay(60) #wait a minute for retry
             self.assertNotEqual(retry, 0, "builtIn templates not ready in zone %s"%z.name)
-            
+
+    def test_deployVmWithBuiltIn(self):
+        """
+        Deploys a VM with the built-in CentOS template
+        """
+
     @classmethod
     def tearDownClass(cls):
         pass

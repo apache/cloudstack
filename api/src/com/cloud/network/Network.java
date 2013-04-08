@@ -136,8 +136,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);
         // NiciraNvp is not an "External" provider, otherwise we get in trouble with NetworkServiceImpl.providersConfiguredForExternalNetworking 
-        public static final Provider NiciraNvp = new Provider("NiciraNvp", false);  
-        public static final Provider MidokuraMidonet = new Provider("MidokuraMidonet", true);
+        public static final Provider NiciraNvp = new Provider("NiciraNvp", false);
         public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
         private String name;
@@ -237,6 +236,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Shutdown);
             s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
+            s_fsm.addTransition(State.Setup, Event.DestroyNetwork, State.Destroy);
+            s_fsm.addTransition(State.Allocated, Event.DestroyNetwork, State.Destroy);
         }
 
         public static StateMachine2<State, Network.Event, Network> getStateMachine() {

@@ -59,6 +59,7 @@ public class EventTypes {
     public static final String EVENT_VM_REBOOT = "VM.REBOOT";
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
+    public static final String EVENT_VM_SCALE = "VM.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
@@ -114,10 +115,18 @@ public class EventTypes {
     public static final String EVENT_LB_HEALTHCHECKPOLICY_DELETE = "LB.HEALTHCHECKPOLICY.DELETE";
     public static final String EVENT_LOAD_BALANCER_UPDATE = "LB.UPDATE";
 
+    // Global Load Balancer rules
+    public static final String EVENT_ASSIGN_TO_GLOBAL_LOAD_BALANCER_RULE = "GLOBAL.LB.ASSIGN";
+    public static final String EVENT_REMOVE_FROM_GLOBAL_LOAD_BALANCER_RULE = "GLOBAL.LB.REMOVE";
+    public static final String EVENT_GLOBAL_LOAD_BALANCER_CREATE = "GLOBAL.LB.CREATE";
+    public static final String EVENT_GLOBAL_LOAD_BALANCER_DELETE = "GLOBAL.LB.DELETE";
+
     // Account events
+    public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";
     public static final String EVENT_ACCOUNT_CREATE = "ACCOUNT.CREATE";
     public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
+    public static final String EVENT_ACCOUNT_UPDATE = "ACCOUNT.UPDATE";
     public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE";
 
     // UserVO Events
@@ -129,6 +138,9 @@ public class EventTypes {
     public static final String EVENT_USER_UPDATE = "USER.UPDATE";
     public static final String EVENT_USER_ENABLE = "USER.ENABLE";
     public static final String EVENT_USER_LOCK = "USER.LOCK";
+
+    //registering SSH keypair events
+    public static final String EVENT_REGISTER_SSH_KEYPAIR = "REGISTER.SSH.KEYPAIR";
 
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";

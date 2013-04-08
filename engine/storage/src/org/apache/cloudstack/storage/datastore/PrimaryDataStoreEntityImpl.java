@@ -243,15 +243,15 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
 	}
 
     @Override
-    public Long getStorageProviderId() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean isInMaintenance() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public String getStorageProviderName() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

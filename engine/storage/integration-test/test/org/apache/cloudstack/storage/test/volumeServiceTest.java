@@ -281,9 +281,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         params.put("port", "1");
         params.put("roles", DataStoreRole.Primary.toString());
         params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
-        params.put("providerId", String.valueOf(provider.getId()));
+        params.put("providerName", String.valueOf(provider.getName()));
         
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         this.primaryStore  = lifeCycle.initialize(params);
         ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
         lifeCycle.attachCluster(this.primaryStore, scope);
@@ -297,8 +297,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         params.put("uuid", name);
         params.put("protocol", "http");
         params.put("scope", ScopeType.GLOBAL.toString());
-        params.put("provider", Long.toString(provider.getId()));
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+        params.put("providerName", name);
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = lifeCycle.initialize(params);
         return store;
 	}
@@ -323,9 +323,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
             params.put("port", "1");
             params.put("roles", DataStoreRole.Primary.toString());
             params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
-            params.put("providerId", String.valueOf(provider.getId()));
+            params.put("providerName", String.valueOf(provider.getName()));
 		    
-		    DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+		    DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
 		    DataStore store = lifeCycle.initialize(params);
 		    ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
 		    lifeCycle.attachCluster(store, scope);

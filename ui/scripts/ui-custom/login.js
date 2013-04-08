@@ -128,5 +128,17 @@
     });
     
     $languageSelect.val($.cookie('lang'));
+
+    // Hide login screen, mainly for SSO
+    if (args.hideLoginScreen) {
+      $login.children().hide();
+      $login.append($('<div>').addClass('loading-overlay').append(
+        $('<span>').html(
+          // _l is not set yet, so localize directly to dictionary
+          // [should fix in future]
+          dictionary['label.loading'] + '...'
+        )
+      ));
+    }
   };
 })(jQuery, cloudStack);

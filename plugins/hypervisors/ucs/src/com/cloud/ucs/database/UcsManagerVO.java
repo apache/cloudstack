@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.database;
 
 import javax.persistence.Column;
@@ -34,25 +34,25 @@ public class UcsManagerVO implements InternalIdentity, Identity {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
 	private long id;
-   
+
     @Column(name="zone_id")
 	private long zoneId;
-    
+
     @Column(name="uuid")
 	private String uuid;
-    
+
     @Column(name="name")
 	private String name;
-    
+
     @Column(name="url")
 	private String url;
-    
+
     @Column(name="username")
 	private String username;
-    
+
     @Column(name="password")
 	private String password;
-	
+
 	public long getId() {
 		return id;
 	}

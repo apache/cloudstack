@@ -257,8 +257,6 @@
                        }
 
                        });
-                    $(window).trigger('cloudStack.fullRefresh');
-
                 }
               },
 

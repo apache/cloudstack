@@ -585,27 +585,31 @@
      * Notice dialog
      */
     notice: function(args) {
-      return $(
-        $('<span>').addClass('message').html(
-          _l(args.message)
-        )
-      ).dialog({
-        title: _l('label.status'),
-        dialogClass: 'notice',
-        closeOnEscape: false,
-        zIndex: 5000,
-        buttons: [
-          {
-            text: _l('Close'),
-            'class': 'close',
-            click: function() {
-              $(this).dialog('destroy');
-              if (args.clickAction) args.clickAction();
-              $('.hovered-elem').hide();
-            }
-          }
-        ]
-      });
+      if (args.message) {
+        return $(
+          $('<span>').addClass('message').html(
+            _l(args.message)
+          )
+        ).dialog({
+            title: _l('label.status'),
+            dialogClass: 'notice',
+            closeOnEscape: false,
+            zIndex: 5000,
+            buttons: [
+              {
+                text: _l('Close'),
+                'class': 'close',
+                click: function() {
+                  $(this).dialog('destroy');
+                  if (args.clickAction) args.clickAction();
+                  $('.hovered-elem').hide();
+                }
+              }
+            ]
+          });
+      }
+
+      return false;
     }
   };
 })(window.jQuery, window.cloudStack);

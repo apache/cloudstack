@@ -261,17 +261,7 @@ CREATE TABLE  `cloud`.`region` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MB) that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.cpus', '40', 'The default maximum number of cpu cores that can be used for a project');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.memory', '40960', 'The default maximum memory (in MB) that can be used for a project');
-
-ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
 CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -1293,10 +1283,6 @@ CREATE VIEW `cloud`.`account_view` AS
         projectcount.count projectTotal,
         networklimit.max networkLimit,
         networkcount.count networkTotal,
-        cpulimit.max cpuLimit,
-        cpucount.count cpuTotal,
-        memorylimit.max memoryLimit,
-        memorycount.count memoryTotal,
         async_job.id job_id,
         async_job.uuid job_uuid,
         async_job.job_status job_status,
@@ -1364,18 +1350,6 @@ CREATE VIEW `cloud`.`account_view` AS
             left join
         `cloud`.`resource_count` networkcount ON account.id = networkcount.account_id
             and networkcount.type = 'network'
-            left join
-        `cloud`.`resource_limit` cpulimit ON account.id = cpulimit.account_id
-            and cpulimit.type = 'cpu'
-            left join
-        `cloud`.`resource_count` cpucount ON account.id = cpucount.account_id
-            and cpucount.type = 'cpu'
-            left join
-        `cloud`.`resource_limit` memorylimit ON account.id = memorylimit.account_id
-            and memorylimit.type = 'memory'
-            left join
-        `cloud`.`resource_count` memorycount ON account.id = memorycount.account_id
-            and memorycount.type = 'memory'
             left join
         `cloud`.`async_job` ON async_job.instance_id = account.id
             and async_job.instance_type = 'Account'
@@ -1503,6 +1477,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         storage_pool.created,
         storage_pool.removed,
         storage_pool.capacity_bytes,
+        storage_pool.scope,
         cluster.id cluster_id,
         cluster.uuid cluster_uuid,
         cluster.name cluster_name,
@@ -1676,3 +1651,14 @@ CREATE TABLE `cloud`.`ucs_manager` (
 
 
 SET foreign_key_checks = 1;
+
+UPDATE `cloud`.`configuration` SET value='KVM,XenServer,VMware,Ovm' WHERE name='hypervisor.list';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'concurrent.snapshots.threshold.perhost' , NULL, 'Limit number of snapshots that can be handled concurrently; default is NULL - unlimited.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.ipv6.search.retry.max' , 10000, 'The maximum number of retrying times to search for an available IPv6 address in the table');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.exclude.zones' , '', 'Traffic going into specified list of zones is not metered');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.include.zones' , 'EXTERNAL', 'Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty');
+
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (163, UUID(), 10, 'Ubuntu 12.04 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164, UUID(), 10, 'Ubuntu 12.04 (64-bit)');

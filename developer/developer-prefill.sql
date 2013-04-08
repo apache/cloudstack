@@ -36,7 +36,7 @@ INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
 -- Add system user with encrypted password=password
 INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
             lastname, email, state, created) VALUES (2, UUID(), 'admin', '5f4dcc3b5aa765d61d8327deb882cf99',
-            '2', 'Admin', 'User', 'admin@mailprovider.com', 'enabled', NOW());
+            '2', 'Admin', 'User', 'admin@mailprovider.com', 'disabled', NOW());
 
 -- Add configurations
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

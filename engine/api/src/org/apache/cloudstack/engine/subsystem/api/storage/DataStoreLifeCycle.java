@@ -34,9 +34,9 @@ public interface DataStoreLifeCycle {
 
     public boolean unmanaged();
 
-    public boolean maintain(long storeId);
+    public boolean maintain(DataStore store);
 
-    public boolean cancelMaintain(long storeId);
+    public boolean cancelMaintain(DataStore store);
 
-    public boolean deleteDataStore(long storeId);
+    public boolean deleteDataStore(DataStore store);
 }

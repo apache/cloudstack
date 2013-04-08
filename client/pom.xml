@@ -67,11 +67,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-snmp-alerts</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -87,17 +82,17 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-midonet</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-xen</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -224,6 +219,21 @@
       <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-volume-default</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-syslog-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -269,6 +279,26 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <version>1.7</version>
         <executions>
+          <!-- Copy the systemvm in the package phase as it is generated 
+               by console-proxy in the package phase. 
+          -->
+          <execution>
+            <id>copy-systemvm</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
+                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
+                    <include name="systemvm.zip" />
+                    <include name="systemvm.iso" />
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
           <execution>
             <id>generate-resource</id>
             <phase>generate-resources</phase>
@@ -294,12 +324,6 @@
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*" />
-                  </fileset>
-                </copy>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
-                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
-                    <include name="systemvm.zip" />
-                    <include name="systemvm.iso" />
                   </fileset>
                 </copy>
                 <copy todir="${basedir}/target/generated-webapp">
@@ -381,22 +405,38 @@
               </target>
             </configuration>
           </execution>
-           <execution>
-                <id>process-nonoss</id>
-                <phase>process-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target if="${nonoss}">
-                    <echo>test</echo>
-                    <replaceregexp
-                      file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
-                      match="cloud-stack-components-specification=.*"
-                      replace="cloud-stack-components-specification=components-nonoss.xml" byline="true" />
-                  </target>
-                </configuration>
-              </execution>
+          <execution>
+            <id>process-nonoss</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${nonoss}">
+                <echo>test</echo>
+                <replaceregexp
+                    file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
+                    match="cloud-stack-components-specification=.*"
+                    replace="cloud-stack-components-specification=components-nonoss.xml" byline="true"/>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>process-simulator-context</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${simulator}">
+                <echo>test</echo>
+                <replaceregexp
+                    file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
+                    match="classpath:componentContext.xml"
+                    replace="classpath:simulatorComponentContext.xml" byline="true" />
+              </target>
+            </configuration>
+          </execution>
           <execution>
             <id>process-nonoss-spring-context</id>
             <phase>process-resources</phase>
@@ -490,6 +530,21 @@
     </pluginManagement>
   </build>
   <profiles>
+    <profile>
+      <id>developer</id>
+      <activation>
+        <property>
+          <name>simulator</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>netapp</id>
       <activation>

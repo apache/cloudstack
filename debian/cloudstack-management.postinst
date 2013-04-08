@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,7 +20,33 @@ if [ "$1" = configure ]; then
     if ! getent passwd cloud >/dev/null; then
         adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
     else
-        usermod -m -d /var/lib/cloudstack/management cloud
+        usermod -m -d /var/lib/cloudstack/management cloud || true
     fi
-    chown cloud /var/log/cloudstack/management
+
+    for i in /var/cache/cloudstack/management \
+        /var/cache/cloudstack/management/work \
+        /var/cache/cloudstack/management/temp \
+        /var/log/cloudstack/management \
+        /var/lib/cloudstack/management
+    do
+        chmod 0770 $i
+        chgrp cloud $i
+    done
+
+    OLDCONFDIR="/etc/cloud/management"
+    NEWCONFDIR="/etc/cloudstack/management"
+    CONFFILES="db.properties cloud.keystore key"
+
+    # Copy old configuration so the admin doesn't have to do that
+    # Only do so when we are installing for the first time
+    if [ -z "$2" ]; then
+        for FILE in $CONFFILES; do
+            if [ -f "$OLDCONFDIR/${FILE}" ]; then
+                cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
+            fi
+        done
+    fi
+
+    chmod 0640 /etc/cloudstack/management/db.properties
+    chgrp cloud /etc/cloudstack/management/db.properties
 fi

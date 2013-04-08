@@ -16,7 +16,7 @@
 -- under the License.
 
 
-INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (10, UUID(), 'simulator-domR', 'SystemVM Template (simulator)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/latest/systemvm.vhd.bz2', '', 0, 'SystemVM Template (simulator)', 'VHD', 15, 0, 1, 'Simulator');
-INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (11, UUID(), 'simulator-Centos', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 11, 1, 1, 'Simulator');
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type, image_data_store_id)
+    VALUES (100, UUID(), 'simulator-domR', 'SystemVM Template (simulator)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2', '', 0, 'SystemVM Template (simulator)', 'VHD', 15, 0, 1, 'Simulator', 1);
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, image_data_store_id)
+    VALUES (111, UUID(), 'simulator-Centos', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 12, 1, 1, 'Simulator', 1);

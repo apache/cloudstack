@@ -95,8 +95,13 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                 SynchronousListener synchronous = (SynchronousListener)listener;
                 String peerName = synchronous.getPeer();
                 if (peerName != null) {
-                    s_logger.debug(log(seq, "Forwarding to peer to cancel due to timeout"));
-                    s_clusteredAgentMgr.cancel(peerName, _id, seq, "Timed Out");
+                    if (s_clusteredAgentMgr != null) {
+                        s_logger.debug(log(seq, "Forwarding to peer to cancel due to timeout"));
+                        s_clusteredAgentMgr.cancel(peerName, _id, seq, "Timed Out");
+                    } else {
+                        s_logger.error("Unable to forward cancel, ClusteredAgentAttache is not properly initialized");
+                    }
+
                 }
             }
         }
@@ -159,6 +164,10 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
             }
         } 
 
+        if (s_clusteredAgentMgr == null) {
+            throw new AgentUnavailableException("ClusteredAgentAttache not properly initialized", _id);
+        }
+        
         int i = 0;
         SocketChannel ch = null;
         boolean error = true;

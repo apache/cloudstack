@@ -27,25 +27,33 @@
         response: {
           success: function(args) {
             var data = args.data;
-            var activeRegionID = args.activeRegionID;
-
+            
+						var currentRegion = null;
             $(data).each(function() {
               var region = this;
               var regionName = region.name;
               var $li = $('<li>').append($('<span>').html(_s(region.name)));
 
               $li.data('region-data', region);
-
-              if (region.id == activeRegionID) {
-                $li.addClass('active');
-              }
-              
-              $regionSwitcherButton.find('.title')
-                .html(regionName)
-                .attr('title', regionName);
-              
-              $regionList.append($li);
+							
+							/* e.g.
+							region.endpoint	== "http://localhost:8080/client/" 
+							document.location.href == "http://localhost:8080/client/#" 
+							*/
+							if(document.location.href.indexOf(region.endpoint) != -1) {							
+                currentRegion = region;	
+								$li.addClass('active');
+							}
+														
+              $regionList.append($li);							
             });
+							
+            if(currentRegion != null)	{						
+						  $regionSwitcherButton.find('.title').html(_s(currentRegion.name)).attr('title', _s(currentRegion.name));   
+            }		
+            else {
+              $regionSwitcherButton.find('.title').html('').attr('title', '');   
+            }						
           }
         }
       });
@@ -81,7 +89,7 @@
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));
-
+          window.name = g_loginCmdText;
           document.location.href = url;
         }
       });

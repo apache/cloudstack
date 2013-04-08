@@ -16,13 +16,16 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.RemoteAccessVpn.State;
 
 @Entity
 @Table(name=("remote_access_vpn"))
@@ -36,7 +39,6 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name="domain_id")
     private long domainId;
 
-    @Id
     @Column(name="vpn_server_addr_id")
     private long serverAddressId;
     
@@ -51,8 +53,18 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     
     @Column(name="state")
     private State state;
+    
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="id")
+    private long id;
+    
+    @Column(name="uuid")
+    private String uuid;
 
-    public RemoteAccessVpnVO() { }
+    public RemoteAccessVpnVO() { 
+        this.uuid = UUID.randomUUID().toString();
+    }
 
     public RemoteAccessVpnVO(long accountId, long domainId, long networkId, long publicIpId, String localIp, String ipRange,  String presharedKey) {
         this.accountId = accountId;
@@ -63,6 +75,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         this.domainId = domainId;
         this.networkId = networkId;
         this.state = State.Added;
+        this.uuid = UUID.randomUUID().toString();
     }
     
     @Override
@@ -116,4 +129,14 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public long getNetworkId() {
 	    return networkId;
 	}
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
 }

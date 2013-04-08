@@ -17,8 +17,10 @@
 package com.cloud.network;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface RemoteAccessVpn extends ControlledEntity {
+public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Identity {
     enum State {
         Added,
         Running,

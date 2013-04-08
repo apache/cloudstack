@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="changed-apicommands-4.1">
-  <title>Changed API Commands in 4.1-incubating</title>
+  <title>Changed API Commands in 4.1</title>
   <informaltable>
     <tgroup cols="2" align="left" colsep="1" rowsep="1">
       <colspec colwidth="1.0*" colname="1" colnum="1"/>
@@ -232,8 +232,20 @@
             <para>listZones</para>
           </entry>
           <entry>
-            <para>The following request parameters is added: securitygroupenabled</para>
+            <para>The following request parameter is added: securitygroupenabled</para>
           </entry>
+        </row>
+        <row>
+          <entry><para>createAccount</para></entry>
+          <entry><para>The following new request parameters are added: accountid, userid</para></entry>
+        </row>
+        <row>
+          <entry><para>createUser</para></entry>
+          <entry><para>The following new request parameter is added: userid</para></entry>
+        </row>
+        <row>
+          <entry><para>createDomain</para></entry>
+          <entry><para>The following new request parameter is added: domainid</para></entry>
         </row>
       </tbody>
     </tgroup>

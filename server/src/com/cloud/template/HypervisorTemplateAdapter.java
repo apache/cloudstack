@@ -39,7 +39,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -61,19 +60,10 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
-
-import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
-import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
-import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import java.net.*;
-import java.util.List;
 
 @Local(value=TemplateAdapter.class)
 public class HypervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
@@ -134,6 +124,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
         }
 
 		profile.setUrl(validateUrl(url));
+		// Check that the resource limit for secondary storage won't be exceeded
+		_resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+		        ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 		return profile;
 	}
 
@@ -148,6 +141,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 	        &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
 	        &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
 	        &&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+	        &&(!url.toLowerCase().endsWith("tar"))&&(!url.toLowerCase().endsWith("tar.zip"))
+	        &&(!url.toLowerCase().endsWith("tar.bz2"))&&(!url.toLowerCase().endsWith("tar.gz"))
 	        &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
 	        throw new InvalidParameterValueException("Please specify a valid "+ cmd.getFormat().toLowerCase());
 	    }
@@ -155,11 +150,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		if ((cmd.getFormat().equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
+			|| (cmd.getFormat().equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar") && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url.toLowerCase().endsWith("tar.gz")))
 			|| (cmd.getFormat().equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
 	        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + cmd.getFormat().toLowerCase());
 		}
 
 		profile.setUrl(validateUrl(url));
+		// Check that the resource limit for secondary storage won't be exceeded
+		_resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+		        ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 		return profile;
 	}
 
@@ -183,10 +182,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
             s_logger.debug("create template Failed", e);
             throw new CloudRuntimeException("create template Failed", e);
         }
-		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-
+        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(profile.getUrl()));
         return template;
-	}
+    }
 
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
@@ -294,8 +294,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 					s_logger.debug("Failed to acquire lock when deleting template with ID: " + templateId);
 					success = false;
 				} else if (_tmpltDao.remove(templateId)) {
-					// Decrement the number of templates
+				    // Decrement the number of templates and total secondary storage space used by the account
 				    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+				    _resourceLimitMgr.recalculateResourceCount(accountId, account.getDomainId(),
+				            ResourceType.secondary_storage.getOrdinal());
 				}
 
 			} finally {

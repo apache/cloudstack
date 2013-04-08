@@ -304,7 +304,16 @@
           }
 
           if($detailView.data("list-view-row") != null) {
-            $detailView.data("list-view-row").remove();
+            var $row = $detailView.data('list-view-row');
+            var $tbody = $row.closest('tbody');
+
+            $row.remove();
+            if(!$tbody.find('tr').size()) {
+              $("<tr>").addClass('empty').append(
+                $("<td>").html(_l('label.no.data'))
+              ).appendTo($tbody);
+            }
+            $tbody.closest('table').dataTable('refresh');
           }
         }
       });

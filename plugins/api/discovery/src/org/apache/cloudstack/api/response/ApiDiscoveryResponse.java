@@ -47,6 +47,9 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.RESPONSE)  @Param(description="api response fields", responseObject = ApiResponseResponse.class)
     private Set<ApiResponseResponse> apiResponse;
 
+    @SerializedName(ApiConstants.TYPE) @Param(description="response field type")
+    private String type;
+
     public ApiDiscoveryResponse(){
         params = new HashSet<ApiParameterResponse>();
         apiResponse = new HashSet<ApiResponseResponse>();
@@ -80,6 +83,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
     public void setAsync(Boolean isAsync) {
         this.isAsync = isAsync;
     }
+
 
     public boolean getAsync() {
         return isAsync;

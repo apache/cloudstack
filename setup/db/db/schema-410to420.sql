@@ -29,6 +29,7 @@ DELETE FROM `cloud`.`configuration` where name='vmware.percluster.host.max';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'xen.nics.max', '7', 'Maximum allowed nics for Vms created on Xen');
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
+alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
 alter table template_host_ref add state varchar(255);
 alter table template_host_ref add update_count bigint unsigned;
 alter table template_host_ref add updated datetime;
@@ -70,13 +71,12 @@ CREATE TABLE `cloud`.`data_store_provider` (
 CREATE TABLE `cloud`.`image_data_store` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of data store',
-  `image_provider_id` bigint unsigned NOT NULL COMMENT 'id of image_data_store_provider',
+  `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_data_store_provider',
   `protocol` varchar(255) NOT NULL COMMENT 'protocol of data store',
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
-  PRIMARY KEY(`id`),
-  CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `data_store_provider`(`id`)
+  PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
@@ -202,6 +202,210 @@ CREATE VIEW `cloud`.`event_view` AS
             left join
         `cloud`.`event` eve ON event.start_id = eve.id;
 
+ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enalbed in the Region';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `gslb_site_publicip` varchar(255)  DEFAULT NULL COMMENT 'GSLB service Provider site public ip';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `gslb_site_privateip` varchar(255) DEFAULT NULL COMMENT 'GSLB service Provider site private ip';
+
+CREATE TABLE `cloud`.`global_load_balancing_rules` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `region_id`  int unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `algorithm` varchar(255) NOT NULL COMMENT 'load balancing algorithm used to distribbute traffic across zones',
+  `persistence` varchar(255) NOT NULL COMMENT 'session persistence used across the zone',
+  `service_type` varchar(255) NOT NULL COMMENT 'GSLB service type (tcp/udp)',
+  `gslb_domain_name` varchar(255) NOT NULL COMMENT 'DNS name for the GSLB service that is used to provide a FQDN for the GSLB service',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_global_load_balancing_rules_account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_global_load_balancing_rules_region_id` FOREIGN KEY(`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `gslb_rule_id` bigint unsigned NOT NULL,
+  `lb_rule_id` bigint unsigned NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),
+  CONSTRAINT `fk_gslb_rule_id` FOREIGN KEY(`gslb_rule_id`) REFERENCES `global_load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lb_rule_id` FOREIGN KEY(`lb_rule_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MiB) that can be used for an account');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.primary.storage', '200', 'The default maximum primary storage space (in GiB) that can be used for an account');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.secondary.storage', '400', 'The default maximum secondary storage space (in GiB) that can be used for an account');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.cpus', '40', 'The default maximum number of cpu cores that can be used for a project');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.memory', '40960', 'The default maximum memory (in MiB) that can be used for a project');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.primary.storage', '200', 'The default maximum primary storage space (in GiB) that can be used for a project');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.secondary.storage', '400', 'The default maximum secondary storage space (in GiB) that can be used for a project');
+
+DROP VIEW IF EXISTS `cloud`.`account_view`;
+CREATE VIEW `cloud`.`account_view` AS
+    select
+        account.id,
+        account.uuid,
+        account.account_name,
+        account.type,
+        account.state,
+        account.removed,
+        account.cleanup_needed,
+        account.network_domain,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        account_netstats_view.bytesReceived,
+        account_netstats_view.bytesSent,
+        vmlimit.max vmLimit,
+        vmcount.count vmTotal,
+        runningvm.vmcount runningVms,
+        stoppedvm.vmcount stoppedVms,
+        iplimit.max ipLimit,
+        ipcount.count ipTotal,
+        free_ip_view.free_ip ipFree,
+        volumelimit.max volumeLimit,
+        volumecount.count volumeTotal,
+        snapshotlimit.max snapshotLimit,
+        snapshotcount.count snapshotTotal,
+        templatelimit.max templateLimit,
+        templatecount.count templateTotal,
+        vpclimit.max vpcLimit,
+        vpccount.count vpcTotal,
+        projectlimit.max projectLimit,
+        projectcount.count projectTotal,
+        networklimit.max networkLimit,
+        networkcount.count networkTotal,
+        cpulimit.max cpuLimit,
+        cpucount.count cpuTotal,
+        memorylimit.max memoryLimit,
+        memorycount.count memoryTotal,
+        primary_storage_limit.max primaryStorageLimit,
+        primary_storage_count.count primaryStorageTotal,
+        secondary_storage_limit.max secondaryStorageLimit,
+        secondary_storage_count.count secondaryStorageTotal,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`free_ip_view`,
+        `cloud`.`account`
+            inner join
+        `cloud`.`domain` ON account.domain_id = domain.id
+            left join
+        `cloud`.`data_center` ON account.default_zone_id = data_center.id
+            left join
+        `cloud`.`account_netstats_view` ON account.id = account_netstats_view.account_id
+            left join
+        `cloud`.`resource_limit` vmlimit ON account.id = vmlimit.account_id
+            and vmlimit.type = 'user_vm'
+            left join
+        `cloud`.`resource_count` vmcount ON account.id = vmcount.account_id
+            and vmcount.type = 'user_vm'
+            left join
+        `cloud`.`account_vmstats_view` runningvm ON account.id = runningvm.account_id
+            and runningvm.state = 'Running'
+            left join
+        `cloud`.`account_vmstats_view` stoppedvm ON account.id = stoppedvm.account_id
+           and stoppedvm.state = 'Stopped'
+            left join
+        `cloud`.`resource_limit` iplimit ON account.id = iplimit.account_id
+            and iplimit.type = 'public_ip'
+            left join
+        `cloud`.`resource_count` ipcount ON account.id = ipcount.account_id
+            and ipcount.type = 'public_ip'
+            left join
+        `cloud`.`resource_limit` volumelimit ON account.id = volumelimit.account_id
+            and volumelimit.type = 'volume'
+            left join
+        `cloud`.`resource_count` volumecount ON account.id = volumecount.account_id
+            and volumecount.type = 'volume'
+            left join
+        `cloud`.`resource_limit` snapshotlimit ON account.id = snapshotlimit.account_id
+            and snapshotlimit.type = 'snapshot'
+            left join
+        `cloud`.`resource_count` snapshotcount ON account.id = snapshotcount.account_id
+            and snapshotcount.type = 'snapshot'
+            left join
+        `cloud`.`resource_limit` templatelimit ON account.id = templatelimit.account_id
+            and templatelimit.type = 'template'
+            left join
+        `cloud`.`resource_count` templatecount ON account.id = templatecount.account_id
+            and templatecount.type = 'template'
+            left join
+        `cloud`.`resource_limit` vpclimit ON account.id = vpclimit.account_id
+            and vpclimit.type = 'vpc'
+            left join
+        `cloud`.`resource_count` vpccount ON account.id = vpccount.account_id
+            and vpccount.type = 'vpc'
+            left join
+        `cloud`.`resource_limit` projectlimit ON account.id = projectlimit.account_id
+            and projectlimit.type = 'project'
+            left join
+        `cloud`.`resource_count` projectcount ON account.id = projectcount.account_id
+            and projectcount.type = 'project'
+            left join
+        `cloud`.`resource_limit` networklimit ON account.id = networklimit.account_id
+            and networklimit.type = 'network'
+            left join
+        `cloud`.`resource_count` networkcount ON account.id = networkcount.account_id
+            and networkcount.type = 'network'
+            left join
+        `cloud`.`resource_limit` cpulimit ON account.id = cpulimit.account_id
+            and cpulimit.type = 'cpu'
+            left join
+        `cloud`.`resource_count` cpucount ON account.id = cpucount.account_id
+            and cpucount.type = 'cpu'
+            left join
+        `cloud`.`resource_limit` memorylimit ON account.id = memorylimit.account_id
+            and memorylimit.type = 'memory'
+            left join
+        `cloud`.`resource_count` memorycount ON account.id = memorycount.account_id
+            and memorycount.type = 'memory'
+            left join
+        `cloud`.`resource_limit` primary_storage_limit ON account.id = primary_storage_limit.account_id
+            and primary_storage_limit.type = 'primary_storage'
+            left join
+        `cloud`.`resource_count` primary_storage_count ON account.id = primary_storage_count.account_id
+            and primary_storage_count.type = 'primary_storage'
+            left join
+        `cloud`.`resource_limit` secondary_storage_limit ON account.id = secondary_storage_limit.account_id
+            and secondary_storage_limit.type = 'secondary_storage'
+            left join
+        `cloud`.`resource_count` secondary_storage_count ON account.id = secondary_storage_count.account_id
+            and secondary_storage_count.type = 'secondary_storage'
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = account.id
+            and async_job.instance_type = 'Account'
+            and async_job.job_status = 0;
+
+ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id';
+ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `uuid` varchar(40) UNIQUE;
+
+-- START: support for LXC
+ 
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('LXC', 'default', 50, 1);
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `lxc_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a LXC host';
+ 
+UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC' WHERE name='hypervisor.list';
+ 
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+     VALUES (10, 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
+
+-- END: support for LXC
+
 CREATE TABLE `cloud`.`external_cisco_vnmc_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
@@ -234,4 +438,3 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
   CONSTRAINT `fk_network_asa1000v_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_network_asa1000v_map__asa1000v_id` FOREIGN KEY (`asa1000v_id`) REFERENCES `external_cisco_asa1000v_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

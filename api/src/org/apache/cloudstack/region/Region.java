@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.region;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  */
@@ -29,4 +32,50 @@ public interface Region  {
 
 	public String getEndPoint();
 	
+
+    public boolean checkIfServiceEnabled(Service service);
+
+    /**
+     * A region level service, is a service that constitute services across one or more zones in the region or a service
+     * made available to all the zones in the region.
+     */
+    public static class Service {
+
+        private String name;
+        private static List<Service> regionServices = new ArrayList<Service>();
+
+        public static final Service Gslb = new Service("Gslb");
+
+        public Service(String name ) {
+            this.name = name;
+            regionServices.add(this);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+    }
+
+    /**
+     * A provider provides the region level service in a zone.
+     */
+    public static class Provider {
+
+        private static List<Provider> supportedProviders = new ArrayList<Provider>();
+        private String name;
+        private Service service;
+
+        public static final Provider Netscaler = new Provider("Netscaler", Service.Gslb);
+
+        public Provider(String name, Service service) {
+            this.name = name;
+            this.service = service;
+            supportedProviders.add(this);
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
 }

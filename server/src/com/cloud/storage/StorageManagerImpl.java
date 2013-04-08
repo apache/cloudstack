@@ -51,7 +51,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreStatus;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
@@ -276,8 +275,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject
     ConfigurationDao _configDao;
     @Inject
     ManagementServer _msServer;
@@ -296,12 +293,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    // TODO : we don't have any instantiated pool discover, disable injection
-    // temporarily
-    // @Inject
-    protected List<StoragePoolDiscoverer> _discoverers;
+    @Inject protected ResourceTagDao _resourceTagDao;
 
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
+    protected List<StoragePoolAllocator> _storagePoolAllocators;
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+		return _storagePoolAllocators;
+	}
+	public void setStoragePoolAllocators(
+			List<StoragePoolAllocator> _storagePoolAllocators) {
+		this._storagePoolAllocators = _storagePoolAllocators;
+	}
+
+    protected List<StoragePoolDiscoverer> _discoverers;
+    public List<StoragePoolDiscoverer> getDiscoverers() {
+		return _discoverers;
+	}
+	public void setDiscoverers(List<StoragePoolDiscoverer> _discoverers) {
+		this._discoverers = _discoverers;
+	}
+
+	protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
@@ -369,7 +380,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (pools == null
                 || pools.size() == 0
                 || (pools.size() == 1 && pools.get(0).getStatus()
-                        .equals(DataStoreStatus.Maintenance))) {
+                        .equals(StoragePoolStatus.Maintenance))) {
             return false;
         } else {
             return true;
@@ -712,7 +723,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             DataStoreProvider provider = this.dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
-            DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
                 String name = (host.getName() + " Local Storage");
@@ -724,7 +735,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 params.put("localStorage", true);
                 params.put("details", pInfo.getDetails());
                 params.put("uuid", pInfo.getUuid());
-                params.put("providerId", provider.getId());
+                params.put("providerName", provider.getName());
                 
                 store = lifeCycle.initialize(params);
             } else {
@@ -748,15 +759,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd)
             throws ResourceInUseException, IllegalArgumentException,
             UnknownHostException, ResourceUnavailableException {
-        String providerUuid = cmd.getStorageProviderUuid();
+        String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr
-                .getDataStoreProviderByUuid(providerUuid);
+                .getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
             storeProvider = dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
             if (storeProvider == null) {
             throw new InvalidParameterValueException(
-                    "can't find storage provider: " + providerUuid);
+                    "can't find storage provider: " + providerName);
             }
         }
 
@@ -821,9 +832,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("tags", cmd.getTags());
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
-        params.put("providerId", storeProvider.getId());
+        params.put("providerName", storeProvider.getName());
 
-        DataStoreLifeCycle lifeCycle = storeProvider.getLifeCycle();
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
             store = lifeCycle.initialize(params);
@@ -948,9 +959,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.trace("Released lock for storage pool " + id);
 
         DataStoreProvider storeProvider = dataStoreProviderMgr
-                .getDataStoreProviderById(sPool.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = storeProvider.getLifeCycle();
-        lifeCycle.deleteDataStore(id);
+                .getDataStoreProvider(sPool.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                sPool.getId(), DataStoreRole.Primary);
+        lifeCycle.deleteDataStore(store);
 
         return false;
     }
@@ -963,8 +976,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(pool.getStorageProviderId());
-        HypervisorHostListener listener = hostListeners.get(provider.getUuid());
+                .getDataStoreProvider(pool.getStorageProviderName());
+        HypervisorHostListener listener = hostListeners.get(provider.getName());
         listener.hostConnect(hostId, pool.getId());
     }
 
@@ -986,8 +999,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
-            CapacityState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId())) == AllocationState.Disabled ?
+            AllocationState allocationState = null;
+            if (storagePool.getScope() == ScopeType.ZONE) {
+                DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
+                allocationState = dc.getAllocationState();
+            } else {
+                allocationState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId()));
+            }
+            CapacityState capacityState = (allocationState == AllocationState.Disabled) ?
                     CapacityState.Disabled : CapacityState.Enabled;
+            
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
@@ -1405,9 +1426,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        if (!primaryStorage.getStatus().equals(DataStoreStatus.Up)
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up)
                 && !primaryStorage.getStatus().equals(
-                        DataStoreStatus.ErrorInMaintenance)) {
+                        StoragePoolStatus.ErrorInMaintenance)) {
             throw new InvalidParameterValueException("Primary storage with id "
                     + primaryStorageId
                     + " is not ready for migration, as the status is:"
@@ -1415,17 +1436,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(primaryStorage.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
-        lifeCycle.maintain(primaryStorage.getId());
+                .getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                primaryStorage.getId(), DataStoreRole.Primary);
+        lifeCycle.maintain(store);
 
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
-    }
-
-    private void setPoolStateToError(StoragePoolVO primaryStorage) {
-        primaryStorage.setStatus(StoragePoolStatus.ErrorInMaintenance);
-        _storagePoolDao.update(primaryStorage.getId(), primaryStorage);
     }
 
     @Override
@@ -1447,9 +1465,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(msg);
         }
 
-        if (primaryStorage.getStatus().equals(DataStoreStatus.Up)
+        if (primaryStorage.getStatus().equals(StoragePoolStatus.Up)
                 || primaryStorage.getStatus().equals(
-                        DataStoreStatus.PrepareForMaintenance)) {
+                        StoragePoolStatus.PrepareForMaintenance)) {
             throw new StorageUnavailableException("Primary storage with id "
                     + primaryStorageId
                     + " is not ready to complete migration, as the status is:"
@@ -1457,29 +1475,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         DataStoreProvider provider = dataStoreProviderMgr
-                .getDataStoreProviderById(primaryStorage.getStorageProviderId());
-        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
-        lifeCycle.cancelMaintain(primaryStorage.getId());
+                .getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = dataStoreMgr.getDataStore(
+                primaryStorage.getId(), DataStoreRole.Primary);
+        lifeCycle.cancelMaintain(store);
+        
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    private boolean sendToVmResidesOn(StoragePoolVO PrimaryDataStoreVO,
-            Command cmd) {
-        ClusterVO cluster = _clusterDao.findById(PrimaryDataStoreVO
-                .getClusterId());
-        if ((cluster.getHypervisorType() == HypervisorType.KVM || cluster
-                .getHypervisorType() == HypervisorType.VMware)
-                && ((cmd instanceof ManageSnapshotCommand) || (cmd instanceof BackupSnapshotCommand))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    
-   
-    
     protected class StorageGarbageCollector implements Runnable {
 
         public StorageGarbageCollector() {
@@ -1521,11 +1526,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         // check if pool is in an inconsistent state
                         if (pool != null
                                 && (pool.getStatus().equals(
-                                        DataStoreStatus.ErrorInMaintenance)
+                                        StoragePoolStatus.ErrorInMaintenance)
                                         || pool.getStatus()
-                                                .equals(DataStoreStatus.PrepareForMaintenance) || pool
+                                                .equals(StoragePoolStatus.PrepareForMaintenance) || pool
                                         .getStatus()
-                                        .equals(DataStoreStatus.CancelMaintenance))) {
+                                        .equals(StoragePoolStatus.CancelMaintenance))) {
                             _storagePoolWorkDao.removePendingJobsOnMsRestart(
                                     vo.getMsid(), poolId);
                             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
@@ -1845,9 +1850,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
 
     @Override
-    public synchronized boolean registerHostListener(String providerUuid,
+    public synchronized boolean registerHostListener(String providerName,
             HypervisorHostListener listener) {
-        hostListeners.put(providerUuid, listener);
+        hostListeners.put(providerName, listener);
         return true;
     }
 

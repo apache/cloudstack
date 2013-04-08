@@ -116,6 +116,66 @@
                });
            },
 
+          detailView: {
+            name: 'label.details',
+              actions: {
+
+              // Remove LDAP
+              remove: {
+                label: 'Remove LDAP',
+                messages: {
+                  notification: function(args) {
+                    return 'LDAP Configuration Deleted';
+                  },
+                  confirm: function() {
+                    return 'Are you sure you want to delete the LDAP configuration?';
+                  }
+                },
+                action: function(args) {
+
+                  $.ajax({
+                       url:createURL("ldapRemove"),
+                       success:function(json){
+
+                  args.response.success();
+
+                       }
+
+                       });
+                    $(window).trigger('cloudStack.fullRefresh');
+
+                }
+              }
+          },
+
+           tabs:{
+
+               details: {
+                title: 'LDAP Configuration Details',
+                fields: [
+                  {
+                    hostname: { label: 'Hostname' },
+                    description: { label: 'label.description' },
+                    ssl : { label: 'SSL'}
+                  }
+                ],
+                dataProvider: function(args) {
+                                                                        $.ajax({
+                                                                                url: createURL("ldapConfig&listAll=true" ),
+                                                                                dataType: "json",
+                                                                                async: true,
+                                                                                success: function(json) {
+                                                                                        var item = json.ldapconfigresponse.ldapconfig;
+                                                                                        args.response.success({data: item});
+                                                                                }
+                                                                        });                                                                                                       
+                                                                }
+             
+                                                        }
+
+            }
+       }, 
+
           actions: {
                add:{
 

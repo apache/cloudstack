@@ -36,6 +36,10 @@ import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public enum Config {
 
 	// Alert
@@ -173,7 +177,8 @@ public enum Config {
 	RouterTemplateId("Advanced", NetworkManager.class, Long.class, "router.template.id", "1", "Default ID for template.", null),
     RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
-	StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm" , null),
+    ScaleRetry("Advanced", AgentManager.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
+    StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm" , null),
 	StorageCleanupInterval("Advanced", StorageManager.class, Integer.class, "storage.cleanup.interval", "86400", "The interval (in seconds) to wait before running the storage cleanup thread.", null),
 	StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
 	UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
@@ -272,6 +277,10 @@ public enum Config {
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
 
+    // Midonet
+    MidoNetAPIServerAddress("Network", ManagementServer.class, String.class, "midonet.apiserver.address", "http://localhost:8081", "Specify the address at which the Midonet API server can be contacted (if using Midonet)", null),
+    MidoNetProviderRouterId("Network", ManagementServer.class, String.class, "midonet.providerrouter.id", "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5", "Specifies the UUID of the Midonet provider router (if using Midonet)", null),
+
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
@@ -318,7 +327,8 @@ public enum Config {
 	DefaultMaxAccountVpcs("Account Defaults", ManagementServer.class, Long.class, "max.account.vpcs", "20", "The default maximum number of vpcs that can be created for an account", null),
 	DefaultMaxAccountCpus("Account Defaults", ManagementServer.class, Long.class, "max.account.cpus", "40", "The default maximum number of cpu cores that can be used for an account", null),
 	DefaultMaxAccountMemory("Account Defaults", ManagementServer.class, Long.class, "max.account.memory", "40960", "The default maximum memory (in MB) that can be used for an account", null),
-
+	DefaultMaxAccountPrimaryStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an account", null),
+	DefaultMaxAccountSecondaryStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.secondary.storage", "400", "The default maximum secondary storage space (in GiB) that can be used for an account", null),
 
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
@@ -344,6 +354,8 @@ public enum Config {
     DefaultMaxProjectVpcs("Project Defaults", ManagementServer.class, Long.class, "max.project.vpcs", "20", "The default maximum number of vpcs that can be created for a project", null),
     DefaultMaxProjectCpus("Project Defaults", ManagementServer.class, Long.class, "max.project.cpus", "40", "The default maximum number of cpu cores that can be used for a project", null),
     DefaultMaxProjectMemory("Project Defaults", ManagementServer.class, Long.class, "max.project.memory", "40960", "The default maximum memory (in MB) that can be used for a project", null),
+    DefaultMaxProjectPrimaryStorage("Project Defaults", ManagementServer.class, Long.class, "max.project.primary.storage", "200", "The default maximum primary storage space (in GiB) that can be used for an project", null),
+    DefaultMaxProjectSecondaryStorage("Project Defaults", ManagementServer.class, Long.class, "max.project.secondary.storage", "400", "The default maximum secondary storage space (in GiB) that can be used for an project", null),
 
     ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),
     ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null),
@@ -387,7 +399,9 @@ public enum Config {
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "600", "In second, timeout for create vm snapshot", null),
     VMSnapshotExpungeInterval("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.interval", "60", "The interval (in seconds) to wait before running the expunge thread.", null),
-    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null);
+    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null),
+
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null);
     
 	
 	private final String _category;

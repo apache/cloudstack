@@ -49,10 +49,10 @@ public class BigSwitchVnsApi {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsApi.class);
     private final static String _protocol = "http";
     private final static String _nsBaseUri = "/networkService/v1.1";
-    private final static String _controllerBaseUri = "/wm/core";
     private final static String CONTENT_TYPE = "Content-Type";
+    private final static String ACCEPT = "Accept";
     private final static String CONTENT_JSON = "application/json";
-    private final static String HTTP_HEADER_INSTANCE_ID = "HTTP_INSTANCE_ID";
+    private final static String HTTP_HEADER_INSTANCE_ID = "INSTANCE_ID";
     private final static String CLOUDSTACK_INSTANCE_ID = "org.apache.cloudstack";
     private final static MultiThreadedHttpConnectionManager s_httpClientManager =
                          new MultiThreadedHttpConnectionManager();
@@ -114,55 +114,56 @@ public class BigSwitchVnsApi {
         return;
     }
 
-    public void createNetwork(Network network)
+    public void createNetwork(NetworkData network)
                 throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + network.getTenant_id() + "/network";
-        executeCreateObject(network, new TypeToken<Network>(){}.getType(),
+        String uri = _nsBaseUri + "/tenants/" + network.getNetwork().getTenant_id() + "/networks";
+        executeCreateObject(network, new TypeToken<NetworkData>(){}.getType(),
                 uri, Collections.<String,String>emptyMap());
     }
 
     public void deleteNetwork(String tenantId, String networkId) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + tenantId + "/networks/" + networkId;
+        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId;
         executeDeleteObject(uri);
     }
 
-    public void createPort(String networkUuid, Port port)
+    public void createPort(String networkUuid, PortData port)
                 throws BigSwitchVnsApiException {
-	String uri = _nsBaseUri + "/tenant/" + port.getTenant_id() + "/networks/" + networkUuid + "/ports";
-        executeCreateObject(port, new TypeToken<Port>(){}.getType(),
+	String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkUuid + "/ports";
+        executeCreateObject(port, new TypeToken<PortData>(){}.getType(),
                 uri, Collections.<String,String>emptyMap());
     }
 
-    public void modifyPort(String networkId, Port port)
+    public void modifyPort(String networkId, PortData port)
                 throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + port.getTenant_id() + "/networks/" + networkId + "/ports";
+        String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkId + "/ports";
         executeUpdateObject(port, uri, Collections.<String,String>emptyMap());
     }
 
     public void deletePort(String tenantId, String networkId, String portId)
                 throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + tenantId + "/networks/" + networkId + "/ports/" + portId;
+        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId;
         executeDeleteObject(uri);
     }
 
     public void modifyPortAttachment(String tenantId,
             String networkId,
             String portId,
-            Attachment attachment) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
+            AttachmentData attachment) throws BigSwitchVnsApiException {
+        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
         executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
     }
 
     public void deletePortAttachment(String tenantId, String networkId, String portId)
                 throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenant/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
+        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
         executeDeleteObject(uri);
     }
 
     public ControlClusterStatus getControlClusterStatus() throws BigSwitchVnsApiException {
-        String uri = _controllerBaseUri + "/health/json";
+        String uri = _nsBaseUri + "/health";
         ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>(){}.getType(),
                                                          uri, 80, null);
+        ccs.setStatus(true);
 
         return ccs;
     }
@@ -177,6 +178,7 @@ public class BigSwitchVnsApi {
 
         PutMethod pm = (PutMethod) createMethod("put", uri, 80);
         pm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
+        pm.setRequestHeader(ACCEPT, CONTENT_JSON);
         pm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
         try {
             pm.setRequestEntity(new StringRequestEntity(
@@ -207,6 +209,7 @@ public class BigSwitchVnsApi {
 
         PostMethod pm = (PostMethod) createMethod("post", uri, 80);
         pm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
+        pm.setRequestHeader(ACCEPT, CONTENT_JSON);
         pm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
         try {
             pm.setRequestEntity(new StringRequestEntity(
@@ -235,6 +238,7 @@ public class BigSwitchVnsApi {
 
         DeleteMethod dm = (DeleteMethod) createMethod("delete", uri, 80);
         dm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
+        dm.setRequestHeader(ACCEPT, CONTENT_JSON);
         dm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
 
         executeMethod(dm);
@@ -257,6 +261,7 @@ public class BigSwitchVnsApi {
 
         GetMethod gm = (GetMethod) createMethod("get", uri, port);
         gm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
+        gm.setRequestHeader(ACCEPT, CONTENT_JSON);
         gm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
 
         if (parameters != null && !parameters.isEmpty()) {

@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.query.QueryService;
-import org.apache.cloudstack.region.RegionService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
@@ -53,6 +52,7 @@ import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
@@ -61,6 +61,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotService;
@@ -131,6 +132,8 @@ public abstract class BaseCmd {
     @Inject public UsageService _usageService;
     @Inject public NetworkUsageService _networkUsageService;
     @Inject public VMSnapshotService _vmSnapshotService;
+    @Inject public DataStoreProviderApiService dataStoreProviderApiService;
+    @Inject public VpcProvisioningService _vpcProvSvc;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

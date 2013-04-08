@@ -103,6 +103,14 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>resources</directory>
+        <includes>
+          <include>**/*.xml</include>
+        </includes>
+      </resource>
+    </resources>    
     <testResources>
       <testResource>
         <directory>test/resources</directory>
@@ -149,6 +157,9 @@
             <exclude>com/cloud/api/ListPerfTest.java</exclude>
             <exclude>com/cloud/network/vpn/RemoteAccessVpnTest.java</exclude>
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
+            <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
+            <!-- see CLOUDSTACK-1884 -->
+            <exclude>org/apache/cloudstack/networkoffering/CreateNetworkOfferingTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>

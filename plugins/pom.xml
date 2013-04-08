@@ -16,7 +16,8 @@
   KIND, either express or implied. See the License for the
   specific language governing permissions and limitations
   under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloudstack-plugins</artifactId>
   <name>Apache CloudStack Plugin POM</name>
@@ -49,6 +50,7 @@
     <module>network-elements/ovs</module>
     <module>network-elements/nicira-nvp</module>
     <module>network-elements/bigswitch-vns</module>
+    <module>network-elements/midonet</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -57,7 +59,9 @@
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
     <module>storage/volume/solidfire</module>
+    <module>storage/volume/default</module>
     <module>alert-handlers/snmp-alerts</module>
+    <module>alert-handlers/syslog-alerts</module>
   </modules>
 
   <dependencies>

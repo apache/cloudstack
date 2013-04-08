@@ -48,7 +48,7 @@ public class UcsBladeResponse extends BaseResponse {
     public void setId(String id) {
         this.id = id;
     }
-    
+
     public String getUcsManagerId() {
         return ucsManagerId;
     }
@@ -80,5 +80,5 @@ public class UcsBladeResponse extends BaseResponse {
     public void setAssociatedProfileDn(String associatedProfileDn) {
         this.associatedProfileDn = associatedProfileDn;
     }
-    
+
 }

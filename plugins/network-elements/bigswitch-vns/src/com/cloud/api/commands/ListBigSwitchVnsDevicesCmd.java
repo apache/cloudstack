@@ -52,13 +52,13 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID,
-		entityType = PhysicalNetworkResponse.class,
+            entityType = PhysicalNetworkResponse.class,
             description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=VnsConstants.BIGSWITCH_VNS_DEVICE_ID,
-               type=CommandType.LONG,
-               description="bigswitch vns device ID")
+    @Parameter(name=VnsConstants.BIGSWITCH_VNS_DEVICE_ID, type=CommandType.UUID,
+		entityType = BigSwitchVnsDeviceResponse.class,
+            description="bigswitch vns device ID")
     private Long bigswitchVnsDeviceId;
 
     /////////////////////////////////////////////////////

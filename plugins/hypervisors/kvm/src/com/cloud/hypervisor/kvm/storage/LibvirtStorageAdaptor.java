@@ -22,8 +22,14 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 import org.apache.log4j.Logger;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
@@ -43,7 +49,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.poolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.authType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -124,6 +129,23 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
+            // if error is that pool is mounted, try to handle it
+            if (e.toString().contains("already mounted")) {
+                s_logger.error("Attempting to unmount old mount libvirt is unaware of at "+targetPath);
+                String result = Script.runSimpleBashScript("umount " + targetPath );
+                if (result == null) {
+                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    try {
+                        sp = conn.storagePoolCreateXML(spd.toString(), 0);
+                        s_logger.error("Succeeded in redefining storage");
+                        return sp;
+                    } catch (LibvirtException l) {
+                        s_logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
+                    }
+                } else {
+                    s_logger.error("Failed in unmounting and redefining storage");
+                }
+            }
             if (sp != null) {
                 try {
                     if (sp.isPersistent() == 1) {
@@ -134,8 +156,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to define nfs storage pool with: "
-                            + l.toString());
+                    s_logger.debug("Failed to undefine nfs storage pool with: "
+                        + l.toString());
                 }
             }
             return null;
@@ -351,6 +373,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             pool.refresh();
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
+            pool.setAvailable(storage.getInfo().available);
 
             return pool;
         } catch (LibvirtException e) {
@@ -372,13 +395,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             disk.setSize(vol.getInfo().allocation);
             disk.setVirtualSize(vol.getInfo().capacity);
             if (voldef.getFormat() == null) {
-                disk.setFormat(pool.getDefaultFormat());
+                File diskDir = new File(disk.getPath());
+                if (diskDir.exists() && diskDir.isDirectory()) {
+                    disk.setFormat(PhysicalDiskFormat.DIR);
+                } else if (volumeUuid.endsWith("tar") || volumeUuid.endsWith(("TAR"))) {
+                    disk.setFormat(PhysicalDiskFormat.TAR);
+                } else {
+                    disk.setFormat(pool.getDefaultFormat());
+                }
             } else if (pool.getType() == StoragePoolType.RBD) {
-                disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.RAW);
+                disk.setFormat(PhysicalDiskFormat.RAW);
             } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
-                disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.QCOW2);
+                disk.setFormat(PhysicalDiskFormat.QCOW2);
             } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.RAW) {
-                disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.RAW);
+                disk.setFormat(PhysicalDiskFormat.RAW);
             }
             return disk;
         } catch (LibvirtException e) {
@@ -483,6 +513,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             pool.setCapacity(sp.getInfo().capacity);
             pool.setUsed(sp.getInfo().allocation);
+            pool.setAvailable(sp.getInfo().available);
   
             return pool;
         } catch (LibvirtException e) {
@@ -539,6 +570,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return true;
         } catch (LibvirtException e) {
+            // handle ebusy error when pool is quickly destroyed
+            if (e.toString().contains("exit status 16")) {
+                String targetPath = _mountPoint + File.separator + uuid;
+                s_logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble"
+                               + "unmounting the pool. Trying umount location " + targetPath
+                               + "again in a few seconds");
+                String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath );
+                if (result == null) {
+                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    return true;
+                }
+                s_logger.error("failed in umount retry");
+            }
             throw new CloudRuntimeException(e.toString());
         }
     }
@@ -558,6 +602,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
         } else if (format == PhysicalDiskFormat.RAW) {
             libvirtformat = LibvirtStorageVolumeDef.volFormat.RAW;
+        } else if (format == PhysicalDiskFormat.DIR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
+        } else if (format == PhysicalDiskFormat.TAR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
         }
 
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name,
@@ -604,51 +652,57 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             We then create a KVMPhysicalDisk object that we can return
         */
-
-        if (destPool.getType() != StoragePoolType.RBD) {
-            disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
-
-            if (format == PhysicalDiskFormat.QCOW2) {
-                Script.runSimpleBashScript("qemu-img create -f "
-                        + template.getFormat() + " -b  " + template.getPath() + " "
-                        + disk.getPath());
-            } else if (format == PhysicalDiskFormat.RAW) {
-                Script.runSimpleBashScript("qemu-img convert -f "
-                                        + template.getFormat() + " -O raw " + template.getPath()
-                                        + " " + disk.getPath());
-            }
-        } else {
-            disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
-            disk.setFormat(format);
-            disk.setSize(template.getVirtualSize());
-            disk.setVirtualSize(disk.getSize());
-
-            if (srcPool.getType() != StoragePoolType.RBD) {
-                Script.runSimpleBashScript("qemu-img convert"
-                        + " -f " + template.getFormat()
-                        + " -O " + format
-                        + " " + template.getPath()
-                        + " " + KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                                                destPool.getSourcePort(),
-                                                destPool.getAuthUserName(),
-                                                destPool.getAuthSecret(),
-                                                disk.getPath()));
+        try {
+            if (destPool.getType() != StoragePoolType.RBD) {
+                disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
+                if (template.getFormat() == PhysicalDiskFormat.TAR) {
+                    Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath());
+                } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
+                    Script.runSimpleBashScript("mkdir -p " + disk.getPath());
+                    Script.runSimpleBashScript("chmod 755 " + disk.getPath());
+                    Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath());
+                } else if (format == PhysicalDiskFormat.QCOW2) {
+                    QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
+                    QemuImgFile destFile = new QemuImgFile(disk.getPath());
+                    QemuImg qemu = new QemuImg();
+                    qemu.create(destFile, backingFile);
+                } else if (format == PhysicalDiskFormat.RAW) {
+                    QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
+                    QemuImgFile destFile = new QemuImgFile(disk.getPath(), PhysicalDiskFormat.RAW);
+                    QemuImg qemu = new QemuImg();
+                    qemu.convert(sourceFile, destFile);
+                }
             } else {
-                template.setFormat(PhysicalDiskFormat.RAW);
-                Script.runSimpleBashScript("qemu-img convert"
-                        + " -f " + template.getFormat()
-                        + " -O " + format
-                        + " " + KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
-                                                srcPool.getSourcePort(),
-                                                srcPool.getAuthUserName(),
-                                                srcPool.getAuthSecret(),
-                                                template.getPath())
-                        + " " + KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                                                destPool.getSourcePort(),
-                                                destPool.getAuthUserName(),
-                                                destPool.getAuthSecret(),
-                                                disk.getPath()));
+                disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
+                disk.setFormat(format);
+                disk.setSize(template.getVirtualSize());
+                disk.setVirtualSize(disk.getSize());
+
+                QemuImg qemu = new QemuImg();
+                QemuImgFile srcFile;
+                QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
+                        destPool.getSourcePort(),
+                        destPool.getAuthUserName(),
+                        destPool.getAuthSecret(),
+                        disk.getPath()));
+                destFile.setFormat(format);
+
+                if (srcPool.getType() != StoragePoolType.RBD) {
+                    srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+                } else {
+                    template.setFormat(PhysicalDiskFormat.RAW);
+                    srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
+                            srcPool.getSourcePort(),
+                            srcPool.getAuthUserName(),
+                            srcPool.getAuthSecret(),
+                            template.getPath()));
+                    srcFile.setFormat(template.getFormat());
+                }
+                qemu.convert(srcFile, destFile);
             }
+        } catch (QemuImgException e) {
+            s_logger.error("Failed to create " + disk.getPath() +
+                    " due to a failed executing of qemu-img: " + e.getMessage());
         }
         return disk;
     }
@@ -692,7 +746,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         KVMPhysicalDisk newDisk;
         if (destPool.getType() != StoragePoolType.RBD) {
-            newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
+            if (disk.getFormat() == PhysicalDiskFormat.TAR) {
+                newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, disk.getVirtualSize());
+            } else {
+                newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
+            }
         } else {
             newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
             newDisk.setFormat(PhysicalDiskFormat.RAW);
@@ -706,40 +764,64 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         PhysicalDiskFormat sourceFormat = disk.getFormat();
         PhysicalDiskFormat destFormat = newDisk.getFormat();
 
-        if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
-            if (sourceFormat.equals(destFormat) && 
-                Script.runSimpleBashScript("qemu-img info " + sourcePath + "|grep backing") == null) {
-                Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
+        QemuImg qemu = new QemuImg();
+        QemuImgFile srcFile = null;
+        QemuImgFile destFile = null;
 
+        if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
+            if (sourceFormat == PhysicalDiskFormat.TAR) {
+                Script.runSimpleBashScript("tar -x -f " + sourcePath + " -C " + destPath);
+            } else if (sourceFormat == PhysicalDiskFormat.DIR) {
+                Script.runSimpleBashScript("mkdir -p " + destPath);
+                Script.runSimpleBashScript("chmod 755 " + destPath);
+                Script.runSimpleBashScript("cp -p -r " + sourcePath + "/* " + destPath);
             } else {
-                Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
-                    + " -O " + destFormat
-                    + " " + sourcePath
-                    + " " + destPath);
+                srcFile = new QemuImgFile(sourcePath, sourceFormat);
+                try {
+                    Map<String, String> info = qemu.info(srcFile);
+                    String backingFile = info.get(new String("backing_file"));
+                    if (sourceFormat.equals(destFormat) && backingFile == null) {
+                        Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
+                    } else {
+                        destFile = new QemuImgFile(destPath, destFormat);
+                    }
+                } catch (QemuImgException e) {
+                    s_logger.error("Failed to fetch the information of file "
+                            + srcFile.getFileName() + " the error was: " + e.getMessage());
+                }
             }
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD))  {
-            Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
-                    + " -O " + destFormat
-                    + " " + sourcePath
-                    + " " + KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                                                destPool.getSourcePort(),
-                                                destPool.getAuthUserName(),
-                                                destPool.getAuthSecret(),
-                                                destPath));
+            srcFile = new QemuImgFile(sourcePath, sourceFormat);
+            destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
+                    destPool.getSourcePort(),
+                    destPool.getAuthUserName(),
+                    destPool.getAuthSecret(),
+                    destPath));
+            destFile.setFormat(destFormat);
         } else {
-            Script.runSimpleBashScript("qemu-img convert -f " + sourceFormat
-                    + " -O " + destFormat
-                    + " " + KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
-                                                srcPool.getSourcePort(),
-                                                srcPool.getAuthUserName(),
-                                                srcPool.getAuthSecret(),
-                                                sourcePath)
-                    + " " + KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                                                destPool.getSourcePort(),
-                                                destPool.getAuthUserName(),
-                                                destPool.getAuthSecret(),
-                                                destPath));
+            srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
+                    srcPool.getSourcePort(),
+                    srcPool.getAuthUserName(),
+                    srcPool.getAuthSecret(),
+                    sourcePath));
+            srcFile.setFormat(sourceFormat);
+            destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
+                    destPool.getSourcePort(),
+                    destPool.getAuthUserName(),
+                    destPool.getAuthSecret(),
+                    destPath));
+            destFile.setFormat(destFormat);
         }
+
+        if (srcFile != null && destFile != null) {
+            try {
+                qemu.convert(srcFile, destFile);
+            } catch (QemuImgException e) {
+                s_logger.error("Failed to convert " + srcFile.getFileName() + " to "
+                        + destFile.getFileName() + " the error was: " + e.getMessage());
+            }
+        }
+
 
         return newDisk;
     }
@@ -764,17 +846,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deleteStoragePool(KVMStoragePool pool) {
-        LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
-        StoragePool virtPool = libvirtPool.getPool();
-        try {
-            virtPool.destroy();
-            virtPool.undefine();
-            virtPool.free();
-        } catch (LibvirtException e) {
-            return false;
-        }
-
-        return true;
+        return deleteStoragePool(pool.getUuid());
     }
 
     public boolean deleteVbdByPath(String diskPath) {

@@ -20,7 +20,7 @@ public interface Resource {
 
     public static final short RESOURCE_UNLIMITED = -1;
 
-    public enum ResourceType {
+    public enum ResourceType { // Primary and Secondary storage are allocated_storage and not the physical storage.
         user_vm("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         public_ip("public_ip", 1, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         volume("volume", 2, ResourceOwnerType.Account, ResourceOwnerType.Domain),
@@ -30,11 +30,14 @@ public interface Resource {
         network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         vpc("vpc", 7, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         cpu("cpu", 8, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        memory("memory", 9, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+        memory("memory", 9, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        primary_storage("primary_storage", 10, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        secondary_storage("secondary_storage", 11, ResourceOwnerType.Account, ResourceOwnerType.Domain);
 
         private String name;
         private ResourceOwnerType[] supportedOwners;
         private int ordinal;
+        public static final long bytesToGiB = 1024 * 1024 * 1024;
 
         ResourceType(String name, int ordinal, ResourceOwnerType... supportedOwners) {
             this.name = name;

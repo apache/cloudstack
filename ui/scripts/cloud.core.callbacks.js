@@ -73,6 +73,24 @@ $(document).ready(function() {
 			}
 		});
 	}
+	else if(window.name != null && window.name.indexOf("&domain=") != -1) {	//from region switching	  
+	  g_loginCmdText = window.name;		
+		$.ajax({
+			url: clientApiUrl + "?command=login" + window.name + "&response=json",
+			dataType: "json",
+			async: false,
+			success: function(json) {
+				g_loginResponse = json.loginresponse;				
+			},
+			error: function() {
+				onLogoutCallback();
+				// This means the login failed.  You should redirect to your login page.
+			},
+			beforeSend: function(XMLHttpRequest) {
+				return true;
+			}
+		});
+	}
 });
 
 

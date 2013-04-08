@@ -38,18 +38,18 @@ import com.cloud.utils.db.Transaction;
 public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> implements VMComputeTagDao {
 
     protected SearchBuilder<VMComputeTagVO> VmIdSearch;
-    
+
     public VMComputeTagDaoImpl() {
     }
-    
+
     @PostConstruct
     public void init() {
         VmIdSearch = createSearchBuilder();
         VmIdSearch.and("vmId", VmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         VmIdSearch.done();
-        
+
     }
-    
+
     @Override
     public void persist(long vmId, List<String> computeTags) {
         Transaction txn = Transaction.currentTxn();
@@ -58,7 +58,7 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
         SearchCriteria<VMComputeTagVO> sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
         expunge(sc);
-        
+
         for (String tag : computeTags) {
             if(tag != null){
                 tag = tag.trim();
@@ -73,10 +73,10 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
 
     @Override
     public List<String> getComputeTags(long vmId) {
-        
+
         SearchCriteria<VMComputeTagVO> sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
-        
+
         List<VMComputeTagVO> results = search(sc, null);
         List<String> computeTags = new ArrayList<String>(results.size());
         for (VMComputeTagVO result : results) {
@@ -85,5 +85,5 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
 
         return computeTags;
     }
-    
+
 }

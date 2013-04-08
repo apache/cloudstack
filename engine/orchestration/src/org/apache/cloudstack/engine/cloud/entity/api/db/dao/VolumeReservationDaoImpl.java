@@ -38,21 +38,21 @@ public class VolumeReservationDaoImpl extends GenericDaoBase<VolumeReservationVO
 
     protected SearchBuilder<VolumeReservationVO> VmIdSearch;
     protected SearchBuilder<VolumeReservationVO> VmReservationIdSearch;
-    
+
     public VolumeReservationDaoImpl() {
     }
-    
+
     @PostConstruct
     public void init() {
         VmIdSearch = createSearchBuilder();
         VmIdSearch.and("vmId", VmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         VmIdSearch.done();
-        
+
         VmReservationIdSearch = createSearchBuilder();
         VmReservationIdSearch.and("vmReservationId", VmReservationIdSearch.entity().geVmReservationId(), SearchCriteria.Op.EQ);
         VmReservationIdSearch.done();
     }
-    
+
     @Override
     public VolumeReservationVO findByVmId(long vmId) {
         SearchCriteria<VolumeReservationVO> sc = VmIdSearch.create("vmId", vmId);
@@ -64,5 +64,5 @@ public class VolumeReservationDaoImpl extends GenericDaoBase<VolumeReservationVO
         SearchCriteria<VolumeReservationVO> sc = VmReservationIdSearch.create("vmReservationId", vmReservationId);
         return listBy(sc);
     }
-    
+
 }

@@ -44,7 +44,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -52,9 +59,15 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.*;
+import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -67,14 +80,28 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.*;
+import com.cloud.exception.AccountLimitException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress.State;
-import com.cloud.network.Network.*;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Event;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -84,7 +111,6 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -104,13 +130,16 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.VpcManager;
@@ -123,7 +152,12 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
-import com.cloud.user.*;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
@@ -133,18 +167,21 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.*;
 import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
@@ -152,6 +189,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
@@ -205,16 +243,41 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject 
     List<NetworkGuru> _networkGurus;
+    public List<NetworkGuru> getNetworkGurus() {
+		return _networkGurus;
+	}
+	public void setNetworkGurus(List<NetworkGuru> _networkGurus) {
+		this._networkGurus = _networkGurus;
+	}
 
-    @Inject  protected List<NetworkElement> _networkElements;
+	List<NetworkElement> _networkElements;
+    public List<NetworkElement> getNetworkElements() {
+		return _networkElements;
+	}
+	public void setNetworkElements(List<NetworkElement> _networkElements) {
+		this._networkElements = _networkElements;
+	}
 
-    @Inject NetworkDomainDao _networkDomainDao;
-    @Inject List<IpDeployer> _ipDeployers;
-    @Inject List<DhcpServiceProvider> _dhcpProviders;
- 
-    @Inject
+	@Inject NetworkDomainDao _networkDomainDao;
+
+	List<IpDeployer> _ipDeployers;
+    public List<IpDeployer> getIpDeployers() {
+		return _ipDeployers;
+	}
+	public void setIpDeployers(List<IpDeployer> _ipDeployers) {
+		this._ipDeployers = _ipDeployers;
+	}
+
+	List<DhcpServiceProvider> _dhcpProviders;
+    public List<DhcpServiceProvider> getDhcpProviders() {
+		return _dhcpProviders;
+	}
+	public void setDhcpProviders(List<DhcpServiceProvider> _dhcpProviders) {
+		this._dhcpProviders = _dhcpProviders;
+	}
+
+	@Inject
     VMInstanceDao _vmDao;
     @Inject
     FirewallManager _firewallMgr;
@@ -548,10 +611,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
                 IpDeployer deployer = null;
                 NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
-                if (!(ComponentContext.getTargetObject(element) instanceof IpDeployingRequester)) {
+                if (!(element instanceof IpDeployingRequester)) {
                     throw new CloudRuntimeException("Element " + element + " is not a IpDeployingRequester!");
                 }
-                deployer = ((IpDeployingRequester)ComponentContext.getTargetObject(element)).getIpDeployer(network);
+                deployer = ((IpDeployingRequester)element).getIpDeployer(network);
                 if (deployer == null) {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -1465,7 +1528,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // associate a source NAT IP (if one isn't already associated with the network)
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (network.getGuestType() == Network.GuestType.Isolated
                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
                && !sharedSourceNat) {
@@ -1531,13 +1593,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof DhcpServiceProvider)) {
+                    element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
-                    (ComponentContext.getTargetObject(element) instanceof UserDataServiceProvider)) {
+                    element instanceof UserDataServiceProvider) {
                 UserDataServiceProvider sp = (UserDataServiceProvider) element;
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
@@ -1761,6 +1823,26 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
         NicProfile profile = new NicProfile(nic, network, null, null, null,
                 _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        /*
+         * We need to release the nics with a Create ReservationStrategy here
+         * because the nic is now being removed.
+         */
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                }
+                try {
+                    element.release(network, profile, vm, null);
+                } catch (ConcurrentOperationException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                } catch (ResourceUnavailableException ex) {
+                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                }
+            }
+        }
+
         NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
@@ -1995,28 +2077,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (cidr != null && gateway != null) {
             userNetwork.setCidr(cidr);
             userNetwork.setGateway(gateway);
-            if (vlanId != null) {
-                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
-                userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                } else {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                }
-            }
         }
         
         if (ip6Cidr != null && ip6Gateway != null) {
             userNetwork.setIp6Cidr(ip6Cidr);
             userNetwork.setIp6Gateway(ip6Gateway);
-            if (vlanId != null) {
-                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+        }
+        
+        if (vlanId != null) {
+            userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+            userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+            if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                 userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                } else {
-                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                }
+            } else {
+                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
             }
         }
         
@@ -3091,27 +3165,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
-        // remove all LB rules for the network
-        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
-        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-        for (LoadBalancerVO lb : lbs) {
-            s_logger.trace("Marking lb rule " + lb + " with Revoke state");
-            lb.setState(FirewallRule.State.Revoke);
-            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-            List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-            List<LbHealthCheckPolicy> hcPolicyList =  _lbMgr.getHealthCheckPolicies (lb.getId());
-            // mark all destination with revoke state
-            for (LbDestination dst : dstList) {
-                s_logger.trace("Marking lb destination " + dst + " with Revoke state");
-                dst.setRevoked(true);
-            }
-
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
-            lbRules.add(loadBalancing);
-        }
-
         try {
-            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbRules)) {
+            if (!_lbMgr.revokeLoadBalancersForNetwork(networkId)) {
                 s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -3428,14 +3483,36 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return success;
     }
 
+    @Override
+    @DB
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network,
     							 String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
+        //This method allocates direct ip for the Shared network in Advance zones
     	boolean ipv4 = false, ipv6 = false;
+    	
+    	Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
     	if (network.getGateway() != null) {
     		if (nic.getIp4Address() == null) {
     			ipv4 = true;
-    			PublicIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIpv4, false);
+    			PublicIp ip = null;
+    			
+    			//Get ip address from the placeholder and don't allocate a new one
+    			if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
+    			    Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
+    			    if (placeholderNic != null) {
+    			        IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
+                        ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                        s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network);
+                    }
+    			}
+    			
+    			if (ip == null) {
+                    ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIpv4, false);
+    			}
+    						
     			nic.setIp4Address(ip.getAddress().toString());
     			nic.setGateway(ip.getGateway());
     			nic.setNetmask(ip.getNetmask());
@@ -3450,6 +3527,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     		nic.setDns2(dc.getDns2());
     	}
     	
+    	//FIXME - get ipv6 address from the placeholder if it's stored there
     	if (network.getIp6Gateway() != null) {
     		if (nic.getIp6Address() == null) {
     			ipv6 = true;
@@ -3472,7 +3550,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     		nic.setIp6Dns1(dc.getIp6Dns1());
     		nic.setIp6Dns2(dc.getIp6Dns2());
     	}
-
+    	
+    	txn.commit();
     }
 
 	@Override
@@ -3619,15 +3698,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
-        assert ComponentContext.getTargetObject(element) instanceof StaticNatServiceProvider;
-        return (StaticNatServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof StaticNatServiceProvider;
+        return (StaticNatServiceProvider)element;
     }
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
         NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
-        assert ComponentContext.getTargetObject(element) instanceof LoadBalancingServiceProvider; 
-        return ( LoadBalancingServiceProvider)ComponentContext.getTargetObject(element);
+        assert element instanceof LoadBalancingServiceProvider; 
+        return (LoadBalancingServiceProvider)element;
     }
     @Override
     public boolean isNetworkInlineMode(Network network) {
@@ -3676,5 +3755,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             Ip ipAddr = ip.getAddress();
             return ipAddr.addr();
         }
-
+        
+        @Override
+        public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
+            NicVO nic = new NicVO(null, null, network.getId(), null); 
+            nic.setIp4Address(ip4Address);
+            nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
+            nic.setState(Nic.State.Reserved);
+            nic.setVmType(vmType);
+            return _nicDao.persist(nic);
+        }
+        
  }

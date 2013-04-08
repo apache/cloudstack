@@ -38,7 +38,6 @@ import com.cloud.storage.Volume.State;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -62,8 +61,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
+    protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
+    protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     @Inject ResourceTagDao _tagsDao;
-    
+
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 
@@ -298,8 +299,22 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount = createSearchBuilder(Long.class);
         CountByAccount.select(null, Func.COUNT, null);
         CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);        
+        CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
         CountByAccount.done();
+
+        primaryStorageSearch = createSearchBuilder(SumCount.class);
+        primaryStorageSearch.select("sum", Func.SUM, primaryStorageSearch.entity().getSize());
+        primaryStorageSearch.and("accountId", primaryStorageSearch.entity().getAccountId(), Op.EQ);
+        primaryStorageSearch.and("path", primaryStorageSearch.entity().getPath(), Op.NNULL);
+        primaryStorageSearch.and("isRemoved", primaryStorageSearch.entity().getRemoved(), Op.NULL);
+        primaryStorageSearch.done();
+
+        secondaryStorageSearch = createSearchBuilder(SumCount.class);
+        secondaryStorageSearch.select("sum", Func.SUM, secondaryStorageSearch.entity().getSize());
+        secondaryStorageSearch.and("accountId", secondaryStorageSearch.entity().getAccountId(), Op.EQ);
+        secondaryStorageSearch.and("path", secondaryStorageSearch.entity().getPath(), Op.NULL);
+        secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
+        secondaryStorageSearch.done();
 	}
 
 	@Override @DB(txn=false)
@@ -316,8 +331,33 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	  	SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
 		sc.setParameters("state", Volume.State.Destroy);
-        return customSearch(sc, null).get(0);		
+        return customSearch(sc, null).get(0);
 	}
+
+    @Override
+    public long primaryStorageUsedForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = primaryStorageSearch.create();
+        sc.setParameters("accountId", accountId);
+        List<SumCount> storageSpace = customSearch(sc, null);
+        if (storageSpace != null) {
+            return storageSpace.get(0).sum;
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public long secondaryStorageUsedForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = secondaryStorageSearch.create();
+        sc.setParameters("accountId", accountId);
+        List<SumCount> storageSpace = customSearch(sc, null);
+        if (storageSpace != null) {
+            return storageSpace.get(0).sum;
+        } else {
+            return 0;
+        }
+    }
+
 
 	public static class SumCount {
 	    public long sum;

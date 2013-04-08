@@ -56,9 +56,9 @@
         documented. This API enables the creation of command line tools and
         new user interfaces to suit particular needs. See the Developer’s 
         Guide and API Reference, both available at 
-        <ulink url="http://incubator.apache.org/cloudstack/docs">Apache CloudStack Guides</ulink> 
+        <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Apache CloudStack Guides</ulink> 
         and
-        <ulink url="http://incubator.apache.org/cloudstack/docs/api">Apache CloudStack API Reference</ulink> 
+        <ulink url="http://cloudstack.apache.org/docs/api/index.html">Apache CloudStack API Reference</ulink> 
         respectively. 
 	</para>
 	<para>

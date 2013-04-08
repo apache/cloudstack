@@ -65,7 +65,7 @@ public class PodRestService {
 
     @PUT @Path("/pod/create")
     public PodEntity create(
-            @QueryParam("xid") String xid, 
+            @QueryParam("xid") String xid,
             @QueryParam("display-name") String displayName) {
         return null;
     }

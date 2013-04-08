@@ -16,33 +16,25 @@
 // under the License.
 package com.cloud.api.response;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.*;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseObject;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.uuididentity.dao.IdentityDao;
-import com.cloud.uuididentity.dao.IdentityDaoImpl;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.*;
+import org.apache.log4j.Logger;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());

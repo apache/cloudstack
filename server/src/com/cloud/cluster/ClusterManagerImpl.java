@@ -365,11 +365,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
 
         try {
             // schedule a scan task immediately
-            if (ComponentContext.getTargetObject(_agentMgr) instanceof ClusteredAgentManagerImpl) {
+            if (_agentMgr instanceof ClusteredAgentManagerImpl) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Received notification as part of addHost command to start a host scan task");
                 }
-                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)ComponentContext.getTargetObject(_agentMgr);
+                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)_agentMgr;
                 clusteredAgentMgr.scheduleHostScanTask();
             }
         } catch (Exception e) {

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.resourcelimit;
 
-import javax.inject.Inject;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -72,11 +70,23 @@ public class ResourceLimitManagerImplTest  extends TestCase{
         // update resource Limit for a domain for resource_type = 8 (CPU)
         resourceLimitServiceCall(null, (long) 1, 8, (long) 40);
 
-        // update resource Limit for an account for resource_type = 9 (Memory)
+        // update resource Limit for an account for resource_type = 9 (Memory (in MiB))
         resourceLimitServiceCall((long) 1, (long) 1, 9, (long) 4096);
 
-        // update resource Limit for a domain for resource_type = 9 (Memory)
+        // update resource Limit for a domain for resource_type = 9 (Memory (in MiB))
         resourceLimitServiceCall(null, (long) 1, 9, (long) 10240);
+
+        // update resource Limit for an account for resource_type = 10 (Primary storage (in GiB))
+        resourceLimitServiceCall((long) 1, (long) 1, 10, (long) 200);
+
+        // update resource Limit for a domain for resource_type = 10 (Primary storage (in GiB))
+        resourceLimitServiceCall(null, (long) 1, 10, (long) 200);
+
+        // update resource Limit for an account for resource_type = 11 (Secondary storage (in GiB))
+        resourceLimitServiceCall((long) 1, (long) 1, 10, (long) 400);
+
+        // update resource Limit for a domain for resource_type = 11 (Secondary storage (in GiB))
+        resourceLimitServiceCall(null, (long) 1, 10, (long) 400);
     }
 
     private void resourceLimitServiceCall(Long accountId, Long domainId, Integer resourceType, Long max) {

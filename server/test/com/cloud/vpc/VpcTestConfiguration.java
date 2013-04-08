@@ -151,31 +151,31 @@ import com.cloud.user.dao.UserStatisticsDaoImpl;
         useDefaultFilters=false
         )
 public class VpcTestConfiguration {
-    
-    
+
+
 
     @Bean
     public RulesManager rulesManager() {
         return Mockito.mock(RulesManager.class);
     }
 
-    
+
     @Bean
     public StorageNetworkManager storageNetworkManager() {
         return Mockito.mock(StorageNetworkManager.class);
     }
-    
+
     @Bean
     public LoadBalancingRulesManager loadBalancingRulesManager() {
         return Mockito.mock(LoadBalancingRulesManager.class);
     }
 
-    
+
     @Bean
     public AlertManager alertManager() {
         return Mockito.mock(AlertManager.class);
     }
-    
+
 
 
     @Bean
@@ -199,17 +199,17 @@ public class VpcTestConfiguration {
         return Mockito.mock(Site2SiteVpnManager.class);
     }
 
-    
+
     @Bean
     public UsageEventDao usageEventDao() {
         return Mockito.mock(UsageEventDao.class);
     }
-    
+
     @Bean
     public RemoteAccessVpnService remoteAccessVpnService() {
         return Mockito.mock(RemoteAccessVpnService.class);
     }
-    
+
     @Bean
     public VpcDao vpcDao() {
         return Mockito.mock(VpcDao.class);
@@ -219,7 +219,7 @@ public class VpcTestConfiguration {
     public NetworkDao networkDao() {
         return Mockito.mock(NetworkDao.class);
     }
-    
+
     public static class VpcLibrary implements TypeFilter {
         @Override
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {

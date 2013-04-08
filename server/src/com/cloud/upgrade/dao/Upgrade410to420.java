@@ -17,9 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,6 +25,9 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -60,7 +60,15 @@ public class Upgrade410to420 implements DbUpgrade {
 	@Override
 	public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
-        PreparedStatement sql = null;
+        createPlaceHolderNics(conn);
+        updateRemoteAccessVpn(conn);
+        updateSystemVmTemplates(conn);
+        updateCluster_details(conn);
+        updatePrimaryStore(conn);
+    }
+	
+	private void updateSystemVmTemplates(Connection conn) {
+	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
             sql.executeUpdate();
@@ -74,7 +82,75 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
+	}
+	
+	private void updatePrimaryStore(Connection conn) {
+	    PreparedStatement sql = null;
+	    PreparedStatement sql2 = null;
+        try {
+            sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
+            sql.setString(1, "ancient primary data store provider");
+            sql.setString(2, "HOST");
+            sql.executeUpdate();
+            
+            sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
+            sql2.setString(1, "ancient primary data store provider");
+            sql2.setString(2, "CLUSTER");
+            sql2.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+                }
+            }
+            
+            if (sql2 != null) {
+                try {
+                    sql2.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+	}
+
+    //update the cluster_details table with default overcommit ratios.
+    private void updateCluster_details(Connection conn) {
+        PreparedStatement pstmt = null;
+        PreparedStatement pstmt1 = null;
+        PreparedStatement pstmt2 =null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`cluster`");
+            pstmt1=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', '1')");
+            pstmt2=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', '1')");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                //update cluster_details table with the default overcommit ratios.
+                pstmt1.setLong(1,id);
+                pstmt1.execute();
+                pstmt2.setLong(1,id);
+                pstmt2.execute();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update cluster_details with default overcommit ratios.", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
     }
+
 
 	@Override
 	public File[] getCleanupScripts() {
@@ -150,6 +226,77 @@ public class Upgrade410to420 implements DbUpgrade {
             try {
                 if (rsParams != null) {
                     rsParams.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    private void createPlaceHolderNics(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                    Long networkId = rs.getLong(1);
+                    String gateway = rs.getString(2);
+                    String ip = rs.getString(3);
+                    String uuid = UUID.randomUUID().toString();
+                    //Insert placeholder nic for each Domain router nic in Shared network
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
+                    pstmt.setString(1, uuid);
+                    pstmt.setString(2, ip);
+                    pstmt.setString(3, gateway);
+                    pstmt.setLong(4, networkId);
+                    pstmt.executeUpdate();
+                    s_logger.debug("Created placeholder nic for the ipAddress " + ip);
+                
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create placeholder nics", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void updateRemoteAccessVpn(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT vpn_server_addr_id FROM `cloud`.`remote_access_vpn`");
+            rs = pstmt.executeQuery();
+            long id=1;
+            while (rs.next()) {
+                    String uuid = UUID.randomUUID().toString();
+                    Long ipId = rs.getLong(1);
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
+                    pstmt.setString(1, uuid);
+                    pstmt.setLong(2, id);
+                    pstmt.setLong(3, ipId);
+                    pstmt.executeUpdate();
+                    id++;
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
                 }
                 if (pstmt != null) {
                     pstmt.close();

@@ -98,10 +98,10 @@ public class BigSwitchApiTest {
     @Test
     public void testExecuteCreateObject() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         _method = mock(PostMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        _api.executeCreateObject(network, Network.class, "/", Collections.<String, String> emptyMap());
+        _api.executeCreateObject(network, NetworkData.class, "/", Collections.<String, String> emptyMap());
         verify(_method, times(1)).releaseConnection();
 
     }
@@ -109,7 +109,7 @@ public class BigSwitchApiTest {
     @Test (expected=BigSwitchVnsApiException.class)
     public void testExecuteCreateObjectFailure() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         _method = mock(PostMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
@@ -118,7 +118,7 @@ public class BigSwitchApiTest {
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         when(_method.isRequestSent()).thenReturn(true);
         try {
-            _api.executeCreateObject(network, Network.class, "/", Collections.<String, String> emptyMap());
+            _api.executeCreateObject(network, NetworkData.class, "/", Collections.<String, String> emptyMap());
         } finally {
             verify(_method, times(1)).releaseConnection();
         }
@@ -127,7 +127,7 @@ public class BigSwitchApiTest {
     @Test (expected=BigSwitchVnsApiException.class)
     public void testExecuteCreateObjectException() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         when(_client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
         _method = mock(PostMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -136,7 +136,7 @@ public class BigSwitchApiTest {
         when(_method.getResponseHeader("Content-Type")).thenReturn(header);
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         try {
-            _api.executeCreateObject(network, Network.class, "/", Collections.<String, String> emptyMap());
+            _api.executeCreateObject(network, NetworkData.class, "/", Collections.<String, String> emptyMap());
         } finally {
             verify(_method, times(1)).releaseConnection();
         }
@@ -145,7 +145,7 @@ public class BigSwitchApiTest {
     @Test
     public void testExecuteUpdateObject() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         _method = mock(PutMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         _api.executeUpdateObject(network, "/", Collections.<String, String> emptyMap());
@@ -156,7 +156,7 @@ public class BigSwitchApiTest {
     @Test (expected=BigSwitchVnsApiException.class)
     public void testExecuteUpdateObjectFailure() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         _method = mock(PutMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
@@ -174,7 +174,7 @@ public class BigSwitchApiTest {
     @Test (expected=BigSwitchVnsApiException.class)
     public void testExecuteUpdateObjectException() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
-        Network network = new Network();
+        NetworkData network = new NetworkData();
         _method = mock(PutMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         when(_client.executeMethod((HttpMethod) any())).thenThrow(new IOException());

@@ -47,15 +47,11 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vpc.dao.MockVpcDaoImpl;
 
 @Component
@@ -63,19 +59,6 @@ import com.cloud.vpc.dao.MockVpcDaoImpl;
 public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     @Inject MockVpcDaoImpl _vpcDao;
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#getVpcOffering(long)
-     */
-    @Override
-    public VpcOffering getVpcOffering(long vpcOfferingId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders) {
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcService#getVpc(long)
@@ -100,42 +83,6 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
      */
     @Override
     public List<? extends Network> getVpcNetworks(long vpcId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#getVpcOffSvcProvidersMap(long)
-     */
-    @Override
-    public Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#listVpcOfferings(java.lang.Long, java.lang.String, java.lang.String, java.util.List, java.lang.Boolean, java.lang.String, java.lang.String, java.lang.Long, java.lang.Long)
-     */
-    @Override
-    public List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword, String state, Long startIndex, Long pageSizeVal) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#deleteVpcOffering(long)
-     */
-    @Override
-    public boolean deleteVpcOffering(long offId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#updateVpcOffering(long, java.lang.String, java.lang.String, java.lang.String)
-     */
-    @Override
-    public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -314,19 +261,6 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#updateVpcGuestNetwork(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.user.User, java.lang.String, java.lang.Long, java.lang.Boolean)
-     */
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#validateNtkwOffForVpc(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.network.vpc.Vpc, java.lang.Long, java.lang.String)
-     */
-    @Override
-    public void validateNtkwOffForVpc(long ntwkOffId, String cidr, String networkDomain, Account networkOwner, Vpc vpc, Long networkId, String gateway) {
-        // TODO Auto-generated method stub
-
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcManager#getVpcsForAccount(long)
      */
     @Override
@@ -344,34 +278,13 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#getVpcRouters(long)
-     */
-    @Override
-    public List<DomainRouterVO> getVpcRouters(long vpcId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
-    @Override
-    public boolean vpcProviderEnabledInZone(long zoneId, String provider) {
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#getPrivateGatewayForVpc(long)
-     */
-    @Override
-    public VpcGateway getPrivateGatewayForVpc(long vpcId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcManager#ipUsedInVpc(com.cloud.network.IpAddress)
      */
     @Override
-    public boolean ipUsedInVpc(IpAddress ip) {
+    public boolean isIpAllocatedToVpc(IpAddress ip) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -458,11 +371,16 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         return null;
     }
 
-	@Override
-	public Network updateVpcGuestNetwork(long networkId, String name,  String displayText, Account callerAccount, User callerUser,
-			String domainSuffix, Long ntwkOffId, Boolean changeCidr,	String guestVmCidr) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

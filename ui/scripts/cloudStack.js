@@ -115,6 +115,11 @@
       // Use this for checking the session, to bypass login screen
       bypassLoginCheck: function(args) { //determine to show or bypass login screen
 			  if (g_loginResponse == null) { //show login screen
+				  /*
+					but if this is a 2nd browser window (of the same domain), login screen still won't show because $.cookie('sessionKey') is valid for 2nd browser window (of the same domain) as well.
+					i.e. calling listCapabilities API with g_sessionKey from $.cookie('sessionKey') will succeed, 
+					then userValid will be set to true, then an user object (instead of "false") will be returned, then login screen will be bypassed.          				
+					*/
 					g_mySession = $.cookie('JSESSIONID');
 					g_sessionKey = $.cookie('sessionKey');
 					g_role = $.cookie('role');        
@@ -176,8 +181,7 @@
 						
             userValid = true;
           },
-          error: function(xmlHTTP) {
-            logout(false);
+          error: function(xmlHTTP) { //override default error handling, do nothing instead of showing error "unable to verify user credentials" on login screen          
           },
           beforeSend : function(XMLHttpResponse) {					  
 						return true;
@@ -250,10 +254,12 @@
         else {
           array1.push("&domain=" + encodeURIComponent("/"));
         }
-
+				
+        g_loginCmdText = array1.join("");			
+				
         $.ajax({
           type: "POST",
-          data: "command=login" + array1.join("") + "&response=json",					
+          data: "command=login" + g_loginCmdText + "&response=json",					
           dataType: "json",
           async: false,
           success: function(json) {			
@@ -382,8 +388,10 @@
 						g_domainid = null;	
 						g_timezoneoffset = null;
 						g_timezone = null;
-						g_supportELB = null;
-								
+						g_supportELB = null;						
+						g_loginCmdText = null;
+						window.name = '';
+						
 						$.cookie('JSESSIONID', null);
 						$.cookie('sessionKey', null);
 						$.cookie('username', null);
@@ -394,7 +402,7 @@
 						$.cookie('timezoneoffset', null);
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
-												
+																	
 						if(onLogoutCallback()) {	 //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
               document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
 						}
@@ -451,10 +459,22 @@
             context: cloudStack.context
           });
         });
+
+        window._reloadUI = function() {
+          $('#container').html('');
+          $('#container').cloudStack(window.cloudStack);
+        };
       }
     };
 		
     document.title = 'CloudStack';
+
+    if ($.urlParam('loginUrl') != 0
+		||(window.name != null && window.name.indexOf("&domain=") != -1)) {
+      // SSO
+      loginArgs.hideLoginScreen = true;
+    }
+    
     cloudStack.uiCustom.login(loginArgs);
 
     // Localization

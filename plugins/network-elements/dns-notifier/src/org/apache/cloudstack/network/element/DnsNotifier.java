@@ -54,7 +54,7 @@ public class DnsNotifier extends AdapterBase implements NetworkElement {
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
-        Map<Service, Map<Capability, String>> caps = new HashMap<Service, Map<Capability, String>>(); 
+        Map<Service, Map<Capability, String>> caps = new HashMap<Service, Map<Capability, String>>();
         caps.put(Service.Dns, new HashMap<Capability, String>());
         return caps;
     }

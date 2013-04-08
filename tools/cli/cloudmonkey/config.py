@@ -23,8 +23,8 @@ __description__ = "Command Line Interface for Apache CloudStack"
 __maintainer__ = "Rohit Yadav"
 __maintaineremail__ = "bhaisaab@apache.org"
 __project__ = "The Apache CloudStack Team"
-__projectemail__ = "cloudstack-dev@incubator.apache.org"
-__projecturl__ = "http://incubator.apache.org/cloudstack"
+__projectemail__ = "dev@cloudstack.apache.org"
+__projecturl__ = "http://cloudstack.apache.org"
 
 try:
     import os
@@ -56,7 +56,7 @@ config_fields['core']['log_file'] = expanduser(config_dir + '/log')
 # ui
 config_fields['ui']['color'] = 'true'
 config_fields['ui']['prompt'] = '> '
-config_fields['ui']['tabularize'] = 'false'
+config_fields['ui']['display'] = 'default'
 
 # server
 config_fields['server']['host'] = 'localhost'

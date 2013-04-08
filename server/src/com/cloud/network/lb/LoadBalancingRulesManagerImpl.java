@@ -16,35 +16,6 @@
 // under the License.
 package com.cloud.network.lb;
 
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import com.cloud.event.UsageEventUtils;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
-import org.apache.cloudstack.api.response.ServiceResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -56,72 +27,24 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalLoadBalancerUsageManager;
-import com.cloud.network.IpAddress;
-import com.cloud.network.LBHealthCheckPolicyVO;
-import com.cloud.network.Network;
+import com.cloud.exception.*;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkRuleApplier;
-import com.cloud.network.as.AutoScalePolicy;
-import com.cloud.network.as.AutoScalePolicyConditionMapVO;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.*;
 import com.cloud.network.as.Condition;
-import com.cloud.network.as.Counter;
-import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
-import com.cloud.network.as.dao.AutoScalePolicyDao;
-import com.cloud.network.as.dao.AutoScaleVmGroupDao;
-import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
-import com.cloud.network.as.dao.AutoScaleVmProfileDao;
-import com.cloud.network.as.dao.ConditionDao;
-import com.cloud.network.as.dao.CounterDao;
-import com.cloud.network.dao.FirewallRulesCidrsDao;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LBHealthCheckPolicyDao;
-import com.cloud.network.dao.LBStickinessPolicyDao;
-import com.cloud.network.dao.LBStickinessPolicyVO;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.as.dao.*;
+import com.cloud.network.dao.*;
 import com.cloud.network.element.LoadBalancingServiceProvider;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
-import com.cloud.network.lb.LoadBalancingRule.LbCondition;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.rules.FirewallManager;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.lb.LoadBalancingRule.*;
+import com.cloud.network.rules.*;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.HealthCheckPolicy;
-import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -130,24 +53,14 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.DomainService;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.*;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
@@ -157,6 +70,16 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
+import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.security.InvalidParameterException;
+import java.util.*;
 
 @Component
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
@@ -338,7 +261,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
          * Regular config like destinations need not be packed for applying
          * autoscale config as of today.
          */
-        LoadBalancingRule rule = new LoadBalancingRule(lb, null, null, null);
+	List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
+        LoadBalancingRule rule = new LoadBalancingRule(lb, null, policyList, null);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
 
         if (!isRollBackAllowedForProvider(lb)) {
@@ -1199,18 +1123,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (apply) {
             try {
-                if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
-                    // Get the associated VmGroup
-                    AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(loadBalancerId, null).get(0);
-                    if (!applyAutoScaleConfig(lb, vmGroup, vmGroup.getState())) {
-                        s_logger.warn("Unable to apply the autoscale config");
-                        return false;
-                    }
-                } else {
-                    if (!applyLoadBalancerConfig(loadBalancerId)) {
-                        s_logger.warn("Unable to apply the load balancer config");
-                        return false;
-                    }
+                if (!applyLoadBalancerConfig(loadBalancerId)) {
+                    s_logger.warn("Unable to apply the load balancer config");
+                    return false;
                 }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
@@ -1471,6 +1386,20 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
+    public boolean revokeLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        if (lbs != null) {
+            for(LoadBalancerVO lb : lbs) { // called during restart, not persisting state in db
+                lb.setState(FirewallRule.State.Revoke);
+            }
+            return applyLoadBalancerRules(lbs, false); // called during restart, not persisting state in db
+        } else {
+            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to revoke");
+            return true;
+        }
+    }
+
+    @Override
     public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
         if (lbs != null) {
@@ -1500,18 +1429,33 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return handled;
     }
 
+    private LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
+
+        List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
+        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, null, policyList, null);
+
+        if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(lb.getId())) {
+            // Get the associated VmGroup
+            AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(lb.getId(), null).get(0);
+            LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, vmGroup.getState(), lb);
+            loadBalancing.setAutoScaleVmGroup(lbAutoScaleVmGroup);
+        } else {
+            List<LbDestination> dstList = getExistingDestinations(lb.getId());
+            loadBalancing.setDestinations(dstList);
+	    List<LbHealthCheckPolicy> hcPolicyList = getHealthCheckPolicies(lb.getId());
+            loadBalancing.setHealthCheckPolicies(hcPolicyList);
+        }
+
+        return loadBalancing;
+    }
+
     @DB
     protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs, boolean updateRulesInDB)
             throws ResourceUnavailableException {
         Transaction txn = Transaction.currentTxn();
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         for (LoadBalancerVO lb : lbs) {
-            List<LbDestination> dstList = getExistingDestinations(lb.getId());
-            List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
-            List<LbHealthCheckPolicy> hcPolicyList = getHealthCheckPolicies(lb.getId());
-
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
-            rules.add(loadBalancing);
+            rules.add(getLoadBalancerRuleToApply(lb));
         }
 
         if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {

@@ -47,29 +47,29 @@ public class VMReservationVO implements Identity, InternalIdentity{
 
     @Column(name="uuid")
     private String uuid;
-    
+
     @Column(name="data_center_id")
     private long dataCenterId;
 
     @Column(name="pod_id")
     private long podId;
-    
+
     @Column(name="cluster_id")
     private long clusterId;
-    
+
     @Column(name="host_id")
     private long hostId;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    // VolumeId -> poolId 
+    // VolumeId -> poolId
     @Transient
     Map<Long,Long> volumeReservationMap;
-    
+
     /**
      * There should never be a public constructor for this class. Since it's
      * only here to define the table for the DAO class.
@@ -85,8 +85,8 @@ public class VMReservationVO implements Identity, InternalIdentity{
         this.hostId = hostId;
         this.uuid = UUID.randomUUID().toString();
     }
-    
-    
+
+
     public long getId() {
         return id;
     }
@@ -99,7 +99,7 @@ public class VMReservationVO implements Identity, InternalIdentity{
     public String getUuid() {
         return uuid;
     }
-    
+
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -107,7 +107,7 @@ public class VMReservationVO implements Identity, InternalIdentity{
     public Long getPodId() {
         return podId;
     }
-    
+
     public Long getClusterId() {
         return clusterId;
     }
@@ -119,7 +119,7 @@ public class VMReservationVO implements Identity, InternalIdentity{
     public Map<Long,Long> getVolumeReservation(){
         return volumeReservationMap;
     }
-    
+
     public void setVolumeReservation(Map<Long,Long> volumeReservationMap){
         this.volumeReservationMap = volumeReservationMap;
     }

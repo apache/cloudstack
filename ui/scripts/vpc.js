@@ -616,6 +616,7 @@
       }
     },
     gateways: {
+
       add: {
         preCheck: function(args) {          
 					if(isAdmin()) { //root-admin
@@ -732,6 +733,92 @@
               netmask: { label: 'label.netmask', validation: { required: true }},
               vlan: { label: 'label.vlan', validation: { required: true }}
             },
+
+         actions:{
+           add:{
+            label:'Add Private Gateway',
+            createForm:{
+                 title: 'label.add.new.gateway',
+                 desc: 'message.add.new.gateway.to.vpc',
+                 fields: {
+                     physicalnetworkid: {
+                     docID: 'helpVPCGatewayPhysicalNetwork',
+                     label: 'label.physical.network',
+                     select: function(args) {
+                                                                $.ajax({
+                                                                        url: createURL("listPhysicalNetworks"),
+                                                                        data: {
+                                                                          zoneid: args.context.vpc[0].zoneid
+                                                                        },
+                                                                        success: function(json) {
+                                                                                var objs = json.listphysicalnetworksresponse.physicalnetwork;
+                                                                                var items = [];
+                                                                                $(objs).each(function() {
+                                                                                        items.push({id: this.id, description: this.name});
+                                                                                });
+                                                                                args.response.success({data: items});
+                                                                        }
+                                                                });
+              }
+                                                },
+            vlan: {
+              label: 'label.vlan', validation: { required: true },
+              docID: 'helpVPCGatewayVLAN'
+            },
+            ipaddress: {
+              label: 'label.ip.address', validation: { required: true },
+              docID: 'helpVPCGatewayIP'
+            },
+            gateway: {
+              label: 'label.gateway', validation: { required: true },
+              docID: 'helpVPCGatewayGateway'
+            },
+            netmask: {
+              label: 'label.netmask', validation: { required: true },
+              docID: 'helpVPCGatewayNetmask'
+            }
+          }
+
+
+
+            },
+            action:function(args){
+                       $.ajax({
+            url: createURL('createPrivateGateway'),
+            data: {
+                                                  physicalnetworkid: args.data.physicalnetworkid,
+              vpcid: args.context.vpc[0].id,
+              ipaddress: args.data.ipaddress,
+              gateway: args.data.gateway,
+              netmask: args.data.netmask,
+              vlan: args.data.vlan
+            },
+            success: function(json) {
+              var jid = json.createprivategatewayresponse.jobid;
+              args.response.success(
+                {_custom:
+                 {jobId: jid,
+                  getUpdatedItem: function(json) {
+                    return json.queryasyncjobresultresponse.jobresult.privategateway;
+                  }
+                 }
+                }
+              );
+            },
+            error: function(json) {
+              args.response.error(parseXMLHttpResponse(json));
+            }
+          });
+               },
+
+          notification: {
+          poll: pollAsyncJobResult
+                   }
+
+
+             }
+           },
+
             dataProvider: function(args) {
               $.ajax({
                 url: createURL('listPrivateGateways'),
