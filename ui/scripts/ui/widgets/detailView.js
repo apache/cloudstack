@@ -57,7 +57,10 @@
      * Default behavior for actions -- just show a confirmation popup and add notification
      */
     standard: function($detailView, args, additional) {
-      var action = args.actions[args.actionName];
+      var tab = args.tabs[args.activeTab];
+      var isMultiple = tab.multiple;
+      
+      var action = isMultiple ? tab.actions[args.actionName] : args.actions[args.actionName];
       var preAction = action.preAction;
       var notification = action.notification ?
             action.notification : {};
@@ -1078,7 +1081,7 @@
               }
 
               // Add action bar
-              if (tabData.actions) {
+              if (tabData.multiple && tabData.actions) {
                 var $actions = makeActionButtons(tabData.actions, {
                   actionFilter: tabData.actions.actionFilter,
                   data: item,
