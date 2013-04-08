@@ -2303,6 +2303,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
                 if (ag == null) {
                     throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+                } else {
+                    // verify permissions
+                    _accountMgr.checkAccess(caller, null, true, owner, ag);
                 }
             }
         }
