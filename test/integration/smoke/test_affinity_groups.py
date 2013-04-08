@@ -53,9 +53,11 @@ class Services:
             },
             "ostype": 'CentOS 5.3 (64-bit)',
             "mode": 'advanced',
-            "affinity": {
-                "name": "webvms",
-                "type": "host anti-affinity",
+            "virtual_machine" : {
+                "affinity": {
+                    "name": "webvms",
+                    "type": "host anti-affinity",
+                }
             }
         }
 
@@ -73,17 +75,12 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.disk_offering = DiskOffering.create(
-            cls.api_client,
-            cls.services["disk_offering"]
-        )
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
             cls.services["ostype"]
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["volume"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
@@ -101,7 +98,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             cls.services["service_offering"]
         )
 
-        cls.ag = AffinityGroup.create(cls.api_client, cls.services["affinity"], domainid=cls.domain.id)
+        cls.ag = AffinityGroup.create(cls.api_client, cls.services["virtual_machine"]["affinity"], domainid=cls.domain.id)
 
         cls._cleanup = [
             cls.service_offering,
