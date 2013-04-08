@@ -226,6 +226,8 @@ public class EventTypes {
     // VLANs/IP ranges
     public static final String EVENT_VLAN_IP_RANGE_CREATE = "VLAN.IP.RANGE.CREATE";
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
+    public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
+    public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
@@ -545,6 +547,8 @@ public class EventTypes {
         // VLANs/IP ranges
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_CREATE, Vlan.class.getName());
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE,Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE,Vlan.class.getName());
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class.getName());
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class.getName());

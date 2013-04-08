@@ -697,15 +697,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
         }
 
-        // Check for account wide pool. It will have an entry for account_vlan_map.
-        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {            
-            //see IPaddressVO.java
-            InvalidParameterValueException ex = new InvalidParameterValueException("Sepcified IP address uuid belongs to" +
-                    " Account wide IP pool and cannot be disassociated");
-            ex.addProxyObject("user_ip_address", ipAddressId, "ipAddressId");
-            throw ex;
-        }
-
         // don't allow releasing system ip address
         if (ipVO.getSystem()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Can't release system IP address with specified id");
