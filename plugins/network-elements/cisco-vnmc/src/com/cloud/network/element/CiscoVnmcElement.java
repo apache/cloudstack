@@ -356,10 +356,10 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             // configure source NAT
-            if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
-                s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
-                return false;
-            }
+            //if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
+            //    s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
+            //    return false;
+            //}
 
             // associate Asa 1000v instance with logical edge firewall
             if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {

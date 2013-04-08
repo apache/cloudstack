@@ -494,7 +494,7 @@ public class CiscoVnmcResource implements ServerResource {
                 }
             }
 
-            if (!_connection.associateNatPolicySet(tenant)) {
+            if (!_connection.associateAclPolicySet(tenant)) {
                 throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
         } catch (Throwable e) {
@@ -597,7 +597,7 @@ public class CiscoVnmcResource implements ServerResource {
                 }
             }
 
-            if (!_connection.associateNatPolicySet(tenant)) {
+            if (!_connection.associateAclPolicySet(tenant)) {
                 throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
         } catch (Throwable e) {

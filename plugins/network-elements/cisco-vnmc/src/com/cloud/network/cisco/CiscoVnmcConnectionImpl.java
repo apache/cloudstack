@@ -548,8 +548,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
-        xml = replaceXmlValue(xml, "egressref", "default-egress");
-        xml = replaceXmlValue(xml, "ingressref", "default-ingress");
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
         String response =  sendRequest(service, xml);
@@ -661,7 +659,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
-        xml = replaceXmlValue(xml, "egresspolicysetname", getNameForAclPolicySet(tenantName, false));
+        //xml = replaceXmlValue(xml, "egresspolicysetname", getNameForAclPolicySet(tenantName, false));
+        xml = replaceXmlValue(xml, "egresspolicysetname", "default-egress");
         xml = replaceXmlValue(xml, "ingresspolicysetname", getNameForAclPolicySet(tenantName, true));
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
