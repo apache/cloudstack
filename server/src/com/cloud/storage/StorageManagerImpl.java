@@ -64,8 +64,17 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +87,7 @@ import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -125,6 +135,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -175,6 +186,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
@@ -242,6 +254,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected VMInstanceDao _vmInstanceDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
+    @Inject
+    protected ImageStoreDao _imageStoreDao = null;
+    @Inject
+    protected ImageStoreDetailsDao _imageStoreDetailsDao = null;
+    @Inject
+    protected SnapshotDataStoreDao _snapshotStoreDao = null;
+    @Inject
+    protected TemplateDataStoreDao _templateStoreDao = null;
+    @Inject
+    protected VolumeDataStoreDao _volumeStoreDao = null;
     @Inject
     protected CapacityDao _capacityDao;
     @Inject
@@ -1949,10 +1971,44 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
+
     @Override
     public boolean deleteImageStore(DeleteImageStoreCmd cmd) {
-        // TODO Auto-generated method stub
-        return false;
+        long storeId = cmd.getId();
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        // Verify that image store exists
+        ImageStoreVO store = _imageStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Image store with id " + storeId + " doesn't exist");
+        }
+        _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), store.getDataCenterId());
+
+        // Verify that there are no live snapshot, template, volume on the image store to be deleted
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listLiveByStoreId(storeId);
+        if ( snapshots != null && snapshots.size() > 0 ){
+            throw new CloudRuntimeException("Cannot delete image store with active snapshots backup!");
+        }
+        List<VolumeDataStoreVO> volumes = _volumeStoreDao.listLiveByStoreId(storeId);
+        if ( volumes != null && volumes.size() > 0 ){
+            throw new CloudRuntimeException("Cannot delete image store with active volumes backup!");
+        }
+        List<TemplateDataStoreVO> templates = _templateStoreDao.listLiveByStoreId(storeId);
+        if ( templates != null && templates.size() > 0 ){
+            throw new CloudRuntimeException("Cannot delete image store with active templates backup!");
+        }
+
+        // ready to delete
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        // first delete from image_store_details table, we need to do that since we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
+        txn.commit();
+        return true;
     }
 
 

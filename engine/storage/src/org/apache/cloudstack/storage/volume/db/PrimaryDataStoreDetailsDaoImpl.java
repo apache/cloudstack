@@ -14,11 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.volume.db;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;

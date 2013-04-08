@@ -23,10 +23,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.image.db.ImageStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageStoreDetailVO;
-import org.apache.cloudstack.storage.image.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.image.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ImageStore;

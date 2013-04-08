@@ -22,8 +22,11 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
+import com.cloud.host.DetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -70,4 +73,18 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
 
     	return detailsMap;
     }
+
+    @Override
+    public void deleteDetails(long storeId) {
+        SearchCriteria<ImageStoreDetailVO> sc = storeSearch.create();
+        sc.setParameters("store", storeId);
+
+        List<ImageStoreDetailVO> results = search(sc, null);
+        for (ImageStoreDetailVO result : results) {
+            remove(result.getId());
+        }
+
+    }
+
+
 }

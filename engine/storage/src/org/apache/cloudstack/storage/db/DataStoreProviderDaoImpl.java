@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.db;
 
+import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
+import org.apache.cloudstack.storage.datastore.db.DataStoreProviderVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;

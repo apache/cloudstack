@@ -14,8 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.db;
+package org.apache.cloudstack.storage.image.db;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -23,19 +24,27 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataStoreDaoImpl.class);
-    private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
+public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
+    private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
+    private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
+    private SearchBuilder<VolumeDataStoreVO> storeSearch;
+    private SearchBuilder<VolumeDataStoreVO> liveStoreSearch;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
@@ -49,12 +58,12 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, TemplateDataStoreVO dataObj, Object data) {
+            State nextState, VolumeDataStoreVO dataObj, Object data) {
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
 
-        SearchCriteria<TemplateDataStoreVO> sc = updateStateSearch.create();
+        SearchCriteria<VolumeDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", dataObj.getId());
         sc.setParameters("state", currentState);
         sc.setParameters("updatedCount", dataObj.getUpdatedCount());
@@ -67,7 +76,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
         int rows = update(dataObj, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
-            TemplateDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
+            VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
                 str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
@@ -83,4 +92,27 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return rows > 0;
     }
 
+    @Override
+    public List<VolumeDataStoreVO> listByStoreId(long id) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        return listIncludingRemovedBy(sc);
+    }
+    @Override
+    public List<VolumeDataStoreVO> listLiveByStoreId(long id) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", false);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public void deletePrimaryRecordsForStore(long id) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        remove(sc);
+        txn.commit();
+    }
 }

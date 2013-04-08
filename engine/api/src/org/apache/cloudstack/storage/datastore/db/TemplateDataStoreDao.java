@@ -14,15 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.image.db;
+package org.apache.cloudstack.storage.datastore.db;
 
-import java.util.Map;
+import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
-public interface ImageStoreDetailsDao extends GenericDao<ImageStoreDetailVO, Long> {
+public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, TemplateDataStoreVO>  {
 
-    void update(long storeId, Map<String, String> details);
-    Map<String, String> getDetails(long storeId);
+    public List<TemplateDataStoreVO> listByStoreId(long id);
+
+    public List<TemplateDataStoreVO> listLiveByStoreId(long id);
+
+    public void deletePrimaryRecordsForStore(long id);
 }

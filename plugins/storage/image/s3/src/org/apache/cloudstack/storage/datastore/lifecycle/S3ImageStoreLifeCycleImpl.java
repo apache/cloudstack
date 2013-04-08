@@ -30,10 +30,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
-import org.apache.cloudstack.storage.image.db.ImageStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.apache.log4j.Logger;
 

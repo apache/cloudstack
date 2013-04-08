@@ -29,11 +29,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
-import org.apache.cloudstack.storage.image.db.ImageStoreDao;
-import org.apache.cloudstack.storage.image.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.springframework.stereotype.Component;
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.db;
+package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.Date;
 
@@ -32,19 +32,19 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
 /**
- * Join table for image_data_store and volumes
+ * Join table for image_data_store and templates
  *
  */
 @Entity
-@Table(name="volume_store_ref")
-public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
+@Table(name="template_store_ref")
+public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;
@@ -52,11 +52,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 	@Column(name="store_id")
 	private long dataStoreId;
 
-	@Column(name="volume_id")
-	private long volumeId;
-
-	@Column(name="zone_id")
-	private long zoneId;
+	@Column(name="template_id")
+	private long templateId;
 
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
@@ -78,9 +75,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 	@Enumerated(EnumType.STRING)
 	private Status downloadState;
 
-    @Column(name="checksum")
-    private String checksum;
-
 	@Column (name="local_path")
 	private String localDownloadPath;
 
@@ -96,8 +90,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 	@Column (name="url")
 	private String downloadUrl;
 
-	@Column(name="format")
-    private Storage.ImageFormat format;
+	@Column(name="is_copy")
+	private boolean isCopy = false;
 
     @Column(name="destroyed")
     boolean destroyed = false;
@@ -113,9 +107,12 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+
+	@Override
     public String getInstallPath() {
 		return installPath;
 	}
+
 
 	public long getDataStoreId() {
 		return dataStoreId;
@@ -125,92 +122,64 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.dataStoreId = hostId;
 	}
 
-
-    public long getVolumeId() {
-		return volumeId;
+    public long getTemplateId() {
+		return templateId;
 	}
 
-
-    public void setVolumeId(long volumeId) {
-		this.volumeId = volumeId;
+    public void setTemplateId(long templateId) {
+		this.templateId = templateId;
 	}
 
-
-    public long getZoneId() {
-		return zoneId;
-	}
-
-	public void setZoneId(long zoneId) {
-		this.zoneId = zoneId;
-	}
-
-	public int getDownloadPercent() {
+    public int getDownloadPercent() {
 		return downloadPercent;
 	}
-
 
     public void setDownloadPercent(int downloadPercent) {
 		this.downloadPercent = downloadPercent;
 	}
 
-
     public void setDownloadState(Status downloadState) {
 		this.downloadState = downloadState;
 	}
-
 
     public long getId() {
 		return id;
 	}
 
-
     public Date getCreated() {
 		return created;
 	}
-
 
     public Date getLastUpdated() {
 		return lastUpdated;
 	}
 
-
     public void setLastUpdated(Date date) {
 	    lastUpdated = date;
 	}
-
 
     public void setInstallPath(String installPath) {
 	    this.installPath = installPath;
 	}
 
-
     public Status getDownloadState() {
 		return downloadState;
 	}
 
-	public String getChecksum() {
-		return checksum;
-	}
-
-	public void setChecksum(String checksum) {
-		this.checksum = checksum;
-	}
-
-	public VolumeDataStoreVO(long hostId, long volumeId) {
+	public TemplateDataStoreVO(long hostId, long templateId) {
 		super();
 		this.dataStoreId = hostId;
-		this.volumeId = volumeId;
+		this.templateId = templateId;
 		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 	}
 
-	public VolumeDataStoreVO(long hostId, long volumeId, long zoneId, Date lastUpdated,
+	public TemplateDataStoreVO(long hostId, long templateId, Date lastUpdated,
 			int downloadPercent, Status downloadState,
 			String localDownloadPath, String errorString, String jobId,
-			String installPath, String downloadUrl, String checksum, ImageFormat format) {
-		//super();
+			String installPath, String downloadUrl) {
+		super();
 		this.dataStoreId = hostId;
-		this.volumeId = volumeId;
-		this.zoneId = zoneId;
+		this.templateId = templateId;
 		this.lastUpdated = lastUpdated;
 		this.downloadPercent = downloadPercent;
 		this.downloadState = downloadState;
@@ -219,11 +188,9 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.jobId = jobId;
 		this.installPath = installPath;
 		this.setDownloadUrl(downloadUrl);
-		this.checksum = checksum;
-		this.format = format;
 	}
 
-	protected VolumeDataStoreVO() {
+	protected TemplateDataStoreVO() {
 
 	}
 
@@ -232,43 +199,38 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.localDownloadPath = localPath;
 	}
 
-
     public String getLocalDownloadPath() {
 		return localDownloadPath;
 	}
-
 
     public void setErrorString(String errorString) {
 		this.errorString = errorString;
 	}
 
-
     public String getErrorString() {
 		return errorString;
 	}
-
 
     public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
 
-
     public String getJobId() {
 		return jobId;
 	}
 
-
+	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof VolumeDataStoreVO) {
-			VolumeDataStoreVO other = (VolumeDataStoreVO)obj;
-			return (this.volumeId==other.getVolumeId() && this.dataStoreId==other.getDataStoreId());
+		if (obj instanceof TemplateDataStoreVO) {
+			TemplateDataStoreVO other = (TemplateDataStoreVO)obj;
+			return (this.templateId==other.getTemplateId() && this.dataStoreId==other.getDataStoreId());
 		}
 		return false;
 	}
 
-
+	@Override
 	public int hashCode() {
-		Long tid = new Long(volumeId);
+		Long tid = new Long(templateId);
 		Long hid = new Long(dataStoreId);
 		return tid.hashCode()+hid.hashCode();
 	}
@@ -306,22 +268,28 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		return downloadUrl;
 	}
 
-    public Storage.ImageFormat getFormat() {
-		return format;
+	public void setCopy(boolean isCopy) {
+		this.isCopy = isCopy;
 	}
 
-	public void setFormat(Storage.ImageFormat format) {
-		this.format = format;
+	public boolean isCopy() {
+		return isCopy;
 	}
 
-	public long getVolumeSize() {
+    public long getTemplateSize() {
 	    return -1;
 	}
 
-
+	@Override
     public String toString() {
-	    return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(dataStoreId).append(installPath).append("]").toString();
+	    return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(dataStoreId).append(installPath).append("]").toString();
 	}
+
+    @Override
+    public ObjectInDataStoreStateMachine.State getState() {
+        // TODO Auto-generated method stub
+        return this.state;
+    }
 
     public long getUpdatedCount() {
         return this.updatedCount;
@@ -337,12 +305,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 
     public Date getUpdated() {
         return updated;
-    }
-
-    @Override
-    public ObjectInDataStoreStateMachine.State getState() {
-        // TODO Auto-generated method stub
-        return this.state;
     }
 
 }

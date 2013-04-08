@@ -14,31 +14,47 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.db;
+package org.apache.cloudstack.storage.image.db;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-public class SnapshotDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
+public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
-    private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
+    private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> liveStoreSearch;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
+
+    	storeSearch = createSearchBuilder();
+        storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.done();
+
+        liveStoreSearch = createSearchBuilder();
+        liveStoreSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        liveStoreSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
@@ -47,14 +63,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, 
         updateStateSearch.done();
         return true;
     }
+
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, VolumeDataStoreVO dataObj, Object data) {
+            State nextState, SnapshotDataStoreVO dataObj, Object data) {
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
 
-        SearchCriteria<VolumeDataStoreVO> sc = updateStateSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", dataObj.getId());
         sc.setParameters("state", currentState);
         sc.setParameters("updatedCount", dataObj.getUpdatedCount());
@@ -67,7 +84,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, 
 
         int rows = update(dataObj, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
-            VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
+            SnapshotDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
                 str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
@@ -82,5 +99,32 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, 
         }
         return rows > 0;
     }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreId(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listLiveByStoreId(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", false);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public void deletePrimaryRecordsForStore(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        remove(sc);
+        txn.commit();
+    }
+
+
 
 }
