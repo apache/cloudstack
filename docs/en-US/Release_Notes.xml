@@ -4,1104 +4,1239 @@
 %BOOK_ENTITIES;
 ]>
 <!-- Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
 -->
 <book>
     <xi:include href="Book_Info_Release_Notes_4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="Preface.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <chapter id="welcome-4.1">
-    <title>Welcome to &PRODUCT; 4.1</title>
-    <para>Welcome to the 4.1.0 release of &PRODUCT;, the first major release from the Apache CloudStack project since its graduation from the Apache Incubator.</para>
-    <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
-    <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
-  </chapter>
-  <chapter id="upgrade-instructions">
-      <title>Upgrade Instructions</title>
-      <para>This section contains upgrade instructions from prior versions of CloudStack to Apache CloudStack 4.1.0. We include instructions on upgrading to Apache CloudStack from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
-      <para>If you run into any issues during upgrades, please feel free to ask questions on users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
-      <section id="upgrade-from-4.0-to-4.1">
-          <title>Upgrade from 4.0.x to 4.1.0</title>
-          <para>This section will guide you from Apache CloudStack 4.0.x versions (4.0.0-incubating, 4.0.1-incubating, and 4.0.2) to &PRODUCT; 4.1.0.</para>
-          <para>Any steps that are hypervisor-specific will be called out with a note.</para>
-                  <warning><title>Package Structure Changes</title>
-                  <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x releases. If you've compiled your own packages, you'll notice that the package names and the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
-                  <para>However, this <emphasis>does</emphasis> mean that the procedure is not as simple as an <command>apt-get upgrade</command> or <command>yum update</command>, so please follow this section carefully.</para>
-              </warning>
-              <para>We recommend reading through this section once or twice before beginning your upgrade procedure, and working through it on a test system before working on a production system.</para>
-          <orderedlist>
-              <listitem>
-                  <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
-                  <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.0 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
-                  <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
-              </listitem>
-              <listitem>
-                  <para>Stop your management server or servers. Run this on all management server hosts:</para>
-                  <programlisting># service cloud-management stop</programlisting>
-              </listitem>
-              <listitem>
-                  <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
-                  <programlisting># mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
-              </listitem>
-              <listitem id="upgrade-deb-packages">
-                  <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
-                  <note><title>Community Packages</title>
-                      <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and APT repository, substitute your own URL for the ones used in these examples.</para>
-                  </note>
-                      <orderedlist id="debsteps">
-                          <listitem><para>Start by opening <filename>/etc/apt/sources.list.d/cloudstack.list</filename>.</para>
-                              <para>This file should have one line, which contains:</para>
-                              <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
-                              <para>We'll change it to point to the new package repository:</para>
-                              <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.1</programlisting>
-                          </listitem>
-                          <listitem>
-                              <para>Now update your apt package list:</para>
-                              <programlisting language="Bash">$ sudo apt-get update</programlisting>
-                          </listitem>
-                          <listitem>
-                              <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para>
-                              <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
-                              <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
-                              <para>When prompted whether you wish to keep your configuration, say Yes.</para>
-                          </listitem>
-                          <listitem>
-                              <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
-                              <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
-                              <para>If not, add the line.</para>
-                          </listitem>
-                          <listitem>
-                              <para>Restart the agent:</para>
-                          </listitem>
-                      </orderedlist>
-              </listitem>
-              <listitem id="upgrade-rpm-packages">
-              <para>###</para> 
-              </listitem>
-          </orderedlist>
-      </section>
-    <section id="upgrade-from-3.0.2-to-4.0">
-      <title>Upgrade from 3.0.2 to 4.0.0-incubating</title>
-      <para>Perform the following to upgrade from version 3.0.2 to version 4.0.0-incubating. Note
-        that some of the steps here are only required if you're using a specific hypervisor. The
-        steps that are hypervisor-specific are called out with a note.</para>
-      <orderedlist>
-        <listitem>
-          <para>Ensure that you query your IP address usage records and process them or make a
-            backup. During the upgrade you will lose the old IP address usage records.</para>
-          <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
-            of the usage types. Instead of a single record with the assignment and release dates,
-            separate records are generated per aggregation period with start and end dates. After
-            upgrading, any existing IP address usage records in the old format will no longer be
-            available.</para>
-        </listitem>
-        <listitem>
-          <note>
-            <para>The following upgrade instructions apply only if you're using VMware hosts. If
-              you're not using VMware hosts, skip this step and move on to step 3: stopping all
-              usage servers.</para>
-          </note>
-          <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>While running the existing 3.0.2 system, log in to the UI as root
-                administrator.</para>
-            </listitem>
-            <listitem>
-              <para>In the left navigation bar, click Templates.</para>
-            </listitem>
-            <listitem>
-              <para>In Select view, click Templates.</para>
-            </listitem>
-            <listitem>
-              <para>Click Register template.</para>
-              <para>The Register template dialog box is displayed.</para>
-            </listitem>
-            <listitem>
-              <para>In the Register template dialog box, specify the following values (do not change
-                these):</para>
-              <informaltable>
+    <chapter id="welcome-4.1">
+        <title>Welcome to &PRODUCT; 4.1</title>
+        <para>Welcome to the 4.1.0 release of &PRODUCT;, the first major release from the Apache CloudStack project since its graduation from the Apache Incubator.</para>
+        <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
+        <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
+    </chapter>
+    <chapter id="upgrade-instructions">
+        <title>Upgrade Instructions</title>
+        <para>This section contains upgrade instructions from prior versions of CloudStack to Apache CloudStack 4.1.0. We include instructions on upgrading to Apache CloudStack from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
+        <para>If you run into any issues during upgrades, please feel free to ask questions on users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
+        <section id="upgrade-from-4.0-to-4.1">
+            <title>Upgrade from 4.0.x to 4.1.0</title>
+            <para>This section will guide you from Apache CloudStack 4.0.x versions (4.0.0-incubating, 4.0.1-incubating, and 4.0.2) to &PRODUCT; 4.1.0.</para>
+            <para>Any steps that are hypervisor-specific will be called out with a note.</para>
+            <warning><title>Package Structure Changes</title>
+                <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x releases. If you've compiled your own packages, you'll notice that the package names and the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
+                <para>However, this <emphasis>does</emphasis> mean that the procedure is not as simple as an <command>apt-get upgrade</command> or <command>yum update</command>, so please follow this section carefully.</para>
+            </warning>
+            <para>We recommend reading through this section once or twice before beginning your upgrade procedure, and working through it on a test system before working on a production system.</para>
+            <orderedlist>
+                <listitem>
+                    <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
+                    <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.0 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
+                    <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
+                </listitem>
+                <listitem>
+                    <para>Stop your management server or servers. Run this on all management server hosts:</para>
+                    <programlisting># service cloud-management stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
+                    <programlisting># mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
+                </listitem>
+                <listitem id="upgrade-deb-packages">
+                    <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
+                    <note><title>Community Packages</title>
+                        <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and APT repository, substitute your own URL for the ones used in these examples.</para>
+                    </note>
+                    <orderedlist id="debsteps">
+                        <listitem>
+                            <para>The first order of business will be to change the sources list for each system with &PRODUCT; packages. This means all management servers, and any hosts that have the KVM agent. (No changes should be necessary for hosts that are running VMware or Xen.)</para>
+                            <para>Start by opening <filename>/etc/apt/sources.list.d/cloudstack.list</filename> on any systems that have &PRODUCT; packages installed.</para>
+                            <para>This file should have one line, which contains:</para>
+                            <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
+                            <para>We'll change it to point to the new package repository:</para>
+                            <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.1</programlisting>
+                            <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Now update your apt package list:</para>
+                            <programlisting language="Bash">$ sudo apt-get update</programlisting>
+                        </listitem>
+                        <listitem id="deb-master">
+                            <para>### upgrade steps for Debian on master servers goes here.</para>
+                        </listitem>
+                        <listitem id="kvm-agent-deb">
+                            <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para>
+                            <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
+                            <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
+                            <para>When prompted whether you wish to keep your configuration, say Yes.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
+                            <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
+                            <para>If not, add the line.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Restart the agent:</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem id="upgrade-rpm-packages">
+                    <para>###</para> 
+                </listitem>
+            </orderedlist>
+        </section>
+        <section id="upgrade-from-3.0.2-to-4.0">
+            <title>Upgrade from 3.0.2 to 4.1.0</title>
+            <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.1.0. Sections that are hypervisor-specific will be called out with a note.</para>
+            <orderedlist>
+                <listitem>
+                    <para>Ensure that you query your IP address usage records and process them or make a
+                        backup. During the upgrade you will lose the old IP address usage records.</para>
+                    <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
+                        of the usage types. Instead of a single record with the assignment and release dates,
+                        separate records are generated per aggregation period with start and end dates. After
+                        upgrading, any existing IP address usage records in the old format will no longer be
+                        available.</para>
+                </listitem>
+                <listitem>
+                    <note>
+                        <para>The following upgrade instructions apply only if you're using VMware hosts. If
+                            you're not using VMware hosts, skip this step and move on to <xref linkend="stopping-usage-servers" />.</para>
+                    </note>
+                    <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>While running the existing 3.0.2 system, log in to the UI as root administrator.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In the left navigation bar, click Templates.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In Select view, click Templates.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Click Register template.</para>
+                            <para>The Register template dialog box is displayed.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In the Register template dialog box, specify the following values (do not change these):</para>
+                            <informaltable>
+                                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry><para>Field</para></entry>
+                                            <entry><para>Value</para></entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry><para>Name</para></entry>
+                                            <entry><para>systemvm-vmware-4.0</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Description</para></entry>
+                                            <entry><para>systemvm-vmware-4.0</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>URL</para></entry>
+                                            <entry><para>http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Zone</para></entry>
+                                            <entry><para>Choose the zone where this hypervisor is used</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Hypervisor</para></entry>
+                                            <entry><para>VMware</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Format</para></entry>
+                                            <entry><para>OVA</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>OS Type</para></entry>
+                                            <entry><para>Debian GNU/Linux 5.0 (32-bit)</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Extractable</para></entry>
+                                            <entry><para>no</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Password Enabled</para></entry>
+                                            <entry><para>no</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Public</para></entry>
+                                            <entry><para>no</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>Featured</para></entry>
+                                            <entry><para>no</para></entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </informaltable>
+                        </listitem>
+                        <listitem>
+                            <para>Watch the screen to be sure that the template downloads successfully and enters
+                                the READY state. Do not proceed until this is successful.</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem id="stopping-usage-servers">
+                    <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
+                    <programlisting># service cloud-usage stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
+                    <programlisting># service cloud-management stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
+                        this step even in test upgrades. If there is an issue, this will assist with
+                        debugging.</para>
+                    <para>In the following commands, it is assumed that you have set the root password on the
+                        database, which is a CloudStack recommended best practice. Substitute your own MySQL
+                        root password.</para>
+                    <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
+                        <prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename></programlisting>
+                </listitem>
+                <listitem>
+                    <para>Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
+                        the community provided yum/apt repositories to gain access to the &PRODUCT;
+                        binaries.</para>
+                </listitem>
+                <listitem>
+                    <para>After you have configured an appropriate yum or apt repository, you may execute the
+                        one of the following commands as appropriate for your environment in order to upgrade
+                        &PRODUCT;: <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+                        <programlisting><prompt>#</prompt> <command>apt-get</command> update
+                            <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
+                    </para>
+                    <para>You will, of course, have to agree to the changes suggested by Yum or APT.</para>
+                    <note>
+                        <para>If the upgrade output includes a message similar to the following, then some
+                            custom content was found in your old components.xml, and you need to merge the two
+                            files:</para>
+                        <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
+                        <para>Instructions follow in the next step.</para>
+                    </note>
+                </listitem>
+                <listitem>
+                    <para>If you have made changes to your copy of
+                        <filename>/etc/cloud/management/components.xml</filename> the changes will be
+                        preserved in the upgrade. However, you need to do the following steps to place these
+                        changes in a new version of the file which is compatible with version
+                        4.1.0.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Make a backup copy of <filename>/etc/cloud/management/components.xml</filename>.
+                                For example:</para>
+                            <programlisting># mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create
+                                a new <filename>/etc/cloud/management/components.xml</filename>:</para>
+                            <programlisting># cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Merge your changes from the backup file into the new
+                                <filename>components.xml</filename>.</para>
+                            <programlisting># vi /etc/cloud/management/components.xml</programlisting>
+                        </listitem>
+                    </orderedlist>
+                    <note>
+                        <para>If you have more than one management server node, repeat the upgrade steps on each
+                            node.</para>
+                    </note>
+                </listitem>
+                <listitem>
+                    <para>Start the first Management Server. Do not start any other Management Server nodes
+                        yet.</para>
+                    <programlisting># service cloud-management start</programlisting>
+                    <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
+                        After confirmation, start the other Management Servers one at a time by running the same
+                        command on each node.</para>
+                    <note>
+                        <para>Failing to restart the Management Server indicates a problem in the upgrade.
+                            Having the Management Server restarted without any issues indicates that the upgrade
+                            is successfully completed.</para>
+                    </note>
+                </listitem>
+                <listitem>
+                    <para>Start all Usage Servers (if they were running on your previous version). Perform
+                        this on each Usage Server host.</para>
+                    <para><command># service cloud-usage start</command></para>
+                </listitem>
+                <listitem>
+                    <note>
+                        <para>Additional steps are required for each KVM host. These steps will not affect
+                            running guests in the cloud. These steps are required only for clouds using KVM as
+                            hosts and only on the KVM hosts.</para>
+                    </note>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Configure a yum or apt respository containing the &PRODUCT; packages as outlined
+                                in the Installation Guide.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Stop the running agent.</para>
+                            <para><command># service cloud-agent stop</command></para>
+                        </listitem>
+                        <listitem>
+                            <para>Update the agent software with one of the following command sets as appropriate
+                                for your environment.</para>
+                            <para><command># yum update cloud-*</command></para>
+                            <para><command># apt-get update</command></para>
+                            <para><command># apt-get upgrade cloud-*</command></para>
+                        </listitem>
+                        <listitem>
+                            <para>Start the agent.</para>
+                            <programlisting># service cloud-agent start</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Edit <filename>/etc/cloud/agent/agent.properties</filename> to change the
+                                resource parameter from
+                                "com.cloud.agent.resource.computing.LibvirtComputingResource" to
+                                "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource".</para>
+                        </listitem>
+                        <listitem>
+                            <para>Start the cloud agent and cloud management services.</para>
+                        </listitem>
+                        <listitem>
+                            <para>When the Management Server is up and running, log in to the CloudStack UI and
+                                restart the virtual router for proper functioning of all the features.</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>Log in to the CloudStack UI as administrator, and check the status of the hosts. All
+                        hosts should come to Up state (except those that you know to be offline). You may need
+                        to wait 20 or 30 minutes, depending on the number of hosts.</para>
+                    <note>
+                        <para>Troubleshooting: If login fails, clear your browser cache and reload the
+                            page.</para>
+                    </note>
+                    <para/>
+                    <para>Do not proceed to the next step until the hosts show in Up state.</para>
+                </listitem>
+                <listitem>
+                    <para>If you are upgrading from 3.0.2, perform the following:</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Ensure that the admin port is set to 8096 by using the "integration.api.port"
+                                global parameter.</para>
+                            <para>This port is used by the cloud-sysvmadm script at the end of the upgrade
+                                procedure. For information about how to set this parameter, see "Setting Global
+                                Configuration Parameters" in the Installation Guide.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Restart the Management Server.</para>
+                            <note>
+                                <para>If you don't want the admin port to remain open, you can set it to null after
+                                    the upgrade is done and restart the management server.</para>
+                            </note>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>Run the <command>cloud-sysvmadm</command> script to stop, then start, all Secondary
+                        Storage VMs, Console Proxy VMs, and virtual routers. Run the script once on each
+                        management server. Substitute your own IP address of the MySQL instance, the MySQL user
+                        to connect as, and the password to use for that user. In addition to those parameters,
+                        provide the <command>-c</command> and <command>-r</command> arguments. For
+                        example:</para>
+                    <para><command># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r >
+                            sysvm.log 2>&amp;1 &amp;</command></para>
+                    <para><command># tail -f sysvm.log</command></para>
+                    <para>This might take up to an hour or more to run, depending on the number of accounts in
+                        the system.</para>
+                </listitem>
+                <listitem>
+                    <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
+                        supported by CloudStack 4.1.0. The supported versions are XenServer 5.6 SP2
+                        and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.1.0
+                        Installation Guide under "Upgrading XenServer Versions."</para>
+                </listitem>
+                <listitem>
+                    <para>Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to
+                        XenServer v6.0.2 hypervisor hosts.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Disconnect the XenServer cluster from CloudStack.</para>
+                            <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
+                                Clusters, click View All. Select the XenServer cluster and click Actions -
+                                Unmanage.</para>
+                            <para>This may fail if there are hosts not in one of the states Up, Down,
+                                Disconnected, or Alert. You may need to fix that before unmanaging this
+                                cluster.</para>
+                            <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
+                                UI to check on the status. When the cluster is in the unmanaged state, there is no
+                                connection to the hosts in the cluster.</para>
+                        </listitem>
+                        <listitem>
+                            <para>To clean up the VLAN, log in to one XenServer host and run:</para>
+                            <para><command>/opt/xensource/bin/cloud-clean-vlan.sh</command></para>
+                        </listitem>
+                        <listitem>
+                            <para>Now prepare the upgrade by running the following on one XenServer host:</para>
+                            <para><command>/opt/xensource/bin/cloud-prepare-upgrade.sh</command></para>
+                            <para>If you see a message like "can't eject CD", log in to the VM and unmount the CD,
+                                then run this script again.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
+                                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
+                                hotfixes to the host. Place them in a temporary folder such as /tmp. </para>
+                            <para>On the Xen pool master, upload the hotfix with this command:</para>
+                            <para><command>xe patch-upload file-name=XS602E003.xsupdate</command></para>
+                            <para>Make a note of the output from this command, which is a UUID for the hotfix
+                                file. You'll need it in another step later.</para>
+                            <note>
+                                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
+                                    commands in this section with the appropriate hotfix number. For example,
+                                    XS602E004.xsupdate.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Manually live migrate all VMs on this host to another host. First, get a list of
+                                the VMs on this host:</para>
+                            <para><command># xe vm-list</command></para>
+                            <para>Then use this command to migrate each VM. Replace the example host name and VM
+                                name with your own:</para>
+                            <para><command># xe vm-migrate live=true host=<replaceable>host-name</replaceable>
+                                    vm=<replaceable>VM-name</replaceable></command></para>
+                            <note>
+                                <title>Troubleshooting</title>
+                                <para>If you see a message like "You attempted an operation on a VM which requires
+                                    PV drivers to be installed but the drivers were not detected," run:</para>
+                                <para><command>/opt/xensource/bin/make_migratable.sh
+                                        b6cf79c8-02ee-050b-922f-49583d9f1a14</command>.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Apply the hotfix. First, get the UUID of this host:</para>
+                            <programlisting># xe host-list</programlisting>
+                            <para>Then use the following command to apply the hotfix. Replace the example host
+                                UUID with the current host ID, and replace the hotfix UUID with the output from the
+                                patch-upload command you ran on this machine earlier. You can also get the hotfix
+                                UUID by running xe patch-list. </para>
+                            <programlisting><command>xe</command> patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Copy the following files from the CloudStack Management Server to the
+                                host.</para>
+                            <informaltable>
+                                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry><para>Copy from here...</para></entry>
+                                            <entry><para>...to here</para></entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                                            <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                                            <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                                            <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </informaltable>
+                        </listitem>
+                        <listitem>
+                            <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
+                                Support Pack.</para>
+                            <itemizedlist>
+                                <listitem>
+                                    <para>Download the CSP software onto the XenServer host from one of the following
+                                        links:</para>
+                                    <para>For hotfix XS602E005: <ulink
+                                            url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
+                                            >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                                    <para>For hotfix XS602E007: <ulink
+                                            url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
+                                            >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                                </listitem>
+                                <listitem>
+                                    <para>Extract the file:</para>
+                                    <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
+                                </listitem>
+                                <listitem>
+                                    <para>Run the following script:</para>
+                                    <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
+                                </listitem>
+                                <listitem>
+                                    <para>If the XenServer host is part of a zone that uses basic networking, disable
+                                        Open vSwitch (OVS):</para>
+                                    <programlisting># xe-switch-network-backend  bridge</programlisting>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        <listitem>
+                            <para>Reboot this XenServer host.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Run the following:</para>
+                            <programlisting>/opt/xensource/bin/setupxenserver.sh</programlisting>
+                            <note>
+                                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
+                                    directory" appears, you can safely ignore it.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Run the following:</para>
+                            <programlisting>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
+                                live migrate VMs."</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+            </orderedlist>
+            <note>
+                <title>Troubleshooting Tip</title>
+                <para>If passwords which you know to be valid appear not to work after upgrade, or other UI
+                    issues are seen, try clearing your browser cache and reloading the UI page.</para>
+            </note>
+        </section>
+        <section id="upgrade-from-2.2.x-to-4.1">
+            <title>Upgrade from 2.2.14 to 4.1.0</title>
+            <orderedlist>
+                <listitem>
+                    <para>Ensure that you query your IPaddress usage records and process them; for example,
+                        issue invoices for any usage that you have not yet billed users for.</para>
+                    <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
+                        of the usage types. Instead of a single record with the assignment and release dates,
+                        separate records are generated per aggregation period with start and end dates. After
+                        upgrading to 4.1.0, any existing IP address usage records in the old format
+                        will no longer be available.</para>
+                </listitem>
+                <listitem>
+                    <para>If you are using version 2.2.0 - 2.2.13, first upgrade to 2.2.14 by using the
+                        instructions in the <ulink url="http://download.cloud.com/releases/2.2.0/CloudStack2.2.14ReleaseNotes.pdf">2.2.14 Release Notes</ulink>.</para>
+                    <warning>
+                        <title>KVM Hosts</title>
+                        <para>If KVM hypervisor is used in your cloud, be sure you completed the step to insert
+                            a valid username and password into the host_details table on each KVM node as
+                            described in the 2.2.14 Release Notes. This step is critical, as the database will be
+                            encrypted after the upgrade to 4.1.0.</para>
+                    </warning>
+                </listitem>
+                <listitem>
+                    <para>While running the 2.2.14 system, log in to the UI as root administrator.</para>
+                </listitem>
+                <listitem>
+                    <para>Using the UI, add a new System VM template for each hypervisor type that is used in
+                        your cloud. In each zone, add a system VM template for each hypervisor used in that
+                        zone</para>
+                    <orderedlist>
+                        <listitem>
+                            <para>In the left navigation bar, click Templates.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In Select view, click Templates.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Click Register template.</para>
+                            <para>The Register template dialog box is displayed.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In the Register template dialog box, specify the following values depending on
+                                the hypervisor type (do not change these):</para>
+                            <informaltable>
+                                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry><para>Hypervisor</para></entry>
+                                            <entry><para>Description</para></entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry><para>XenServer</para></entry>
+                                            <entry><para>Name: systemvm-xenserver-4.1.0</para>
+                                                <para>Description: systemvm-xenserver-4.1.0</para>
+                                                <para>URL:
+                                                    http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2</para>
+                                                <para>Zone: Choose the zone where this hypervisor is used</para>
+                                                <para>Hypervisor: XenServer</para>
+                                                <para>Format: VHD</para>
+                                                <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                                                <para>Extractable: no</para>
+                                                <para>Password Enabled: no</para>
+                                                <para>Public: no</para>
+                                                <para>Featured: no</para>
+                                            </entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>KVM</para></entry>
+                                            <entry><para>Name: systemvm-kvm-4.1.0</para>
+                                                <para>Description: systemvm-kvm-4.1.0</para>
+                                                <para>URL:
+                                                    http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2</para>
+                                                <para>Zone: Choose the zone where this hypervisor is used</para>
+                                                <para>Hypervisor: KVM</para>
+                                                <para>Format: QCOW2</para>
+                                                <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                                                <para>Extractable: no</para>
+                                                <para>Password Enabled: no</para>
+                                                <para>Public: no</para>
+                                                <para>Featured: no</para>
+                                            </entry>
+                                        </row>
+                                        <row>
+                                            <entry><para>VMware</para></entry>
+                                            <entry><para>Name: systemvm-vmware-4.1.0</para>
+                                                <para>Description: systemvm-vmware-4.1.0</para>
+                                                <para>URL:
+                                                    http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
+                                                <para>Zone: Choose the zone where this hypervisor is used</para>
+                                                <para>Hypervisor: VMware</para>
+                                                <para>Format: OVA</para>
+                                                <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                                                <para>Extractable: no</para>
+                                                <para>Password Enabled: no</para>
+                                                <para>Public: no</para>
+                                                <para>Featured: no</para>
+                                            </entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </informaltable>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>Watch the screen to be sure that the template downloads successfully and enters the
+                        READY state. Do not proceed until this is successful</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">WARNING</emphasis>: If you use more than one type of
+                        hypervisor in your cloud, be sure you have repeated these steps to download the system
+                        VM template for each hypervisor type. Otherwise, the upgrade will fail.</para>
+                </listitem>
+                <listitem>
+                    <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
+                    <programlisting># service cloud-usage stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
+                    <programlisting># service cloud-management stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
+                        this step even in test upgrades. If there is an issue, this will assist with
+                        debugging.</para>
+                    <para>In the following commands, it is assumed that you have set the root password on the
+                        database, which is a CloudStack recommended best practice. Substitute your own MySQL
+                        root password.</para>
+                    <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
+                        <prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename>
+                    </programlisting>
+                </listitem>
+                <listitem>
+                    <para> Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
+                        the community provided yum/apt repositories to gain access to the &PRODUCT; binaries.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para> After you have configured an appropriate yum or apt repository, you may execute the
+                        one of the following commands as appropriate for your environment in order to upgrade
+                        &PRODUCT;: <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+                        <programlisting><prompt>#</prompt> <command>apt-get</command> update
+                            <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
+                    </para>
+                    <para>You will, of course, have to agree to the changes suggested by Yum or APT.</para>
+                </listitem>
+                <listitem>
+                    <para>If you have made changes to your existing copy of the file components.xml in your
+                        previous-version CloudStack installation, the changes will be preserved in the upgrade.
+                        However, you need to do the following steps to place these changes in a new version of
+                        the file which is compatible with version 4.0.0-incubating.</para>
+                    <note>
+                        <para>How will you know whether you need to do this? If the upgrade output in the
+                            previous step included a message like the following, then some custom content was
+                            found in your old components.xml, and you need to merge the two files:</para>
+                    </note>
+                    <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Make a backup copy of your
+                                <filename>/etc/cloud/management/components.xml</filename> file. For
+                                example:</para>
+                            <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/components.xml</filename> <filename>/etc/cloud/management/components.xml-backup</filename></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create
+                                a new <filename>/etc/cloud/management/components.xml</filename>:</para>
+                            <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/components.xml.rpmnew</filename> <filename>/etc/cloud/management/components.xml</filename></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Merge your changes from the backup file into the new components.xml file.</para>
+                            <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>If you have made changes to your existing copy of the
+                        <filename>/etc/cloud/management/db.properties</filename> file in your previous-version
+                        CloudStack installation, the changes will be preserved in the upgrade. However, you need
+                        to do the following steps to place these changes in a new version of the file which is
+                        compatible with version 4.0.0-incubating.</para>
+                    <orderedlist>
+                        <listitem>
+                            <para>Make a backup copy of your file
+                                <filename>/etc/cloud/management/db.properties</filename>. For example:</para>
+                            <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/db.properties</filename> <filename>/etc/cloud/management/db.properties-backup</filename></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Copy <filename>/etc/cloud/management/db.properties.rpmnew</filename> to create a
+                                new <filename>/etc/cloud/management/db.properties</filename>:</para>
+                            <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/db.properties.rpmnew</filename> <filename>etc/cloud/management/db.properties</filename></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Merge your changes from the backup file into the new db.properties file.</para>
+                            <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/db.properties</filename></programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>On the management server node, run the following command. It is recommended that you
+                        use the command-line flags to provide your own encryption keys. See Password and Key
+                        Encryption in the Installation Guide.</para>
+                    <programlisting><prompt>#</prompt> <command>cloud-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable></programlisting>
+                    <para>When used without arguments, as in the following example, the default encryption
+                        type and keys will be used:</para>
+                    <itemizedlist>
+                        <listitem>
+                            <para>(Optional) For encryption_type, use file or web to indicate the technique used
+                                to pass in the database encryption password. Default: file.</para>
+                        </listitem>
+                        <listitem>
+                            <para>(Optional) For management_server_key, substitute the default key that is used to
+                                encrypt confidential parameters in the properties file. Default: password. It is
+                                highly recommended that you replace this with a more secure value</para>
+                        </listitem>
+                        <listitem>
+                            <para>(Optional) For database_key, substitute the default key that is used to encrypt
+                                confidential parameters in the CloudStack database. Default: password. It is highly
+                                recommended that you replace this with a more secure value.</para>
+                        </listitem>
+                    </itemizedlist>
+                </listitem>
+                <listitem>
+                    <para>Repeat steps 10 - 14 on every management server node. If you provided your own
+                        encryption key in step 14, use the same key on all other management servers.</para>
+                </listitem>
+                <listitem>
+                    <para>Start the first Management Server. Do not start any other Management Server nodes
+                        yet.</para>
+                    <programlisting># service cloud-management start</programlisting>
+                    <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
+                        You should see a message like "Complete! Done." After confirmation, start the other
+                        Management Servers one at a time by running the same command on each node.</para>
+                </listitem>
+                <listitem>
+                    <para>Start all Usage Servers (if they were running on your previous version). Perform
+                        this on each Usage Server host.</para>
+                    <programlisting># service cloud-usage start</programlisting>
+                </listitem>
+                <listitem>
+                    <para>(KVM only) Additional steps are required for each KVM host. These steps will not
+                        affect running guests in the cloud. These steps are required only for clouds using KVM
+                        as hosts and only on the KVM hosts.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para> Configure your CloudStack package repositories as outlined in the Installation
+                                Guide </para>
+                        </listitem>
+                        <listitem>
+                            <para>Stop the running agent.</para>
+                            <programlisting># service cloud-agent stop</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Update the agent software with one of the following command sets as
+                                appropriate.</para>
+                            <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+                            <programlisting>
+                                <prompt>#</prompt> <command>apt-get</command> update
+                                <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
+                            </programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Start the agent.</para>
+                            <programlisting># service cloud-agent start</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para> Copy the contents of the <filename>agent.properties</filename> file to the new
+                                <filename>agent.properties</filename> file by using the following command</para>
+                            <programlisting><command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename></programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Start the cloud agent and cloud management services.</para>
+                        </listitem>
+                        <listitem>
+                            <para>When the Management Server is up and running, log in to the CloudStack UI and
+                                restart the virtual router for proper functioning of all the features.</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>Log in to the CloudStack UI as admin, and check the status of the hosts. All hosts
+                        should come to Up state (except those that you know to be offline). You may need to wait
+                        20 or 30 minutes, depending on the number of hosts.</para>
+                    <para>Do not proceed to the next step until the hosts show in the Up state. If the hosts
+                        do not come to the Up state, contact support.</para>
+                </listitem>
+                <listitem>
+                    <para>Run the following script to stop, then start, all Secondary Storage VMs, Console
+                        Proxy VMs, and virtual routers.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Run the command once on one management server. Substitute your own IP address of
+                                the MySQL instance, the MySQL user to connect as, and the password to use for that
+                                user. In addition to those parameters, provide the "-c" and "-r" arguments. For
+                                example:</para>
+                            <programlisting><prompt>#</prompt> <command>nohup cloud-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r > sysvm.log 2>&amp;1 &amp;
+                                <prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
+                            <para>This might take up to an hour or more to run, depending on the number of
+                                accounts in the system.</para>
+                        </listitem>
+                        <listitem>
+                            <para>After the script terminates, check the log to verify correct execution:</para>
+                            <programlisting><prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
+                            <para>The content should be like the following:</para>
+                            <programlisting>
+                                Stopping and starting 1 secondary storage vm(s)...
+                                Done stopping and starting secondary storage vm(s)
+                                Stopping and starting 1 console proxy vm(s)...
+                                Done stopping and starting console proxy vm(s).
+                                Stopping and starting 4 running routing vm(s)...
+                                Done restarting router(s).
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem>
+                    <para>If you would like additional confirmation that the new system VM templates were
+                        correctly applied when these system VMs were rebooted, SSH into the System VM and check
+                        the version.</para>
+                    <para>Use one of the following techniques, depending on the hypervisor.</para>
+                    <formalpara>
+                        <title>XenServer or KVM:</title>
+                        <para>SSH in by using the link local IP address of the system VM. For example, in the
+                            command below, substitute your own path to the private key used to log in to the
+                            system VM and your own link local IP.</para>
+                    </formalpara>
+                    <para>Run the following commands on the XenServer or KVM host on which the system VM is
+                        present:</para>
+                    <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>link-local-ip</replaceable> -p 3922
+                        # cat /etc/cloudstack-release</programlisting>
+                    <para>The output should be like the following:</para>
+                    <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
+                    <formalpara>
+                        <title>ESXi</title>
+                        <para>SSH in using the private IP address of the system VM. For example, in the command
+                            below, substitute your own path to the private key used to log in to the system VM and
+                            your own private IP.</para>
+                    </formalpara>
+                    <para>Run the following commands on the Management Server:</para>
+                    <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922
+                        <prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>
+                    </programlisting>
+                    <para>The output should be like the following:</para>
+                    <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
+                </listitem>
+                <listitem>
+                    <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
+                        supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2
+                        and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.0.0-incubating
+                        Installation Guide.</para>
+                </listitem>
+                <listitem>
+                    <para>Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer
+                        v6.0.2 hypervisor hosts.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem>
+                            <para>Disconnect the XenServer cluster from CloudStack.</para>
+                            <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
+                                Clusters, click View All. Select the XenServer cluster and click Actions -
+                                Unmanage.</para>
+                            <para>This may fail if there are hosts not in one of the states Up, Down,
+                                Disconnected, or Alert. You may need to fix that before unmanaging this
+                                cluster.</para>
+                            <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
+                                UI to check on the status. When the cluster is in the unmanaged state, there is no
+                                connection to the hosts in the cluster.</para>
+                        </listitem>
+                        <listitem>
+                            <para>To clean up the VLAN, log in to one XenServer host and run:</para>
+                            <programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Prepare the upgrade by running the following on one XenServer host:</para>
+                            <programlisting>/opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
+                            <para>If you see a message like "can't eject CD", log in to the VM and umount the CD,
+                                then run this script again.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
+                                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
+                                hotfixes to the host. Place them in a temporary folder such as /root or /tmp. </para>
+                            <para>On the Xen pool master, upload the hotfix with this command:</para>
+                            <programlisting>xe patch-upload file-name=XS602E003.xsupdate</programlisting>
+                            <para>Make a note of the output from this command, which is a UUID for the hotfix
+                                file. You'll need it in another step later.</para>
+                            <note>
+                                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
+                                    commands in this section with the appropriate hotfix number. For example,
+                                    XS602E004.xsupdate.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Manually live migrate all VMs on this host to another host. First, get a list of
+                                the VMs on this host:</para>
+                            <programlisting># xe vm-list</programlisting>
+                            <para>Then use this command to migrate each VM. Replace the example host name and VM
+                                name with your own:</para>
+                            <programlisting><prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
+                            <note>
+                                <title>Troubleshooting</title>
+                                <para>If you see a message like "You attempted an operation on a VM which requires
+                                    PV drivers to be installed but the drivers were not detected," run:</para>
+                                <para><command>/opt/xensource/bin/make_migratable.sh
+                                        b6cf79c8-02ee-050b-922f-49583d9f1a14</command>.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Apply the hotfix. First, get the UUID of this host:</para>
+                            <para><command># xe host-list</command></para>
+                            <para>Then use the following command to apply the hotfix. Replace the example host
+                                UUID with the current host ID, and replace the hotfix UUID with the output from the
+                                patch-upload command you ran on this machine earlier. You can also get the hotfix
+                                UUID by running xe patch-list. </para>
+                            <para><command>xe patch-apply host-uuid=<replaceable>host-uuid</replaceable>
+                                    uuid=<replaceable>hotfix-uuid</replaceable></command></para>
+                        </listitem>
+                        <listitem>
+                            <para>Copy the following files from the CloudStack Management Server to the
+                                host.</para>
+                            <informaltable>
+                                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry><para>Copy from here...</para></entry>
+                                            <entry><para>...to here</para></entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
+                                            <entry><para><filename>/opt/xensource/sm/NFSSR.py</filename></para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
+                                            <entry><para><filename>/opt/xensource/bin/setupxenserver.sh</filename></para></entry>
+                                        </row>
+                                        <row>
+                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
+                                            <entry><para><filename>/opt/xensource/bin/make_migratable.sh</filename></para></entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </informaltable>
+                        </listitem>
+                        <listitem>
+                            <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
+                                Support Pack.</para>
+                            <itemizedlist>
+                                <listitem>
+                                    <para>Download the CSP software onto the XenServer host from one of the following
+                                        links:</para>
+                                    <para>For hotfix XS602E005: <ulink
+                                            url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
+                                            >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                                    <para>For hotfix XS602E007: <ulink
+                                            url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
+                                            >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
+                                </listitem>
+                                <listitem>
+                                    <para>Extract the file:</para>
+                                    <para><command># tar xf xenserver-cloud-supp.tgz</command></para>
+                                </listitem>
+                                <listitem>
+                                    <para>Run the following script:</para>
+                                    <para><command># xe-install-supplemental-pack
+                                            xenserver-cloud-supp.iso</command></para>
+                                </listitem>
+                                <listitem>
+                                    <para>If the XenServer host is part of a zone that uses basic networking, disable
+                                        Open vSwitch (OVS):</para>
+                                    <para><command># xe-switch-network-backend bridge</command></para>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        <listitem>
+                            <para>Reboot this XenServer host.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Run the following:</para>
+                            <para><command>/opt/xensource/bin/setupxenserver.sh</command></para>
+                            <note>
+                                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
+                                    directory" appears, you can safely ignore it.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Run the following:</para>
+                            <para><command>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk
+                                    '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </command>
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
+                                live migrate VMs."</para>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+            </orderedlist>
+        </section>
+    </chapter>
+    <chapter id="version-4.1">
+        <title>Version 4.1.0</title>
+        <section id="what-new-in-4.1">
+            <title>What’s New in 4.1</title>
+            <para>Apache CloudStack 4.1.0 includes many new features. This section covers the most prominent new features and changes.</para>
+        </section>
+        <section id="issues-fixed-4.0">
+            <title>Issues Fixed in 4.1.0</title>
+            <para>Apache CloudStack uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">Jira</ulink>
+                to track its issues. All new features and bugs for 4.1.0 have been tracked in Jira, and have 
+                a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the issue number.</para>
+            <para>This section includes a summary of known issues against 4.0.0 that were fixed in 4.1.0.</para>
+            <informaltable>
                 <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                  <colspec colwidth="1*" colname="1" colnum="1"/>
-                  <colspec colwidth="2*" colname="2" colnum="2"/>
-                  <thead>
-                    <row>
-                      <entry><para>Field</para></entry>
-                      <entry><para>Value</para></entry>
-                    </row>
-                  </thead>
-                  <tbody>
-                    <row>
-                      <entry><para>Name</para></entry>
-                      <entry><para>systemvm-vmware-4.0</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Description</para></entry>
-                      <entry><para>systemvm-vmware-4.0</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>URL</para></entry>
-                      <entry><para>http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Zone</para></entry>
-                      <entry><para>Choose the zone where this hypervisor is used</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Hypervisor</para></entry>
-                      <entry><para>VMware</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Format</para></entry>
-                      <entry><para>OVA</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>OS Type</para></entry>
-                      <entry><para>Debian GNU/Linux 5.0 (32-bit)</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Extractable</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Password Enabled</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Public</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Featured</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                  </tbody>
+                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                    <thead>
+                        <row>
+                            <entry>
+                                <para>Defect</para>
+                            </entry>
+                            <entry>
+                                <para>Description</para>
+                            </entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry><para>CS-16135</para></entry>
+                            <entry><para>Creating volumes after upgrading from snapshot taken in 2.2.14 no longer
+                                    deletes the snapshot physically from the secondary storage.</para></entry>
+                        </row>
+                    </tbody>
                 </tgroup>
-              </informaltable>
-            </listitem>
-            <listitem>
-              <para>Watch the screen to be sure that the template downloads successfully and enters
-                the READY state. Do not proceed until this is successful.</para>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
-          <programlisting># service cloud-usage stop</programlisting>
-        </listitem>
-        <listitem>
-          <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
-          <programlisting># service cloud-management stop</programlisting>
-        </listitem>
-        <listitem>
-          <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
-            this step even in test upgrades. If there is an issue, this will assist with
-            debugging.</para>
-          <para>In the following commands, it is assumed that you have set the root password on the
-            database, which is a CloudStack recommended best practice. Substitute your own MySQL
-            root password.</para>
-          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
-<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename></programlisting>
-        </listitem>
-        <listitem>
-          <para>Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
-            the community provided yum/apt repositories to gain access to the &PRODUCT;
-            binaries.</para>
-        </listitem>
-        <listitem>
-          <para>After you have configured an appropriate yum or apt repository, you may execute the
-            one of the following commands as appropriate for your environment in order to upgrade
-            &PRODUCT;: <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
-            <programlisting><prompt>#</prompt> <command>apt-get</command> update
-<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
-          </para>
-          <para>You will, of course, have to agree to the changes suggested by Yum or APT.</para>
-          <note>
-            <para>If the upgrade output includes a message similar to the following, then some
-              custom content was found in your old components.xml, and you need to merge the two
-              files:</para>
-            <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
-            <para>Instructions follow in the next step.</para>
-          </note>
-        </listitem>
-        <listitem>
-          <para>If you have made changes to your copy of
-              <filename>/etc/cloud/management/components.xml</filename> the changes will be
-            preserved in the upgrade. However, you need to do the following steps to place these
-            changes in a new version of the file which is compatible with version
-            4.0.0-incubating.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Make a backup copy of <filename>/etc/cloud/management/components.xml</filename>.
-                For example:</para>
-              <programlisting># mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup</programlisting>
-            </listitem>
-            <listitem>
-              <para>Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create
-                a new <filename>/etc/cloud/management/components.xml</filename>:</para>
-              <programlisting># cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml</programlisting>
-            </listitem>
-            <listitem>
-              <para>Merge your changes from the backup file into the new
-                  <filename>components.xml</filename>.</para>
-              <programlisting># vi /etc/cloud/management/components.xml</programlisting>
-            </listitem>
-          </orderedlist>
-          <note>
-            <para>If you have more than one management server node, repeat the upgrade steps on each
-              node.</para>
-          </note>
-        </listitem>
-        <listitem>
-          <para>Start the first Management Server. Do not start any other Management Server nodes
-            yet.</para>
-          <programlisting># service cloud-management start</programlisting>
-          <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
-            After confirmation, start the other Management Servers one at a time by running the same
-            command on each node.</para>
-          <note>
-            <para>Failing to restart the Management Server indicates a problem in the upgrade.
-              Having the Management Server restarted without any issues indicates that the upgrade
-              is successfully completed.</para>
-          </note>
-        </listitem>
-        <listitem>
-          <para>Start all Usage Servers (if they were running on your previous version). Perform
-            this on each Usage Server host.</para>
-          <para><command># service cloud-usage start</command></para>
-        </listitem>
-        <listitem>
-          <note>
-            <para>Additional steps are required for each KVM host. These steps will not affect
-              running guests in the cloud. These steps are required only for clouds using KVM as
-              hosts and only on the KVM hosts.</para>
-          </note>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Configure a yum or apt respository containing the &PRODUCT; packages as outlined
-                in the Installation Guide.</para>
-            </listitem>
-            <listitem>
-              <para>Stop the running agent.</para>
-              <para><command># service cloud-agent stop</command></para>
-            </listitem>
-            <listitem>
-              <para>Update the agent software with one of the following command sets as appropriate
-                for your environment.</para>
-              <para><command># yum update cloud-*</command></para>
-              <para><command># apt-get update</command></para>
-              <para><command># apt-get upgrade cloud-*</command></para>
-            </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloud-agent start</programlisting>
-            </listitem>
-            <listitem>
-              <para>Edit <filename>/etc/cloud/agent/agent.properties</filename> to change the
-                resource parameter from
-                "com.cloud.agent.resource.computing.LibvirtComputingResource" to
-                "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource".</para>
-            </listitem>
-            <listitem>
-              <para>Start the cloud agent and cloud management services.</para>
-            </listitem>
-            <listitem>
-              <para>When the Management Server is up and running, log in to the CloudStack UI and
-                restart the virtual router for proper functioning of all the features.</para>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>Log in to the CloudStack UI as administrator, and check the status of the hosts. All
-            hosts should come to Up state (except those that you know to be offline). You may need
-            to wait 20 or 30 minutes, depending on the number of hosts.</para>
-          <note>
-            <para>Troubleshooting: If login fails, clear your browser cache and reload the
-              page.</para>
-          </note>
-          <para/>
-          <para>Do not proceed to the next step until the hosts show in Up state.</para>
-        </listitem>
-        <listitem>
-          <para>If you are upgrading from 3.0.2, perform the following:</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Ensure that the admin port is set to 8096 by using the "integration.api.port"
-                global parameter.</para>
-              <para>This port is used by the cloud-sysvmadm script at the end of the upgrade
-                procedure. For information about how to set this parameter, see "Setting Global
-                Configuration Parameters" in the Installation Guide.</para>
-            </listitem>
-            <listitem>
-              <para>Restart the Management Server.</para>
-              <note>
-                <para>If you don't want the admin port to remain open, you can set it to null after
-                  the upgrade is done and restart the management server.</para>
-              </note>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>Run the <command>cloud-sysvmadm</command> script to stop, then start, all Secondary
-            Storage VMs, Console Proxy VMs, and virtual routers. Run the script once on each
-            management server. Substitute your own IP address of the MySQL instance, the MySQL user
-            to connect as, and the password to use for that user. In addition to those parameters,
-            provide the <command>-c</command> and <command>-r</command> arguments. For
-            example:</para>
-          <para><command># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r >
-              sysvm.log 2>&amp;1 &amp;</command></para>
-          <para><command># tail -f sysvm.log</command></para>
-          <para>This might take up to an hour or more to run, depending on the number of accounts in
-            the system.</para>
-        </listitem>
-        <listitem>
-          <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2
-            and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.0.0-incubating
-            Installation Guide.</para>
-        </listitem>
-        <listitem>
-          <para>Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to
-            XenServer v6.0.2 hypervisor hosts.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Disconnect the XenServer cluster from CloudStack.</para>
-              <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
-                Clusters, click View All. Select the XenServer cluster and click Actions -
-                Unmanage.</para>
-              <para>This may fail if there are hosts not in one of the states Up, Down,
-                Disconnected, or Alert. You may need to fix that before unmanaging this
-                cluster.</para>
-              <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
-                UI to check on the status. When the cluster is in the unmanaged state, there is no
-                connection to the hosts in the cluster.</para>
-            </listitem>
-            <listitem>
-              <para>To clean up the VLAN, log in to one XenServer host and run:</para>
-              <para><command>/opt/xensource/bin/cloud-clean-vlan.sh</command></para>
-            </listitem>
-            <listitem>
-              <para>Now prepare the upgrade by running the following on one XenServer host:</para>
-              <para><command>/opt/xensource/bin/cloud-prepare-upgrade.sh</command></para>
-              <para>If you see a message like "can't eject CD", log in to the VM and unmount the CD,
-                then run this script again.</para>
-            </listitem>
-            <listitem>
-              <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
-                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
-                hotfixes to the host. Place them in a temporary folder such as /tmp. </para>
-              <para>On the Xen pool master, upload the hotfix with this command:</para>
-              <para><command>xe patch-upload file-name=XS602E003.xsupdate</command></para>
-              <para>Make a note of the output from this command, which is a UUID for the hotfix
-                file. You'll need it in another step later.</para>
-              <note>
-                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
-                  commands in this section with the appropriate hotfix number. For example,
-                  XS602E004.xsupdate.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Manually live migrate all VMs on this host to another host. First, get a list of
-                the VMs on this host:</para>
-              <para><command># xe vm-list</command></para>
-              <para>Then use this command to migrate each VM. Replace the example host name and VM
-                name with your own:</para>
-              <para><command># xe vm-migrate live=true host=<replaceable>host-name</replaceable>
-                    vm=<replaceable>VM-name</replaceable></command></para>
-              <note>
-                <title>Troubleshooting</title>
-                <para>If you see a message like "You attempted an operation on a VM which requires
-                  PV drivers to be installed but the drivers were not detected," run:</para>
-                <para><command>/opt/xensource/bin/make_migratable.sh
-                    b6cf79c8-02ee-050b-922f-49583d9f1a14</command>.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Apply the hotfix. First, get the UUID of this host:</para>
-              <programlisting># xe host-list</programlisting>
-              <para>Then use the following command to apply the hotfix. Replace the example host
-                UUID with the current host ID, and replace the hotfix UUID with the output from the
-                patch-upload command you ran on this machine earlier. You can also get the hotfix
-                UUID by running xe patch-list. </para>
-              <programlisting><command>xe</command> patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></programlisting>
-            </listitem>
-            <listitem>
-              <para>Copy the following files from the CloudStack Management Server to the
-                host.</para>
-              <informaltable>
+            </informaltable>
+        </section>
+        <section id="known-issues-4.1">
+            <title>Known Issues in 4.1.0</title>
+            <informaltable>
                 <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                  <colspec colwidth="1*" colname="1" colnum="1"/>
-                  <colspec colwidth="2*" colname="2" colnum="2"/>
-                  <thead>
-                    <row>
-                      <entry><para>Copy from here...</para></entry>
-                      <entry><para>...to here</para></entry>
-                    </row>
-                  </thead>
-                  <tbody>
-                    <row>
-                      <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
-                      <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
-                      <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
-                      <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
-                    </row>
-                  </tbody>
+                    <colspec colwidth="1*" colname="1" colnum="1"/>
+                    <colspec colwidth="2*" colname="2" colnum="2"/>
+                    <thead>
+                        <row>
+                            <entry>
+                                <para>Issue ID</para>
+                            </entry>
+                            <entry>
+                                <para>Description</para>
+                            </entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747">CLOUDSTACK-1747</ulink></para></entry>
+                            <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
+                                <para>Due to tooling changes between 4.1 and 4.2, CloudStack's database is created using the 4.0 schema and updated to the 4.1 schema when the management server starts for the first time. It's OK to see the same schema if the management server has not started yet.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824">CLOUDSTACK-1824</ulink></para></entry>
+                            <entry><para>Service CloudStack-Management is being displayed as cloud-management service </para>
+                                <para>Many scripts and text entries have references to cloud-management rather than cloudstack-management due to the changeover between 4.0 and 4.1 to rename services. This is a minor issue and should be corrected by 4.2.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824">CLOUDSTACK-1824</ulink></para></entry>
+                            <entry><para>Service CloudStack-Management is being displayed as cloud-management service</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1510">CLOUDSTACK-1510</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>NPE when primary storage is added with wrong path</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1428">CLOUDSTACK-1428</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[UI] Instance which are created without display name are not visible when added to LB</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1306">CLOUDSTACK-1306</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Better Error message when trying to deploy Vm by passing static Ipv4 addresses that are assigned to another VM/IP4 address is outside the iprange.</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1236">CLOUDSTACK-1236</ulink></para> 
+                            </entry>
+                            <entry>
+                                <para>Warning while adding Xen 6.1 host [Unable to create local link network]</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-969">CLOUDSTACK-969</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>api: zone response lists vlan in it as &quot;vlan range of zone&quot; but the vlan belongs to physical network</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-963">CLOUDSTACK-963</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[cloud.utils.AnnotationHelper] class java.lang.Stringdoes not have a Table annotation</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-458">CLOUDSTACK-458</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>xen:snapshots:Storage gc fail to clean the failed snapshot images from secondarystorage</para>
+                            </entry>
+                        </row> 
+                        <row> 
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-315">CLOUDSTACK-315</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Infrastructure view does not show capacity values</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-300">CLOUDSTACK-300</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Creation of compute offering allow combination of local storage + HA</para>
+                            </entry>
+                        </row> 
+                        <row> 
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-282">CLOUDSTACK-282</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Virtual Routers do not properly resolve DNS SRV Records</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-276">CLOUDSTACK-276</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>SSVM ID is exposed in the Error Message thrown by AddTrafficType API</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-270">CLOUDSTACK-270</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ui should not ask for a vlan range if the physical network isolation type is not VLAN</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-245">CLOUDSTACK-245</ulink></para> 
+                            </entry>
+                            <entry>
+                                <para>VPC ACLs are not stored and programmed consistently</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-231">CLOUDSTACK-231</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Tag creation using special charecters</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-124">CLOUDSTACK-124</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>NetworkGarbageCollector not cleaning up networks</para>
+                            </entry>
+                        </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-62">CLOUDSTACK-62</ulink></para> 
+                            </entry>
+                            <entry>
+                                <para>console proxy does not support any keymaps besides us, jp</para>
+                            </entry>
+                        </row> 
+                    </tbody>
                 </tgroup>
-              </informaltable>
-            </listitem>
-            <listitem>
-              <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
-                Support Pack.</para>
-              <itemizedlist>
-                <listitem>
-                  <para>Download the CSP software onto the XenServer host from one of the following
-                    links:</para>
-                  <para>For hotfix XS602E005: <ulink
-                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
-                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
-                  <para>For hotfix XS602E007: <ulink
-                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
-                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
-                </listitem>
-                <listitem>
-                  <para>Extract the file:</para>
-                  <programlisting># tar xf xenserver-cloud-supp.tgz</programlisting>
-                </listitem>
-                <listitem>
-                  <para>Run the following script:</para>
-                  <programlisting># xe-install-supplemental-pack xenserver-cloud-supp.iso</programlisting>
-                </listitem>
-                <listitem>
-                  <para>If the XenServer host is part of a zone that uses basic networking, disable
-                    Open vSwitch (OVS):</para>
-                  <programlisting># xe-switch-network-backend  bridge</programlisting>
-                </listitem>
-              </itemizedlist>
-            </listitem>
-            <listitem>
-              <para>Reboot this XenServer host.</para>
-            </listitem>
-            <listitem>
-              <para>Run the following:</para>
-              <programlisting>/opt/xensource/bin/setupxenserver.sh</programlisting>
-              <note>
-                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
-                  directory" appears, you can safely ignore it.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Run the following:</para>
-              <programlisting>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </programlisting>
-            </listitem>
-            <listitem>
-              <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
-                live migrate VMs."</para>
-            </listitem>
-          </orderedlist>
-        </listitem>
-      </orderedlist>
-      <note>
-        <title>Troubleshooting Tip</title>
-        <para>If passwords which you know to be valid appear not to work after upgrade, or other UI
-          issues are seen, try clearing your browser cache and reloading the UI page.</para>
-      </note>
-    </section>
-    <section id="upgrade-from-2.2.x-to-4.0">
-      <title>Upgrade from 2.2.14 to 4.0.0-incubating</title>
-      <orderedlist>
-        <listitem>
-          <para>Ensure that you query your IPaddress usage records and process them; for example,
-            issue invoices for any usage that you have not yet billed users for.</para>
-          <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
-            of the usage types. Instead of a single record with the assignment and release dates,
-            separate records are generated per aggregation period with start and end dates. After
-            upgrading to 4.0.0-incubating, any existing IP address usage records in the old format
-            will no longer be available.</para>
-        </listitem>
-        <listitem>
-          <para>If you are using version 2.2.0 - 2.2.13, first upgrade to 2.2.14 by using the
-            instructions in the 2.2.14 Release Notes.</para>
-          <warning>
-            <title>KVM Hosts</title>
-            <para>If KVM hypervisor is used in your cloud, be sure you completed the step to insert
-              a valid username and password into the host_details table on each KVM node as
-              described in the 2.2.14 Release Notes. This step is critical, as the database will be
-              encrypted after the upgrade to 4.0.0-incubating.</para>
-          </warning>
-        </listitem>
-        <listitem>
-          <para>While running the 2.2.14 system, log in to the UI as root administrator.</para>
-        </listitem>
-        <listitem>
-          <para>Using the UI, add a new System VM template for each hypervisor type that is used in
-            your cloud. In each zone, add a system VM template for each hypervisor used in that
-            zone</para>
-          <orderedlist>
-            <listitem>
-              <para>In the left navigation bar, click Templates.</para>
-            </listitem>
-            <listitem>
-              <para>In Select view, click Templates.</para>
-            </listitem>
-            <listitem>
-              <para>Click Register template.</para>
-              <para>The Register template dialog box is displayed.</para>
-            </listitem>
-            <listitem>
-              <para>In the Register template dialog box, specify the following values depending on
-                the hypervisor type (do not change these):</para>
-              <informaltable>
-                <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                  <colspec colwidth="1*" colname="1" colnum="1"/>
-                  <colspec colwidth="2*" colname="2" colnum="2"/>
-                  <thead>
-                    <row>
-                      <entry><para>Hypervisor</para></entry>
-                      <entry><para>Description</para></entry>
-                    </row>
-                  </thead>
-                  <tbody>
-                    <row>
-                      <entry><para>XenServer</para></entry>
-                      <entry><para>Name: systemvm-xenserver-3.0.0</para>
-                        <para>Description: systemvm-xenserver-3.0.0</para>
-                        <para>URL:
-                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2</para>
-                        <para>Zone: Choose the zone where this hypervisor is used</para>
-                        <para>Hypervisor: XenServer</para>
-                        <para>Format: VHD</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
-                        <para>Extractable: no</para>
-                        <para>Password Enabled: no</para>
-                        <para>Public: no</para>
-                        <para>Featured: no</para>
-                      </entry>
-                    </row>
-                    <row>
-                      <entry><para>KVM</para></entry>
-                      <entry><para>Name: systemvm-kvm-4.1.0</para>
-                        <para>Description: systemvm-kvm-4.1.0</para>
-                        <para>URL:
-                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2</para>
-                        <para>Zone: Choose the zone where this hypervisor is used</para>
-                        <para>Hypervisor: KVM</para>
-                        <para>Format: QCOW2</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
-                        <para>Extractable: no</para>
-                        <para>Password Enabled: no</para>
-                        <para>Public: no</para>
-                        <para>Featured: no</para>
-                      </entry>
-                    </row>
-                    <row>
-                      <entry><para>VMware</para></entry>
-                      <entry><para>Name: systemvm-vmware-4.1.0</para>
-                        <para>Description: systemvm-vmware-4.1.0</para>
-                        <para>URL:
-                          http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
-                        <para>Zone: Choose the zone where this hypervisor is used</para>
-                        <para>Hypervisor: VMware</para>
-                        <para>Format: OVA</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
-                        <para>Extractable: no</para>
-                        <para>Password Enabled: no</para>
-                        <para>Public: no</para>
-                        <para>Featured: no</para>
-                      </entry>
-                    </row>
-                  </tbody>
-                </tgroup>
-              </informaltable>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>Watch the screen to be sure that the template downloads successfully and enters the
-            READY state. Do not proceed until this is successful</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">WARNING</emphasis>: If you use more than one type of
-            hypervisor in your cloud, be sure you have repeated these steps to download the system
-            VM template for each hypervisor type. Otherwise, the upgrade will fail.</para>
-        </listitem>
-        <listitem>
-          <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
-          <programlisting># service cloud-usage stop</programlisting>
-        </listitem>
-        <listitem>
-          <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
-          <programlisting># service cloud-management stop</programlisting>
-        </listitem>
-        <listitem>
-          <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
-            this step even in test upgrades. If there is an issue, this will assist with
-            debugging.</para>
-          <para>In the following commands, it is assumed that you have set the root password on the
-            database, which is a CloudStack recommended best practice. Substitute your own MySQL
-            root password.</para>
-          <programlisting><prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud > <filename>cloud-backup.dmp</filename>
-<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage > <filename>cloud-usage-backup.dmp</filename>
-</programlisting>
-        </listitem>
-        <listitem>
-          <para> Either build RPM/DEB packages as detailed in the Installation Guide, or use one of
-            the community provided yum/apt repositories to gain access to the &PRODUCT; binaries.
-          </para>
-        </listitem>
-        <listitem>
-          <para> After you have configured an appropriate yum or apt repository, you may execute the
-            one of the following commands as appropriate for your environment in order to upgrade
-            &PRODUCT;: <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
-            <programlisting><prompt>#</prompt> <command>apt-get</command> update
-<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*</programlisting>
-          </para>
-          <para>You will, of course, have to agree to the changes suggested by Yum or APT.</para>
-        </listitem>
-        <listitem>
-          <para>If you have made changes to your existing copy of the file components.xml in your
-            previous-version CloudStack installation, the changes will be preserved in the upgrade.
-            However, you need to do the following steps to place these changes in a new version of
-            the file which is compatible with version 4.0.0-incubating.</para>
-          <note>
-            <para>How will you know whether you need to do this? If the upgrade output in the
-              previous step included a message like the following, then some custom content was
-              found in your old components.xml, and you need to merge the two files:</para>
-          </note>
-          <programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Make a backup copy of your
-                  <filename>/etc/cloud/management/components.xml</filename> file. For
-                example:</para>
-              <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/components.xml</filename> <filename>/etc/cloud/management/components.xml-backup</filename></programlisting>
-            </listitem>
-            <listitem>
-              <para>Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create
-                a new <filename>/etc/cloud/management/components.xml</filename>:</para>
-              <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/components.xml.rpmnew</filename> <filename>/etc/cloud/management/components.xml</filename></programlisting>
-            </listitem>
-            <listitem>
-              <para>Merge your changes from the backup file into the new components.xml file.</para>
-              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
-              </programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>If you have made changes to your existing copy of the
-              <filename>/etc/cloud/management/db.properties</filename> file in your previous-version
-            CloudStack installation, the changes will be preserved in the upgrade. However, you need
-            to do the following steps to place these changes in a new version of the file which is
-            compatible with version 4.0.0-incubating.</para>
-          <orderedlist>
-            <listitem>
-              <para>Make a backup copy of your file
-                  <filename>/etc/cloud/management/db.properties</filename>. For example:</para>
-              <programlisting><prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/db.properties</filename> <filename>/etc/cloud/management/db.properties-backup</filename></programlisting>
-            </listitem>
-            <listitem>
-              <para>Copy <filename>/etc/cloud/management/db.properties.rpmnew</filename> to create a
-                new <filename>/etc/cloud/management/db.properties</filename>:</para>
-              <programlisting><prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/db.properties.rpmnew</filename> <filename>etc/cloud/management/db.properties</filename></programlisting>
-            </listitem>
-            <listitem>
-              <para>Merge your changes from the backup file into the new db.properties file.</para>
-              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/db.properties</filename></programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>On the management server node, run the following command. It is recommended that you
-            use the command-line flags to provide your own encryption keys. See Password and Key
-            Encryption in the Installation Guide.</para>
-          <programlisting><prompt>#</prompt> <command>cloud-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable></programlisting>
-          <para>When used without arguments, as in the following example, the default encryption
-            type and keys will be used:</para>
-          <itemizedlist>
-            <listitem>
-              <para>(Optional) For encryption_type, use file or web to indicate the technique used
-                to pass in the database encryption password. Default: file.</para>
-            </listitem>
-            <listitem>
-              <para>(Optional) For management_server_key, substitute the default key that is used to
-                encrypt confidential parameters in the properties file. Default: password. It is
-                highly recommended that you replace this with a more secure value</para>
-            </listitem>
-            <listitem>
-              <para>(Optional) For database_key, substitute the default key that is used to encrypt
-                confidential parameters in the CloudStack database. Default: password. It is highly
-                recommended that you replace this with a more secure value.</para>
-            </listitem>
-          </itemizedlist>
-        </listitem>
-        <listitem>
-          <para>Repeat steps 10 - 14 on every management server node. If you provided your own
-            encryption key in step 14, use the same key on all other management servers.</para>
-        </listitem>
-        <listitem>
-          <para>Start the first Management Server. Do not start any other Management Server nodes
-            yet.</para>
-          <programlisting># service cloud-management start</programlisting>
-          <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
-            You should see a message like "Complete! Done." After confirmation, start the other
-            Management Servers one at a time by running the same command on each node.</para>
-        </listitem>
-        <listitem>
-          <para>Start all Usage Servers (if they were running on your previous version). Perform
-            this on each Usage Server host.</para>
-          <programlisting># service cloud-usage start</programlisting>
-        </listitem>
-        <listitem>
-          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
-            affect running guests in the cloud. These steps are required only for clouds using KVM
-            as hosts and only on the KVM hosts.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para> Configure your CloudStack package repositories as outlined in the Installation
-                Guide </para>
-            </listitem>
-            <listitem>
-              <para>Stop the running agent.</para>
-              <programlisting># service cloud-agent stop</programlisting>
-            </listitem>
-            <listitem>
-              <para>Update the agent software with one of the following command sets as
-                appropriate.</para>
-              <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
-              <programlisting>
-                 <prompt>#</prompt> <command>apt-get</command> update
-<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
-              </programlisting>
-            </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloud-agent start</programlisting>
-            </listitem>
-            <listitem>
-              <para> Copy the contents of the <filename>agent.properties</filename> file to the new
-                  <filename>agent.properties</filename> file by using the following command</para>
-              <programlisting><command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename></programlisting>
-            </listitem>
-            <listitem>
-              <para>Start the cloud agent and cloud management services.</para>
-            </listitem>
-            <listitem>
-              <para>When the Management Server is up and running, log in to the CloudStack UI and
-                restart the virtual router for proper functioning of all the features.</para>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>Log in to the CloudStack UI as admin, and check the status of the hosts. All hosts
-            should come to Up state (except those that you know to be offline). You may need to wait
-            20 or 30 minutes, depending on the number of hosts.</para>
-          <para>Do not proceed to the next step until the hosts show in the Up state. If the hosts
-            do not come to the Up state, contact support.</para>
-        </listitem>
-        <listitem>
-          <para>Run the following script to stop, then start, all Secondary Storage VMs, Console
-            Proxy VMs, and virtual routers.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Run the command once on one management server. Substitute your own IP address of
-                the MySQL instance, the MySQL user to connect as, and the password to use for that
-                user. In addition to those parameters, provide the "-c" and "-r" arguments. For
-                example:</para>
-              <programlisting><prompt>#</prompt> <command>nohup cloud-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r > sysvm.log 2>&amp;1 &amp;
-<prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
-              <para>This might take up to an hour or more to run, depending on the number of
-                accounts in the system.</para>
-            </listitem>
-            <listitem>
-              <para>After the script terminates, check the log to verify correct execution:</para>
-              <programlisting><prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
-              <para>The content should be like the following:</para>
-              <programlisting>
-Stopping and starting 1 secondary storage vm(s)...
-Done stopping and starting secondary storage vm(s)
-Stopping and starting 1 console proxy vm(s)...
-Done stopping and starting console proxy vm(s).
-Stopping and starting 4 running routing vm(s)...
-Done restarting router(s).
-						</programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
-          <para>If you would like additional confirmation that the new system VM templates were
-            correctly applied when these system VMs were rebooted, SSH into the System VM and check
-            the version.</para>
-          <para>Use one of the following techniques, depending on the hypervisor.</para>
-          <formalpara>
-            <title>XenServer or KVM:</title>
-            <para>SSH in by using the link local IP address of the system VM. For example, in the
-              command below, substitute your own path to the private key used to log in to the
-              system VM and your own link local IP.</para>
-          </formalpara>
-          <para>Run the following commands on the XenServer or KVM host on which the system VM is
-            present:</para>
-          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>link-local-ip</replaceable> -p 3922
-# cat /etc/cloudstack-release</programlisting>
-          <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
-          <formalpara>
-            <title>ESXi</title>
-            <para>SSH in using the private IP address of the system VM. For example, in the command
-              below, substitute your own path to the private key used to log in to the system VM and
-              your own private IP.</para>
-          </formalpara>
-          <para>Run the following commands on the Management Server:</para>
-          <programlisting><prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922
-<prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>
-</programlisting>
-          <para>The output should be like the following:</para>
-          <programlisting>Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012</programlisting>
-        </listitem>
-        <listitem>
-          <para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version
-            supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2
-            and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.0.0-incubating
-            Installation Guide.</para>
-        </listitem>
-        <listitem>
-          <para>Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer
-            v6.0.2 hypervisor hosts.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Disconnect the XenServer cluster from CloudStack.</para>
-              <para>In the left navigation bar of the CloudStack UI, select Infrastructure. Under
-                Clusters, click View All. Select the XenServer cluster and click Actions -
-                Unmanage.</para>
-              <para>This may fail if there are hosts not in one of the states Up, Down,
-                Disconnected, or Alert. You may need to fix that before unmanaging this
-                cluster.</para>
-              <para>Wait until the status of the cluster has reached Unmanaged. Use the CloudStack
-                UI to check on the status. When the cluster is in the unmanaged state, there is no
-                connection to the hosts in the cluster.</para>
-            </listitem>
-            <listitem>
-              <para>To clean up the VLAN, log in to one XenServer host and run:</para>
-              <programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
-            </listitem>
-            <listitem>
-              <para>Prepare the upgrade by running the following on one XenServer host:</para>
-              <programlisting>/opt/xensource/bin/cloud-prepare-upgrade.sh</programlisting>
-              <para>If you see a message like "can't eject CD", log in to the VM and umount the CD,
-                then run this script again.</para>
-            </listitem>
-            <listitem>
-              <para>Upload the hotfix to the XenServer hosts. Always start with the Xen pool master,
-                then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the
-                hotfixes to the host. Place them in a temporary folder such as /root or /tmp. </para>
-              <para>On the Xen pool master, upload the hotfix with this command:</para>
-              <programlisting>xe patch-upload file-name=XS602E003.xsupdate</programlisting>
-              <para>Make a note of the output from this command, which is a UUID for the hotfix
-                file. You'll need it in another step later.</para>
-              <note>
-                <para>(Optional) If you are applying other hotfixes as well, you can repeat the
-                  commands in this section with the appropriate hotfix number. For example,
-                  XS602E004.xsupdate.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Manually live migrate all VMs on this host to another host. First, get a list of
-                the VMs on this host:</para>
-              <programlisting># xe vm-list</programlisting>
-              <para>Then use this command to migrate each VM. Replace the example host name and VM
-                name with your own:</para>
-              <programlisting><prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable></programlisting>
-              <note>
-                <title>Troubleshooting</title>
-                <para>If you see a message like "You attempted an operation on a VM which requires
-                  PV drivers to be installed but the drivers were not detected," run:</para>
-                <para><command>/opt/xensource/bin/make_migratable.sh
-                    b6cf79c8-02ee-050b-922f-49583d9f1a14</command>.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Apply the hotfix. First, get the UUID of this host:</para>
-              <para><command># xe host-list</command></para>
-              <para>Then use the following command to apply the hotfix. Replace the example host
-                UUID with the current host ID, and replace the hotfix UUID with the output from the
-                patch-upload command you ran on this machine earlier. You can also get the hotfix
-                UUID by running xe patch-list. </para>
-              <para><command>xe patch-apply host-uuid=<replaceable>host-uuid</replaceable>
-                    uuid=<replaceable>hotfix-uuid</replaceable></command></para>
-            </listitem>
-            <listitem>
-              <para>Copy the following files from the CloudStack Management Server to the
-                host.</para>
-              <informaltable>
-                <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                  <colspec colwidth="1*" colname="1" colnum="1"/>
-                  <colspec colwidth="2*" colname="2" colnum="2"/>
-                  <thead>
-                    <row>
-                      <entry><para>Copy from here...</para></entry>
-                      <entry><para>...to here</para></entry>
-                    </row>
-                  </thead>
-                  <tbody>
-                    <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
-                      <entry><para><filename>/opt/xensource/sm/NFSSR.py</filename></para></entry>
-                    </row>
-                    <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
-                      <entry><para><filename>/opt/xensource/bin/setupxenserver.sh</filename></para></entry>
-                    </row>
-                    <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
-                      <entry><para><filename>/opt/xensource/bin/make_migratable.sh</filename></para></entry>
-                    </row>
-                  </tbody>
-                </tgroup>
-              </informaltable>
-            </listitem>
-            <listitem>
-              <para>(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud
-                Support Pack.</para>
-              <itemizedlist>
-                <listitem>
-                  <para>Download the CSP software onto the XenServer host from one of the following
-                    links:</para>
-                  <para>For hotfix XS602E005: <ulink
-                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz"
-                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
-                  <para>For hotfix XS602E007: <ulink
-                      url="http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz"
-                      >http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink></para>
-                </listitem>
-                <listitem>
-                  <para>Extract the file:</para>
-                  <para><command># tar xf xenserver-cloud-supp.tgz</command></para>
-                </listitem>
-                <listitem>
-                  <para>Run the following script:</para>
-                  <para><command># xe-install-supplemental-pack
-                    xenserver-cloud-supp.iso</command></para>
-                </listitem>
-                <listitem>
-                  <para>If the XenServer host is part of a zone that uses basic networking, disable
-                    Open vSwitch (OVS):</para>
-                  <para><command># xe-switch-network-backend bridge</command></para>
-                </listitem>
-              </itemizedlist>
-            </listitem>
-            <listitem>
-              <para>Reboot this XenServer host.</para>
-            </listitem>
-            <listitem>
-              <para>Run the following:</para>
-              <para><command>/opt/xensource/bin/setupxenserver.sh</command></para>
-              <note>
-                <para>If the message "mv: cannot stat `/etc/cron.daily/logrotate': No such file or
-                  directory" appears, you can safely ignore it.</para>
-              </note>
-            </listitem>
-            <listitem>
-              <para>Run the following:</para>
-              <para><command>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk
-                  '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </command>
-              </para>
-            </listitem>
-            <listitem>
-              <para>On each slave host in the Xen pool, repeat these steps, starting from "manually
-                live migrate VMs."</para>
-            </listitem>
-          </orderedlist>
-        </listitem>
-      </orderedlist>
-    </section>
-  </chapter>
-  <chapter id="version-4.1">
-    <title>Version 4.1.0</title>
-    <section id="what-new-in-4.1">
-      <title>What’s New in 4.1</title>
-      <para>Apache CloudStack 4.1.0 includes many new features. This section covers the most prominent new features and changes.</para>
-    </section>
-    <section id="issues-fixed-4.0">
-        <title>Issues Fixed in 4.1.0</title>
-        <para>Apache CloudStack uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">Jira</ulink>
-            to track its issues. All new features and bugs for 4.1.0 have been tracked in Jira, and have 
-            a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the issue number.</para>
-        <para>This section includes a summary of known issues against 4.0.0 that were fixed in 4.1.0.</para>
-      <informaltable>
-        <tgroup cols="2" align="left" colsep="1" rowsep="1">
-          <colspec colwidth="1*" colname="1" colnum="1"/>
-          <colspec colwidth="2*" colname="2" colnum="2"/>
-          <thead>
-            <row>
-              <entry>
-                <para>Defect</para>
-              </entry>
-              <entry>
-                <para>Description</para>
-              </entry>
-            </row>
-          </thead>
-          <tbody>
-            <row>
-              <entry><para>CS-16135</para></entry>
-              <entry><para>Creating volumes after upgrading from snapshot taken in 2.2.14 no longer
-                  deletes the snapshot physically from the secondary storage.</para></entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </informaltable>
-    </section>
-    <section id="known-issues-4.1">
-      <title>Known Issues in 4.1.0</title>
-      <informaltable>
-        <tgroup cols="2" align="left" colsep="1" rowsep="1">
-          <colspec colwidth="1*" colname="1" colnum="1"/>
-          <colspec colwidth="2*" colname="2" colnum="2"/>
-          <thead>
-            <row>
-              <entry>
-                <para>Issue ID</para>
-              </entry>
-              <entry>
-                <para>Description</para>
-              </entry>
-            </row>
-          </thead>
-          <tbody>
-              <row>
-                  <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747">CLOUDSTACK-1747</ulink></para></entry>
-                  <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
-                      <para>Due to tooling changes between 4.1 and 4.2, CloudStack's database is created using the 4.0 schema and updated to the 4.1 schema when the management server starts for the first time. It's OK to see the same schema if the management server has not started yet.</para>
-                  </entry>
-              </row>
-            <row>
-                <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824">CLOUDSTACK-1824</ulink></para></entry>
-              <entry><para>Service CloudStack-Management is being displayed as cloud-management service </para>
-                <para>Many scripts and text entries have references to cloud-management rather than cloudstack-management due to the changeover between 4.0 and 4.1 to rename services. This is a minor issue and should be corrected by 4.2.</para>
-              </entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </informaltable>
-    </section>
-  </chapter>
-  <!-- <chapter id="api-changes-4.1">
-      <title>API Changes in 4.1.0</title>
-  </chapter> -->
+            </informaltable>
+        </section>
+    </chapter>
+    <!-- <chapter id="api-changes-4.1">
+        <title>API Changes in 4.1.0</title>
+    </chapter> -->
 </book>
