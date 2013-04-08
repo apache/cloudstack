@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -57,6 +58,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         ListByIp = createSearchBuilder();
         ListByIp.and("ipAddressId", ListByIp.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         ListByIp.and("networkId", ListByIp.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        ListByIp.and("scheme", ListByIp.entity().getScheme(), SearchCriteria.Op.EQ);
         ListByIp.done();
 
         IpAndPublicPortSearch = createSearchBuilder();
@@ -104,9 +106,10 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     }
 
     @Override
-    public List<LoadBalancerVO> listByNetworkId(long networkId) {
+    public List<LoadBalancerVO> listByNetworkIdAndScheme(long networkId, Scheme scheme) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
         sc.setParameters("networkId", networkId);
+        sc.setParameters("scheme", scheme);
         return listBy(sc);
     }
 
@@ -127,7 +130,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     }
 
     @Override
-    public List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId) {
+    public List<LoadBalancerVO> listInTransitionStateByNetworkIdAndScheme(long networkId, Scheme scheme) {
         SearchCriteria<LoadBalancerVO> sc = TransitionStateSearch.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());

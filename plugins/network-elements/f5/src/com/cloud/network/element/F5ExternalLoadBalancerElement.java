@@ -17,6 +17,7 @@
 package com.cloud.network.element;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,8 +189,11 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        String algo = rule.getAlgorithm();
-        return (algo.equals("roundrobin") || algo.equals("leastconn"));
+        if (canHandle(network, new ArrayList<LoadBalancingRule>(Arrays.asList(rule)))) {
+            String algo = rule.getAlgorithm();
+            return (algo.equals("roundrobin") || algo.equals("leastconn"));
+        }
+        return true;
     }
 
     @Override

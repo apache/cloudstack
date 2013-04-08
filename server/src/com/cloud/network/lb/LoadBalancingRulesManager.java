@@ -25,6 +25,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -47,10 +48,10 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
      * @return true if removal is successful
      */
     boolean removeVmFromLoadBalancers(long vmId);
-    boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
     String getLBCapability(long networkid, String capabilityName);
     boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException;
-    boolean revokeLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
 
     boolean validateLbRule(LoadBalancingRule lbRule);
 

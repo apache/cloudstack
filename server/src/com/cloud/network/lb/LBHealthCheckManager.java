@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.network.lb;
 
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+
 
 public interface LBHealthCheckManager {
 
-    void updateLBHealthCheck();
+    void updateLBHealthCheck(Scheme scheme);
 
 }

@@ -840,7 +840,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     // by CloudStack and update them in lbvmmap table
     @DB
     @Override
-    public void updateLBHealthChecks() throws ResourceUnavailableException {
+    public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException {
         List<LoadBalancerVO> rules = _lbDao.listAll();
         List<NetworkVO> networks = _networkDao.listAll();
         List<LoadBalancerTO> stateRules = null;
@@ -855,7 +855,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                  * "HealthCheck Manager :: LB Provider in the Network has the Healthcheck policy capability :: "
                  * + provider.get(0).getName());
                  */
-                rules = _lbDao.listByNetworkId(network.getId());
+                rules = _lbDao.listByNetworkIdAndScheme(network.getId(), scheme);
                 if (rules != null && rules.size() > 0) {
                     List<LoadBalancingRule> lbrules = new ArrayList<LoadBalancingRule>();
                     for (LoadBalancerVO lb : rules) {
@@ -1467,14 +1467,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lbs = Arrays.asList(lb);
         } else {
             // get all rules in transition state
-            lbs = _lbDao.listInTransitionStateByNetworkId(lb.getNetworkId());
+            lbs = _lbDao.listInTransitionStateByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
         }
         return applyLoadBalancerRules(lbs, true);
     }
 
     @Override
-    public boolean revokeLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
-        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+    public boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
         if (lbs != null) {
             for(LoadBalancerVO lb : lbs) { // called during restart, not persisting state in db
                 lb.setState(FirewallRule.State.Revoke);
@@ -1487,8 +1487,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
-    public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
-        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+    public boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
         if (lbs != null) {
             return applyLoadBalancerRules(lbs, true);
         } else {

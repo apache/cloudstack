@@ -90,6 +90,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
 		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
 		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
@@ -338,7 +340,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        if (canHandle(network, Service.Lb)) {
+        List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
+        rules.add(rule);
+        if (canHandle(network, Service.Lb) && canHandleLbRules(rules)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 return true;
@@ -351,17 +355,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (canHandle(network, Service.Lb)) {
-            Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
-            if (!lbCaps.isEmpty()) {
-                String schemeCaps = lbCaps.get(Capability.LbSchemes);
-                if (schemeCaps != null) {
-                    for (LoadBalancingRule rule : rules) {
-                        if (!schemeCaps.contains(rule.getScheme().toString())) {
-                            s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
-                            return false;
-                        }
-                    }
-                }
+            if (!canHandleLbRules(rules)) {
+                return false;
             }
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
@@ -375,9 +370,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;
-            }
-            
-            
+            }   
         } else {
             return false;
         }
@@ -960,5 +953,21 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 			List<LoadBalancingRule> lbrules) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
+	    Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+	    if (!lbCaps.isEmpty()) {
+	        String schemeCaps = lbCaps.get(Capability.LbSchemes);
+	        if (schemeCaps != null) {
+	            for (LoadBalancingRule rule : rules) {
+	                if (!schemeCaps.contains(rule.getScheme().toString())) {
+	                    s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+	                    return false;
+	                }
+	            }
+	        }
+	    }
+	    return true;
 	}
 }

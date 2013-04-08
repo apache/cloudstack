@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.db.GenericDao;
 
 public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
@@ -29,8 +30,8 @@ public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
 
     LoadBalancerVO findByAccountAndName(Long accountId, String name);
 
-    List<LoadBalancerVO> listByNetworkId(long networkId);
+    List<LoadBalancerVO> listByNetworkIdAndScheme(long networkId, Scheme scheme);
 
-    List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId);
+    List<LoadBalancerVO> listInTransitionStateByNetworkIdAndScheme(long networkId, Scheme scheme);
 
 }

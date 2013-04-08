@@ -32,6 +32,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -138,7 +139,7 @@ public interface LoadBalancingRulesService {
 
     LoadBalancer findById(long LoadBalancer);
     
-    public void updateLBHealthChecks() throws ResourceUnavailableException;
+    public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
 
     Map<Ip, UserVm> getLbInstances(long lbId);
 }

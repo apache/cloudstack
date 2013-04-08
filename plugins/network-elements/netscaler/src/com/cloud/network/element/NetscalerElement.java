@@ -233,6 +233,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (!canHandle(config, Service.Lb)) {
             return false;
         }
+        
+        if (canHandleLbRules(rules)) {
+            return false;
+        }
 
         if (isBasicZoneNetwok(config)) {
             return applyElasticLoadBalancerRules(config, rules);
@@ -837,7 +841,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
 
-        if (canHandle(network, Service.Lb)) {
+        if (canHandle(network, Service.Lb) && canHandleLbRules(lbrules)) {
             try {
                 return getLBHealthChecks(network, lbrules);
             } catch (ResourceUnavailableException e) {
@@ -917,5 +921,21 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return nsGslbProvider.getGslbSitePrivateIP();
         }
         return null;
+    }
+    
+    private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
+        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+        if (!lbCaps.isEmpty()) {
+            String schemeCaps = lbCaps.get(Capability.LbSchemes);
+            if (schemeCaps != null) {
+                for (LoadBalancingRule rule : rules) {
+                    if (!schemeCaps.contains(rule.getScheme().toString())) {
+                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }

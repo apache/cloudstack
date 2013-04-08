@@ -19,7 +19,6 @@ package com.cloud.network.lb;
 import static java.lang.String.format;
 
 import java.util.Map;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +33,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -90,7 +90,8 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
         @Override
         public void run() {
             try {
-                updateLBHealthCheck();
+                updateLBHealthCheck(Scheme.Public);
+                updateLBHealthCheck(Scheme.Internal);
             } catch (Exception e) {
                 s_logger.error("Exception in LB HealthCheck Update Checker", e);
             }
@@ -98,9 +99,9 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
     }
 
     @Override
-    public void updateLBHealthCheck() {
+    public void updateLBHealthCheck(Scheme scheme) {
         try {
-            _lbService.updateLBHealthChecks();
+            _lbService.updateLBHealthChecks(scheme);
         } catch (ResourceUnavailableException e) {
             s_logger.debug("Error while updating the LB HealtCheck ", e);
         }
