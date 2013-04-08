@@ -25,6 +25,7 @@ import com.cloud.network.as.Condition;
 import com.cloud.network.as.Counter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 
@@ -418,4 +419,7 @@ public class LoadBalancingRule {
         return sourceIp;
     }
 
+    public Scheme getScheme() {
+        return lb.getScheme();
+    }
 }

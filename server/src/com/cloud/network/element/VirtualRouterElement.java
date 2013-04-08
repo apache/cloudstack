@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
@@ -66,6 +65,7 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -351,6 +351,19 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (canHandle(network, Service.Lb)) {
+            Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+            if (!lbCaps.isEmpty()) {
+                String schemeCaps = lbCaps.get(Capability.LbSchemes);
+                if (schemeCaps != null) {
+                    for (LoadBalancingRule rule : rules) {
+                        if (!schemeCaps.contains(rule.getScheme().toString())) {
+                            s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                            return false;
+                        }
+                    }
+                }
+            }
+            
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
@@ -363,6 +376,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             } else {
                 return true;
             }
+            
+            
         } else {
             return false;
         }
@@ -557,8 +572,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
-
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
+        lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
 
         capabilities.put(Service.Lb, lbCapabilities);
 

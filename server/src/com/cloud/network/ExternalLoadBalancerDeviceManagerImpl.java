@@ -829,18 +829,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @Override
-    public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyLoadBalancerRules(Network network, List<LoadBalancingRule> loadBalancingRules) throws ResourceUnavailableException {
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-
-        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
-
-        for (FirewallRule rule : rules) {
-            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
-                loadBalancingRules.add((LoadBalancingRule) rule);
-            }
-        }
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return true;
@@ -1115,21 +1107,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @Override
-    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> loadBalancingRules)
             throws ResourceUnavailableException {
 
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
         HealthCheckLBConfigAnswer answer = null;
-
-        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
-
-        for (FirewallRule rule : rules) {
-            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
-                loadBalancingRules.add((LoadBalancingRule) rule);
-            }
-        }
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return null;
