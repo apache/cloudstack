@@ -176,8 +176,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected SecondaryStorageVmManager _secondaryStorageMgr;
     @Inject
-    DataStoreProviderManager _dataStoreProviderMgr;
-    @Inject
     protected RegionDao _regionDao;
     @Inject
     protected DataCenterDao _dcDao;
@@ -217,8 +215,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected HighAvailabilityManager _haMgr;
     @Inject
     protected StorageService _storageSvr;
-    @Inject
-    DataStoreManager _dataStoreMgr;
+
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -633,72 +630,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return this._s3Mgr.listS3s(cmd);
     }
 
-    @Override
-    public ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
-        String providerName = cmd.getProviderName();
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
-
-        if (storeProvider == null) {
-            storeProvider = _dataStoreProviderMgr.getDefaultImageDataStoreProvider();
-            if (storeProvider == null) {
-                throw new InvalidParameterValueException("can't find image store provider: " + providerName);
-            }
-        }
-
-        Long dcId = cmd.getZoneId();
-        String url = cmd.getUrl();
-        Map details = cmd.getDetails();
-
-        ScopeType scopeType = null;
-        String scope = cmd.getScope();
-        if (scope != null) {
-            try {
-                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid scope" + scope);
-            }
-        }
-        if (scopeType == ScopeType.ZONE && dcId == null) {
-            throw new InvalidParameterValueException("zone id can't be null, if scope is zone");
-        }
-
-        if (dcId != null) {
-            // Check if the zone exists in the system
-            DataCenterVO zone = _dcDao.findById(dcId);
-            if (zone == null) {
-                throw new InvalidParameterValueException("Can't find zone by id " + dcId);
-            }
-
-            Account account = UserContext.current().getCaller();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
-                PermissionDeniedException ex = new PermissionDeniedException(
-                        "Cannot perform this operation, Zone with specified id is currently disabled");
-                ex.addProxyObject(zone, dcId, "dcId");
-                throw ex;
-            }
-        }
-
-
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("zoneId", dcId);
-        params.put("url", cmd.getUrl());
-        params.put("name", cmd.getUrl());
-        params.put("details", details);
-        params.put("scope", scopeType);
-        params.put("providerName", storeProvider.getName());
-
-        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
-        DataStore store = null;
-        try {
-            store = lifeCycle.initialize(params);
-        } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
-            throw new CloudRuntimeException("Failed to add data store", e);
-        }
-
-        return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
-    }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password,
             String hypervisorType, List<String> hostTags, Map<String, String> params, boolean deferAgentCreation) throws IllegalArgumentException,

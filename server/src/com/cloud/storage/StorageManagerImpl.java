@@ -40,8 +40,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -103,6 +105,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -294,6 +297,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Inject protected ResourceTagDao _resourceTagDao;
 
+    @Inject
+    DataStoreManager _dataStoreMgr;
+    @Inject
+    DataStoreProviderManager _dataStoreProviderMgr;
+
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
 		return _storagePoolAllocators;
@@ -453,13 +461,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(
         		vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-        	
+
         	ExcludeList avoidList = new ExcludeList();
         	for(StoragePool pool : avoid){
         		avoidList.addPool(pool.getId());
         	}
         	DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), clusterId, hostId, null, null);
-        	
+
         	final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
         	if (poolList != null && !poolList.isEmpty()) {
         		return (StoragePool)this.dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
@@ -672,7 +680,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    
+
     @Override
     public String getStoragePoolTags(long poolId) {
         return _configMgr.listToCsvTags(_storagePoolDao
@@ -701,7 +709,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         return true;
     }
-    
+
     @DB
     @Override
     public DataStore createLocalStorage(Host host, StoragePoolInfo pInfo) throws ConnectionException {
@@ -715,7 +723,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
             if(pool == null && host.getHypervisorType() == HypervisorType.VMware) {
                 // perform run-time upgrade. In versions prior to 2.2.12, there is a bug that we don't save local datastore info (host path is empty), this will cause us
-                // not able to distinguish multiple local datastores that may be available on the host, to support smooth migration, we 
+                // not able to distinguish multiple local datastores that may be available on the host, to support smooth migration, we
                 // need to perform runtime upgrade here
                 if(pInfo.getHostPath().length() > 0) {
                     pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
@@ -735,13 +743,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 params.put("details", pInfo.getDetails());
                 params.put("uuid", pInfo.getUuid());
                 params.put("providerName", provider.getName());
-                
+
                 store = lifeCycle.initialize(params);
             } else {
                 store = (DataStore) dataStoreMgr.getDataStore(pool.getId(),
                         DataStoreRole.Primary);
             }
-            
+
             HostScope scope = new HostScope(host.getId());
             lifeCycle.attachHost(store, scope, pInfo);
         } catch (Exception e) {
@@ -1007,7 +1015,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             CapacityState capacityState = (allocationState == AllocationState.Disabled) ?
                     CapacityState.Disabled : CapacityState.Enabled;
-            
+
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
@@ -1147,7 +1155,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }finally {
                     scanLock.unlock();
                 }
-            } 
+            }
         }finally {
             scanLock.releaseRef();
         }
@@ -1479,7 +1487,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStore store = dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
         lifeCycle.cancelMaintain(store);
-        
+
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
     }
@@ -1627,7 +1635,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreRole.Primary);
     }
 
-   
+
 
     @Override
     @DB
@@ -1708,7 +1716,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return secHost;
     }
 
-    
+
 
     @Override
     public HypervisorType getHypervisorTypeFromFormat(ImageFormat format) {
@@ -1874,5 +1882,78 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
+        String providerName = cmd.getProviderName();
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+
+        if (storeProvider == null) {
+            storeProvider = _dataStoreProviderMgr.getDefaultImageDataStoreProvider();
+            if (storeProvider == null) {
+                throw new InvalidParameterValueException("can't find image store provider: " + providerName);
+            }
+        }
+
+        Long dcId = cmd.getZoneId();
+        String url = cmd.getUrl();
+        Map details = cmd.getDetails();
+
+        ScopeType scopeType = null;
+        String scope = cmd.getScope();
+        if (scope != null) {
+            try {
+                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
+            } catch (Exception e) {
+                throw new InvalidParameterValueException("invalid scope" + scope);
+            }
+        }
+        if (scopeType == ScopeType.ZONE && dcId == null) {
+            throw new InvalidParameterValueException("zone id can't be null, if scope is zone");
+        }
+
+        if (dcId != null) {
+            // Check if the zone exists in the system
+            DataCenterVO zone = _dcDao.findById(dcId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+            }
+
+            Account account = UserContext.current().getCaller();
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+                PermissionDeniedException ex = new PermissionDeniedException(
+                        "Cannot perform this operation, Zone with specified id is currently disabled");
+                ex.addProxyObject(zone, dcId, "dcId");
+                throw ex;
+            }
+        }
+
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("zoneId", dcId);
+        params.put("url", cmd.getUrl());
+        params.put("name", cmd.getUrl());
+        params.put("details", details);
+        params.put("scope", scopeType);
+        params.put("providerName", storeProvider.getName());
+
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+        DataStore store = null;
+        try {
+            store = lifeCycle.initialize(params);
+        } catch (Exception e) {
+            s_logger.debug("Failed to add data store", e);
+            throw new CloudRuntimeException("Failed to add data store", e);
+        }
+
+        return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+    }
+    @Override
+    public boolean deleteImageStore(DeleteImageStoreCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 
 }

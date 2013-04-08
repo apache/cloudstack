@@ -609,12 +609,4 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 		return null;
 	}
 
-    @Override
-    public ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
 }

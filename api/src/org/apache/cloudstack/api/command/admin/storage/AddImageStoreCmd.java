@@ -102,7 +102,7 @@ public class AddImageStoreCmd extends BaseCmd {
     @Override
     public void execute(){
         try{
-            ImageStore result = _resourceService.discoverImageStore(this);
+            ImageStore result = _storageService.discoverImageStore(this);
             ImageStoreResponse storeResponse = null;
             if (result != null ) {
                     storeResponse = _responseGenerator.createImageStoreResponse(result);
