@@ -1,8 +1,0 @@
-port-profile type vethernet ASA-Inside-vlanid
-  vmware port-group
-  switchport mode access
-  switchport access vlan vlanid
-  no shutdown
-  state enabled
-
-
