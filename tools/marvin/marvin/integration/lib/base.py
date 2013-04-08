@@ -223,7 +223,7 @@ class VirtualMachine:
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
-                    diskofferingid=None, hostid=None, mode='basic'):
+                    diskofferingid=None, affinitygroupname=None, hostid=None, mode='basic'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -267,6 +267,9 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
+
+        if "affinitygroupnames" in services:
+            cmd.affinitygroupnames  = services["affinitygroupnames"]
 
         if projectid:
             cmd.projectid = projectid
@@ -2424,3 +2427,27 @@ class VPC:
         cmd = listVPCs.listVPCsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
+
+
+class AffinityGroup:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, account=None, domainid=None):
+        agCmd = createAffinityGroup.createAffinityGroupCmd()
+        agCmd.name = services['name']
+        agCmd.displayText = services['displaytext'] if 'displaytext' in services else services['name']
+        agCmd.type = services['type']
+        agCmd.account = services['account'] if 'account' in services else account
+        agCmd.domainid = services['domainid'] if 'domainid' in services else domainid
+
+    def update(self):
+        pass
+
+    def delete(self):
+        pass
+
+    @classmethod
+    def list(cls):
+        pass
