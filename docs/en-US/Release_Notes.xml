@@ -54,6 +54,26 @@ under the License.
                     <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
                     <programlisting># mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
                 </listitem>
+                <listitem>
+                    <para>Whether you're upgrading a Red Hat/CentOS based system or Ubuntu based system, you're going to need to stop the CloudStack management server before proceeding.</para>
+                    <programlisting language="Bash"># service cloud-management stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>If you have made changes to <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these over manually to the new file, <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done automatically. (If you're unsure, we recommend making a backup of the original <filename>components.xml</filename> to be on the safe side.</para>
+                </listitem>
+                <listitem>
+                    <note><title>For AWS API Users Only</title>
+                        <para>This step is only necessary if you're using the AWS APIs with &PRODUCT;. If not, you can skip this step.</para>
+                    </note>
+                    <para>The file <filename>/etc/cloud/management/db.properties</filename> will be carried over to <filename>etc/cloudstack/management/db.properties</filename>, but the parameters for the AWS API are <emphasis>not</emphasis> carried over. You'll need to add these parameters to the new file manually:</para>
+                    <programlisting language="Bash">
+db.awsapi.username=
+db.awsapi.password=
+db.awsapi.host=
+db.awsapi.port=
+                    </programlisting>
+                    <para>For the AWS API queries to work, you'll need to copy those over to <filename>/etc/cloudstack/management/db.properties</filename> (with the values you have currently).</para>
+                </listitem>
                 <listitem id="upgrade-deb-packages">
                     <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
                     <note><title>Community Packages</title>
@@ -74,7 +94,8 @@ under the License.
                             <programlisting language="Bash">$ sudo apt-get update</programlisting>
                         </listitem>
                         <listitem id="deb-master">
-                            <para>### upgrade steps for Debian on master servers goes here.</para>
+                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package. This will pull in any other dependencies you need.</para>
+                            <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
                         </listitem>
                         <listitem id="kvm-agent-deb">
                             <para>You will need to manually install the <filename>cloudstack-agent</filename> package:</para>
