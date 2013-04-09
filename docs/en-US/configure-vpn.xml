@@ -29,7 +29,7 @@
 		<listitem><para>In the left navigation, click Global Settings.</para></listitem>
 		<listitem><para>Set the following global configuration parameters.</para>
 		<itemizedlist>
-			<listitem><para>remote.access.vpn.client.ip.range – The range of IP addressess to be allocated to remote access VPN clients. The first IP in the range is used by the VPN server.</para></listitem>
+			<listitem><para>remote.access.vpn.client.ip.range – The range of IP addresses to be allocated to remote access VPN clients. The first IP in the range is used by the VPN server.</para></listitem>
 			<listitem><para>remote.access.vpn.psk.length – Length of the IPSec key.</para></listitem>
 			<listitem><para>remote.access.vpn.user.limit – Maximum number of VPN users per account.</para></listitem>
 		</itemizedlist></listitem></orderedlist>
