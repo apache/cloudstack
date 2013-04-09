@@ -71,10 +71,9 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -1743,10 +1742,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
 
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
+        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+               
+        if (asyncExecutionContext != null) {
+            AsyncJobVO job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
@@ -1826,10 +1825,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Please specify a VM that is either running or stopped.");
         }
 
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
+        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (asyncExecutionContext != null) {
+            AsyncJobVO job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId

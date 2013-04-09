@@ -594,7 +594,6 @@
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
 
   <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
-  <bean id="asyncJobExecutorContextImpl" class="com.cloud.async.AsyncJobExecutorContextImpl" />
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
   <bean id="autoScaleManagerImpl" class="com.cloud.network.as.AutoScaleManagerImpl" />
   <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />

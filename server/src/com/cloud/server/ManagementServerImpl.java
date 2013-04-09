@@ -2833,9 +2833,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     volume.getName(), ApiDBUtils.findAccountById(accountId).getUuid(), UploadVO.Status.COPY_IN_PROGRESS.toString(),
                     uploadJob.getUuid());
             resultObj.setResponseName(cmd.getCommandName());
-            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-            if (asyncExecutor != null) {
-                job = asyncExecutor.getJob();
+            AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+            if (asyncExecutionContext != null) {
+                job = asyncExecutionContext.getJob();
                 _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
                 _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
             }
@@ -2857,7 +2857,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 // Update the async job.
                 resultObj.setResultString(errorString);
                 resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
-                if (asyncExecutor != null) {
+                if (asyncExecutionContext != null) {
                     _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
                 }
 

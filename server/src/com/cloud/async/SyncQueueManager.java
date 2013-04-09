@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.utils.component.Manager;
 
-
 public interface SyncQueueManager extends Manager {
     public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit);
     public SyncQueueItemVO dequeueFromOne(long queueId, Long msid);

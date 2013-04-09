@@ -325,7 +325,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             txt.start();
             AsyncJobVO job = _jobDao.findById(jobId);
             if(job != null) {
-                jobResult.setCmdOriginator(job.getCmdOriginator());
                 jobResult.setJobStatus(job.getStatus());
                 jobResult.setProcessStatus(job.getProcessStatus());
                 jobResult.setResult(job.getResult());
@@ -391,6 +390,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     } catch(Exception e) {
                         s_logger.warn("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     }
+                    
+                    AsyncJobExecutionContext.setCurrentExecutionContext(new AsyncJobExecutionContext(job));
 
                     BaseAsyncCmd cmdObj = null;
                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -500,6 +501,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.error("Caught: " + th);
                     } catch (Throwable th2) {
                     }
+                } finally {
+                	AsyncJobExecutionContext.setCurrentExecutionContext(null);
                 }
             }
         };
@@ -535,17 +538,20 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public void releaseSyncSource(AsyncJobExecutor executor) {
-        if(executor.getSyncSource() != null) {
+    public void releaseSyncSource() {
+    	AsyncJobExecutionContext executionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+    	assert(executionContext != null);
+    	
+    	if(executionContext.getSyncSource() != null) {
             if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Release sync source for job-" + executor.getJob().getId() + " sync source: "
-                        + executor.getSyncSource().getContentType() + "-"
-                        + executor.getSyncSource().getContentId());
+                s_logger.debug("Release sync source for job-" + executionContext.getJob().getId() + " sync source: "
+                        + executionContext.getSyncSource().getContentType() + "-"
+                        + executionContext.getSyncSource().getContentId());
             }
 
-            _queueMgr.purgeItem(executor.getSyncSource().getId());
-            checkQueue(executor.getSyncSource().getQueueId());
-        }
+            _queueMgr.purgeItem(executionContext.getSyncSource().getId());
+            checkQueue(executionContext.getSyncSource().getQueueId());
+    	}
     }
 
     private void checkQueue(long queueId) {

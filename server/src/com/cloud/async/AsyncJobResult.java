@@ -23,7 +23,6 @@ public class AsyncJobResult {
 	public static final int STATUS_SUCCEEDED = 1;
 	public static final int STATUS_FAILED = 2;
 	
-	private String cmdOriginator;
 	private long jobId;
 	private int jobStatus;
 	private int processStatus;
@@ -37,14 +36,6 @@ public class AsyncJobResult {
 		processStatus = 0;
 		resultCode = 0;
 		result = "";
-	}
-	
-	public String getCmdOriginator() {
-		return cmdOriginator;
-	}
-	
-	public void setCmdOriginator(String cmdOriginator) {
-		this.cmdOriginator = cmdOriginator;
 	}
 	
 	public long getJobId() {
