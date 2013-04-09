@@ -52,12 +52,12 @@ class Services:
                 # In MBs
             },
             "ostype": 'CentOS 5.3 (64-bit)',
-            "mode": 'advanced',
             "virtual_machine" : {
                 "affinity": {
                     "name": "webvms",
                     "type": "host anti-affinity",
-                }
+                },
+                "hypervisor" : "XenServer",
             }
         }
 
@@ -98,19 +98,22 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             cls.services["service_offering"]
         )
 
-        cls.ag = AffinityGroup.create(cls.api_client, cls.services["virtual_machine"]["affinity"], domainid=cls.domain.id)
+        cls.ag = AffinityGroup.create(cls.api_client, cls.services["virtual_machine"]["affinity"],
+            account=cls.services["account"], domainid=cls.domain.id)
 
         cls._cleanup = [
             cls.service_offering,
-            cls.disk_offering,
             cls.account,
         ]
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost"])
     def test_DeployVmAntiAffinityGroup(self):
         """
-        Deploys a couple of VMs in the same affinity group and verifies they are not on the same host
+        test DeployVM in anti-affinity groups
+
+        deploy VM1 and VM2 in the same host-anti-affinity groups
+        Verify that the vms are deployed on separate hosts
         """
         #deploy VM1 in affinity group created in setUp
         vm1 = VirtualMachine.create(
@@ -120,8 +123,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             accountid=self.account.account.name,
             domainid=self.account.account.domainid,
             serviceofferingid=self.service_offering.id,
-            affinitygroupnames=self.ag.name,
-            mode=self.services["mode"]
+            affinitygroupnames=[self.ag.name]
         )
 
         list_vm1 = list_virtual_machines(
@@ -154,12 +156,11 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             accountid=self.account.account.name,
             domainid=self.account.account.domainid,
             serviceofferingid=self.service_offering.id,
-            affinitygroupnames=self.ag.name,
-            mode=self.services["mode"]
+            affinitygroupnames=[self.ag.name]
         )
         list_vm2 = list_virtual_machines(
             self.api_client,
-            id=self.vm1.id
+            id=vm2.id
         )
         self.assertEqual(
             isinstance(list_vm2, list),
