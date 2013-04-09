@@ -48,17 +48,15 @@ public class AddImageStoreCmd extends BaseCmd {
             description="the Zone ID for the image store")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
+            required=true, description="the image store provider name")
+    private String providerName;
+
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the image store")
     private Map<String, String> details;
 
-    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
-            required=false, description="the scope of the image store: zone or region")
-    private String scope;
 
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
-            required=false, description="the image store provider name")
-    private String providerName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -75,10 +73,6 @@ public class AddImageStoreCmd extends BaseCmd {
      public Map<String, String> getDetails() {
         return details;
     }
-
-    public String getScope() {
-        return this.scope;
-     }
 
     public String getProviderName() {
         return this.providerName;

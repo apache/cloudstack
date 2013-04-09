@@ -406,7 +406,7 @@ public class AncientSnapshotStrategy implements SnapshotStrategy {
 			snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
 			ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
-			List<DataStore> stores = this.dataStoreMgr.getImageStores(scope);
+			List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(scope);
 			if (stores.size() != 1) {
 				throw new CloudRuntimeException("find out more than one image stores");
 			}

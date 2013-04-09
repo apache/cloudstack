@@ -56,6 +56,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -1922,18 +1923,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
         Map details = cmd.getDetails();
-
-        ScopeType scopeType = null;
-        String scope = cmd.getScope();
-        if (scope != null) {
-            try {
-                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid scope" + scope);
-            }
+        ScopeType scopeType = ScopeType.ZONE;
+        if ( dcId == null ){
+            scopeType = ScopeType.REGION;
         }
-        if (scopeType == ScopeType.ZONE && dcId == null) {
-            throw new InvalidParameterValueException("zone id can't be null, if scope is zone");
+
+        // check if scope is supported by store provider
+        if ( !((ImageStoreProvider)storeProvider).isScopeSupported(scopeType)){
+            throw new InvalidParameterValueException("Image store provider " + providerName + " does not support scope " + scopeType);
+        }
+
+        // check if we have already image stores from other different providers, we currently are not supporting image stores from different
+        // providers co-existing
+        List<ImageStoreVO> imageStores = _imageStoreDao.listAll();
+        for ( ImageStoreVO store : imageStores){
+            if (!store.getProviderName().equalsIgnoreCase(providerName)){
+                throw new InvalidParameterValueException("You can only add new image stores from the same provider " + store.getProviderName() + " already added");
+            }
         }
 
         if (dcId != null) {

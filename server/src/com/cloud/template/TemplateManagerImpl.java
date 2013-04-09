@@ -325,7 +325,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = this.dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            List<DataStore> stores = this.dataStoreMgr.getImageStores(new ZoneScope(zoneId));
+            List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
             if (stores.size() > 1) {
                 throw new CloudRuntimeException("multiple image stores, don't know which one to use");
             }
@@ -1718,7 +1718,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateInfo tmplInfo = this.tmplFactory.getTemplate(templateId);
             snapshot = _snapshotDao.findById(snapshotId);
             ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
-            List<DataStore> store = this.dataStoreMgr.getImageStores(scope);
+            List<DataStore> store = this.dataStoreMgr.getImageStoresByScope(scope);
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
             }

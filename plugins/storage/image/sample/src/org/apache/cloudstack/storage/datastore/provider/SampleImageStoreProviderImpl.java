@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.component.ComponentContext;
 
 public class SampleImageStoreProviderImpl implements ImageStoreProvider {
@@ -79,4 +80,13 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
     public HypervisorHostListener getHostListener() {
         return null;
     }
+
+    @Override
+    public boolean isScopeSupported(ScopeType scope) {
+        if ( scope == ScopeType.ZONE)
+            return true;
+        return false;
+    }
+
+
 }

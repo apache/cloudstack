@@ -44,7 +44,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class SwiftImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "Swift image store provider";
+    private final String providerName = "Swift";
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject
@@ -88,5 +88,13 @@ public class SwiftImageStoreProviderImpl implements ImageStoreProvider {
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
+
+    @Override
+    public boolean isScopeSupported(ScopeType scope) {
+        if ( scope == ScopeType.REGION )
+            return true;
+        return false;
+    }
+
 
 }

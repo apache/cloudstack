@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 
+
+
 public interface DataStoreProvider {
     public static enum DataStoreProviderType {
         PRIMARY,
@@ -33,5 +35,6 @@ public interface DataStoreProvider {
     public String getName();
     public boolean configure(Map<String, Object> params);
     public Set<DataStoreProviderType> getTypes();
-    
+
+
 }

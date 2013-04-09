@@ -18,31 +18,29 @@
  */
 package org.apache.cloudstack.storage.image.db;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.ImageStore;
-import com.cloud.user.AccountVO;
-import com.cloud.utils.db.DB;
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
-import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implements ImageStoreDao {
 
     private static final Logger s_logger = Logger.getLogger(ImageStoreDaoImpl.class);
     private SearchBuilder<ImageStoreVO> nameSearch;
+    private SearchBuilder<ImageStoreVO> providerSearch;
+    private SearchBuilder<ImageStoreVO> scopeSearch;
 
 
     @Override
@@ -53,6 +51,14 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
+        providerSearch = createSearchBuilder();
+        providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        providerSearch.done();
+
+        scopeSearch = createSearchBuilder();
+        scopeSearch.and("scope", scopeSearch.entity().getScope(), SearchCriteria.Op.EQ);
+        scopeSearch.done();
+
         return true;
     }
 
@@ -61,6 +67,20 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         SearchCriteria<ImageStoreVO> sc = nameSearch.create();
         sc.setParameters("name", name);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ImageStoreVO> findByProvider(String provider) {
+        SearchCriteria<ImageStoreVO> sc = providerSearch.create();
+        sc.setParameters("providerName", provider);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ImageStoreVO> findByScope(ScopeType scope) {
+        SearchCriteria<ImageStoreVO> sc = scopeSearch.create();
+        sc.setParameters("scope", scope);
+        return listBy(sc);
     }
 
 

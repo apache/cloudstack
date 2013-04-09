@@ -35,12 +35,13 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.component.ComponentContext;
 
 @Component
 public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "cloudstack image store provider";
+    private final String providerName = "CloudStack ImageStore Provider";
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject
@@ -84,5 +85,13 @@ public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
+
+    @Override
+    public boolean isScopeSupported(ScopeType scope) {
+        if ( scope == ScopeType.ZONE)
+            return true;
+        return false;
+    }
+
 
 }

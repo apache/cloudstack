@@ -44,7 +44,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class S3ImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "S3 image store provider";
+    private final String providerName = "S3";
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject
@@ -86,5 +86,13 @@ public class S3ImageStoreProviderImpl implements ImageStoreProvider {
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
+
+    @Override
+    public boolean isScopeSupported(ScopeType scope) {
+        if ( scope == ScopeType.REGION )
+            return true;
+        return false;
+    }
+
 
 }

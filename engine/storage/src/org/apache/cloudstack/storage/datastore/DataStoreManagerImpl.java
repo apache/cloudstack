@@ -62,10 +62,18 @@ public class DataStoreManagerImpl implements DataStoreManager {
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
+
     @Override
-    public List<DataStore> getImageStores(Scope scope) {
-        return imageDataStoreMgr.getList();
+    public List<DataStore> getImageStoresByScope(Scope scope) {
+        return imageDataStoreMgr.listImageStoresByScope(scope);
     }
+
+
+    @Override
+    public List<DataStore> getImageStoresByProvider(String provider) {
+        return imageDataStoreMgr.listImageStoreByProvider(provider);
+    }
+
     @Override
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStorMgr.getPrimaryDataStore(storeId);

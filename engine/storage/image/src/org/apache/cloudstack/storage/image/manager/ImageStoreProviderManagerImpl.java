@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
@@ -53,13 +54,13 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     public void config() {
         driverMaps = new HashMap<String, ImageStoreDriver>();
     }
-    
+
     @Override
     public ImageStoreEntity getImageStore(long dataStoreId) {
         ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         String providerName = dataStore.getProviderName();
         ImageStoreProvider provider = (ImageStoreProvider)providerManager.getDataStoreProvider(providerName);
-        ImageStoreEntity imgStore = ImageStoreImpl.getDataStore(dataStore, 
+        ImageStoreEntity imgStore = ImageStoreImpl.getDataStore(dataStore,
                 driverMaps.get(provider.getName()), provider
                 );
         // TODO Auto-generated method stub
@@ -82,7 +83,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
-    public List<DataStore> getList() {
+    public List<DataStore> listImageStores() {
         List<ImageStoreVO> stores = dataStoreDao.listAll();
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
@@ -90,5 +91,27 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
         }
         return imageStores;
     }
+
+    @Override
+    public List<DataStore> listImageStoresByScope(Scope scope) {
+        List<ImageStoreVO> stores = dataStoreDao.findByScope(scope.getScopeType());
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
+    }
+
+    @Override
+    public List<DataStore> listImageStoreByProvider(String provider) {
+        List<ImageStoreVO> stores = dataStoreDao.findByProvider(provider);
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
+    }
+
+
 
 }
