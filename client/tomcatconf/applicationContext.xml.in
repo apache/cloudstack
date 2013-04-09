@@ -168,8 +168,6 @@
   <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
   <bean id="agentUpgradeDaoImpl" class="com.cloud.maint.dao.AgentUpgradeDaoImpl" />
   <bean id="alertDaoImpl" class="com.cloud.alert.dao.AlertDaoImpl" />
-  <bean id="asyncJobDaoImpl" class="com.cloud.async.dao.AsyncJobDaoImpl" />
-  <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
   <bean id="autoScalePolicyConditionMapDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl" />
   <bean id="autoScalePolicyDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyDaoImpl" />
   <bean id="autoScaleVmGroupDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl" />
@@ -311,8 +309,6 @@
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
   <bean id="swiftDaoImpl" class="com.cloud.storage.dao.SwiftDaoImpl" />
-  <bean id="syncQueueDaoImpl" class="com.cloud.async.dao.SyncQueueDaoImpl" />
-  <bean id="syncQueueItemDaoImpl" class="com.cloud.async.dao.SyncQueueItemDaoImpl" />
   <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
@@ -662,7 +658,6 @@
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
 
   <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
-  <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
   <bean id="autoScaleManagerImpl" class="com.cloud.network.as.AutoScaleManagerImpl" />
   <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
   <bean id="clusterFenceManagerImpl" class="com.cloud.cluster.ClusterFenceManagerImpl" />
@@ -695,7 +690,6 @@
   <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" />
   <bean id="storageNetworkManagerImpl" class="com.cloud.network.StorageNetworkManagerImpl" />
   <bean id="swiftManagerImpl" class="com.cloud.storage.swift.SwiftManagerImpl" />
-  <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
   <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
   <bean id="templateManagerImpl" class="com.cloud.template.TemplateManagerImpl" />
   <bean id="upgradeManagerImpl" class="com.cloud.maint.UpgradeManagerImpl" />
@@ -791,6 +785,16 @@
 <!--                           Module-basis OSS/non-OSS Common components                                  -->
 <!--                                                                                                       -->
 <!--=======================================================================================================-->
+
+
+  <!-- Async management -->
+  <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher" />
+  <bean id="asyncJobDaoImpl" class="com.cloud.async.dao.AsyncJobDaoImpl" />
+  <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
+  <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
+  <bean id="syncQueueDaoImpl" class="com.cloud.async.dao.SyncQueueDaoImpl" />
+  <bean id="syncQueueItemDaoImpl" class="com.cloud.async.dao.SyncQueueItemDaoImpl" />
+  <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
 
   <!--
     Baremetal components

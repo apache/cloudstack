@@ -17,7 +17,6 @@
 package com.cloud.api;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;

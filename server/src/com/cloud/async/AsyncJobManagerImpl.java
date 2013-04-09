@@ -36,17 +36,15 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.ApiDispatcher;
-import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.ApiAsyncJobDispatcher;
 import com.cloud.api.ApiSerializerHelper;
+import com.cloud.api.AsyncCommandQueued;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -63,7 +61,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -73,11 +70,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-@Component
-@Local(value={AsyncJobManager.class})
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener {
     public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class.getName());
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
@@ -92,11 +85,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private AccountDao _accountDao;
     @Inject private AsyncJobDao _jobDao;
     @Inject private ConfigurationDao _configDao;
+    @Inject private List<AsyncJobDispatcher> _jobDispatchers;
 
     private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
-
-    @Inject private ApiDispatcher _dispatcher;
 
     private final ScheduledExecutorService _heartbeatScheduler =
             Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
@@ -377,14 +369,33 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _executor.submit(runnable);
         }
     }
-
+    
+    private AsyncJobDispatcher getDispatcher(String dispatcherName) {
+    	if(dispatcherName == null || dispatcherName.isEmpty())
+    		dispatcherName = ApiAsyncJobDispatcher.class.getSimpleName();
+    	
+    	if(_jobDispatchers != null) {
+    		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {
+    			if(dispatcherName.equals(dispatcher.getName()))
+    				return dispatcher;
+    		}
+    	}
+    	return null;
+    }
+    
     private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJobVO job) {
         return new Runnable() {
             @Override
             public void run() {
-                try {
-                    long jobId = 0;
-
+            	Transaction txn = null;
+            	try {
+            		//
+            		// setup execution environment
+            		//
+                    NDC.push("job-" + job.getId());
+                    
+            		txn = Transaction.open(Transaction.CLOUD_DB);
+            		
                     try {
                         JmxUtil.registerMBean("AsyncJobManager", "Active Job " + job.getId(), new AsyncJobMBeanImpl(job));
                     } catch(Exception e) {
@@ -392,122 +403,58 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
                     
                     AsyncJobExecutionContext.setCurrentExecutionContext(new AsyncJobExecutionContext(job));
-
-                    BaseAsyncCmd cmdObj = null;
-                    Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                    
+                    // execute the job
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug("Executing " + job.getCmd() + " for job-" + job.getId());
+                    }
+                    
+                    AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
+                    if(jobDispatcher != null) {
+                    	jobDispatcher.RunJob(job);
+                    } else {
+                    	s_logger.error("Unable to find job dispatcher, job will be cancelled");
+                        completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+                    }
+                    
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Done executing " + job.getCmd() + " for job-" + job.getId());
+                    }
+                   
+            	} catch (Throwable e) {
+            		s_logger.error("Unexpected exception", e);
+                    completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+            	} finally {
+            		// guard final clause as well
                     try {
-                        jobId = job.getId();
-                        NDC.push("job-" + jobId);
-
-                        if(s_logger.isDebugEnabled()) {
-                            s_logger.debug("Executing " + job.getCmd() + " for job-" + jobId);
-                        }
-
-                        Class<?> cmdClass = Class.forName(job.getCmd());
-                        cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
-                        cmdObj = ComponentContext.inject(cmdObj);
-                        cmdObj.configure();
-                        cmdObj.setJob(job);
-
-                        Type mapType = new TypeToken<Map<String, String>>() {}.getType();
-                        Gson gson = ApiGsonHelper.getBuilder().create();
-                        Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
-
-                        // whenever we deserialize, the UserContext needs to be updated
-                        String userIdStr = params.get("ctxUserId");
-                        String acctIdStr = params.get("ctxAccountId");
-                        Long userId = null;
-                        Account accountObject = null;
-
-                        if (userIdStr != null) {
-                            userId = Long.parseLong(userIdStr);
-                        }
-
-                        if (acctIdStr != null) {
-                            accountObject = _accountDao.findById(Long.parseLong(acctIdStr));
-                        }
-
-                        UserContext.registerContext(userId, accountObject, null, false);
-                        try {
-                            // dispatch could ultimately queue the job
-                            _dispatcher.dispatch(cmdObj, params);
-
-                            // serialize this to the async job table
-                            completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
-                        } finally {
-                            UserContext.unregisterContext();
-                        }
-
-                        // commands might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue mechanism...
-                        if (job.getSyncSource() != null) {
+                    	if (job.getSyncSource() != null) {
                             _queueMgr.purgeItem(job.getSyncSource().getId());
                             checkQueue(job.getSyncSource().getQueueId());
                         }
 
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Done executing " + job.getCmd() + " for job-" + jobId);
-                        }
-
+                    	//
+                    	// clean execution environment
+                    	//
+                        AsyncJobExecutionContext.setCurrentExecutionContext(null);
+                   	
+                    	try {
+                    		JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
+                    	} catch(Exception e) {
+                            s_logger.warn("Unable to unregister job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
+                    	}
+                    	
+	                    if(txn != null)
+	                    	txn.close();
+	                    
+	                    NDC.pop();
                     } catch(Throwable e) {
-                        if (e instanceof AsyncCommandQueued) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("job " + job.getCmd() + " for job-" + jobId + " was queued, processing the queue.");
-                            }
-                            checkQueue(((AsyncCommandQueued)e).getQueue().getId());
-                        } else {
-                            String errorMsg = null;
-                            int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
-                            if (!(e instanceof ServerApiException)) {
-                                s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
-                                errorMsg = e.getMessage();
-                            } else {
-                                ServerApiException sApiEx = (ServerApiException)e;
-                                errorMsg = sApiEx.getDescription();
-                                errorCode = sApiEx.getErrorCode().getHttpCode();
-                            }
-
-                            ExceptionResponse response = new ExceptionResponse();
-                            response.setErrorCode(errorCode);
-                            response.setErrorText(errorMsg);
-                            response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
-
-                            // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
-                            //         and we need to preserve that as much as possible here
-                            completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
-
-                            // need to clean up any queue that happened as part of the dispatching and move on to the next item in the queue
-                            try {
-                                if (job.getSyncSource() != null) {
-                                    _queueMgr.purgeItem(job.getSyncSource().getId());
-                                    checkQueue(job.getSyncSource().getQueueId());
-                                }
-                            } catch(Throwable ex) {
-                                s_logger.fatal("Exception on exception, log it for record", ex);
-                            }
-                        }
-                    } finally {
-
-                        try {
-                            JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
-                        } catch(Exception e) {
-                            s_logger.warn("Unable to unregister active job " + job.getId() + " from JMX monitoring");
-                        }
-
-                        txn.close();
-                        NDC.pop();
+                		s_logger.error("Double exception", e);
                     }
-                } catch (Throwable th) {
-                    try {
-                        s_logger.error("Caught: " + th);
-                    } catch (Throwable th2) {
-                    }
-                } finally {
-                	AsyncJobExecutionContext.setCurrentExecutionContext(null);
-                }
+            	}
             }
         };
     }
-
+    
     private void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
         AsyncJobVO job = _jobDao.findById(item.getContentId());
         if (job != null) {

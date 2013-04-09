@@ -16,20 +16,8 @@
 // under the License.
 package com.cloud.async;
 
-import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.component.Adapter;
 
-public class AsyncCommandQueued extends CloudRuntimeException {
-    private static final long serialVersionUID = SerialVersionUID.AsyncCommandQueued;
-
-    private SyncQueueVO _queue = null;
-
-    public AsyncCommandQueued(SyncQueueVO queue, String msg) {
-        super(msg);
-        _queue = queue;
-    }
-
-    public SyncQueueVO getQueue() {
-        return _queue;
-    }
+public interface AsyncJobDispatcher extends Adapter {
+	void RunJob(AsyncJobVO job);
 }
