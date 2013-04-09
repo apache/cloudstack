@@ -26,7 +26,8 @@ public class Storage {
         VHD(true, true, true),
         ISO(false, false, false),
         OVA(true, true, true, "ova"),
-        BAREMETAL(false, false, false);
+        BAREMETAL(false, false, false),
+        TAR(false, false, false);
 
         private final boolean thinProvisioned;
         private final boolean supportSparse;

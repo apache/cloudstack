@@ -87,6 +87,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 
@@ -1418,7 +1419,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
 
 
     @Override
-    public NicVO savePlaceholderNic(Network network, String ip4Address) {
+    public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
         // TODO Auto-generated method stub
         return null;
     }

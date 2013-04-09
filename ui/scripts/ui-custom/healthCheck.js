@@ -164,7 +164,15 @@
 											}
 										});										
 									}, g_queryAsyncJobResultInterval); 										
-								}
+								},
+                                                           
+                                                               error:function(json){
+
+                                                                  cloudStack.dialog.notice({message: _s(json.responseText)}); //Error message in the API needs to be improved
+                                                                  $healthCheckDialog.dialog('close');
+                                                                  $('.overlay').remove();
+                                                              }
+
 							});
             }
           }					

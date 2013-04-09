@@ -114,28 +114,34 @@
       }
     });
 
-		if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
-		  trafficType.xennetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
-		  trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
-		  trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
-	        if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
-                   trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];	
+    if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
+      trafficType.xennetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
+      trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
+      trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
+      trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+    if(trafficType.lxcnetworklabel == null || trafficType.lxcnetworklabel == 0)
+      trafficType.lxcnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+
     return trafficType;
   };
 
   var updateTrafficLabels = function(trafficType, labels, complete) {
     var array1 = [];
-		if(labels.xennetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&xennetworklabel=" + labels.xennetworklabel);
-		if(labels.kvmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
-		if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-	        if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
-                  array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel); 		
-		$.ajax({
+    if(labels.xennetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&xennetworklabel=" + labels.xennetworklabel);
+    if(labels.kvmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
+    if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
+    if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
+    if(labels.lxcnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+      array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
+
+    $.ajax({
       url: createURL('updateTrafficType' + array1.join("")),
       data: {
         id: trafficType.id       
@@ -463,7 +469,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label',isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label',isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label',isEditable: true }
                   }
                 ],
 
@@ -483,6 +490,7 @@
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                       selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -580,7 +588,83 @@
                             }
                           });
                         }
-                      }
+                      },
+											/*
+											releaseFromAccount: {
+                        label: 'Release from Account',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('releasePublicIpRange'),
+                            data: {
+														  id: args.context.multiRule[0].id
+														},                            
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'release from account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      },
+											addAccount: {
+											  label: 'Add Account',												
+												createForm: {
+													title: 'Add Account',
+													fields: {
+														account: { label: 'Account' },
+														domainid: {
+															label: 'Domain',															
+															select: function(args) {
+																$.ajax({
+																	url: createURL('listDomains'),
+																	data: { listAll: true },
+																	success: function(json) {
+																		args.response.success({
+																			data: $.map(json.listdomainsresponse.domain, function(domain) {
+																				return {
+																					id: domain.id,
+																					description: domain.path
+																				};
+																			})
+																		});
+																	}
+																});
+															}
+														}
+													}
+												},												
+												action: function(args) {                          							
+												  var data = {
+														id: args.context.multiRule[0].id
+													};												
+                          $.ajax({
+                            url: createURL('dedicatePublicIpRange'),
+                            data: data,                        
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Add Account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+											}
+											*/
                     },
                     dataProvider: function(args) {
                       $.ajax({
@@ -636,7 +720,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -795,7 +880,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true } 
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {
@@ -811,6 +897,7 @@
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                       selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedManagementNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
                       args.response.success({ data: selectedManagementNetworkObj });
                     }
                   });
@@ -887,7 +974,59 @@
                   });
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
+              },
+
+             addVlanRange:{
+                   label:'Add VLAN Range',
+                   title:'Add VLAN Range',
+
+                    messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to add another VLAN Range to this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range added';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Add VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&vlan=" + todb(args.data.startvlan) + "-" + todb(args.data.endvlan));
+
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
+                   }
+                  });
+
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+
+               }
+
+ 
             },
 
             tabFilter: function(args) {
@@ -928,7 +1067,8 @@
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true }
+                    ovmnetworklabel: { label: 'OVM traffic label', isEditable: true },
+                    lxcnetworklabel: { label: 'label.lxc.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) { //physical network + Guest traffic type       
@@ -964,10 +1104,11 @@
 											selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
 											selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
                                                                                         selectedPhysicalNetworkObj["ovmnetworklabel"] = trafficType.ovmnetworklabel;
+                                                                                        selectedPhysicalNetworkObj["lxcnetworklabel"] = trafficType.lxcnetworklabel;
 
 											args.response.success({
 												actionFilter: function() {
-													var allowedActions = ['edit'];
+													var allowedActions = ['edit' , 'addVlanRange'];
 													return allowedActions;
 												},
 												data: selectedPhysicalNetworkObj
@@ -4297,6 +4438,110 @@
                   },
                   notification: function(args) {
                     return 'label.shutdown.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          },
+
+
+          // MidoNet provider detailView
+          midoNet: {
+          id: 'midoNet',
+          label: 'label.midoNet',
+          isMaximized: true,
+          type: 'detailView',
+          fields: {
+            name: { label: 'label.name' },
+            //ipaddress: { label: 'label.ip.address' },
+            state: { label: 'label.status', indicator: { 'Enabled': 'on' } }
+          },
+          tabs: {
+            details: {
+              title: 'label.network',
+              fields: [
+                {
+                  name: { label: 'label.name' }
+                },
+                {
+                  id: { label: 'label.id' },
+                  state: { label: 'label.state' },
+                  physicalnetworkid: { label: 'label.physical.network.ID' },
+                  destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
+                  supportedServices: { label: 'label.supported.services' }
+                }
+                ],
+                dataProvider: function(args) {
+                  refreshNspData("MidoNet");
+                  args.response.success({
+                    actionFilter: virtualRouterProviderActionFilter,
+                    data: $.extend(nspMap["midoNet"], {
+                      supportedServices: nspMap["midoNet"].servicelist.join(', ')
+                    })
+                  });
+                }
+              },
+            },
+            actions: {
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["midoNet"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.enable.provider';
+                  },
+                  notification: function() {
+                    return 'label.enable.provider';
+                  }
+               },
+               notification: { poll: pollAsyncJobResult }
+             },
+             disable: {
+               label: 'label.disable.provider',
+               action: function(args) {
+               $.ajax({
+                 url: createURL("updateNetworkServiceProvider&id=" + nspMap["midoNet"].id + "&state=Disabled"),
+                 dataType: "json",
+                 success: function(json) {
+                   var jid = json.updatenetworkserviceproviderresponse.jobid;
+                     args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.disable.provider';
+                  },
+                  notification: function() {
+                    return 'label.disable.provider';
                   }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -9303,8 +9548,8 @@
                     select: function(args) {
                       var scope = [
                         { id: 'zone', description: _l('label.zone.wide') },
-                        { id: 'cluster', description: _l('label.cluster') },
-                        { id: 'host', description: _l('label.host') }
+                        { id: 'cluster', description: _l('label.cluster') }
+                       // { id: 'host', description: _l('label.host') }
                       ];
 
                       args.response.success({
@@ -9489,6 +9734,13 @@
                         var items = [];
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "ocfs2", description: "ocfs2"});
+                        args.response.success({data: items});
+                      }
+                      else if(selectedClusterObj.hypervisortype == "LXC") {
+                        var items = [];
+                        items.push({id: "nfs", description: "nfs"});
+                        items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+                        items.push({id: "rbd", description: "RBD"});
                         args.response.success({data: items});
                       }
                       else {
@@ -11333,6 +11585,9 @@
 							case "Netscaler":
 								nspMap["netscaler"] = items[i];
 								break;
+                            case "MidoNet":
+                                nspMap["midoNet"] = items[i];
+                                break;
 							case "F5BigIp":
 								nspMap["f5"] = items[i];
 								break;
@@ -11389,6 +11644,13 @@
 		else if(selectedZoneObj.networktype == "Advanced"){
 		  nspHardcodingArray.push(
 				{
+                    id: 'midoNet',
+                    name: 'MidoNet',
+                    state: nspMap.midoNet? nspMap.midoNet.state : 'Disabled'
+                }
+            );
+            nspHardcodingArray.push(
+                {
 					id: 'vpcVirtualRouter',
 					name: 'VPC Virtual Router',
 					state: nspMap.vpcVirtualRouter ? nspMap.vpcVirtualRouter.state : 'Disabled'

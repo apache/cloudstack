@@ -66,6 +66,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentMethodInterceptable;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmManager;
@@ -78,7 +79,7 @@ import com.cloud.vm.dao.UserVmDao;
  *
  */
 @Component
-public class StatsCollector implements ComponentMethodInterceptable {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
 	public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
 	private static StatsCollector s_instance = null;
@@ -122,10 +123,11 @@ public class StatsCollector implements ComponentMethodInterceptable {
 		s_instance = this;
 	}
 
-    @PostConstruct
-    private void init(){
+	@Override
+	public boolean start() {
         init(_configDao.getConfiguration());
-    }
+		return true;
+	}
 
 	private void init(Map<String, String> configs) {
 		_executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StatsCollector"));

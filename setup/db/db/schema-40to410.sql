@@ -263,8 +263,6 @@ CREATE TABLE  `cloud`.`region` (
 
 INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
-ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-
 CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
@@ -1479,6 +1477,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         storage_pool.created,
         storage_pool.removed,
         storage_pool.capacity_bytes,
+        storage_pool.scope,
         cluster.id cluster_id,
         cluster.uuid cluster_uuid,
         cluster.name cluster_name,
@@ -1659,3 +1658,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.ipv6.search.retry.max' , 10000, 'The maximum number of retrying times to search for an available IPv6 address in the table');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.exclude.zones' , '', 'Traffic going into specified list of zones is not metered');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.include.zones' , 'EXTERNAL', 'Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty');
+
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (163, UUID(), 10, 'Ubuntu 12.04 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164, UUID(), 10, 'Ubuntu 12.04 (64-bit)');

@@ -19,7 +19,7 @@
 # specific language governing permissions and limitations
 # under the License.
 ### BEGIN INIT INFO
-# Provides:          tomcat-vmops
+# Provides:          cloudstack-management
 # Required-Start:    $local_fs $remote_fs $network
 # Required-Stop:     $local_fs $remote_fs $network
 # Should-Start:      $named
@@ -34,7 +34,7 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=cloudstack-management
 DESC="CloudStack-specific Tomcat servlet engine"
 DAEMON=/usr/bin/jsvc
-CATALINA_HOME=/usr/share/cloudstack/management
+CATALINA_HOME=/usr/share/cloudstack-management
 DEFAULT=/etc/cloudstack/management/tomcat6.conf
 JVM_TMP=/tmp/$NAME-temp
 
@@ -65,7 +65,7 @@ TOMCAT6_USER=tomcat6
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not
 # defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-1.6.0-openjdk-amd64/ /usr/lib/jvm/java-1.6.0-openjdk-i386/ /usr/lib/jvm/java-1.6.0-openjdk/ /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-sun"
+JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
 
 # Look for the right JVM to use
 for jdir in $JDK_DIRS; do
@@ -76,7 +76,7 @@ done
 export JAVA_HOME
 
 # Directory for per-instance configuration files and webapps
-CATALINA_BASE=/usr/share/cloudstack/management
+CATALINA_BASE=/usr/share/cloudstack-management
 
 # Use the Java security manager? (yes/no)
 TOMCAT6_SECURITY=no
@@ -125,8 +125,7 @@ fi
 # Define other required variables
 CATALINA_PID="/var/run/$NAME.pid"
 BOOTSTRAP_CLASS=org.apache.catalina.startup.Bootstrap
-JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar"
-JSVC_CLASSPATH=$CLASSPATH:$JSVC_CLASSPATH
+JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:/etc/cloudstack/management"
 
 # Look for Java Secure Sockets Extension (JSSE) JARs
 if [ -z "${JSSE_HOME}" -a -r "${JAVA_HOME}/jre/lib/jsse.jar" ]; then

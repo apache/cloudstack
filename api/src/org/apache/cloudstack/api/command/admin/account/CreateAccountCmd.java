@@ -63,7 +63,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.LASTNAME, type=CommandType.STRING, required=true, description="lastname")
     private String lastName;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
     private String password;
 
     @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")

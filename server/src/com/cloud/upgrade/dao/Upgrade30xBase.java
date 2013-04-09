@@ -30,11 +30,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public abstract class Upgrade30xBase implements DbUpgrade{
 
     final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
-    
+
     protected String getNetworkLabelFromConfig(Connection conn, String name){
         String sql = "SELECT value FROM `cloud`.`configuration` where name = '"+name+"'";
         String networkLabel = null;
-        PreparedStatement pstmt = null; 
+        PreparedStatement pstmt = null;
         ResultSet rs = null;
         try{
             pstmt = conn.prepareStatement(sql);
@@ -60,8 +60,8 @@ public abstract class Upgrade30xBase implements DbUpgrade{
         }
         return networkLabel;
     }
-    
-    
+
+
     protected long addPhysicalNetworkToZone(Connection conn, long zoneId, String zoneName, String networkType, String vnet, Long domainId){
 
         String getNextNetworkSequenceSql = "SELECT value from `cloud`.`sequence` where name='physical_networks_seq'";
@@ -70,26 +70,26 @@ public abstract class Upgrade30xBase implements DbUpgrade{
         // add p.network
         try{
             pstmt2 = conn.prepareStatement(getNextNetworkSequenceSql);
-        
+
             ResultSet rsSeq = pstmt2.executeQuery();
             rsSeq.next();
-    
+
             long physicalNetworkId = rsSeq.getLong(1);
             rsSeq.close();
             pstmt2.close();
             pstmt2 = conn.prepareStatement(advanceNetworkSequenceSql);
             pstmt2.executeUpdate();
             pstmt2.close();
-    
+
             String uuid = UUID.randomUUID().toString();
             String broadcastDomainRange = "POD";
             if ("Advanced".equals(networkType)) {
                 broadcastDomainRange = "ZONE";
             }
-    
+
             s_logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
             String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, broadcast_domain_range, state, name) VALUES (?,?,?,?,?,?,?)";
-            
+
             pstmtUpdate = conn.prepareStatement(sql);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setString(2, uuid);
@@ -102,7 +102,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             s_logger.warn("Statement is " + pstmtUpdate.toString());
             pstmtUpdate.executeUpdate();
             pstmtUpdate.close();
-            
+
             if (domainId != null && domainId.longValue() != 0) {
                 s_logger.debug("Updating domain_id for physical network id=" + physicalNetworkId);
                 sql = "UPDATE `cloud`.`physical_network` set domain_id=? where id=?";
@@ -112,7 +112,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
             }
-    
+
             return physicalNetworkId;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
@@ -132,7 +132,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
 
         }
     }
-    
+
     protected void addTrafficType(Connection conn, long physicalNetworkId, String trafficType, String xenPublicLabel, String kvmPublicLabel, String vmwarePublicLabel){
         // add traffic types
         PreparedStatement pstmtUpdate = null;
@@ -159,8 +159,8 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             }
         }
     }
-    
-    
+
+
     protected void addDefaultSGProvider(Connection conn, long physicalNetworkId, long zoneId, String networkType, boolean is304){
         PreparedStatement pstmtUpdate = null, pstmt2 = null;
         try{
@@ -176,13 +176,13 @@ public abstract class Upgrade30xBase implements DbUpgrade{
 
             pstmt2 = conn.prepareStatement(selectSG);
             pstmt2.setLong(1, zoneId);
-            ResultSet sgDcSet = pstmt2.executeQuery(); 
+            ResultSet sgDcSet = pstmt2.executeQuery();
             if (sgDcSet.next()) {
                 isSGServiceEnabled = true;
             }
             sgDcSet.close();
             pstmt2.close();
-            
+
             if(isSGServiceEnabled){
                 s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
                 String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
@@ -194,7 +194,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
                 pstmtUpdate.setLong(2, physicalNetworkId);
                 pstmtUpdate.setString(3, "SecurityGroupProvider");
                 pstmtUpdate.setString(4, "Enabled");
-                
+
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
             }
@@ -216,7 +216,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             }
         }
     }
-    
+
     protected void addDefaultVRProvider(Connection conn, long physicalNetworkId, long zoneId){
         PreparedStatement pstmtUpdate = null, pstmt2 = null;
         try{
@@ -235,7 +235,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             pstmtUpdate.setString(4, "Enabled");
             pstmtUpdate.executeUpdate();
             pstmtUpdate.close();
-            
+
             // add virtual_router_element
             String fetchNSPid = "SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId + " AND provider_name = 'VirtualRouter' AND uuid = ?";
             pstmt2 = conn.prepareStatement(fetchNSPid);
@@ -271,9 +271,9 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             }
         }
     }
-    
+
     protected void addPhysicalNtwk_To_Ntwk_IP_Vlan(Connection conn, long physicalNetworkId, long networkId){
-        PreparedStatement pstmtUpdate = null; 
+        PreparedStatement pstmtUpdate = null;
         try{
             // add physicalNetworkId to vlan for this zone
             String updateVLAN = "UPDATE `cloud`.`vlan` SET physical_network_id = " + physicalNetworkId + " WHERE network_id = " + networkId;
@@ -302,10 +302,10 @@ public abstract class Upgrade30xBase implements DbUpgrade{
                 }
             }
         }
-            
+
     }
-    
-    
-    
-    
+
+
+
+
 }

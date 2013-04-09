@@ -2943,7 +2943,7 @@
                             });
 
                             $.extend(item, {
-                              _itemName: 'displayname',
+                              _itemName: 'name',
                               _itemData: lbInstances,
                               _maxLength: {
                                 name: 7

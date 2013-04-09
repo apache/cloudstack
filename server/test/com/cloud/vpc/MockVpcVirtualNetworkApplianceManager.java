@@ -396,4 +396,10 @@ VpcVirtualNetworkApplianceService {
         return false;
     }
 
+    @Override
+    public List<DomainRouterVO> getVpcRouters(long vpcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

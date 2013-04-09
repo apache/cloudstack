@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
-	
+
 	@Inject private VMEntityManager manager;
 
 	private VMEntityVO vmEntityVO;
@@ -61,10 +61,10 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
 		manager.saveVirtualMachine(vmEntityVO);
 	}
-	
+
 	public VirtualMachineEntityImpl(String vmId, VMEntityManager manager) {
 		this.manager = manager;
-    	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
+	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
     }
 
 	public VirtualMachineEntityImpl(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags, List<String> rootDiskTags, List<String> networks, VMEntityManager manager) {
@@ -76,7 +76,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 		this.vmEntityVO.setComputeTags(computeTags);
 		this.vmEntityVO.setRootDiskTags(rootDiskTags);
 		this.vmEntityVO.setNetworkIds(networks);
-		
+
 		manager.saveVirtualMachine(vmEntityVO);
     }
 

@@ -47,24 +47,24 @@ import com.cloud.user.Account;
 @APICommand(description="List ucs manager", responseObject=UcsManagerResponse.class)
 public class ListUcsManagerCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
-    
+
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the zone id", required=true)
     private Long zoneId;
-    
+
     @Inject
     private UcsManager mgr;
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
         try {
-            ListResponse<UcsManagerResponse> response  = mgr.listUcsManager(this);            
+            ListResponse<UcsManagerResponse> response  = mgr.listUcsManager(this);
             response.setResponseName(getCommandName());
             response.setObjectName("ucsmanager");
             this.setResponseObject(response);
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());  
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 

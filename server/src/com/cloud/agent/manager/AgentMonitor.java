@@ -35,6 +35,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -60,7 +61,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class AgentMonitor extends Thread implements AgentMonitorService {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
-    private long _pingTimeout;
+    private long _pingTimeout = 120; // Default set to 120 seconds
     @Inject private HostDao _hostDao;
     private boolean _stop;
     @Inject private AgentManager _agentMgr;
@@ -69,40 +70,16 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
     @Inject private HostPodDao _podDao = null;
     @Inject private AlertManager _alertMgr;
     private long _msId;
-    private ConnectionConcierge _concierge;
     @Inject ClusterDao _clusterDao;
     @Inject ResourceManager _resourceMgr;
-
+        
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
     public AgentMonitor() {
         _pingMap = new ConcurrentHashMap<Long, Long>(10007);
     }
-
-    public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {
-        super("AgentMonitor");
-        _msId = msId;
-        _pingTimeout = pingTimeout;
-        _hostDao = hostDao;
-        _agentMgr = agentMgr;
-        _stop = false;
-        _vmDao = vmDao;
-        _dcDao = dcDao;
-        _podDao = podDao;
-        _alertMgr = alertMgr;
-        _pingMap = new ConcurrentHashMap<Long, Long>(10007);
-        // try {
-        // Connection conn = Transaction.getStandaloneConnectionWithException();
-        // conn.setAutoCommit(true);
-        // conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        // _concierge = new ConnectionConcierge("AgentMonitor", conn, true);
-        // } catch (SQLException e) {
-        // throw new CloudRuntimeException("Unable to get a db connection", e);
-        // }
-
-    }
-
+    
     /**
      * Check if the agent is behind on ping
      *
@@ -297,7 +274,9 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
         return -1;
     }
 
-    public void startMonitoring() {
+    @Override
+    public void startMonitoring(long pingTimeout) {
+        _pingTimeout = pingTimeout;
     	start();
     }
 }

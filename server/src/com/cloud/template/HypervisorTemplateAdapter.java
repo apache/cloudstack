@@ -141,6 +141,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 	        &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
 	        &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
 	        &&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+	        &&(!url.toLowerCase().endsWith("tar"))&&(!url.toLowerCase().endsWith("tar.zip"))
+	        &&(!url.toLowerCase().endsWith("tar.bz2"))&&(!url.toLowerCase().endsWith("tar.gz"))
 	        &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
 	        throw new InvalidParameterValueException("Please specify a valid "+ cmd.getFormat().toLowerCase());
 	    }
@@ -148,6 +150,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		if ((cmd.getFormat().equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
+			|| (cmd.getFormat().equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar") && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url.toLowerCase().endsWith("tar.gz")))
 			|| (cmd.getFormat().equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
 	        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + cmd.getFormat().toLowerCase());
 		}

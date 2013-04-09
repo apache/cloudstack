@@ -29,6 +29,7 @@ public class Hypervisor {
         BareMetal,
         Simulator,
         Ovm,
+        LXC,
 
         Any; /*If you don't care about the hypervisor type*/
 
@@ -54,6 +55,8 @@ public class Hypervisor {
                 return HypervisorType.Simulator;
             } else if (hypervisor.equalsIgnoreCase("Ovm")) {
                 return HypervisorType.Ovm;
+            } else if (hypervisor.equalsIgnoreCase("LXC")) {
+                return HypervisorType.LXC;
             } else if (hypervisor.equalsIgnoreCase("Any")) {
                 return HypervisorType.Any;
             } else {

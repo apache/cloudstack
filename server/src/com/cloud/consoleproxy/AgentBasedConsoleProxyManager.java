@@ -353,7 +353,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 
-    @Override 
+    @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
 }

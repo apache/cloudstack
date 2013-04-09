@@ -102,7 +102,6 @@ public class VpcOfferingVO implements VpcOffering {
         return name;
     }
 
-    @Override
     public String getUniqueName() {
         return uniqueName;
     }

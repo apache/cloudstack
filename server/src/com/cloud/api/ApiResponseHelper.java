@@ -446,6 +446,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
+        vmSnapshotResponse.setObjectName("vmsnapshot");
         return vmSnapshotResponse;
     }
     

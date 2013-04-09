@@ -32,17 +32,17 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 
 public class ClusterEntityImpl implements ClusterEntity {
-	
-	
+
+
 	private DataCenterResourceManager manager;
 
 	private EngineClusterVO clusterVO;
-	
-	
+
+
 	public ClusterEntityImpl(String clusterId, DataCenterResourceManager manager) {
 		this.manager = manager;
-    	this.clusterVO = this.manager.loadCluster(clusterId);
-    }	
+	this.clusterVO = this.manager.loadCluster(clusterId);
+    }
 
 	@Override
 	public boolean enable() {
@@ -51,7 +51,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 
@@ -82,7 +82,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 

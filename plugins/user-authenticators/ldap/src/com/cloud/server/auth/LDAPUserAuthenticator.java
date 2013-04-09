@@ -151,7 +151,10 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        super.configure(name, params);
+        if (name == null) {
+            name = "LDAP";
+        }
+	super.configure(name, params);
         return true;
     }
 

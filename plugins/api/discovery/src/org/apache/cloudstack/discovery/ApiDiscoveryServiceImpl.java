@@ -16,25 +16,14 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.Local;
-import javax.inject.Inject;
-
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.PluggableService;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
@@ -43,12 +32,11 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.serializer.Param;
-import com.cloud.user.User;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.PluggableService;
-import com.google.gson.annotations.SerializedName;
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.util.*;
 
 @Component
 @Local(value = ApiDiscoveryService.class)
@@ -80,72 +68,39 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         }
     }
 
-    protected void cacheResponseMap(Set<Class<?>> cmdClasses) {
+    protected Map<String, List<String>> cacheResponseMap(Set<Class<?>> cmdClasses) {
         Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
         for(Class<?> cmdClass: cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
-            if (apiCmdAnnotation == null)
+            if (apiCmdAnnotation == null) {
                 apiCmdAnnotation = cmdClass.getSuperclass().getAnnotation(APICommand.class);
+            }
             if (apiCmdAnnotation == null
                     || !apiCmdAnnotation.includeInApiDoc()
-                    || apiCmdAnnotation.name().isEmpty())
+                    || apiCmdAnnotation.name().isEmpty()) {
                 continue;
+            }
 
             String apiName = apiCmdAnnotation.name();
+            ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
+
             String responseName = apiCmdAnnotation.responseObject().getName();
             if (!responseName.contains("SuccessResponse")) {
-                if (!responseApiNameListMap.containsKey(responseName))
+                if (!responseApiNameListMap.containsKey(responseName)) {
                     responseApiNameListMap.put(responseName, new ArrayList<String>());
+                }
                 responseApiNameListMap.get(responseName).add(apiName);
             }
-            ApiDiscoveryResponse response = new ApiDiscoveryResponse();
-            response.setName(apiName);
-            response.setDescription(apiCmdAnnotation.description());
-            if (!apiCmdAnnotation.since().isEmpty())
-                response.setSince(apiCmdAnnotation.since());
             response.setRelated(responseName);
+
 
             Field[] responseFields = apiCmdAnnotation.responseObject().getDeclaredFields();
             for(Field responseField: responseFields) {
-                SerializedName serializedName = responseField.getAnnotation(SerializedName.class);
-                if(serializedName != null) {
-                    ApiResponseResponse responseResponse = new ApiResponseResponse();
-                    responseResponse.setName(serializedName.value());
-                    Param param = responseField.getAnnotation(Param.class);
-                    if (param != null)
-                        responseResponse.setDescription(param.description());
-                    responseResponse.setType(responseField.getType().getSimpleName().toLowerCase());
-                    response.addApiResponse(responseResponse);
-                }
+                ApiResponseResponse responseResponse = getFieldResponseMap(responseField);
+                response.addApiResponse(responseResponse);
             }
 
-            Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass,
-                    new Class<?>[]{BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
-
-            boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass,
-                    new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
-
-            response.setAsync(isAsync);
-
-            for(Field field: fields) {
-                Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
-                if (parameterAnnotation != null
-                        && parameterAnnotation.expose()
-                        && parameterAnnotation.includeInApiDoc()) {
-
-                    ApiParameterResponse paramResponse = new ApiParameterResponse();
-                    paramResponse.setName(parameterAnnotation.name());
-                    paramResponse.setDescription(parameterAnnotation.description());
-                    paramResponse.setType(parameterAnnotation.type().toString().toLowerCase());
-                    paramResponse.setLength(parameterAnnotation.length());
-                    paramResponse.setRequired(parameterAnnotation.required());
-                    if (!parameterAnnotation.since().isEmpty())
-                        paramResponse.setSince(parameterAnnotation.since());
-                    paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
-                    response.addParam(paramResponse);
-                }
-            }
             response.setObjectName("api");
             s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
@@ -173,6 +128,76 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             }
             s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
+        return responseApiNameListMap;
+    }
+
+    private ApiResponseResponse getFieldResponseMap(Field responseField) {
+        ApiResponseResponse responseResponse = new ApiResponseResponse();
+        SerializedName serializedName = responseField.getAnnotation(SerializedName.class);
+        Param param = responseField.getAnnotation(Param.class);
+        if (serializedName != null && param != null) {
+            responseResponse.setName(serializedName.value());
+            responseResponse.setDescription(param.description());
+            responseResponse.setType(responseField.getType().getSimpleName().toLowerCase());
+            //If response is not of primitive type - we have a nested entity
+            Class fieldClass = param.responseObject();
+            if (fieldClass != null) {
+                Class<?> superClass = fieldClass.getSuperclass();
+                if (superClass != null) {
+                    String superName = superClass.getName();
+                    if (superName.equals(BaseResponse.class.getName())) {
+                        Field[] fields = fieldClass.getDeclaredFields();
+                        for (Field field : fields) {
+                            ApiResponseResponse innerResponse = getFieldResponseMap(field);
+                            if (innerResponse != null) {
+                                responseResponse.addApiResponse(innerResponse);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return responseResponse;
+    }
+
+    private ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
+        String apiName = apiCmdAnnotation.name();
+        ApiDiscoveryResponse response = new ApiDiscoveryResponse();
+        response.setName(apiName);
+        response.setDescription(apiCmdAnnotation.description());
+        if (!apiCmdAnnotation.since().isEmpty()) {
+            response.setSince(apiCmdAnnotation.since());
+        }
+
+
+        Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass,
+                new Class<?>[]{BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
+        boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass,
+                new Class<?>[]{BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
+        response.setAsync(isAsync);
+
+        for(Field field: fields) {
+            Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
+            if (parameterAnnotation != null
+                    && parameterAnnotation.expose()
+                    && parameterAnnotation.includeInApiDoc()) {
+
+                ApiParameterResponse paramResponse = new ApiParameterResponse();
+                paramResponse.setName(parameterAnnotation.name());
+                paramResponse.setDescription(parameterAnnotation.description());
+                paramResponse.setType(parameterAnnotation.type().toString().toLowerCase());
+                paramResponse.setLength(parameterAnnotation.length());
+                paramResponse.setRequired(parameterAnnotation.required());
+                if (!parameterAnnotation.since().isEmpty()) {
+                    paramResponse.setSince(parameterAnnotation.since());
+                }
+                paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
+                response.addParam(paramResponse);
+            }
+        }
+        return response;
     }
 
     @Override

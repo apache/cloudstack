@@ -138,7 +138,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public List<VMTemplateVO> listByPublic() {
-    	SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
+	SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
     	sc.setParameters("public", 1);
 	    return listBy(sc);
 	}

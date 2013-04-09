@@ -47,7 +47,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
-        
+
         AccountIdNameSearch = createSearchBuilder();
         AccountIdNameSearch.and("accountId", AccountIdNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdNameSearch.and("name", AccountIdNameSearch.entity().getName(), SearchCriteria.Op.EQ);

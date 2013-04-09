@@ -16,23 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.io.File;
-import java.math.BigInteger;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -97,7 +80,22 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 @Local(value = { MockStorageManager.class })
@@ -954,7 +952,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
             MockVolumeVO template = new MockVolumeVO();
             template.setName("simulator-domR");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/10/" + UUID.randomUUID().toString());
+            template.setPath(storage.getMountPoint() + "template/tmpl/1/100/" + UUID.randomUUID().toString());
             template.setPoolId(storage.getId());
             template.setSize(defaultTemplateSize);
             template.setType(MockVolumeType.TEMPLATE);
@@ -975,7 +973,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
             template = new MockVolumeVO();
             template.setName("simulator-Centos");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/11/" + UUID.randomUUID().toString());
+            template.setPath(storage.getMountPoint() + "template/tmpl/1/111/" + UUID.randomUUID().toString());
             template.setPoolId(storage.getId());
             template.setSize(defaultTemplateSize);
             template.setType(MockVolumeType.TEMPLATE);

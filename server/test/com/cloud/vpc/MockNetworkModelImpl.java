@@ -852,7 +852,13 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 	}
 
     @Override
-    public Nic getPlaceholderNic(Network network, Long podId) {
+    public boolean isProviderEnabledInZone(long zoneId, String provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Nic getPlaceholderNicForRouter(Network network, Long podId) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -92,7 +92,6 @@ import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -1212,6 +1211,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         return isProviderEnabled(ntwkSvcProvider);
     }
+    
+    @Override
+    public boolean isProviderEnabledInZone(long zoneId, String provider)
+    {
+        //the provider has to be enabled at least in one network in the zone
+        for (PhysicalNetwork pNtwk : _physicalNetworkDao.listByZone(zoneId)) {
+            if (isProviderEnabledInPhysicalNetwork(pNtwk.getId(), provider)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     @Override
     public String getNetworkTag(HypervisorType hType, Network network) {
@@ -1999,12 +2011,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	}
 		return startIpv6;
 	}
-	
+    
     @Override
-    public NicVO getPlaceholderNic(Network network, Long podId) {
-        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
+    public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
+        List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
         for (NicVO nic : nics) {
-            if (nic.getVmType() == null && nic.getReserver() == null && nic.getIp4Address() != null && !nic.getIp4Address().equals(network.getGateway())) {
+            if (nic.getReserver() == null && nic.getIp4Address() != null) {
                 if (podId == null) {
                     return nic;
                 } else {

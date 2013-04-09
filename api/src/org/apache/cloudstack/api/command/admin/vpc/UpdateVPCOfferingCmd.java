@@ -88,7 +88,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
 
     @Override
     public void execute(){
-        VpcOffering result = _vpcService.updateVpcOffering(getId(), getVpcOfferingName(), getDisplayText(), getState());
+        VpcOffering result = _vpcProvSvc.updateVpcOffering(getId(), getVpcOfferingName(), getDisplayText(), getState());
         if (result != null) {
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(result);
             response.setResponseName(getCommandName());

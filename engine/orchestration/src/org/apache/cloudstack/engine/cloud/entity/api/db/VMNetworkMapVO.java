@@ -41,7 +41,7 @@ public class VMNetworkMapVO implements InternalIdentity{
     @Column(name="network_id")
     private long networkId;
 
-   
+
     /**
      * There should never be a public constructor for this class. Since it's
      * only here to define the table for the DAO class.
@@ -53,8 +53,8 @@ public class VMNetworkMapVO implements InternalIdentity{
         this.vmId = vmId;
         this.networkId = networkId;
     }
-    
-    
+
+
     public long getId() {
         return id;
     }
@@ -63,9 +63,9 @@ public class VMNetworkMapVO implements InternalIdentity{
         return vmId;
     }
 
-    
+
     public long getNetworkId() {
         return networkId;
     }
-  
+
 }

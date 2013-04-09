@@ -457,7 +457,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private Map<String, Boolean> _availableIdsMap;
 
-    List<UserAuthenticator> _userAuthenticators;
+    private List<UserAuthenticator> _userAuthenticators;
+    private List<UserAuthenticator> _userPasswordEncoders;
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
@@ -473,7 +474,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
-    
+
+    public List<UserAuthenticator> getUserPasswordEncoders() {
+        return _userPasswordEncoders;
+    }
+
+    public void setUserPasswordEncoders(List<UserAuthenticator> encoders) {
+        _userPasswordEncoders = encoders;
+    }
+
     public List<HostAllocator> getHostAllocators() {
 		return _hostAllocators;
 	}
@@ -3342,7 +3351,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             // This means its a new account, set the password using the
             // authenticator
 
-            for (UserAuthenticator  authenticator: _userAuthenticators) {
+            for (UserAuthenticator authenticator: _userPasswordEncoders) {
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;

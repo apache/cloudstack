@@ -63,7 +63,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar:@JAVADIR@/jasypt-1.8.jar:@JAVADIR@/jasypt-1.9.0.jar'
+    encryptionJarPath = '@COMMONLIBDIR@/lib/jasypt-1.9.0.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 

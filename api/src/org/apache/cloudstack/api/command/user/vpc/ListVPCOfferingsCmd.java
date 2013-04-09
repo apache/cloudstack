@@ -92,7 +92,7 @@ public class ListVPCOfferingsCmd extends BaseListCmd{
 
     @Override
     public void execute(){
-        List<? extends VpcOffering> offerings = _vpcService.listVpcOfferings(getId(), getVpcOffName(), getDisplayText(),
+        List<? extends VpcOffering> offerings = _vpcProvSvc.listVpcOfferings(getId(), getVpcOffName(), getDisplayText(),
                 getSupportedServices(), isDefault, this.getKeyword(), getState(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<VpcOfferingResponse> response = new ListResponse<VpcOfferingResponse>();
         List<VpcOfferingResponse> offeringResponses = new ArrayList<VpcOfferingResponse>();

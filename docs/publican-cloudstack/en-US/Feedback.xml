@@ -2,33 +2,43 @@
 <!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
 -->
 
-<section>
-    <title>We Need Feedback!</title>
-     <indexterm>
+<section id="feedback">
+    <title>Submitting Feedback and Getting Help</title>
+    <indexterm>
         <primary>feedback1</primary>
-         <secondary>contact information for this brand</secondary>
+        <secondary>contact information for this brand</secondary>
 
     </indexterm>
-     <para>If you find a typographical error in this manual, or if you have thought of a way to make this manual better, we would love to hear from you! Please submit a bug: <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">https://issues.apache.org/jira/browse/CLOUDSTACK</ulink> against the component <application>Doc</application>.</para>
+    <para>If you find a typographical error in this manual, or if you have thought of a way to make this manual better, we would love to hear from you! Please submit a bug: <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">https://issues.apache.org/jira/browse/CLOUDSTACK</ulink> against the component <application>Doc</application>.</para>
     <para>If you have a suggestion for improving the documentation, try to be as specific as possible when describing it. If you have found an error, please include the section number and some of the surrounding text so we can find it easily.</para>
-    <para>Better yet, feel free to submit a patch if you would like to enhance the documentation. Our documentation is, along with the rest of the CloudStack source code, kept in the project's git repository.</para>
+    <para>Better yet, feel free to submit a patch if you would like to enhance the documentation. Our documentation is, along with the rest of the &PRODUCT; source code, kept in the project's git repository.</para>
+    <para>The most efficient way to get help with &PRODUCT; is to ask on the mailing lists.</para>
+    <para>The Apache CloudStack project has mailing lists for users and developers. These are the
+        official channels of communication for the project and are the best way to get answers about
+        using and contributing to CloudStack. It's a good idea to subscribe to the
+        users@cloudstack.apache.org mailing list if you've deployed or are deploying
+        CloudStack into production, and even for test deployments.</para>
+    <para>The CloudStack developer's mailing list (dev@cloudstack.apache.org) is for discussions
+        about CloudStack development, and is the best list for discussing possible bugs in CloudStack.
+        Anyone contributing to CloudStack should be on this mailing list.</para>
+    <para>To posts to the lists, you'll need to be subscribed. See the
+        <ulink url="http://cloudstack.apache.org/mailing-lists.html">CloudStack Web site</ulink>
+        for instructions.</para>
 </section>
-
-

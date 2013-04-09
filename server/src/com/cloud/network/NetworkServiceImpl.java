@@ -94,6 +94,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpc.PrivateIpVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
@@ -489,6 +490,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         accountId = network.getAccountId();
         domainId = network.getDomainId();
 
+        // Validate network offering
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
+
         // verify permissions
         _accountMgr.checkAccess(ipOwner, null, true, network);
 
@@ -517,7 +521,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             } catch (InsufficientAddressCapacityException e) {
                 throw new InvalidParameterValueException("Allocating guest ip for nic failed");
             }
-        } else if (dc.getNetworkType() == NetworkType.Basic) {
+        } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType()  == Network.GuestType.Shared) {
             Account caller = UserContext.current().getCaller();
             long callerUserId = UserContext.current().getCallerUserId();
             _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
@@ -544,14 +548,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             } catch (InsufficientAddressCapacityException e) {
                 s_logger.error("Allocating ip to guest nic " + nicId + " failed");
                 return null;
-            }
-        } else if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
-            // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
-            Account caller = UserContext.current().getCaller();
-            long callerUserId = UserContext.current().getCallerUserId();
-            _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
             }
         } else {
             s_logger.error("AddIpToVMNic is not supported in this network...");
@@ -593,6 +589,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Network network = _networksDao.findById(secIpVO.getNetworkId());
 
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        // Validate network offering
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
+
         // verify permissions
         _accountMgr.checkAccess(caller, null, true, network);
 
@@ -626,7 +629,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 s_logger.debug("VM nic IP " + secondaryIp + " is associated with the static NAT rule public IP address id " + publicIpVO.getId());
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
-        } else if (dc.getNetworkType() == NetworkType.Basic) {
+        } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType()  == Network.GuestType.Shared) {
             IPAddressVO ip = _ipAddressDao.findByIpAndNetworkId(secIpVO.getNetworkId(), secIpVO.getIp4Address());
             if (ip != null) {
                 Transaction txn = Transaction.currentTxn();
@@ -635,7 +638,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 _ipAddressDao.unassignIpAddress(ip.getId());
                 txn.commit();
             }
-        } else if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && dc.getNetworkType() == NetworkType.Advanced) {
+        } else {
             throw new InvalidParameterValueException("Not supported for this network now");
         }
 
@@ -1714,6 +1717,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified network id doesn't exist in the system");
             ex.addProxyObject("networks", networkId, "networkId");
             throw ex;
+        }
+        
+        //perform below validation if the network is vpc network
+        if (network.getVpcId() != null && networkOfferingId != null) {
+            Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()));
         }
 
         // don't allow to update network in Destroy state

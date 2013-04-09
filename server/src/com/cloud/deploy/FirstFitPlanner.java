@@ -102,7 +102,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StorageManager _storageMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject protected ClusterDetailsDao _clusterDetailsDao;
-
+    
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
 		return _storagePoolAllocators;

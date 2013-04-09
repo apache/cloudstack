@@ -65,7 +65,7 @@ class MarvinPlugin(Plugin):
         cfg.debugLog = self.debug_stream
         
         self.testrunner = nose.core.TextTestRunner(stream=self.result_stream, descriptions=True, verbosity=2, config=config)
-    
+
     def options(self, parser, env):
         """
         Register command line options
@@ -84,7 +84,7 @@ class MarvinPlugin(Plugin):
                           help="The path to the testcase debug logs [DEBUG_LOG]")
         parser.add_option("--load", action="store_true", default=False, dest="load",
                           help="Only load the deployment configuration given")
-        
+
         Plugin.options(self, parser, env)
  
     def __init__(self):

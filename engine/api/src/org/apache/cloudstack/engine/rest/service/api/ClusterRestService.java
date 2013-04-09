@@ -73,12 +73,12 @@ public class ClusterRestService {
 
     @PUT @Path("/cluster/create")
     public ClusterEntity create(
-            @QueryParam("xid") String xid, 
+            @QueryParam("xid") String xid,
             @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @PUT @Path("/cluster/{clusterid}/update") 
+    @PUT @Path("/cluster/{clusterid}/update")
     public ClusterEntity update(
             @QueryParam("display-name") String displayName) {
         return null;

@@ -43,20 +43,20 @@ public class VolumeReservationVO implements InternalIdentity{
 
     @Column(name = "vm_reservation_id")
     private Long vmReservationId;
-    
+
     @Column(name = "vm_id")
     private long vmId;
-    
+
     @Column(name="volume_id")
     private long volumeId;
 
     @Column(name="pool_id")
     private long poolId;
-    
-    // VolumeId -> poolId 
+
+    // VolumeId -> poolId
     @Transient
     Map<String, String> volumeReservationMap;
-    
+
     /**
      * There should never be a public constructor for this class. Since it's
      * only here to define the table for the DAO class.
@@ -70,8 +70,8 @@ public class VolumeReservationVO implements InternalIdentity{
         this.poolId = poolId;
         this.vmReservationId = vmReservationId;
     }
-    
-    
+
+
     public long getId() {
         return id;
     }
@@ -83,7 +83,7 @@ public class VolumeReservationVO implements InternalIdentity{
     public Long geVmReservationId() {
         return vmReservationId;
     }
-    
+
     public long getVolumeId() {
         return volumeId;
     }

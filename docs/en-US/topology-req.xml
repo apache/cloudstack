@@ -28,4 +28,5 @@
   <xi:include href="xenserver-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="vmware-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="kvm-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  </section>
+  <xi:include href="lxc-topology-req.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</section>

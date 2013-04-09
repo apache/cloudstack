@@ -59,8 +59,12 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 		return true;
 	}
 
+	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
+	        if(name == null) {
+                     name = "MD5";
+                }
 		super.configure(name, params);
 		return true;
 	}

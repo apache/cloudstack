@@ -27,7 +27,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.vm.UserVmVO;
 @Local(value = {DeployPlannerSelector.class})
 public class BaremetalPlannerSelector extends AbstractDeployPlannerSelector{
-    
+
     @Override
     public String selectPlanner(UserVmVO vm) {
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {

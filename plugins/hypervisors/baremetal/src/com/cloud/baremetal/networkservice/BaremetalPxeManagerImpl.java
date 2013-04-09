@@ -111,10 +111,10 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 		        return service;
 		    }
 		}
-		
+
 		throw new CloudRuntimeException("Cannot find PXE service for " + type);
 	}
-	
+
 	@Override
 	public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
 	    //TODO: select type from template

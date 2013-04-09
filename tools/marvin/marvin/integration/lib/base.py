@@ -883,6 +883,8 @@ class PublicIPAddress:
 
         if accountid:
             cmd.account = accountid
+        elif "account" in services:
+            cmd.account = services["account"]
 
         if zoneid:
             cmd.zoneid = zoneid
