@@ -329,7 +329,7 @@ class deployDataCenters():
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
             
             enabled = getattr(zone, 'enabled', 'True')
-            if enabled == 'True' or enabled == 'None':
+            if enabled == 'True' or enabled is None:
                 self.enableZone(zoneId, "Enabled")
             details = getattr(zone, 'details')
             if details is not None:
