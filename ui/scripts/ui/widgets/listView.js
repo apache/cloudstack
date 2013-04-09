@@ -863,7 +863,7 @@
     var uiCustom = listViewArgs.uiCustom;
     var subselect = uiCustom ? listViewArgs.listView.subselect : null;
 
-    if (!data || ($.isArray(data) && !data.length)) {
+    if (!data || !data.length) {
       if (!$tbody.find('tr').size()) {
         return [
           $('<tr>').addClass('empty').append(
