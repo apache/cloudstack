@@ -186,6 +186,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         SecondaryStorageVm,
         ElasticIpVm,
         ElasticLoadBalancerVm,
+        InternalLoadBalancerVm,
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
@@ -196,7 +197,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         public static boolean isSystemVM(VirtualMachine.Type vmtype) {
             if (DomainRouter.equals(vmtype)
                     || ConsoleProxy.equals(vmtype)
-                    || SecondaryStorageVm.equals(vmtype)) {
+                    || SecondaryStorageVm.equals(vmtype) || InternalLoadBalancerVm.equals(vmtype)) {
                 return true;
             }
             return false;

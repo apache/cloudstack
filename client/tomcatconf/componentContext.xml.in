@@ -240,6 +240,7 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
+          <ref bean="InternalLbVm"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>

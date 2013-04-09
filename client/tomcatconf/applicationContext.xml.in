@@ -409,9 +409,11 @@
   <bean id="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement">
     <property name="name" value="VpcVirtualRouter"/>
   </bean>
-
   <bean id="elasticLoadBalancerElement" class="com.cloud.network.element.ElasticLoadBalancerElement">
     <property name="name" value="ElasticLoadBalancerElement"/>
+  </bean>
+  <bean id="InternalLbVm" class="org.apache.cloudstack.network.element.InternalLoadBalancerElement">
+    <property name="name" value="InternalLbVm"/>
   </bean>
 
   <!-- 
@@ -788,7 +790,7 @@
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
   <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl" />
   <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
-
+  <bean id="InternalLoadBalancerManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerManagerImpl" />
 
 
 <!--=======================================================================================================-->

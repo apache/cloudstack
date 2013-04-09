@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.element;
+package org.apache.cloudstack.network.element;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,7 +100,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public Provider getProvider() {
-        return Provider.InternalLoadBalancerVm;
+        return Provider.InternalLbVm;
     }
 
     @Override
@@ -124,30 +124,30 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Shutdown all the internal lb elements
-        return false;
+        return true;
     }
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Shutdown all the internal lb elements
-        return false;
+        return true;
     }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
         // TODO Shutdown all the internal lb elements
-        return false;
+        return true;
     }
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Shutdown all the internal lb elements
-        return false;
+        return true;
     }
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     @Override
@@ -163,7 +163,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override

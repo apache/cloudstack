@@ -3077,6 +3077,22 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         return nsp;
     }
+    
+    
+    protected PhysicalNetworkServiceProvider addDefaultInternalLbProviderToPhysicalNetwork(long physicalNetworkId) {
+
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.InternalLbVm.getName(), null, null);
+        // add instance of the provider
+        NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.InternalLbVm.getName());
+        if (networkElement == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Network.Provider.InternalLbVm.getName() + " Provider");
+        }
+        
+        VirtualRouterElement element = (VirtualRouterElement)networkElement;
+        element.addElement(nsp.getId(), VirtualRouterProviderType.VirtualRouter);
+
+        return nsp;
+    }
 
     protected PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(long physicalNetworkId) {
 
@@ -3085,6 +3101,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         return nsp;
     }
+    
+    
 
     private PhysicalNetworkServiceProvider addDefaultBaremetalProvidersToPhysicalNetwork(long physicalNetworkId) {
         PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
