@@ -363,10 +363,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 	        }
+            dcmd.setProxy(getHttpProxy());
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
@@ -452,12 +452,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		if(volumeHost != null) {
 		    start();
 			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
 	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
-			
+            dcmd.setProxy(getHttpProxy());
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssvm == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
