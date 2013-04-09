@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.EnableImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -165,6 +166,7 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -2009,6 +2011,41 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _imageStoreDao.remove(storeId);
         txn.commit();
         return true;
+    }
+
+    @Override
+    public ImageStore enableImageStore(EnableImageStoreCmd cmd) {
+        Long storeId = cmd.getId();
+        String storeName = cmd.getStoreName();
+
+        ImageStore store = null;
+        if ( storeId != null ){
+            store = _imageStoreDao.findById(storeId);
+        } else if ( storeName != null ){
+            store = _imageStoreDao.findByName(storeName);
+        } else {
+            throw new InvalidParameterValueException("Either image store id or name has to be specified!");
+        }
+
+        if (store == null) {
+            throw new InvalidParameterValueException("Unable to find image store by id: " + storeId + " OR by name: " + storeName);
+        }
+        // disable currently active store
+        ImageStoreVO activeStore = _imageStoreDao.findEnabledStore();
+        ImageStoreVO activeStoreForUpdate = _imageStoreDao.createForUpdate();
+        activeStoreForUpdate.setState(ImageStore.State.Disabled);
+        if ( !_imageStoreDao.update(activeStore.getId(), activeStoreForUpdate)){
+            throw new CloudRuntimeException("Failed to disable current active image store " + activeStore.getName());
+        }
+
+        ImageStoreVO storeForUpdate = _imageStoreDao.createForUpdate();
+        storeForUpdate.setState(ImageStore.State.Enabled);
+        if (_imageStoreDao.update(store.getId(), storeForUpdate)){
+            return _imageStoreDao.findById(store.getId());
+        }
+        else{
+            throw new CloudRuntimeException("Failed to enable image store by id: " + storeId + " OR by name: " + storeName);
+        }
     }
 
 

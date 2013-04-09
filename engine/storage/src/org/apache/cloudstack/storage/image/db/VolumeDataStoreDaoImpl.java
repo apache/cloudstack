@@ -49,6 +49,15 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
 
+        storeSearch = createSearchBuilder();
+        storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.done();
+
+        liveStoreSearch = createSearchBuilder();
+        liveStoreSearch.and("store_id", liveStoreSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("destroyed", liveStoreSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        liveStoreSearch.done();
+
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
@@ -100,7 +109,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     }
     @Override
     public List<VolumeDataStoreVO> listLiveByStoreId(long id) {
-        SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<VolumeDataStoreVO> sc = liveStoreSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);

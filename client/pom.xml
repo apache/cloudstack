@@ -225,6 +225,21 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-default</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-s3</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-swift</artifactId>
+        <version>${project.version}</version>
+    </dependency>            
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-syslog-alerts</artifactId>
       <version>${project.version}</version>

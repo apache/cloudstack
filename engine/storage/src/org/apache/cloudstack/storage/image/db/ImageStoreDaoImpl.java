@@ -18,11 +18,22 @@
  */
 package org.apache.cloudstack.storage.image.db;
 
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ImageStore;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -30,11 +41,41 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implements ImageStoreDao {
 
+    private static final Logger s_logger = Logger.getLogger(ImageStoreDaoImpl.class);
+    private SearchBuilder<ImageStoreVO> nameSearch;
+    private SearchBuilder<ImageStoreVO> enableSearch;
+
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        nameSearch = createSearchBuilder();
+        nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        nameSearch.done();
+
+
+        enableSearch = createSearchBuilder();
+        enableSearch.and("state", enableSearch.entity().getState(), SearchCriteria.Op.EQ);
+        enableSearch.done();
+
+        return true;
+    }
+
     @Override
     public ImageStoreVO findByName(String name) {
-        SearchCriteriaService<ImageStoreVO, ImageStoreVO> sc =  SearchCriteria2.create(ImageStoreVO.class);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
-        return sc.find();
+        SearchCriteria<ImageStoreVO> sc = nameSearch.create();
+        sc.setParameters("name", name);
+        return findOneBy(sc);
     }
+
+    @Override
+    public ImageStoreVO findEnabledStore() {
+        SearchCriteria<ImageStoreVO> sc = nameSearch.create();
+        sc.setParameters("state", ImageStore.State.Enabled); // only one image store is enabled at one time.
+        return findOneBy(sc);
+    }
+
+
 
 }

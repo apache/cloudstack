@@ -53,8 +53,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         storeSearch.done();
 
         liveStoreSearch = createSearchBuilder();
-        liveStoreSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        liveStoreSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("store_id", liveStoreSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("destroyed", liveStoreSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         liveStoreSearch.done();
 
     	updateStateSearch = this.createSearchBuilder();
@@ -109,7 +109,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
     @Override
     public List<TemplateDataStoreVO> listLiveByStoreId(long id) {
-        SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<TemplateDataStoreVO> sc = liveStoreSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);

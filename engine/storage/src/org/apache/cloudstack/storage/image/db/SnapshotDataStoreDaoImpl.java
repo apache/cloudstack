@@ -52,8 +52,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch.done();
 
         liveStoreSearch = createSearchBuilder();
-        liveStoreSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        liveStoreSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("store_id", liveStoreSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        liveStoreSearch.and("destroyed", liveStoreSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         liveStoreSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
@@ -109,7 +109,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listLiveByStoreId(long id) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = liveStoreSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
