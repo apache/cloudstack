@@ -1186,7 +1186,7 @@
                 virtualmachineid: args.context.instances[0].id
               },
               success: function(json) {
-                var ips = json.listnics.nic ? json.listnics.nic[0].secondaryip : [];
+                var ips = json.listnicsresponse.nic ? json.listnicsresponse.nic[0].secondaryip : [];
 
                 args.response.success({
                   data: $(ips).map(function(index, ip) {
@@ -1252,7 +1252,7 @@
                       virtualmachineid: args.context.instances[0].id
                     },
                     success: function(json) {
-                      var ips = json.listnics.nic[0].secondaryip
+                      var ips = json.listnicsresponse.nic[0].secondaryip
 
                       args.response.success({
                         data: $.grep($(ips).map(function(index, ip) {
