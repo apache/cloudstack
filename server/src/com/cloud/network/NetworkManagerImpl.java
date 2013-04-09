@@ -188,7 +188,6 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
@@ -349,7 +348,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(long dcId, Long podId, List<Long> vlanDbIds, Account owner, VlanType vlanUse,
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse,
             Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
             throws InsufficientAddressCapacityException {
         StringBuilder errorMessage = new StringBuilder("Unable to get ip adress in ");
@@ -365,9 +364,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             errorMessage.append(" zone id=" + dcId);
         }
 
-        if ( vlanDbIds != null && !vlanDbIds.isEmpty() ) {
-            sc.setParameters("vlanId", vlanDbIds.toArray());
-            errorMessage.append(", vlanId id=" + vlanDbIds.toArray());
+        if (vlanDbId != null) {
+            sc.addAnd("vlanId", SearchCriteria.Op.EQ, vlanDbId);
+            errorMessage.append(", vlanId id=" + vlanDbId);
         }
 
         sc.setParameters("dc", dcId);
@@ -527,14 +526,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             // If account has Account specific ip ranges, try to allocate ip from there
-            List<Long> vlanIds = new ArrayList<Long>();
+            Long vlanId = null;
             List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ownerId);
             if (maps != null && !maps.isEmpty()) {
-                vlanIds.add(maps.get(0).getVlanDbId());
+                vlanId = maps.get(0).getVlanDbId();
             }
 
 
-            ip = fetchNewPublicIp(dcId, null, vlanIds, owner, VlanType.VirtualNetwork, guestNtwkId,
+            ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, guestNtwkId,
                     isSourceNat, false, null, false, vpcId);
             IPAddressVO publicIp = ip.ip();
 
@@ -670,7 +669,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
-        boolean allocateFromDedicatedRange = false;
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // zone is of type DataCenter. See DataCenterVO.java.
@@ -704,32 +702,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
             txn.start();
 
-            // If account has dedicated Public IP ranges, allocate IP from the dedicated range
-            List<Long> vlanDbIds = new ArrayList<Long>();
-            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ipOwner.getId());
-            for (AccountVlanMapVO map : maps) {
-                vlanDbIds.add(map.getVlanDbId());
-            }
-            if (vlanDbIds != null && !vlanDbIds.isEmpty()) {
-                allocateFromDedicatedRange = true;
-            }
-
-            try {
-                if (allocateFromDedicatedRange) {
-                    ip = fetchNewPublicIp(zone.getId(), null, vlanDbIds, ipOwner, vlanType, null,
-                            false, assign, null, isSystem, null);
-                }
-            } catch(InsufficientAddressCapacityException e) {
-                s_logger.warn("All IPs dedicated to account " + ipOwner.getId() + " has been acquired." +
-                        " Now acquiring from the system pool");
-                txn.close();
-                allocateFromDedicatedRange = false;
-            }
-
-            if (!allocateFromDedicatedRange) {
-                ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, null,
-                       isSystem, null);
-            }
+            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null,
+                    false, assign, null, isSystem, null);
 
             if (ip == null) {
 
@@ -1096,7 +1070,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         AssignIpAddressSearch = _ipAddressDao.createSearchBuilder();
         AssignIpAddressSearch.and("dc", AssignIpAddressSearch.entity().getDataCenterId(), Op.EQ);
         AssignIpAddressSearch.and("allocated", AssignIpAddressSearch.entity().getAllocatedTime(), Op.NULL);
-        AssignIpAddressSearch.and("vlanId", AssignIpAddressSearch.entity().getVlanId(), Op.IN);
+        AssignIpAddressSearch.and("vlanId", AssignIpAddressSearch.entity().getVlanId(), Op.EQ);
         SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
         vlanSearch.and("networkId", vlanSearch.entity().getNetworkId(), Op.EQ);

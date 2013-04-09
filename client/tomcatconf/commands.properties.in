@@ -124,8 +124,6 @@ listDiskOfferings=15
 createVlanIpRange=1
 deleteVlanIpRange=1
 listVlanIpRanges=1
-dedicatePublicIpRange=1
-releasePublicIpRange=1
 
 #### address commands
 associateIpAddress=15

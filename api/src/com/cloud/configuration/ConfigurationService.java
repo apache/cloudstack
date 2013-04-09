@@ -35,9 +35,7 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -235,10 +233,6 @@ public interface ConfigurationService {
     Account markDefaultZone(String accountName, long domainId, long defaultZoneId);
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
-
-    Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException;
-
-    boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd);
 
     NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
 
