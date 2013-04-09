@@ -1424,7 +1424,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
             network.setReservationId(context.getReservationId());
-            stateTransitTo(network, Event.ImplementNetwork);
+            if (isSharedNetworkWithServices(network)) {
+                network.setState(Network.State.Implementing);
+            } else {
+                stateTransitTo(network, Event.ImplementNetwork);
+            }
 
             Network result = guru.implement(network, offering, dest, context);
             network.setCidr(result.getCidr());
@@ -1437,7 +1441,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             // implement network elements and re-apply all the network rules
             implementNetworkElementsAndResources(dest, context, network, offering);
 
-            stateTransitTo(network,Event.OperationSucceeded);
+            if (isSharedNetworkWithServices(network)) {
+                network.setState(Network.State.Implemented);
+            } else {
+                stateTransitTo(network,Event.OperationSucceeded);
+            }
 
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
@@ -1450,7 +1458,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
                 try {
-                    stateTransitTo(network,Event.OperationFailed);
+                    if (isSharedNetworkWithServices(network)) {
+                        network.setState(Network.State.Shutdown);
+                        _networksDao.update(networkId, network);
+                    } else {
+                        stateTransitTo(network,Event.OperationFailed);
+                    }
                 } catch (NoTransitionException e) {
                     s_logger.error(e.getMessage());
                 }
@@ -2086,6 +2099,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         boolean result = false;
+        Transaction txn = Transaction.currentTxn();
 
         NetworkVO network = _networksDao.lockRow(networkId, true);
         if (network == null) {
@@ -2096,16 +2110,23 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             s_logger.debug("Network is not implemented: " + network);
             return false;
         }
-        try {
-            stateTransitTo(network, Event.DestroyNetwork);
-        } catch (NoTransitionException e) {
+
+        txn.start();
+        if (isSharedNetworkWithServices(network)) {
             network.setState(Network.State.Shutdown);
             _networksDao.update(network.getId(), network);
+        } else {
+            try {
+                stateTransitTo(network, Event.DestroyNetwork);
+            } catch (NoTransitionException e) {
+                network.setState(Network.State.Shutdown);
+                _networksDao.update(network.getId(), network);
+            }
         }
+        txn.commit();
 
         boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
-        Transaction txn = Transaction.currentTxn();
         txn.start();
         if (success) {
             if (s_logger.isDebugEnabled()) {
@@ -2739,6 +2760,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(SSHKeyProvider);
+    }
+
+    protected boolean isSharedNetworkWithServices(Network network) {
+        assert(network != null);
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if (network.getGuestType() == Network.GuestType.Shared &&
+                zone.getNetworkType() == NetworkType.Advanced &&
+                isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+            return true;
+        }
+        return false;
     }
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
