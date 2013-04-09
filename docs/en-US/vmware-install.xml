@@ -327,282 +327,439 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
         guide.</para>
     </section>
   </section>
-  <!--    <section id="vmware-vsphere-cluster-config-nexus-vswitch">
+  <section id="vmware-vsphere-cluster-config-nexus-vswitch">
     <title>Configuring a vSphere Cluster with Nexus 1000v Virtual Switch</title>
-    <para>&PRODUCT; supports Cisco Nexus 1000v dvSwitch (Distributed Virtual Switch) for virtual network configuration in a VMware vSphere environment. This section helps you configure a vSphere cluster with Nexus 1000v virtual switch in a VMware vCenter environment. For information on creating a vSphere cluster, see <xref linkend="vmware-install" /></para>
+    <para>&PRODUCT; supports Cisco Nexus 1000v dvSwitch (Distributed Virtual Switch) for virtual
+      network configuration in a VMware vSphere environment. This section helps you configure a
+      vSphere cluster with Nexus 1000v virtual switch in a VMware vCenter environment. For
+      information on creating a vSphere cluster, see <xref linkend="vmware-install"/></para>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-about">
-        <title>About Cisco Nexus 1000v Distributed Virtual Switch</title>
-        <para>The Cisco Nexus 1000V virtual switch is a software-based virtual machine access switch for VMware vSphere environments. It can span multiple hosts running VMware ESXi 4.0 and later. A Nexus virtual switch consists of two components: the Virtual Supervisor Module (VSM) and the Virtual Ethernet Module (VEM). The VSM is a virtual appliance that acts as the switch&apos;s supervisor. It controls multiple VEMs as a single network device. The VSM is installed independent of the VEM and is deployed in redundancy mode as pairs or as a standalone appliance.  The VEM is installed on each VMware ESXi server to provide packet-forwarding capability. It provides each virtual machine with dedicated switch ports. This VSM-VEM architecture is analogous to a physical Cisco switch&apos;s supervisor (standalone or configured in high-availability mode) and multiple linecards architecture.</para>
-        <para>Nexus 1000v switch uses vEthernet port profiles to simplify network provisioning for virtual machines. There are two types of port profiles: Ethernet port profile and vEthernet port profile. The Ethernet port profile is applied to the physical uplink ports-the NIC ports of the physical NIC adapter on an ESXi server. The vEthernet port profile is associated with the virtual NIC (vNIC) that is plumbed on a guest VM on the ESXi server.  The port profiles help the network administrators define network policies which can be reused for new virtual machines.  The Ethernet port profiles are created on the VSM and are represented as port groups on the vCenter server.</para>
+      <title>About Cisco Nexus 1000v Distributed Virtual Switch</title>
+      <para>The Cisco Nexus 1000V virtual switch is a software-based virtual machine access switch
+        for VMware vSphere environments. It can span multiple hosts running VMware ESXi 4.0 and
+        later. A Nexus virtual switch consists of two components: the Virtual Supervisor Module
+        (VSM) and the Virtual Ethernet Module (VEM). The VSM is a virtual appliance that acts as the
+        switch&apos;s supervisor. It controls multiple VEMs as a single network device. The VSM is
+        installed independent of the VEM and is deployed in redundancy mode as pairs or as a
+        standalone appliance. The VEM is installed on each VMware ESXi server to provide
+        packet-forwarding capability. It provides each virtual machine with dedicated switch ports.
+        This VSM-VEM architecture is analogous to a physical Cisco switch&apos;s supervisor
+        (standalone or configured in high-availability mode) and multiple linecards
+        architecture.</para>
+      <para>Nexus 1000v switch uses vEthernet port profiles to simplify network provisioning for
+        virtual machines. There are two types of port profiles: Ethernet port profile and vEthernet
+        port profile. The Ethernet port profile is applied to the physical uplink ports-the NIC
+        ports of the physical NIC adapter on an ESXi server. The vEthernet port profile is
+        associated with the virtual NIC (vNIC) that is plumbed on a guest VM on the ESXi server. The
+        port profiles help the network administrators define network policies which can be reused
+        for new virtual machines. The Ethernet port profiles are created on the VSM and are
+        represented as port groups on the vCenter server.</para>
     </section>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-prerequisite-guide">
-        <title>Prerequisites and Guidelines</title>
-        <para>This section discusses prerequisites and guidelines for using Nexus virtual switch in &PRODUCT;. Before configuring Nexus virtual switch, ensure that your system meets the following requirements:</para>
-        <itemizedlist>
-        <listitem><para>A cluster of servers (ESXi 4.1 or later) is configured in the vCenter.</para></listitem>
-        <listitem><para>Each cluster managed by &PRODUCT; is the only cluster in its vCenter datacenter.</para></listitem>
-        <listitem><para>A Cisco Nexus 1000v virtual switch is installed to serve the datacenter that contains the vCenter cluster. This ensures that &PRODUCT; doesn&apos;t have to deal with dynamic migration of virtual adapters or networks across other existing virtual switches. See <ulink url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_5_1/install_upgrade/vsm_vem/guide/n1000v_installupgrade.html">Cisco Nexus 1000V Installation and Upgrade Guide</ulink> for guidelines on how to install the Nexus 1000v VSM and VEM modules.</para></listitem>
-        <listitem><para>The Nexus 1000v VSM is not deployed on a vSphere host that is managed by &PRODUCT;.</para></listitem>
-        <listitem><para>When the maximum number of VEM modules per VSM instance is reached, an additional VSM instance is created before introducing any more ESXi hosts. The limit is 64 VEM modules for each VSM instance.</para></listitem>
-        <listitem><para>&PRODUCT; expects that the Management Network of the ESXi host is configured on the standard vSwitch and searches for it in the standard vSwitch. Therefore, ensure that you do not migrate the management network to Nexus 1000v virtual switch during configuration.</para></listitem>
-        <listitem><para>All information given in <xref linkend="vmware-vsphere-cluster-config-nexus-vswitch-preconfig" /></para></listitem>
-        </itemizedlist>
+      <title>Prerequisites and Guidelines</title>
+      <para>This section discusses prerequisites and guidelines for using Nexus virtual switch in
+        &PRODUCT;. Before configuring Nexus virtual switch, ensure that your system meets the
+        following requirements:</para>
+      <itemizedlist>
+        <listitem>
+          <para>A cluster of servers (ESXi 4.1 or later) is configured in the vCenter.</para>
+        </listitem>
+        <listitem>
+          <para>Each cluster managed by &PRODUCT; is the only cluster in its vCenter
+            datacenter.</para>
+        </listitem>
+        <listitem>
+          <para>A Cisco Nexus 1000v virtual switch is installed to serve the datacenter that
+            contains the vCenter cluster. This ensures that &PRODUCT; doesn&apos;t have to deal with
+            dynamic migration of virtual adapters or networks across other existing virtual
+            switches. See <ulink
+              url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_5_1/install_upgrade/vsm_vem/guide/n1000v_installupgrade.html"
+              >Cisco Nexus 1000V Installation and Upgrade Guide</ulink> for guidelines on how to
+            install the Nexus 1000v VSM and VEM modules.</para>
+        </listitem>
+        <listitem>
+          <para>The Nexus 1000v VSM is not deployed on a vSphere host that is managed by
+            &PRODUCT;.</para>
+        </listitem>
+        <listitem>
+          <para>When the maximum number of VEM modules per VSM instance is reached, an additional
+            VSM instance is created before introducing any more ESXi hosts. The limit is 64 VEM
+            modules for each VSM instance.</para>
+        </listitem>
+        <listitem>
+          <para>&PRODUCT; expects that the Management Network of the ESXi host is configured on the
+            standard vSwitch and searches for it in the standard vSwitch. Therefore, ensure that you
+            do not migrate the management network to Nexus 1000v virtual switch during
+            configuration.</para>
+        </listitem>
+        <listitem>
+          <para>All information given in <xref
+              linkend="vmware-vsphere-cluster-config-nexus-vswitch-preconfig"/></para>
+        </listitem>
+      </itemizedlist>
     </section>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-preconfig">
-        <title>Nexus 1000v Virtual Switch Preconfiguration</title>
-        <section id="vmware-vsphere-cluster-config-nexus-vswitch-preconfig-checklist">
+      <title>Nexus 1000v Virtual Switch Preconfiguration</title>
+      <section id="vmware-vsphere-cluster-config-nexus-vswitch-preconfig-checklist">
         <title>Preparation Checklist</title>
-        <para>For a smoother configuration of Nexus 1000v switch, gather the following information before you start:</para>
+        <para>For a smoother configuration of Nexus 1000v switch, gather the following information
+          before you start:</para>
         <itemizedlist>
-            <listitem><para>vCenter Credentials</para></listitem>
-            <listitem><para>Nexus 1000v VSM IP address</para></listitem>
-            <listitem><para>Nexus 1000v VSM Credentials</para></listitem>
-            <listitem><para>Ethernet port profile names</para></listitem>
+          <listitem>
+            <para>vCenter Credentials</para>
+          </listitem>
+          <listitem>
+            <para>Nexus 1000v VSM IP address</para>
+          </listitem>
+          <listitem>
+            <para>Nexus 1000v VSM Credentials</para>
+          </listitem>
+          <listitem>
+            <para>Ethernet port profile names</para>
+          </listitem>
         </itemizedlist>
         <section id="vmware-vsphere-cluster-config-nexus-vswitch-vcenter-credential-checklist">
-            <title>vCenter Credentials Checklist</title>
-            <para>You will need the following information about vCenter:</para>
-            <informaltable frame="all">
+          <title>vCenter Credentials Checklist</title>
+          <para>You will need the following information about vCenter:</para>
+          <informaltable frame="all">
             <tgroup cols="3" align="left" colsep="1" rowsep="1">
-                <colspec colname="c1" />
-                <colspec colname="c2" />
-                <colspec colname="c3" />
-                <thead>
+              <colspec colname="c1"/>
+              <colspec colname="c2"/>
+              <colspec colname="c3"/>
+              <thead>
                 <row>
-                    <entry><para>Nexus vSwitch Requirements</para></entry>
-                    <entry><para>Value</para></entry>
-                    <entry><para>Notes</para></entry>
+                  <entry><para>Nexus vSwitch Requirements</para></entry>
+                  <entry><para>Value</para></entry>
+                  <entry><para>Notes</para></entry>
                 </row>
-                </thead>
-                <tbody>
+              </thead>
+              <tbody>
                 <row>
-                    <entry><para>vCenter IP</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The IP address of the vCenter.</para></entry>
-                </row>
-                <row>
-                    <entry><para>Secure HTTP Port Number</para></entry>
-                    <entry><para>443</para></entry>
-                    <entry><para>Port 443 is configured by default; however, you can change the port if needed.</para></entry>
+                  <entry><para>vCenter IP</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The IP address of the vCenter.</para></entry>
                 </row>
                 <row>
-                    <entry><para>vCenter User ID</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The vCenter user with administrator-level privileges. The vCenter User ID is required when you configure the virtual switch in &PRODUCT;.</para></entry>
+                  <entry><para>Secure HTTP Port Number</para></entry>
+                  <entry><para>443</para></entry>
+                  <entry><para>Port 443 is configured by default; however, you can change the port
+                      if needed.</para></entry>
                 </row>
                 <row>
-                    <entry><para>vCenter Password</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The password for the vCenter user specified above. The password for this vCenter user is required when you configure the switch in &PRODUCT;.</para></entry>
+                  <entry><para>vCenter User ID</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The vCenter user with administrator-level privileges. The vCenter
+                      User ID is required when you configure the virtual switch in
+                    &PRODUCT;.</para></entry>
                 </row>
-                </tbody>
+                <row>
+                  <entry><para>vCenter Password</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The password for the vCenter user specified above. The password for
+                      this vCenter user is required when you configure the switch in
+                      &PRODUCT;.</para></entry>
+                </row>
+              </tbody>
             </tgroup>
-            </informaltable>
+          </informaltable>
         </section>
         <section id="vmware-vsphere-cluster-config-nexus-vswitch-net-config-checklist">
-            <title>Network Configuration Checklist</title>
-            <para>The following information specified in the Nexus Configure Networking screen is displayed in the Details tab of the Nexus dvSwitch in the &PRODUCT; UI:</para>
-            <informaltable frame="all">
+          <title>Network Configuration Checklist</title>
+          <para>The following information specified in the Nexus Configure Networking screen is
+            displayed in the Details tab of the Nexus dvSwitch in the &PRODUCT; UI:</para>
+          <informaltable frame="all">
             <tgroup cols="3" align="left" colsep="1" rowsep="1">
-                <colspec colname="c1" />
-                <colspec colname="c2" />
-                <colspec colname="c3" />
-                <thead>
+              <colspec colname="c1"/>
+              <colspec colname="c2"/>
+              <colspec colname="c3"/>
+              <thead>
                 <row>
-                    <entry><para>Network Requirements</para></entry>
-                    <entry><para>Value</para></entry>
-                    <entry><para>Notes</para></entry>
+                  <entry><para>Network Requirements</para></entry>
+                  <entry><para>Value</para></entry>
+                  <entry><para>Notes</para></entry>
                 </row>
-                </thead>
-                <tbody>
+              </thead>
+              <tbody>
                 <row>
-                    <entry><para>Control Port Group VLAN ID</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The VLAN ID of the Control Port Group. The control VLAN is used for communication between the VSM and the VEMs.</para></entry>
-                </row>
-                <row>
-                    <entry><para>Management Port Group VLAN ID</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The VLAN ID of the Management Port Group. The management VLAN corresponds to the mgmt0 interface that is used to establish and maintain the connection between the VSM and VMware vCenter Server.</para></entry>
+                  <entry><para>Control Port Group VLAN ID</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The VLAN ID of the Control Port Group. The control VLAN is used for
+                      communication between the VSM and the VEMs.</para></entry>
                 </row>
                 <row>
-                    <entry><para>Packet Port Group VLAN ID</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The VLAN ID of the Packet Port Group. The packet VLAN forwards relevant data packets from the VEMs to the VSM.</para></entry>
+                  <entry><para>Management Port Group VLAN ID</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The VLAN ID of the Management Port Group. The management VLAN
+                      corresponds to the mgmt0 interface that is used to establish and maintain the
+                      connection between the VSM and VMware vCenter Server.</para></entry>
                 </row>
-                </tbody>
+                <row>
+                  <entry><para>Packet Port Group VLAN ID</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The VLAN ID of the Packet Port Group. The packet VLAN forwards
+                      relevant data packets from the VEMs to the VSM.</para></entry>
+                </row>
+              </tbody>
             </tgroup>
-            </informaltable>
-            <note><para>The VLANs used for control, packet, and management port groups can be the same.</para></note>
-            <para>For more information, see <ulink url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_4_b/getting_started/configuration/guide/n1000v_gsg.pdf">Cisco Nexus 1000V Getting Started Guide</ulink>.</para>
+          </informaltable>
+          <note>
+            <para>The VLANs used for control, packet, and management port groups can be the
+              same.</para>
+          </note>
+          <para>For more information, see <ulink
+              url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_4_b/getting_started/configuration/guide/n1000v_gsg.pdf"
+              >Cisco Nexus 1000V Getting Started Guide</ulink>.</para>
         </section>
         <section id="vmware-vsphere-cluster-config-nexus-vswitch-vsm-config-checklist">
-            <title>VSM Configuration Checklist</title>
-            <para>You will need the following information about network configuration:</para>
-            <informaltable frame="all">
+          <title>VSM Configuration Checklist</title>
+          <para>You will need the following information about network configuration:</para>
+          <informaltable frame="all">
             <tgroup cols="3" align="left" colsep="1" rowsep="1">
-                <colspec colname="c1" />
-                <colspec colname="c2" />
-                <colspec colname="c3" />
-                <thead>
+              <colspec colname="c1"/>
+              <colspec colname="c2"/>
+              <colspec colname="c3"/>
+              <thead>
                 <row>
-                    <entry><para>VSM Configuration Parameters Value Notes</para></entry>
-                    <entry><para>Value</para></entry>
-                    <entry><para>Notes</para></entry>
+                  <entry><para>VSM Configuration Parameters Value Notes</para></entry>
+                  <entry><para>Value</para></entry>
+                  <entry><para>Notes</para></entry>
                 </row>
-                </thead>
-                <tbody>
+              </thead>
+              <tbody>
                 <row>
-                    <entry><para>Admin Name and Password</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>The admin name and password to connect to the VSM appliance. You must specify these credentials while configuring Nexus virtual switch.</para></entry>
-                </row>
-                <row>
-                    <entry><para>Management IP Address</para></entry>
-                    <entry><para></para></entry>
-                    <entry><para>This is the IP address of the VSM appliance. This is the IP address you specify in the virtual switch IP Address field while configuting Nexus virtual switch.</para></entry>
+                  <entry><para>Admin Name and Password</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>The admin name and password to connect to the VSM appliance. You must
+                      specify these credentials while configuring Nexus virtual
+                    switch.</para></entry>
                 </row>
                 <row>
-                    <entry><para>SSL</para></entry>
-                    <entry><para>Enable</para></entry>
-                    <entry><para>Always enable SSL. SSH is usually enabled by default during the VSM installation. However, check whether the SSH connection to the VSM is working, without which &PRODUCT; failes to connect to the VSM.</para></entry>
+                  <entry><para>Management IP Address</para></entry>
+                  <entry><para/></entry>
+                  <entry><para>This is the IP address of the VSM appliance. This is the IP address
+                      you specify in the virtual switch IP Address field while configuting Nexus
+                      virtual switch.</para></entry>
                 </row>
-                </tbody>
+                <row>
+                  <entry><para>SSL</para></entry>
+                  <entry><para>Enable</para></entry>
+                  <entry><para>Always enable SSL. SSH is usually enabled by default during the VSM
+                      installation. However, check whether the SSH connection to the VSM is working,
+                      without which &PRODUCT; failes to connect to the VSM.</para></entry>
+                </row>
+              </tbody>
             </tgroup>
-            </informaltable>
+          </informaltable>
         </section>
-        </section>
-        <section id="vmware-vsphere-cluster-config-nexus-vswitch-create-port-profile">
+      </section>
+      <section id="vmware-vsphere-cluster-config-nexus-vswitch-create-port-profile">
         <title>Creating a Port Profile</title>
         <itemizedlist>
-            <listitem>
-            <para>Whether you create a Basic or Advanced zone configuration, ensure that you always create an Ethernet port profile on the VSM after you install it and before you create the zone.</para>
+          <listitem>
+            <para>Whether you create a Basic or Advanced zone configuration, ensure that you always
+              create an Ethernet port profile on the VSM after you install it and before you create
+              the zone.</para>
             <itemizedlist>
-                <listitem><para>The Ethernet port profile created to represent the physical network or networks used by an Advanced zone configuration trunk all the VLANs including guest VLANs, the VLANs that serve the native VLAN, and the packet/control/data/management VLANs of the VSM.</para></listitem>
-                <listitem><para>The Ethernet port profile created for a Basic zone configuration does not trunk the guest VLANs because the guest VMs do not get their own VLANs provisioned on their network interfaces in a Basic zone.</para></listitem>
+              <listitem>
+                <para>The Ethernet port profile created to represent the physical network or
+                  networks used by an Advanced zone configuration trunk all the VLANs including
+                  guest VLANs, the VLANs that serve the native VLAN, and the
+                  packet/control/data/management VLANs of the VSM.</para>
+              </listitem>
+              <listitem>
+                <para>The Ethernet port profile created for a Basic zone configuration does not
+                  trunk the guest VLANs because the guest VMs do not get their own VLANs provisioned
+                  on their network interfaces in a Basic zone.</para>
+              </listitem>
             </itemizedlist>
-            </listitem>
-            <listitem><para>An Ethernet port profile configured on the Nexus 1000v virtual switch should not use in its set of system VLANs, or any of the VLANs configured or intended to be configured for use towards VMs or VM resources in the &PRODUCT; environment.</para></listitem>
-            <listitem><para>You do not have to create any vEthernet port profiles – &PRODUCT; does that during VM deployment.</para></listitem>
-            <listitem><para>Ensure that you create required port profiles to be used by &PRODUCT; for different traffic types of &PRODUCT;, such as Management traffic, Guest traffic, Storage traffic, and Public traffic. The physical networks configured during zone creation should have a one-to-one relation with the Ethernet port profiles.</para></listitem>
+          </listitem>
+          <listitem>
+            <para>An Ethernet port profile configured on the Nexus 1000v virtual switch should not
+              use in its set of system VLANs, or any of the VLANs configured or intended to be
+              configured for use towards VMs or VM resources in the &PRODUCT; environment.</para>
+          </listitem>
+          <listitem>
+            <para>You do not have to create any vEthernet port profiles – &PRODUCT; does that during
+              VM deployment.</para>
+          </listitem>
+          <listitem>
+            <para>Ensure that you create required port profiles to be used by &PRODUCT; for
+              different traffic types of &PRODUCT;, such as Management traffic, Guest traffic,
+              Storage traffic, and Public traffic. The physical networks configured during zone
+              creation should have a one-to-one relation with the Ethernet port profiles.</para>
+          </listitem>
         </itemizedlist>
         <mediaobject>
-            <imageobject>
+          <imageobject>
             <imagedata fileref="./images/vmware-nexus-port-profile.png"/>
-            </imageobject>
-            <textobject>
+          </imageobject>
+          <textobject>
             <phrase>vsphereclient.png: vSphere client</phrase>
-            </textobject>
+          </textobject>
         </mediaobject>
-        <para>For information on creating a port profile, see <ulink url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_4_a/port_profile/configuration/guide/n1000v_port_profile.html">Cisco Nexus 1000V Port Profile Configuration Guide</ulink>.</para>
-        </section>
-        <section id="vmware-vsphere-cluster-config-nexus-vswitch-assign-nic-adapters">
+        <para>For information on creating a port profile, see <ulink
+            url="http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_2_1_s_v_1_4_a/port_profile/configuration/guide/n1000v_port_profile.html"
+            >Cisco Nexus 1000V Port Profile Configuration Guide</ulink>.</para>
+      </section>
+      <section id="vmware-vsphere-cluster-config-nexus-vswitch-assign-nic-adapters">
         <title>Assigning Physical NIC Adapters</title>
-        <para>Assign ESXi host&apos;s physical NIC adapters, which correspond to each physical network, to the port profiles. In each ESXi host that is part of the vCenter cluster, observe the physical networks assigned to each port profile and note down the names of the port profile for future use. This mapping information helps you when configuring physical networks during the zone configuration on &PRODUCT;. These Ethernet port profile names are later specified as VMware Traffic Labels for different traffic types when configuring physical networks during the zone configuration. For more information on configuring physical networks, see <xref linkend="vmware-vsphere-cluster-config-nexus-vswitch" />.</para>
-        </section>
-        <section id="vmware-vsphere-cluster-config-nexus-vswitch-add-vlan-range">
+        <para>Assign ESXi host&apos;s physical NIC adapters, which correspond to each physical
+          network, to the port profiles. In each ESXi host that is part of the vCenter cluster,
+          observe the physical networks assigned to each port profile and note down the names of the
+          port profile for future use. This mapping information helps you when configuring physical
+          networks during the zone configuration on &PRODUCT;. These Ethernet port profile names are
+          later specified as VMware Traffic Labels for different traffic types when configuring
+          physical networks during the zone configuration. For more information on configuring
+          physical networks, see <xref linkend="vmware-vsphere-cluster-config-nexus-vswitch"
+          />.</para>
+      </section>
+      <section id="vmware-vsphere-cluster-config-nexus-vswitch-add-vlan-range">
         <title>Adding VLAN Ranges</title>
-        <para>Determine the public VLAN, System VLAN, and Guest VLANs to be used by the &PRODUCT;. Ensure that you add them to the port profile database. Corresponding to each physical network, add the VLAN range to port profiles. In the VSM command prompt, run the switchport trunk allowed vlan&lt;range&gt; command to add the VLAN ranges to the port profile.</para>
+        <para>Determine the public VLAN, System VLAN, and Guest VLANs to be used by the &PRODUCT;.
+          Ensure that you add them to the port profile database. Corresponding to each physical
+          network, add the VLAN range to port profiles. In the VSM command prompt, run the
+          switchport trunk allowed vlan&lt;range&gt; command to add the VLAN ranges to the port
+          profile.</para>
         <para>For example:</para>
         <programlisting>switchport trunk allowed vlan 1,140-147,196-203</programlisting>
         <para>In this example, the allowed VLANs added are 1, 140-147, and 196-203</para>
-        <para>You must also add all the public and private VLANs or VLAN ranges to the switch. This range is the VLAN range you specify in your zone.</para>
-        <note><para>Before you run the vlan command, ensure that the configuration mode is enabled in Nexus 1000v virtual switch.</para></note>
+        <para>You must also add all the public and private VLANs or VLAN ranges to the switch. This
+          range is the VLAN range you specify in your zone.</para>
+        <note>
+          <para>Before you run the vlan command, ensure that the configuration mode is enabled in
+            Nexus 1000v virtual switch.</para>
+        </note>
         <para>For example:</para>
         <para>If you want the VLAN 200 to be used on the switch, run the following command:</para>
         <programlisting>vlan 200</programlisting>
-        <para>If you want the VLAN range 1350-1750 to be used on the switch, run the following command:</para>
+        <para>If you want the VLAN range 1350-1750 to be used on the switch, run the following
+          command:</para>
         <programlisting>vlan 1350-1750</programlisting>
         <para>Refer to Cisco Nexus 1000V Command Reference of specific product version.</para>
-        </section>
+      </section>
     </section>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-enable">
-        <title>Enabling Nexus Virtual Switch in &PRODUCT;</title>
-        <para>To make a &PRODUCT; deployment Nexus enabled, you must set the vmware.use.nexus.vswitch parameter true by using the Global Settings page in the &PRODUCT; UI. Unless this parameter is set to &quot;true&quot; and restart the management server, you cannot see any UI options specific to Nexus virtual switch, and &PRODUCT; ignores the Nexus virtual switch specific parameters specified in the AddTrafficTypeCmd, UpdateTrafficTypeCmd, and AddClusterCmd API calls.</para>
-        <para>Unless the &PRODUCT; global parameter &quot;vmware.use.nexus.vswitch&quot; is set to &quot;true&quot;, &PRODUCT; by default uses VMware standard vSwitch for virtual network infrastructure. In this release, &PRODUCT; doesn’t support configuring virtual networks in a deployment with a mix of standard vSwitch and Nexus 1000v virtual switch. The deployment can have either standard vSwitch or Nexus 1000v virtual switch.</para>
+      <title>Enabling Nexus Virtual Switch in &PRODUCT;</title>
+      <para>To make a &PRODUCT; deployment Nexus enabled, you must set the vmware.use.nexus.vswitch
+        parameter true by using the Global Settings page in the &PRODUCT; UI. Unless this parameter
+        is set to &quot;true&quot; and restart the management server, you cannot see any UI options
+        specific to Nexus virtual switch, and &PRODUCT; ignores the Nexus virtual switch specific
+        parameters specified in the AddTrafficTypeCmd, UpdateTrafficTypeCmd, and AddClusterCmd API
+        calls.</para>
+      <para>Unless the &PRODUCT; global parameter &quot;vmware.use.nexus.vswitch&quot; is set to
+        &quot;true&quot;, &PRODUCT; by default uses VMware standard vSwitch for virtual network
+        infrastructure. In this release, &PRODUCT; doesn’t support configuring virtual networks in a
+        deployment with a mix of standard vSwitch and Nexus 1000v virtual switch. The deployment can
+        have either standard vSwitch or Nexus 1000v virtual switch.</para>
     </section>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-config">
-        <title>Configuring Nexus 1000v Virtual Switch in &PRODUCT;</title>
-        <para>You can configure Nexus dvSwitch by adding the necessary resources while the zone is being created.</para>
-        <mediaobject>
+      <title>Configuring Nexus 1000v Virtual Switch in &PRODUCT;</title>
+      <para>You can configure Nexus dvSwitch by adding the necessary resources while the zone is
+        being created.</para>
+      <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/vmware-nexus-add-cluster.png"/>
+          <imagedata fileref="./images/vmware-nexus-add-cluster.png"/>
         </imageobject>
         <textobject>
-            <phrase>vsphereclient.png: vSphere client</phrase>
+          <phrase>vsphereclient.png: vSphere client</phrase>
         </textobject>
-        </mediaobject>
-        <para>After the zone is created, if you want to create an additional cluster along with Nexus 1000v virtual switch in the existing zone, use the Add Cluster option. For information on creating a cluster, see <xref linkend="add-clusters-vsphere" />.</para>
-        <para>In both these cases, you must specify the following parameters to configure Nexus virtual switch:</para>
-        <informaltable frame="all">
+      </mediaobject>
+      <para>After the zone is created, if you want to create an additional cluster along with Nexus
+        1000v virtual switch in the existing zone, use the Add Cluster option. For information on
+        creating a cluster, see <xref linkend="add-clusters-vsphere"/>.</para>
+      <para>In both these cases, you must specify the following parameters to configure Nexus
+        virtual switch:</para>
+      <informaltable frame="all">
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-            <colspec colname="c2" />
-            <thead>
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
             <row>
-                <entry><para>Parameters</para></entry>
-                <entry><para>Description</para></entry>
+              <entry><para>Parameters</para></entry>
+              <entry><para>Description</para></entry>
             </row>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             <row>
-                <entry><para>Cluster Name</para></entry>
-                <entry><para>Enter the name of the cluster you created in vCenter.  For example, &quot;cloud.cluster&quot;.</para></entry>
-            </row>
-            <row>
-                <entry><para>vCenter Host</para></entry>
-                <entry><para>Enter the host name or the IP address of the vCenter host where you have deployed the Nexus virtual switch.</para></entry>
+              <entry><para>Cluster Name</para></entry>
+              <entry><para>Enter the name of the cluster you created in vCenter. For example,
+                  &quot;cloud.cluster&quot;.</para></entry>
             </row>
             <row>
-                <entry><para>vCenter User name</para></entry>
-                <entry><para>Enter the username that &PRODUCT; should use to connect to vCenter.  This user must have all administrative privileges.</para></entry>
+              <entry><para>vCenter Host</para></entry>
+              <entry><para>Enter the host name or the IP address of the vCenter host where you have
+                  deployed the Nexus virtual switch.</para></entry>
             </row>
             <row>
-                <entry><para>vCenter Password</para></entry>
-                <entry><para>Enter the password for the user named above.</para></entry>
+              <entry><para>vCenter User name</para></entry>
+              <entry><para>Enter the username that &PRODUCT; should use to connect to vCenter. This
+                  user must have all administrative privileges.</para></entry>
             </row>
             <row>
-                <entry><para>vCenter Datacenter</para></entry>
-                <entry><para>Enter the vCenter datacenter that the cluster is in.  For example, &quot;cloud.dc.VM&quot;.</para></entry>
+              <entry><para>vCenter Password</para></entry>
+              <entry><para>Enter the password for the user named above.</para></entry>
             </row>
             <row>
-                <entry><para>Nexus dvSwitch IP Address</para></entry>
-                <entry><para>The IP address of the VSM component of the Nexus 1000v virtual switch.</para></entry>
+              <entry><para>vCenter Datacenter</para></entry>
+              <entry><para>Enter the vCenter datacenter that the cluster is in. For example,
+                  &quot;cloud.dc.VM&quot;.</para></entry>
             </row>
             <row>
-                <entry><para>Nexus dvSwitch Username</para></entry>
-                <entry><para>The admin name to connect to the VSM appliance.</para></entry>
+              <entry><para>Nexus dvSwitch IP Address</para></entry>
+              <entry><para>The IP address of the VSM component of the Nexus 1000v virtual
+                  switch.</para></entry>
             </row>
             <row>
-                <entry><para>Nexus dvSwitch Password</para></entry>
-                <entry><para>The corresponding password for the admin user specified above.</para></entry>
+              <entry><para>Nexus dvSwitch Username</para></entry>
+              <entry><para>The admin name to connect to the VSM appliance.</para></entry>
             </row>
-            </tbody>
+            <row>
+              <entry><para>Nexus dvSwitch Password</para></entry>
+              <entry><para>The corresponding password for the admin user specified
+                above.</para></entry>
+            </row>
+          </tbody>
         </tgroup>
-        </informaltable>
+      </informaltable>
     </section>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-remove">
-        <title>Removing Nexus Virtual Switch</title>
-        <orderedlist>
-        <listitem><para>In the vCenter datacenter that is served by the Nexus virtual switch, ensure that you delete all the hosts in the corresponding cluster.</para></listitem>
-        <listitem><para>Log in with Admin permissions to the &PRODUCT; administrator UI.</para></listitem>
-        <listitem><para>In the left navigation bar, select Infrastructure.</para></listitem>
-        <listitem><para>In the Infrastructure page, click View all under Clusters.</para></listitem>
-        <listitem><para>Select the cluster where you want to remove the virtual switch.</para></listitem>
-        <listitem><para>In the dvSwitch tab, click the name of the virtual switch.</para></listitem>
+      <title>Removing Nexus Virtual Switch</title>
+      <orderedlist>
         <listitem>
-            <para>
-            In the Details page, click Delete Nexus dvSwitch icon.
-            <inlinemediaobject>
-                <imageobject><imagedata fileref="./images/delete-button.png" /></imageobject>
-                <textobject><phrase>DeleteButton.png: button to delete dvSwitch</phrase></textobject>
-            </inlinemediaobject>
-            </para>
-            <para>Click Yes in the confirmation dialog box.</para>
+          <para>In the vCenter datacenter that is served by the Nexus virtual switch, ensure that
+            you delete all the hosts in the corresponding cluster.</para>
         </listitem>
-        </orderedlist>
-    </section> 
-</section> -->
+        <listitem>
+          <para>Log in with Admin permissions to the &PRODUCT; administrator UI.</para>
+        </listitem>
+        <listitem>
+          <para>In the left navigation bar, select Infrastructure.</para>
+        </listitem>
+        <listitem>
+          <para>In the Infrastructure page, click View all under Clusters.</para>
+        </listitem>
+        <listitem>
+          <para>Select the cluster where you want to remove the virtual switch.</para>
+        </listitem>
+        <listitem>
+          <para>In the dvSwitch tab, click the name of the virtual switch.</para>
+        </listitem>
+        <listitem>
+          <para> In the Details page, click Delete Nexus dvSwitch icon. <inlinemediaobject>
+              <imageobject>
+                <imagedata fileref="./images/delete-button.png"/>
+              </imageobject>
+              <textobject>
+                <phrase>DeleteButton.png: button to delete dvSwitch</phrase>
+              </textobject>
+            </inlinemediaobject>
+          </para>
+          <para>Click Yes in the confirmation dialog box.</para>
+        </listitem>
+      </orderedlist>
+    </section>
+  </section>
+  <xi:include href="vmware-cluster-config-dvswitch.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <section id="vmware-vsphere-iscsi-storage-preparation">
     <title>Storage Preparation for vSphere (iSCSI only)</title>
     <para>Use of iSCSI requires preparatory work in vCenter. You must add an iSCSI target and create
