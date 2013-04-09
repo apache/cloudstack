@@ -1984,6 +1984,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
