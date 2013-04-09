@@ -306,6 +306,8 @@
           <ref bean="DirectNetworkGuru"/>
           <ref bean="OvsGuestNetworkGuru"/>
           <ref bean="PrivateNetworkGuru"/>
+          <ref bean="NiciraNvpGuestNetworkGuru"/>
+          <ref bean="MidoNetGuestNetworkGuru"/>
       </list>
     </property>
   </bean>

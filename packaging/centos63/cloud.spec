@@ -153,13 +153,9 @@ Provides: cloud-aws-api
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-#%package docs
-#Summary: Apache CloudStack documentation
-#%description docs
-#Apache CloudStack documentations
-
 %prep
 echo Doing CloudStack build
+
 %setup -q -n %{name}-%{_maventag}
 
 %build
@@ -169,10 +165,10 @@ echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-    echo "Packaging nonoss components"
+    echo "Executing mvn packaging for NONOSS ..."
    mvn -Pawsapi,systemvm -Dnonoss package
 else
-    echo "Packaging oss components"
+    echo "Executing mvn packaging for OSS ..."
    mvn -Pawsapi package -Dsystemvm
 fi
 
@@ -248,8 +244,7 @@ mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classe
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
-install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.9.0.jar
-install -D client/target/pythonlibs/jasypt-1.8.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.8.jar
+install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
@@ -313,8 +308,26 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 
+#License files from whisker
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+
+%pre awsapi
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
 /sbin/service cloudstack-management stop || true
@@ -454,7 +467,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/db-enc.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
@@ -486,13 +498,11 @@ fi
 %{_datadir}/%{name}-management/setup/db/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
-%{_javadir}/jasypt-1.9.0.jar
-%{_javadir}/jasypt-1.8.jar
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
@@ -502,8 +512,8 @@ fi
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
 %dir %{_datadir}/%{name}-agent/plugins
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
 %files common
 %dir %attr(0755,root,root) %{_libdir}/python2.6/site-packages/cloudutils
@@ -514,8 +524,9 @@ fi
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
-%doc LICENSE
-%doc NOTICE
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
+%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
@@ -523,19 +534,15 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir /var/log/%{name}/usage
 %dir %{_sysconfdir}/%{name}/usage
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
 %files cli
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudapis.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/__init__.py
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
-%doc LICENSE
-%doc NOTICE
-
-#%files docs
-#%doc LICENSE
-#%doc NOTICE
+%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
@@ -543,8 +550,8 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
 
 %changelog

@@ -56,7 +56,7 @@ config_fields['core']['log_file'] = expanduser(config_dir + '/log')
 # ui
 config_fields['ui']['color'] = 'true'
 config_fields['ui']['prompt'] = '> '
-config_fields['ui']['tabularize'] = 'false'
+config_fields['ui']['display'] = 'default'
 
 # server
 config_fields['server']['host'] = 'localhost'
