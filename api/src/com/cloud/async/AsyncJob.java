@@ -61,6 +61,8 @@ public interface AsyncJob extends Identity, InternalIdentity {
     int getCmdVersion();
 
     String getCmdInfo();
+    
+    String getDispatcher();
 
     int getCallbackType();
 
@@ -89,10 +91,6 @@ public interface AsyncJob extends Identity, InternalIdentity {
     Type getInstanceType();
 
     Long getInstanceId();
-
-    String getSessionKey();
-
-    String getCmdOriginator();
 
     boolean isFromPreviousSession();
 

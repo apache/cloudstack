@@ -17,7 +17,6 @@
 package com.cloud.async;
 
 public class AsyncJobExecutionContext  {
-	private SyncQueueItemVO _syncSource;
 	private AsyncJobVO _job;
 	
 	private static ThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ThreadLocal<AsyncJobExecutionContext>();
@@ -30,11 +29,7 @@ public class AsyncJobExecutionContext  {
 	}
 	
 	public SyncQueueItemVO getSyncSource() {
-		return _syncSource;
-	}
-	
-	public void setSyncSource(SyncQueueItemVO syncSource) {
-		_syncSource = syncSource;
+		return _job.getSyncSource();
 	}
 	
 	public AsyncJobVO getJob() {

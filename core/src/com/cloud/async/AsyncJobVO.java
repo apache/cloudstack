@@ -50,21 +50,18 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="account_id")
     private long accountId;
     
-    @Column(name="session_key")
-    private String sessionKey;
-    
 	@Column(name="job_cmd")
     private String cmd;
-	
-	@Column(name="job_cmd_originator")
-	private String cmdOriginator;
-    
+
 	@Column(name="job_cmd_ver")
     private int cmdVersion;
-    
+	
+	@Column(name="job_dispatcher")
+	private String jobDispatcher;
+	
     @Column(name="job_cmd_info", length=65535)
     private String cmdInfo;
-    
+  
     @Column(name="callback_type")
     private int callbackType;
     
@@ -124,22 +121,22 @@ public class AsyncJobVO implements AsyncJob {
     }
 
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
-	this.userId = userId;
-	this.accountId = accountId;
-	this.cmd = cmd;
-	this.cmdInfo = cmdInfo;
-    	this.callbackType = CALLBACK_POLLING;
-    	this.uuid = UUID.randomUUID().toString();
-        this.instanceId = instanceId;
+		this.userId = userId;
+		this.accountId = accountId;
+		this.cmd = cmd;
+		this.cmdInfo = cmdInfo;
+	    this.callbackType = CALLBACK_POLLING;
+	    this.uuid = UUID.randomUUID().toString();
+	    this.instanceId = instanceId;
     }
 
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
-
-	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
-	this.callbackType = callbackType;
-	this.callbackAddress = callbackAddress;
-    	this.uuid = UUID.randomUUID().toString();
+		int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
+	
+		this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
+		this.callbackType = callbackType;
+		this.callbackAddress = callbackAddress;
+	    this.uuid = UUID.randomUUID().toString();
     }
 
 
@@ -195,6 +192,15 @@ public class AsyncJobVO implements AsyncJob {
 
 	public void setCmdInfo(String cmdInfo) {
 		this.cmdInfo = cmdInfo;
+	}
+	
+	@Override
+	public String getDispatcher() {
+		return this.jobDispatcher;
+	}
+	
+	public void setDispatcher(String dispatcher) {
+		this.jobDispatcher = dispatcher;
 	}
 
 	@Override
@@ -323,24 +329,6 @@ public class AsyncJobVO implements AsyncJob {
 		this.instanceId = instanceId;
 	}
 	
-    @Override
-    public String getSessionKey() {
-		return sessionKey;
-	}
-
-	public void setSessionKey(String sessionKey) {
-		this.sessionKey = sessionKey;
-	}
-	
-    @Override
-    public String getCmdOriginator() {
-		return cmdOriginator;
-	}
-
-	public void setCmdOriginator(String cmdOriginator) {
-		this.cmdOriginator = cmdOriginator;
-	}
-	
 	@Override
     public SyncQueueItemVO getSyncSource() {
         return syncSource;
@@ -374,11 +362,9 @@ public class AsyncJobVO implements AsyncJob {
 		sb.append("AsyncJobVO {id:").append(getId());
 		sb.append(", userId: ").append(getUserId());
 		sb.append(", accountId: ").append(getAccountId());
-		sb.append(", sessionKey: ").append(getSessionKey());
 		sb.append(", instanceType: ").append(getInstanceType());
 		sb.append(", instanceId: ").append(getInstanceId());
 		sb.append(", cmd: ").append(getCmd());
-		sb.append(", cmdOriginator: ").append(getCmdOriginator());
 		sb.append(", cmdInfo: ").append(getCmdInfo());
 		sb.append(", cmdVersion: ").append(getCmdVersion());
 		sb.append(", callbackType: ").append(getCallbackType());
