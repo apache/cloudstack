@@ -29,4 +29,6 @@
 /usr/bin/cloudstack-setup-management
 /usr/bin/cloudstack-setup-databases
 /usr/bin/cloudstack-migrate-databases
+/usr/bin/cloudstack-setup-encryption
+/usr/bin/cloudstack-sysvmadm
 /usr/share/cloudstack-management/*
