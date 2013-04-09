@@ -76,6 +76,9 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
@@ -2528,6 +2531,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);
+        cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
+        cmdList.add(CreateInternalLoadBalancerElementCmd.class);
+        cmdList.add(ListInternalLoadBalancerElementsCmd.class);
         return cmdList;
     }
 

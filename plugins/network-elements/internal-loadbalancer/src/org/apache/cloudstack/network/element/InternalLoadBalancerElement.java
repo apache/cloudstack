@@ -26,15 +26,16 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -46,18 +47,21 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VirtualRouterElement;
-import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -66,7 +70,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = {NetworkElement.class})
-public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, VirtualRouterElementService{
+public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService{
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -74,6 +78,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
     @Inject DomainRouterDao _routerDao;
     @Inject VirtualRouterProviderDao _vrProviderDao;
+    @Inject PhysicalNetworkServiceProviderDao _pNtwkSvcProviderDao;
     
     private boolean canHandle(Network config, List<LoadBalancingRule> rules) {
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
@@ -212,40 +217,75 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(CreateVirtualRouterElementCmd.class);
-        cmdList.add(ConfigureVirtualRouterElementCmd.class);
-        cmdList.add(ListVirtualRouterElementsCmd.class);
+        cmdList.add(CreateInternalLoadBalancerElementCmd.class);
+        cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
+        cmdList.add(ListInternalLoadBalancerElementsCmd.class);
         return cmdList;
     }
 
     @Override
-    public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+    public VirtualRouterProvider configure(ConfigureInternalLoadBalancerElementCmd cmd) {
+        VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
+        if (element == null || element.getType() != VirtualRouterProviderType.InternalLbVm) {
+            s_logger.debug("Can't find " + this.getName() + " element with network service provider id " + cmd.getId() +
+                    " to be used as a provider for " + this.getName());
+            return null;
+        }
+
+        element.setEnabled(cmd.getEnabled());
+        _vrProviderDao.persist(element);
+
+        return element;
     }
 
     @Override
-    public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
+    public VirtualRouterProvider addElement(Long nspId) {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.InternalLbVm);
         if (element != null) {
-            s_logger.debug("There is already a virtual router element with service provider id " + nspId);
+            s_logger.debug("There is already an " + this.getName() + " with service provider id " + nspId);
             return null;
         }
-        element = new VirtualRouterProviderVO(nspId, providerType);
+        
+        PhysicalNetworkServiceProvider provider = _pNtwkSvcProviderDao.findById(nspId);
+        if (provider == null || !provider.getProviderName().equalsIgnoreCase(this.getName())) {
+            throw new InvalidParameterValueException("Invalid network service provider is specified");
+        }
+        
+        element = new VirtualRouterProviderVO(nspId, VirtualRouterProviderType.InternalLbVm);
         _vrProviderDao.persist(element);
         return element;
     }
 
     @Override
     public VirtualRouterProvider getCreatedElement(long id) {
-        // TODO Auto-generated method stub
-        return null;
+        VirtualRouterProvider provider = _vrProviderDao.findById(id);
+        if (provider.getType() != VirtualRouterProviderType.InternalLbVm) {
+            throw new InvalidParameterValueException("Unable to find " + this.getName() + " by id");
+        }
+        return provider;
     }
 
     @Override
-    public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(ListInternalLoadBalancerElementsCmd cmd) {
+        Long id = cmd.getId();
+        Long nspId = cmd.getNspId();
+        Boolean enabled = cmd.getEnabled();
+
+        SearchCriteriaService<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
+        if (id != null) {
+            sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
+        }
+        if (nspId != null) {
+            sc.addAnd(sc.getEntity().getNspId(), Op.EQ, nspId);
+        }
+        if (enabled != null) {
+            sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
+        }
+        
+        //return only Internal LB elements
+        sc.addAnd(sc.getEntity().getType(), Op.EQ, VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm);
+        
+        return sc.list();
     }
 
 }

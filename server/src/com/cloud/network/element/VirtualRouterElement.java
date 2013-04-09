@@ -811,7 +811,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public VirtualRouterProvider getCreatedElement(long id) {
-        return _vrProviderDao.findById(id);
+        VirtualRouterProvider provider = _vrProviderDao.findById(id);
+        if (!(provider.getType() == VirtualRouterProviderType.VirtualRouter || provider.getType() == VirtualRouterProviderType.VPCVirtualRouter)) {
+            throw new InvalidParameterValueException("Unable to find provider by id");
+        }
+        return provider;
     }
 
     @Override

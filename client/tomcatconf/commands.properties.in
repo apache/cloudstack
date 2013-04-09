@@ -574,3 +574,9 @@ createLoadBalancer=15
 listLoadBalancers=15
 deleteLoadBalancer=15
 
+#Internal Load Balancer Element commands
+configureInternalLoadBalancerElement=1
+createInternalLoadBalancerElement=1
+listInternalLoadBalancerElements=1
+
+
