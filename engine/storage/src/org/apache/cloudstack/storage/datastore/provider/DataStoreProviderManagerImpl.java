@@ -36,7 +36,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -50,8 +49,6 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             .getLogger(DataStoreProviderManagerImpl.class);
     @Inject
     List<DataStoreProvider> providers;
-    @Inject
-    DataStoreProviderDao providerDao;
     protected Map<String, DataStoreProvider> providerMap = new HashMap<String, DataStoreProvider>();
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;

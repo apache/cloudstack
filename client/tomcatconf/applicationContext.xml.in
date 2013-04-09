@@ -190,7 +190,6 @@
   <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
   <bean id="dataCenterLinkLocalIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl" />
   <bean id="dataCenterVnetDaoImpl" class="com.cloud.dc.dao.DataCenterVnetDaoImpl" />
-  <bean id="dataStoreProviderDaoImpl" class="org.apache.cloudstack.storage.db.DataStoreProviderDaoImpl" />
   <bean id="dcDetailsDaoImpl" class="com.cloud.dc.dao.DcDetailsDaoImpl" />
   <bean id="engineDcDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl" />
   <bean id="diskOfferingJoinDaoImpl" class="com.cloud.api.query.dao.DiskOfferingJoinDaoImpl" />

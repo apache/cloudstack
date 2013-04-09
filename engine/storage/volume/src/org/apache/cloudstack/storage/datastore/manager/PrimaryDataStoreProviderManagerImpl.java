@@ -31,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
@@ -40,8 +39,6 @@ import com.cloud.storage.StorageManager;
 
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
-    @Inject
-    DataStoreProviderDao dataStoreProviderDao;
     @Inject
     DataStoreProviderManager providerManager;
     @Inject
@@ -53,7 +50,7 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
     public void config() {
         driverMaps = new HashMap<String, PrimaryDataStoreDriver>();
     }
-    
+
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
@@ -62,7 +59,7 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
         PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
         return dataStore;
     }
-    
+
     @Override
     public boolean registerDriver(String providerName, PrimaryDataStoreDriver driver) {
         if (driverMaps.get(providerName) != null) {
