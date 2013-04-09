@@ -18,6 +18,7 @@ from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import addNiciraNvpDevice
 from marvin.cloudstackAPI import listNiciraNvpDevices
 from marvin.cloudstackAPI import deleteNiciraNvpDevice
+from marvin.cloudstackAPI import listNiciraNvpDeviceNetworks
 
 class NiciraNvpDevice(CloudStackEntity.CloudStackEntity):
 
@@ -54,3 +55,11 @@ class NiciraNvpDevice(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         niciranvpdevice = apiclient.deleteNiciraNvpDevice(cmd)
         return niciranvpdevice
+
+    @classmethod
+    def listNetworks(self, apiclient, nvpdeviceid, **kwargs):
+        cmd = listNiciraNvpDeviceNetworks.listNiciraNvpDeviceNetworksCmd()
+        cmd.nvpdeviceid = nvpdeviceid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        niciranvpdevicenetworks = apiclient.listNiciraNvpDeviceNetworks(cmd)
+        return map(lambda e: NiciraNvpDevice(e.__dict__), niciranvpdevicenetworks)

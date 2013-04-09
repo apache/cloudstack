@@ -26,6 +26,11 @@ from marvin.cloudstackAPI import updateVirtualMachine
 from marvin.cloudstackAPI import startVirtualMachine
 from marvin.cloudstackAPI import destroyVirtualMachine
 from marvin.cloudstackAPI import assignVirtualMachine
+from marvin.cloudstackAPI import addNicToVirtualMachine
+from marvin.cloudstackAPI import removeNicFromVirtualMachine
+from marvin.cloudstackAPI import resetPasswordForVirtualMachine
+from marvin.cloudstackAPI import resetSSHKeyForVirtualMachine
+from marvin.cloudstackAPI import updateDefaultNicForVirtualMachine
 
 class VirtualMachine(CloudStackEntity.CloudStackEntity):
 
@@ -43,10 +48,9 @@ class VirtualMachine(CloudStackEntity.CloudStackEntity):
         return virtualmachine
 
 
-    def scale(self, apiclient, id, serviceofferingid, **kwargs):
+    def scale(self, apiclient, serviceofferingid, **kwargs):
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.serviceofferingid = serviceofferingid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.scaleVirtualMachine(cmd)
@@ -79,46 +83,41 @@ class VirtualMachine(CloudStackEntity.CloudStackEntity):
         return map(lambda e: VirtualMachine(e.__dict__), virtualmachine)
 
 
-    def stop(self, apiclient, id, **kwargs):
+    def stop(self, apiclient, **kwargs):
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.stopVirtualMachine(cmd)
         return virtualmachine
 
 
-    def reboot(self, apiclient, id, **kwargs):
+    def reboot(self, apiclient, **kwargs):
         cmd = rebootVirtualMachine.rebootVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.rebootVirtualMachine(cmd)
         return virtualmachine
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateVirtualMachine.updateVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.updateVirtualMachine(cmd)
         return virtualmachine
 
 
-    def start(self, apiclient, id, **kwargs):
+    def start(self, apiclient, **kwargs):
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.startVirtualMachine(cmd)
         return virtualmachine
 
 
-    def destroy(self, apiclient, id, **kwargs):
+    def destroy(self, apiclient, **kwargs):
         cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.destroyVirtualMachine(cmd)
         return virtualmachine
@@ -133,3 +132,46 @@ class VirtualMachine(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualmachine = apiclient.assignVirtualMachine(cmd)
         return virtualmachine
+
+    def remove_nic(self, apiclient, nicid, **kwargs):
+        cmd = removeNicFromVirtualMachine.removeNicFromVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        cmd.nicid = nicid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        nicfromvirtualmachine = apiclient.removeNicFromVirtualMachine(cmd)
+        return nicfromvirtualmachine
+
+
+    def add_nic(self, apiclient, networkid, **kwargs):
+        cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        cmd.networkid = networkid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        nictovirtualmachine = apiclient.addNicToVirtualMachine(cmd)
+        return nictovirtualmachine
+
+
+    def update_default_nic(self, apiclient, nicid, **kwargs):
+        cmd = updateDefaultNicForVirtualMachine.updateDefaultNicForVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        cmd.nicid = nicid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        defaultnicforvirtualmachine = apiclient.updateDefaultNicForVirtualMachine(cmd)
+        return defaultnicforvirtualmachine
+
+
+    def reset_password(self, apiclient, **kwargs):
+        cmd = resetPasswordForVirtualMachine.resetPasswordForVirtualMachineCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        passwordforvirtualmachine = apiclient.resetPasswordForVirtualMachine(cmd)
+        return passwordforvirtualmachine
+
+
+    def reset_sshkey(self, apiclient, keypair, **kwargs):
+        cmd = resetSSHKeyForVirtualMachine.resetSSHKeyForVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.keypair = keypair
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        sshkeyforvirtualmachine = apiclient.resetSSHKeyForVirtualMachine(cmd)
+        return sshkeyforvirtualmachine

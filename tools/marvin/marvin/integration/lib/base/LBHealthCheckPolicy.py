@@ -17,6 +17,7 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import createLBHealthCheckPolicy
 from marvin.cloudstackAPI import deleteLBHealthCheckPolicy
+from marvin.cloudstackAPI import listLBHealthCheckPolicies
 
 class LBHealthCheckPolicy(CloudStackEntity.CloudStackEntity):
 
@@ -41,3 +42,12 @@ class LBHealthCheckPolicy(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbhealthcheckpolicy = apiclient.deleteLBHealthCheckPolicy(cmd)
         return lbhealthcheckpolicy
+
+
+    @classmethod
+    def list(self, apiclient, lbruleid, **kwargs):
+        cmd = listLBHealthCheckPolicies.listLBHealthCheckPoliciesCmd()
+        cmd.lbruleid = lbruleid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        lbhealthcheckpolicies = apiclient.listLBHealthCheckPolicies(cmd)
+        return map(lambda e: LBHealthCheckPolicy(e.__dict__), lbhealthcheckpolicies)

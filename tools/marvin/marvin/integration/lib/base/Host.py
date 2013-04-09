@@ -20,6 +20,9 @@ from marvin.cloudstackAPI import listHosts
 from marvin.cloudstackAPI import updateHost
 from marvin.cloudstackAPI import reconnectHost
 from marvin.cloudstackAPI import deleteHost
+from marvin.cloudstackAPI import prepareHostForMaintenance
+from marvin.cloudstackAPI import cancelHostMaintenance
+from marvin.cloudstackAPI import updateHostPassword
 
 class Host(CloudStackEntity.CloudStackEntity):
 
@@ -75,3 +78,29 @@ class Host(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.deleteHost(cmd)
         return host
+
+
+    def prepareMaintenance(self, apiclient, **kwargs):
+        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        hostformaintenance = apiclient.prepareHostForMaintenance(cmd)
+        return hostformaintenance
+
+
+    def cancelMaintenance(self, apiclient, **kwargs):
+        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        hostmaintenance = apiclient.cancelHostMaintenance(cmd)
+        return hostmaintenance
+
+
+    def updatePassword(self, apiclient, username, password, **kwargs):
+        cmd = updateHostPassword.updateHostPasswordCmd()
+        cmd.id = self.id
+        cmd.password = password
+        cmd.username = username
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        hostpassword = apiclient.updateHostPassword(cmd)
+        return hostpassword

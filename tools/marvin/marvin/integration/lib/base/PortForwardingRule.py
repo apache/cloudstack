@@ -56,10 +56,9 @@ class PortForwardingRule(CloudStackEntity.CloudStackEntity):
         return portforwardingrule
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         portforwardingrule = apiclient.deletePortForwardingRule(cmd)
         return portforwardingrule

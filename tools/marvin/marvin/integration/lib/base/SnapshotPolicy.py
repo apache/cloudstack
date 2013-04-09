@@ -16,6 +16,8 @@
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import createSnapshotPolicy
+from marvin.cloudstackAPI import listSnapshotPolicies
+from marvin.cloudstackAPI import deleteSnapshotPolicies
 
 class SnapshotPolicy(CloudStackEntity.CloudStackEntity):
 
@@ -31,3 +33,20 @@ class SnapshotPolicy(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshotpolicy = apiclient.createSnapshotPolicy(cmd)
         return SnapshotPolicy(snapshotpolicy.__dict__)
+
+
+    @classmethod
+    def list(self, apiclient, volumeid, **kwargs):
+        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
+        cmd.volumeid = volumeid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        snapshotpolicies = apiclient.listSnapshotPolicies(cmd)
+        return map(lambda e: SnapshotPolicy(e.__dict__), snapshotpolicies)
+
+
+    def delete(self, apiclient, **kwargs):
+        cmd = deleteSnapshotPolicies.deleteSnapshotPoliciesCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        snapshotpolicies = apiclient.deleteSnapshotPolicies(cmd)
+        return snapshotpolicies

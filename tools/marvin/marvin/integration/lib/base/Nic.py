@@ -15,20 +15,37 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.integration.lib.base import CloudStackEntity
-from marvin.cloudstackAPI import updateDefaultNicForVirtualMachine
+from marvin.cloudstackAPI import listNics
+from marvin.cloudstackAPI import addIpToNic
+from marvin.cloudstackAPI import removeIpFromNic
 
-class DefaultNicForVirtualMachine(CloudStackEntity.CloudStackEntity):
+class Nic(CloudStackEntity.CloudStackEntity):
 
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
-    def update(self, apiclient, nicid, virtualmachineid, **kwargs):
-        cmd = updateDefaultNicForVirtualMachine.updateDefaultNicForVirtualMachineCmd()
-        cmd.id = self.id
-        cmd.nicid = nicid
+    @classmethod
+    def list(self, apiclient, virtualmachineid, **kwargs):
+        cmd = listNics.listNicsCmd()
         cmd.virtualmachineid = virtualmachineid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
-        defaultnicforvirtualmachine = apiclient.updateDefaultNicForVirtualMachine(cmd)
-        return defaultnicforvirtualmachine
+        nics = apiclient.listNics(cmd)
+        return map(lambda e: Nic(e.__dict__), nics)
+
+
+    def add_ip(self, apiclient, **kwargs):
+        cmd = addIpToNic.addIpToNicCmd()
+        cmd.nicid = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        iptonic = apiclient.addIpToNic(cmd)
+        return iptonic
+
+
+    def remove_ip(self, apiclient, **kwargs):
+        cmd = removeIpFromNic.removeIpFromNicCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        ipfromnic = apiclient.removeIpFromNic(cmd)
+        return ipfromnic

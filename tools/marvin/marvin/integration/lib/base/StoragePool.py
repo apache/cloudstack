@@ -19,6 +19,8 @@ from marvin.cloudstackAPI import createStoragePool
 from marvin.cloudstackAPI import listStoragePools
 from marvin.cloudstackAPI import updateStoragePool
 from marvin.cloudstackAPI import deleteStoragePool
+from marvin.cloudstackAPI import cancelStorageMaintenance
+from marvin.cloudstackAPI import enableStorageMaintenance
 
 class StoragePool(CloudStackEntity.CloudStackEntity):
 
@@ -60,3 +62,19 @@ class StoragePool(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagepool = apiclient.deleteStoragePool(cmd)
         return storagepool
+
+
+    def cancel_maintenance(self, apiclient, **kwargs):
+        cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        storagemaintenance = apiclient.cancelStorageMaintenance(cmd)
+        return storagemaintenance
+
+
+    def enable_maintenance(self, apiclient, **kwargs):
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        storagemaintenance = apiclient.enableStorageMaintenance(cmd)
+        return storagemaintenance

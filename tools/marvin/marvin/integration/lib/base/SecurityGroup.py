@@ -18,6 +18,10 @@ from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import createSecurityGroup
 from marvin.cloudstackAPI import listSecurityGroups
 from marvin.cloudstackAPI import deleteSecurityGroup
+from marvin.cloudstackAPI import revokeSecurityGroupEgress
+from marvin.cloudstackAPI import revokeSecurityGroupIngress
+from marvin.cloudstackAPI import authorizeSecurityGroupEgress
+from marvin.cloudstackAPI import authorizeSecurityGroupIngress
 
 class SecurityGroup(CloudStackEntity.CloudStackEntity):
 
@@ -49,3 +53,29 @@ class SecurityGroup(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         securitygroup = apiclient.deleteSecurityGroup(cmd)
         return securitygroup
+
+
+    def authorize(self, apiclient, ingress=True, **kwargs):
+        if ingress:
+            cmd = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
+        else:
+            cmd = authorizeSecurityGroupEgress.authorizeSecurityGroupEgressCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        if ingress:
+            return apiclient.authorizeSecurityGroupIngress(cmd)
+        else:
+            return apiclient.authorizeSecurityGroupEgress(cmd)
+
+
+    def revoke(self, apiclient, ingress=True, **kwargs):
+        if ingress:
+            cmd = revokeSecurityGroupIngress.revokeSecurityGroupIngressCmd()
+        else:
+            cmd = revokeSecurityGroupEgress.revokeSecurityGroupEgressCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        if ingress:
+            return apiclient.revokeSecurityGroupIngress(cmd)
+        else:
+            return apiclient.revokeSecurityGroupEgress(cmd)

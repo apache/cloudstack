@@ -21,6 +21,9 @@ from marvin.cloudstackAPI import listProjects
 from marvin.cloudstackAPI import updateProject
 from marvin.cloudstackAPI import activateProject
 from marvin.cloudstackAPI import deleteProject
+from marvin.cloudstackAPI import deleteAccountFromProject
+from marvin.cloudstackAPI import addAccountToProject
+from marvin.cloudstackAPI import listProjectAccounts
 
 class Project(CloudStackEntity.CloudStackEntity):
 
@@ -29,10 +32,9 @@ class Project(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def suspend(self, apiclient, id, **kwargs):
+    def suspend(self, apiclient, **kwargs):
         cmd = suspendProject.suspendProjectCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.suspendProject(cmd)
         return project
@@ -55,28 +57,51 @@ class Project(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Project(e.__dict__), project)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateProject.updateProjectCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.updateProject(cmd)
         return project
 
 
-    def activate(self, apiclient, id, **kwargs):
+    def activate(self, apiclient, **kwargs):
         cmd = activateProject.activateProjectCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.activateProject(cmd)
         return project
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteProject.deleteProjectCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.deleteProject(cmd)
         return project
+
+
+    def delete_account(self, apiclient, projectid, **kwargs):
+        cmd = deleteAccountFromProject.deleteAccountFromProjectCmd()
+        cmd.id = self.id
+        cmd.projectid = projectid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        deletefromproject = apiclient.deleteAccountFromProject(cmd)
+        return deletefromproject
+
+
+    def add_account(self, apiclient, projectid, **kwargs):
+        cmd = addAccountToProject.addAccountToProjectCmd()
+        cmd.id = self.id
+        cmd.projectid = projectid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        accounttoproject = apiclient.addAccountToProject(cmd)
+        return accounttoproject
+
+    @classmethod
+    def list_accounts(self, apiclient, projectid, **kwargs):
+        cmd = listProjectAccounts.listProjectAccountsCmd()
+        cmd.projectid = projectid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        projectaccounts = apiclient.listProjectAccounts(cmd)
+        return map(lambda e: Project(e.__dict__), projectaccounts)

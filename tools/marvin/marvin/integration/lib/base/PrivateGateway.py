@@ -43,10 +43,9 @@ class PrivateGateway(CloudStackEntity.CloudStackEntity):
         return map(lambda e: PrivateGateway(e.__dict__), privategateway)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deletePrivateGateway.deletePrivateGatewayCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         privategateway = apiclient.deletePrivateGateway(cmd)
         return privategateway

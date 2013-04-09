@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import listUsers
 from marvin.cloudstackAPI import updateUser
 from marvin.cloudstackAPI import disableUser
 from marvin.cloudstackAPI import deleteUser
+from marvin.cloudstackAPI import registerUserKeys
 
 class User(CloudStackEntity.CloudStackEntity):
 
@@ -100,3 +101,11 @@ class User(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.deleteUser(cmd)
         return user
+
+
+    def register_userkeys(self, apiclient, **kwargs):
+        cmd = registerUserKeys.registerUserKeysCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        userkeys = apiclient.registerUserKeys(cmd)
+        return userkeys

@@ -22,6 +22,7 @@ from marvin.cloudstackAPI import listAccounts
 from marvin.cloudstackAPI import updateAccount
 from marvin.cloudstackAPI import disableAccount
 from marvin.cloudstackAPI import deleteAccount
+from marvin.cloudstackAPI import markDefaultZoneForAccount
 
 class Account(CloudStackEntity.CloudStackEntity):
 
@@ -90,3 +91,13 @@ class Account(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.deleteAccount(cmd)
         return account
+
+    def mark(self, apiclient, zoneid, **kwargs):
+        cmd = markDefaultZoneForAccount.markDefaultZoneForAccountCmd()
+        cmd.id = self.id
+        cmd.account = self.account
+        cmd.domainid = self.domainid
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        defaultzoneforaccount = apiclient.markDefaultZoneForAccount(cmd)
+        return defaultzoneforaccount

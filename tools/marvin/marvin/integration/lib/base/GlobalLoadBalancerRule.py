@@ -19,6 +19,8 @@ from marvin.cloudstackAPI import createGlobalLoadBalancerRule
 from marvin.cloudstackAPI import listGlobalLoadBalancerRules
 from marvin.cloudstackAPI import updateGlobalLoadBalancerRule
 from marvin.cloudstackAPI import deleteGlobalLoadBalancerRule
+from marvin.cloudstackAPI import removeFromGlobalLoadBalancerRule
+from marvin.cloudstackAPI import assignToGlobalLoadBalancerRule
 
 class GlobalLoadBalancerRule(CloudStackEntity.CloudStackEntity):
 
@@ -44,19 +46,35 @@ class GlobalLoadBalancerRule(CloudStackEntity.CloudStackEntity):
         return map(lambda e: GlobalLoadBalancerRule(e.__dict__), globalloadbalancerrule)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateGlobalLoadBalancerRule.updateGlobalLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         globalloadbalancerrule = apiclient.updateGlobalLoadBalancerRule(cmd)
         return globalloadbalancerrule
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteGlobalLoadBalancerRule.deleteGlobalLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         globalloadbalancerrule = apiclient.deleteGlobalLoadBalancerRule(cmd)
         return globalloadbalancerrule
+
+
+    def remove(self, apiclient, loadbalancerrulelist, **kwargs):
+        cmd = removeFromGlobalLoadBalancerRule.removeFromGlobalLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.loadbalancerrulelist = loadbalancerrulelist
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        fromgloballoadbalancerrule = apiclient.removeFromGlobalLoadBalancerRule(cmd)
+        return fromgloballoadbalancerrule
+
+
+    def assign(self, apiclient, loadbalancerrulelist, **kwargs):
+        cmd = assignToGlobalLoadBalancerRule.assignToGlobalLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.loadbalancerrulelist = loadbalancerrulelist
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        togloballoadbalancerrule = apiclient.assignToGlobalLoadBalancerRule(cmd)
+        return togloballoadbalancerrule

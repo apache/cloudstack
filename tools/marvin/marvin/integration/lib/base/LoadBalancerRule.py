@@ -19,6 +19,9 @@ from marvin.cloudstackAPI import createLoadBalancerRule
 from marvin.cloudstackAPI import listLoadBalancerRules
 from marvin.cloudstackAPI import updateLoadBalancerRule
 from marvin.cloudstackAPI import deleteLoadBalancerRule
+from marvin.cloudstackAPI import removeFromLoadBalancerRule
+from marvin.cloudstackAPI import listLoadBalancerRuleInstances
+from marvin.cloudstackAPI import assignToLoadBalancerRule
 
 class LoadBalancerRule(CloudStackEntity.CloudStackEntity):
 
@@ -44,19 +47,44 @@ class LoadBalancerRule(CloudStackEntity.CloudStackEntity):
         return map(lambda e: LoadBalancerRule(e.__dict__), loadbalancerrule)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateLoadBalancerRule.updateLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.updateLoadBalancerRule(cmd)
         return loadbalancerrule
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteLoadBalancerRule.deleteLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         loadbalancerrule = apiclient.deleteLoadBalancerRule(cmd)
         return loadbalancerrule
+
+
+    def remove(self, apiclient, virtualmachineids, **kwargs):
+        cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineids = virtualmachineids
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        fromloadbalancerrule = apiclient.removeFromLoadBalancerRule(cmd)
+        return fromloadbalancerrule
+
+
+    def assign(self, apiclient, virtualmachineids, **kwargs):
+        cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineids = virtualmachineids
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        toloadbalancerrule = apiclient.assignToLoadBalancerRule(cmd)
+        return toloadbalancerrule
+
+
+    @classmethod
+    def listInstances(self, apiclient, **kwargs):
+        cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
+        cmd.id = self.id
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        loadbalancerruleinstances = apiclient.listLoadBalancerRuleInstances(cmd)
+        return map(lambda e: LoadBalancerRule(e.__dict__), loadbalancerruleinstances)

@@ -17,6 +17,7 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import createLBStickinessPolicy
 from marvin.cloudstackAPI import deleteLBStickinessPolicy
+from marvin.cloudstackAPI import listLBStickinessPolicies
 
 class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
 
@@ -41,3 +42,12 @@ class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)
         return lbstickinesspolicy
+
+
+    @classmethod
+    def list(self, apiclient, lbruleid, **kwargs):
+        cmd = listLBStickinessPolicies.listLBStickinessPoliciesCmd()
+        cmd.lbruleid = lbruleid
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        lbstickinesspolicies = apiclient.listLBStickinessPolicies(cmd)
+        return map(lambda e: LBStickinessPolicy(e.__dict__), lbstickinesspolicies)

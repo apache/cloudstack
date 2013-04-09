@@ -43,10 +43,9 @@ class Snapshot(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Snapshot(e.__dict__), snapshot)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshot = apiclient.deleteSnapshot(cmd)
         return snapshot
