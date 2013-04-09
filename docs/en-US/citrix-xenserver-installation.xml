@@ -62,7 +62,7 @@
           support any system that is not up to date with patches.</para>
       </listitem>
       <listitem>
-        <para>All hosts within a cluster must be homogenous. The CPUs must be of the same type,
+        <para>All hosts within a cluster must be homogeneous. The CPUs must be of the same type,
           count, and feature flags.</para>
       </listitem>
       <listitem>

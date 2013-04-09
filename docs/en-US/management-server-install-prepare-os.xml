@@ -30,7 +30,7 @@
         <listitem>
             <para>Check for a fully qualified hostname.</para>
             <programlisting language="Bash">hostname --fqdn</programlisting>
-            <para>This should return a fully qualified hostname such as "managament1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
+            <para>This should return a fully qualified hostname such as "management1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
         </listitem>
         <listitem>
             <para>Make sure that the machine can reach the Internet.</para>

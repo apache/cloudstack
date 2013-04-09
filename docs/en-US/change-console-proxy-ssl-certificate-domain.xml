@@ -32,7 +32,7 @@
             <listitem><para>Generate a new 2048-bit private key</para><programlisting>openssl genrsa -des3 -out yourprivate.key 2048</programlisting></listitem>
             <listitem><para>Generate a new certificate CSR</para><programlisting>openssl req -new -key yourprivate.key -out yourcertificate.csr</programlisting></listitem>
             <listitem><para>Head to the website of your favorite trusted Certificate Authority, purchase an SSL certificate, and submit the CSR. You should receive a valid certificate in return</para></listitem>
-            <listitem><para>Convert your private key format into PKCS#8 encrypted format.</para><programlisting>openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encryped.key</programlisting></listitem>
+            <listitem><para>Convert your private key format into PKCS#8 encrypted format.</para><programlisting>openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encrypted.key</programlisting></listitem>
             <listitem><para>Convert your PKCS#8 encrypted private key into the PKCS#8 format that is compliant with &PRODUCT;</para><programlisting>openssl pkcs8 -in yourprivate.pkcs8.encrypted.key -out yourprivate.pkcs8.key</programlisting></listitem>
         </orderedlist>          
         </listitem>

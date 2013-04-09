@@ -87,7 +87,7 @@
           <entry><para>suspendProject (Suspends a project)</para></entry>
           <entry><para>listProjects (Lists projects and provides detailed information for listed
               projects)</para></entry>
-          <entry><para>addAccountToProject (Adds acoount to a project)</para></entry>
+          <entry><para>addAccountToProject (Adds account to a project)</para></entry>
         </row>
         <row>
           <entry><para>deleteAccountFromProject (Deletes account from the project)</para></entry>
