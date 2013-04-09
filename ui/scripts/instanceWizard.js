@@ -312,6 +312,18 @@
         });
       },
 
+      // Step 5: Affinity
+      function(args) {
+        args.response.success({
+          data: {
+            affinityGroups: [
+              { id: 1, name: 'affinity1', description: 'Dummy Affinity Group 1' },
+              { id: 2, name: 'affinity2', description: 'Dummy Affinity Group 2' },
+            ]
+          }
+        });
+      },
+
       // Step 6: Network
       function(args) {
         if(diskOfferingObjs != null && diskOfferingObjs.length > 0) {

@@ -5222,6 +5222,10 @@ label.error {
   position: relative;
 }
 
+.multi-wizard.instance-wizard .progress ul li {
+  width: 109px;
+}
+
 .multi-wizard .progress ul li.first {
   /*+border-radius:5px 0 0 5px;*/
   -moz-border-radius: 5px 0 0 5px;
@@ -5263,6 +5267,10 @@ label.error {
   text-align: center;
 }
 
+.multi-wizard.instance-wizard .progress ul li span {
+  left: 36px;
+}
+
 .multi-wizard .progress ul li span.multiline {
   width: 71px;
   top: 12px;
@@ -5277,6 +5285,10 @@ label.error {
   margin-top: -3px;
   background: url(../images/icons.png) no-repeat 0px -422px;
   z-index: 1000;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.arrow {
+  left: 27px;
 }
 
 .multi-wizard .progress ul li.active span.arrow {
@@ -5297,6 +5309,15 @@ label.error {
   -o-text-shadow: 0px -1px 1px #C2BDBD;
   text-shadow: 0px -1px 1px #C2BDBD;
   background: transparent;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.number {
+  left: 16px;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.multiline {
+  width: 79px;
+  left: 23px;
 }
 
 .multi-wizard .progress ul li.active span {
@@ -11761,11 +11782,10 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .updateResourceLimits:hover .icon {
   background-position: -100px -614px;
 }
- 
+
 .addVlanRange .icon {
   background-position: -168px -31px;
 }
-
 
 .addVlanRange:hover .icon {
   background-position: -168px -613px;
@@ -11796,8 +11816,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon ,
-.scaleUp .icon{
+.reset .icon,
+.scaleUp .icon {
   background-position: -168px -31px;
 }
 

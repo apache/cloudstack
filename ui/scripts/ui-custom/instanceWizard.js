@@ -482,6 +482,25 @@
             };
           },
 
+          'affinity': function($step, formData) {
+            return {
+              response: {
+                success: function(args) {
+                  $step.find('.select-container').append(
+                    makeSelects('affinity-groups', args.data.affinityGroups, {
+                      name: 'name',
+                      desc: 'description',
+                      id: 'id'
+                    }, {
+                      type: 'checkbox',
+                      'wizard-field': 'affinity-groups'
+                    })
+                  );
+                }
+              }
+            };
+          },
+
           'network': function($step, formData) {
             var showAddNetwork = true;
 
