@@ -240,6 +240,7 @@
 
       // Action filter
       var allowedActions = options.preFilter ? options.preFilter({
+        actions: $.map(actions, function(value, key) { return key; }),
         context: $.extend(true, {}, options.context, {
           multiRule: [data],
           actions: $.map(actions, function(value, key) { return key; })
