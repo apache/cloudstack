@@ -36,7 +36,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
-import com.cloud.storage.ImageStore;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.storage.encoding.EncodingType;
@@ -154,10 +153,6 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return imageDataStoreVO.getDataCenterId();
     }
 
-    @Override
-    public ImageStore.State getState() {
-        return imageDataStoreVO.getState();
-    }
 
     @Override
     public String getProviderName() {

@@ -39,10 +39,6 @@ public class ImageStoreResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the image store")
     private String zoneName;
 
-    @SerializedName("state") @Param(description="the state of the image store")
-    private ImageStore.State state;
-
-
     @SerializedName("name") @Param(description="the name of the image store")
     private String name;
 
@@ -93,15 +89,6 @@ public class ImageStoreResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-
-    public ImageStore.State getState() {
-        return state;
-    }
-
-    public void setState(ImageStore.State state) {
-        this.state = state;
     }
 
     public String getName() {

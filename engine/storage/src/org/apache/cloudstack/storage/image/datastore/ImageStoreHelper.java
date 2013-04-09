@@ -52,7 +52,6 @@ public class ImageStoreHelper {
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
-        store.setState(ImageStore.State.Disabled);
         store = imageStoreDao.persist(store);
         return store;
     }
@@ -69,7 +68,6 @@ public class ImageStoreHelper {
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
-        store.setState(ImageStore.State.Disabled);
         store = imageStoreDao.persist(store);
 
         // persist details

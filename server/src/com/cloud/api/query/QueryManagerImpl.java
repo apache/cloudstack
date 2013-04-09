@@ -1931,15 +1931,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object name = cmd.getStoreName();
         String provider = cmd.getProvider();
         String protocol = cmd.getProtocol();
-        ImageStore.State state = null;
-        String stateStr = cmd.getState();
-        if (stateStr != null) {
-            try {
-                state = Enum.valueOf(ImageStore.State.class, stateStr.toUpperCase());
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid state" + stateStr);
-            }
-        }
         Object keyword = cmd.getKeyword();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
@@ -1953,7 +1944,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
 
 
@@ -1981,9 +1971,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (provider != null) {
             sc.setParameters("provider", provider);
-        }
-        if (state != null) {
-            sc.setParameters("state", state);
         }
         if (protocol != null) {
             sc.setParameters("protocol", protocol);

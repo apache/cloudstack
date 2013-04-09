@@ -43,7 +43,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
 
     private static final Logger s_logger = Logger.getLogger(ImageStoreDaoImpl.class);
     private SearchBuilder<ImageStoreVO> nameSearch;
-    private SearchBuilder<ImageStoreVO> enableSearch;
 
 
     @Override
@@ -54,11 +53,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
-
-        enableSearch = createSearchBuilder();
-        enableSearch.and("state", enableSearch.entity().getState(), SearchCriteria.Op.EQ);
-        enableSearch.done();
-
         return true;
     }
 
@@ -68,14 +62,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         sc.setParameters("name", name);
         return findOneBy(sc);
     }
-
-    @Override
-    public ImageStoreVO findEnabledStore() {
-        SearchCriteria<ImageStoreVO> sc = nameSearch.create();
-        sc.setParameters("state", ImageStore.State.Enabled); // only one image store is enabled at one time.
-        return findOneBy(sc);
-    }
-
 
 
 }

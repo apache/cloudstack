@@ -23,5 +23,4 @@ import com.cloud.utils.db.GenericDao;
 public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
     public ImageStoreVO findByName(String name);
 
-    public ImageStoreVO findEnabledStore();
 }

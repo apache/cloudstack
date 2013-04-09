@@ -76,7 +76,6 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setScope(ids.getScope());
         osResponse.setZoneId(ids.getZoneUuid());
         osResponse.setZoneName(ids.getZoneName());
-        osResponse.setState(ids.getState());
 
         String detailName = ids.getDetailName();
         if ( detailName != null && detailName.length() > 0 ){

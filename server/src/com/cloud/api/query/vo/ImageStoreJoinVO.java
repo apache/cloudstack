@@ -68,9 +68,6 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name="data_center_name")
     private String zoneName;
 
-    @Column(name="state")
-    private ImageStore.State state;
-
     @Column(name="detail_name")
     private String detailName;
 
@@ -157,15 +154,6 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
 
     public void setScope(ScopeType scope) {
         this.scope = scope;
-    }
-
-
-    public ImageStore.State getState() {
-        return state;
-    }
-
-    public void setState(ImageStore.State state) {
-        this.state = state;
     }
 
     public void setName(String name) {

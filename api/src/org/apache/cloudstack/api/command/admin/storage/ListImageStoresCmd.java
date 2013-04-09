@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
 
-@APICommand(name = "listImageStores", description="Lists image stores.", responseObject=ImageStoreResponse.class)
+@APICommand(name = "listImageStores", description="Lists image stores.", responseObject=ImageStoreResponse.class, since = "4.2.0")
 public class ListImageStoresCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListImageStoresCmd.class.getName());
 
@@ -42,9 +42,6 @@ public class ListImageStoresCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image store")
     private String storeName;
-
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="the image store state")
-    private String state;
 
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="the image store protocol")
     private String protocol;
@@ -72,10 +69,6 @@ public class ListImageStoresCmd extends BaseListCmd {
 
     public String getStoreName() {
         return storeName;
-    }
-
-    public String getState() {
-        return state;
     }
 
     public String getProtocol() {

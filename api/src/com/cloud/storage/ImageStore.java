@@ -21,10 +21,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ImageStore extends Identity, InternalIdentity {
 
-    public enum State {
-        Disabled, Enabled, Deactivated;
-    }
-
 
     /**
      * @return name of the object store.
@@ -36,10 +32,6 @@ public interface ImageStore extends Identity, InternalIdentity {
      */
     Long getDataCenterId();
 
-    /**
-     * @return image store state.
-     */
-    State getState();
 
 	/**
 	 * @return object store provider name

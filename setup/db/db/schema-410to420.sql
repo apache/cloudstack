@@ -77,7 +77,6 @@ CREATE TABLE `cloud`.`image_store` (
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
-  `state` varchar(30) COMMENT 'state of data store',
   `created` datetime COMMENT 'date the image store first signed on',
   `removed` datetime COMMENT 'date removed if not null',  
   PRIMARY KEY(`id`)
@@ -103,7 +102,6 @@ CREATE VIEW `cloud`.`image_store_view` AS
         image_store.protocol,
         image_store.url,
         image_store.scope,
-        image_store.state,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,

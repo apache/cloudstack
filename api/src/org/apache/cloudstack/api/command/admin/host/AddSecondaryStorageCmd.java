@@ -50,20 +50,6 @@ public class AddSecondaryStorageCmd extends BaseCmd {
             description="the Zone ID for the secondary storage")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.UUID, entityType=RegionResponse.class,
-            description="the Region ID for the secondary storage")
-    private Long regionId;
-
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the secondary storage data store")
-    private Map details;
-
-    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
-            required=false, description="the scope of the secondary storage data store: zone or region or global")
-    private String scope;
-
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
-            required=false, description="the secondary storage store provider name")
-    private String imageProviderName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -75,22 +61,6 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public Long getRegionId() {
-        return regionId;
-    }
-
-    public Map getDetails() {
-        return details;
-    }
-
-    public String getScope() {
-        return this.scope;
-     }
-
-    public String getImageProviderName() {
-        return this.imageProviderName;
     }
 
 

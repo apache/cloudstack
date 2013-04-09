@@ -60,10 +60,6 @@ public class ImageStoreVO implements ImageStore {
     @Column(name = "data_center_id")
     private long dcId;
 
-    @Column(name = "state")
-    @Enumerated(value = EnumType.STRING)
-    private State state;
-
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
@@ -148,14 +144,6 @@ public class ImageStoreVO implements ImageStore {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
-    }
-
-    public State getState() {
-        return state;
-    }
-
-    public void setState(State state) {
-        this.state = state;
     }
 
 
