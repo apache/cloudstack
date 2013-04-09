@@ -3089,7 +3089,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
         
         VirtualRouterElement element = (VirtualRouterElement)networkElement;
-        element.addElement(nsp.getId(), VirtualRouterProviderType.VirtualRouter);
+        element.addElement(nsp.getId(), VirtualRouterProviderType.InternalLbVm);
 
         return nsp;
     }

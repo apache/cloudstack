@@ -2769,6 +2769,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNspId(nsp.getUuid());
         }
         response.setEnabled(result.isEnabled());
+        response.setType(result.getType().toString());
 
         response.setObjectName("virtualrouterelement");
         return response;

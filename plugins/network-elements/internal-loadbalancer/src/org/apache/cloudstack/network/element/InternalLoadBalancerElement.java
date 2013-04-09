@@ -26,6 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -40,11 +43,16 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VirtualRouterElementService;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LoadBalancerContainer;
@@ -58,13 +66,14 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = {NetworkElement.class})
-public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider{
+public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, VirtualRouterElementService{
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject NetworkModel _ntwkModel;
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
     @Inject DomainRouterDao _routerDao;
+    @Inject VirtualRouterProviderDao _vrProviderDao;
     
     private boolean canHandle(Network config, List<LoadBalancingRule> rules) {
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
@@ -198,6 +207,45 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
         capabilities.put(Service.Lb, lbCapabilities);
         return capabilities;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateVirtualRouterElementCmd.class);
+        cmdList.add(ConfigureVirtualRouterElementCmd.class);
+        cmdList.add(ListVirtualRouterElementsCmd.class);
+        return cmdList;
+    }
+
+    @Override
+    public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
+        if (element != null) {
+            s_logger.debug("There is already a virtual router element with service provider id " + nspId);
+            return null;
+        }
+        element = new VirtualRouterProviderVO(nspId, providerType);
+        _vrProviderDao.persist(element);
+        return element;
+    }
+
+    @Override
+    public VirtualRouterProvider getCreatedElement(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

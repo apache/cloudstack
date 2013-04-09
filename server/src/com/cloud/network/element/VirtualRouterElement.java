@@ -90,8 +90,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
 		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
 		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
@@ -723,8 +721,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
-        if (element == null) {
-            s_logger.debug("Can't find element with network service provider id " + cmd.getId());
+        if (element == null || !(element.getType() == VirtualRouterProviderType.VirtualRouter || element.getType() == VirtualRouterProviderType.VPCVirtualRouter)) {
+            s_logger.debug("Can't find Virtual Router element with network service provider id " + cmd.getId());
             return null;
         }
 
@@ -736,6 +734,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
+        if (!(providerType != VirtualRouterProviderType.VirtualRouter) || (providerType != VirtualRouterProviderType.VPCVirtualRouter)) {
+            throw new InvalidParameterValueException("Element " + this.getName() + " supports only providerTypes: " + 
+        VirtualRouterProviderType.VirtualRouter.toString() + " and " + VirtualRouterProviderType.VPCVirtualRouter);
+        }
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
         if (element != null) {
             s_logger.debug("There is already a virtual router element with service provider id " + nspId);
@@ -919,6 +921,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (enabled != null) {
             sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
         }
+        
+        //return only VR and VPC VR
+        sc.addAnd(sc.getEntity().getType(), Op.IN, VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter, VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter);
+        
         return sc.list();
     }
 

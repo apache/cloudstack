@@ -478,6 +478,7 @@ public class ApiConstants {
     public static final String SOURCE_IP = "sourceipaddress";
     public static final String SOURCE_IP_NETWORK_ID = "sourceipaddressnetworkid";
     public static final String SCHEME = "scheme";
+    public static final String PROVIDER_TYPE = "providertype";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
