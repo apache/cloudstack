@@ -124,6 +124,15 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (64 bit)', 209);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 Server (64 bit)', 210);
 
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (211, UUID(), 7, 'Apple Mac OS X 10.6 (32 bits)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (212, UUID(), 7, 'Apple Mac OS X 10.6 (64 bits)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (213, UUID(), 7, 'Apple Mac OS X 10.7 (32 bits)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (214, UUID(), 7, 'Apple Mac OS X 10.7 (64 bits)');
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (32 bits)', 211);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (64 bits)', 212);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (32 bits)', 213);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (64 bits)', 214);
+
 CREATE TABLE `cloud`.`user_vm_clone_setting` (
   `vm_id` bigint unsigned NOT NULL COMMENT 'guest VM id',
   `clone_type` varchar(10) NOT NULL COMMENT 'Full or Linked Clone (applicable to VMs on ESX)',
