@@ -8839,6 +8839,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   left: 0px;
   top: -10px;
   margin-right: 9px;
+  display: none;
 }
 
 #header div.view-switcher.alt {
@@ -8903,6 +8904,25 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   max-width: 120px;
   margin: 6px 3px 0 -21px;
   padding: 3px 0 4px;
+}
+
+/*** View switcher (drop-down)*/
+.project-switcher {
+  float: left;
+  width: 141px;
+  padding: 9px 17px 0 0;
+}
+
+.project-switcher select {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #000000;
+  border-bottom: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
 }
 
 /*** Select project*/
@@ -11761,11 +11781,10 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .updateResourceLimits:hover .icon {
   background-position: -100px -614px;
 }
- 
+
 .addVlanRange .icon {
   background-position: -168px -31px;
 }
-
 
 .addVlanRange:hover .icon {
   background-position: -168px -613px;
@@ -11796,8 +11815,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon ,
-.scaleUp .icon{
+.reset .icon,
+.scaleUp .icon {
   background-position: -168px -31px;
 }
 
