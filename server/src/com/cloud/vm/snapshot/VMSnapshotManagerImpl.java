@@ -59,6 +59,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.storage.GuestOSVO;
@@ -119,6 +120,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject VirtualMachineManager _itMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     int _vmSnapshotMax;
     int _wait;
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
@@ -244,7 +246,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (userVmVo == null) {
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
-        
+
+        // check hypervisor capabilities
+        if(!_hypervisorCapabilitiesDao.isVmSnapshotEnabled(userVmVo.getHypervisorType(), "default"))
+        	throw new InvalidParameterValueException("VM snapshot is not enabled for hypervisor type: " + userVmVo.getHypervisorType());
+
         // parameter length check
         if(vsDisplayName != null && vsDisplayName.length()>255)
             throw new InvalidParameterValueException("Creating VM snapshot failed due to length of VM snapshot vsDisplayName should not exceed 255");
