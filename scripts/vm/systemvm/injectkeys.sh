@@ -69,9 +69,9 @@ copy_priv_key() {
   return $?
 }
 
-if [[ `whoami` == cloud* ]]
+if [[ "$EUID" -ne 0  ]]
 then
-   SUDO=$SUDO
+   SUDO="sudo "
 fi
 
 $SUDO mkdir -p $MOUNTPATH
