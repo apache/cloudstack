@@ -45,7 +45,7 @@
         <para>Available in fresh installations of &PRODUCT;. Not available through upgrade of previous versions.</para>
       </listitem>
       <listitem>
-        <para>Features such as Elastic IP (EIP) and Elastic Load Balacing (ELB) are only available in an infrastructure
+        <para>Features such as Elastic IP (EIP) and Elastic Load Balancing (ELB) are only available in an infrastructure
         with a Citrix NetScaler device. Users accessing a Zone with a NetScaler device will need to use a 
         NetScaler-enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering).</para>
       </listitem>

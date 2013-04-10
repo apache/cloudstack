@@ -317,6 +317,10 @@
               <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+              <exclude>services/console-proxy/server/conf/agent.properties</exclude>
+              <exclude>services/console-proxy/server/conf/environment.properties</exclude>
+              <exclude>services/secondary-storage/conf/agent.properties</exclude>
+              <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/definitions/devcloud/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>

@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.api.commands.DestroyConsoleProxyCmd;
+import com.cloud.info.ConsoleProxyInfo;
 
 public interface ConsoleProxyService {
-    boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd);
+
+    public abstract ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
+
 }

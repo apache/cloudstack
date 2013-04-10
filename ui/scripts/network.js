@@ -924,7 +924,7 @@
               }
 
               if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
-                hiddenTabs.push('egressRules');
+                 hiddenTabs.push('egressRules');
                }
               
               return hiddenTabs;
@@ -1107,6 +1107,401 @@
 											);		
 										}
 									});			
+                }
+              },
+                 
+              egressRules: {
+                title: 'label.egress.rules',
+                custom: function(args) {
+                  var context = args.context;
+
+                  return $('<div>').multiEdit({
+                    context: context,
+                    noSelect: true,
+                    noHeaderActionsColumn: true,
+                    fields: {
+                      'cidrlist': { edit: true, label: 'label.cidr.list', isOptional: true },
+                      'protocol': {
+                        label: 'label.protocol',
+                        select: function(args) {
+                          args.$select.change(function() {
+                            var $inputs = args.$form.find('th, td');
+                            var $icmpFields = $inputs.filter(function() {
+                              var name = $(this).attr('rel');
+
+                              return $.inArray(name, [
+                                'icmptype',
+                                'icmpcode'
+                              ]) > -1;
+                            });
+                            var $otherFields = $inputs.filter(function() {
+                              var name = $(this).attr('rel');
+
+                              return name != 'cidrlist' &&
+                                name != 'icmptype' &&
+                                name != 'icmpcode' &&
+                                name != 'protocol' &&
+                                name != 'add-rule';
+                            });
+
+                            if ($(this).val() == 'icmp') {
+                              $icmpFields.show();
+                              $otherFields.hide();
+                            } else if ($(this).val() == 'all') {
+                              $icmpFields.hide();
+                              $otherFields.hide();
+                            } else {
+                              $icmpFields.hide();
+                              $otherFields.show();
+                            }
+                          });
+                       
+                            args.response.success({
+                            data: [
+                              { name: 'tcp', description: 'TCP' },
+                              { name: 'udp', description: 'UDP' },
+                              { name: 'icmp', description: 'ICMP' },
+                              { name: 'all', description: 'All' }
+                            ]
+                          });
+                        }
+                      },
+                      'startport': { edit: true, label: 'label.start.port', isOptional: true },
+                      'endport': { edit: true, label: 'label.end.port', isOptional: true },
+                      'icmptype': { edit: true, label: 'ICMP.type', isHidden: true, isOptional: true },
+                      'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true, isOptional: true },
+                      'add-rule': {
+                        label: 'label.add',
+                        addButton: true
+                      }
+                    },
+                    add: {
+                      label: 'label.add',
+                      action: function(args) {
+                        var data = {
+                          protocol: args.data.protocol,
+                          cidrlist: args.data.cidrlist,
+                          networkid: args.context.networks[0].id
+                        };
+
+                        if (args.data.icmptype && args.data.icmpcode) { // ICMP
+                          $.extend(data, {
+                            icmptype: args.data.icmptype,
+                            icmpcode: args.data.icmpcode
+                          });
+                        } else { // TCP/UDP
+                          $.extend(data, {
+                            startport: args.data.startport,
+                            endport: args.data.endport
+                          });
+                        }
+
+                        $.ajax({
+                          url: createURL('createEgressFirewallRule'),
+                          data: data,
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var jobId = json.createegressfirewallruleresponse.jobid;
+
+                            args.response.success({
+                              _custom: {
+                                jobId: jobId
+                              },
+                              notification: {
+                                label: 'label.add.egress.rule',
+                                poll: pollAsyncJobResult
+                              }
+                            });
+                          },
+                          error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                          }
+                        });
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'label.remove.rule',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('deleteEgressFirewallRule'),
+                            data: {
+                              id: args.context.multiRule[0].id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              var jobID = data.deleteegressfirewallruleresponse.jobid;
+
+                              args.response.success({
+                                _custom: {
+                                  jobId: jobID
+                                },
+                                notification: {
+                                  label: 'label.remove.egress.rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      }
+                    },
+                    ignoreEmptyFields: true,
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL('listEgressFirewallRules'),
+                        data: {
+                          listAll: true,
+                          networkid: args.context.networks[0].id
+                        },
+                        dataType: 'json',
+                        async: true,
+                        success: function(json) {
+                          var response = json.listegressfirewallrulesresponse.firewallrule ?
+                                json.listegressfirewallrulesresponse.firewallrule : [];
+
+                          args.response.success({
+                            data: $.map(response, function(rule) {
+                              if (rule.protocol == 'all') {
+                                $.extend(rule, {
+                                  startport: 'All',
+                                  endport: 'All'
+                                });
+                              } else if (rule.protocol == 'tcp' || rule.protocol == 'udp') {
+                                if (!rule.startport) {
+                                  rule.startport = ' ';
+                                }
+
+                                if (!rule.endport) {
+                                  rule.endport = ' ';
+                                }
+                              }
+
+                              return rule;
+                            })
+                          });
+                        }
+                       });
+                    }
+                  });
+                }
+              },
+
+               addloadBalancer: { // EIP/ELB Basic zone: Add Load Balancer tab in network detailView
+                title: 'label.add.load.balancer',
+                custom: function(args) {
+                  var context = args.context;
+
+                  return $('<div>').addClass('loadBalancer').multiEdit(
+                    {
+                      context: context,
+                      listView: $.extend(true, {}, cloudStack.sections.instances, {
+                        listView: {
+                          filters: false,
+
+                          dataProvider: function(args) {
+                            var data = {
+                              page: args.page,
+                              pageSize: pageSize,
+                                                                                                                        domainid: g_domainid,
+                              account: g_account,
+                              networkid: args.context.networks[0].id,
+                              listAll: true
+                            };
+
+                            $.ajax({
+                              url: createURL('listVirtualMachines'),
+                              data: data,
+                              dataType: 'json',
+                              async: true,
+                              success: function(data) {
+                                args.response.success({
+                                  data: $.grep(
+                                    data.listvirtualmachinesresponse.virtualmachine ?
+                                      data.listvirtualmachinesresponse.virtualmachine : [],
+                                    function(instance) {
+                                          var nonAutoScale=0;
+                                          if(instance.displayname == null)
+                                              nonAutoScale = 1;
+                                            else{
+                                          if( instance.displayname.match(/AutoScale-LB-/)==null)
+                                             nonAutoScale =1;
+                                          else {
+                                             if(instance.displayname.match(/AutoScale-LB-/).length)
+                                               nonAutoScale =0;
+                                             }
+                                          }
+                                      var isActiveState= $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
+                                      return nonAutoScale && isActiveState;
+                                    }
+                                  )
+                                });
+                               },
+                              error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
+                              }
+                            });
+                          }
+                        }
+                      }),
+                      multipleAdd: true,
+                      fields: {
+                        'name': { edit: true, label: 'label.name' },
+                        'publicport': { edit: true, label: 'label.public.port' },
+                        'privateport': { edit: true, label: 'label.private.port' },
+                        'algorithm': {
+                          label: 'label.algorithm',
+                          select: function(args) {
+                            args.response.success({
+                              data: [
+                                { name: 'roundrobin', description: _l('label.round.robin') },
+                                { name: 'leastconn', description: _l('label.least.connections') },
+                                { name: 'source', description: _l('label.source') }
+                              ]
+                            });
+                          }
+                        },
+                        'sticky': {
+                          label: 'label.stickiness',
+                          custom: {
+                            buttonLabel: 'label.configure',
+                            action: cloudStack.lbStickyPolicy.dialog()
+                          }
+                        },
+                        'autoScale': {
+                          label: 'AutoScale',
+                          custom: {
+                            requireValidation: true,
+                            buttonLabel: 'label.configure',
+                            action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
+                          }
+                        },
+                        'add-vm': {
+                          label: 'label.add.vms',
+                          addButton: true
+                        }
+                      },
+
+                      add: {  //basic zone - elastic IP - Add Load Balancer tab - Add VMs button
+                        label: 'label.add.vms',
+                        action: function(args) {
+                            var data = {
+                            algorithm: args.data.algorithm,
+                            name: args.data.name,
+                            privateport: args.data.privateport,
+                            publicport: args.data.publicport,
+                                                                                                                openfirewall: false,
+                                                                                                                domainid: g_domainid,
+                                                                                                                account: g_account
+                          };
+
+                                                                                                        if('vpc' in args.context) { //from VPC section
+                                                                                                                if(args.data.tier == null) {                                                         
+                                                                                                                        args.response.error('Tier is required');
+                                                                                                                        return;
+                                                                                                                }
+                                                                                                                $.extend(data, {
+                                                                                                                        networkid: args.data.tier
+                                                                                                                });
+                                                                                                        }
+                                                                                                        else {  //from Guest Network section
+                                                                                                                $.extend(data, {
+                                                                                                                        networkid: args.context.networks[0].id
+                                                                                                                });
+                                                                                                        }
+
+                          var stickyData = $.extend(true, {}, args.data.sticky);
+
+                          $.ajax({
+                            url: createURL('createLoadBalancerRule'),
+                            data: data,
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              var itemData = args.itemData;
+                              //var jobID = data.createloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
+
+                              $.ajax({
+                                url: createURL('assignToLoadBalancerRule'),
+                                data: {
+                                  id: data.createloadbalancerruleresponse.id,
+                                  virtualmachineids: $.map(itemData, function(elem) {
+                                    return elem.id;
+                                  }).join(',')
+                                },
+                                dataType: 'json',
+                                async: true,
+                                success: function(data) {
+                                  var jobID = data.assigntoloadbalancerruleresponse.jobid; //CS-16964: use jobid from assignToLoadBalancerRule instead of createLoadBalancerRule
+                                   var lbCreationComplete = false;
+
+                                  args.response.success({
+                                    _custom: {
+                                      jobId: jobID
+                                    },
+                                    notification: {
+                                      label: 'label.add.load.balancer',
+                                      poll: function(args) {
+                                        var complete = args.complete;
+                                        var error = args.error;
+
+                                        pollAsyncJobResult({
+                                          _custom: args._custom,
+                                          complete: function(args) {
+                                            if (lbCreationComplete) {
+                                              return;
+                                            }
+
+                                            lbCreationComplete = true;
+                                            cloudStack.dialog.notice({
+                                              message: _l('message.add.load.balancer.under.ip') +
+                                                args.data.loadbalancer.publicip
+                                            });
+
+                                            if (stickyData &&
+                                                stickyData.methodname &&
+                                                stickyData.methodname != 'None') {
+                                              cloudStack.lbStickyPolicy.actions.add(
+                                                args.data.loadbalancer.id,
+                                                stickyData,
+                                                complete, // Complete
+                                                complete // Error
+                                              );
+                                            } else {
+                                              complete();
+                                            }
+                                          },
+                                          error: error
+                                        });
+                                      }
+                                    }
+                                  });
+                                },
+                                error: function(data) {
+                                  args.response.error(parseXMLHttpResponse(data));
+                                }
+                              });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
+                            }
+                          });
+                        }
+                      },
+
+
+                      dataProvider: function(args) {
+                        args.response.success({ //no LB listing in AddLoadBalancer tab
+                          data: []
+                        });
+                      }
+                    }             
+                   );                
                 }
               }
             }
@@ -2783,6 +3178,7 @@
                         }
                       }
                     },
+  
                     itemActions: {
                       add: {
                         label: 'label.add.vms.to.lb',

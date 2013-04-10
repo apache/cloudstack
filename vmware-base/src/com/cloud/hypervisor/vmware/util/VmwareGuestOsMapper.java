@@ -62,6 +62,11 @@ public class VmwareGuestOsMapper {
         s_mapper.put("Windows 8 (64 bit)", VirtualMachineGuestOsIdentifier.WINDOWS_8_64_GUEST);
         s_mapper.put("Windows 8 Server (64 bit)", VirtualMachineGuestOsIdentifier.WINDOWS_8_SERVER_64_GUEST);
 
+                s_mapper.put("Apple Mac OS X 10.6 (32 bits)", VirtualMachineGuestOsIdentifier.DARWIN_10_GUEST);
+                s_mapper.put("Apple Mac OS X 10.6 (64 bits)", VirtualMachineGuestOsIdentifier.DARWIN_10_64_GUEST);
+                s_mapper.put("Apple Mac OS X 10.7 (32 bits)", VirtualMachineGuestOsIdentifier.DARWIN_11_GUEST);
+                s_mapper.put("Apple Mac OS X 10.7 (64 bits)", VirtualMachineGuestOsIdentifier.DARWIN_11_64_GUEST);
+
 		s_mapper.put("Open Enterprise Server", VirtualMachineGuestOsIdentifier.OES_GUEST);
 
 		s_mapper.put("Asianux 3(32-bit)", VirtualMachineGuestOsIdentifier.ASIANUX_3_GUEST);

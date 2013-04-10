@@ -32,5 +32,6 @@
   </build>
   <modules>
     <module>console-proxy</module>
+    <module>secondary-storage</module>
   </modules>
 </project>

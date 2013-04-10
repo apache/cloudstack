@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.template;
+package org.apache.cloudstack.storage.template;
 
 import java.io.File;
 import java.net.URI;
@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
@@ -43,7 +44,9 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.resource.SecondaryStorageResource;
+import com.cloud.storage.template.FtpTemplateUploader;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.TemplateUploader;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.utils.NumbersUtil;

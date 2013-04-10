@@ -58,7 +58,7 @@
       </tbody>
     </tgroup>
   </informaltable>
-  <para>In addition to above settings, the adminstrator is responsible for setting the 'host' global
+  <para>In addition to above settings, the administrator is responsible for setting the 'host' global
     config value from the management server IP to load balancer virtual IP address.
     If the 'host' value is not set to the VIP for Port 8250 and one of your management servers crashes,
     the UI is still available but the system VMs will not be able to contact the management server.

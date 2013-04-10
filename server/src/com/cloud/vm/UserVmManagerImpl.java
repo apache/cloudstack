@@ -2485,18 +2485,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _vmCloneSettingDao.persist(vmCloneSettingVO);
         }
 
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        long guestOSCategoryId = guestOS.getCategoryId();
+        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+
+
+        // If hypervisor is vSphere and OS is OS X, set special settings.
+        if (hypervisorType.equals(HypervisorType.VMware)) {
+            if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
+                vm.setDetail("smc.present", "TRUE");
+                vm.setDetail(VmDetailConstants.ROOK_DISK_CONTROLLER, "scsi");
+                vm.setDetail("firmware", "efi");
+                s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
+            }
+       }
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);
 
         s_logger.debug("Allocating in the DB for vm");
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-
-
-        long guestOSId = template.getGuestOSId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        long guestOSCategoryId = guestOS.getCategoryId();
-        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
 
         List<String> computeTags = new ArrayList<String>();
         computeTags.add(offering.getHostTag());

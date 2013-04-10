@@ -80,7 +80,7 @@ public abstract class ServerResourceBase implements ServerResource {
         _storageNic2 = getNetworkInterface(storageNic2);
         
         if (_privateNic == null) {
-            s_logger.error("Nics are not configured!");
+            s_logger.warn("Nics are not specified in properties file/db, will try to autodiscover");
 
 			Enumeration<NetworkInterface> nics = null;
             try {

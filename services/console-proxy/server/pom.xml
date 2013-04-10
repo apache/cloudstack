@@ -57,6 +57,11 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-secondary-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -254,6 +259,42 @@
       </plugins>
       </build>
     </profile>
+    <profile>
+      <id>quickcloud</id>
+      <build>
+      <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>com.cloud.agent.AgentShell</mainClass>
+          <arguments>
+            <argument>zone=1</argument>
+            <argument>pod=1</argument>
+            <argument>host=192.168.56.1</argument>
+            <argument>guid=ConsoleProxy.1</argument>
+          </arguments>
+          <systemProperties>
+            <systemProperty>
+              <key>javax.net.ssl.trustStore</key>
+              <value>certs/realhostip.keystore</value>
+              <key>log.home</key>
+              <value>${PWD}/</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      </plugins>
+    </build>
+  </profile>
   </profiles>
 
 </project>

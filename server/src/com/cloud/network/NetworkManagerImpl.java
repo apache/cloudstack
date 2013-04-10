@@ -968,9 +968,21 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // diff between offering #1 and #2 - securityGroup is enabled for the first, and disabled for the third
 
         NetworkOfferingVO offering = null;
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.QuickCloudNoServices) == null) {
+            offering =
+                    _configMgr.createNetworkOffering(NetworkOffering.QuickCloudNoServices,
+                            "Offering for QuickCloud with no services", TrafficType.Guest, null, true,
+                            Availability.Optional, null, new HashMap<Network.Service, Set<Network.Provider>>(), true,
+                            Network.GuestType.Shared, false, null, true, null, true, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
-            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null,
-                    true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false);
+            offering =
+                    _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
+                            "Offering for Shared Security group enabled networks", TrafficType.Guest, null, true,
+                            Availability.Optional, null, defaultSharedNetworkOfferingProviders, true,
+                            Network.GuestType.Shared, false, null, true, null, true, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }

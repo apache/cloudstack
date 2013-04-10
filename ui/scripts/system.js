@@ -565,6 +565,14 @@
                         });
                       }
                     },
+										actionPreFilter: function(args) {										  
+											var actionsToShow = ['destroy'];											
+											if(args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account.account == 'system')  
+											  actionsToShow.push('addAccount');
+											else
+											  actionsToShow.push('releaseFromAccount');											
+											return actionsToShow;
+										},
                     actions: {
                       destroy: {
                         label: 'label.remove.ip.range',
@@ -588,7 +596,7 @@
                             }
                           });
                         }
-                      },
+                      },											
 											/*
 											releaseFromAccount: {
                         label: 'Release from Account',
@@ -643,7 +651,10 @@
 												},												
 												action: function(args) {                          							
 												  var data = {
-														id: args.context.multiRule[0].id
+														id: args.context.multiRule[0].id,
+														zoneid: args.context.multiRule[0].zoneid,
+														domainid: args.data.domainid,
+														account: args.data.account
 													};												
                           $.ajax({
                             url: createURL('dedicatePublicIpRange'),
@@ -663,8 +674,8 @@
                             }
                           });
                         }
-											}
-											*/
+											}	
+                      */											
                     },
                     dataProvider: function(args) {
                       $.ajax({

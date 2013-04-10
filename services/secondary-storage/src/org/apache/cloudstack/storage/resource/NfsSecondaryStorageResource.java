@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.resource;
+package org.apache.cloudstack.storage.resource;
 
 import static com.cloud.utils.S3Utils.deleteDirectory;
 import static com.cloud.utils.S3Utils.getDirectory;
@@ -46,6 +46,11 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -97,18 +102,12 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.template.DownloadManager;
-import com.cloud.storage.template.DownloadManagerImpl;
-import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.UploadManager;
-import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
 import com.cloud.utils.S3Utils.ObjectNamingStrategy;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -133,7 +132,7 @@ SecondaryStorageResource {
     String _role;
     Map<String, Object> _params;
     StorageLayer _storage;
-    boolean _inSystemVM = false;
+    protected boolean _inSystemVM = false;
     boolean _sslCopy = false;
 
     DownloadManager _dlMgr;
@@ -150,7 +149,7 @@ SecondaryStorageResource {
     private String _storageNetmask;
     private String _storageGateway;
     private final List<String> nfsIps = new ArrayList<String>();
-    final private String _parent = "/mnt/SecStorage";
+    private String _parent = "/mnt/SecStorage";
     final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
     @Override
@@ -397,8 +396,8 @@ SecondaryStorageResource {
                 @Override
                 public boolean accept(final File directory,
                         final String fileName) {
-                            File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
-                            return !fileName.startsWith(".") && !fileToUpload.isDirectory();
+                    File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
+                    return !fileName.startsWith(".") && !fileToUpload.isDirectory();
                 }
             }, new ObjectNamingStrategy() {
                 @Override
@@ -1107,9 +1106,7 @@ SecondaryStorageResource {
     }
 
     private Answer execute(ListTemplateCommand cmd) {
-        if (!_inSystemVM){
-            return new Answer(cmd, true, null);
-        }
+
         if (cmd.getSwift() != null) {
             Map<String, TemplateInfo> templateInfos = swiftListTemplate(cmd.getSwift());
             return new ListTemplateAnswer(cmd.getSwift().toString(), templateInfos);
@@ -1121,9 +1118,6 @@ SecondaryStorageResource {
     }
 
     private Answer execute(ListVolumeCommand cmd) {
-        if (!_inSystemVM){
-            return new Answer(cmd, true, null);
-        }
 
         String root = getRootDir(cmd.getSecUrl());
         Map<Long, TemplateInfo> templateInfos = _dlMgr.gatherVolumeInfo(root);
@@ -1217,7 +1211,9 @@ SecondaryStorageResource {
     }
 
     public String allowOutgoingOnPrivate(String destCidr) {
-
+        if (!_inSystemVM) {
+            return null;
+        }
         Script command = new Script("/bin/bash", s_logger);
         String intf = "eth1";
         command.add("-c");
@@ -1392,6 +1388,9 @@ SecondaryStorageResource {
 
 
     synchronized public String getRootDir(String secUrl) {
+        if (!_inSystemVM) {
+            return _parent;
+        }
         try {
             URI uri = new URI(secUrl);
             String nfsHost = uri.getHost();
@@ -1465,7 +1464,7 @@ SecondaryStorageResource {
         if (_eth1ip != null) { //can only happen inside service vm
             params.put("private.network.device", "eth1");
         } else {
-            s_logger.warn("Wait, what's going on? eth1ip is null!!");
+            s_logger.warn("eth1ip parameter has not been configured, assuming that we are not inside a system vm");
         }
         String eth2ip = (String) params.get("eth2ip");
         if (eth2ip != null) {
@@ -1474,9 +1473,14 @@ SecondaryStorageResource {
         _publicIp = (String) params.get("eth2ip");
         _hostname = (String) params.get("name");
 
+        String inSystemVM = (String) params.get("secondary.storage.vm");
+        if (inSystemVM == null || "true".equalsIgnoreCase(inSystemVM)) {
+            _inSystemVM = true;
+        }
+
         _storageIp = (String) params.get("storageip");
-        if (_storageIp == null) {
-            s_logger.warn("Wait, there is no storageip in /proc/cmdline, something wrong!");
+        if (_storageIp == null && _inSystemVM) {
+            s_logger.warn("There is no storageip in /proc/cmdline, something wrong!");
         }
         _storageNetmask = (String) params.get("storagenetmask");
         _storageGateway = (String) params.get("storagegateway");
@@ -1505,7 +1509,10 @@ SecondaryStorageResource {
                 throw new ConfigurationException("Unable to find class " + value);
             }
         }
-        _storage.mkdirs(_parent);
+
+        if (_inSystemVM)
+            _storage.mkdirs(_parent);
+
         _configSslScr = Script.findScript(getDefaultScriptsDir(), "config_ssl.sh");
         if (_configSslScr != null) {
             s_logger.info("config_ssl.sh found in " + _configSslScr);
@@ -1539,10 +1546,12 @@ SecondaryStorageResource {
 
         _instance = (String)params.get("instance");
 
+        if (!_inSystemVM) {
+            _parent = (String) params.get("mount.path");
+        }
 
-        String inSystemVM = (String)params.get("secondary.storage.vm");
-        if (inSystemVM == null || "true".equalsIgnoreCase(inSystemVM)) {
-            _inSystemVM = true;
+
+        if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
                 String mgmtHost = (String) params.get("host");
@@ -1581,6 +1590,9 @@ SecondaryStorageResource {
     }
 
     private void startAdditionalServices() {
+        if (!_inSystemVM) {
+            return;
+        }
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("if [ -f /etc/init.d/ssh ]; then service ssh restart; else service sshd restart; fi ");
@@ -1598,6 +1610,9 @@ SecondaryStorageResource {
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
+        if (!_inSystemVM) {
+            return;
+        }
         s_logger.debug("addRouteToInternalIp: localgw=" + localgw + ", eth1ip=" + eth1ip + ", eth1mask=" + eth1mask + ",destIp=" + destIpOrCidr);
         if (destIpOrCidr == null) {
             s_logger.debug("addRouteToInternalIp: destIp is null");
@@ -1637,6 +1652,9 @@ SecondaryStorageResource {
     }
 
     private void configureSSL() {
+        if (!_inSystemVM) {
+            return;
+        }
         Script command = new Script(_configSslScr);
         command.add("-i", _publicIp);
         command.add("-h", _hostname);
@@ -1647,6 +1665,9 @@ SecondaryStorageResource {
     }
 
     private void configureSSL(String prvkeyPath, String prvCertPath, String certChainPath) {
+        if (!_inSystemVM) {
+            return;
+        }
         Script command = new Script(_configSslScr);
         command.add("-i", _publicIp);
         command.add("-h", _hostname);
@@ -1758,13 +1779,15 @@ SecondaryStorageResource {
         if(_publicIp != null)
             cmd.setPublicIpAddress(_publicIp);
 
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("ln -sf " + _parent + " /var/www/html/copy");
-        String result = command.execute();
-        if (result != null) {
-            s_logger.warn("Error in linking  err=" + result);
-            return null;
+        if (_inSystemVM) {
+            Script command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("ln -sf " + _parent + " /var/www/html/copy");
+            String result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in linking  err=" + result);
+                return null;
+            }
         }
         return new StartupCommand[] {cmd};
     }
@@ -1810,33 +1833,50 @@ SecondaryStorageResource {
         return "./scripts/storage/secondary";
     }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void fillNetworkInformation(final StartupCommand cmd) {
+        final String dummyMac = "00:06:0A:0B:0C:0D";
+        final String dummyNetmask = "255.255.255.0";
+        if (!_inSystemVM) {
+            cmd.setPrivateIpAddress(_eth1ip);
+            cmd.setPrivateMacAddress(dummyMac);
+            cmd.setPrivateNetmask(dummyNetmask);
+            cmd.setPublicIpAddress(_publicIp);
+            cmd.setPublicMacAddress(dummyMac);
+            cmd.setPublicNetmask(dummyNetmask);
+            cmd.setName(_hostname);
+        } else {
+            super.fillNetworkInformation(cmd);
+        }
+    }
 }

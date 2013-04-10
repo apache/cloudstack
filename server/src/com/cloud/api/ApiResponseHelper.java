@@ -965,6 +965,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicIpAddress(ip.getAddress().addr());
 
         if (ip != null && fwRule.getDestinationIpAddress() != null) {
+            response.setDestNatVmIp(fwRule.getDestinationIpAddress().toString());
             UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if (vm != null) {
                 response.setVirtualMachineId(vm.getUuid());

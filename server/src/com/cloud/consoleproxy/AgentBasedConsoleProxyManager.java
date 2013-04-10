@@ -23,48 +23,28 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
-import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
-import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.network.Network;
+import com.cloud.keystore.KeystoreManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { ConsoleProxyManager.class })
-public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru<ConsoleProxyVO>, AgentHook {
+public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 
     @Inject
@@ -85,8 +65,24 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     VirtualMachineManager _itMgr;
     @Inject
     protected ConsoleProxyDao _cpDao;
+    @Inject
+    protected KeystoreManager _ksMgr;
 
     @Inject ConfigurationDao _configDao;
+
+    public class AgentBasedAgentHook extends AgentHookBase {
+
+        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
+                KeystoreManager ksMgr, AgentManager agentMgr) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr);
+        }
+
+        @Override
+        protected HostVO findConsoleProxyHost(StartupProxyCommand cmd) {
+            return _hostDao.findByGuid(cmd.getGuid());
+        }
+
+    }
 
     public int getVncPort(VMInstanceVO vm) {
         if (vm.getHostId() == null) {
@@ -123,10 +119,9 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
-        _listener = new ConsoleProxyListener(this);
+        _listener =
+                new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
-
-        _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("AgentBasedConsoleProxyManager has been configured. SSL enabled: " + _sslEnabled);
@@ -177,64 +172,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         return null;
     }
 
-    @Override
-    public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
-    }
 
-    @Override
-    public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
-        long vmId = 0;
 
-        if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Invalid vm id sent from proxy(happens when proxy session has terminated)");
-            }
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        try {
-            vmId = Long.parseLong(cmd.getVmId());
-        } catch (NumberFormatException e) {
-            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication", e);
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        // TODO authentication channel between console proxy VM and management
-        // server needs to be secured,
-        // the data is now being sent through private network, but this is
-        // apparently not enough
-        VMInstanceVO vm = _instanceDao.findById(vmId);
-        if (vm == null) {
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        if (vm.getHostId() == null) {
-            s_logger.warn("VM " + vmId + " lost host info, failed authentication request");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            s_logger.warn("VM " + vmId + "'s host does not exist, fail authentication request");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        String sid = cmd.getSid();
-        if (sid == null || !sid.equals(vm.getVncPassword())) {
-            s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        return new ConsoleAccessAuthenticationAnswer(cmd, true);
-    }
-
-    @Override
-    public void onAgentConnect(HostVO host, StartupCommand cmd) {
-    }
-
-    @Override
-    public void onAgentDisconnect(long agentId, Status state) {
-    }
 
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId) {
@@ -270,90 +209,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
-    }
-
-    @Override
     public String getName() {
         return _name;
-    }
-
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
-            return null;
-        }
-        return VirtualMachineName.getConsoleProxyId(vmName);
-    }
-
-    @Override
-    public ConsoleProxyVO findByName(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ConsoleProxyVO findById(long id) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ConsoleProxyVO persist(ConsoleProxyVO vm) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override 
-    public void finalizeExpunge(ConsoleProxyVO proxy) {
-    }
-
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
-    }
-
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
-    }
-
-    @Override
-    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
 }

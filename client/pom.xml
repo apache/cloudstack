@@ -453,6 +453,22 @@
               </target>
             </configuration>
           </execution>
+          <execution>
+            <id>process-quickcloud-spring-context</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${quickcloud}">
+                <echo>quickcloud</echo>
+                <replaceregexp
+                    file="${basedir}/target/generated-webapp/WEB-INF/classes/applicationContext.xml"
+                  match="com.cloud.consoleproxy.ConsoleProxyManagerImpl"
+                  replace="com.cloud.consoleproxy.StaticConsoleProxyManager" byline="true" />
+              </target>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <!-- there are the jasypt libs requires by some of the python scripts -->
