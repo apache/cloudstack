@@ -67,6 +67,7 @@ install_packages() {
   # uncomment for opensource vmware tool:
   #   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   apt-get --no-install-recommends -q -y --force-yes install build-essential gcc linux-headers-`uname -r`
+  df -h
   PREVDIR=$PWD
   cd /opt
   wget http://people.apache.org/~bhaisaab/cloudstack/VMwareTools-9.2.1-818201.tar.gz
