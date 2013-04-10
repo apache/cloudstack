@@ -361,10 +361,6 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
             }
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, errorMsg, ex);
         }
-        catch (AsyncCommandQueued ex){
-            s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal server error, unable to execute request.");
-        }
         catch (ServerApiException ex){
             s_logger.info(ex.getDescription());
             throw ex;

@@ -91,31 +91,25 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 UserContext.unregisterContext();
             }
         } catch(Throwable e) {
-            if (e instanceof AsyncCommandQueued) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("job " + job.getCmd() + " for job-" + job.getId() + " was queued, processing the queue.");
-                }
+            String errorMsg = null;
+            int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
+            if (!(e instanceof ServerApiException)) {
+                s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                errorMsg = e.getMessage();
             } else {
-                String errorMsg = null;
-                int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
-                if (!(e instanceof ServerApiException)) {
-                    s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
-                    errorMsg = e.getMessage();
-                } else {
-                    ServerApiException sApiEx = (ServerApiException)e;
-                    errorMsg = sApiEx.getDescription();
-                    errorCode = sApiEx.getErrorCode().getHttpCode();
-                }
-
-                ExceptionResponse response = new ExceptionResponse();
-                response.setErrorCode(errorCode);
-                response.setErrorText(errorMsg);
-                response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
-
-                // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
-                //         and we need to preserve that as much as possible here
-                _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
+                ServerApiException sApiEx = (ServerApiException)e;
+                errorMsg = sApiEx.getDescription();
+                errorCode = sApiEx.getErrorCode().getHttpCode();
             }
+
+            ExceptionResponse response = new ExceptionResponse();
+            response.setErrorCode(errorCode);
+            response.setErrorText(errorMsg);
+            response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
+
+            // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
+            //         and we need to preserve that as much as possible here
+            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
         }
 	}
 }

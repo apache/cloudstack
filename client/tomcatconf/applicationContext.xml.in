@@ -788,13 +788,18 @@
 
 
   <!-- Async management -->
-  <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher" />
   <bean id="asyncJobDaoImpl" class="com.cloud.async.dao.AsyncJobDaoImpl" />
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
-  <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
+  <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl">
+    <property name="defaultDispatcher" value="ApiAsyncJobDispatcher" />
+  </bean>
   <bean id="syncQueueDaoImpl" class="com.cloud.async.dao.SyncQueueDaoImpl" />
   <bean id="syncQueueItemDaoImpl" class="com.cloud.async.dao.SyncQueueItemDaoImpl" />
   <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
+
+  <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
+    <property name="name" value="ApiAsyncJobDispatcher" />
+  </bean>
 
   <!--
     Baremetal components

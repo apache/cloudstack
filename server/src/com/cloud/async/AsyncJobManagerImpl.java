@@ -19,7 +19,6 @@ package com.cloud.async;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -40,11 +38,8 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-import org.springframework.stereotype.Component;
 
-import com.cloud.api.ApiAsyncJobDispatcher;
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.AsyncCommandQueued;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -87,7 +82,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private ConfigurationDao _configDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
 
-    private long _jobExpireSeconds = 86400;						// 1 day
+    // property
+    private String defaultDispatcher;
+    public String getDefaultDispatcher() {
+		return defaultDispatcher;
+	}
+	public void setDefaultDispatcher(String defaultDispatcher) {
+		this.defaultDispatcher = defaultDispatcher;
+	}
+
+	private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
 
     private final ScheduledExecutorService _heartbeatScheduler =
@@ -239,15 +243,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit) {
-        // This method is re-entrant.  If an API developer wants to synchronized on an object, e.g. the router,
-        // when executing business logic, they will call this method (actually a method in BaseAsyncCmd that calls this).
-        // This method will get called every time their business logic executes.  The first time it exectues for a job
-        // there will be no sync source, but on subsequent execution there will be a sync souce.  If this is the first
-        // time the job executes we queue the job, otherwise we just return so that the business logic can execute.
-        if (job.getSyncSource() != null) {
-            return;
-        }
-
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Sync job-" + job.getId() + " execution on object " + syncObjType + "." + syncObjId);
         }
@@ -270,11 +265,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
 
-        if (queue == null) {
+        if (queue == null)
             throw new CloudRuntimeException("Unable to insert queue item into database, DB is full?");
-        } else {
-            throw new AsyncCommandQueued(queue, "job-" + job.getId() + " queued");
-        }
     }
 
     @Override
@@ -372,7 +364,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     private AsyncJobDispatcher getDispatcher(String dispatcherName) {
     	if(dispatcherName == null || dispatcherName.isEmpty())
-    		dispatcherName = ApiAsyncJobDispatcher.class.getSimpleName();
+    		dispatcherName = this.defaultDispatcher;
     	
     	if(_jobDispatchers != null) {
     		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {

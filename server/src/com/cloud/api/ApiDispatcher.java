@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.InvalidParameterValueException;
@@ -126,35 +127,38 @@ public class ApiDispatcher {
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
-            processParameters(cmd, params);
-            UserContext ctx = UserContext.current();
-            ctx.setAccountId(cmd.getEntityOwnerId());
-            
-            if (cmd instanceof BaseAsyncCmd) {
+        processParameters(cmd, params);
+        UserContext ctx = UserContext.current();
+        ctx.setAccountId(cmd.getEntityOwnerId());
+        
+        if (cmd instanceof BaseAsyncCmd) {
 
-                BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
-                String startEventId = params.get("ctxStartEventId");
-                ctx.setStartEventId(Long.valueOf(startEventId));
+            BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
+            String startEventId = params.get("ctxStartEventId");
+            ctx.setStartEventId(Long.valueOf(startEventId));
 
-                // Synchronise job on the object if needed
-                if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
-                    Long queueSizeLimit = null;
-                    if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
-                        queueSizeLimit = _createSnapshotQueueSizeLimit;
-                    } else {
-                        queueSizeLimit = 1L;
-                    }
+            // Synchronise job on the object if needed
+            if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
+                Long queueSizeLimit = null;
+                if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
+                    queueSizeLimit = _createSnapshotQueueSizeLimit;
+                } else {
+                    queueSizeLimit = 1L;
+                }
 
-                    if (queueSizeLimit != null) {
-                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
-                    } else {
-                        s_logger.trace("The queue size is unlimited, skipping the synchronizing");
-                    }
+                if (queueSizeLimit != null) {
+                	if(AsyncJobExecutionContext.getCurrentExecutionContext() == null) {
+                		// if we are not within async-execution context, enqueue the command
+                		_asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                		return;
+                	}
+                } else {
+                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
             }
+        }
 
-            cmd.execute();
-
+        cmd.execute();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

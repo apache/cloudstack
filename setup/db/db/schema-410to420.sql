@@ -405,3 +405,8 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
      VALUES (10, 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
 
 -- END: support for LXC
+
+ALTER TABLE `cloud`.`async_job` DROP COLUMN `session_key`;
+ALTER TABLE `cloud`.`async_job` DROP COLUMN `job_cmd_originator`;
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_dispatcher` VARCHAR(64);
+
