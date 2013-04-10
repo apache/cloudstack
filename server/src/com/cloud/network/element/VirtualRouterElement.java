@@ -734,7 +734,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
-        if (!(providerType != VirtualRouterProviderType.VirtualRouter) || (providerType != VirtualRouterProviderType.VPCVirtualRouter)) {
+        if (!(providerType == VirtualRouterProviderType.VirtualRouter || providerType == VirtualRouterProviderType.VPCVirtualRouter)) {
             throw new InvalidParameterValueException("Element " + this.getName() + " supports only providerTypes: " + 
         VirtualRouterProviderType.VirtualRouter.toString() + " and " + VirtualRouterProviderType.VPCVirtualRouter);
         }

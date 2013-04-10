@@ -1621,8 +1621,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 }
                 // if the rule is the last one for the ip address assigned to
                 // VPC, unassign it from the network
-                IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
-                _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), lb.getNetworkId());
+                if (lb.getSourceIpAddressId() != null) {
+                    IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
+                    _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), lb.getNetworkId());
+                }
             }
         }
 
