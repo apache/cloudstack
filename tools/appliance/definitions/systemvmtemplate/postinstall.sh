@@ -66,7 +66,7 @@ install_packages() {
   # vmware tools
   # uncomment for opensource vmware tool:
   #   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
-  apt-get --no-install-recommends -q -y --force-yes install build-essential gcc linux-headers-`uname -r`
+  apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
   df -h
   PREVDIR=$PWD
   cd /opt
@@ -77,7 +77,7 @@ install_packages() {
   ./vmware-install.pl -d
   cd $PREV
   rm -fr /opt/vmware-tools-distrib
-  apt-get -q -y --force-yes purge build-essential gcc
+  apt-get -q -y --force-yes purge build-essential
 }
 
 setup_accounts() {
