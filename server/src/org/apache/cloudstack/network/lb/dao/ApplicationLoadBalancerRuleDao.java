@@ -17,10 +17,14 @@
 
 package org.apache.cloudstack.network.lb.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
 
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.Ip;
 
 public interface ApplicationLoadBalancerRuleDao extends GenericDao<ApplicationLoadBalancerRuleVO, Long>{
-
+    List<ApplicationLoadBalancerRuleVO> listBySrcIpSrcNtwkIdAndScheme(Ip sourceIp, long sourceNetworkId, Scheme scheme);
 }

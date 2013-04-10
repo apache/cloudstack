@@ -2490,7 +2490,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             Network network = _networkModel.getNetwork(routerNic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
-            } 
+            }
         }
         
         answer = cmds.getAnswer("getDomRVersion");

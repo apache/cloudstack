@@ -16,8 +16,82 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import java.util.List;
+import java.util.Map;
+
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.net.Ip;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface InternalLoadBalancerManager extends Manager{
+    /**
+     * Destroys Internal LB vm instance
+     * @param vmId
+     * @param caller
+     * @param callerUserId
+     * @return 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
+     */
+    VirtualRouter destroyInternalLbVm(long vmId, Account caller, Long callerUserId) 
+            throws ResourceUnavailableException, ConcurrentOperationException;
+    
+   
+    /**
+     * Stops Internal lb vm
+     * @param vmId
+     * @param forced
+     * @param caller
+     * @param callerUserId
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, Long callerUserId) 
+            throws ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * Deploys internal lb vm
+     * @param guestNetwork
+     * @param requestedGuestIp
+     * @param dest
+     * @param owner
+     * @param params
+     * @return
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    List<DomainRouterVO> deployInternalLbVm(Network guestNetwork, Ip requestedGuestIp, DeployDestination dest, Account owner,
+            Map<Param, Object> params) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * Starts Internal lb vm
+     * @param internalLbVm
+     * @param user
+     * @param caller
+     * @param params
+     * @return
+     * @throws StorageUnavailableException
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, User user, Account caller, Map<Param, Object> params) 
+            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException,
+            ResourceUnavailableException;
 
 }

@@ -106,4 +106,5 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
     boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+
 }
