@@ -102,7 +102,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StorageManager _storageMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject protected ClusterDetailsDao _clusterDetailsDao;
-    
+
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
 		return _storagePoolAllocators;
@@ -157,7 +157,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if(plan.getHostId() != null && haVmTag == null){
             Long hostIdSpecified = plan.getHostId();
             if (s_logger.isDebugEnabled()){
-                s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
+                s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: "
+                        + hostIdSpecified);
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
             if (s_logger.isDebugEnabled()) {
@@ -407,9 +408,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     /**
-     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic
      * for this planner
-     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * For FirstFitPlanner there is no specific heuristic to be applied
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Cluster Ids
      */
@@ -419,9 +420,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     /**
-     * This method should reorder the given list of Pod Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Pod Ids by applying any necessary heuristic
      * for this planner
-     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * For FirstFitPlanner there is no specific heuristic to be applied
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Pod Ids
      */
@@ -443,7 +444,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     private List<Long> listDisabledPods(long zoneId){
         List<Long> disabledPods = _podDao.listDisabledPods(zoneId);
         return disabledPods;
-    }    
+    }
 
     private Map<Short,Float> getCapacityThresholdMap(){
         // Lets build this real time so that the admin wont have to restart MS if he changes these values
@@ -461,9 +462,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     private List<Short> getCapacitiesForCheckingThreshold(){
-        List<Short> capacityList = new ArrayList<Short>();    	
+        List<Short> capacityList = new ArrayList<Short>();
         capacityList.add(Capacity.CAPACITY_TYPE_CPU);
-        capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);    	
+        capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);
         return capacityList;
     }
 
@@ -479,7 +480,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
         // 	For each capacity get the cluster list crossing the threshold and remove it from the clusterList that will be used for vm allocation.
         for(short capacity : capacityList){
-        	
+
         	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
            		return;
            	}
@@ -492,17 +493,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                         capacityThresholdMap.get(capacity), ram_requested );
             }
 
-           	
+
            	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
                	// addToAvoid Set
            		avoid.addClusterList(clustersCrossingThreshold);
            		// Remove clusters crossing disabled threshold
                	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
-               	
+
            		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
            				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");
            	}
-           	           	           	
+
         }
     }
 
@@ -652,7 +653,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             public int compare(Volume v1, Volume v2) {
                 if(v1.getSize() < v2.getSize())
                     return 1;
-                else 
+                else
                     return -1;
             }
         });
@@ -749,7 +750,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 }else{
                     pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
-                
+
                 if(!pool.isInMaintenance()){
                     if(!avoid.shouldAvoid(pool)){
                         long exstPoolDcId = pool.getDataCenterId();
@@ -781,13 +782,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             if(!isRootAdmin(plan.getReservationContext())){
                 if(!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())){
                     if(s_logger.isDebugEnabled()){
-                        s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");                    
+                        s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");
                         s_logger.debug("Cannot deploy to this specified plan, allocation state is disabled, returning.");
                     }
-                    //Cannot find suitable storage pools under this cluster for this volume since allocation_state is disabled. 
+                    //Cannot find suitable storage pools under this cluster for this volume since allocation_state is disabled.
                     //- remove any suitable pools found for other volumes.
                     //All volumes should get suitable pools under this cluster; else we cant use this cluster.
-                    suitableVolumeStoragePools.clear();                
+                    suitableVolumeStoragePools.clear();
                     break;
                 }
             }
@@ -877,7 +878,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         super.configure(name, params);
         _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
         return true;
-    }    
+    }
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId){
         // Check if the zone exists in the system

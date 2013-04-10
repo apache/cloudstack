@@ -27,8 +27,8 @@ under the License.
 <policy>
 <name>%policy-name%</name>
 <match>
-<source-address>%src-address%</source-address>
-<destination-address>%dest-address%</destination-address>
+%src-address%
+%dst-address%
 %applications%
 </match>
 <then>
