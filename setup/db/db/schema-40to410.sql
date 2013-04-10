@@ -412,35 +412,6 @@ INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1,
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
-CREATE TABLE `cloud`.`vm_snapshots` (
-  `id` bigint(20) unsigned NOT NULL auto_increment COMMENT 'Primary Key',
-  `uuid` varchar(40) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `display_name` varchar(255) default NULL,
-  `description` varchar(255) default NULL,
-  `vm_id` bigint(20) unsigned NOT NULL,
-  `account_id` bigint(20) unsigned NOT NULL,
-  `domain_id` bigint(20) unsigned NOT NULL,
-  `vm_snapshot_type` varchar(32) default NULL,
-  `state` varchar(32) NOT NULL,
-  `parent` bigint unsigned default NULL,
-  `current` int(1) unsigned default NULL,
-  `update_count` bigint unsigned NOT NULL DEFAULT 0,
-  `updated` datetime default NULL,
-  `created` datetime default NULL,
-  `removed` datetime default NULL,
-  PRIMARY KEY  (`id`),
-  CONSTRAINT UNIQUE KEY `uc_vm_snapshots_uuid` (`uuid`),
-  INDEX `vm_snapshots_name` (`name`),
-  INDEX `vm_snapshots_vm_id` (`vm_id`),
-  INDEX `vm_snapshots_account_id` (`account_id`),
-  INDEX `vm_snapshots_display_name` (`display_name`),
-  INDEX `vm_snapshots_removed` (`removed`),
-  INDEX `vm_snapshots_parent` (`parent`),
-  CONSTRAINT `fk_vm_snapshots_vm_id__vm_instance_id` FOREIGN KEY `fk_vm_snapshots_vm_id__vm_instance_id` (`vm_id`) REFERENCES `vm_instance` (`id`),
-  CONSTRAINT `fk_vm_snapshots_account_id__account_id` FOREIGN KEY `fk_vm_snapshots_account_id__account_id` (`account_id`) REFERENCES `account` (`id`),
-  CONSTRAINT `fk_vm_snapshots_domain_id__domain_id` FOREIGN KEY `fk_vm_snapshots_domain_id__domain_id` (`domain_id`) REFERENCES `domain` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
