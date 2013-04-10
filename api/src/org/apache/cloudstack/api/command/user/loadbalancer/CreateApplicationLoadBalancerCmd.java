@@ -42,7 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createLoadBalancer", description="Creates a Load Balancer", responseObject=ApplicationLoadBalancerResponse.class)
+@APICommand(name = "createLoadBalancer", description="Creates a Load Balancer", responseObject=ApplicationLoadBalancerResponse.class, since="4.2.0")
 public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateApplicationLoadBalancerCmd.class.getName());
 

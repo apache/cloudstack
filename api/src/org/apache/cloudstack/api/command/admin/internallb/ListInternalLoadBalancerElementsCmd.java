@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 
-@APICommand(name = "listInternalLoadBalancerElements", description="Lists all available internal load balancer elements.", responseObject=VirtualRouterProviderResponse.class)
+@APICommand(name = "listInternalLoadBalancerElements", description="Lists all available internal load balancer elements.",
+            responseObject=VirtualRouterProviderResponse.class, since="4.2.0")
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String _name = "listinternalloadbalancerelementsresponse";

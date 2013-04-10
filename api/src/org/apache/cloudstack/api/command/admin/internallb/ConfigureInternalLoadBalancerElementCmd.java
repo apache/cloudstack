@@ -40,7 +40,8 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "configureInternalLoadBalancerElement", responseObject=VirtualRouterProviderResponse.class, description="Configures an internal load balancer element.")
+@APICommand(name = "configureInternalLoadBalancerElement", responseObject=VirtualRouterProviderResponse.class,
+            description="Configures an internal load balancer element.", since="4.2.0")
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
     private static final String s_name = "configureinternalloadbalancerelementresponse";

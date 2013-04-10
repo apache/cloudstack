@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "deleteLoadBalancer", description="Deletes a load balancer", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteLoadBalancer", description="Deletes a load balancer", responseObject=SuccessResponse.class, since="4.2.0")
 public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteApplicationLoadBalancerCmd.class.getName());
     private static final String s_name = "deleteloadbalancerresponse";
