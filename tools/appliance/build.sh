@@ -81,7 +81,10 @@ rm raw.img
 bzip2 $appliance-$build_date-$branch-kvm.qcow2
 echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
 
-# Export for VMWare vSphere
+# Export both ova and vmdk for VMWare
+vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-vmware.vmdk --format VMDK
+bzip2 $appliance-$build_date-$branch-vmware.vmdk
+echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.vmdk.bz2"
 vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
