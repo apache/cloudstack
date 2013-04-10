@@ -48,15 +48,15 @@ under the License.
                 </listitem>
                 <listitem>
                     <para>Stop your management server or servers. Run this on all management server hosts:</para>
-                    <programlisting># service cloud-management stop</programlisting>
+                    <programlisting><prompt>#</prompt> service cloud-management stop</programlisting>
                 </listitem>
                 <listitem>
                     <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
-                    <programlisting># mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
+                    <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
                 </listitem>
                 <listitem>
                     <para>Whether you're upgrading a Red Hat/CentOS based system or Ubuntu based system, you're going to need to stop the CloudStack management server before proceeding.</para>
-                    <programlisting language="Bash"># service cloud-management stop</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management stop</programlisting>
                 </listitem>
                 <listitem>
                     <para>If you have made changes to <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these over manually to the new file, <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done automatically. (If you're unsure, we recommend making a backup of the original <filename>components.xml</filename> to be on the safe side.</para>
@@ -114,7 +114,7 @@ db.awsapi.port=
                     </orderedlist>
                 </listitem>
                 <listitem id="upgrade-rpm-packages">
-                    <para>###</para> 
+                    <para>The package names have changed between 4.0 and 4.1, so upgrading the packages won't happen automatically with a <command>yum update</command></para> 
                 </listitem>
             </orderedlist>
         </section>
@@ -220,11 +220,11 @@ db.awsapi.port=
                 </listitem>
                 <listitem id="stopping-usage-servers">
                     <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
-                    <programlisting># service cloud-usage stop</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-usage stop</programlisting>
                 </listitem>
                 <listitem>
                     <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
-                    <programlisting># service cloud-management stop</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management stop</programlisting>
                 </listitem>
                 <listitem>
                     <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
@@ -288,7 +288,7 @@ db.awsapi.port=
                 <listitem>
                     <para>Start the first Management Server. Do not start any other Management Server nodes
                         yet.</para>
-                    <programlisting># service cloud-management start</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management start</programlisting>
                     <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
                         After confirmation, start the other Management Servers one at a time by running the same
                         command on each node.</para>
@@ -669,7 +669,7 @@ db.awsapi.port=
                 </listitem>
                 <listitem>
                     <para>Stop the Management Servers. Run this on all Management Server hosts.</para>
-                    <programlisting># service cloud-management stop</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management stop</programlisting>
                 </listitem>
                 <listitem>
                     <para>On the MySQL master, take a backup of the MySQL databases. We recommend performing
@@ -780,7 +780,7 @@ db.awsapi.port=
                 <listitem>
                     <para>Start the first Management Server. Do not start any other Management Server nodes
                         yet.</para>
-                    <programlisting># service cloud-management start</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management start</programlisting>
                     <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
                         You should see a message like "Complete! Done." After confirmation, start the other
                         Management Servers one at a time by running the same command on each node.</para>
@@ -788,7 +788,7 @@ db.awsapi.port=
                 <listitem>
                     <para>Start all Usage Servers (if they were running on your previous version). Perform
                         this on each Usage Server host.</para>
-                    <programlisting># service cloud-usage start</programlisting>
+                    <programlisting language="Bash"><prompt>#</prompt> service cloud-usage start</programlisting>
                 </listitem>
                 <listitem>
                     <para>(KVM only) Additional steps are required for each KVM host. These steps will not
