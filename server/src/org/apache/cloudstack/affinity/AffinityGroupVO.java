@@ -104,4 +104,11 @@ public class AffinityGroupVO implements AffinityGroup {
         return type;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("AffinityGroup[");
+        buf.append(id).append("|").append(name).append("|").append(type).append("]");
+        return buf.toString();
+    }
+
 }
