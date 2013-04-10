@@ -1084,7 +1084,7 @@
             label:'scaleUp VM',
             action: function(args) {
               $.ajax({
-                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id),
+                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id + "&serviceofferingid=" + args.context.instances[0].serviceofferingid),
                 dataType: "json",
                 async: true,
                 success: function(json) {
@@ -1101,7 +1101,11 @@
                      }
                     }
                   );
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
                 }
+
               });
             },
             messages: {
