@@ -23,8 +23,9 @@
       $('<option>').attr('value', 'basic').html(_l('Project 1')),
       $('<option>').attr('value', 'advanced').html(_l('Project 2'))
     );
+    var $label = $('<label>').html('Project:');
 
-    $projectSelect.appendTo($projectSwitcher);
+    $projectSwitcher.append($label, $projectSelect);
     $projectSwitcher.insertBefore($header.find('.region-switcher'));
   });
 }(jQuery, cloudStack));      

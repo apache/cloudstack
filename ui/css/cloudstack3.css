@@ -8913,6 +8913,13 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   padding: 9px 17px 0 0;
 }
 
+.project-switcher label {
+  position: absolute;
+  top: -2px;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
 .project-switcher select {
   width: 100%;
   font-size: 12px;
@@ -11390,7 +11397,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   border-bottom: 1px solid #FFFFFF;
   height: 28px;
   float: left;
-  margin: 4px 13px 0 0;
+  margin: 5px 13px 0 0;
   cursor: pointer;
   /*+box-shadow:inset 0px 1px 1px #000000;*/
   -moz-box-shadow: inset 0px 1px 1px #000000;
