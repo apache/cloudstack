@@ -2277,6 +2277,34 @@ div.detail-group.actions td {
   top: 13px;
 }
 
+/** Zone filter (mixed zone management)*/
+#header .zone-filter {
+  float: left;
+  width: 111px;
+  margin: 9px 20px 0 2px;
+}
+
+#header .zone-filter label {
+  position: absolute;
+  top: -3px;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
+#header .zone-filter select {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #000000;
+  border-bottom: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #ECECEC;
+  margin-top: 2px;
+}
+
 /*Navigation*/
 #navigation,
 #browser {
@@ -8930,6 +8958,8 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
+  background: #ECECEC;
+  margin-top: 2px;
 }
 
 /*** Select project*/

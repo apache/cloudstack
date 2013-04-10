@@ -1659,7 +1659,6 @@ under the License.
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/regions.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/ui-custom/zoneFilter.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/ipRules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/enableStaticNAT.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/securityRules.js?t=<%=now%>"></script>
@@ -1681,6 +1680,7 @@ under the License.
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/projectSelect.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/zoneFilter.js?t=<%=now%>"></script>
 
     <!-- Plugins -->
     <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
