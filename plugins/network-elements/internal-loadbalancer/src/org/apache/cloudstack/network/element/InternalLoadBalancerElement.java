@@ -44,6 +44,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -70,7 +71,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = {NetworkElement.class})
-public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService{
+public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService, IpDeployer{
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -171,7 +172,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
-        return null;
+        return this;
     }
 
     @Override
@@ -286,6 +287,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         sc.addAnd(sc.getEntity().getType(), Op.EQ, VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm);
         
         return sc.list();
+    }
+
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
+        //do nothing here; this element just has to extend the ip deployer as the LB service implements IPDeployerRequester
+        return true;
     }
 
 }
