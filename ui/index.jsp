@@ -1678,7 +1678,8 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/projectSelect.js?t=<%=now%>"></script>
 
     <!-- Plugins -->
     <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
