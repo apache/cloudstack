@@ -22,17 +22,22 @@
   <title>Added API Commands in 4.2</title>
   <itemizedlist>
     <listitem>
-      <para>addIpToNic (Adds an IP address to the NIC from the guest subnet. The request parameters
-        are: nicid, ipaddress)</para>
+      <para>addIpToNic </para>
+      <para>Adds an IP address to the NIC from the guest subnet. The request parameters are: nicid,
+        ipaddress.</para>
+      <para>The response parameters are: nicid, ipaddress, networkid </para>
     </listitem>
     <listitem>
-      <para>removeIpFromNic (Removes the reserved IP for the NIC. The request parameters is:
-        id)</para>
+      <para>removeIpFromNic</para>
+      <para> Removes the reserved IP for the NIC. The request parameters is: id.</para>
+      <para>The response parameters are: true, false</para>
     </listitem>
     <listitem>
-      <para>listNics (Lists the NIC details of the user VM; the API response also contains the
-        Secondary IP addresses of the NIC. The request parameters are: nicid,
-        virtualmachineid)</para>
+      <para>listNics</para>
+      <para>Lists the NIC details of the user VM; the API response also contains the Secondary IP
+        addresses of the NIC. The request parameters are: nicid, virtualmachineid.</para>
+      <para>The response parameters are: id, ipaddress, secondaryips, gateway, netmask, macaddr,
+        broadcasturi, isolationuri, isdefault,</para>
     </listitem>
   </itemizedlist>
 </section>

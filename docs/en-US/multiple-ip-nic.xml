@@ -21,27 +21,32 @@
 -->
 <section id="multiple-ip-nic">
   <title>Configuring Multiple IP Addresses on a Single NIC</title>
-  <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses per NIC.
-    This feature is supported on all the network configurations&mdash;Basic, Advanced, and VPC.
-    Security Groups, Static NAT and Port forwarding services are supported on these additional IPs.
-    In addition to the primary IP, you can assign additional IPs to the guest VM NIC. Up to 256 IP
-    addresses are allowed per NIC.</para>
+  <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses per guest
+    VM NIC. This feature is supported on all the network configurations&mdash;Basic, Advanced, and
+    VPC. Security Groups, Static NAT and Port forwarding services are supported on these additional
+    IPs. In addition to the primary IP, you can assign additional IPs to the guest VM NIC. Up to 256
+    IP addresses are allowed per NIC.</para>
   <para>As always, you can specify an IP from the guest subnet; if not specified, an IP is
-    automatically picked up from the guest subnet. You can view the IPs and associated NICs
-    for each VMs on the UI. You can apply NAT on these additional guest IPs by using firewall
+    automatically picked up from the guest VM subnet. You can view the IPs associated with for each
+    guest VM NICs on the UI. You can apply NAT on these additional guest IPs by using firewall
     configuration in the &PRODUCT; UI. You must specify the NIC to which the IP should be
     associated.</para>
   <para>This feature is supported on XenServer, KVM, and VMware hypervisors.</para>
+  <note>
+    <para>You need to configure the secondary IP address on the guest VM. &PRODUCT; will
+      not configure the acquired IP address on the VM. Ensure that you assign IPs to NIC each
+      time the VM reboots.</para>
+  </note>
   <para>Some of the use cases are described below:</para>
   <itemizedlist>
     <listitem>
-      <para>Building network appliances: Network appliances, such as firewalls and load
-        balancers, generally work best when they have access to multiple IP addresses on the
-        network interface.</para>
+      <para>Building network appliances: Network appliances, such as firewalls and load balancers,
+        generally work best when they have access to multiple IP addresses on the network
+        interface.</para>
     </listitem>
     <listitem>
-      <para>Moving private IP addresses between interfaces or instances. Applications that are
-        bound to specific IP addresses can be moved between instances. </para>
+      <para>Moving private IP addresses between interfaces or instances. Applications that are bound
+        to specific IP addresses can be moved between instances. </para>
     </listitem>
     <listitem>
       <para>Hosting multiple SSL Websites on a single instance. You can install multiple SSL
@@ -74,55 +79,7 @@
       </listitem>
     </orderedlist>
   </section>
-  <section id="api-nic">
-    <title>API Changes</title>
-    <para>The following APIs have been added:</para>
-    <informaltable>
-      <tgroup cols="4" align="left" colsep="1" rowsep="1">
-        <thead>
-          <row>
-            <entry><para>Parameter Name</para></entry>
-            <entry><para>Description</para></entry>
-            <entry><para>Request Parameter</para></entry>
-            <entry><para>Response Parameter</para></entry>
-          </row>
-        </thead>
-        <tbody>
-          <row>
-            <entry><para>addIpToNic</para></entry>
-            <entry><para>Adds an IP address to the NIC from the guest subnet.</para></entry>
-            <entry>
-              <para>nicid</para>
-              <para>(optional) ipaddress </para>
-            </entry>
-            <entry><para>nicid</para>
-              <para>ipaddress</para>
-              <para>networkid </para></entry>
-          </row>
-          <row>
-            <entry><para>removeIpFromNic</para></entry>
-            <entry><para>Removes the reserved IP for the NIC.</para></entry>
-            <entry>
-              <para>id</para>
-            </entry>
-            <entry><para>true</para>
-              <para>false</para></entry>
-          </row>
-          <row>
-            <entry><para>listNics</para></entry>
-            <entry><para>Lists the NIC details of the user VM; the API response also contains
-              the Secondary IP addresses of the NIC.</para></entry>
-            <entry>
-              <para>virtualmachineid</para>
-              <para>(optional) nicid</para>
-            </entry>
-            <entry><para>Lists the NIC details including secondary IP address </para></entry>
-          </row>
-        </tbody>
-      </tgroup>
-    </informaltable>
-  </section>
-  <section id="caveats-rn">
+   <section id="caveats">
     <title>Port Forwarding and StaticNAT Services Changes</title>
     <para>Because multiple IPs can be associated per NIC, you are allowed to select a desired IP for
       the Port Forwarding and StaticNAT services. The default is the primary IP. To enable this
