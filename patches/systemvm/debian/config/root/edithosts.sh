@@ -200,7 +200,8 @@ fi
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
-  service dnsmasq restart
+  #service dnsmasq restart
+  kill -HUP $pid
 else
   if [ $no_redundant -eq 1 ]
   then

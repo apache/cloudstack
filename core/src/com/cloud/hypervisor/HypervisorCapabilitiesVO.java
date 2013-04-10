@@ -62,6 +62,9 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     @Column(name="max_hosts_per_cluster")
     private Integer maxHostsPerCluster;
 
+    @Column(name="vm_snapshot_enabled")
+    private Boolean vmSnapshotEnabled;
+    
     protected HypervisorCapabilitiesVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -169,7 +172,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.maxHostsPerCluster = maxHostsPerCluster;
     }
 
-    @Override
+	public Boolean getVmSnapshotEnabled() {
+		return vmSnapshotEnabled;
+	}
+
+	public void setVmSnapshotEnabled(Boolean vmSnapshotEnabled) {
+		this.vmSnapshotEnabled = vmSnapshotEnabled;
+	}
+
+	@Override
     public boolean equals(Object obj) {
         if (obj instanceof HypervisorCapabilitiesVO) {
             return ((HypervisorCapabilitiesVO)obj).getId() == this.getId();

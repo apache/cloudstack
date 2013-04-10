@@ -135,10 +135,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
             || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)){
             // user vm
-            if (diskDeviceType != null){
-                details.remove(VmDetailConstants.ROOK_DISK_CONTROLLER);
+            if (diskDeviceType == null){
+		    details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
-            details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
         }
         
         to.setDetails(details);

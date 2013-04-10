@@ -32,7 +32,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name="deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class)
+@APICommand(name="deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since="4.2.0")
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger
             .getLogger(DeleteVMSnapshotCmd.class.getName());

@@ -225,7 +225,9 @@ import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -707,22 +709,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
-
-
-
-    private void checkVMSnapshots(UserVmVO vm, Long volumeId, boolean attach) {
-        // Check that if vm has any VM snapshot
-        /*Long vmId = vm.getId();
-        List<VMSnapshotVO> listSnapshot = _vmSnapshotDao.listByInstanceId(vmId,
-                VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
-        if (listSnapshot != null && listSnapshot.size() != 0) {
-            throw new InvalidParameterValueException(
-                        "The VM has VM snapshots, do not allowed to attach volume. Please delete the VM snapshots first.");
-        }*/
-    }
-
-
-
     private UserVm rebootVirtualMachine(long userId, long vmId)
             throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
@@ -785,7 +771,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
 
         // remove diskAndMemory VM snapshots
-        /* List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
             if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
                 if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
@@ -795,7 +781,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
 
             }
-        }*/
+        }
 
         _itMgr.upgradeVmDb(vmId, svcOffId);
 
@@ -2534,18 +2520,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _vmCloneSettingDao.persist(vmCloneSettingVO);
         }
 
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        long guestOSCategoryId = guestOS.getCategoryId();
+        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+
+
+        // If hypervisor is vSphere and OS is OS X, set special settings.
+        if (hypervisorType.equals(HypervisorType.VMware)) {
+            if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
+                vm.setDetail("smc.present", "TRUE");
+                vm.setDetail(VmDetailConstants.ROOK_DISK_CONTROLLER, "scsi");
+                vm.setDetail("firmware", "efi");
+                s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
+            }
+       }
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);
 
         s_logger.debug("Allocating in the DB for vm");
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-
-
-        long guestOSId = template.getGuestOSId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        long guestOSCategoryId = guestOS.getCategoryId();
-        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
 
         List<String> computeTags = new ArrayList<String>();
         computeTags.add(offering.getHostTag());

@@ -14,18 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.template;
+package org.apache.cloudstack.storage.template;
 
-import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.resource.SecondaryStorageResource;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.template.TemplateDownloader;
+import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Manager;
 
 public interface DownloadManager extends Manager {

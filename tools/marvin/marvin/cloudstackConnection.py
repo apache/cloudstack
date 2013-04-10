@@ -162,9 +162,9 @@ class cloudConnection(object):
                     else:
                         requests.pop(param)
                         i = 0
-                        for v in value:
-                            for key, val in v.iteritems():
-                                requests["%s[%d].%s"%(param,i,key)] = val
+                        for val in value:
+                            for k,v in val.iteritems():
+                                requests["%s[%d].%s"%(param,i,k)] = v
                             i = i + 1
         
         if self.logging is not None:

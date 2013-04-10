@@ -565,6 +565,14 @@
                         });
                       }
                     },
+										actionPreFilter: function(args) {										  
+											var actionsToShow = ['destroy'];											
+											if(args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account.account == 'system')  
+											  actionsToShow.push('addAccount');
+											else
+											  actionsToShow.push('releaseFromAccount');											
+											return actionsToShow;
+										},
                     actions: {
                       destroy: {
                         label: 'label.remove.ip.range',
@@ -588,7 +596,86 @@
                             }
                           });
                         }
-                      }
+                      },											
+											/*
+											releaseFromAccount: {
+                        label: 'Release from Account',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('releasePublicIpRange'),
+                            data: {
+														  id: args.context.multiRule[0].id
+														},                            
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'release from account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      },
+											addAccount: {
+											  label: 'Add Account',												
+												createForm: {
+													title: 'Add Account',
+													fields: {
+														account: { label: 'Account' },
+														domainid: {
+															label: 'Domain',															
+															select: function(args) {
+																$.ajax({
+																	url: createURL('listDomains'),
+																	data: { listAll: true },
+																	success: function(json) {
+																		args.response.success({
+																			data: $.map(json.listdomainsresponse.domain, function(domain) {
+																				return {
+																					id: domain.id,
+																					description: domain.path
+																				};
+																			})
+																		});
+																	}
+																});
+															}
+														}
+													}
+												},												
+												action: function(args) {                          							
+												  var data = {
+														id: args.context.multiRule[0].id,
+														zoneid: args.context.multiRule[0].zoneid,
+														domainid: args.data.domainid,
+														account: args.data.account
+													};												
+                          $.ajax({
+                            url: createURL('dedicatePublicIpRange'),
+                            data: data,                        
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Add Account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+											}	
+                      */											
                     },
                     dataProvider: function(args) {
                       $.ajax({

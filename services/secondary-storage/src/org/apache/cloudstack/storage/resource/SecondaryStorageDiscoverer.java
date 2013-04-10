@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.secondary;
+package org.apache.cloudstack.storage.resource;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -47,8 +47,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.storage.resource.LocalSecondaryStorageResource;
-import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;

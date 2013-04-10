@@ -212,7 +212,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         }
 
         DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(),
-                vmReservation.getHostId(), poolId , null);
+                vmReservation.getHostId(), null , null);
         try{
             VMInstanceVO vmDeployed = _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), reservedPlan);
         }catch(Exception ex){

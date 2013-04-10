@@ -6380,7 +6380,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String guestOSType = cmd.getGuestOSType();
 
         boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
-        long timeout = 600;
+        long timeout = cmd.getWait();
 
         Connection conn = getConnection();
         VM vm = null;

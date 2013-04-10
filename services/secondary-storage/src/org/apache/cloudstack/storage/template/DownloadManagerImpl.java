@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.template;
+package org.apache.cloudstack.storage.template;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -54,10 +55,22 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.resource.SecondaryStorageResource;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
+import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -743,21 +756,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             TemplateInfo tInfo = loc.getTemplateInfo();
 
-            if ((tInfo.size == tInfo.physicalSize) && (tInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
+			if ((tInfo.getSize() == tInfo.getPhysicalSize())
+					&& (tInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
                     Processor processor = _processors.get("VMDK Processor");
                     VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
-                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.installPath.substring(tInfo.installPath.lastIndexOf(File.separator) + 1));
-                    tInfo.size = vSize;
+					long vSize =
+							vmdkProcessor.getTemplateVirtualSize(
+									path,
+									tInfo.getInstallPath().substring(
+											tInfo.getInstallPath().lastIndexOf(File.separator) + 1));
+					tInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    s_logger.error("Unable to get the virtual size of the template: " + tInfo.installPath + " due to " + e.getMessage());
+					s_logger.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath()
+							+ " due to " + e.getMessage());
                 }
             }
 
-            result.put(tInfo.templateName, tInfo);
-            s_logger.debug("Added template name: " + tInfo.templateName + ", path: " + tmplt);
+			result.put(tInfo.getTemplateName(), tInfo);
+			s_logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         /*
         for (String tmplt : isoTmplts) {
@@ -800,21 +819,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             TemplateInfo vInfo = loc.getTemplateInfo();
 
-            if ((vInfo.size == vInfo.physicalSize) && (vInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
+			if ((vInfo.getSize() == vInfo.getPhysicalSize())
+					&& (vInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
                     Processor processor = _processors.get("VMDK Processor");
                     VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
-                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.installPath.substring(vInfo.installPath.lastIndexOf(File.separator) + 1));
-                    vInfo.size = vSize;
+					long vSize =
+							vmdkProcessor.getTemplateVirtualSize(
+									path,
+									vInfo.getInstallPath().substring(
+											vInfo.getInstallPath().lastIndexOf(File.separator) + 1));
+					vInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    s_logger.error("Unable to get the virtual size of the volume: " + vInfo.installPath + " due to " + e.getMessage());
+					s_logger.error("Unable to get the virtual size of the volume: " + vInfo.getInstallPath()
+							+ " due to " + e.getMessage());
                 }
             }
 
             result.put(vInfo.getId(), vInfo);
-            s_logger.debug("Added volume name: " + vInfo.templateName + ", path: " + vol);
+			s_logger.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
         }
         return result;
     }

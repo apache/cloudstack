@@ -14,7 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.template;
+package org.apache.cloudstack.storage.template;
+
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
@@ -24,7 +26,7 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Status;
-import com.cloud.storage.resource.SecondaryStorageResource;
+import com.cloud.storage.template.TemplateUploader;
 import com.cloud.utils.component.Manager;
 
 public interface UploadManager extends Manager {

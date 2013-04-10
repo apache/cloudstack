@@ -53,6 +53,10 @@
           <para>For KVM:</para>
           <programlisting># /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
         </listitem>
+        <listitem>
+          <para>For LXC:</para>
+          <programlisting># /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h lxc -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
+        </listitem>
       </itemizedlist>
       <para>On Ubuntu, use the following path instead:</para>
       <programlisting># /usr/lib/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</programlisting>

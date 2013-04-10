@@ -33,7 +33,6 @@ import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
-import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
@@ -110,7 +109,6 @@ public abstract class BaseCmd {
     @Inject public TemplateService _templateService;
     @Inject public SecurityGroupService _securityGroupService;
     @Inject public SnapshotService _snapshotService;
-    @Inject public ConsoleProxyService _consoleProxyService;
     @Inject public VpcVirtualNetworkApplianceService _routerService;
     @Inject public ResponseGenerator _responseGenerator;
     @Inject public EntityManager _entityMgr;

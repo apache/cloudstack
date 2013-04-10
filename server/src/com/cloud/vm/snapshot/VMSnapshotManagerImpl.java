@@ -59,6 +59,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.storage.GuestOSVO;
@@ -119,7 +120,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject VirtualMachineManager _itMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     int _vmSnapshotMax;
+    int _wait;
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
 
     @Override
@@ -131,6 +134,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         _vmSnapshotMax = NumbersUtil.parseInt(_configDao.getValue("vmsnapshot.max"), VMSNAPSHOTMAX);
+        
+        String value = _configDao.getValue("vmsnapshot.create.wait");
+        _wait = NumbersUtil.parseInt(value, 1800);
 
         _vmSnapshottateMachine   = VMSnapshot.State.getStateMachine();
         return true;
@@ -240,7 +246,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (userVmVo == null) {
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
-        
+
+        // check hypervisor capabilities
+        if(!_hypervisorCapabilitiesDao.isVmSnapshotEnabled(userVmVo.getHypervisorType(), "default"))
+        	throw new InvalidParameterValueException("VM snapshot is not enabled for hypervisor type: " + userVmVo.getHypervisorType());
+
         // parameter length check
         if(vsDisplayName != null && vsDisplayName.length()>255)
             throw new InvalidParameterValueException("Creating VM snapshot failed due to length of VM snapshot vsDisplayName should not exceed 255");
@@ -361,6 +371,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmSnapshot.setParent(current.getId());
 
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(),target ,volumeTOs, guestOS.getDisplayName(),userVm.getState());
+            ccmd.setWait(_wait);
             
             answer = (CreateVMSnapshotAnswer) sendToPool(hostId, ccmd);
             if (answer != null && answer.getResult()) {

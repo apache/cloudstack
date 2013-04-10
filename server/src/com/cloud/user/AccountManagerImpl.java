@@ -1991,6 +1991,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
@@ -2144,7 +2145,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
             boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
-
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
@@ -2160,10 +2160,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             Account userAccount = null;
+            Domain domain = null;
             if (domainId != null) {
                 userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                domain = _domainDao.findById(domainId);
             } else {
                 userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+                domain = _domainDao.findById(caller.getDomainId());
             }
 
             if (userAccount != null) {
@@ -2171,7 +2174,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 //check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
-                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
             }
         }
 
