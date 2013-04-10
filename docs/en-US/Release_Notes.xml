@@ -33,7 +33,7 @@ under the License.
         <para>If you run into any issues during upgrades, please feel free to ask questions on users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
         <section id="upgrade-from-4.0-to-4.1">
             <title>Upgrade from 4.0.x to 4.1.0</title>
-            <para>This section will guide you from Apache CloudStack 4.0.x versions (4.0.0-incubating, 4.0.1-incubating, and 4.0.2) to &PRODUCT; 4.1.0.</para>
+            <para>This section will guide you from Apache CloudStack 4.0.x versions to &PRODUCT; 4.1.0.</para>
             <para>Any steps that are hypervisor-specific will be called out with a note.</para>
             <warning><title>Package Structure Changes</title>
                 <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x releases. If you've compiled your own packages, you'll notice that the package names and the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
@@ -51,6 +51,10 @@ under the License.
                     <programlisting><prompt>#</prompt> service cloud-management stop</programlisting>
                 </listitem>
                 <listitem>
+                    <para>If you are running a usage server or usage servers, stop those as well:</para>
+                    <programlisting><prompt>#</prompt> service cloud-usage stop</programlisting>
+                </listitem>
+                <listitem>
                     <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
                     <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
                 </listitem>
@@ -60,19 +64,6 @@ under the License.
                 </listitem>
                 <listitem>
                     <para>If you have made changes to <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these over manually to the new file, <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done automatically. (If you're unsure, we recommend making a backup of the original <filename>components.xml</filename> to be on the safe side.</para>
-                </listitem>
-                <listitem>
-                    <note><title>For AWS API Users Only</title>
-                        <para>This step is only necessary if you're using the AWS APIs with &PRODUCT;. If not, you can skip this step.</para>
-                    </note>
-                    <para>The file <filename>/etc/cloud/management/db.properties</filename> will be carried over to <filename>etc/cloudstack/management/db.properties</filename>, but the parameters for the AWS API are <emphasis>not</emphasis> carried over. You'll need to add these parameters to the new file manually:</para>
-                    <programlisting language="Bash">
-db.awsapi.username=
-db.awsapi.password=
-db.awsapi.host=
-db.awsapi.port=
-                    </programlisting>
-                    <para>For the AWS API queries to work, you'll need to copy those over to <filename>/etc/cloudstack/management/db.properties</filename> (with the values you have currently).</para>
                 </listitem>
                 <listitem id="upgrade-deb-packages">
                     <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
@@ -110,12 +101,51 @@ db.awsapi.port=
                         </listitem>
                         <listitem>
                             <para>Restart the agent:</para>
+                            <programlisting language="Bash">
+service cloud-agent stop
+killall jsvc
+service cloudstack-agent start
+                            </programlisting>
                         </listitem>
+                        <listitem>
+                            <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over, so the logs will continue to be added to <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can change this by copying over the sample configuration file:</para>
+                            <programlisting language="Bash">
+cd /etc/cloudstack/agent
+mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
+service cloudstack-agent restart
+                            </programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Once the agent is running, you can uninstall the old cloud-* packages from your system:</para>
+                            <programlisting language="Bash">sudo dpkg --purge cloud-agent</programlisting>
+                        </listitem> 
                     </orderedlist>
                 </listitem>
                 <listitem id="upgrade-rpm-packages">
                     <para>The package names have changed between 4.0 and 4.1, so upgrading the packages won't happen automatically with a <command>yum update</command></para> 
                 </listitem>
+                <listitem id="restart-system-vms">
+                    <para>Once you've upgraded the packages on your management servers, you'll need to restart the system VMs. Make sure port 8096 is open <!-- [FIXME, where?] --> to do this.</para>
+                    <para>There is a script that will do this for you, all you need to do is run the script and supply the IP address for your MySQL instance and your MySQL credentials:</para>
+                    <programlisting language="Bash"><prompt>#</prompt> nohup cloudstack-sysvmadm -d <replaceable>IP address</replaceable> -u cloud -p -a &gt; sysvm.log 2&gt;&amp;1 &amp;</programlisting>
+                    <para>You can monitor the log for progress. The process of restarting the system VMs can take an hour or more.</para>
+                    <programlisting language="Bash"><prompt>#</prompt> tail -f sysvm.log</programlisting>
+                    <para>The output to <filename>sysvm.log</filename> will look something like this:</para>
+                    <programlisting language="Bash">
+Stopping and starting 1 secondary storage vm(s)...
+Done stopping and starting secondary storage vm(s)
+Stopping and starting 1 console proxy vm(s)...
+Done stopping and starting console proxy vm(s).
+Stopping and starting 4 running routing vm(s)...
+Done restarting router(s).
+                    </programlisting>
+                </listitem>
+                <listitem>
+                    <note><title>For Xen Hosts: Copy vhd-utils</title>
+                        <para>This step is only for CloudStack installs that are using Xen hosts.</para>
+                    </note>
+                    <para>Copy the file <filename>vhd-utils</filename> to <filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver</filename>.</para>
+                </listitem> 
             </orderedlist>
         </section>
         <section id="upgrade-from-3.0.2-to-4.0">
@@ -856,12 +886,12 @@ db.awsapi.port=
                             <programlisting><prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
                             <para>The content should be like the following:</para>
                             <programlisting>
-                                Stopping and starting 1 secondary storage vm(s)...
-                                Done stopping and starting secondary storage vm(s)
-                                Stopping and starting 1 console proxy vm(s)...
-                                Done stopping and starting console proxy vm(s).
-                                Stopping and starting 4 running routing vm(s)...
-                                Done restarting router(s).
+Stopping and starting 1 secondary storage vm(s)...
+Done stopping and starting secondary storage vm(s)
+Stopping and starting 1 console proxy vm(s)...
+Done stopping and starting console proxy vm(s).
+Stopping and starting 4 running routing vm(s)...
+Done restarting router(s).
                             </programlisting>
                         </listitem>
                     </orderedlist>
