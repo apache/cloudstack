@@ -120,6 +120,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
     int _vmSnapshotMax;
+    int _wait;
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
 
     @Override
@@ -131,6 +132,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         _vmSnapshotMax = NumbersUtil.parseInt(_configDao.getValue("vmsnapshot.max"), VMSNAPSHOTMAX);
+        
+        String value = _configDao.getValue("vmsnapshot.create.wait");
+        _wait = NumbersUtil.parseInt(value, 1800);
 
         _vmSnapshottateMachine   = VMSnapshot.State.getStateMachine();
         return true;
@@ -361,6 +365,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmSnapshot.setParent(current.getId());
 
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(),target ,volumeTOs, guestOS.getDisplayName(),userVm.getState());
+            ccmd.setWait(_wait);
             
             answer = (CreateVMSnapshotAnswer) sendToPool(hostId, ccmd);
             if (answer != null && answer.getResult()) {
