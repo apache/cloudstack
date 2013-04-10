@@ -83,6 +83,7 @@ known_categories = {
     'Configuration': 'Configuration',
     'Capabilities': 'Configuration',
     'Pod': 'Pod',
+    'PublicIpRange': 'Network',
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
     'NetworkACL': 'Network ACL',
