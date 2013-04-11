@@ -214,8 +214,148 @@
           id: 'GSLB',
           label: 'GSLB',
           fields: {
-            name: { label: 'label.name' }
+            name: { label: 'label.name' },
+						gslbdomainname: { label: 'GSLB Domain Name' },
+						gslblbmethod: { label: 'Algorithm' }
+          },										
+					actions: {
+            add: {
+              label: 'Add GSLB',
+
+              messages: {
+                confirm: function(args) {
+                  return 'Add GSLB';
+                },
+                notification: function(args) {
+                  return 'Add GSLB';
+                }
+              },
+
+              createForm: {
+                title: 'Add GSLB',
+                fields: {
+                  name: {
+                    label: 'label.name',                    
+                    validation: { required: true }
+                  },									
+                  description: {
+                    label: 'label.description'  
+                  }, 
+									/*
+									domainid: {					
+										label: 'Domain',					
+										select: function(args) {
+											if(isAdmin() || isDomainAdmin()) {
+												$.ajax({
+													url: createURL('listDomains'),
+													data: { 
+														listAll: true,
+														details: 'min'
+													},
+													success: function(json) {
+														var array1 = [{id: '', description: ''}];
+														var domains = json.listdomainsresponse.domain;
+														if(domains != null && domains.length > 0) {
+															for(var i = 0; i < domains.length; i++) {
+																array1.push({id: domains[i].id, description: domains[i].path});
+															}
+														}
+														args.response.success({
+															data: array1
+														});
+													}
+												});
+											}
+											else {
+												args.response.success({
+													data: null
+												});
+											}
+										},
+										isHidden: function(args) {
+											if(isAdmin() || isDomainAdmin())
+												return false;
+											else
+												return true;
+										}
+									},	
+									account: { 
+										label: 'Account',
+										isHidden: function(args) {
+											if(isAdmin() || isDomainAdmin())
+												return false;
+											else
+												return true;
+										}			
+									},
+									*/
+									gslblbmethod: {					
+										label: 'Algorithm',					
+										select: function(args) {
+											var array1 = [{id: 'roundrobin', description: 'roundrobin'}, {id: 'leastconn', description: 'leastconn'}, {id: 'proximity', description: 'proximity'}];
+											args.response.success({
+												data: array1
+											});														
+										}
+									},
+									gslbdomainname: {
+                    label: 'GSLB Domain Name',
+                    validation: { required: true }										
+                  }, 								
+									gslbservicetype: {					
+										label: 'Service Type',					
+										select: function(args) {
+											var array1 = [{id: 'tcp', description: 'tcp'}, {id: 'udp', description: 'udp'}];
+											args.response.success({
+												data: array1
+											});														
+										},
+										validation: { required: true }				
+									}
+                }
+              },
+              action: function(args) {                
+								var data = {
+								  name: args.data.name,									
+									regionid: args.context.regions[0].id,
+									gslblbmethod: args.data.gslblbmethod,
+									gslbstickysessionmethodname: 'sourceip',
+									gslbdomainname: args.data.gslbdomainname,
+									gslbservicetype: args.data.gslbservicetype
+								};	
+                if(args.data.description != null && args.data.description.length > 0)
+								  $.extend(data, { description: args.data.description });  
+                /*									
+                if(args.data.domainid != null && args.data.domainid.length > 0)
+								  $.extend(data, { domainid: args.data.domainid });  								  		
+                if(args.data.account != null && args.data.account.length > 0)
+								  $.extend(data, { account: args.data.account });   
+								*/	
+                $.ajax({
+                  url: createURL('createGlobalLoadBalancerRule'),
+                  data: data,                 
+                  success: function(json) {		
+										var jid = json.creategloballoadbalancerruleresponse.jobid;
+										args.response.success(
+											{_custom:
+											 {jobId: jid,
+												getUpdatedItem: function(json) {												  
+													return json.queryasyncjobresultresponse.jobresult.globalloadbalancerrule;
+												}
+											 }
+											}
+										);										
+                  }
+                });
+              },
+              notification: {
+                poll: function(args) {
+                  poll: pollAsyncJobResult
+                }
+              }
+            }
           },
+										
           dataProvider: function(args) {
             if('regions' in args.context) {
               var data = {
@@ -224,8 +364,7 @@
               $.ajax({
                 url: createURL('listGlobalLoadBalancerRules'),
                 data: data,
-                success: function(json) {
-                  debugger;
+                success: function(json) {                  
                   var items = json.listgloballoadbalancerrulesresponse.globalloadbalancerrule;
                   args.response.success({
                     data: items

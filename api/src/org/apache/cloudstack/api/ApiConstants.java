@@ -473,13 +473,16 @@ public class ApiConstants {
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
     public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
+    public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
+    public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
+    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
+        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
     }
 
     public enum LDAPParams {

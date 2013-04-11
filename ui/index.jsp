@@ -56,7 +56,7 @@ under the License.
             <!-- Password -->
             <div class="field password">
               <label for="password"><fmt:message key="label.password"/></label>
-              <input type="password" name="password" class="required" />
+              <input type="password" name="password" class="required" autocomplete="off" />
             </div>
             <!-- Domain -->
             <div class="field domain">

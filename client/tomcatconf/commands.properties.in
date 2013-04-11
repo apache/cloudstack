@@ -568,3 +568,10 @@ revertToSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+
+#### Affinity group commands
+createAffinityGroup=15
+deleteAffinityGroup=15
+listAffinityGroups=15
+updateVMAffinityGroup=15
+listAffinityGroupTypes=15

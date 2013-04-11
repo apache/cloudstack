@@ -37,14 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.*;
@@ -54,60 +49,43 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.*;
-import org.apache.cloudstack.api.command.admin.autoscale.*;
-import org.apache.cloudstack.api.command.admin.cluster.*;
-import org.apache.cloudstack.api.command.admin.config.*;
 import org.apache.cloudstack.api.command.admin.domain.*;
 import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.ldap.*;
 import org.apache.cloudstack.api.command.admin.network.*;
 import org.apache.cloudstack.api.command.admin.offering.*;
-import org.apache.cloudstack.api.command.admin.pod.*;
-import org.apache.cloudstack.api.command.admin.region.*;
 import org.apache.cloudstack.api.command.admin.resource.*;
 import org.apache.cloudstack.api.command.admin.router.*;
 import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.admin.swift.*;
 import org.apache.cloudstack.api.command.admin.systemvm.*;
-import org.apache.cloudstack.api.command.admin.template.*;
 import org.apache.cloudstack.api.command.admin.usage.*;
 import org.apache.cloudstack.api.command.admin.user.*;
-import org.apache.cloudstack.api.command.admin.vlan.*;
-import org.apache.cloudstack.api.command.admin.vm.*;
 import org.apache.cloudstack.api.command.admin.vpc.*;
-import org.apache.cloudstack.api.command.admin.zone.*;
-import org.apache.cloudstack.api.command.user.account.*;
-import org.apache.cloudstack.api.command.user.address.*;
 import org.apache.cloudstack.api.command.user.autoscale.*;
-import org.apache.cloudstack.api.command.user.config.*;
-import org.apache.cloudstack.api.command.user.event.*;
 import org.apache.cloudstack.api.command.user.firewall.*;
-import org.apache.cloudstack.api.command.user.guest.*;
 import org.apache.cloudstack.api.command.user.iso.*;
-import org.apache.cloudstack.api.command.user.job.*;
 import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.cloudstack.api.command.user.nat.*;
 import org.apache.cloudstack.api.command.user.network.*;
-import org.apache.cloudstack.api.command.user.offering.*;
 import org.apache.cloudstack.api.command.user.project.*;
-import org.apache.cloudstack.api.command.user.region.*;
 import org.apache.cloudstack.api.command.user.resource.*;
 import org.apache.cloudstack.api.command.user.securitygroup.*;
 import org.apache.cloudstack.api.command.user.snapshot.*;
-import org.apache.cloudstack.api.command.user.ssh.*;
-import org.apache.cloudstack.api.command.user.tag.*;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.cloudstack.api.command.user.vm.*;
-import org.apache.cloudstack.api.command.user.vmgroup.*;
 import org.apache.cloudstack.api.command.user.volume.*;
 import org.apache.cloudstack.api.command.user.vpc.*;
 import org.apache.cloudstack.api.command.user.vpn.*;
-import org.apache.cloudstack.api.command.user.zone.*;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -136,11 +114,11 @@ import com.cloud.dc.*;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.*;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
-import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -175,7 +153,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.dao.*;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -193,11 +170,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapter;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -214,10 +187,6 @@ import com.cloud.vm.dao.*;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
-import org.apache.cloudstack.api.command.admin.account.*;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -228,12 +197,8 @@ import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.domain.*;
-import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.network.*;
-import org.apache.cloudstack.api.command.admin.offering.*;
 import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -241,22 +206,15 @@ import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
-import org.apache.cloudstack.api.command.admin.resource.*;
-import org.apache.cloudstack.api.command.admin.router.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
-import org.apache.cloudstack.api.command.admin.usage.*;
-import org.apache.cloudstack.api.command.admin.user.*;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.admin.vpc.*;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
@@ -268,29 +226,19 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.autoscale.*;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.firewall.*;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
-import org.apache.cloudstack.api.command.user.iso.*;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.*;
-import org.apache.cloudstack.api.command.user.nat.*;
-import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.project.*;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
-import org.apache.cloudstack.api.command.user.resource.*;
-import org.apache.cloudstack.api.command.user.securitygroup.*;
-import org.apache.cloudstack.api.command.user.snapshot.*;
 import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
@@ -298,8 +246,6 @@ import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.template.*;
-import org.apache.cloudstack.api.command.user.vm.*;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -308,27 +254,10 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToSnapshotCmd;
-import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.api.command.user.vpc.*;
-import org.apache.cloudstack.api.command.user.vpn.*;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.lang.reflect.Field;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -460,8 +389,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
+    @Inject
+    protected List<DeploymentPlanner> _planners;
+
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
+
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    protected List<AffinityGroupProcessor> _affinityProcessors;
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
@@ -820,6 +758,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
+
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, excludes);
+            }
+        }
 
         for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -2301,6 +2248,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(CreateAffinityGroupCmd.class);
+        cmdList.add(DeleteAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupsCmd.class);
+        cmdList.add(UpdateVMAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupTypesCmd.class);
+
         return cmdList;
     }
 
@@ -3364,6 +3317,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.info("Admin user enabled");
         }
 
+    }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
     }
 
 }

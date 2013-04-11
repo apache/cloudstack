@@ -1,4 +1,3 @@
-
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -34,8 +33,8 @@
   <!--
     OSS deployment component configuration
   -->
-  <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+  <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
+  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
 
   <!-- simulator components -->
   <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
@@ -122,9 +121,9 @@
   <bean id="deploymentPlanners" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
       <list>
-        <ref bean="FirstFitPlanner" />
-        <ref bean="UserDispersingPlanner" />
-        <ref bean="UserConcentratedPodPlanner" />
+        <ref bean="FirstFitPlanner"/>
+        <ref bean="UserDispersingPlanner"/>
+        <ref bean="UserConcentratedPodPlanner"/>
 
         <!--
                   <ref bean="BareMetalPlanner" />
@@ -215,6 +214,16 @@
     </property>
   </bean>
 
-  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
+  <bean id="GlobalLoadBalancingRulesServiceImpl"
+        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>
+
+  <!--
+  AffinityGroup Processors
+  -->
+  <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+    <property name="name" value="HostAntiAffinityProcessor"/>
+    <property name="type" value="host anti-affinity"/>
+  </bean>
+
 
 </beans>

@@ -90,10 +90,7 @@ class Account:
         cmd.firstname = services["firstname"]
         cmd.lastname = services["lastname"]
 
-        # Password Encoding
-        mdf = hashlib.md5()
-        mdf.update(services["password"])
-        cmd.password = mdf.hexdigest()
+        cmd.password = services["password"]
         cmd.username = "-".join([services["username"], random_gen()])
 
         if domainid:
@@ -223,7 +220,7 @@ class VirtualMachine:
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
-                    diskofferingid=None, hostid=None, mode='basic'):
+                    diskofferingid=None, affinitygroupnames=None, hostid=None, mode='basic'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -267,6 +264,11 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
+
+        if "affinitygroupnames" in services:
+            cmd.affinitygroupnames  = services["affinitygroupnames"]
+        elif affinitygroupnames:
+            cmd.affinitygroupnames  = affinitygroupnames
 
         if projectid:
             cmd.projectid = projectid
@@ -2422,5 +2424,35 @@ class VPC:
         """List VPCs"""
 
         cmd = listVPCs.listVPCsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVPCs(cmd))
+
+
+class AffinityGroup:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, account=None, domainid=None):
+        agCmd = createAffinityGroup.createAffinityGroupCmd()
+        agCmd.name = services['name']
+        agCmd.displayText = services['displaytext'] if 'displaytext' in services else services['name']
+        agCmd.type = services['type']
+        agCmd.account = services['account'] if 'account' in services else account
+        agCmd.domainid = services['domainid'] if 'domainid' in services else domainid
+        return AffinityGroup(apiclient.createAffinityGroup(agCmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteVPC(cmd)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listAffinityGroups.listAffinityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
