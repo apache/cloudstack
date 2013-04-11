@@ -21,4 +21,5 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public interface StorageCacheManager {
     public DataStore getCacheStorage(Scope scope);
+    public DataObject createCacheObject(DataObject data, Scope scope);
 }

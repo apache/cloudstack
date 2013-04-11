@@ -63,7 +63,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     	SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
     	SnapshotObject so = null;
     	if (snapshot.getState() == Snapshot.State.BackedUp) {
-    		DataStore store = objMap.findStore(snapshot.getUuid(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
+    		DataStore store = objMap.findStore(snapshot.getId(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
     		so =  SnapshotObject.getSnapshotObject(snapshot, store);
     	} else {
     		VolumeInfo volume = this.volumeFactory.getVolume(snapshot.getVolumeId());

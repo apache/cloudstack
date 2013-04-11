@@ -32,5 +32,5 @@ public interface ObjectInDataStoreManager {
     DataObjectInStore findObject(long objId, DataObjectType type,
             long dataStoreId, DataStoreRole role);
     DataObjectInStore findObject(DataObject obj, DataStore store);
-    DataStore findStore(String objUuid, DataObjectType type,  DataStoreRole role);
+    DataStore findStore(long objId, DataObjectType type,  DataStoreRole role);
 }

@@ -470,7 +470,7 @@ public class AncientSnapshotStrategy implements SnapshotStrategy {
 
 	@DB
 	protected boolean destroySnapshotBackUp(SnapshotVO snapshot) {
-		DataStore store = objInStoreMgr.findStore(snapshot.getUuid(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
+		DataStore store = objInStoreMgr.findStore(snapshot.getId(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
 		if (store == null) {
 			s_logger.debug("Can't find snapshot" + snapshot.getId() + " backed up into image store");
 			return false;

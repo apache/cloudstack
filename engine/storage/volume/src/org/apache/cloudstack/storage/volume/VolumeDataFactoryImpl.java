@@ -55,7 +55,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
         VolumeObject vol = null;
         if (volumeVO.getPoolId() == null) {
-            DataStore store = objMap.findStore(volumeVO.getUuid(), DataObjectType.VOLUME, DataStoreRole.Image);
+            DataStore store = objMap.findStore(volumeVO.getId(), DataObjectType.VOLUME, DataStoreRole.Image);
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         } else {
             DataStore store = this.storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);

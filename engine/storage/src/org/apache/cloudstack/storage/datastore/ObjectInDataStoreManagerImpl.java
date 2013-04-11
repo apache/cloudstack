@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -69,6 +70,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     VMTemplatePoolDao templatePoolDao;
     @Inject
     SnapshotDataFactory snapshotFactory;
+    @Inject
+    ObjectInDataStoreDao objInStoreDao;
     protected StateMachine2<State, Event, DataObjectInStore> stateMachines;
 
     public ObjectInDataStoreManagerImpl() {
@@ -110,6 +113,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());
                 vo = templatePoolDao.persist(vo);
             }
+        } else if (dataStore.getRole() == DataStoreRole.ImageCache) {
+        	ObjectInDataStoreVO vo = new ObjectInDataStoreVO();
+        	vo.setDataStoreRole(dataStore.getRole());
+        	vo.setDataStoreId(dataStore.getId());
+        	vo.setObjectType(obj.getType());
+        	vo.setObjectId(obj.getId());
+        	vo = objInStoreDao.persist(vo);
         } else {
             // Image store
             switch ( obj.getType()){
@@ -212,6 +222,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
+        } else if (role == DataStoreRole.ImageCache) {
+        	SearchCriteriaService<ObjectInDataStoreVO, ObjectInDataStoreVO> sc = SearchCriteria2.create(ObjectInDataStoreVO.class);
+        	sc.addAnd(sc.getEntity().getObjectId(), Op.EQ, objId);
+        	sc.addAnd(sc.getEntity().getObjectType(), Op.EQ, type);
+        	sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, dataStoreId);
+        	sc.addAnd(sc.getEntity().getDataStoreRole(), Op.EQ, role);
+        	vo = sc.find();
         } else {
             s_logger.debug("Invalid data or store type: " + type + " " + role);
             throw new CloudRuntimeException("Invalid data or store type: " + type + " " + role);
@@ -222,16 +239,16 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public DataStore findStore(String objUuid, DataObjectType type,  DataStoreRole role) {
+    public DataStore findStore(long objId, DataObjectType type,  DataStoreRole role) {
         DataStore store = null;
         if (role == DataStoreRole.Image) {
             SearchCriteriaService<ObjectInDataStoreVO, ObjectInDataStoreVO> sc = SearchCriteria2.create(ObjectInDataStoreVO.class);
             sc.addAnd(sc.getEntity().getDataStoreRole(), Op.EQ, role);
-            sc.addAnd(sc.getEntity().getObjectUuid(), Op.EQ, objUuid);
+            sc.addAnd(sc.getEntity().getObjectId(), Op.EQ, objId);
             sc.addAnd(sc.getEntity().getObjectType(), Op.EQ, type);
             ObjectInDataStoreVO vo = sc.find();
             if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreUuid(), vo.getDataStoreRole());
+                store = this.storeMgr.getDataStore(vo.getDataStoreId(), vo.getDataStoreRole());
             }
         }
         return store;

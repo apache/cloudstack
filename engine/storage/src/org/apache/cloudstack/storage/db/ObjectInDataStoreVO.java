@@ -46,15 +46,15 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
 
-    @Column(name = "datastore_uuid")
-    private String dataStoreUuid;
+    @Column(name = "datastore_id")
+    private long dataStoreId;
     
     @Column(name = "datastore_role")
     @Enumerated(EnumType.STRING)
     private DataStoreRole dataStoreRole;
 
-    @Column(name = "object_uuid")
-    String objectUuid;
+    @Column(name = "object_id")
+    long objectId;
     
     @Column(name = "object_type")
     @Enumerated(EnumType.STRING)
@@ -117,14 +117,6 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.id;
     }
     
-    public String getDataStoreUuid() {
-        return this.dataStoreUuid;
-    }
-    
-    public void setDataStoreUuid(String uuid) {
-        this.dataStoreUuid = uuid;
-    }
-    
     public DataStoreRole getDataStoreRole() {
         return this.dataStoreRole;
     }
@@ -133,12 +125,12 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.dataStoreRole = role;
     }
     
-    public String getObjectUuid() {
-        return this.objectUuid;
+    public long getObjectId() {
+        return this.objectId;
     }
     
-    public void setObjectUuid(String uuid) {
-        this.objectUuid = uuid;
+    public void setObjectId(long id) {
+        this.objectId = id;
     }
     
     public DataObjectType getObjectType() {
@@ -189,4 +181,12 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public void setUpdated(Date updated) {
         this.updated = updated;
     }
+
+	public long getDataStoreId() {
+		return dataStoreId;
+	}
+
+	public void setDataStoreId(long dataStoreId) {
+		this.dataStoreId = dataStoreId;
+	}
 }

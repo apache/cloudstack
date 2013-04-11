@@ -44,6 +44,8 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -51,6 +53,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -75,6 +78,8 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDataFactory volFactory;
     @Inject SnapshotManager snapshotMgr;
     @Inject VMInstanceDao vmDao;
+    @Inject
+    ConfigurationDao configDao;
 
     public VolumeServiceImpl() {
     }
@@ -281,6 +286,24 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
     
+    private TemplateInfo waitForTemplateDownloaded(PrimaryDataStore store, TemplateInfo template) {
+    	int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+    	int sleepTime = 120;
+    	int tries = storagePoolMaxWaitSeconds/sleepTime;
+    	while (tries > 0) {
+    		TemplateInfo tmpl = store.getTemplate(template.getId());
+    		if (tmpl != null) {
+    			return tmpl;
+    		}
+    		try {
+				Thread.sleep(sleepTime * 1000);
+			} catch (InterruptedException e) {
+				s_logger.debug("waiting for template download been interrupted: " + e.toString());
+			}
+    		tries--;
+    	}
+    	return null;
+    }
     @DB
     protected void createBaseImageAsync(VolumeInfo volume, PrimaryDataStore dataStore, TemplateInfo template, AsyncCallFuture<VolumeApiResult> future) {
        
@@ -293,8 +316,21 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null))
         .setContext(context);
         
-        templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
-     
+        try {
+         	templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
+        } catch (Exception e) {
+        	try {
+        		templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
+        	} finally {
+        		if (templateOnPrimaryStoreObj == null) {
+        			VolumeApiResult result = new VolumeApiResult(volume);
+        			result.setResult(e.toString());
+        			caller.complete(result);
+        			return;
+        		}
+        	}
+        }
+        
         try {
             motionSrv.copyAsync(template, templateOnPrimaryStoreObj, caller);
         } catch (Exception e) {

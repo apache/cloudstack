@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
@@ -34,6 +36,8 @@ import com.cloud.utils.component.Manager;
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     @Inject
     List<StorageCacheAllocator> storageCacheAllocator;
+    @Inject
+    DataMotionService dataMotionSvr;
     @Override
     public DataStore getCacheStorage(Scope scope) {
         for (StorageCacheAllocator allocator : storageCacheAllocator) {
@@ -97,4 +101,14 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         // TODO Auto-generated method stub
         return true;
     }
+
+	@Override
+	public DataObject createCacheObject(DataObject data, Scope scope) {
+		DataStore cacheStore = this.getCacheStorage(scope);
+		DataObject objOnCacheStore = cacheStore.create(data);
+		//AsyncCallFuture<>
+		//dataMotionSvr.copyAsync(data, objOnCacheStore, callback);
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
