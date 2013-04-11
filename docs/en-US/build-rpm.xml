@@ -52,7 +52,19 @@ under the License.
             <programlisting><prompt>$</prompt>./package.sh</programlisting>
         </para>
         <para>That will run for a bit and then place the finished packages in <filename>dist/rpmbuild/RPMS/x86_64/</filename>.</para>
-        <para>You should see seven RPMs in that directory: <filename>cloudstack-agent-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-awsapi-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-cli-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-common-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-docs-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-management-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, and <filename>cloudstack-usage-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>.</para>
+        <para>You should see six RPMs in that directory:</para>
+<itemizedlist>
+<listitem><para><filename>cloudstack-agent-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+<listitem><para><filename>cloudstack-awsapi-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+<listitem><para><filename>cloudstack-cli-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+<listitem><para><filename>cloudstack-common-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+<listitem><para><filename>cloudstack-management-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+<listitem><para><filename>cloudstack-usage-4.1.0.el6.x86_64.rpm</filename></para></listitem>
+</itemizedlist>
+
+<note><title>Filename Variations</title>
+<para>The file names may vary slightly. For instance, if you were to build the RPMs on a Fedora 18 system, you'd see "fc18" instead of "el6" in the filename. (Fedora 18 isn't a supported platform at this time, just providing an example.)</para>
+</note>
             <section id="sect-source-buildrpm-repo">
                 <title>Creating a yum repo</title>
                 <para>
