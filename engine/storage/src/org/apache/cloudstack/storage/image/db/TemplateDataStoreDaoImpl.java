@@ -24,12 +24,12 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -43,6 +43,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeSearch;
     private SearchBuilder<TemplateDataStoreVO> liveStoreSearch;
+    private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
+    private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -62,12 +64,27 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        storeTemplateStateSearch = createSearchBuilder();
+        storeTemplateStateSearch.and("template_id", storeTemplateStateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.and("store_id", storeTemplateStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.and("states", storeTemplateStateSearch.entity().getState(), SearchCriteria.Op.IN);
+        storeTemplateStateSearch.and("destroyed", storeTemplateStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.done();
+
+        storeTemplateSearch = createSearchBuilder();
+        storeTemplateSearch.and("store_id", storeTemplateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.and("template_id", storeTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.and("destroyed", storeTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.done();
+
         return true;
     }
 
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, TemplateDataStoreVO dataObj, Object data) {
+            State nextState, DataObjectInStore vo, Object data) {
+        TemplateDataStoreVO dataObj = (TemplateDataStoreVO)vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
@@ -124,4 +141,26 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         remove(sc);
         txn.commit();
     }
+
+
+    @Override
+    public List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateStateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("states", (Object[])states);
+        return search(sc, null);
+    }
+
+    @Override
+    public TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("destroyed", false);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+
+
 }

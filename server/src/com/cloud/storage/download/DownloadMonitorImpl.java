@@ -30,6 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -118,15 +124,20 @@ import com.cloud.vm.dao.UserVmDao;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+
 
 @Component
 @Local(value={DownloadMonitor.class})
 public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
-	
-    @Inject 
+
+    @Inject
     VMTemplateHostDao _vmTemplateHostDao;
-    @Inject 
+    @Inject
+    TemplateDataStoreDao _vmTemplateStoreDao;
+    @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
@@ -148,7 +159,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
     StorageManager _storageMgr ;
-    
+
     @Inject
     private final DataCenterDao _dcDao = null;
     @Inject
@@ -163,10 +174,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 
     @Inject TemplateManager templateMgr;
 
-    
-    @Inject 
+
+    @Inject
     private UsageEventDao _usageEventDao;
-    
+
 
     @Inject
     private ClusterDao _clusterDao;
@@ -186,10 +197,13 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
 	private String _proxy = null;
-    protected SearchBuilder<VMTemplateHostVO> ReadyTemplateStatesSearch;
+    protected SearchBuilder<TemplateDataStoreVO> ReadyTemplateStatesSearch;
 
 	Timer _timer;
 
+    @Inject DataStoreManager storeMgr;
+
+    final Map<TemplateDataStoreVO, DownloadListener> _listenerTemplateMap = new ConcurrentHashMap<TemplateDataStoreVO, DownloadListener>();
 	final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
 	final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
 
@@ -203,20 +217,20 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
-        
+
         String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
-        
+
         _copyAuthPasswd = configs.get("secstorage.copy.password");
-        
+
         _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
-        
-        ReadyTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
-        ReadyTemplateStatesSearch.and("download_state", ReadyTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
+
+        ReadyTemplateStatesSearch = _vmTemplateStoreDao.createSearchBuilder();
+        ReadyTemplateStatesSearch.and("state", ReadyTemplateStatesSearch.entity().getState(), SearchCriteria.Op.EQ);
         ReadyTemplateStatesSearch.and("destroyed", ReadyTemplateStatesSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        ReadyTemplateStatesSearch.and("host_id", ReadyTemplateStatesSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        ReadyTemplateStatesSearch.and("store_id", ReadyTemplateStatesSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
 
         SearchBuilder<VMTemplateVO> TemplatesWithNoChecksumSearch = _templateDao.createSearchBuilder();
         TemplatesWithNoChecksumSearch.and("checksum", TemplatesWithNoChecksumSearch.entity().getChecksum(), SearchCriteria.Op.NULL);
@@ -225,7 +239,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 ReadyTemplateStatesSearch.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         TemplatesWithNoChecksumSearch.done();
         ReadyTemplateStatesSearch.done();
-               
+
 		return true;
 	}
 
@@ -239,13 +253,13 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	public boolean stop() {
 		return true;
 	}
-	
-	public boolean isTemplateUpdateable(Long templateId, Long hostId) {
-		List<VMTemplateHostVO> downloadsInProgress =
-			_vmTemplateHostDao.listByTemplateHostStatus(templateId.longValue(), hostId.longValue(), VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.DOWNLOADED);
+
+	public boolean isTemplateUpdateable(Long templateId, Long storeId) {
+		List<TemplateDataStoreVO> downloadsInProgress =
+			_vmTemplateStoreDao.listByTemplateStoreStatus(templateId, storeId, ObjectInDataStoreStateMachine.State.Creating, ObjectInDataStoreStateMachine.State.Creating2, ObjectInDataStoreStateMachine.State.Ready);
 		return (downloadsInProgress.size() == 0);
 	}
-	
+
 	@Override
     public boolean copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws StorageUnavailableException{
 
@@ -278,12 +292,12 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         	throw new CloudRuntimeException("Cant copy the template as the template's size " +srcTmpltHost.getSize()+
         			" is greater than max.template.iso.size " + maxTemplateSizeInBytes);
         }
-        
+
 		if(destTmpltHost != null) {
 		    start();
             String sourceChecksum = this.templateMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
-			DownloadCommand dcmd =  
-              new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
+			DownloadCommand dcmd =
+              new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes);
 			dcmd.setProxy(getHttpProxy());
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
@@ -305,7 +319,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			if( old != null ) {
 			    old.abandon();
 			}
-			
+
             try {
 	            send(ssAhost.getId(), dcmd, dl);
 	            return true;
@@ -316,10 +330,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	            e.printStackTrace();
             }
 		}
-		
+
 		return false;
 	}
-	
+
 	private String generateCopyUrl(String ipAddress, String dir, String path){
 		String hostname = ipAddress;
 		String scheme = "http";
@@ -328,9 +342,9 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			hostname = hostname + ".realhostip.com";
 			scheme = "https";
 		}
-		return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path; 
+		return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path;
 	}
-	
+
 	private String generateCopyUrl(HostVO sourceServer, VMTemplateHostVO srcTmpltHost) {
 		List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, sourceServer.getDataCenterId(), State.Running);
 		if (ssVms.size() > 0) {
@@ -341,7 +355,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			}
 			return generateCopyUrl(ssVm.getPublicIpAddress(), sourceServer.getParent(), srcTmpltHost.getInstallPath());
 		}
-		
+
 		VMTemplateVO tmplt = _templateDao.findById(srcTmpltHost.getTemplateId());
 		HypervisorType hyperType = tmplt.getHypervisorType();
 		/*No secondary storage vm yet*/
@@ -351,43 +365,43 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		return null;
 	}
 
-	private void downloadTemplateToStorage(VMTemplateVO template, HostVO sserver) {
+	private void initiateTemplateDownload(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback) {
 		boolean downloadJobExists = false;
-        VMTemplateHostVO vmTemplateHost = null;
+        TemplateDataStoreVO vmTemplateStore = null;
 
-        vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(sserver.getId(), template.getId());
-        if (vmTemplateHost == null) {
-            vmTemplateHost = new VMTemplateHostVO(sserver.getId(), template.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUrl());
-            _vmTemplateHostDao.persist(vmTemplateHost);
-        } else if ((vmTemplateHost.getJobId() != null) && (vmTemplateHost.getJobId().length() > 2)) {
+        vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+        // we should already persist one entry in template_store_ref table, so vmTemplateStore should not be null
+        if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
-                
+
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
-        String secUrl = sserver.getStorageUrl();
-		if(vmTemplateHost != null) {
+        String secUrl = store.getUri();
+		if(vmTemplateStore != null) {
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
 			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
-	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
+	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateStore.getJobId(), RequestType.GET_OR_RESTART);
 	        }
-			if (vmTemplateHost.isCopy()) {
+			if (vmTemplateStore.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
-			HostVO ssAhost = _ssvmMgr.pickSsvmHost(sserver);
+			HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
 			if( ssAhost == null ) {
-	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
+	             s_logger.warn("There is no secondary storage VM for downloading template to image store " + store.getName());
 	             return;
 			}
-			DownloadListener dl = new DownloadListener(ssAhost, sserver, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd, _templateDao, _resourceLimitMgr, _alertMgr, _accountMgr);
+			DownloadListener dl = new DownloadListener(ssAhost, store, template, _timer, _vmTemplateStoreDao, vmTemplateStore.getId(), this, dcmd, _templateDao, _resourceLimitMgr, _alertMgr, _accountMgr, callback);
 			if (downloadJobExists) {
-				dl.setCurrState(vmTemplateHost.getDownloadState());
+			    // due to handling existing download job issues, we still keep downloadState in template_store_ref to avoid big change in DownloadListener to use
+			    // new ObjectInDataStore.State transition. TODO: fix this later to be able to remove downloadState from template_store_ref.
+				dl.setCurrState(vmTemplateStore.getDownloadState());
 	 		}
             DownloadListener old = null;
-            synchronized (_listenerMap) {
-                old = _listenerMap.put(vmTemplateHost, dl);
+            synchronized (_listenerTemplateMap) {
+                old = _listenerTemplateMap.put(vmTemplateStore, dl);
             }
             if( old != null ) {
                 old.abandon();
@@ -396,7 +410,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			try {
 	            send(ssAhost.getId(), dcmd, dl);
             } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName(), e);
+				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + store.getName(), e);
 				dl.setDisconnected();
 				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -406,39 +420,26 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 
 
 	@Override
-	public boolean downloadTemplateToStorage(VMTemplateVO template, Long zoneId) {
-        List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
-        if (zoneId == null) {
-            dcs.addAll(_dcDao.listAll());
-        } else {
-            dcs.add(_dcDao.findById(zoneId));
-        }
+	public boolean downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback) {
         long templateId = template.getId();
-        boolean isPublic = template.isFeatured() || template.isPublicTemplate(); 
-        for ( DataCenterVO dc : dcs ) {
-    	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(dc.getId());
-    	    for ( HostVO ssHost : ssHosts ) {
-        		if (isTemplateUpdateable(templateId, ssHost.getId())) {
-       				initiateTemplateDownload(templateId, ssHost);
-       				if (! isPublic ) {
-       				    break;
-       				}
-        		}
-    	    }
-	    }
+        if (isTemplateUpdateable(templateId, store.getId())) {
+            if ( template != null && template.getUrl() != null ){
+                initiateTemplateDownload(template, store, callback);
+            }
+        }
 	    return true;
 	}
-	
+
 	@Override
 	public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format) {
-                                
+
 	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(zoneId);
 	    Collections.shuffle(ssHosts);
 	    HostVO ssHost = ssHosts.get(0);
 	    downloadVolumeToStorage(volume, ssHost, url, checkSum, format);
 	    return true;
 	}
-	
+
 	private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum, ImageFormat format) {
 		boolean downloadJobExists = false;
         VolumeHostVO volumeHost = null;
@@ -451,7 +452,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
-        
+
 
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
         String secUrl = sserver.getStorageUrl();
@@ -463,7 +464,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
 	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
-			
+
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssvm == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
@@ -471,7 +472,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			}
 			DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(),
 					this, dcmd, _volumeDao, _storageMgr, _resourceLimitMgr, _alertMgr, _accountMgr);
-			
+
 			if (downloadJobExists) {
 				dl.setCurrState(volumeHost.getDownloadState());
 	 		}
@@ -493,15 +494,16 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		}
 	}
 
-
-	private void initiateTemplateDownload(Long templateId, HostVO ssHost) {
+/*
+	private void initiateTemplateDownload(Long templateId, DataStore store) {
 		VMTemplateVO template = _templateDao.findById(templateId);
 		if (template != null && (template.getUrl() != null)) {
 			//find all storage hosts and tell them to initiate download
-    		downloadTemplateToStorage(template, ssHost);
+    		downloadTemplateToStorage(template, store);
 		}
-		
+
 	}
+	*/
 
 	@DB
 	public void handleDownloadEvent(HostVO host, VMTemplateVO template, Status dnldStatus) {
@@ -511,11 +513,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	            _listenerMap.remove(vmTemplateHost);
 	        }
 		}
-		
+
 		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
-		
+
 		Transaction txn = Transaction.currentTxn();
-        txn.start();		
+        txn.start();
 
         if (dnldStatus == Status.DOWNLOADED) {
             long size = -1;
@@ -548,14 +550,14 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	        	_listenerVolumeMap.remove(volumeHost);
 	        }
 		}
-		
+
 		VolumeHostVO volumeHost = _volumeHostDao.findByHostVolume(host.getId(), volume.getId());
-		
+
 		Transaction txn = Transaction.currentTxn();
-        txn.start();		
+        txn.start();
 
         if (dnldStatus == Status.DOWNLOADED) {
-			
+
 			//Create usage event
             long size = -1;
             if(volumeHost!=null){
@@ -590,38 +592,45 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	    }
 
 	    Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+	    List<DataStore> ssHosts = this.storeMgr.getImageStoresByScope(new ZoneScope(host.getDataCenterId()));
+	    if (ssHosts == null || ssHosts.isEmpty()){
+	        return;
+	    }
+	       /*
 	    List<HostVO> ssHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.SecondaryStorage, host.getDataCenterId());
 	    if (ssHosts == null || ssHosts.isEmpty()) {
 	        return;
 	    }
+	    */
 	    /*Download all the templates in zone with the same hypervisortype*/
-        for ( HostVO ssHost : ssHosts) {
+        for ( DataStore ssHost : ssHosts) {
     	    List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
     	    List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-    
-    
+
+
     	    for (VMTemplateVO rtngTmplt : rtngTmplts) {
     	        if (rtngTmplt.getHypervisorType() == hostHyper) {
     	            toBeDownloaded.add(rtngTmplt);
     	        }
     	    }
-    
+
     	    for (VMTemplateVO builtinTmplt : defaultBuiltin) {
     	        if (builtinTmplt.getHypervisorType() == hostHyper) {
     	            toBeDownloaded.add(builtinTmplt);
     	        }
     	    }
-    
+
     	    for (VMTemplateVO template: toBeDownloaded) {
     	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(ssHost.getId(), template.getId());
     	        if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-    	            downloadTemplateToStorage(template, ssHost);
+    	            //TODO: pass callback here
+    	            initiateTemplateDownload(template, ssHost, null);
     	        }
     	    }
         }
 	}
-    
-    @Override	
+
+    @Override
 	public void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos){
 	    if ( templateInfos == null ) {
 	        return;
@@ -642,21 +651,26 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 	        }
 	    }
 	}
-	
+
     @Override
     public void handleSync(Long dcId) {
         if (dcId != null) {
             List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
             for (HostVO ssHost : ssHosts) {
-                handleTemplateSync(ssHost);
+                //handleTemplateSync(ssHost);
                 handleVolumeSync(ssHost);
             }
         }
+        List<DataStore> imageStores = this.storeMgr.getImageStoresByScope(new ZoneScope(dcId));
+        for (DataStore store : imageStores){
+            handleTemplateSync(store);
+        }
     }
-    
-    private Map<String, TemplateInfo> listTemplate(HostVO ssHost) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssHost.getStorageUrl());
-        Answer answer = _agentMgr.sendToSecStorage(ssHost, cmd);
+
+    private Map<String, TemplateInfo> listTemplate(DataStore ssHost) {
+        ListTemplateCommand cmd = new ListTemplateCommand(ssHost.getUri());
+        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssHost);
+        Answer answer = _agentMgr.sendToSecStorage(ssAhost, cmd);
         if (answer != null && answer.getResult()) {
             ListTemplateAnswer tanswer = (ListTemplateAnswer)answer;
             return tanswer.getTemplateInfo();
@@ -664,11 +678,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("can not list template for secondary storage host " + ssHost.getId());
             }
-        } 
-        
+        }
+
         return null;
     }
-    
+
     private Map<Long, TemplateInfo> listVolume(HostVO ssHost) {
     	ListVolumeCommand cmd = new ListVolumeCommand(ssHost.getStorageUrl());
         Answer answer = _agentMgr.sendToSecStorage(ssHost, cmd);
@@ -679,11 +693,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Can not list volumes for secondary storage host " + ssHost.getId());
             }
-        } 
-        
+        }
+
         return null;
     }
-    
+
     private Map<String, TemplateInfo> listTemplate(SwiftVO swift) {
         if (swift == null) {
             return null;
@@ -700,14 +714,14 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         }
         return null;
     }
-    
+
     @Override
     public void handleVolumeSync(HostVO ssHost) {
         if (ssHost == null) {
             s_logger.warn("Huh? ssHost is null");
             return;
         }
-        long sserverId = ssHost.getId();        
+        long sserverId = ssHost.getId();
         if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage)) {
             s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
             return;
@@ -717,7 +731,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         if (volumeInfos == null) {
             return;
         }
-        
+
         List<VolumeHostVO> dbVolumes = _volumeHostDao.listBySecStorage(sserverId);
         List<VolumeHostVO> toBeDownloaded = new ArrayList<VolumeHostVO>(dbVolumes);
         for (VolumeHostVO volumeHost : dbVolumes){
@@ -779,17 +793,17 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         	if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
                 s_logger.info("Volume Sync did not find " + volume.getName() + " ready on server " + sserverId + ", will request download to start/resume shortly");
                 toBeDownloaded.add(volumeHost);
-            } 
+            }
         }
-        
+
         //Download volumes which haven't been downloaded yet.
         if (toBeDownloaded.size() > 0) {
             for (VolumeHostVO volumeHost : toBeDownloaded) {
                 if (volumeHost.getDownloadUrl() == null) { // If url is null we can't initiate the download
                     continue;
-                }                                  
+                }
                 s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + ssHost.getName());
-                downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), ssHost,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat());                
+                downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), ssHost,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat());
             }
         }
 
@@ -804,32 +818,36 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 s_logger.error(err);
                 return;
             }
-            
+
             String description = "Deleted volume " + vInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
             s_logger.info(description);
         }
     }
-    
-	@Override
-    public void handleTemplateSync(HostVO ssHost) {
-        if (ssHost == null) {
-            s_logger.warn("Huh? ssHost is null");
-            return;
-        }
-        long sserverId = ssHost.getId();
-        long zoneId = ssHost.getDataCenterId();
-        if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage)) {
-            s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
-            return;
-        }
 
-        Map<String, TemplateInfo> templateInfos = listTemplate(ssHost);
+	@Override
+    public void handleTemplateSync(DataStore ssStore) {
+        if (ssStore == null) {
+            s_logger.warn("Huh? image store is null");
+            return;
+        }
+        long storeId = ssStore.getId();
+        Long zoneId = ssStore.getScope().getScopeId();
+
+        Map<String, TemplateInfo> templateInfos = listTemplate(ssStore);
         if (templateInfos == null) {
             return;
         }
 
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(zoneId);
+        List<VMTemplateVO> allTemplates = null;
+        if (zoneId == null){
+            // region wide store
+            allTemplates = _templateDao.listAll();
+        }
+        else{
+            // zone wide store
+            allTemplates = _templateDao.listAllInZone(zoneId);
+        }
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
         List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
@@ -853,34 +871,34 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 
         for (VMTemplateVO tmplt : allTemplates) {
             String uniqueName = tmplt.getUniqueName();
-            VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
+            TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if (templateInfos.containsKey(uniqueName)) {
                 TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
                 toBeDownloaded.remove(tmplt);
-                if (tmpltHost != null) {
+                if (tmpltStore != null) {
                     s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
-                    if (tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-                        tmpltHost.setErrorString("");
+                    if (tmpltStore.getDownloadState() != Status.DOWNLOADED) {
+                        tmpltStore.setErrorString("");
                     }
                     if (tmpltInfo.isCorrupted()) {
-                        tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
-                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId() + " is corrupted on secondary storage " + tmpltHost.getId();
-                        tmpltHost.setErrorString(msg);
+                        tmpltStore.setDownloadState(Status.DOWNLOAD_ERROR);
+                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId() + " is corrupted on secondary storage " + tmpltStore.getId();
+                        tmpltStore.setErrorString(msg);
                         s_logger.info("msg");
                         if (tmplt.getUrl() == null) {
-                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() + "is corrupted, please check in secondary storage: " + tmpltHost.getHostId();
+                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
                             s_logger.warn(msg);
                         } else {
                             toBeDownloaded.add(tmplt);
                         }
 
                     } else {
-                        tmpltHost.setDownloadPercent(100);
-                        tmpltHost.setDownloadState(Status.DOWNLOADED);
-                        tmpltHost.setInstallPath(tmpltInfo.getInstallPath());
-                        tmpltHost.setSize(tmpltInfo.getSize());
-                        tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
-                        tmpltHost.setLastUpdated(new Date());
+                        tmpltStore.setDownloadPercent(100);
+                        tmpltStore.setDownloadState(Status.DOWNLOADED);
+                        tmpltStore.setInstallPath(tmpltInfo.getInstallPath());
+                        tmpltStore.setSize(tmpltInfo.getSize());
+                        tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                        tmpltStore.setLastUpdated(new Date());
 
                         if (tmpltInfo.getSize() > 0) {
                             long accountId = tmplt.getAccountId();
@@ -890,7 +908,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                                         tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
                             } catch (ResourceAllocationException e) {
                                 s_logger.warn(e.getMessage());
-                                _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, ssHost.getDataCenterId(),
+                                _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId,
                                         null, e.getMessage(), e.getMessage());
                             } finally {
                                 _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
@@ -898,39 +916,62 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                             }
                         }
                     }
-                    _vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
+                    _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
                 } else {
-                    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
-                    tmpltHost.setSize(tmpltInfo.getSize());
-                    tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
-                    _vmTemplateHostDao.persist(tmpltHost);
-                    VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
+                    tmpltStore.setSize(tmpltInfo.getSize());
+                    tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                    _vmTemplateStoreDao.persist(tmpltStore);
+                    List<Long> dcs = new ArrayList<Long>();
+                    if (zoneId != null ){
+                        dcs.add(zoneId);
+                    }
+                    else{
+                        List<DataCenterVO> zones = _dcDao.listAll();
+                        for (DataCenterVO zone : zones){
+                            dcs.add(zone.getId());
+                        }
+                    }
+                    for (Long id : dcs) {
+                        VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(id, tmplt.getId());
+                        if (tmpltZoneVO == null) {
+                            tmpltZoneVO = new VMTemplateZoneVO(id, tmplt.getId(), new Date());
+                            _vmTemplateZoneDao.persist(tmpltZoneVO);
+                        } else {
+                            tmpltZoneVO.setLastUpdated(new Date());
+                            _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+                        }
+                    }
+                }
+
+                continue;
+            }
+            if (tmpltStore != null && tmpltStore.getDownloadState() != Status.DOWNLOADED) {
+                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + storeId + ", will request download to start/resume shortly");
+
+            } else if (tmpltStore == null) {
+                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + storeId + ", will request download shortly");
+                TemplateDataStoreVO templtStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
+                _vmTemplateStoreDao.persist(templtStore);
+                List<Long> dcs = new ArrayList<Long>();
+                if (zoneId != null ){
+                    dcs.add(zoneId);
+                }
+                else{
+                    List<DataCenterVO> zones = _dcDao.listAll();
+                    for (DataCenterVO zone : zones){
+                        dcs.add(zone.getId());
+                    }
+                }
+                for (Long id : dcs) {
+                    VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(id, tmplt.getId());
                     if (tmpltZoneVO == null) {
-                        tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+                        tmpltZoneVO = new VMTemplateZoneVO(id, tmplt.getId(), new Date());
                         _vmTemplateZoneDao.persist(tmpltZoneVO);
                     } else {
                         tmpltZoneVO.setLastUpdated(new Date());
                         _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
                     }
-
-                }
-
-                continue;
-            }
-            if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
-
-            } else if (tmpltHost == null) {
-                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
-                VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
-                _vmTemplateHostDao.persist(templtHost);
-                VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
-                if (tmpltZoneVO == null) {
-                    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
-                    _vmTemplateZoneDao.persist(tmpltZoneVO);
-                } else {
-                    tmpltZoneVO.setLastUpdated(new Date());
-                    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
                 }
             }
 
@@ -958,7 +999,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 // if this is private template, and there is no record for this
                 // template in this sHost, skip
                 if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
-                    VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
+                    VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(storeId, tmplt.getId());
                     if (tmpltHost == null) {
                         continue;
                     }
@@ -969,8 +1010,9 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                             continue;
                         }
                     }
-                    s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
-                    downloadTemplateToStorage(tmplt, ssHost);
+                    s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssStore.getName());
+                    //TODO: we should pass a callback here
+                    initiateTemplateDownload(tmplt, ssStore, null);
                 }
             }
         }
@@ -980,16 +1022,17 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssStore.getUri(), tInfo.getInstallPath());
                 try {
-                    _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+                    HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssStore);
+                    _agentMgr.sendToSecStorage(ssAhost, dtCommand, null);
                 } catch (AgentUnavailableException e) {
-                    String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+                    String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + storeId + " which isn't in the database";
                     s_logger.error(err);
                     return;
                 }
 
-                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
+                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId + " since it isn't in the database";
                 s_logger.info(description);
             }
         }
@@ -1012,10 +1055,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			}
 		}
 	}
-	
+
+	/*
 	private void checksumSync(long hostId){
-        SearchCriteria<VMTemplateHostVO> sc = ReadyTemplateStatesSearch.create();
-        sc.setParameters("download_state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        SearchCriteria<TemplateDataStoreVO> sc = ReadyTemplateStatesSearch.create();
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
         sc.setParameters("host_id", hostId);
 
         List<VMTemplateHostVO> templateHostRefList = _vmTemplateHostDao.search(sc, null);
@@ -1030,7 +1074,8 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         }
 
 	}
-	
+	*/
+
 	private Long getMaxTemplateSizeInBytes() {
 		try {
 			return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
@@ -1038,7 +1083,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			return null;
 		}
 	}
-	
+
 	private Long getMaxVolumeSizeInBytes() {
 		try {
 			return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
@@ -1046,7 +1091,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			return null;
 		}
 	}
-	
+
 	private Proxy getHttpProxy() {
 		if (_proxy == null) {
 			return null;
@@ -1058,7 +1103,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		} catch (URISyntaxException e) {
 			return null;
 		}
-	}	
-	
+	}
+
 }
-	
+

@@ -23,6 +23,7 @@ public interface DataStore {
     String getUuid();
     String getUri();
     Scope getScope();
+    String getName();
     DataObject create(DataObject obj);
     boolean delete(DataObject obj);
 }

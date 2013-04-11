@@ -110,11 +110,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
             description="Register template for the project")
     private Long projectId;
-    
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
-            description="Image store uuid")
-    private String imageStoreUuid;
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
 
@@ -193,10 +189,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     public String getTemplateTag() {
         return templateTag;
     }
-    
-    public String getImageStoreUuid() {
-        return this.imageStoreUuid;
-    }
+
 
     public Map getDetails() {
         if (details == null || details.isEmpty()) {

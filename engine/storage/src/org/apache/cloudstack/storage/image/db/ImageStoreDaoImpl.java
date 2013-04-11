@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
@@ -40,7 +42,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     private static final Logger s_logger = Logger.getLogger(ImageStoreDaoImpl.class);
     private SearchBuilder<ImageStoreVO> nameSearch;
     private SearchBuilder<ImageStoreVO> providerSearch;
-    private SearchBuilder<ImageStoreVO> scopeSearch;
 
 
     @Override
@@ -54,10 +55,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         providerSearch = createSearchBuilder();
         providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
         providerSearch.done();
-
-        scopeSearch = createSearchBuilder();
-        scopeSearch.and("scope", scopeSearch.entity().getScope(), SearchCriteria.Op.EQ);
-        scopeSearch.done();
 
         return true;
     }
@@ -77,9 +74,10 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
-    public List<ImageStoreVO> findByScope(ScopeType scope) {
-        SearchCriteria<ImageStoreVO> sc = scopeSearch.create();
-        sc.setParameters("scope", scope);
+    public List<ImageStoreVO> findByScope(ZoneScope scope) {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
+        sc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
         return listBy(sc);
     }
 

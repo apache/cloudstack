@@ -32,7 +32,6 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -118,8 +117,8 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		return dataStoreId;
 	}
 
-	public void setHostId(long hostId) {
-		this.dataStoreId = hostId;
+	public void setDataStoreId(long storeId) {
+		this.dataStoreId = storeId;
 	}
 
     public long getTemplateId() {
@@ -158,6 +157,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	    lastUpdated = date;
 	}
 
+    @Override
     public void setInstallPath(String installPath) {
 	    this.installPath = installPath;
 	}
@@ -190,7 +190,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		this.setDownloadUrl(downloadUrl);
 	}
 
-	protected TemplateDataStoreVO() {
+	public TemplateDataStoreVO() {
 
 	}
 

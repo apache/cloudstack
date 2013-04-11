@@ -22,13 +22,14 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 
 public interface ImageStoreProviderManager {
     ImageStoreEntity getImageStore(long dataStoreId);
     ImageStoreEntity getImageStore(String uuid);
     List<DataStore> listImageStores();
-    List<DataStore> listImageStoresByScope(Scope scope);
+    List<DataStore> listImageStoresByScope(ZoneScope scope);
     List<DataStore> listImageStoreByProvider(String provider);
     boolean registerDriver(String uuid, ImageStoreDriver driver);
 }

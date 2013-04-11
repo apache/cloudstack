@@ -24,6 +24,11 @@ import java.util.TimerTask;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -74,7 +79,7 @@ public class DownloadListener implements Listener {
 	private static final class StatusTask extends TimerTask {
 		private final DownloadListener dl;
 		private final RequestType reqType;
-		
+
 		public StatusTask( DownloadListener dl,  RequestType req) {
 			this.reqType = req;
 			this.dl = dl;
@@ -86,10 +91,10 @@ public class DownloadListener implements Listener {
 
 		}
 	}
-	
+
 	private static final class TimeoutTask extends TimerTask {
 		private final DownloadListener dl;
-		
+
 		public TimeoutTask( DownloadListener dl) {
 			this.dl = dl;
 		}
@@ -104,7 +109,7 @@ public class DownloadListener implements Listener {
 	public static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
 	public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
-	
+
 	public static final String DOWNLOADED=Status.DOWNLOADED.toString();
 	public static final String NOT_DOWNLOADED=Status.NOT_DOWNLOADED.toString();
 	public static final String DOWNLOAD_ERROR=Status.DOWNLOAD_ERROR.toString();
@@ -114,24 +119,25 @@ public class DownloadListener implements Listener {
 
 	private HostVO sserver;
 	private HostVO ssAgent;
+
 	private VMTemplateVO template;
 	private VolumeVO volume;
-	
 	private boolean downloadActive = true;
 
 	private VolumeHostDao volumeHostDao;
 	private VolumeDao _volumeDao;
 	private StorageManager _storageMgr;
 	private VMTemplateHostDao vmTemplateHostDao;
+	private TemplateDataStoreDao _vmTemplateStoreDao;
 	private VMTemplateDao _vmTemplateDao;
 	private ResourceLimitService _resourceLimitMgr;
 	private AccountManager _accountMgr;
 	private AlertManager _alertMgr;
 
 	private final DownloadMonitorImpl downloadMonitor;
-	
+
 	private DownloadState currState;
-	
+
 	private DownloadCommand cmd;
 
 	private Timer timer;
@@ -140,11 +146,15 @@ public class DownloadListener implements Listener {
 	private TimeoutTask timeoutTask;
 	private Date lastUpdated = new Date();
 	private String jobId;
-	
+
 	private final Map<String,  DownloadState> stateMap = new HashMap<String, DownloadState>();
 	private Long templateHostId;
 	private Long volumeHostId;
-	
+
+    private DataStore sstore;
+    private Long templateStoreId;
+	private AsyncCompletionCallback<CreateCmdResult> callback;
+
 	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
@@ -164,7 +174,30 @@ public class DownloadListener implements Listener {
 		this._alertMgr = _alertMgr;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
-	
+
+	// TODO: this constructor should be the one used for template only, remove other template constructor later
+    public DownloadListener(HostVO ssAgent, DataStore store, VMTemplateVO template, Timer _timer, TemplateDataStoreDao dao, Long templStoreId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr, AsyncCompletionCallback<CreateCmdResult> callback) {
+        this.ssAgent = ssAgent;
+        this.sstore = store;
+        this.template = template;
+        this._vmTemplateStoreDao = dao;
+        this.downloadMonitor = downloadMonitor;
+        this.cmd = cmd;
+        this.templateStoreId = templStoreId;
+        initStateMachine();
+        this.currState=getState(Status.NOT_DOWNLOADED.toString());
+        this.timer = _timer;
+        this.timeoutTask = new TimeoutTask(this);
+        this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+        this._vmTemplateDao = templateDao;
+        this._resourceLimitMgr = _resourceLimitMgr;
+        this._accountMgr = _accountMgr;
+        this._alertMgr = _alertMgr;
+        this.callback = callback;
+        updateDatabase(Status.NOT_DOWNLOADED, "");
+    }
+
+
 	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StorageManager storageMgr, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
@@ -185,8 +218,8 @@ public class DownloadListener implements Listener {
 		this._alertMgr = _alertMgr;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
-	
-	
+
+
 	public void setCurrState(VMTemplateHostVO.Status currState) {
 		this.currState = getState(currState.toString());
 	}
@@ -198,7 +231,7 @@ public class DownloadListener implements Listener {
 		stateMap.put(Status.DOWNLOAD_IN_PROGRESS.toString(), new DownloadInProgressState(this));
 		stateMap.put(Status.ABANDONED.toString(), new DownloadAbandonedState(this));
 	}
-	
+
 	private DownloadState getState(String stateName) {
 		return stateMap.get(stateName);
 	}
@@ -217,7 +250,7 @@ public class DownloadListener implements Listener {
             } catch (AgentUnavailableException e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();
-            }			
+            }
 		}
 
 	}
@@ -253,7 +286,7 @@ public class DownloadListener implements Listener {
 			volumeHostDao.update(getVolumeHostId(), vo);
 		}
 	}
-	
+
 	public void log(String message, Level level) {
 		if (template != null){
 			s_logger.log(level, message + ", template=" + template.getName() + " at host " + sserver.getName());
@@ -269,7 +302,15 @@ public class DownloadListener implements Listener {
 		}
 		return templateHostId;
 	}
-	
+
+    private Long getTemplateStoreId() {
+        if (templateStoreId == null){
+            TemplateDataStoreVO templStore = _vmTemplateStoreDao.findByStoreTemplate(sstore.getId(), template.getId());
+            templateStoreId = templStore.getId();
+        }
+        return templateStoreId;
+    }
+
 	private Long getVolumeHostId() {
 		if (volumeHostId == null){
 			VolumeHostVO volHost = volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
@@ -282,14 +323,14 @@ public class DownloadListener implements Listener {
 	    downloadMonitor = monitor;
 	}
 
-	
+
 
 	@Override
 	public boolean isRecurring() {
 		return false;
 	}
 
-	
+
 	@Override
 	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
 		boolean processed = false;
@@ -307,7 +348,7 @@ public class DownloadListener implements Listener {
     	}
         return processed;
 	}
-	
+
 	private synchronized void transition(DownloadEvent event, Object evtObj) {
 	    if (currState == null) {
 	        return;
@@ -328,7 +369,7 @@ public class DownloadListener implements Listener {
 
 	public synchronized void updateDatabase(DownloadAnswer answer) {
 		if (template != null){
-	        VMTemplateHostVO updateBuilder = vmTemplateHostDao.createForUpdate();
+	        TemplateDataStoreVO updateBuilder = _vmTemplateStoreDao.createForUpdate();
 			updateBuilder.setDownloadPercent(answer.getDownloadPct());
 			updateBuilder.setDownloadState(answer.getDownloadStatus());
 			updateBuilder.setLastUpdated(new Date());
@@ -338,9 +379,9 @@ public class DownloadListener implements Listener {
 			updateBuilder.setInstallPath(answer.getInstallPath());
 			updateBuilder.setSize(answer.getTemplateSize());
 			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-			
-			vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
-			
+
+			_vmTemplateStoreDao.update(getTemplateStoreId(), updateBuilder);
+
 			if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
 				templateDaoBuilder.setChecksum(answer.getCheckSum());
@@ -363,7 +404,14 @@ public class DownloadListener implements Listener {
                             com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
                 }
             }
-
+            // only invoke callback when Download is completed or errored so that callback will update template_store_ref state column
+            Status dndStatus = answer.getDownloadStatus();
+            if (dndStatus == Status.DOWNLOAD_ERROR || dndStatus == Status.DOWNLOADED ){
+                if ( callback != null ){
+                    CreateCmdResult result = new CreateCmdResult(null, null);
+                    callback.complete(result);
+                }
+            }
 		} else {
 	        VolumeHostVO updateBuilder = volumeHostDao.createForUpdate();
 			updateBuilder.setDownloadPercent(answer.getDownloadPct());
@@ -422,20 +470,21 @@ public class DownloadListener implements Listener {
 		setDisconnected();
 		return true;
 	}
-	
+
 	@Override
 	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    if (cmd instanceof StartupRoutingCommand) {
 	        downloadMonitor.handleSysTemplateDownload(agent);
 	    } else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
-            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||  
+            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||
                     storage.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE  ) {
                 downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
-                downloadMonitor.handleTemplateSync(agent);
+                // DO we need to do sync here since we have been doing sync in StartupSecondaryStorageCommand?
+               // downloadMonitor.handleTemplateSync(agent);
                 downloadMonitor.handleVolumeSync(agent);
             }
-	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {        
+	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {
 	        downloadMonitor.handleSync(agent.getDataCenterId());
 	    }
 	}
@@ -448,7 +497,7 @@ public class DownloadListener implements Listener {
 		return cmd;
 	}
 
-	
+
 	public void abandon() {
 		transition(DownloadEvent.ABANDON_DOWNLOAD, null);
 	}
@@ -467,7 +516,7 @@ public class DownloadListener implements Listener {
 		statusTask = new StatusTask(this, request);
 		timer.schedule(statusTask, STATUS_POLL_INTERVAL);
 	}
-	
+
 	public void scheduleTimeoutTask(long delay) {
 		if (timeoutTask != null) timeoutTask.cancel();
 
@@ -477,7 +526,7 @@ public class DownloadListener implements Listener {
 			log("Scheduling timeout at " + delay + " ms", Level.DEBUG);
 		}
 	}
-	
+
 	public void scheduleImmediateStatusCheck(RequestType request) {
 		if (statusTask != null) statusTask.cancel();
 		statusTask = new StatusTask(this, request);
@@ -495,7 +544,7 @@ public class DownloadListener implements Listener {
 	public Date getLastUpdated() {
 		return lastUpdated;
 	}
-	
+
 	public void setLastUpdated() {
 		lastUpdated  = new Date();
 	}
@@ -515,12 +564,12 @@ public class DownloadListener implements Listener {
 
 	public void logDownloadStart() {
 	}
-	
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
     	return true;
     }
-    
+
     @Override
     public int getTimeout() {
     	return -1;

@@ -51,7 +51,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
-        DataObjectInStore obj = objMap.findObject(snapshot.getUuid(), DataObjectType.SNAPSHOT, store.getUuid(), store.getRole());
+        DataObjectInStore obj = objMap.findObject(snapshot.getId(), DataObjectType.SNAPSHOT, store.getId(), store.getRole());
         if (obj == null) {
             return null;
         }
@@ -71,7 +71,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     	}
     	return so;
     }
-    
+
     @Override
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(obj.getId());

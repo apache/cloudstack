@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.springframework.stereotype.Component;
 
@@ -63,8 +64,10 @@ public class DataStoreManagerImpl implements DataStoreManager {
         throw new CloudRuntimeException("un recognized type" + role);
     }
 
+
+
     @Override
-    public List<DataStore> getImageStoresByScope(Scope scope) {
+    public List<DataStore> getImageStoresByScope(ZoneScope scope) {
         return imageDataStoreMgr.listImageStoresByScope(scope);
     }
 

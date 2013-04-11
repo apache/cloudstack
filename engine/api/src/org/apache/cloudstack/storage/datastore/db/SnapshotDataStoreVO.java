@@ -99,8 +99,8 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		return dataStoreId;
 	}
 
-	public void setHostId(long hostId) {
-		this.dataStoreId = hostId;
+	public void setDataStoreId(long storeId) {
+		this.dataStoreId = storeId;
 	}
 
 
@@ -151,7 +151,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 
 
-	protected SnapshotDataStoreVO() {
+	public SnapshotDataStoreVO() {
 
 	}
 

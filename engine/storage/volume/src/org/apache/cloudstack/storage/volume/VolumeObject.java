@@ -54,7 +54,7 @@ public class VolumeObject implements VolumeInfo {
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
     }
-    
+
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
@@ -74,7 +74,7 @@ public class VolumeObject implements VolumeInfo {
     public void setPath(String uuid) {
         volumeVO.setPath(uuid);
     }
-    
+
     public void setSize(Long size) {
     	volumeVO.setSize(size);
     }
@@ -129,15 +129,15 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = ojbectInStoreMgr.findObject(this.volumeVO.getUuid(), DataObjectType.VOLUME, this.dataStore.getUuid(), this.dataStore.getRole());
+        DataObjectInStore obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            return this.dataStore.getUri() + 
-                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 
-                    "&" + EncodingType.SIZE + "=" + this.volumeVO.getSize() + 
+            return this.dataStore.getUri() +
+                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME +
+                    "&" + EncodingType.SIZE + "=" + this.volumeVO.getSize() +
                     "&" + EncodingType.NAME + "=" + this.volumeVO.getName();
         } else {
             return this.dataStore.getUri() +
-                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 
+                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME +
                     "&" + EncodingType.PATH + "=" + obj.getInstallPath();
         }
     }
@@ -178,7 +178,7 @@ public class VolumeObject implements VolumeInfo {
                     volEvent = Volume.Event.CopyRequested;
                 }
             }
-            
+
             if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
                 volEvent = Volume.Event.DestroyRequested;
             } else if (event == ObjectInDataStoreStateMachine.Event.ExpungeRequested) {

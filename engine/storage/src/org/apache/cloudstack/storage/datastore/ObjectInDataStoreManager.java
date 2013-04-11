@@ -29,8 +29,8 @@ public interface ObjectInDataStoreManager {
     public DataObject create(DataObject template, DataStore dataStore);
     public DataObject get(DataObject dataObj, DataStore store);
     public boolean update(DataObject vo, Event event) throws NoTransitionException;
-    DataObjectInStore findObject(String uuid, DataObjectType type,
-            String dataStoreUuid, DataStoreRole role);
+    DataObjectInStore findObject(long objId, DataObjectType type,
+            long dataStoreId, DataStoreRole role);
     DataObjectInStore findObject(DataObject obj, DataStore store);
     DataStore findStore(String objUuid, DataObjectType type,  DataStoreRole role);
 }

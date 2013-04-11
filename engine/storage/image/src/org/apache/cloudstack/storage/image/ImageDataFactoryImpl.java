@@ -64,16 +64,16 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
                 found = true;
             }
         } else {
-            DataObjectInStore obj = objMap.findObject(templ.getUuid(), DataObjectType.TEMPLATE, store.getUuid(), store.getRole());
+            DataObjectInStore obj = objMap.findObject(templ.getId(), DataObjectType.TEMPLATE, store.getId(), store.getRole());
             if (obj != null) {
                 found = true;
             }
         }
-        
+
         if (!found) {
             s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
         }
-        
+
         TemplateObject tmpl =  TemplateObject.getTemplate(templ, store);
         return tmpl;
     }
@@ -82,7 +82,7 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
         VMTemplateVO templ = imageDataDao.findById(templateId);
         if (templ.getImageDataStoreId() == null) {
             return this.getTemplate(templateId, null);
-        } 
+        }
         DataStore store = this.storeMgr.getDataStore(templ.getImageDataStoreId(), DataStoreRole.Image);
         return this.getTemplate(templateId, store);
     }

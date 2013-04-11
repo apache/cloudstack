@@ -94,7 +94,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public String getUri() {
-        return this.imageDataStoreVO.getProtocol() + "://" + "?" + EncodingType.ROLE + "=" + this.getRole();
+        return this.imageDataStoreVO.getUrl();
     }
 
     @Override

@@ -121,8 +121,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		return dataStoreId;
 	}
 
-	public void setHostId(long hostId) {
-		this.dataStoreId = hostId;
+	public void setDataStoreId(long storeId) {
+		this.dataStoreId = storeId;
 	}
 
 
@@ -223,7 +223,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.format = format;
 	}
 
-	protected VolumeDataStoreVO() {
+	public VolumeDataStoreVO() {
 
 	}
 

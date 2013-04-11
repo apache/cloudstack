@@ -67,7 +67,8 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     }
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, VolumeDataStoreVO dataObj, Object data) {
+            State nextState, DataObjectInStore vo, Object data) {
+        VolumeDataStoreVO dataObj = (VolumeDataStoreVO)vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 

@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.log4j.Logger;
 
@@ -50,6 +51,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
@@ -81,7 +83,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
     public String getName() {
         return TemplateAdapterType.Hypervisor.getName();
     }
-	
+
 	private String validateUrl(String url) {
 		try {
 			URI uri = new URI(url);
@@ -164,23 +166,30 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 
 	@Override
 	public VMTemplateVO create(TemplateProfile profile) {
+	    // persist entry in vm_template, vm_template_details and template_zone_ref tables
 		VMTemplateVO template = persistTemplate(profile);
 
 		if (template == null) {
 			throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
 		}
 
-		DataStore imageStore = this.storeMgr.getDataStore(profile.getImageStoreId(), DataStoreRole.Image);
-		
-		AsyncCallFuture<CommandResult> future = this.imageService.createTemplateAsync(this.imageFactory.getTemplate(template.getId()), imageStore);
-		try {
-            future.get();
-        } catch (InterruptedException e) {
-            s_logger.debug("create template Failed", e);
-            throw new CloudRuntimeException("create template Failed", e);
-        } catch (ExecutionException e) {
-            s_logger.debug("create template Failed", e);
-            throw new CloudRuntimeException("create template Failed", e);
+		// find all eligible image stores for this zone scope
+		List<DataStore> imageStores = this.storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+		if ( imageStores == null || imageStores.size() == 0 ){
+		    throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
+		}
+        for (DataStore imageStore : imageStores) {
+            AsyncCallFuture<CommandResult> future = this.imageService
+                    .createTemplateAsync(this.imageFactory.getTemplate(template.getId()), imageStore);
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                s_logger.debug("create template Failed", e);
+                throw new CloudRuntimeException("create template Failed", e);
+            } catch (ExecutionException e) {
+                s_logger.debug("create template Failed", e);
+                throw new CloudRuntimeException("create template Failed", e);
+            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage,

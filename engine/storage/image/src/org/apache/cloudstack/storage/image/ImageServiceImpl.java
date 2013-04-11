@@ -49,7 +49,7 @@ public class ImageServiceImpl implements ImageService {
     ObjectInDataStoreManager objectInDataStoreMgr;
     @Inject
     DataObjectManager dataObjectMgr;
-    
+
     class CreateTemplateContext<T> extends AsyncRpcConext<T> {
         final TemplateInfo srcTemplate;
         final DataStore store;
@@ -68,39 +68,30 @@ public class ImageServiceImpl implements ImageService {
             this.templateOnStore = templateOnStore;
         }
     }
-    
+
     @Override
     public AsyncCallFuture<CommandResult> createTemplateAsync(
             TemplateInfo template, DataStore store) {
         TemplateObject to = (TemplateObject) template;
         AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
-        try {
-            to.stateTransit(TemplateEvent.CreateRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to transit state:", e);
-            CommandResult result = new CommandResult();
-            result.setResult(e.toString());
-            future.complete(result);
-            return future;
-        }
-        
+        // persist template_store_ref entry
         DataObject templateOnStore = store.create(template);
+        // update template_store_ref state
         templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
-        
-        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(null, 
+
+        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(null,
                 template,
                 future,
                 store,
                 templateOnStore
                );
-        AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> caller =  AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createTemplateCallback(null, null))
-        .setContext(context);
+        AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
         store.getDriver().createAsync(templateOnStore, caller);
         return future;
     }
-    
-    protected Void createTemplateCallback(AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> callback, 
+
+    protected Void createTemplateCallback(AsyncCallbackDispatcher<ImageServiceImpl, CreateCmdResult> callback,
             CreateTemplateContext<CreateCmdResult> context) {
         TemplateObject template = (TemplateObject)context.srcTemplate;
         AsyncCallFuture<CommandResult> future = context.future;
@@ -118,7 +109,7 @@ public class ImageServiceImpl implements ImageService {
             future.complete(result);
             return null;
         }
-        
+
         try {
             templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
             template.stateTransit(TemplateEvent.OperationSucceeded);
@@ -128,7 +119,7 @@ public class ImageServiceImpl implements ImageService {
             future.complete(result);
             return null;
         }
-        
+
         future.complete(result);
         return null;
     }

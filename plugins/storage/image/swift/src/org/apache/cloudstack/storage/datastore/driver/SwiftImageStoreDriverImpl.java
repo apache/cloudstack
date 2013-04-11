@@ -34,6 +34,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
+import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -72,7 +73,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     VMTemplateDao templateDao;
     @Inject DownloadMonitor _downloadMonitor;
-    @Inject 
+    @Inject
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject VolumeDao volumeDao;
     @Inject VolumeHostDao volumeHostDao;
@@ -82,8 +83,8 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     @Inject SnapshotManager snapshotMgr;
 	@Inject
     private SwiftManager _swiftMgr;
-    @Inject 
-    private S3Manager _s3Mgr; 
+    @Inject
+    private S3Manager _s3Mgr;
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
@@ -109,16 +110,13 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
             this.data = data;
         }
     }
-    
+
     @Override
     public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
         if (data.getType() == DataObjectType.TEMPLATE) {
-            List<VMTemplateZoneVO> templateZones = this.templateZoneDao.listByTemplateId(data.getId());
-            for (VMTemplateZoneVO templateZone : templateZones) {
-                VMTemplateVO template = this.templateDao.findById(data.getId());
-                _downloadMonitor.downloadTemplateToStorage(template, templateZone.getZoneId());
-            }
+            TemplateObject tData = (TemplateObject)data;
+            _downloadMonitor.downloadTemplateToStorage(tData.getImage(), tData.getDataStore(), callback);
         } else if (data.getType() == DataObjectType.VOLUME) {
             VolumeVO vol = this.volumeDao.findById(data.getId());
             VolumeInfo volInfo = (VolumeInfo)data;
@@ -130,7 +128,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
         CreateCmdResult result = new CreateCmdResult(null, null);
         callback.complete(result);
     }
-    
+
     private void deleteVolume(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         VolumeVO vol = volumeDao.findById(data.getId());
@@ -167,11 +165,11 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
             return;
         }
     }
-    
+
     private void deleteTemplate(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        
+
     }
-    
+
     private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
     	Long snapshotId = data.getId();
     	SnapshotVO snapshot = this.snapshotDao.findByIdIncludingRemoved(snapshotId);
@@ -214,7 +212,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     	}
     	callback.complete(result);
     }
-    
+
     @Override
     public void deleteAsync(DataObject data,
             AsyncCompletionCallback<CommandResult> callback) {
@@ -244,7 +242,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
 	public void resize(DataObject data,
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

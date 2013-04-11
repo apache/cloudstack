@@ -19,13 +19,14 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, SnapshotDataStoreVO>  {
+public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore>  {
 
     public List<SnapshotDataStoreVO> listByStoreId(long id);
 
