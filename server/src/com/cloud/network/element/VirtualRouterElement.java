@@ -368,7 +368,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;
-            }   
+            }
         } else {
             return false;
         }

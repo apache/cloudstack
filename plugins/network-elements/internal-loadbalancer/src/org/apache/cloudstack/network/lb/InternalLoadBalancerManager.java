@@ -25,6 +25,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -93,5 +94,17 @@ public interface InternalLoadBalancerManager extends Manager{
     DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, User user, Account caller, Map<Param, Object> params) 
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException;
+
+
+    /**
+     * 
+     * @param network
+     * @param rules
+     * @param internalLbVms
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms)
+            throws ResourceUnavailableException;
 
 }

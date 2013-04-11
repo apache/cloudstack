@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -50,6 +51,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -567,26 +569,26 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
         List<DomainRouterVO> internalLbVms = findOrDeployInternalLbVm(guestNetwork, requestedGuestIp, dest, owner, params);
         
-        return startRouters(params, internalLbVms);
+        return startInternalLbVms(params, internalLbVms);
     }
     
-    protected List<DomainRouterVO> startRouters(Map<Param, Object> params, List<DomainRouterVO> routers) 
+    protected List<DomainRouterVO> startInternalLbVms(Map<Param, Object> params, List<DomainRouterVO> internalLbVms) 
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> runningRouters = null;
+        List<DomainRouterVO> runningInternalLbVms = null;
 
-        if (routers != null) {
-            runningRouters = new ArrayList<DomainRouterVO>();
+        if (internalLbVms != null) {
+            runningInternalLbVms = new ArrayList<DomainRouterVO>();
         }
 
-        for (DomainRouterVO router : routers) {
-            router = startInternalLbVm(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+        for (DomainRouterVO internalLbVm : internalLbVms) {
+            internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
             
-            if (router != null) {
-                runningRouters.add(router);
+            if (internalLbVm != null) {
+                runningInternalLbVms.add(internalLbVm);
             }
             
         }
-        return runningRouters;
+        return runningInternalLbVms;
     }
     
     
@@ -630,22 +632,22 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             }
 
             // 3) deploy internal lb vm
-            Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndInternalLbVms(dest, guestNetwork.getId(), requestedGuestIp);
-            internalLbs = planAndRouters.second();
-            DeploymentPlan plan = planAndRouters.first();
+            Pair<DeploymentPlan, List<DomainRouterVO>> planAndInternalLbVms = getDeploymentPlanAndInternalLbVms(dest, guestNetwork.getId(), requestedGuestIp);
+            internalLbs = planAndInternalLbVms.second();
+            DeploymentPlan plan = planAndInternalLbVms.first();
 
             List<Pair<NetworkVO, NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, null);
             //don't start the internal lb as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO internalLb = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, offeringId, guestNetwork.getVpcId(),
+            DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, offeringId, guestNetwork.getVpcId(),
                 networks, false);
-            if (internalLb != null) {
-                internalLbs.add(internalLb);
+            if (internalLbVm != null) {
+                internalLbs.add(internalLbVm);
             }
         } finally {
             if (lock != null) {
                 _networkDao.releaseFromLockTable(lock.getId());
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Lock is released for network id " + lock.getId() + " as a part of router startup in " + dest);
+                    s_logger.debug("Lock is released for network id " + lock.getId() + " as a part of internal lb vm startup in " + dest);
                 }
             }
         }
@@ -826,5 +828,53 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
                     "there are no clusters in the zone ", DataCenter.class, dest.getDataCenter().getId());
         }
         return hypervisors;
+    }
+    
+    @Override
+    public boolean applyLoadBalancingRules(Network network, final List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No lb rules to be applied for network " + network);
+            return true;
+        }
+        
+        //FIXME - add validation for the internal lb vm state here
+        return sendLBRules(internalLbVms.get(0), rules, network.getId());
+    }
+    
+    protected boolean sendLBRules(VirtualRouter internalLbVm, List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyLoadBalancingRulesCommands(rules, internalLbVm, cmds, guestNetworkId);
+        return sendCommandsToInternalLbVm(internalLbVm, cmds);
+    }
+    
+    
+    protected boolean sendCommandsToInternalLbVm(final VirtualRouter internalLbVm, Commands cmds) throws AgentUnavailableException {
+        Answer[] answers = null;
+        try {
+            answers = _agentMgr.send(internalLbVm.getHostId(), cmds);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            throw new AgentUnavailableException("Unable to send commands to virtual router ", internalLbVm.getHostId(), e);
+        }
+
+        if (answers == null) {
+            return false;
+        }
+
+        if (answers.length != cmds.size()) {
+            return false;
+        }
+
+        // FIXME: Have to return state for individual command in the future
+        boolean result = true;
+        if (answers.length > 0) {
+            for (Answer answer : answers) {
+                if (!answer.getResult()) {
+                    result = false;
+                    break;
+                }
+            }
+        }
+        return result;
     }
 }

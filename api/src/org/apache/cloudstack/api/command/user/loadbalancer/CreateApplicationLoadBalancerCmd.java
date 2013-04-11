@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -232,6 +233,9 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         } catch (InsufficientAddressCapacityException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
+        } catch (InsufficientVirtualNetworkCapcityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }

@@ -124,7 +124,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
         
         //1) Validate LB rule's parameters
-        validateLbRuleParameters(sourcePort, instancePort, algorithm, guestNtwk);
+        validateLbRule(sourcePort, instancePort, algorithm, guestNtwk, scheme);
         
         //2) Get source ip address
         sourceIp = getSourceIp(scheme, sourceIpNtwk, sourceIp);
@@ -188,10 +188,11 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param sourcePort
      * @param instancePort
      * @param algorithm
-     * @param networkId
      * @param network
+     * @param scheme TODO
+     * @param networkId
      */
-    protected void validateLbRuleParameters(int sourcePort, int instancePort, String algorithm, Network network) {
+    protected void validateLbRule(int sourcePort, int instancePort, String algorithm, Network network, Scheme scheme) {
         // verify that lb service is supported by the network
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
@@ -199,6 +200,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             ex.addProxyObject(network, network.getId(), "networkId");
             throw ex;
         }
+        
+        //FIXME - check if the schema is supported by the network
         
         Map<Network.Capability, String> caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
         String supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();

@@ -61,6 +61,7 @@ import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.AccountManager;
@@ -68,6 +69,8 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -235,25 +238,80 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers;
-        try {
-            DeployDestination dest = new DeployDestination(_configMgr.getZone(network.getDataCenterId()), null, null, null); 
-            routers = _internalLbMgr.deployInternalLbVm(network, null, dest, _accountMgr.getAccount(network.getAccountId()), null);
-        } catch (InsufficientCapacityException e) {
-            s_logger.warn("Failed to apply lb rule(s) on the element " + this.getName() + " due to:", e);
-            return false;
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Failed to apply lb rule(s) on the element " + this.getName() + " due to:", e);
-            return false;
-        }
         
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules",
-                    DataCenter.class, network.getDataCenterId());
-        }
+        Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
         
-        //TODO - apply the rules
+        for (Ip sourceIp : rulesToApply.keySet()) {
+            //2.1 Start Internal LB vm per IP address
+            List<DomainRouterVO> internalLbVms;
+            try {
+                DeployDestination dest = new DeployDestination(_configMgr.getZone(network.getDataCenterId()), null, null, null); 
+                internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Failed to apply lb rule(s) on the element " + this.getName() + " due to:", e);
+                return false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to apply lb rule(s) on the element " + this.getName() + " due to:", e);
+                return false;
+            }
+            
+            if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+                throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules",
+                        DataCenter.class, network.getDataCenterId());
+            }
+             
+            //2.2 Apply Internal LB rules on the VM
+            if (!_internalLbMgr.applyLoadBalancingRules(network, rules, internalLbVms)) {
+                throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId() + " on element " + this.getName());
+            } else {
+                return true;
+            }
+        }
+
         return true;    
+    }
+
+    protected Map<Ip, List<LoadBalancingRule>> getLbRulesToApply(List<LoadBalancingRule> rules) {
+        //1) Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
+        Map<Ip, List<LoadBalancingRule>> groupedRules = groupBySourceIp(rules);
+
+        //2) Apply only set containing LB rules in transition state (Add/Revoke)
+        Map<Ip, List<LoadBalancingRule>> rulesToApply = new HashMap<Ip, List<LoadBalancingRule>>();
+        
+        for (Ip sourceIp : groupedRules.keySet()) {
+            boolean apply = false;
+            List<LoadBalancingRule> rulesToCheck = groupedRules.get(sourceIp);
+            for (LoadBalancingRule ruleToCheck : rulesToCheck) {
+                if (ruleToCheck.getState() == FirewallRule.State.Revoke || ruleToCheck.getState() == FirewallRule.State.Add){
+                    apply = true;
+                    break;
+                }
+            }
+            if (apply) {
+                rulesToApply.put(sourceIp, rulesToCheck);
+            } else {
+                s_logger.debug("Not applying the lb rules for soure ip " + sourceIp + " on element " + this.getName() + " as there are no rules in transition state");
+            }
+        }
+        return rulesToApply;
+    }
+
+    protected Map<Ip, List<LoadBalancingRule>> groupBySourceIp(List<LoadBalancingRule> rules) {
+        Map<Ip, List<LoadBalancingRule>> groupedRules = new HashMap<Ip, List<LoadBalancingRule>>();
+        for (LoadBalancingRule rule : rules) {
+            Ip sourceIp = rule.getSourceIp();
+            if (!groupedRules.containsKey(sourceIp)) {
+                groupedRules.put(sourceIp, null);
+            }
+            
+            List<LoadBalancingRule> rulesToApply = groupedRules.get(sourceIp);
+            if (rulesToApply == null) {
+                rulesToApply = new ArrayList<LoadBalancingRule>();
+            }
+            rulesToApply.add(rule);
+            groupedRules.put(sourceIp, rulesToApply);
+        }
+        return groupedRules;
     }
 
     @Override
