@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
@@ -137,6 +138,7 @@ public abstract class BaseCmd {
     @Inject public ApplicationLoadBalancerService _newLbSvc;
     @Inject public NetworkModel _ntwkModel;
     @Inject public ApplicationLoadBalancerService _appLbService;
+    @Inject public AffinityGroupService _affinityGroupService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 
@@ -159,7 +161,7 @@ public abstract class BaseCmd {
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.
-     * 
+     *
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
@@ -472,7 +474,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -489,7 +491,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");                    
+                    ex.addProxyObject(project, projectId, "projectId");
                     throw ex;
                 }
             } else {

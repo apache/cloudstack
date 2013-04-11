@@ -239,6 +239,11 @@
       <artifactId>cloud-plugin-snmp-alerts</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-host-anti-affinity</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -289,7 +294,7 @@
           -->
           <execution>
             <id>copy-systemvm</id>
-            <phase>package</phase>
+            <phase>process-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>

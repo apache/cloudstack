@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.query;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -97,4 +98,7 @@ public interface QueryService {
     public ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
     public ListResponse<ZoneResponse>  listDataCenters(ListZonesByCmd cmd);
+
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, Long startIndex, Long pageSize);
 }

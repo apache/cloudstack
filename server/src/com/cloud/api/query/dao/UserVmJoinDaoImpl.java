@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -216,6 +217,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+
+        if (details.contains(VMDetails.all) || details.contains(VMDetails.affgrp)) {
+            Long affinityGroupId = userVm.getAffinityGroupId();
+            if (affinityGroupId != null && affinityGroupId.longValue() != 0) {
+                AffinityGroupResponse resp = new AffinityGroupResponse();
+                resp.setId(userVm.getAffinityGroupUuid());
+                resp.setName(userVm.getAffinityGroupName());
+                resp.setDescription(userVm.getAffinityGroupDescription());
+                resp.setObjectName("affinitygroup");
+                resp.setAccountName(userVm.getAccountName());
+                userVmResponse.addAffinityGroup(resp);
+            }
+        }
+
         userVmResponse.setObjectName(objectName);
 
         return userVmResponse;
@@ -276,6 +291,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+
+        Long affinityGroupId = uvo.getAffinityGroupId();
+        if (affinityGroupId != null && affinityGroupId.longValue() != 0) {
+            AffinityGroupResponse resp = new AffinityGroupResponse();
+            resp.setId(uvo.getAffinityGroupUuid());
+            resp.setName(uvo.getAffinityGroupName());
+            resp.setDescription(uvo.getAffinityGroupDescription());
+            resp.setObjectName("affinitygroup");
+            resp.setAccountName(uvo.getAccountName());
+            userVmData.addAffinityGroup(resp);
+        }
+
         return userVmData;
     }
 

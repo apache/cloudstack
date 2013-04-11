@@ -479,13 +479,16 @@ public class ApiConstants {
     public static final String SOURCE_IP_NETWORK_ID = "sourceipaddressnetworkid";
     public static final String SCHEME = "scheme";
     public static final String PROVIDER_TYPE = "providertype";
+    public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
+    public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
+    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
+        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
     }
 
     public enum LDAPParams {

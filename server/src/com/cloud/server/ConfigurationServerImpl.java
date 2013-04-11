@@ -148,8 +148,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @DB
     public void persistDefaultValues() throws InternalErrorException {
 
-    	fixupScriptFileAttribute();
-
         // Create system user and admin user
         saveUser();
 
@@ -701,24 +699,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     }
 
-	private void fixupScriptFileAttribute() {
-		// TODO : this is a hacking fix to workaround that executable bit is not preserved in WAR package
-        String scriptPath = Script.findScript("", "scripts/vm/systemvm/injectkeys.sh");
-        if(scriptPath != null) {
-        	File file = new File(scriptPath);
-        	if(!file.canExecute()) {
-        		s_logger.info("Some of the shell script files may not have executable bit set. Fixup...");
-
-        		String cmd = "sudo chmod ugo+x " + scriptPath;
-        		s_logger.info("Executing " + cmd);
-                String result = Script.runSimpleBashScript(cmd);
-                if (result != null) {
-                    s_logger.warn("Failed to fixup shell script executable bits " + result);
-                }
-        	}
-        }
-	}
-
     private void updateKeyPairsOnDisk(String homeDir) {
         File keyDir = new File(homeDir + "/.ssh");
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
@@ -749,7 +729,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (systemVmIsoPath == null) {
             throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
         }
-        final Script command = new Script(scriptPath, s_logger);
+        final Script command = new Script("/bin/bash " + scriptPath, s_logger);
         command.add(publicKeyPath);
         command.add(privKeyPath);
         command.add(systemVmIsoPath);

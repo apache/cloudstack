@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/cygdrive/c/Python27
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -137,6 +137,7 @@ known_categories = {
     'addIpToNic': 'Nic',
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
+	'AffinityGroup': 'Affinity Group',
     }
 
 

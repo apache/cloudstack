@@ -255,11 +255,11 @@
           array1.push("&domain=" + encodeURIComponent("/"));
         }
 				
-        g_loginCmdText = array1.join("");			
+        var loginCmdText = array1.join("");			
 				
         $.ajax({
           type: "POST",
-          data: "command=login" + g_loginCmdText + "&response=json",					
+          data: "command=login" + loginCmdText + "&response=json",					
           dataType: "json",
           async: false,
           success: function(json) {			

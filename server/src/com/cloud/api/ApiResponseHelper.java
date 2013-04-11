@@ -36,6 +36,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
@@ -445,7 +447,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setCreated(vmSnapshot.getCreated());
         vmSnapshotResponse.setDescription(vmSnapshot.getDescription());
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
-        UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());        
+        UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if(vm!=null)
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
         if(vmSnapshot.getParent() != null)
@@ -455,7 +457,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setObjectName("vmsnapshot");
         return vmSnapshotResponse;
     }
-    
+
     @Override
     public SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy) {
         SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
@@ -552,7 +554,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
         vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
-        
+
         String ip6Range = vlan.getIp6Range();
         if (ip6Range != null) {
         	String[] range = ip6Range.split("-");
@@ -2256,7 +2258,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (((network.getCidr()) != null) && (network.getNetworkCidr() == null)) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
-        
+
         response.setIp6Gateway(network.getIp6Gateway());
         response.setIp6Cidr(network.getIp6Cidr());
 
@@ -2451,7 +2453,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
-        
+
         if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
             response.setPublicIpAddressId(ip.getId());
@@ -3483,7 +3485,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 		return usageRecResponse;
 	}
 
-	
+
     public String getDateStringInternal(Date inputDate) {
         if (inputDate == null) return null;
 
@@ -3567,7 +3569,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         return sb.toString();
     }
-    
+
     @Override
     public TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor) {
         Map<String, String> tmDetails = ApiDBUtils.findHostDetailsById(trafficMonitor.getId());
@@ -3627,6 +3629,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsDefault(result.isDefaultNic());
         return response;
     }
+
     
     @Override
     public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances) {
@@ -3692,5 +3695,30 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
+    }
+
+    @Override
+    public AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group) {
+
+        AffinityGroupResponse response = new AffinityGroupResponse();
+
+        Account account = ApiDBUtils.findAccountById(group.getAccountId());
+        response.setAccountName(account.getAccountName());
+        response.setName(group.getName());
+        response.setType(group.getType());
+        response.setDescription(group.getDescription());
+        // response.setDomainId(account.)
+
+        return response;
+    }
+
+    @Override
+    public Long getAffinityGroupId(String groupName, long accountId) {
+        AffinityGroup ag = ApiDBUtils.getAffinityGroup(groupName, accountId);
+        if (ag == null) {
+            return null;
+        } else {
+            return ag.getId();
+        }
     }
 }

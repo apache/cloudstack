@@ -44,6 +44,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
@@ -188,6 +190,11 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
@@ -431,6 +438,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -687,8 +695,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
+    @Inject
+    protected List<DeploymentPlanner> _planners;
+
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
+
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    protected List<AffinityGroupProcessor> _affinityProcessors;
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
@@ -1047,6 +1064,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
+
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, excludes);
+            }
+        }
 
         for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -2534,6 +2560,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
         cmdList.add(CreateInternalLoadBalancerElementCmd.class);
         cmdList.add(ListInternalLoadBalancerElementsCmd.class);
+        cmdList.add(CreateAffinityGroupCmd.class);
+        cmdList.add(DeleteAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupsCmd.class);
+        cmdList.add(UpdateVMAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupTypesCmd.class);
         return cmdList;
     }
 
@@ -3597,6 +3628,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.info("Admin user enabled");
         }
 
+    }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
     }
 
 }
