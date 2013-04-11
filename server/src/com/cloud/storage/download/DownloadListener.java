@@ -474,17 +474,20 @@ public class DownloadListener implements Listener {
 	@Override
 	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    if (cmd instanceof StartupRoutingCommand) {
+
 	        downloadMonitor.handleSysTemplateDownload(agent);
-	    } else if ( cmd instanceof StartupStorageCommand) {
+	    }
+	    /* This can be removed since
+	    else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
             if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||
                     storage.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE  ) {
                 downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
-                // DO we need to do sync here since we have been doing sync in StartupSecondaryStorageCommand?
-               // downloadMonitor.handleTemplateSync(agent);
+                downloadMonitor.handleTemplateSync(agent);
                 downloadMonitor.handleVolumeSync(agent);
             }
-	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {
+	    }*/
+	    else if ( cmd instanceof StartupSecondaryStorageCommand ) {
 	        downloadMonitor.handleSync(agent.getDataCenterId());
 	    }
 	}

@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -50,10 +51,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
 
         nameSearch = createSearchBuilder();
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        nameSearch.and("role", nameSearch.entity().getRole(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
         providerSearch = createSearchBuilder();
         providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        providerSearch.and("role", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
         providerSearch.done();
 
         return true;
@@ -76,8 +79,11 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     @Override
     public List<ImageStoreVO> findByScope(ZoneScope scope) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
-        sc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
-        sc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
+        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
+        scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
+        scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
+        sc.addAnd("scope", SearchCriteria.Op.SC, scc);
         return listBy(sc);
     }
 
