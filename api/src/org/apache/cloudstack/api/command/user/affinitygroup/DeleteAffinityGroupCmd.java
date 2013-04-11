@@ -52,7 +52,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "The ID of the affinity group. Mutually exclusive with name parameter", entityType = AffinityGroupResponse.class)
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The ID of the affinity group. Mutually exclusive with id parameter")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with id parameter")
     private String name;
 
 

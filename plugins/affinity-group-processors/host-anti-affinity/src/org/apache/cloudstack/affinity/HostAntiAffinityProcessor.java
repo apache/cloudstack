@@ -62,6 +62,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
             }
 
             List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
+            groupVMIds.remove(vm.getId());
 
             for (Long groupVMId : groupVMIds) {
                 VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);

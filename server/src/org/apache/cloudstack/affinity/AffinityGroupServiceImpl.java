@@ -130,7 +130,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             throw new InvalidParameterValueException(
                     "Either the affinity group Id or group name must be specified to delete the group");
         }
-
+        if (affinityGroupId == null) {
+            affinityGroupId = group.getId();
+        }
         // check permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
@@ -302,11 +304,17 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(vmInstance.getAccountId());
+
         // check that the affinity groups exist
         for (Long affinityGroupId : affinityGroupIds) {
             AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
             if (ag == null) {
                 throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+            } else {
+                // verify permissions
+                _accountMgr.checkAccess(caller, null, true, owner, ag);
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
