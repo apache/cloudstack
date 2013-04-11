@@ -466,11 +466,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
-    
+
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
     }
-    
+
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
@@ -2301,6 +2301,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(AddImageStoreCmd.class);
+        cmdList.add(ListImageStoresCmd.class);
+        cmdList.add(DeleteImageStoreCmd.class);
         return cmdList;
     }
 

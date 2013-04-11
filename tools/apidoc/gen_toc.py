@@ -138,6 +138,9 @@ known_categories = {
     'addIpToNic': 'Nic',
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
+    'addImageStore': 'Image Store',
+    'listImageStores': 'Image Store',
+    'deleteImageStore': 'Image Store',
     }
 
 
