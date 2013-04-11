@@ -28,6 +28,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+
 
 
 import com.cloud.storage.ImageStore;
@@ -69,6 +71,18 @@ public class ImageStoreVO implements ImageStore {
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
+    
+    @Column(name = "role")
+    @Enumerated(value = EnumType.STRING)
+    private DataStoreRole role;
+
+    public DataStoreRole getRole() {
+        return role;
+    }
+
+    public void setRole(DataStoreRole role) {
+        this.role = role;
+    }
 
     public long getId() {
         return this.id;

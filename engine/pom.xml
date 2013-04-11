@@ -39,8 +39,8 @@
     <module>storage</module>
     <module>storage/volume</module>
     <module>storage/image</module>
-    <module>storage/imagemotion</module>
-    <module>storage/backup</module>
+    <module>storage/datamotion</module>
+    <module>storage/cache</module>
     <module>storage/snapshot</module>
     <module>storage/integration-test</module>
     <module>components-api</module>

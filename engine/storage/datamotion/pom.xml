@@ -11,8 +11,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-engine-storage-backup</artifactId>
-  <name>Apache CloudStack Engine Storage Backup Component</name>
+  <artifactId>cloud-engine-storage-datamotion</artifactId>
+  <name>Apache CloudStack Engine Storage Data Motion Component</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-engine</artifactId>
@@ -24,6 +24,18 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-volume</artifactId>
+      <version>${project.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-image</artifactId>
+      <version>${project.version}</version>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>mysql</groupId>

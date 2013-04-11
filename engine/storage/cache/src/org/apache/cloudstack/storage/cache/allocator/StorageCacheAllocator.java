@@ -16,9 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.motion;
+package org.apache.cloudstack.storage.cache.allocator;
 
-import org.apache.cloudstack.storage.motion.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 
-public interface ImageMotionStrategy extends DataMotionStrategy {
+public interface StorageCacheAllocator {
+    DataStore getCacheStore(Scope scope);
 }

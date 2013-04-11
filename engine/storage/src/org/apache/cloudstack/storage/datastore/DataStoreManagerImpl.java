@@ -46,6 +46,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
             return primaryStorMgr.getPrimaryDataStore(storeId);
         } else if (role == DataStoreRole.Image) {
             return imageDataStoreMgr.getImageStore(storeId);
+        } else if (role == DataStoreRole.ImageCache) {
+            return imageDataStoreMgr.getImageStore(storeId);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
@@ -81,5 +83,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStorMgr.getPrimaryDataStore(storeId);
     }
-
+    @Override
+    public List<DataStore> getImageCacheStores(Scope scope) {
+    	return imageDataStoreMgr.listImageCacheStores(scope);
+    }
 }

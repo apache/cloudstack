@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -37,12 +38,18 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 
 @Component
 public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager {
+	private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
     @Inject
     ImageStoreDao dataStoreDao;
     @Inject
@@ -115,4 +122,21 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
 
 
+    @Override
+    public List<DataStore> listImageCacheStores(Scope scope) {
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        if (scope.getScopeType() != ScopeType.ZONE) {
+            s_logger.debug("only support zone wide image cache stores");
+            return imageStores;
+        }
+        SearchCriteriaService<ImageStoreVO, ImageStoreVO> sc = SearchCriteria2.create(ImageStoreVO.class);
+        sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
+        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, scope.getScopeId());
+        sc.addAnd(sc.getEntity().getRole(), Op.EQ, DataStoreRole.ImageCache);
+        List<ImageStoreVO> cacheStores = sc.list();
+        for (ImageStoreVO store : cacheStores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
+    }
 }

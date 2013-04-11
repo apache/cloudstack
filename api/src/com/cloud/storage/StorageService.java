@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
@@ -47,6 +48,8 @@ public interface StorageService{
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
     UnknownHostException, ResourceUnavailableException;
+    
+    ImageStore createCacheStore(CreateCacheStoreCmd cmd);
 
     /**
      * Delete the storage pool

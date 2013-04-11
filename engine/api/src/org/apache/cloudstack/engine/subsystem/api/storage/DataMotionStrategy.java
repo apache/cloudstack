@@ -16,8 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.backup;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface BackupMotionService {
-    boolean copySnapshot(String snapshotUri, String destSnapshotUri);
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+
+public interface DataMotionStrategy {
+    public boolean canHandle(DataObject srcData, DataObject destData);
+
+    public Void copyAsync(DataObject srcData, DataObject destData,
+            AsyncCompletionCallback<CopyCommandResult> callback);
 }

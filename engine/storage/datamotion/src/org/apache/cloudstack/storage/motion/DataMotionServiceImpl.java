@@ -23,6 +23,8 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;

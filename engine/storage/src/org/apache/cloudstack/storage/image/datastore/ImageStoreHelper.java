@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -52,6 +53,7 @@ public class ImageStoreHelper {
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
+        store.setRole(DataStoreRole.getRole((String)params.get("role")));
         store = imageStoreDao.persist(store);
         return store;
     }
@@ -68,6 +70,7 @@ public class ImageStoreHelper {
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
+        store.setRole(DataStoreRole.getRole((String)params.get("role")));
         store = imageStoreDao.persist(store);
 
         // persist details

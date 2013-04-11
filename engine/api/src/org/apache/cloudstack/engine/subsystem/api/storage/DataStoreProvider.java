@@ -27,7 +27,8 @@ import java.util.Set;
 public interface DataStoreProvider {
     public static enum DataStoreProviderType {
         PRIMARY,
-        IMAGE
+        IMAGE,
+        ImageCache
     }
     public DataStoreLifeCycle getDataStoreLifeCycle();
     public DataStoreDriver getDataStoreDriver();

@@ -161,11 +161,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             this.stateMachines.transitTo(obj, event, null,
                     templatePoolDao);
             } catch (NoTransitionException e) {
-                if (event == Event.CreateOnlyRequested || event == Event.OperationSuccessed) {
-                    s_logger.debug("allow muliple create requests");
-                } else {
                     throw e;
-                }
             }
         } else {
             throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " " + data.getDataStore().getRole());

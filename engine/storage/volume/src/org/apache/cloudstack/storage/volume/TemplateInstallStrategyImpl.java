@@ -20,12 +20,12 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.motion.DataMotionService;
 import org.apache.cloudstack.storage.volume.VolumeServiceImpl.CreateBaseImageResult;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;

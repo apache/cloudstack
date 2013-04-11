@@ -16,11 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.backup;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 
-public interface BackupService {
-	public boolean backupSnapshot(SnapshotInfo snapshot, long backupStoreId);
-	public SnapshotOnBackupStoreInfo getSnapshot(long snapshotId);
+public interface StorageCacheManager {
+    public DataStore getCacheStorage(Scope scope);
 }

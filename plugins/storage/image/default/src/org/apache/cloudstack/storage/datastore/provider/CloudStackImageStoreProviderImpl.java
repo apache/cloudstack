@@ -83,6 +83,7 @@ public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
     public Set<DataStoreProviderType> getTypes() {
         Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.IMAGE);
+        types.add(DataStoreProviderType.ImageCache);
         return types;
     }
 

@@ -16,15 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.motion;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
-public interface DataMotionStrategy {
-    public boolean canHandle(DataObject srcData, DataObject destData);
-
-    public Void copyAsync(DataObject srcData, DataObject destData,
+public interface DataMotionService {
+    public void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback);
 }

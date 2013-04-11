@@ -34,8 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
+import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -68,7 +68,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public List<StorageProviderResponse> getPrimaryDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
-            if (provider instanceof PrimaryDataStoreProvider) {
+            if (provider.getTypes().contains(DataStoreProviderType.PRIMARY)) {
                 StorageProviderResponse response = new StorageProviderResponse();
                 response.setName(provider.getName());
                 response.setType(DataStoreProvider.DataStoreProviderType.PRIMARY.toString());
@@ -81,10 +81,23 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public List<StorageProviderResponse> getImageDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
-            if (provider instanceof ImageStoreProvider) {
+            if (provider.getTypes().contains(DataStoreProviderType.IMAGE)) {
                 StorageProviderResponse response = new StorageProviderResponse();
                 response.setName(provider.getName());
                 response.setType(DataStoreProvider.DataStoreProviderType.IMAGE.toString());
+                providers.add(response);
+            }
+        }
+        return providers;
+    }
+    
+    public List<StorageProviderResponse> getCacheDataStoreProviders() {
+        List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
+        for (DataStoreProvider provider : providerMap.values()) {
+            if (provider.getTypes().contains(DataStoreProviderType.ImageCache)) {
+                StorageProviderResponse response = new StorageProviderResponse();
+                response.setName(provider.getName());
+                response.setType(DataStoreProviderType.ImageCache.toString());
                 providers.add(response);
             }
         }
@@ -125,6 +138,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             } catch(Exception e) {
                 s_logger.debug("configure provider failed", e);
                 providerMap.remove(providerName);
+                return false;
             }
         }
 
@@ -141,6 +155,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public DataStoreProvider getDefaultImageDataStoreProvider() {
         return this.getDataStoreProvider("CloudStack ImageStore Provider");
     }
+    
+    @Override
+    public DataStoreProvider getDefaultCacheDataStoreProvider() {
+        return this.getDataStoreProvider("cloudstack image store provider");
+    }
 
     @Override
     public List<StorageProviderResponse> getDataStoreProviders(String type) {
@@ -151,6 +170,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             return this.getPrimaryDataStoreProviders();
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.IMAGE.toString())) {
             return this.getImageDataStoreProviders();
+        } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.ImageCache.toString())) {
+           return this.getCacheDataStoreProviders();
         } else {
             throw new InvalidParameterValueException("Invalid parameter: " + type);
         }
