@@ -45,7 +45,7 @@ public class VolumeObject implements VolumeInfo {
     @Inject
     VolumeManager volumeMgr;
     @Inject
-    ObjectInDataStoreManager ojbectInStoreMgr;
+    ObjectInDataStoreManager objectInStoreMgr;
 
     protected VolumeObject() {
       
@@ -122,7 +122,7 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
+        ObjectInDataStoreVO obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return this.dataStore.getUri() + 
                     "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 

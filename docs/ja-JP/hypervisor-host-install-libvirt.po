@@ -52,7 +52,7 @@ msgstr "libvirt を用いてライブマイグレーションを実施するに�
 
 #. Tag: para
 #, no-c-format
-msgid "Set the following paramaters:"
+msgid "Set the following parameters:"
 msgstr "以下のパラメーターを設定してください。"
 
 #. Tag: programlisting

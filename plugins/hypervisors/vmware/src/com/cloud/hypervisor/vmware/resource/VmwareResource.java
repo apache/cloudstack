@@ -1438,11 +1438,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected void assignPublicIpAddress(VirtualMachineMO vmMo, final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
             final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
 
-        String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-        Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
+        String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
+        Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Find public NIC index, public network name: " + publicNeworkName + ", index: " + publicNicInfo.first());
+            s_logger.debug("Find public NIC index, public network name: " + publicNetworkName + ", index: " + publicNicInfo.first());
         }
 
         boolean addVif = false;
@@ -1463,7 +1463,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (addVif) {
             plugPublicNic(vmMo, vlanId, vifMacAddress);
-            publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
+            publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
             if (publicNicInfo.first().intValue() >= 0) {
                 networkUsage(privateIpAddress, "addVif", "eth" + publicNicInfo.first());
             }

@@ -47,7 +47,7 @@ public class TemplateObject implements TemplateInfo {
     @Inject
     ImageDataDao imageDao;
     @Inject
-    ObjectInDataStoreManager ojbectInStoreMgr;
+    ObjectInDataStoreManager objectInStoreMgr;
 
     protected TemplateObject() {
     }
@@ -97,7 +97,7 @@ public class TemplateObject implements TemplateInfo {
         if (this.dataStore == null) {
             return image.getUrl();
         } else {
-            ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
+            ObjectInDataStoreVO obj = objectInStoreMgr.findObject(
                     this.imageVO.getId(), DataObjectType.TEMPLATE,
                     this.dataStore.getId(), this.dataStore.getRole());
             StringBuilder builder = new StringBuilder();
@@ -124,7 +124,7 @@ public class TemplateObject implements TemplateInfo {
         if (this.dataStore == null) {
             return this.imageVO.getSize();
         }
-        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
+        ObjectInDataStoreVO obj = objectInStoreMgr.findObject(
                 this.imageVO.getId(), DataObjectType.TEMPLATE,
                 this.dataStore.getId(), this.dataStore.getRole());
         return obj.getSize();

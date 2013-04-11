@@ -28,7 +28,7 @@ public class TemplateProfile {
 	String displayText;
 	Integer bits;
 	Boolean passwordEnabled;
-	Boolean sshKeyEnbaled;
+	Boolean sshKeyEnabled;
 	Boolean requiresHvm;
 	String url;
 	Boolean isPublic;
@@ -72,7 +72,7 @@ public class TemplateProfile {
 		this.chksum = chksum;
 		this.bootable = bootable;
 		this.details = details;
-		this.sshKeyEnbaled = sshKeyEnabled;
+		this.sshKeyEnabled = sshKeyEnabled;
 	}
 	
 	public TemplateProfile(Long userId, VirtualMachineTemplate template, Long zoneId) {
@@ -246,11 +246,11 @@ public class TemplateProfile {
     }
     
     public void setSshKeyEnabled(Boolean enabled) {
-    	this.sshKeyEnbaled = enabled;
+    	this.sshKeyEnabled = enabled;
     }
     
     public Boolean getSshKeyEnabled() {
-    	return this.sshKeyEnbaled;
+    	return this.sshKeyEnabled;
     }
     
     public String getImageStorageUri() {

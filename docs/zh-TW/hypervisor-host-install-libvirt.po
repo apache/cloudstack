@@ -52,7 +52,7 @@ msgstr "為了具備live migration的能力 ,libviry必須傾聽不安全的TCP�
 
 #. Tag: para
 #, no-c-format
-msgid "Set the following paramaters:"
+msgid "Set the following parameters:"
 msgstr "設定以下參數"
 
 #. Tag: programlisting
