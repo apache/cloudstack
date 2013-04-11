@@ -160,6 +160,7 @@
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
             <!-- see CLOUDSTACK-1884 -->
             <exclude>org/apache/cloudstack/networkoffering/CreateNetworkOfferingTest.java</exclude>
+            <exclude>org/apache/cloudstack/affinity/AffinityApiUnitTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>
