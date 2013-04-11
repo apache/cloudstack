@@ -214,10 +214,10 @@
           id: 'GSLB',
           label: 'GSLB',
           fields: {
-            name: { label: 'label.name' }
-          },
-					
-					//???
+            name: { label: 'label.name' },
+						gslbdomainname: { label: 'GSLB Domain Name' },
+						gslblbmethod: { label: 'Algorithm' }
+          },										
 					actions: {
             add: {
               label: 'Add GSLB',
@@ -241,6 +241,7 @@
                   description: {
                     label: 'label.description'  
                   }, 
+									/*
 									domainid: {					
 										label: 'Domain',					
 										select: function(args) {
@@ -287,6 +288,7 @@
 												return true;
 										}			
 									},
+									*/
 									gslblbmethod: {					
 										label: 'Algorithm',					
 										select: function(args) {
@@ -297,7 +299,7 @@
 										}
 									},
 									gslbdomainname: {
-                    label: 'Domain Name',
+                    label: 'GSLB Domain Name',
                     validation: { required: true }										
                   }, 								
 									gslbservicetype: {					
@@ -317,38 +319,43 @@
 								  name: args.data.name,									
 									regionid: args.context.regions[0].id,
 									gslblbmethod: args.data.gslblbmethod,
+									gslbstickysessionmethodname: 'sourceip',
 									gslbdomainname: args.data.gslbdomainname,
 									gslbservicetype: args.data.gslbservicetype
 								};	
                 if(args.data.description != null && args.data.description.length > 0)
-								  $.extend(data, { description: args.data.description });                  
+								  $.extend(data, { description: args.data.description });  
+                /*									
                 if(args.data.domainid != null && args.data.domainid.length > 0)
 								  $.extend(data, { domainid: args.data.domainid });  								  		
                 if(args.data.account != null && args.data.account.length > 0)
-								  $.extend(data, { account: args.data.account });                   											
-
+								  $.extend(data, { account: args.data.account });   
+								*/	
                 $.ajax({
                   url: createURL('createGlobalLoadBalancerRule'),
                   data: data,                 
-                  success: function(json) {									
-                    var item = json.creategloballoadbalancerruleresponse.globalloadbalancerrule;
-                    args.response.success({data: item});
-                  },
-                  error: function(data) {
-                    args.response.error(parseXMLHttpResponse(data));
+                  success: function(json) {		
+										var jid = json.creategloballoadbalancerruleresponse.jobid;
+										args.response.success(
+											{_custom:
+											 {jobId: jid,
+												getUpdatedItem: function(json) {												  
+													return json.queryasyncjobresultresponse.jobresult.globalloadbalancerrule;
+												}
+											 }
+											}
+										);										
                   }
                 });
               },
-
               notification: {
                 poll: function(args) {
-                  args.complete();
+                  poll: pollAsyncJobResult
                 }
               }
             }
           },
-					//???
-					
+										
           dataProvider: function(args) {
             if('regions' in args.context) {
               var data = {
