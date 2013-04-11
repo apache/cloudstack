@@ -64,9 +64,9 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
 
   # vmware tools
-  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  #apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
-  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
+  apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
   # df -h
   # PREVDIR=$PWD
   # cd /opt
@@ -186,6 +186,9 @@ configure_services() {
   snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
+}
+
+cfg_cloud_early() {
   tar -zxvf cloudstack.tar.gz
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
   cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
