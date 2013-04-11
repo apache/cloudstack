@@ -304,7 +304,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             return;
         } else {
             List<String> usedIps = _networkModel.getUsedIpsInNetwork(sourceIpNtwk);
-            if (usedIps.size() > 0) {
+            if (usedIps.contains(requestedSourceIp.toString())) {
                 throw new InvalidParameterValueException("Ip address " + requestedSourceIp.addr() + " is already in use");
             }
         }

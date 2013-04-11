@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.log4j.Logger;
@@ -37,9 +36,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
@@ -77,14 +74,6 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SOURCE_IP_NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class, required=true,
             description="the network id of the source ip address")
     private Long sourceIpNetworkId;
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the load balancer." +
-    		" Must be used with the domainId parameter.")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="the domain ID associated with the load balancer")
-    private Long domainId;
     
     @Parameter(name=ApiConstants.SCHEME, type=CommandType.STRING, required=true, description="the load balancer scheme. Supported value in this release is Internal")
     private String scheme;
@@ -128,33 +117,18 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     }
 
     public long getAccountId() {
-        Account account = null;
-        //get account info from the network object if it's a guest network
+        //get account info from the network object
         Network ntwk = _networkService.getNetwork(networkId);
-        if (ntwk.getTrafficType() == TrafficType.Guest){
-            return ntwk.getAccountId();
-        } else if (sourceIp != null) {
-            //get account info from the ip address object if the traffic type is public
-
-        } if ((domainId != null) && (accountName != null)) {
-            account = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-            if (account != null) {
-                return account.getId();
-            } else {
-                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
-            }
-        } else {
-            throw new InvalidParameterValueException("Can't define the Load Balancer owner. Either specify guest" +
-                    " network in networkId, or Public Ip address in sourceIpAddress, or account/domainId parameters");
-        }   
+        if (ntwk == null) {
+            throw new InvalidParameterValueException("Invalid network id specified");
+        }
+       
+        return ntwk.getAccountId();
+        
     }
 
     public int getInstancePort() {
         return instancePort.intValue();
-    }
-
-    public String getAccountName() {
-        return accountName;
     }
 
     @Override
@@ -164,7 +138,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating load balancer: " + getName() + " account: " + getAccountName();
+        return "creating load balancer: " + getName() + " account: " + getAccountId();
 
     }
 

@@ -483,7 +483,8 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
                 _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), 
                 _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, null, 
+        //FIXME - for ha proxy 
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), 
                 guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), 
                 _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId());
 
@@ -635,8 +636,13 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             Pair<DeploymentPlan, List<DomainRouterVO>> planAndInternalLbVms = getDeploymentPlanAndInternalLbVms(dest, guestNetwork.getId(), requestedGuestIp);
             internalLbs = planAndInternalLbVms.second();
             DeploymentPlan plan = planAndInternalLbVms.first();
+            
+            if (internalLbs.size() > 0) {
+                s_logger.debug("Found " + internalLbs.size() + " internal lb vms for the requested IP " + requestedGuestIp.addr());
+                return internalLbs;
+            }
 
-            List<Pair<NetworkVO, NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, null);
+            List<Pair<NetworkVO, NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //don't start the internal lb as we are holding the network lock that needs to be released at the end of router allocation
             DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, offeringId, guestNetwork.getVpcId(),
                 networks, false);
@@ -717,13 +723,13 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         
         long id = _routerDao.getNextInSequence(Long.class, "id");
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the internal lb " + id + " in datacenter "  + dest.getDataCenter());
+            s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter());
         }
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
         // Internal lb is the network element, we don't know the hypervisor type yet.
-        // Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
+        // Try to allocate the internal lb twice using diff hypervisors, and when failed both times, throw the exception up
         List<HypervisorType> hypervisors = getHypervisors(dest, plan, null);
 
         int allocateRetry = 0;
