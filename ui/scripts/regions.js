@@ -55,6 +55,12 @@
           actions: {
             add: {
               label: 'label.add.region',
+							preFilter: function(args) {
+                if(isAdmin())
+                  return true;
+                else
+                  return false;
+              },
               messages: {
                 notification: function() { return 'label.add.region'; }
               },
@@ -98,10 +104,9 @@
             $.ajax({
               url: createURL('listRegions&listAll=true'),
               success: function(json) {
-                var regions = json.listregionsresponse.region
-
-                args.response.success({
-                  data: regions ? regions : []
+                var items = json.listregionsresponse.region;
+                args.response.success({								 
+                  data: items
                 });
               },
               error: function(json) {
@@ -193,6 +198,7 @@
                       var region = json.listregionsresponse.region
 
                       args.response.success({
+											  actionFilter: regionActionfilter,
                         data: region ? region[0] : {}
                       });
                     },
@@ -382,4 +388,14 @@
       }
     }
   };
+		
+	var regionActionfilter = function(args) {	  
+    var allowedActions = [];    
+    if(isAdmin()) {        
+      allowedActions.push("edit");
+			allowedActions.push("remove");
+    } 
+    return allowedActions;
+  }	
+	
 })(cloudStack);
