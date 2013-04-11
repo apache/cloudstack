@@ -50,6 +50,8 @@ import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.event.EventUtils;
+import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
@@ -100,6 +102,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserContextInitializer;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.utils.component.SpringComponentScanUtils;
@@ -115,7 +118,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 @Configuration
 @ComponentScan(basePackageClasses = { AccountVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class,
         DomainDaoImpl.class, SwiftDaoImpl.class, ServiceOfferingDaoImpl.class, VlanDaoImpl.class,
-        IPAddressDaoImpl.class, ResourceTagsDaoImpl.class, AccountDaoImpl.class, InstanceGroupDaoImpl.class,
+        IPAddressDaoImpl.class, ResourceTagsDaoImpl.class, InstanceGroupDaoImpl.class,
         UserAccountJoinDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, HostDaoImpl.class,
         VMInstanceDaoImpl.class, HostTransferMapDaoImpl.class, PortForwardingRulesDaoImpl.class,
         PrivateIpDaoImpl.class, UsageEventDaoImpl.class, PodVlanMapDaoImpl.class, DiskOfferingDaoImpl.class,
@@ -126,8 +129,19 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class,
         PhysicalNetworkServiceProviderDaoImpl.class, LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class, AffinityGroupServiceImpl.class,
-        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
+        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class,
+        EventDaoImpl.class }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
 public class AffinityApiTestConfiguration {
+
+    @Bean
+    public AccountDao accountDao() {
+        return Mockito.mock(AccountDao.class);
+    }
+
+    @Bean
+    public EventUtils eventUtils() {
+        return Mockito.mock(EventUtils.class);
+    }
 
     @Bean
     public AffinityGroupProcessor affinityGroupProcessor() {

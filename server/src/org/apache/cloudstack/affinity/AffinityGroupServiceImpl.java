@@ -64,6 +64,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     private UserVmDao _userVmDao;
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_CREATE, eventDescription = "Creating Affinity Group", create = true)
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
             String affinityGroupType, String description) {
 
@@ -106,7 +107,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_DELETE, eventDescription = "deleting affinity group")
+    @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
     public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
             throws ResourceInUseException {
 
