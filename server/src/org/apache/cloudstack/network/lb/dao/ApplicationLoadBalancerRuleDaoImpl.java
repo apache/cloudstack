@@ -63,9 +63,9 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         CountBy.done();
         
         NotRevokedSearch = createSearchBuilder();
-        NotRevokedSearch.and("sourceIp", AllFieldsSearch.entity().getSourceIp(), SearchCriteria.Op.EQ);
-        NotRevokedSearch.and("sourceIpNetworkId", AllFieldsSearch.entity().getSourceIpNetworkId(), SearchCriteria.Op.EQ);
-        NotRevokedSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        NotRevokedSearch.and("sourceIp", NotRevokedSearch.entity().getSourceIp(), SearchCriteria.Op.EQ);
+        NotRevokedSearch.and("sourceIpNetworkId", NotRevokedSearch.entity().getSourceIpNetworkId(), SearchCriteria.Op.EQ);
+        NotRevokedSearch.and("state", NotRevokedSearch.entity().getState(), SearchCriteria.Op.NEQ);
         NotRevokedSearch.done();
     }
 
