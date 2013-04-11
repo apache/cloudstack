@@ -17,8 +17,16 @@
  * under the License.
  */
 
-package org.apache.cloudstack.framework.eventbus;
+package org.apache.cloudstack.framework.messagebus;
 
-public interface Subscriber {
-	void onPublishEvent(String senderAddress, String subject, Object args);
+import org.apache.cloudstack.framework.serializer.MessageSerializer;
+
+public interface MessageBus {
+	void setMessageSerializer(MessageSerializer messageSerializer);
+	MessageSerializer getMessageSerializer();
+	
+	void subscribe(String subject, MessageSubscriber subscriber);
+	void unsubscribe(String subject, MessageSubscriber subscriber);
+	
+	void publish(String senderAddress, String subject, PublishScope scope, Object args);
 }

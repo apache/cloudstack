@@ -284,7 +284,7 @@
           -->
           <execution>
             <id>copy-systemvm</id>
-            <phase>package</phase>
+            <phase>process-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>
