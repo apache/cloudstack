@@ -922,26 +922,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                     tmpltStore.setSize(tmpltInfo.getSize());
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     _vmTemplateStoreDao.persist(tmpltStore);
-                    List<Long> dcs = new ArrayList<Long>();
-                    if (zoneId != null ){
-                        dcs.add(zoneId);
-                    }
-                    else{
-                        List<DataCenterVO> zones = _dcDao.listAll();
-                        for (DataCenterVO zone : zones){
-                            dcs.add(zone.getId());
-                        }
-                    }
-                    for (Long id : dcs) {
-                        VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(id, tmplt.getId());
-                        if (tmpltZoneVO == null) {
-                            tmpltZoneVO = new VMTemplateZoneVO(id, tmplt.getId(), new Date());
-                            _vmTemplateZoneDao.persist(tmpltZoneVO);
-                        } else {
-                            tmpltZoneVO.setLastUpdated(new Date());
-                            _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
-                        }
-                    }
+                    this.associateTemplateToZone(tmplt.getId(), zoneId);
                 }
 
                 continue;
@@ -953,26 +934,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 s_logger.info("Template Sync did not find " + uniqueName + " on the server " + storeId + ", will request download shortly");
                 TemplateDataStoreVO templtStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateStoreDao.persist(templtStore);
-                List<Long> dcs = new ArrayList<Long>();
-                if (zoneId != null ){
-                    dcs.add(zoneId);
-                }
-                else{
-                    List<DataCenterVO> zones = _dcDao.listAll();
-                    for (DataCenterVO zone : zones){
-                        dcs.add(zone.getId());
-                    }
-                }
-                for (Long id : dcs) {
-                    VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(id, tmplt.getId());
-                    if (tmpltZoneVO == null) {
-                        tmpltZoneVO = new VMTemplateZoneVO(id, tmplt.getId(), new Date());
-                        _vmTemplateZoneDao.persist(tmpltZoneVO);
-                    } else {
-                        tmpltZoneVO.setLastUpdated(new Date());
-                        _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
-                    }
-                }
+                this.associateTemplateToZone(tmplt.getId(), zoneId);
             }
 
         }
@@ -1103,6 +1065,31 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		} catch (URISyntaxException e) {
 			return null;
 		}
+	}
+
+	// persist entry in template_zone_ref table. zoneId can be empty for region-wide image store, in that case,
+	// we will associate the template to all the zones.
+	private void associateTemplateToZone(long templateId, Long zoneId){
+        List<Long> dcs = new ArrayList<Long>();
+        if (zoneId != null ){
+            dcs.add(zoneId);
+        }
+        else{
+            List<DataCenterVO> zones = _dcDao.listAll();
+            for (DataCenterVO zone : zones){
+                dcs.add(zone.getId());
+            }
+        }
+        for (Long id : dcs) {
+            VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(id, templateId);
+            if (tmpltZoneVO == null) {
+                tmpltZoneVO = new VMTemplateZoneVO(id, templateId, new Date());
+                _vmTemplateZoneDao.persist(tmpltZoneVO);
+            } else {
+                tmpltZoneVO.setLastUpdated(new Date());
+                _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+            }
+        }
 	}
 
 }
