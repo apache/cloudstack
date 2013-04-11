@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.ejb.Local;
@@ -2068,35 +2067,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         return getNetwork(network.getId());
     }
-
-
-
-
-    protected Set<Long> getAvailableIps(Network network, String requestedIp) {
-        String[] cidr = network.getCidr().split("/");
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
-        Set<Long> usedIps = new TreeSet<Long>(); 
-        
-        for (String ip : ips) {
-            if (requestedIp != null && requestedIp.equals(ip)) {
-                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network" + network);
-                return null;
-            }
-
-            usedIps.add(NetUtils.ip2Long(ip));
-        }
-        if (usedIps.size() != 0) {
-            allPossibleIps.removeAll(usedIps);
-        }
-
-        String gateway = network.getGateway();
-        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
-            allPossibleIps.remove(NetUtils.ip2Long(gateway));
-
-        return allPossibleIps;
-    }
-
 
   
     protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {

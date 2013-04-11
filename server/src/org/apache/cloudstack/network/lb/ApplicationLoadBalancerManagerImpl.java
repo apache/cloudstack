@@ -29,6 +29,7 @@ import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -76,8 +77,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     @Inject ResourceTagDao _resourceTagDao;
     
     
-    //TODO - add action even annotation here; test it as well
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
             int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException,
             NetworkRuleConflictException {
