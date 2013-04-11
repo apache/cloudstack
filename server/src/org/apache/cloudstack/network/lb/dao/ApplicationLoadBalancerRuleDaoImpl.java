@@ -24,16 +24,24 @@ import javax.ejb.Local;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
 
 @Component
 @Local(value = { ApplicationLoadBalancerRuleDao.class })
 public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<ApplicationLoadBalancerRuleVO, Long> implements ApplicationLoadBalancerRuleDao{
     protected final SearchBuilder<ApplicationLoadBalancerRuleVO> AllFieldsSearch;
+    final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, String> listIps;
+    final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, Long> CountBy;
+    protected final SearchBuilder<ApplicationLoadBalancerRuleVO> NotRevokedSearch;
+
+
     
     protected ApplicationLoadBalancerRuleDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -42,14 +50,55 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("scheme", AllFieldsSearch.entity().getScheme(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
+        
+        listIps = createSearchBuilder(String.class);
+        listIps.select(null, Func.DISTINCT, listIps.entity().getSourceIp());
+        listIps.and("sourceIpNetworkId", listIps.entity().getSourceIpNetworkId(), Op.EQ);
+        listIps.done();
+        
+        CountBy = createSearchBuilder(Long.class);
+        CountBy.select(null, Func.COUNT, CountBy.entity().getId());
+        CountBy.and("sourceIp", CountBy.entity().getSourceIp(), Op.EQ);
+        CountBy.and("sourceIpNetworkId", CountBy.entity().getSourceIpNetworkId(), Op.EQ);
+        CountBy.done();
+        
+        NotRevokedSearch = createSearchBuilder();
+        NotRevokedSearch.and("sourceIp", AllFieldsSearch.entity().getSourceIp(), SearchCriteria.Op.EQ);
+        NotRevokedSearch.and("sourceIpNetworkId", AllFieldsSearch.entity().getSourceIpNetworkId(), SearchCriteria.Op.EQ);
+        NotRevokedSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        NotRevokedSearch.done();
     }
 
     @Override
-    public List<ApplicationLoadBalancerRuleVO> listBySrcIpSrcNtwkIdAndScheme(Ip sourceIp, long sourceNetworkId, Scheme scheme) {
+    public List<ApplicationLoadBalancerRuleVO> listBySrcIpSrcNtwkId(Ip sourceIp, long sourceNetworkId) {
         SearchCriteria<ApplicationLoadBalancerRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("sourceIp", sourceIp);
         sc.setParameters("sourceIpNetworkId", sourceNetworkId);
-        sc.setParameters("scheme", scheme);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<String> listLbIpsBySourceIpNetworkId(long sourceIpNetworkId) {
+        SearchCriteria<String> sc = listIps.create();
+        sc.setParameters("sourceIpNetworkId", sourceIpNetworkId);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public long countBySourceIp(Ip sourceIp, long sourceIpNetworkId) {
+        SearchCriteria<Long> sc = CountBy.create();
+        sc.setParameters("sourceIp", sourceIp);
+        sc.setParameters("sourceIpNetworkId", sourceIpNetworkId);
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+    @Override
+    public List<ApplicationLoadBalancerRuleVO> listBySourceIpAndNotRevoked(Ip sourceIp, long sourceNetworkId) {
+        SearchCriteria<ApplicationLoadBalancerRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("sourceIp", sourceIp);
+        sc.setParameters("sourceIpNetworkId", sourceNetworkId);
+        sc.setParameters("state", FirewallRule.State.Revoke);
         return listBy(sc);
     }
 

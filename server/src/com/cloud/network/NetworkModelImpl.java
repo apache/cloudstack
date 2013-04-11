@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -177,7 +178,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     @Inject
-    NicSecondaryIpDao _nicSecondaryIpDao;;
+    NicSecondaryIpDao _nicSecondaryIpDao;
+    @Inject
+    ApplicationLoadBalancerRuleDao _appLbRuleDao;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -1644,10 +1647,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
-        ips.addAll(secondaryIps);
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
+        List<String> ips = getUsedIpsInNetwork(network);
         Set<Long> usedIps = new TreeSet<Long>(); 
         
         for (String ip : ips) {
@@ -1658,6 +1658,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     
             usedIps.add(NetUtils.ip2Long(ip));
         }
+        
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         if (usedIps.size() != 0) {
             allPossibleIps.removeAll(usedIps);
         }
@@ -1667,6 +1669,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             allPossibleIps.remove(NetUtils.ip2Long(gateway));
 
         return allPossibleIps;
+    }
+    
+    @Override
+    public List<String> getUsedIpsInNetwork(Network network) {
+        //Get all ips used by vms nics
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        //Get all secondary ips for nics
+        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
+        ips.addAll(secondaryIps);
+        //Get ips used by load balancers
+        List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
+        ips.addAll(lbIps);
+        return ips;
     }
 
     @Override

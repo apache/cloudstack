@@ -81,7 +81,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -437,7 +436,7 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     
     protected void finalizeLbRulesForIp(Commands cmds, DomainRouterVO internalLbVm, Provider provider, Ip sourceIp, long guestNtwkId) {
         s_logger.debug("Resending load balancing rules as a part of start for " + internalLbVm);
-        List<ApplicationLoadBalancerRuleVO> lbs = _lbDao.listBySrcIpSrcNtwkIdAndScheme(sourceIp, guestNtwkId, Scheme.Internal);
+        List<ApplicationLoadBalancerRuleVO> lbs = _lbDao.listBySrcIpSrcNtwkId(sourceIp, guestNtwkId);
         List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
         if (_ntwkModel.isProviderSupportServiceInNetwork(guestNtwkId, Service.Lb, provider)) {
             // Re-apply load balancing rules

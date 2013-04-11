@@ -266,4 +266,6 @@ public interface NetworkModel {
     
     IpAddress getPublicIpAddress(String ipAddress, long zoneId);
 
+    List<String> getUsedIpsInNetwork(Network network);
+
 }
