@@ -48,6 +48,11 @@ if [ ! -x "$publican_path" ]; then
     exit 1
 fi
 
+if [ ! -d "$sourcedir/docs" ]; then
+    echo "$sourcedir/docs doesn't seem to exist? Maybe set -s?"
+    exit 1
+fi
+
 cd $sourcedir/docs
 cp -R /usr/share/publican/Common_Content .
 ln -s $sourcedir/docs/publican-cloudstack Common_Content/cloudstack
