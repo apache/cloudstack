@@ -39,7 +39,7 @@ import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.ImageOnPrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -206,7 +206,7 @@ public class XenServerStorageResource {
     
     protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
         VolumeTO volume = cmd.getVolume();
-        ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
+        ImageOnPrimaryDataStoreTO baseImage = cmd.getImage();
         Connection conn = hypervisorResource.getConnection();
         
         try {
