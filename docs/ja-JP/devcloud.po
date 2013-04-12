@@ -14,13 +14,13 @@
 #under the License.
 # 
 # Translators:
-# Go Chiba <go.chiba@gmail.com>, 2013.
+# Satoshi Shimazaki <arkray0701@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-04-12T11:19:38\n"
-"PO-Revision-Date: 2013-04-12 11:34+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-03 05:14+0000\n"
+"Last-Translator: smzksts <arkray0701@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,17 +30,42 @@ msgstr ""
 
 #. Tag: title
 #, no-c-format
-msgid "API Reference Documentation"
-msgstr "API リファレンス"
+msgid "DevCloud"
+msgstr "DevCloud"
 
 #. Tag: para
 #, no-c-format
-msgid "You can find all the API reference documentation at the below site:"
-msgstr "全ての API リファレンスドキュメントは以下のサイトから入手できます。"
+msgid ""
+"DevCloud is the &PRODUCT; sandbox. It is provided as a Virtual Box "
+"appliance. It is meant to be used as a development environment to easily "
+"test new &PRODUCT; development. It has also been used for training and "
+"&PRODUCT; demos since it provides a <emphasis>Cloud in a box</emphasis>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"DevCloud is provided as a convenience by community members. It is not an "
+"official &PRODUCT; release artifact."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; source code however, contains tools to build your own "
+"DevCloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"DevCloud is under development and should be considered a Work In Progress "
+"(WIP), the wiki is the most up to date documentation:"
+msgstr ""
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<ulink "
-"url=\"http://cloudstack.apache.org/docs/api/\">http://cloudstack.apache.org/docs/api/</ulink>"
+"url=\"https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud\" />"
 msgstr ""

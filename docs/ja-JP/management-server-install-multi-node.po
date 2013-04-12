@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-28 03:10+0000\n"
-"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -130,6 +130,6 @@ msgstr "これらの手順をそれぞれの追加する管理サーバー上で
 #. Tag: para
 #, no-c-format
 msgid ""
-"Be sure to configure a load balancer for the Management Servers. See "
-"Management Server Load Balancing."
-msgstr "管理サーバー用の負荷分散装置を構成します。「管理サーバーの負荷分散」を参照してください。"
+"Be sure to configure a load balancer for the Management Servers. See <xref "
+"linkend=\"management-server-lb\" />."
+msgstr ""

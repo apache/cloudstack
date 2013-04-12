@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-02-04 16:47+0000\n"
-"Last-Translator: go_chiba <go.chiba@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-12 11:29+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -172,8 +172,8 @@ msgstr "listProjects (プロジェクトをリスト表示し、各プロジェ�
 
 #. Tag: para
 #, no-c-format
-msgid "addAccountToProject (Adds acoount to a project)"
-msgstr "addAccountToProject (プロジェクトにアカウントを追加します)"
+msgid "addAccountToProject (Adds account to a project)"
+msgstr ""
 
 #. Tag: para
 #, no-c-format
