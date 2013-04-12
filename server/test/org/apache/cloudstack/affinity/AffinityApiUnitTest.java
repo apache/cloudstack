@@ -21,9 +21,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -36,15 +34,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.event.EventUtils;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
@@ -84,6 +82,9 @@ public class AffinityApiUnitTest {
 
     @Inject
     AccountDao _accountDao;
+    
+    @Inject
+    EventDao _eventDao;
 
     private static long domainId = 5L;
 
@@ -113,6 +114,7 @@ public class AffinityApiUnitTest {
         Mockito.when(_affinityGroupDao.findByAccountAndName(Mockito.anyLong(), Mockito.anyString())).thenReturn(group);
         Mockito.when(_affinityGroupDao.lockRow(Mockito.anyLong(), anyBoolean())).thenReturn(group);
         Mockito.when(_affinityGroupDao.expunge(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_eventDao.persist(Mockito.any(EventVO.class))).thenReturn(new EventVO());
     }
 
     @Test
