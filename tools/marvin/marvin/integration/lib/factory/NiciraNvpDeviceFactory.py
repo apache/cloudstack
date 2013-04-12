@@ -1,5 +1,5 @@
 import factory
-from marvin.integration.lib.newbase import NiciraNvpDevice
+from marvin.integration.lib.base import NiciraNvpDevice
 class NiciraNvpDeviceFactory(factory.Factory):
 
     FACTORY_FOR = NiciraNvpDevice
@@ -9,12 +9,3 @@ class NiciraNvpDeviceFactory(factory.Factory):
     physicalnetworkid = None
     transportzoneuuid = None
     username = None
-
-
-    FACTORY_FOR = NiciraNvpDevice
-
-
-
-    FACTORY_FOR = NiciraNvpDevice
-
-    nvpdeviceid = None

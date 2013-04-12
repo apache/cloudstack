@@ -1,5 +1,5 @@
 import factory
-from marvin.integration.lib.newbase import Host
+from marvin.integration.lib.base import Host
 class HostFactory(factory.Factory):
 
     FACTORY_FOR = Host
@@ -11,21 +11,3 @@ class HostFactory(factory.Factory):
     username = None
     zoneid = None
 
-
-    FACTORY_FOR = Host
-
-
-
-    FACTORY_FOR = Host
-
-    id = None
-
-
-    FACTORY_FOR = Host
-
-    id = None
-
-
-    FACTORY_FOR = Host
-
-    id = None

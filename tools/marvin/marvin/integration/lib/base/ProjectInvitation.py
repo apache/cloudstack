@@ -43,10 +43,9 @@ class ProjectInvitation(CloudStackEntity.CloudStackEntity):
         return projectinvitation
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteProjectInvitation.deleteProjectInvitationCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         projectinvitation = apiclient.deleteProjectInvitation(cmd)
         return projectinvitation

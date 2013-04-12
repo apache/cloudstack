@@ -1,13 +1,8 @@
 import factory
-from marvin.integration.lib.newbase import StaticNat
+from marvin.integration.lib.base import StaticNat
 class StaticNatFactory(factory.Factory):
 
     FACTORY_FOR = StaticNat
 
     ipaddressid = None
     virtualmachineid = None
-
-
-    FACTORY_FOR = StaticNat
-
-    ipaddressid = None

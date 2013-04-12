@@ -18,7 +18,7 @@ import factory
 from marvin.integration.lib.base import Iso
 class IsoFactory(factory.Factory):
 
-    FACTORY_FOR = Iso
+    FACTORY_FOR = Iso.Iso
 
     displaytext = None
     name = None

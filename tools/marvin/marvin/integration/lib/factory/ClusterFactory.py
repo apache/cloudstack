@@ -1,5 +1,5 @@
 import factory
-from marvin.integration.lib.newbase import Cluster
+from marvin.integration.lib.base import Cluster
 class ClusterFactory(factory.Factory):
 
     FACTORY_FOR = Cluster

@@ -43,10 +43,9 @@ class VirtualRouterElement(CloudStackEntity.CloudStackEntity):
         return map(lambda e: VirtualRouterElement(e.__dict__), virtualrouterelement)
 
 
-    def configure(self, apiclient, enabled, id, **kwargs):
+    def configure(self, apiclient, enabled, **kwargs):
         cmd = configureVirtualRouterElement.configureVirtualRouterElementCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.enabled = enabled
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         virtualrouterelement = apiclient.configureVirtualRouterElement(cmd)

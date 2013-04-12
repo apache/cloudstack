@@ -18,6 +18,6 @@ import factory
 from marvin.integration.lib.base import InstanceGroup
 class InstanceGroupFactory(factory.Factory):
 
-    FACTORY_FOR = InstanceGroup
+    FACTORY_FOR = InstanceGroup.InstanceGroup
 
     name = None

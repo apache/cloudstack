@@ -17,6 +17,7 @@
 from marvin.integration.lib.base import CloudStackEntity
 from marvin.cloudstackAPI import disassociateIpAddress
 from marvin.cloudstackAPI import associateIpAddress
+from marvin.cloudstackAPI import listPublicIpAddresses
 
 class IpAddress(CloudStackEntity.CloudStackEntity):
 
@@ -40,3 +41,11 @@ class IpAddress(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipaddress = apiclient.associateIpAddress(cmd)
         return ipaddress
+
+
+    @classmethod
+    def list(self, apiclient, **kwargs):
+        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
+        publicipaddresses = apiclient.listPublicIpAddresses(cmd)
+        return map(lambda e: IpAddress(e.__dict__), publicipaddresses)

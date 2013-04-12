@@ -46,19 +46,17 @@ class TrafficType(CloudStackEntity.CloudStackEntity):
         return map(lambda e: TrafficType(e.__dict__), traffictype)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateTrafficType.updateTrafficTypeCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         traffictype = apiclient.updateTrafficType(cmd)
         return traffictype
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteTrafficType.deleteTrafficTypeCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         traffictype = apiclient.deleteTrafficType(cmd)
         return traffictype

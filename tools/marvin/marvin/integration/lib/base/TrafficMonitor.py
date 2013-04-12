@@ -45,10 +45,9 @@ class TrafficMonitor(CloudStackEntity.CloudStackEntity):
         return map(lambda e: TrafficMonitor(e.__dict__), trafficmonitor)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteTrafficMonitor.deleteTrafficMonitorCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         trafficmonitor = apiclient.deleteTrafficMonitor(cmd)
         return trafficmonitor

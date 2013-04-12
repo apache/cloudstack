@@ -32,10 +32,9 @@ class User(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def enable(self, apiclient, id, **kwargs):
+    def enable(self, apiclient, **kwargs):
         cmd = enableUser.enableUserCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.enableUser(cmd)
         return user
@@ -50,10 +49,9 @@ class User(CloudStackEntity.CloudStackEntity):
         return user
 
 
-    def lock(self, apiclient, id, **kwargs):
+    def lock(self, apiclient, **kwargs):
         cmd = lockUser.lockUserCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.lockUser(cmd)
         return user
@@ -76,28 +74,25 @@ class User(CloudStackEntity.CloudStackEntity):
         return map(lambda e: User(e.__dict__), user)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateUser.updateUserCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.updateUser(cmd)
         return user
 
 
-    def disable(self, apiclient, id, **kwargs):
+    def disable(self, apiclient, **kwargs):
         cmd = disableUser.disableUserCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.disableUser(cmd)
         return user
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteUser.deleteUserCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.deleteUser(cmd)
         return user

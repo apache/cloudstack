@@ -35,10 +35,9 @@ class LBHealthCheckPolicy(CloudStackEntity.CloudStackEntity):
         return LBHealthCheckPolicy(lbhealthcheckpolicy.__dict__)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteLBHealthCheckPolicy.deleteLBHealthCheckPolicyCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbhealthcheckpolicy = apiclient.deleteLBHealthCheckPolicy(cmd)
         return lbhealthcheckpolicy

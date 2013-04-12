@@ -24,7 +24,3 @@ class StoragePoolFactory(factory.Factory):
     name = None
     podid = None
     url = None
-    zoneid = None
-    name = None
-    url = None
-    zoneid = None
