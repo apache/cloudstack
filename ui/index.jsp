@@ -1664,6 +1664,8 @@ under the License.
     <script type="text/javascript" src="scripts/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/affinity.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/ui-custom/affinity.js?t=<%=now%>"></script>  
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>

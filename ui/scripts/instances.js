@@ -437,7 +437,6 @@
               poll: pollAsyncJobResult
             }
           },
-
           snapshot: {
             messages: {
               notification: function(args) {
@@ -500,7 +499,6 @@
               pool: pollAsyncJobResult
             }
           },          
-
           destroy: {
             label: 'label.action.destroy.instance',
             compactLabel: 'label.destroy',
@@ -566,7 +564,6 @@
               }
             }
           },
-
           reset: {
             label: 'Reset VM',
             messages:{
@@ -597,8 +594,81 @@
               }
             }
 
-           },
+          },
 
+          changeAffinity: {
+            label: 'Change affinity',
+
+            action: {
+              custom: cloudStack.uiCustom.affinity({
+                tierSelect: function(args) {
+                  if ('vpc' in args.context) { //from VPC section
+                    args.$tierSelect.show(); //show tier dropdown
+
+                    $.ajax({ //populate tier dropdown
+                      url: createURL("listNetworks"),
+                      async: false,
+                      data: {
+                        vpcid: args.context.vpc[0].id,
+                        //listAll: true,  //do not pass listAll to listNetworks under VPC
+											  domainid: args.context.vpc[0].domainid,
+						            account: args.context.vpc[0].account,
+                        supportedservices: 'StaticNat'
+                      },
+                      success: function(json) {
+                        var networks = json.listnetworksresponse.network;
+                        var items = [{ id: -1, description: 'Please select a tier' }];
+                        $(networks).each(function(){
+                          items.push({id: this.id, description: this.displaytext});
+                        });
+                        args.response.success({ data: items });
+                      }
+                    });
+                  }
+                  else { //from Guest Network section
+                    args.$tierSelect.hide();
+                  }
+
+                  args.$tierSelect.change(function() {
+                    args.$tierSelect.closest('.list-view').listView('refresh');
+                  });
+                  args.$tierSelect.closest('.list-view').listView('refresh');
+                },
+
+                listView: {
+                  listView: {
+                    id: 'affinityGroups',
+                    fields: {
+                      name: { label: 'label.name' },
+                      type: { label: 'label.type' }
+                    },
+                    dataProvider: function(args) {
+                      args.response.success({
+                        data: [
+                          { name: 'Affinity Group 1', type: 'Affinity' },
+                          { name: 'Affinity Group 2', type: 'Anti-affinity' },
+                          { name: 'Anti-affinity Group', type: 'Anti-affinity' }
+                        ]
+                      });
+                    }
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                }
+              })
+            },
+            messages: {
+              notification: function(args) {
+                return 'label.action.enable.static.NAT';
+              }
+            },
+            notification: {
+              poll: function(args) {
+                args.complete();
+              }
+            }
+          },
 
           edit: {
             label: 'label.edit',
@@ -608,7 +678,7 @@
 							  group: args.data.group,
 								ostypeid: args.data.guestosid
 							};
-						             						
+						  
 							if(args.data.displayname != args.context.instances[0].displayname) {
 							  $.extend(data, {
 								  displayName: args.data.displayname
@@ -1404,6 +1474,7 @@
       allowedActions.push("reset");
       allowedActions.push("snapshot");
       allowedActions.push("scaleUp");
+      allowedActions.push("changeAffinity");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
