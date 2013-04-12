@@ -739,8 +739,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
             assert(secondaryStorageHost != null);
             dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
-            // TODO temporary hacking, hard-coded to NFS primary data store
-            dcmd.setPrimaryStorageUrl("nfs://" + pool.getHostAddress() + pool.getPath());
+     
             
             for (int retry = 0; retry < 2; retry ++){
             	Collections.shuffle(vos); // Shuffling to pick a random host in the vm deployment retries

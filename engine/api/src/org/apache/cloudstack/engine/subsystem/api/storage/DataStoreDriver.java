@@ -31,4 +31,5 @@ public interface DataStoreDriver {
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
     public boolean canCopy(DataObject srcData, DataObject destData);
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
+    public DataTO getTO(DataObject data);
 }

@@ -26,4 +26,5 @@ public interface DataStore {
     String getName();
     DataObject create(DataObject obj);
     boolean delete(DataObject obj);
+    DataStoreTO getTO();
 }

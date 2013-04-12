@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -89,6 +90,11 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
+        return null;
+    }
+    
+    @Override
+    public DataTO getTO(DataObject data) {
         return null;
     }
 

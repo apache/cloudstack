@@ -16,25 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.endpoint;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.List;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-
-public interface EndPointSelector {
-    public EndPoint select(DataObject srcData, DataObject destData);
-
-    /**
-     * @param object
-     * @return
-     */
-    EndPoint select(DataObject object);
-    /**
-     * @param store
-     * @return
-     */
-    List<EndPoint> selectAll(DataStore store);
+public interface DataStoreTO {
+    public DataStoreRole getRole();
 }

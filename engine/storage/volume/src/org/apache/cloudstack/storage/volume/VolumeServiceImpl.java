@@ -428,7 +428,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeObject vo = (VolumeObject)volume;
         CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, vo, pd, templateOnPrimaryStore, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().copyBaseImageCallBack(null, null))
+        caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null))
         .setContext(context);
 
         DataObject volumeOnPrimaryStorage = pd.create(volume);
@@ -439,7 +439,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @DB
-    public Void copyBaseImageCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
+    protected Void createVolumeFromBaseImageCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         VolumeObject vo = context.vo;
         CopyCommandResult result = callback.getResult();
         VolumeApiResult volResult = new VolumeApiResult(vo);

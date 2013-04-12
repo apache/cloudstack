@@ -16,14 +16,20 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
-public class ImageStoreTO {
+public class ImageStoreTO implements DataStoreTO {
     private final String type;
     private final String uri;
+    private final String providerName;
+    private final DataStoreRole role;
     public ImageStoreTO(ImageStoreInfo dataStore) {
         this.type = dataStore.getType();
         this.uri = dataStore.getUri();
+        this.providerName = null;
+        this.role = dataStore.getRole();
     }
     
     public String getType() {
@@ -32,5 +38,17 @@ public class ImageStoreTO {
     
     public String getUri() {
         return this.uri;
+    }
+
+    /**
+     * @return the providerName
+     */
+    public String getProviderName() {
+        return providerName;
+    }
+
+    @Override
+    public DataStoreRole getRole() {
+        return this.role;
     }
 }

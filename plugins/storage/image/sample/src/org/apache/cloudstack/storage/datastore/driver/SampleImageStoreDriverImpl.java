@@ -28,11 +28,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 
 import com.cloud.storage.dao.VMTemplateDao;
@@ -44,6 +45,11 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     VMTemplateDao imageDataDao;
     public SampleImageStoreDriverImpl() {
+    }
+    
+    @Override
+    public DataTO getTO(DataObject data) {
+        return null;
     }
 
     @Override

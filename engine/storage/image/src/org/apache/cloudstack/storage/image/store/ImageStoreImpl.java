@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -164,7 +165,10 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return imageDataStoreVO.getProtocol();
     }
 
-
+    @Override
+    public DataStoreTO getTO() {
+        return null;
+    }
 
 
 }

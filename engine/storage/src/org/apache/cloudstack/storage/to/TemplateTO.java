@@ -16,23 +16,29 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
-public class TemplateTO {
+public class TemplateTO implements DataTO {
     private final String path;
     private final String uuid;
     private  DiskFormat diskType;
     private final ImageStoreTO imageDataStore;
+    private final String name;
 
     public TemplateTO(TemplateInfo template) {
-        this.path = null;
+        this.path = template.getUri();
         this.uuid = template.getUuid();
         //this.diskType = template.getDiskType();
         this.imageDataStore = new ImageStoreTO((ImageStoreInfo)template.getDataStore());
+        this.name = template.getUniqueName();
     }
     
+    @Override
     public String getPath() {
         return this.path;
     }
@@ -47,5 +53,22 @@ public class TemplateTO {
     
     public ImageStoreTO getImageDataStore() {
         return this.imageDataStore;
+    }
+
+    @Override
+    public DataObjectType getObjectType() {
+        return DataObjectType.TEMPLATE;
+    }
+
+    @Override
+    public DataStoreTO getDataStore() {
+        return (DataStoreTO)this.imageDataStore;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
     }
 }

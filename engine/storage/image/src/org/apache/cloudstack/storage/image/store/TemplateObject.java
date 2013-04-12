@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
@@ -30,15 +31,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
+import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.storage.encoding.EncodingType;
 
 public class TemplateObject implements TemplateInfo {
     private static final Logger s_logger = Logger
@@ -83,6 +85,11 @@ public class TemplateObject implements TemplateInfo {
     public DataStore getDataStore() {
         return this.dataStore;
     }
+    
+    @Override
+    public String getUniqueName() {
+        return this.imageVO.getUniqueName();
+    }
 
     @Override
     public long getId() {
@@ -101,22 +108,7 @@ public class TemplateObject implements TemplateInfo {
             return image.getUrl();
         } else {
             DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
-            StringBuilder builder = new StringBuilder();
-            if (obj.getState() == ObjectInDataStoreStateMachine.State.Ready
-                    || obj.getState() == ObjectInDataStoreStateMachine.State.Copying) {
-
-                builder.append(this.dataStore.getUri());
-                builder.append("&" + EncodingType.OBJTYPE + "=" + DataObjectType.TEMPLATE);
-                builder.append("&" + EncodingType.PATH + "=" + obj.getInstallPath());
-                builder.append("&" + EncodingType.SIZE + "=" + image.getSize());
-                return builder.toString();
-            } else {
-                builder.append(this.dataStore.getUri());
-                builder.append("&" + EncodingType.OBJTYPE + "=" + DataObjectType.TEMPLATE);
-                builder.append("&" + EncodingType.SIZE + "=" + image.getSize());
-                builder.append("&" + EncodingType.PATH + "=" + image.getUrl());
-                return builder.toString();
-            }
+           return obj.getInstallPath();
         }
     }
 
@@ -174,10 +166,30 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(Event event) {
         try {
-            ojbectInStoreMgr.update(this, event);
+            ojbectInStoreMgr.update(this, event, null);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
         }
+    }
+    
+    @Override
+    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
+        try {
+            ojbectInStoreMgr.update(this, event, answer);
+        } catch (NoTransitionException e) {
+            s_logger.debug("failed to update state", e);
+            throw new CloudRuntimeException("Failed to update state" + e.toString());
+        }
+    }
+    
+    @Override
+    public DataTO getTO() {
+        DataTO to = this.dataStore.getDriver().getTO(this);
+        if (to == null) {
+            to = new TemplateTO(this);
+        }
+        
+        return to;
     }
 }

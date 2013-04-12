@@ -16,30 +16,47 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+
 import com.cloud.agent.api.Command;
 
 public class CopyCmd extends Command implements StorageSubSystemCommand {
-    private String srcUri;
-    private String destUri;
+    private DataTO srcTO;
+    private DataTO destTO;
+    private int timeout;
 
-    public CopyCmd(String srcUri, String destUri) {
+    /**
+     * @return the timeout
+     */
+    public int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * @param timeout the timeout to set
+     */
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    public CopyCmd(DataTO srcUri, DataTO destUri, int timeout) {
         super();
-        this.srcUri = srcUri;
-        this.destUri = destUri;
+        this.srcTO = srcUri;
+        this.destTO = destUri;
+        this.timeout = timeout;
     }
     
-    public String getDestUri() {
-        return this.destUri;
+    public DataTO getDestTO() {
+        return this.destTO;
     }
     
-    public String getSrcUri() {
-        return this.srcUri;
+    public DataTO getSrcTO() {
+        return this.srcTO;
     }
 
     @Override
     public boolean executeInSequence() {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
 }

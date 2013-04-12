@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 
-public class PrimaryDataStoreTO {
+public class PrimaryDataStoreTO implements DataStoreTO {
     private final String uuid;
     private final String name;
     private  String type;
@@ -44,5 +46,10 @@ public class PrimaryDataStoreTO {
     
     public String getType() {
         return this.type;
+    }
+
+    @Override
+    public DataStoreRole getRole() {
+        return DataStoreRole.Primary;
     }
 }

@@ -28,7 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmd;
@@ -40,6 +45,9 @@ import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.ImageStoreTO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -52,6 +60,8 @@ import org.apache.xmlrpc.XmlRpcException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
@@ -601,21 +611,134 @@ public class XenServerStorageResource {
         }
     }
     
-    protected Answer execute(CopyCmd cmd) {
-        DecodedDataObject srcObj = null;
-        DecodedDataObject destObj = null;
-        try {
-            srcObj = Decoder.decode(cmd.getSrcUri());
-            destObj = Decoder.decode(cmd.getDestUri());
-        } catch (URISyntaxException e) {
-            return new Answer(cmd, false, e.toString());
-        }
-       
-        
-        if (srcObj.getPath().startsWith("http")) {
-            return directDownloadHttpTemplate(cmd, srcObj, destObj);
+    private boolean IsISCSI(String type) {
+        return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type) ;
+    }
+    
+    private String copy_vhd_from_secondarystorage(Connection conn, String mountpoint, String sruuid, int wait) {
+        String nameLabel = "cloud-" + UUID.randomUUID().toString();
+        String results = hypervisorResource.callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage",
+                wait, "mountpoint", mountpoint, "sruuid", sruuid, "namelabel", nameLabel);
+        String errMsg = null;
+        if (results == null || results.isEmpty()) {
+            errMsg = "copy_vhd_from_secondarystorage return null";
         } else {
-            return new Answer(cmd, false, "not implemented yet");
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            if (status.equals("0")) {
+                return tmp[1];
+            } else {
+                errMsg = tmp[1];
+            }
+        }
+        String source = mountpoint.substring(mountpoint.lastIndexOf('/') + 1);
+        if( hypervisorResource.killCopyProcess(conn, source) ) {
+            destroyVDIbyNameLabel(conn, nameLabel);
+        }
+        s_logger.warn(errMsg);
+        throw new CloudRuntimeException(errMsg);
+    }
+    
+    private void destroyVDIbyNameLabel(Connection conn, String nameLabel) {
+        try {
+            Set<VDI> vdis = VDI.getByNameLabel(conn, nameLabel);
+            if ( vdis.size() != 1 ) {
+                s_logger.warn("destoryVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
+                return;
+            }
+            for (VDI vdi : vdis) {
+                try {
+                    vdi.destroy(conn);
+                } catch (Exception e) {
+                }
+            }
+        } catch (Exception e){
+        }
+    }
+    
+    protected VDI getVDIbyUuid(Connection conn, String uuid) {
+        try {
+            return VDI.getByUuid(conn, uuid);
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + " :VDI getByUuid for uuid: " + uuid + " failed due to " + e.toString();
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+    
+    protected String getVhdParent(Connection conn, String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
+        String parentUuid = hypervisorResource.callHostPlugin(conn, "vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
+                "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
+
+        if (parentUuid == null || parentUuid.isEmpty() || parentUuid.equalsIgnoreCase("None")) {
+            s_logger.debug("Unable to get parent of VHD " + snapshotUuid + " in SR " + primaryStorageSRUuid);
+            // errString is already logged.
+            return null;
+        }
+        return parentUuid;
+    }
+    
+    protected PrimaryStorageDownloadAnswer copyTemplateToPrimaryStorage(DataTO srcData, DataTO destData, int wait) {
+        DataStoreTO srcStore = srcData.getDataStore();
+        try {
+            if (srcStore.getRole() == DataStoreRole.ImageCache && srcData.getObjectType() == DataObjectType.TEMPLATE) {
+                ImageStoreTO srcImageStore = (ImageStoreTO)srcStore;
+                TemplateTO srcTemplate = (TemplateTO)srcData;
+                String storeUrl = srcImageStore.getUri();
+                if (!storeUrl.startsWith("nfs")) {
+                    return new PrimaryStorageDownloadAnswer("only nfs image cache store supported");
+                }
+                String tmplpath = storeUrl + ":" + srcData.getPath();
+                PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
+                String poolName = destStore.getUuid();
+                Connection conn = hypervisorResource.getConnection();
+
+                SR poolsr = null;
+                Set<SR> srs = SR.getByNameLabel(conn, poolName);
+                if (srs.size() != 1) {
+                    String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
+                    s_logger.warn(msg);
+                    return new PrimaryStorageDownloadAnswer(msg);
+                } else {
+                    poolsr = srs.iterator().next();
+                }
+                String pUuid = poolsr.getUuid(conn);
+                boolean isISCSI = IsISCSI(poolsr.getType(conn));
+                String uuid = copy_vhd_from_secondarystorage(conn, tmplpath, pUuid, wait);
+                VDI tmpl = getVDIbyUuid(conn, uuid);
+                VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
+                String snapshotUuid = snapshotvdi.getUuid(conn);
+                snapshotvdi.setNameLabel(conn, "Template " + srcTemplate.getName());
+                String parentuuid = getVhdParent(conn, pUuid, snapshotUuid, isISCSI);
+                VDI parent = getVDIbyUuid(conn, parentuuid);
+                Long phySize = parent.getPhysicalUtilisation(conn);
+                tmpl.destroy(conn);
+                poolsr.scan(conn);
+                try{
+                    Thread.sleep(5000);
+                } catch (Exception e) {
+                }
+                return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
+            } 
+        }catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + " for template + " + " due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new PrimaryStorageDownloadAnswer(msg);
+        }
+        return new PrimaryStorageDownloadAnswer("not implemented yet");
+    }
+ 
+    
+    protected Answer execute(CopyCmd cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        
+        if (srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+            //copy template to primary storage
+            return copyTemplateToPrimaryStorage(srcData, destData, cmd.getTimeout());
+        }
+        
+        return new Answer(cmd, false, "not implemented yet");
             /*
         String tmplturl = cmd.getUrl();
         String poolName = cmd.getPoolUuid();
@@ -657,6 +780,4 @@ public class XenServerStorageResource {
             return new PrimaryStorageDownloadAnswer(msg);
         }*/
         }
-        
-    }
 }

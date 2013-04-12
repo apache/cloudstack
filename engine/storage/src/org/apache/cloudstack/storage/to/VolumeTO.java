@@ -16,12 +16,14 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
-public class VolumeTO {
+public class VolumeTO implements DataTO {
     private final String uuid;
     private final String path;
     private  VolumeType volumeType;
@@ -73,5 +75,9 @@ public class VolumeTO {
     
     public long getSize() {
         return this.size;
+    }
+    
+    public DataObjectType getObjectType() {
+        return DataObjectType.VOLUME;
     }
 }

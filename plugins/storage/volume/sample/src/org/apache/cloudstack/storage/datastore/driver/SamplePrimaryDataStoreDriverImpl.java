@@ -26,7 +26,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -36,7 +38,6 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
-import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -56,6 +57,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     DataObjectManager dataObjMgr;
     public SamplePrimaryDataStoreDriverImpl() {
         
+    }
+    
+    @Override
+    public DataTO getTO(DataObject data) {
+        return null;
     }
     
     private class CreateVolumeContext<T> extends AsyncRpcConext<T> {

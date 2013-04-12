@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -339,5 +340,10 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Override
     public String getStorageProviderName() {
         return this.pdsv.getStorageProviderName();
+    }
+    
+    @Override
+    public DataStoreTO getTO() {
+        return null;
     }
 }

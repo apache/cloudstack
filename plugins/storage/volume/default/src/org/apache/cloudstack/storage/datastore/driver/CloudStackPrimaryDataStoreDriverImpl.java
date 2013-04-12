@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -90,6 +91,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+    public DataTO getTO(DataObject data) {
+        return null;
+    }
 
 	@Override
 	public boolean revokeAccess(DataObject data, EndPoint ep) {

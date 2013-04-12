@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -220,4 +222,16 @@ public class SnapshotObject implements SnapshotInfo {
 	public String getBackupSnapshotId() {
 		return this.snapshot.getBackupSnapshotId();
 	}
+
+    @Override
+    public DataTO getTO() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void processEvent(org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event event, Answer answer) {
+        // TODO Auto-generated method stub
+        
+    }
 }

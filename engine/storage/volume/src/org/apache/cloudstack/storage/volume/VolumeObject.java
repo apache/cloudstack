@@ -24,12 +24,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -162,7 +165,7 @@ public class VolumeObject implements VolumeInfo {
         try {
             Volume.Event volEvent = null;
             if (this.dataStore.getRole() == DataStoreRole.Image) {
-                ojbectInStoreMgr.update(this, event);
+                ojbectInStoreMgr.update(this, event, null);
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
                     volEvent = Volume.Event.UploadRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
@@ -331,4 +334,19 @@ public class VolumeObject implements VolumeInfo {
 	public Long getLastPoolId() {
 		return this.volumeVO.getLastPoolId();
 	}
+
+    @Override
+    public DataTO getTO() {
+        DataTO to = this.getDataStore().getDriver().getTO(this);
+        if (to == null) {
+            to = new VolumeTO(this);
+        }
+        return to;
+    }
+
+    @Override
+    public void processEvent(org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event event, Answer answer) {
+        // TODO Auto-generated method stub
+        
+    }
 }

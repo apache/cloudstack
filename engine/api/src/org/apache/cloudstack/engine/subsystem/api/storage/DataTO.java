@@ -18,6 +18,11 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface TemplateInfo extends DataObject {
-    public String getUniqueName();
+public interface DataTO {
+    public DataObjectType getObjectType();
+    public DataStoreTO getDataStore();
+    /**
+     * @return
+     */
+    String getPath();
 }

@@ -20,20 +20,30 @@ package org.apache.cloudstack.storage.cache.manager;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.Manager;
 
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
+    private static final Logger s_logger = Logger
+            .getLogger(StorageCacheManagerImpl.class);
     @Inject
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
@@ -101,14 +111,62 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         // TODO Auto-generated method stub
         return true;
     }
+    
+
+    
+    private class CreateCacheObjectContext<T> extends AsyncRpcConext<T> {
+        final AsyncCallFuture<CommandResult> future;
+        /**
+         * @param callback
+         */
+        public CreateCacheObjectContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future) {
+            super(callback);
+            this.future = future;
+        }
+        
+    }
 
 	@Override
 	public DataObject createCacheObject(DataObject data, Scope scope) {
 		DataStore cacheStore = this.getCacheStorage(scope);
 		DataObject objOnCacheStore = cacheStore.create(data);
-		//AsyncCallFuture<>
-		//dataMotionSvr.copyAsync(data, objOnCacheStore, callback);
-		// TODO Auto-generated method stub
+		AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+		CreateCacheObjectContext<CommandResult> context = new CreateCacheObjectContext<CommandResult>(null, future);
+		AsyncCallbackDispatcher<StorageCacheManagerImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this); 
+		caller.setContext(context);
+		
+		
+		CommandResult result = null;
+		try {
+		    objOnCacheStore.processEvent(Event.CreateOnlyRequested);
+		    
+		    dataMotionSvr.copyAsync(data, objOnCacheStore, caller);
+		    result = future.get();
+		    
+		    if (result.isFailed()) {
+		        cacheStore.delete(data);
+		    } else {
+		        objOnCacheStore.processEvent(Event.OperationSuccessed);
+		    }
+        } catch (InterruptedException e) {
+            s_logger.debug("create cache storage failed: " + e.toString());
+        } catch (ExecutionException e) {
+            s_logger.debug("create cache storage failed: " + e.toString());
+        } catch (Exception e) {
+            s_logger.debug("create cache storage failed: " + e.toString());
+        } finally {
+            if (result == null) {
+                cacheStore.delete(data);
+            }
+        }
+		
 		return null;
+	}
+	
+	protected Void createCacheObjectCallBack(AsyncCallbackDispatcher<StorageCacheManagerImpl, CommandResult> callback, 
+	        CreateCacheObjectContext<CommandResult> context) {
+	    AsyncCallFuture<CommandResult> future = context.future;
+	    future.complete(callback.getResult());
+	    return null;
 	}
 }

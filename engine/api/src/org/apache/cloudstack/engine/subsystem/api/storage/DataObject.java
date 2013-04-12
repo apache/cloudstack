@@ -20,13 +20,17 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
+import com.cloud.agent.api.Answer;
+
 public interface DataObject {
     public long getId();
     public String getUri();
+    public DataTO getTO();
     public DataStore getDataStore();
     public Long getSize();
     public DataObjectType getType();
     public DiskFormat getFormat();
     public String getUuid();
     public void processEvent(ObjectInDataStoreStateMachine.Event event);
+    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
 }

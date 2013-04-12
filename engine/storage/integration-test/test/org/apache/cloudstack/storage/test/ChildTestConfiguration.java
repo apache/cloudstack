@@ -20,9 +20,9 @@ import java.io.IOException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
-import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;

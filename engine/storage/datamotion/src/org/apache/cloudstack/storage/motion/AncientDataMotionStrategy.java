@@ -29,9 +29,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -51,6 +55,8 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -93,6 +99,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger
             .getLogger(AncientDataMotionStrategy.class);
     @Inject
+    EndPointSelector selector;
+    @Inject
     TemplateManager templateMgr;
     @Inject
     VolumeHostDao volumeHostDao;
@@ -124,6 +132,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private SwiftManager _swiftMgr;
     @Inject 
     private S3Manager _s3Mgr;
+    @Inject
+    StorageCacheManager cacheMgr;
 
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
@@ -178,10 +188,22 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     private Answer copyTemplate(DataObject srcData, DataObject destData) {
-        VMTemplateVO template = this.templateDao.findById(srcData.getId());
-        templateMgr.prepareTemplateForCreate(template,
-                (StoragePool) destData.getDataStore());
-        return null;
+        String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+        int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+            //need to copy it to image cache store
+            DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
+            CopyCmd cmd = new CopyCmd(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            EndPoint ep = selector.select(cacheData, destData);
+            Answer answer = ep.sendMessage(cmd);
+            return answer;
+        } else {
+            //handle copy it to cache store
+            CopyCmd cmd = new CopyCmd(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            EndPoint ep = selector.select(srcData, destData);
+            Answer answer = ep.sendMessage(cmd);
+            return answer;
+        }
     }
 
     protected Answer copyFromSnapshot(DataObject snapObj, DataObject volObj) {

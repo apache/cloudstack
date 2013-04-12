@@ -18,6 +18,20 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface TemplateInfo extends DataObject {
-    public String getUniqueName();
+import java.util.List;
+
+
+public interface EndPointSelector {
+    public EndPoint select(DataObject srcData, DataObject destData);
+
+    /**
+     * @param object
+     * @return
+     */
+    EndPoint select(DataObject object);
+    /**
+     * @param store
+     * @return
+     */
+    List<EndPoint> selectAll(DataStore store);
 }
