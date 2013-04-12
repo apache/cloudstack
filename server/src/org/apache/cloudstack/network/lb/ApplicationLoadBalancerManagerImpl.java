@@ -510,5 +510,4 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             s_logger.debug("No network rule conflicts detected for " + newLbRule + " against " + (lbRules.size() - 1) + " existing rules");
         }
     }
-
 }

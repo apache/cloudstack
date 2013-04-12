@@ -30,7 +30,9 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerManager;
+import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -65,6 +67,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -96,6 +99,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Inject InternalLoadBalancerManager _internalLbMgr;
     @Inject ConfigurationManager _configMgr;
     @Inject AccountManager _accountMgr;
+    @Inject ApplicationLoadBalancerRuleDao _appLbDao;
     
     protected InternalLoadBalancerElement() {
     }
@@ -107,7 +111,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return internalLbElement;
      }
     
-    private boolean canHandle(Network config, List<LoadBalancingRule> rules) {
+    private boolean canHandle(Network config, Scheme lbScheme) {
         //works in Advance zone only
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
         if (dc.getNetworkType() != NetworkType.Advanced) {
@@ -122,12 +126,10 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
-            if (schemeCaps != null && rules != null && !rules.isEmpty()) {
-                for (LoadBalancingRule rule : rules) {
-                    if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
-                        return false;
-                    }
+            if (schemeCaps != null && lbScheme != null) {
+                if (!schemeCaps.contains(lbScheme.toString())) {
+                    s_logger.debug("Scheme " + lbScheme.toString() + " is not supported by the provider " + this.getName());
+                    return false;
                 }
             }
         }
@@ -154,12 +156,70 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
+        
+        if (!canHandle(network, null)) {
+            s_logger.trace("No need to implement " + this.getName());
+            return true;
+        }
+        
+        //1) Get all the Ips from the network having LB rules assigned
+        List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
+        
+        //2) Start those vms
+        for (String ip : ips) {
+            Ip sourceIp = new Ip(ip);
+            List<? extends VirtualRouter> internalLbVms;
+            try {
+                internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
+                return false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
+                return false;
+            }
+            
+            if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+                throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
+                        DataCenter.class, network.getDataCenterId());
+            }
+        }
+       
         return true;
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
+        
+        if (!canHandle(network, null)) {
+            s_logger.trace("No need to prepare " + this.getName());
+            return true;
+        }
+        
+        //1) Get all the Ips from the network having LB rules assigned
+        List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
+        
+        //2) Start those vms
+        for (String ip : ips) {
+            Ip sourceIp = new Ip(ip);
+            List<? extends VirtualRouter> internalLbVms;
+            try {
+                internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
+                return false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp +  " due to:", e);
+                return false;
+            }
+            
+            if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+                throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
+                        DataCenter.class, network.getDataCenterId());
+            }
+        }
+        
         return true;
     }
 
@@ -254,9 +314,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         
-        Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
+        //1) Get Internal LB VMs to destroy
         Set<Ip> vmsToDestroy = getVmsToDestroy(rules);
         
+        //2) Get rules to apply
+        Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
+ 
         for (Ip sourceIp : rulesToApply.keySet()) {
             if (vmsToDestroy.contains(sourceIp)) {
                 //2.1 Destroy internal lb vm
@@ -377,7 +440,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         rules.add(rule);
-        if (canHandle(network, rules)) {
+        if (canHandle(network, rule.getScheme())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
             if (routers == null || routers.isEmpty()) {
                 return true;

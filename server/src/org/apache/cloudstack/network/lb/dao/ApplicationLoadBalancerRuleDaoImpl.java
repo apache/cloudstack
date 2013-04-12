@@ -25,6 +25,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -54,6 +55,7 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         listIps = createSearchBuilder(String.class);
         listIps.select(null, Func.DISTINCT, listIps.entity().getSourceIp());
         listIps.and("sourceIpNetworkId", listIps.entity().getSourceIpNetworkId(), Op.EQ);
+        listIps.and("scheme", listIps.entity().getScheme(), Op.EQ);
         listIps.done();
         
         CountBy = createSearchBuilder(Long.class);
@@ -100,6 +102,14 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         sc.setParameters("sourceIpNetworkId", sourceNetworkId);
         sc.setParameters("state", FirewallRule.State.Revoke);
         return listBy(sc);
+    }
+
+    @Override
+    public List<String> listLbIpsBySourceIpNetworkIdAndScheme(long sourceIpNetworkId, Scheme scheme) {
+        SearchCriteria<String> sc = listIps.create();
+        sc.setParameters("sourceIpNetworkId", sourceIpNetworkId);
+        sc.setParameters("scheme", scheme);
+        return customSearch(sc, null);
     }
 
 }
