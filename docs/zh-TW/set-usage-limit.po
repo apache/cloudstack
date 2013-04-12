@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-06 15:00+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Usage Limits"
+msgstr "設定使用限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides several administrator control points for capping resource"
+" usage by users. Some of these limits are global configuration parameters. "
+"Others are applied at the ROOT domain and may be overridden on a per-account"
+" basis."
+msgstr "&PRODUCT;提供多個管理者控制點給隱藏資源使用率，有些限制是廣域設定參數，其他應用在ROOT網域及無視每個帳戶的基礎"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Aggregate limits may be set on a per-domain basis. For example, you may "
+"limit a domain and all subdomains to the creation of 100 VMs."
+msgstr "累積極限可能會在每個網域基礎上設定，例如，您可以限制網域，並且所有子網域只能建立100VM"
+
+#. Tag: para
+#, no-c-format
+msgid "This section covers the following topics:"
+msgstr "這個章節涵蓋以下章節："

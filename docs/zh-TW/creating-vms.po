@@ -1,0 +1,123 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-08 13:24+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating VMs"
+msgstr "建立VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Virtual machines are usually created from a template. Users can also create "
+"blank virtual machines. A blank virtual machine is a virtual machine without"
+" an OS template. Users can attach an ISO file and install the OS from the CD"
+"/DVD-ROM."
+msgstr "虛擬機器通常由模組建立，使用者也可以建立空的虛擬機器，空的虛擬機器是沒有作業系統的虛擬機器。使用者可以附上ISO然後從光碟機安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create a VM without starting it. You can determine whether the VM "
+"needs to be started as part of the VM deployment. A request parameter, "
+"startVM, in the deployVm API provides this feature. For more information, "
+"see the Developer's Guide"
+msgstr "您可以建立VM但不要啟動，您可以決定是否隨部署完成啟動虛擬機器，在deployVm API提供欄位startVM給您，更多資訊，詳見Developer's Guide "
+
+#. Tag: para
+#, no-c-format
+msgid "To create a VM from a template:"
+msgstr "想要從模組建立VM："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or user."
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Instances."
+msgstr "在左邊的導覽視窗，選擇 Instances"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Instance."
+msgstr "點選Add Instance"
+
+#. Tag: para
+#, no-c-format
+msgid "Select a zone."
+msgstr "選擇一個區域"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select a template, then follow the steps in the wizard. For more information"
+" about how the templates came to be in this list, see <xref linkend"
+"=\"working-with-templates\" />."
+msgstr "選擇一個模組，然後依照安裝精靈執行，更多資訊，詳見<xref linkend=\"working-with-templates\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure that the hardware you have allows starting the selected service "
+"offering."
+msgstr "請確定您允許的硬體開始執行選擇的service offering"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Submit and your VM will be created and started."
+msgstr "點選Submi，您的VM就會建立及啟動"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For security reason, the internal name of the VM is visible only to the root"
+" admin."
+msgstr "為安全考量，VM的內部名稱僅為root管理者所見"
+
+#. Tag: para
+#, no-c-format
+msgid "To create a VM from an ISO:"
+msgstr "想要從ISO建立VM："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer) Windows VMs running on XenServer require PV drivers, which may "
+"be provided in the template or added after the VM is created. The PV drivers"
+" are necessary for essential management functions such as mounting "
+"additional volumes and ISO images, live migration, and graceful shutdown."
+msgstr "(XenServer)Windows VMs在XenServer上執行需要PV驅動程式，有可能會在模組中就有，或是在VM建立後新增。PV驅動程式對基礎管理功能如掛在額外的volumes和ISO images、live migration和graceful shutdown是必要的。"
+
+#. Tag: para
+#, no-c-format
+msgid "Select ISO Boot, and follow the steps in the wizard."
+msgstr "選擇 ISO Boot並跟著精靈的步驟安裝"

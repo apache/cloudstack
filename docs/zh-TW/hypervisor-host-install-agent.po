@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 09:05+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-26 07:45+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -39,7 +39,7 @@ msgid ""
 "To manage KVM instances on the host &PRODUCT; uses a Agent. This Agent "
 "communicates with the Management server and controls all the instances on "
 "the host."
-msgstr ""
+msgstr "使用Agent來管理&PRODUCT;主機上的KVM instances。Agent 與管理伺服器及控制所有instances的主機溝通"
 
 #. Tag: para
 #, no-c-format

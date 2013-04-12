@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-02-02 18:44+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -29,7 +30,7 @@ msgstr ""
 
 #. Tag: title
 #, no-c-format
-msgid "Setting Zone VLAN and Running VM Maximums"
+msgid "Management Server Load Balancing"
 msgstr ""
 
 #. Tag: para
@@ -41,57 +42,57 @@ msgid ""
 "persistence or stickiness across multiple sessions. The following chart "
 "lists the ports that should be load balanced and whether or not persistence "
 "is required."
-msgstr ""
+msgstr "&PRODUCT;可以使用負載平衡器來為管理伺服器提供虛擬IP，管理者負責建立負載平衡規則，此應用需要在多通訊任務能持續及固定，以下圖表列出應套用負載平衡的埠，及是否要持續"
 
 #. Tag: para
 #, no-c-format
 msgid "Even if persistence is not required, enabling it is permitted."
-msgstr ""
+msgstr "即使不需要持續套用，您也可以啟用"
 
 #. Tag: para
 #, no-c-format
 msgid "Source Port"
-msgstr ""
+msgstr "Source Port"
 
 #. Tag: para
 #, no-c-format
 msgid "Destination Port"
-msgstr ""
+msgstr "Destination Port"
 
 #. Tag: para
 #, no-c-format
 msgid "Protocol"
-msgstr ""
+msgstr "Protocol"
 
 #. Tag: para
 #, no-c-format
 msgid "Persistence Required?"
-msgstr ""
+msgstr "Persistence Required?"
 
 #. Tag: para
 #, no-c-format
 msgid "80 or 443"
-msgstr ""
+msgstr "80 or 443"
 
 #. Tag: para
 #, no-c-format
 msgid "8080 (or 20400 with AJP)"
-msgstr ""
+msgstr "8080 (or 20400 with AJP)"
 
 #. Tag: para
 #, no-c-format
 msgid "HTTP (or AJP)"
-msgstr ""
+msgstr "HTTP (or AJP)"
 
 #. Tag: para
 #, no-c-format
 msgid "Yes"
-msgstr ""
+msgstr "Yes"
 
 #. Tag: para
 #, no-c-format
 msgid "8250"
-msgstr ""
+msgstr "8250"
 
 #. Tag: para
 #, no-c-format
@@ -101,14 +102,25 @@ msgstr "TCP"
 #. Tag: para
 #, no-c-format
 msgid "8096"
-msgstr ""
+msgstr "8096"
 
 #. Tag: para
 #, no-c-format
 msgid "HTTP"
-msgstr ""
+msgstr "HTTP"
 
 #. Tag: para
 #, no-c-format
 msgid "No"
+msgstr "No"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to above settings, the administrator is responsible for setting "
+"the 'host' global config value from the management server IP to load "
+"balancer virtual IP address. If the 'host' value is not set to the VIP for "
+"Port 8250 and one of your management servers crashes, the UI is still "
+"available but the system VMs will not be able to contact the management "
+"server."
 msgstr ""

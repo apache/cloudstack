@@ -1,0 +1,203 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 10:23+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Globally Configured Limits"
+msgstr "廣域設定限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a zone, the guest virtual network has a 24 bit CIDR by default. This "
+"limits the guest virtual network to 254 running instances. It can be "
+"adjusted as needed, but this must be done before any instances are created "
+"in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses."
+msgstr "一個區域內，訪客虛擬網路預設上有24位元的CIDR，此限制訪客虛擬機器僅能執行254個instance。可依需要調整，但是必須在任何instance加到區域前調整。例如，10.1.1.0/22會提供~1000個位址"
+
+#. Tag: para
+#, no-c-format
+msgid "The following table lists limits set in the Global Configuration:"
+msgstr "以下表格列出廣域組態的限制："
+
+#. Tag: para
+#, no-c-format
+msgid "Parameter Name"
+msgstr "欄位名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Definition"
+msgstr "定義"
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.public.ips"
+msgstr "max.account.public.ips"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of public IP addresses that can be owned by an account"
+msgstr "可以被一個帳戶擁有的公開IP數量"
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.snapshots"
+msgstr "max.account.snapshots"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of snapshots that can exist for an account"
+msgstr "一個帳戶中的最多快取物件數量"
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.templates"
+msgstr "max.account.templates"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of templates that can exist for an account"
+msgstr "一個帳戶中的最多模組數量"
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.user.vms"
+msgstr "max.account.user.vms"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of virtual machine instances that can exist for an account"
+msgstr "一個帳戶中的最多虛擬機器 instance數量"
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.volumes"
+msgstr "max.account.volumes"
+
+#. Tag: para
+#, no-c-format
+msgid "Number of disk volumes that can exist for an account"
+msgstr "一個帳戶中的最多硬碟容量數量"
+
+#. Tag: para
+#, no-c-format
+msgid "max.template.iso.size"
+msgstr "max.template.iso.size"
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum size for a downloaded template or ISO in GB"
+msgstr "下載的模組或ISO的最大大小，單位為GB"
+
+#. Tag: para
+#, no-c-format
+msgid "max.volume.size.gb"
+msgstr "max.volume.size.gb"
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum size for a volume in GB"
+msgstr "容量最大的大小，單位為GB"
+
+#. Tag: para
+#, no-c-format
+msgid "network.throttling.rate"
+msgstr "network.throttling.rate"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Default data transfer rate in megabits per second allowed per user "
+"(supported on XenServer)"
+msgstr "預設的資料傳輸速率，單位為MBit/s(支援XenServer)"
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.hourly"
+msgstr "snapshot.max.hourly"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum recurring hourly snapshots to be retained for a volume. If the limit"
+" is reached, early snapshots from the start of the hour are deleted so that "
+"newer ones can be saved. This limit does not apply to manual snapshots. If "
+"set to 0, recurring hourly snapshots can not be scheduled"
+msgstr "容量每小時重複快取的最大數量，如果快達限制，較早的快取物件會被刪除。此限制不適用手動快取。如果設為0，每小時重複快取將無法排程"
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.daily"
+msgstr "snapshot.max.daily"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum recurring daily snapshots to be retained for a volume. If the limit "
+"is reached, snapshots from the start of the day are deleted so that newer "
+"ones can be saved. This limit does not apply to manual snapshots. If set to "
+"0, recurring daily snapshots can not be scheduled"
+msgstr "容量每天重複快取的最大數量，如果快達限制，較早的快取物件會被刪除。此限制不適用手動快取。如果設為0，每天重複快取將無法排程"
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.weekly"
+msgstr "snapshot.max.weekly"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum recurring weekly snapshots to be retained for a volume. If the limit"
+" is reached, snapshots from the beginning of the week are deleted so that "
+"newer ones can be saved. This limit does not apply to manual snapshots. If "
+"set to 0, recurring weekly snapshots can not be scheduled"
+msgstr "容量每周重複快取的最大數量，如果快達限制，較早的快取物件會被刪除。此限制不適用手動快取。如果設為0，每周重複快取將無法排程"
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.monthly"
+msgstr "snapshot.max.monthly"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum recurring monthly snapshots to be retained for a volume. If the "
+"limit is reached, snapshots from the beginning of the month are deleted so "
+"that newer ones can be saved. This limit does not apply to manual snapshots."
+" If set to 0, recurring monthly snapshots can not be scheduled."
+msgstr "容量每月重複快取的最大數量，如果快達限制，較早的快取物件會被刪除。此限制不適用手動快取。如果設為0，每月重複快取將無法排程"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To modify global configuration parameters, use the global configuration "
+"screen in the &PRODUCT; UI. See Setting Global Configuration Parameters"
+msgstr "使用&PRODUCT;使用者介面的廣域組態視窗來修改廣域組態參數欄位。詳見Setting Global Configuration Parameters"

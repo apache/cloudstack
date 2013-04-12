@@ -1,0 +1,187 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-09 07:03+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the firewall"
+msgstr "設定防火牆"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The hypervisor needs to be able to communicate with other hypervisors and "
+"the management server needs to be able to reach the hypervisor."
+msgstr "超級監督者需要能與其他監督者通信，以及管理伺服器必須能接觸超級監督者"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order to do so we have to open the following TCP ports (if you are using "
+"a firewall):"
+msgstr "請開啟TCP通訊埠(如果您使用防火牆)："
+
+#. Tag: para
+#, no-c-format
+msgid "22 (SSH)"
+msgstr "22 (SSH)"
+
+#. Tag: para
+#, no-c-format
+msgid "1798"
+msgstr "1798"
+
+#. Tag: para
+#, no-c-format
+msgid "16509 (libvirt)"
+msgstr "16509 (libvirt)"
+
+#. Tag: para
+#, no-c-format
+msgid "5900 - 6100 (VNC consoles)"
+msgstr "5900 - 6100 (VNC consoles)"
+
+#. Tag: para
+#, no-c-format
+msgid "49152 - 49216 (libvirt live migration)"
+msgstr "49152 - 49216 (libvirt live migration)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It depends on the firewall you are using how to open these ports. Below "
+"you'll find examples how to open these ports in RHEL/CentOS and Ubuntu."
+msgstr "取決於您的防火牆，開啟通訊埠的方法會不同，以下為RHEL/CentOS 及Ubuntu的範例"
+
+#. Tag: title
+#, no-c-format
+msgid "Open ports in RHEL/CentOS"
+msgstr "於RHEL/CentOS："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"RHEL and CentOS use iptables for firewalling the system, you can open extra "
+"ports by executing the following iptable commands:"
+msgstr "RHEL 及 CentOS使用IP對照表，您可以執行以下IP對照表指令來開啟額外的通訊埠："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</command>"
+msgstr "<command>$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</command>"
+msgstr "<command>$ iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</command>"
+msgstr "<command>$ iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j "
+"ACCEPT</command>"
+msgstr "<command>$ iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j "
+"ACCEPT</command>"
+msgstr "<command>$ iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j ACCEPT</command>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These iptable settings are not persistent accross reboots, we have to save "
+"them first."
+msgstr "這些IP對照表設定再重新開機後會消失，所以必須先儲存"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables-save &gt; /etc/sysconfig/iptables</command>"
+msgstr "<command>$ iptables-save &gt; /etc/sysconfig/iptables</command>"
+
+#. Tag: title
+#, no-c-format
+msgid "Open ports in Ubuntu"
+msgstr "於Ubuntu"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is "
+"a Python wrapper around iptables."
+msgstr "預設防火牆為UFW(Uncomplicated FireWall)，是個Python環繞在IP對照表四周"
+
+#. Tag: para
+#, no-c-format
+msgid "To open the required ports, execute the following commands:"
+msgstr "執行以下指令來開啟通訊埠："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 22</command>"
+msgstr "<command>$ ufw allow proto tcp from any to any port 22</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 1798</command>"
+msgstr "<command>$ ufw allow proto tcp from any to any port 1798</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 16509</command>"
+msgstr "<command>$ ufw allow proto tcp from any to any port 16509</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ ufw allow proto tcp from any to any port 5900:6100</command>"
+msgstr "<command>$ ufw allow proto tcp from any to any port 5900:6100</command>"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<command>$ ufw allow proto tcp from any to any port 49152:49216</command>"
+msgstr "<command>$ ufw allow proto tcp from any to any port 49152:49216</command>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default UFW is not enabled on Ubuntu. Executing these commands with the "
+"firewall disabled does not enable the firewall."
+msgstr "預設UFW是停用的，執行這些指令並不會啟用防火牆"

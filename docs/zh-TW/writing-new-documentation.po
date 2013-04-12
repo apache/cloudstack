@@ -1,0 +1,204 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:48+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Writing &PRODUCT; Documentation"
+msgstr "撰寫&PRODUCT;文件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; documentation is written in DocBook xml format. Each guide defined"
+" with a publican configuration file refers to a DocBook "
+"<emphasis>book</emphasis>."
+msgstr "&PRODUCT;文件格式為DocBook xml，每份指南以參考DocBook <emphasis>book</emphasis>的publican configuration file 定義"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These books are defined in xml files in docs/en-US, for instance if we look "
+"at the Developers guide, its configuration file contains:"
+msgstr "這些書以xml files in docs/en-US定義，因此，如果我們翻閱Developers指南，它的設定文件應包含："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"        xml_lang: en-US\n"
+"        type: Book\n"
+"        docname: Developers_Guide\n"
+"        brand: cloudstack\n"
+"        chunk_first: 1\n"
+"        chunk_section_depth: 1\n"
+"    "
+msgstr "\n        xml_lang: en-US\n        type: Book\n        docname: Developers_Guide\n        brand: cloudstack\n        chunk_first: 1\n        chunk_section_depth: 1\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <emphasis>docname</emphasis> key gives you the basename of the DocBook "
+"file located in the en-US directory that contains the description of the "
+"book."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Looking closely at Developers_Guide.xml we see that it contains "
+"<emphasis>book</emphasis> tags and several references to other xml files. "
+"These are the chapters of the book, currently they are:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"    \n"
+"        &lt;xi:include href=\"concepts.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"building-with-maven.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"developer-introduction.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"whats-new.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"api-calls.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"working-with-usage-data.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"working-with-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"tools.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"event-types.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"alerts.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"time-zones.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;xi:include href=\"Revision_History.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"    \n"
+"    "
+msgstr "\n    \n        &lt;xi:include href=\"concepts.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"building-with-maven.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"developer-introduction.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"whats-new.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"api-calls.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"working-with-usage-data.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"working-with-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"tools.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"event-types.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"alerts.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"time-zones.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;xi:include href=\"Revision_History.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n    \n    "
+
+#. Tag: para
+#, no-c-format
+msgid "All these xml files are written in DocBook format."
+msgstr "所有 xml檔案都是DocBook格式"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"DocBook format is well <ulink "
+"url=\"http://www.docbook.org/tdg5/en/html/docbook.html\">documented</ulink>,"
+" refer to the documentation for any questions about DocBook tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When writing documentation, you therefore need to located the book,chapter "
+"and section of the content you want to write/correct. Or create a new "
+"book,chapter,section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You will then learn much more about DocBook tagging. In order to write this "
+"chapter about documentation, I added the <emphasis>working-with-"
+"documentation.xml</emphasis>file describing a chapter in the Developer book "
+"and I created several sections within that chapter like so:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"    \n"
+"        &lt;chapter id=\"working-with-documentation\"&gt;\n"
+"            &lt;title&gt;Preparing and Building &PRODUCT; Documentation&lt;/title&gt;\n"
+"            &lt;para&gt;This chapter describes how to install publican, how to write new documentation and build a guide as well as how to build a translated version of the documentation using transifex&lt;/para&gt;\n"
+"            &lt;xi:include href=\"installing-publican.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"            &lt;xi:include href=\"building-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"            &lt;xi:include href=\"writing-new-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"            &lt;xi:include href=\"building-translation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n"
+"        &lt;/chapter&gt;\n"
+"    \n"
+"    "
+msgstr "\n    \n        &lt;chapter id=\"working-with-documentation\"&gt;\n            &lt;title&gt;Preparing and Building &PRODUCT; Documentation&lt;/title&gt;\n            &lt;para&gt;This chapter describes how to install publican, how to write new documentation and build a guide as well as how to build a translated version of the documentation using transifex&lt;/para&gt;\n            &lt;xi:include href=\"installing-publican.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n            &lt;xi:include href=\"building-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n            &lt;xi:include href=\"writing-new-documentation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n            &lt;xi:include href=\"building-translation.xml\" xmlns:xi=\"http://www.w3.org/2001/XInclude\" /&gt;\n        &lt;/chapter&gt;\n    \n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note the id witin the chapter tag, it represents the basename of the xml "
+"file describing the chapter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For translation purposes it is important that this basename be less than 50 "
+"characters long."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This chapter also refers to xml files which contains each section. While you"
+" could embed the sections directly in the chapter file and as a matter of "
+"fact also write the chapters within a single book file. Breaking things up "
+"in smaller files at the granularity of the section, allows us to re-use any "
+"section to build different books."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For completeness here is an example of a section:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"    \n"
+"        &lt;section id=\"building-documentation\"&gt;\n"
+"            &lt;title&gt;Building &PRODUCT; Documentation&lt;/title&gt;\n"
+"            &lt;para&gt;To build a specific guide, go to the source tree of the documentation in /docs and identify the guide you want to build.&lt;/para&gt;\n"
+"            &lt;para&gt;Currently there are four guides plus the release notes, all defined in publican configuration files:&lt;/para&gt;\n"
+"            &lt;programlisting&gt;\n"
+"               publican-adminguide.cfg\n"
+"               publican-devguide.cfg\n"
+"               publican-installation.cfg\n"
+"               publican-plugin-niciranvp.cfg\n"
+"               publican-release-notes.cfg\n"
+"            &lt;/programlisting&gt;\n"
+"            &lt;para&gt;To build the Developer guide for example, do the following:&lt;/para&gt;\n"
+"            &lt;programlisting&gt;publican build --config=publican-devguide.cfg --formats=pdf --langs=en-US&lt;/programlisting&gt;\n"
+"            &lt;para&gt;A pdf file will be created in tmp/en-US/pdf, you may choose to build the guide in a different format like html. In that case just replace the format value.&lt;/para&gt;\n"
+"        &lt;/section&gt;\n"
+"    \n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Happy Publicating and DocBooking."
+msgstr ""

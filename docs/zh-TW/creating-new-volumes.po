@@ -1,0 +1,150 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-04 07:24+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Volume"
+msgstr "新增容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can add more data disk volumes to a guest VM at any time, up to the "
+"limits of your storage capacity. Both &PRODUCT; administrators and users can"
+" add volumes to VM instances. When you create a new volume, it is stored as "
+"an entity in &PRODUCT;, but the actual storage resources are not allocated "
+"on the physical storage device until you attach the volume. This "
+"optimization allows the &PRODUCT; to provision the volume nearest to the "
+"guest that will use it when the first attachment is made."
+msgstr "您可以隨時新增資料硬碟到訪客VM，直到上限。&PRODUCT; 的使用者及管理者耶可以新增，當您新增容量，它會放在&PRODUCT;，但實際的儲存資源並沒有分配，直到您將容量歸屬。此最佳化允許&PRODUCT;提供容量給最近的訪客"
+
+#. Tag: title
+#, no-c-format
+msgid "Using Local Storage for Data Volumes"
+msgstr "使用本機端儲存的資料磁碟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create data volumes on local storage (supported with XenServer, KVM,"
+" and VMware). The data volume is placed on the same host as the VM instance "
+"that is attached to the data volume. These local data volumes can be "
+"attached to virtual machines, detached, re-attached, and deleted just as "
+"with the other types of data volume."
+msgstr "您現在可以在本地儲存裝置(支援 XenServer、KVM及 VMware)新增資料volumes，它和VM instance位於同一個主機。這些本地資料volumes可以：連結到虛擬機器、不連結、重新連結和刪除。在前些版本的CloudStack，只有root硬碟能夠放到本地儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Local storage is ideal for scenarios where persistence of data volumes and "
+"HA is not required. Some of the benefits include reduced disk I/O latency "
+"and cost reduction from using inexpensive local disks."
+msgstr "本地儲存裝置對保存資料 volumes的計畫是很理想的，而且不需要HA。還有一些優點，像是減少硬碟I/O延遲和使用本地硬碟來減少成本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order for local volumes to be used, the feature must be enabled for the "
+"zone."
+msgstr "為了本地 volumes可以使用，這個功能需要在zone啟用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can create a data disk offering for local storage. When a user creates a"
+" new VM, they can select this disk offering in order to cause the data disk "
+"volume to be placed in local storage."
+msgstr "您可以建立資料硬碟給本地儲存裝置，當使用者建立新的VM時，他們可以選擇這個硬碟來使資料硬碟 volume可以放在本地儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can not migrate a VM that has a volume in local storage to a different "
+"host, nor migrate the volume itself away to a different host. If you want to"
+" put a host into maintenance mode, you must first stop any VMs with local "
+"data volumes on that host."
+msgstr "您不能遷移含有本地儲存裝置的VM或是volume本身到其他主機上。如果您想要這台主機進入維護模式，您必須先停止所有含有本地資料volume的VM"
+
+#. Tag: title
+#, no-c-format
+msgid "To Create a New Volume"
+msgstr "要新增容量"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr "在左邊的導覽視窗，選擇Storage"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "於Select View中選擇Volumes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To create a new volume, click Add Volume, provide the following details, and"
+" click OK."
+msgstr "選擇 Add Volume，並提供細節來新增容量"
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Give the volume a unique name so you can find it later."
+msgstr "Name：容量的名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Availability Zone. Where do you want the storage to reside? This should be "
+"close to the VM that will use the volume."
+msgstr "Availability Zone：儲存裝置的歸屬，必須鄰近使用容量的VM"
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Offering. Choose the characteristics of the storage."
+msgstr "Disk Offering：選擇儲存裝置的屬性"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new volume appears in the list of volumes with the state “Allocated.” "
+"The volume data is stored in &PRODUCT;, but the volume is not yet ready for "
+"use"
+msgstr "新的容量會出現在表中，並顯示\"Allocated\"。容量資料會存在&PRODUCT;中，但是尚未啟用"
+
+#. Tag: para
+#, no-c-format
+msgid "To start using the volume, continue to Attaching a Volume"
+msgstr "繼續Attaching a Volume步驟來啟用"

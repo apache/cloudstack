@@ -1,0 +1,112 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 12:54+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Moving VMs Between Hosts (Manual Live Migration)"
+msgstr "在主機間移動VM(手動移動)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; administrator can move a running VM from one host to another "
+"without interrupting service to users or going into maintenance mode. This "
+"is called manual live migration, and can be done under the following "
+"conditions:"
+msgstr "&PRODUCT;管理者可以再不打斷服務及進入維護模式的情況下，移動執行中的VM。此動作稱為手動移動，可以在以下情況操作："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The root administrator is logged in. Domain admins and users can not perform"
+" manual live migration of VMs."
+msgstr "登入root管理者，網域管理者及使用者無法執行此動作"
+
+#. Tag: para
+#, no-c-format
+msgid "The VM is running. Stopped VMs can not be live migrated."
+msgstr "VM正在運行。停止的VM無法執行動作"
+
+#. Tag: para
+#, no-c-format
+msgid "The destination host must be in the same cluster as the original host."
+msgstr "目的地主機必須和原來的主機是同一cluster"
+
+#. Tag: para
+#, no-c-format
+msgid "The VM must not be using local disk storage."
+msgstr "VM必須使用本地硬碟儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The destination host must have enough available capacity. If not, the VM "
+"will remain in the \"migrating\" state until memory becomes available."
+msgstr "目的地主機必須有足夠的空間，否則VM會持續 \"migrating\"狀態直到記憶體足夠為止"
+
+#. Tag: para
+#, no-c-format
+msgid "To manually live migrate a virtual machine"
+msgstr "要手動移動虛擬機器"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr "在左邊的導覽視窗，選擇 Instances"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VM that you want to migrate."
+msgstr "選擇想要移動的VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Migrate Instance button.<inlinemediaobject> <imageobject> "
+"<imagedata fileref=\"./images/migrate-instance.png\" /> </imageobject> "
+"<textobject><phrase>Migrateinstance.png: button to migrate an "
+"instance</phrase></textobject> </inlinemediaobject>"
+msgstr "點選Migrate Instance<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/migrate-instance.png\" /> </imageobject> <textobject><phrase>Migrateinstance.png: button to migrate an instance</phrase></textobject> </inlinemediaobject> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From the list of hosts, choose the one to which you want to move the VM."
+msgstr "從主機列表中選擇要移動VM的目的地主機"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"

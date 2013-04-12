@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-06 14:20+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Project Members From the UI"
+msgstr "使用使用者介面增加計畫成員"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The steps below tell how to add a new member to a project if the invitations"
+" feature is not enabled in the cloud. If the invitations feature is enabled "
+"cloud,as described in <xref linkend=\"set-up-invitations\" />, use the "
+"procedure in <xref linkend=\"send-projects-membership-invitation\" />."
+msgstr "此步驟教您，如果邀請功能不能用的話，如何新增成員到計畫中，如果邀請功能，在<xref linkend=\"set-up-invitations\" />中描述的，可以用的話，請依照<xref linkend=\"send-projects-membership-invitation\" />的步驟執行"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "在左邊的導覽視窗，選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "於Select View中選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr "選擇你想要套用的計畫"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Accounts tab. The current members of the project are listed."
+msgstr "點選Accounts標籤，會列出現在計畫的成員"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Type the account name of the new member you want to add, and click Add "
+"Account. You can add only people who have an account in this cloud and "
+"within the same domain as the project."
+msgstr "輸入新成員的帳戶名，然後按Add Account，您可以只加入在同一網域的雲端使用者"

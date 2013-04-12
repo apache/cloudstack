@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-11 14:38+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with System Virtual Machines"
+msgstr "使用系統虛擬機器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; uses several types of system virtual machines to perform tasks in "
+"the cloud. In general &PRODUCT; manages these system VMs and creates, "
+"starts, and stops them as needed based on scale and immediate needs. "
+"However, the administrator should be aware of them and their roles to assist"
+" in debugging issues."
+msgstr "&PRODUCT;使用多種類型的系統虛擬機器來在雲端執行任務。通常&PRODUCT;管理這些系統虛擬機器，以及建立、啟動及停止，依據擴展或立即需求時使用。但是管理者應該要注意這些虛擬機器，以及它們協助除錯的功能"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can configure the system.vm.random.password parameter to create a random"
+" system VM password to ensure higher security. If you reset the value for "
+"system.vm.random.password to true and restart the Management Server, a "
+"random password is generated and stored encrypted in the database. You can "
+"view the decrypted password under the system.vm.password global parameter on"
+" the &PRODUCT; UI or by calling the listConfigurations API."
+msgstr "您可以設定ystem.vm.random.password欄位來建立隨機的系統虛擬機器密碼，以達到更高的安全性。如果您重設數值system.vm.random.password為true，並重新啟動管理伺服器，隨機的密碼就會產生，並存在加密的資料庫中。您可以檢查解密的密碼，可以在&PRODUCT;使用者介面檢查system.vm.password廣域參數欄位，或是呼叫listConfigurations API"

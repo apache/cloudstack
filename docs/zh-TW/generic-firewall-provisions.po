@@ -1,0 +1,62 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-10 02:53+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Generic Firewall Provisions"
+msgstr "通用防火牆規則"
+
+#. Tag: para
+#, no-c-format
+msgid "The hardware firewall is required to serve two purposes:"
+msgstr "硬體防火牆是為以下兩個原因："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Protect the Management Servers. NAT and port forwarding should be configured"
+" to direct traffic from the public Internet to the Management Servers."
+msgstr "保護管理伺服器，NAT及通訊埠轉送應設定為從公開網路直接送流量到管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Route management network traffic between multiple zones. Site-to-site VPN "
+"should be configured between multiple zones."
+msgstr "在管理網路及多區域間建立流量路線，站對站VPN應設在多區域間"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To achieve the above purposes you must set up fixed configurations for the "
+"firewall. Firewall rules and policies need not change as users are "
+"provisioned into the cloud. Any brand of hardware firewall that supports NAT"
+" and site-to-site VPN can be used."
+msgstr "您可以建立固定防火牆設定來達到以上目的，防火牆規則及政策不用再改變，任何支援NAT及站對站VPN的硬體防火牆品牌都可以使用"

@@ -1,0 +1,179 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-26 01:27+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Primary Storage"
+msgstr "新增Primary Storage"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that nothing stored on the server. Adding the server to CloudStack "
+"will destroy any existing data."
+msgstr "請確保伺服器端是沒有任何資料的，新增一個伺服器至CloudStack將會刪除所有存在的資料。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you create a new zone, the first primary storage is added as part of "
+"that procedure. You can add primary storage servers at any time, such as "
+"when adding a new cluster or adding more servers to an existing cluster."
+msgstr "當您新增了一個zone，過程中您間加入第一個primary storage，您可以隨時新增primary storage伺服器進入您的CloudStack，例如：當您新增了一個cluster或是當新增了許多的伺服器進入一個已存在的cluster。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the primary storage."
+msgstr "於左邊的navigation列表中點選Infrastructure，接者點選zone並選擇View More，最後點選新增primary storage。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute tab."
+msgstr "點選Compute分頁"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Primary Storage node of the diagram, click View All."
+msgstr "於圖示中的Primary storage節點中點選View All"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Primary Storage."
+msgstr "點選Add Primary Storage"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide the following information in the dialog. The information required "
+"varies depending on your choice in Protocol."
+msgstr "於對話視窗中，輸入以下資訊，所有的資訊都跟您的protocol有關。"
+
+#. Tag: para
+#, no-c-format
+msgid "Pod. The pod for the storage device."
+msgstr "Pod，儲存裝置所服務的pod"
+
+#. Tag: para
+#, no-c-format
+msgid "Cluster. The cluster for the storage device."
+msgstr "Cluster，儲存裝置所服務的cluster"
+
+#. Tag: para
+#, no-c-format
+msgid "Name. The name of the storage device"
+msgstr "Name，儲存裝置名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Protocol. For XenServer, choose either NFS, iSCSI, or PreSetup. For KVM, "
+"choose NFS or SharedMountPoint. For vSphere choose either VMFS (iSCSI or "
+"FiberChannel) or NFS"
+msgstr "Protocol. 以XenServer來說，您可以選擇NFS、iSCSI、或是 PreSetup. 以KVM來說，您可以選擇NFS or SharedMountPoint。vSphere您可以選擇VMFS (iSCSI或 FiberChannel)或NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Server (for NFS, iSCSI, or PreSetup). The IP address or DNS name of the "
+"storage device"
+msgstr "伺服器(NFS、iSCSI、PreSetup)。儲存裝置的IP位址或是DNS名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Server (for VMFS). The IP address or DNS name of the vCenter server."
+msgstr "伺服器(VMFS)。vCenter伺服器的的IP位址或是DNS名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Path (for NFS). In NFS this is the exported path from the server."
+msgstr "路徑(NFS)。NFS的路徑"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Path (for VMFS). In vSphere this is a combination of the datacenter name and"
+" the datastore name. The format is \"/\" datacenter name \"/\" datastore "
+"name. For example, \"/cloud.dc.VM/cluster1datastore\"."
+msgstr "路徑(VMFS)。在vSphere中，這是datacenter名稱和datastoe的名稱組合，格式為\"/\"datacenter name\"/\"datastore name。 例如：\"/cloud.dc.VM/cluster1datastore\"。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Path (for SharedMountPoint). With KVM this is the path on each host that is "
+"where this primary storage is mounted. For example, \"/mnt/primary\"."
+msgstr "路徑(SharedMountPoint)。於KVM環境下指的是每一台host掛載primary storage的路徑，例如：\"/mnt/primary\"。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"SR Name-Label (for PreSetup). Enter the name-label of the SR that has been "
+"set up outside &PRODUCT;."
+msgstr "SR Name-Label (PreSetup). 輸入SR的name-label ，此label應已於&PRODUCT;外設定完成。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Target IQN (for iSCSI). In iSCSI this is the IQN of the target. For example,"
+" iqn.1986-03.com.sun:02:01ec9bb549-1271378984"
+msgstr "Target IQN (iSCSI). 在iSCSI中，此欄位代表其IQN。例如：iqn.1986-03.com.sun:02:01ec9bb549-1271378984"
+
+#. Tag: para
+#, no-c-format
+msgid "Lun # (for iSCSI). In iSCSI this is the LUN number. For example, 3."
+msgstr "Lun # (iSCSI). iSCSI的 LUN number. 例如：3."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Tags (optional). The comma-separated list of tags for this storage device. "
+"It should be an equivalent set or superset of the tags on your disk "
+"offerings."
+msgstr "標籤(非必要)。代表此storage device的逗點分隔標籤。此標籤應等於集合或父集合的disk offering標籤。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The tag sets on primary storage across clusters in a Zone must be identical."
+" For example, if cluster A provides primary storage that has tags T1 and T2,"
+" all other clusters in the Zone must also provide primary storage that has "
+"tags T1 and T2."
+msgstr "橫跨Zone中的cluster，設在主要儲存裝置的標籤，必須一模一樣。例如，如果cluster A提供主要儲存裝置，他有標籤T1和T2，其他Zone內的cluster也必須提供相同標籤T1和T2的主要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"

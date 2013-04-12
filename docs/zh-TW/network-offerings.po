@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2012-09-24 18:41+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-03 12:23+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,39 +31,39 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Network Offerings"
-msgstr ""
+msgstr "Network Offerings"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "For the most up-to-date list of supported network services, see the "
 "&PRODUCT; UI or call listNetworkServices."
-msgstr ""
+msgstr "對於大多最新支援的網路服務名單，詳見&PRODUCT; UI或呼叫listNetworkServices "
 
 #. Tag: para
 #, no-c-format
 msgid "A network offering is a named set of network services, such as:"
-msgstr ""
+msgstr "Network offering是指一群網路服務的集合"
 
 #. Tag: para
 #, no-c-format
 msgid "DHCP"
-msgstr ""
+msgstr "DHCP"
 
 #. Tag: para
 #, no-c-format
 msgid "DNS"
-msgstr ""
+msgstr "DNS"
 
 #. Tag: para
 #, no-c-format
 msgid "Source NAT"
-msgstr ""
+msgstr "Source NAT"
 
 #. Tag: para
 #, no-c-format
 msgid "Static NAT"
-msgstr ""
+msgstr "Static NAT"
 
 #. Tag: para
 #, no-c-format
@@ -72,36 +73,36 @@ msgstr "Port Forwarding"
 #. Tag: para
 #, no-c-format
 msgid "Load Balancing"
-msgstr ""
+msgstr "Load Balancing"
 
 #. Tag: para
 #, no-c-format
 msgid "Firewall"
-msgstr ""
+msgstr "Firewall"
 
 #. Tag: para
 #, no-c-format
 msgid "VPN"
-msgstr ""
+msgstr "VPN"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Optional) Name one of several available providers to use for a given "
 "service, such as Juniper for the firewall"
-msgstr ""
+msgstr "選擇性)選擇一個可用的提供者來使用這個服務，如將防火牆使用在 Juniper "
 
 #. Tag: para
 #, no-c-format
 msgid "(Optional) Network tag to specify which physical network to use"
-msgstr ""
+msgstr "(選擇性)將網路tag到要使用的實體網路"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "When creating a new VM, the user chooses one of the available network "
 "offerings, and that determines which network services the VM can use."
-msgstr ""
+msgstr "當建立一個新的VM時，使用者需要選擇一個可用的網路來供VM使用"
 
 #. Tag: para
 #, no-c-format
@@ -115,7 +116,7 @@ msgid ""
 "for their website, while tenant B may be running a web server farm and "
 "require a scalable firewall solution, load balancing solution, and alternate"
 " networks for accessing the database backend."
-msgstr ""
+msgstr "除了&PRODUCT;建立的預設網路服務，&PRODUCT;管理者可以建立任意個網路服務。您可以設定您的雲端在多租戶網路提供不同等級的服務，例如，如果兩租戶的基本實體網路配線是相同的，假使租戶A只需要簡單的防火牆，而租戶B想要運行網頁伺服器並需要替終端安裝可擴充的防火牆、 load balancing及替代網路。"
 
 #. Tag: para
 #, no-c-format
@@ -135,7 +136,7 @@ msgid ""
 "associated with one network offering. A virtual network can be upgraded or "
 "downgraded by changing its associated network offering. If you do this, be "
 "sure to reprogram the physical network to match."
-msgstr ""
+msgstr "建立新的虛擬網路時， &PRODUCT;管理者會選擇一個網路服務給網路。每個虛擬網路會接到一個網路服務。而虛擬網路可以藉由更新或還原來改變連結，如果您做了此步驟，請重新改編實體網路"
 
 #. Tag: para
 #, no-c-format
@@ -143,4 +144,4 @@ msgid ""
 "&PRODUCT; also has internal network offerings for use by &PRODUCT; system "
 "VMs. These network offerings are not visible to users but can be modified by"
 " administrators."
-msgstr ""
+msgstr "&PRODUCT;在&PRODUCT;系統VMs也有內部網路服務，這些網路服務對使用者是不可見的，但管理者可以修改"

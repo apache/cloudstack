@@ -1,0 +1,124 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-26 09:19+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installing Publican"
+msgstr "安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; documentation is built using publican. This section describes how "
+"to install publican on your own machine so that you can build the "
+"documentation guides."
+msgstr "&PRODUCT;文件使用Publican建立，這個章節描述如何安裝在您的機器上"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; documentation source code is located under "
+"<emphasis>/docs</emphasis>"
+msgstr " &PRODUCT;文件原始碼位於"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Publican documentation itself is also very <ulink "
+"url=\"http://docs.fedoraproject.org/en-"
+"US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-"
+"Installing_Publican.html\">useful</ulink>."
+msgstr "Publican文件也非常<ulink url=\"http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Installing_Publican.html\">useful</ulink> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On RHEL and RHEL derivatives, install publican with the following command:"
+msgstr "在RHEL和RHEL衍生的東西，用下列指令安裝："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install publican publican-doc"
+msgstr "yum install publican publican-doc"
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, install publican with the following command:"
+msgstr "在 Ubuntu，用以下指令安裝："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install publican publican-doc"
+msgstr "apt-get install publican publican-doc"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For other distribution refer to the publican documentation listed above. For"
+" latest versions of OSX you may have to install from <ulink "
+"url=\"https://fedorahosted.org/publican/wiki/Installing_OSX\">source</ulink>"
+" and tweak it to your own setup."
+msgstr "其他產品列在上面，對於最新版的OSX，您需要從 <ulink url=\"https://fedorahosted.org/publican/wiki/Installing_OSX\">source</ulink> 安裝，並轉成您自己的設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once publican is installed, you need to setup the so-called &PRODUCT; brand "
+"defined in the <emphasis>docs/publican-&PRODUCT;</emphasis> directory."
+msgstr "當publican安裝好了，您需要設定&PRODUCT; brand，定義在<emphasis>docs/publican-&PRODUCT;</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid "To do so, enter the following commands:"
+msgstr "進入以下指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"        sudo cp -R publican-cloudstack /usr/share/publican/Common_Content/cloudstack\n"
+"    "
+msgstr "\n        sudo cp -R publican-cloudstack /usr/share/publican/Common_Content/cloudstack\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this fails or you later face errors related to the brand files, see the "
+"publican <ulink url=\"http://docs.fedoraproject.org/en-"
+"US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-"
+"Branding.html#sect-Users_Guide-Installing_a_brand\">documentation</ulink>."
+msgstr "如果失敗或您之後看見錯誤，請見publican <ulink url=\"http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Branding.html#sect-Users_Guide-Installing_a_brand\">documentation</ulink> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With publican installed and the &PRODUCT; brand files in place, you should "
+"be able to build any documentation guide."
+msgstr "當您publican和&PRODUCT; brand檔案都建好了，您將可以建立任何文件指南"

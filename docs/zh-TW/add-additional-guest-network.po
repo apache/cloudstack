@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 09:32+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-22 01:54+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -69,7 +69,7 @@ msgid ""
 "applies to. Each zone is a broadcast domain, and therefore each zone has a "
 "different IP range for the guest network. The administrator must configure "
 "the IP range for each zone."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Zone</emphasis>. 欲新增網路的zone；每一個zone都具有廣播的範圍，因此每一個zone都需具有不同的IP範圍的Guest網路，administrator必須要為每一個zone設定獨立的IP範圍。"
 
 #. Tag: para
 #, no-c-format

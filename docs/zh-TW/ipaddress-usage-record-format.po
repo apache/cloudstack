@@ -1,0 +1,102 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-03 12:26+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "IP Address Usage Record Format"
+msgstr "IP位址使用紀錄的格式"
+
+#. Tag: para
+#, no-c-format
+msgid "For IP address usage the following fields exist in a usage record."
+msgstr "以下欄位會出現在使用紀錄中"
+
+#. Tag: para
+#, no-c-format
+msgid "account - name of the account"
+msgstr "account：帳戶名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "accountid - ID of the account"
+msgstr "accountid：帳戶的ID"
+
+#. Tag: para
+#, no-c-format
+msgid "domainid - ID of the domain in which this account resides"
+msgstr "domainid：帳戶所在的區域ID"
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid - Zone where the usage occurred"
+msgstr "zoneid：使用的地區"
+
+#. Tag: para
+#, no-c-format
+msgid "description - A string describing what the usage record is tracking"
+msgstr "description：描述使用紀錄在追蹤甚麼的字串"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage - String representation of the usage, including the units of usage"
+msgstr "usage：代表使用率的字串，包括單位"
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype - A number representing the usage type (see Usage Types)"
+msgstr "usagetype：代表使用形式的數字(詳見 Usage Types )"
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage - A number representing the actual usage in hours"
+msgstr "rawusage：帶表實際使用率的數字，單位為小時"
+
+#. Tag: para
+#, no-c-format
+msgid "usageid - IP address ID"
+msgstr "usageid：IP位址的ID"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"startdate, enddate - The range of time for which the usage is aggregated; "
+"see Dates in the Usage Record"
+msgstr "startdate, enddate：使用總計的時間，詳見Dates in the Usage Record"
+
+#. Tag: para
+#, no-c-format
+msgid "issourcenat - Whether source NAT is enabled for the IP address"
+msgstr "issourcenat：source NAT是否啟用"
+
+#. Tag: para
+#, no-c-format
+msgid "iselastic - True if the IP address is elastic."
+msgstr "iselastic：如果IP位址是彈性的，顯示True"

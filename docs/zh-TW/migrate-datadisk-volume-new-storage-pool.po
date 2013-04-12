@@ -1,0 +1,67 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 12:28+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Migrating a Data Disk Volume to a New Storage Pool"
+msgstr "移動資料硬碟容量到新的儲存裝置群"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Detach the data disk from the VM. See Detaching and Moving Volumes <xref "
+"linkend=\"detach-move-volumes\" /> (but skip the “reattach” step at the end."
+" You will do that after migrating to new storage)."
+msgstr "切斷VM與資料硬碟的連結，詳見Detaching and Moving Volumes <xref linkend=\"detach-move-volumes\" />(請跳過最後的“reattach”步驟，您在移動後才會使用到)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Call the &PRODUCT; API command migrateVolume and pass in the volume ID and "
+"the ID of any storage pool in the zone."
+msgstr "在容量ID及任一儲存裝置ID呼叫 &PRODUCT; API指令migrateVolume及pass"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Watch for the volume status to change to Migrating, then back to Ready."
+msgstr "監看VM狀態，移動時為Migrating，停止時為Ready"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Attach the volume to any desired VM running in the same cluster as the new "
+"storage server. See Attaching a Volume <xref linkend=\"attaching-volume\" />"
+msgstr "連結容量到同一cluster的任一VM，做為新的儲存裝置伺服器，詳見 Attaching a Volume <xref linkend=\"attaching-volume\" />"

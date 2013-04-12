@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:10+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-03-20 12:31+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -37,7 +38,7 @@ msgstr "事前準備"
 msgid ""
 "Before enabling the Nicira NVP plugin the NVP Controller needs to be "
 "configured. Please review the NVP User Guide on how to do that."
-msgstr ""
+msgstr "在啟用Nicira NVP 插件前，請先設定 NVP Controller。請回顧"
 
 #. Tag: para
 #, no-c-format
@@ -45,7 +46,7 @@ msgid ""
 "&PRODUCT; needs to have at least one physical network with the isolation "
 "method set to \"STT\". This network should be enabled for the Guest traffic "
 "type."
-msgstr ""
+msgstr "&PRODUCT; 需要至少一個將隔離法設至STT的實體網路。這個網路應該可以在Guest traffic type下使用了"
 
 #. Tag: para
 #, no-c-format
@@ -53,36 +54,36 @@ msgid ""
 "The Guest traffic type should be configured with the traffic label that "
 "matches the name of the Integration Bridge on the hypervisor. See the Nicira"
 " NVP User Guide for more details on how to set this up in XenServer or KVM."
-msgstr ""
+msgstr "來賓流量的形式應在流量標籤中設定，使和在高層管理者中的 Integration Bridge名稱吻合。參閱Nicira NVP User Guide 來取得更多關於設定這些的資訊"
 
 #. Tag: para
 #, no-c-format
 msgid "Make sure you have the following information ready:"
-msgstr ""
+msgstr "請先確定您已經準備好以下資訊："
 
 #. Tag: para
 #, no-c-format
 msgid "The IP address of the NVP Controller"
-msgstr ""
+msgstr "NVP Controller的IP位址"
 
 #. Tag: para
 #, no-c-format
 msgid "The username to access the API"
-msgstr ""
+msgstr "存取API的使用者名稱"
 
 #. Tag: para
 #, no-c-format
 msgid "The password to access the API"
-msgstr ""
+msgstr "存取API的密碼"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "The UUID of the Transport Zone that contains the hypervisors in this Zone"
-msgstr ""
+msgstr "Transport Zone中，包含高層管理者的UUID，"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "The UUID of the Physical Network that will be used for the Guest networks"
-msgstr ""
+msgstr "會被用在來賓網路的實體網路UUID"

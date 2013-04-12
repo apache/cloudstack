@@ -1,0 +1,300 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:46+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using SSH Keys for Authentication"
+msgstr "使用SSH Key授權"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the username and password authentication, &PRODUCT; supports "
+"using SSH keys to log in to the cloud infrastructure for additional "
+"security. You can use the createSSHKeyPair API to generate the SSH keys."
+msgstr "除了使用者名稱及密碼授權， &PRODUCT;支援使用SSH key登入雲端，您可以使用createSSHKeyPair API來產生"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Because each cloud user has their own SSH key, one cloud user cannot log in "
+"to another cloud user's instances unless they share their SSH key files. "
+"Using a single SSH key pair, you can manage multiple instances."
+msgstr "因為每個雲端使用者有自己的SSH key，兩個使用者將不能登入互相的帳戶除非他們共用，使用一個SSH key pair，您可以管理多個帳戶"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating an Instance Template that Supports SSH Keys"
+msgstr "建立支援SSH Key的Instance Template "
+
+#. Tag: para
+#, no-c-format
+msgid "Create a instance template that supports SSH Keys."
+msgstr "建立支援SSH Key的Instance Template "
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new instance by using the template provided by cloudstack."
+msgstr "使用cloudstack提供的 template新增Instance"
+
+#. Tag: para
+#, no-c-format
+msgid "For more information on creating a new instance, see"
+msgstr "更多關於新增instance的資訊，詳見"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Download the cloudstack script from <ulink "
+"url=\"http://sourceforge.net/projects/cloudstack/files/SSH%20Key%20Gen%20Script/\">The"
+" SSH Key Gen Script</ulink>to the instance you have created."
+msgstr "下載cloudstack script從<ulink url=\"http://sourceforge.net/projects/cloudstack/files/SSH%20Key%20Gen%20Script/\">The SSH Key Gen Script</ulink>到您建立的instance"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"wget "
+"http://downloads.sourceforge.net/project/cloudstack/SSH%20Key%20Gen%20Script"
+"/cloud-set-guest-"
+"sshkey.in?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcloudstack%2Ffiles%2FSSH%2520Key%2520Gen%2520Script%2F&amp;ts=1331225219&amp;use_mirror=iweb"
+msgstr "wget http://downloads.sourceforge.net/project/cloudstack/SSH%20Key%20Gen%20Script/cloud-set-guest-sshkey.in?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcloudstack%2Ffiles%2FSSH%2520Key%2520Gen%2520Script%2F&amp;ts=1331225219&amp;use_mirror=iweb"
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the file to /etc/init.d."
+msgstr "將檔案複製到/etc/init.d。"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "cp cloud-set-guest-sshkey.in /etc/init.d/"
+msgstr "cp cloud-set-guest-sshkey.in /etc/init.d/"
+
+#. Tag: para
+#, no-c-format
+msgid "Give the necessary permissions on the script:"
+msgstr "給必要的允許："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chmod +x /etc/init.d/cloud-set-guest-sshkey.in"
+msgstr "chmod +x /etc/init.d/cloud-set-guest-sshkey.in"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script while starting up the operating system:"
+msgstr "執行作業系統時執行script："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chkconfig --add cloud-set-guest-sshkey.in"
+msgstr "chkconfig --add cloud-set-guest-sshkey.in"
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the instance."
+msgstr "停止Instance"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating the SSH Keypair"
+msgstr "新增SSH Keypair "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must make a call to the createSSHKeyPair api method. You can either use "
+"the &PRODUCT; Python API library or the curl commands to make the call to "
+"the cloudstack api."
+msgstr "您必須呼叫 createSSHKeyPair api ，您可以使用&PRODUCT; Python API 或 curl指令來呼叫 cloudstack api "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, make a call from the cloudstack server to create a SSH keypair "
+"called \"keypair-doc\" for the admin account in the root domain:"
+msgstr "例如， 從 cloudstack 伺服器呼叫 \"keypair-doc\" 來建立"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that you adjust these values to meet your needs. If you are making "
+"the API call from a different server, your URL/PORT will be different, and "
+"you will need to use the API keys."
+msgstr "確保您已修正您需要的數值，如果您從不同伺服器呼叫API，您的URL/PORT會不同，並需要使用API Keys"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following curl command:"
+msgstr "執行以下curl指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"curl --globoff \"http://localhost:8096/?command=createSSHKeyPair&amp;name"
+"=keypair-doc&amp;account=admin&amp;domainid=5163440e-c44b-"
+"42b5-9109-ad75cae8e8a2\""
+msgstr "curl --globoff \"http://localhost:8096/?command=createSSHKeyPair&amp;name=keypair-doc&amp;account=admin&amp;domainid=5163440e-c44b-42b5-9109-ad75cae8e8a2\""
+
+#. Tag: para
+#, no-c-format
+msgid "The output is something similar to what is given below:"
+msgstr "結果會顯示如下："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"&lt;?xml version=\"1.0\" encoding=\"ISO-8859-1\"?&gt;&lt;createsshkeypairresponse cloud-stack-version=\"3.0.0.20120228045507\"&gt;&lt;keypair&gt;&lt;name&gt;keypair-doc&lt;/name&gt;&lt;fingerprint&gt;f6:77:39:d5:5e:77:02:22:6a:d8:7f:ce:ab:cd:b3:56&lt;/fingerprint&gt;&lt;privatekey&gt;-----BEGIN RSA PRIVATE KEY-----\n"
+"MIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\n"
+"dXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\n"
+"AoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\n"
+"mfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\n"
+"QpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\n"
+"VvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\n"
+"lYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\n"
+"nVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n"
+"4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\n"
+"KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n"
+"-----END RSA PRIVATE KEY-----\n"
+"&lt;/privatekey&gt;&lt;/keypair&gt;&lt;/createsshkeypairresponse&gt;"
+msgstr "&lt;?xml version=\"1.0\" encoding=\"ISO-8859-1\"?&gt;&lt;createsshkeypairresponse cloud-stack-version=\"3.0.0.20120228045507\"&gt;&lt;keypair&gt;&lt;name&gt;keypair-doc&lt;/name&gt;&lt;fingerprint&gt;f6:77:39:d5:5e:77:02:22:6a:d8:7f:ce:ab:cd:b3:56&lt;/fingerprint&gt;&lt;privatekey&gt;-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\ndXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\nAoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\nmfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\nQpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\nVvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\nlYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\nnVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\nKfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n-----END RSA PRIVATE KEY-----\n&lt;/privatekey&gt;&lt;/keypair&gt;&lt;/createsshkeypairresponse&gt;"
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the key data into a file. The file looks like this:"
+msgstr "將資料複製到檔案中，檔案會像："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"-----BEGIN RSA PRIVATE KEY-----\n"
+"MIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\n"
+"dXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\n"
+"AoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\n"
+"mfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\n"
+"QpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\n"
+"VvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\n"
+"lYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\n"
+"nVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n"
+"4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\n"
+"KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n"
+"-----END RSA PRIVATE KEY-----"
+msgstr "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\ndXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\nAoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\nmfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\nQpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\nVvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\nlYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\nnVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\nKfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n-----END RSA PRIVATE KEY-----"
+
+#. Tag: para
+#, no-c-format
+msgid "Save the file."
+msgstr "儲存"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating an Instance"
+msgstr "新增Instance"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you save the SSH keypair file, you must create an instance by using "
+"the template that you created at <xref linkend=\"create-ssh-template\" />. "
+"Ensure that you use the same SSH key name that you created at <xref linkend"
+"=\"create-ssh-keypair\" />."
+msgstr "當您儲存好SSH keypair檔案，您必須使用您在<xref linkend=\"create-ssh-template\" />建立的 template建立一個帳戶，確保您使用和相同的 SSH key 名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You cannot create the instance by using the GUI at this time and associate "
+"the instance with the newly created SSH keypair."
+msgstr "您不行使用GUI來新增及連結Instance新建的SSH keypair"
+
+#. Tag: para
+#, no-c-format
+msgid "A sample curl command to create a new instance is:"
+msgstr "新增Instance 的curl指令的範本如下："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"curl --globoff http://localhost:&lt;port "
+"number&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId"
+"=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-"
+"48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair"
+"=keypair-doc"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Substitute the template, service offering and security group IDs (if you are"
+" using the security group feature) that are in your cloud environment."
+msgstr "替換您雲端的template, service offering 和 security group IDs(如果您有使用security group)"
+
+#. Tag: title
+#, no-c-format
+msgid "Logging In Using the SSH Keypair"
+msgstr "用 SSH Keypair登入"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To test your SSH key generation is successful, check whether you can log in "
+"to the cloud setup."
+msgstr "用您是否能登入雲端設定來測試SSH key有沒有建立成功"
+
+#. Tag: para
+#, no-c-format
+msgid "For exaple, from a Linux OS, run:"
+msgstr "例如，在Linux OS執行："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ssh -i ~/.ssh/keypair-doc &lt;ip address&gt;"
+msgstr "ssh -i ~/.ssh/keypair-doc &lt;ip address&gt;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The -i parameter tells the ssh client to use a ssh key found at ~/.ssh"
+"/keypair-doc."
+msgstr "-i 變數告訴SSH客戶使用~/.ssh/keypair-doc內的ssh key"
+
+#. Tag: title
+#, no-c-format
+msgid "Resetting SSH Keys"
+msgstr "重設"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With the API command resetSSHKeyForVirtualMachine, a user can set or reset "
+"the SSH keypair assigned to a virtual machine. A lost or compromised SSH "
+"keypair can be changed, and the user can access the VM by using the new "
+"keypair. Just create or register a new keypair, then call "
+"resetSSHKeyForVirtualMachine."
+msgstr "由於有resetSSHKeyForVirtualMachine這個API指令，使用者可以設定或重設 SSH keypair，忘掉或有危害的SSH keypair可以被換掉，使用者可以使用新的keypair存取VM。建立或註冊新的keypair，然後呼叫 resetSSHKeyForVirtualMachine"

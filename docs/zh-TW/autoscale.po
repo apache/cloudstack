@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 14:04+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-08 15:40+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Configuring AutoScale"
-msgstr ""
+msgstr "設定 AutoScale "
 
 #. Tag: para
 #, no-c-format
@@ -42,7 +43,7 @@ msgid ""
 "decreases when demand subsides. Thus it helps you save compute costs by "
 "terminating underused VMs automatically and launching new VMs when you need "
 "them, without the need for manual intervention."
-msgstr ""
+msgstr "AutoScaling允許您擴充終端服務或無縫及自動地增加或減少VM，根據您的設定。啟用AutoScaling，您可以確定當需求增加時，VM數量會跟著增加，反之則自動減少。這能幫您減少運算成本，不用手動介入"
 
 #. Tag: para
 #, no-c-format
@@ -55,7 +56,7 @@ msgid ""
 "AutoScaling to launch an additional VM whenever CPU usage exceeds 80 percent"
 " for 15 minutes, or to remove a VM whenever CPU usage is less than 20 "
 "percent for 30 minutes."
-msgstr ""
+msgstr "NetScaler AutoScaling設計為無縫執行或根據使用者定義情況終止VM，觸發變動的情況會依據像監控CPU使用率等簡單的規則，或是監控伺服器的反應及CPU使用率等複雜的規則而有所不同，例如，您想要想要在CPU使用率在15分鐘超過80%就增加VM，或是CPU使用率在30分鐘低於20%就移除VM"
 
 #. Tag: para
 #, no-c-format
@@ -78,7 +79,7 @@ msgstr "事前準備"
 #. Tag: para
 #, no-c-format
 msgid "Before you configure an AutoScale rule, consider the following:"
-msgstr ""
+msgstr "在您設定 AutoScale 規則之前，請先考慮："
 
 #. Tag: para
 #, no-c-format
@@ -86,7 +87,7 @@ msgid ""
 "Ensure that the necessary template is prepared before configuring AutoScale."
 " When a VM is deployed by using a template and when it comes up, the "
 "application should be up and running."
-msgstr ""
+msgstr "確保必要的模組已經準備好，當VM使用模組部署時，應用程式需要出現並執行"
 
 #. Tag: para
 #, no-c-format
@@ -94,7 +95,7 @@ msgid ""
 "If the application is not running, the NetScaler device considers the VM as "
 "ineffective and continues provisioning the VMs unconditionally until the "
 "resource limit is exhausted."
-msgstr ""
+msgstr "如果應用程式並未執行，NetScaler裝置會認為VM是無效的，並繼續無條件的配置VM，直到資源耗盡"
 
 #. Tag: para
 #, no-c-format
@@ -103,7 +104,7 @@ msgid ""
 "the first boot and is ready to take the traffic. Observe the time requires "
 "to deploy the template. Consider this time when you specify the quiet time "
 "while configuring AutoScale."
-msgstr ""
+msgstr "部署您準備的模組，確定應用程式在開機時有出現，並可以處理流量。觀察部署模組需要的時間，用來考慮設定AutoScale時是否正常"
 
 #. Tag: para
 #, no-c-format
@@ -115,7 +116,7 @@ msgid ""
 "configured SNMP community and port by using standard SNMP managers. For "
 "example, see <xref linkend=\"configure-snmp-rhel\" /> to configure SNMP on a"
 " RHEL machine."
-msgstr ""
+msgstr "AutoScale功能支援SNMP計數器，可使用為定義狀況，想要監視 SNMP-based 計數器，請確保SNMP agent已安裝在模組中，及 使用標準SNMP管理器，使 SNMP運作單元可以在設定後的SNMP 群組及通訊埠正常運作，例如，詳見<xref linkend=\"configure-snmp-rhel\" />來設定RHEL機器上的SNMP "
 
 #. Tag: para
 #, no-c-format
@@ -126,7 +127,7 @@ msgid ""
 "deployment, use the virtual IP address configured in the load balancer for "
 "the management server’s cluster. Additionally, ensure that the NetScaler "
 "device has access to this IP address to provide AutoScale support."
-msgstr ""
+msgstr "確定endpointe.url 欄位有出現在Global Setting，並設定為Management Server API URL。例如，http://10.102.102.22:8080/client/api。對於多節點管理伺服器，使用虛擬IP，在管理伺服器叢集的負載平衡器中設定。另外，確定NetScaler 裝置可以存取此IP，藉此提供AutoScale支援"
 
 #. Tag: para
 #, no-c-format
@@ -134,7 +135,7 @@ msgid ""
 "If you update the endpointe.url, disable the AutoScale functionality of the "
 "load balancer rules in the system, then enable them back to reflect the "
 "changes. For more information see <xref linkend=\"update-autoscale\" />"
-msgstr ""
+msgstr "如果您更新endpointe.url，請停用系統的負載平衡規則的AutoScale功能，然後再啟用，使變更生效，更多資訊，詳見<xref linkend=\"update-autoscale\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -143,7 +144,7 @@ msgid ""
 "that the AutoScale functionality of the load balancers that the user "
 "participates in are disabled and then enabled to reflect the configuration "
 "changes in the NetScaler."
-msgstr ""
+msgstr "如果API Key 及 Secret Key為AutoScale 使用者重新產生，請確定使用者參與的負載平衡器的AutoScale功能，有先停用後再啟用，以使變更生效"
 
 #. Tag: para
 #, no-c-format
@@ -152,7 +153,7 @@ msgid ""
 "configuring a load balancer rule with AutoScale. Having one VM in the "
 "network ensures that the network is in implemented state for configuring "
 "AutoScale."
-msgstr ""
+msgstr "在進階區域中，確定在設定AutoScale的負載平衡規則前，至少有一個VM顯示，此確定網路是在執行狀態"
 
 #. Tag: title
 #, no-c-format
@@ -174,7 +175,7 @@ msgid ""
 " any admin intervention. For example, if the VM is deployed for a Web "
 "service, it should have the Web server running, the database connected, and "
 "so on."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Template</emphasis>：模組包含作業系統映像及應用程式。用來提供新 instance 擴增動作，當VM部署後，VM可以開始由負載平衡器接收流量，例如，如果VM部署為網頁服務，網頁伺服器應會開始執行，資料庫開始連結，然後繼續下去"
 
 #. Tag: para
 #, no-c-format
@@ -184,7 +185,7 @@ msgid ""
 "size, that the user can select when creating a new virtual machine instance."
 " Choose one of the compute offerings to be used while provisioning a VM "
 "instance as part of scaleup action."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Compute offering</emphasis>：一組先定義的虛擬硬體，包含CPU速度、CPU數量及記憶體大小，讓使用者可以在建立新的虛擬機器時選擇，配置VM instance為擴增動作的一部份時，選擇一個計算服務"
 
 #. Tag: para
 #, no-c-format

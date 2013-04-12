@@ -1,0 +1,135 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers"
+msgstr "準備及啟動其他管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For your second and subsequent Management Servers, you will install the "
+"Management Server software, connect it to the database, and set up the OS "
+"for the Management Server."
+msgstr "對於次要及後續的管理伺服器，您需要安裝管理伺服器軟體。連結到資料庫，然後為伺服器建立作業系統"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Perform the steps in <xref linkend=\"prepare-os\" /> and <xref linkend"
+"=\"sect-source-buildrpm\" /> or <xref linkend=\"sect-source-builddebs\" /> "
+"as appropriate."
+msgstr "執行<xref linkend=\"prepare-os\" />及<xref linkend=\"sect-source-buildrpm\" />或<xref linkend=\"sect-source-builddebs\" />步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This step is required only for installations where XenServer is installed on"
+" the hypervisor hosts."
+msgstr "此步驟僅為安裝超級監督者主機的 XenServer安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Download vhd-util from <ulink "
+"url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-"
+"util</ulink>"
+msgstr "從<ulink url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-util</ulink>下載vhd-util "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is RHEL or CentOS, copy vhd-util to "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr "如果管理伺服器為RHEL 或 CentOS，請複製vhd-util到/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the Management Server is Ubuntu, copy vhd-util to "
+"/usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util."
+msgstr "如果管理伺服器是Ubuntu，複製vhd-util到/usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util "
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that necessary services are started and set to start on boot."
+msgstr "確定必要的服務已經啟動"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>#</prompt> service rpcbind start\n"
+"<prompt>#</prompt> service nfs start\n"
+"<prompt>#</prompt> chkconfig nfs on\n"
+"<prompt>#</prompt> chkconfig rpcbind on\n"
+msgstr "<prompt>#</prompt> service rpcbind start\n<prompt>#</prompt> service nfs start\n<prompt>#</prompt> chkconfig nfs on\n<prompt>#</prompt> chkconfig rpcbind on\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the database client. Note the absence of the --deploy-as argument "
+"in this case. (For more details about the arguments to this command, see "
+"<xref linkend=\"management-server-install-db-external\" />.)"
+msgstr "設定資料庫客戶，注意，請忽略--deploy-as變數(更多細節，詳見<xref linkend=\"management-server-install-db-external\" /> )"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable> -i <replaceable>management_server_ip</replaceable>\n"
+"      "
+msgstr "<prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable> -i <replaceable>management_server_ip</replaceable>\n      "
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the OS and start the Management Server:"
+msgstr "設定作業系統及啟動管理伺服器："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> cloud-setup-management"
+msgstr "<prompt>#</prompt> cloud-setup-management"
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server on this node should now be running."
+msgstr "此節點的管理伺服器應該會開始執行"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps on each additional Management Server."
+msgstr "重複以上步驟到其他管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure to configure a load balancer for the Management Servers. See <xref "
+"linkend=\"management-server-lb\" />."
+msgstr ""

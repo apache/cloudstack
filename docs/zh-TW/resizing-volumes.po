@@ -1,0 +1,149 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 12:47+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Resizing Volumes"
+msgstr "重新規劃容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides the ability to resize data disks; &PRODUCT; controls "
+"volume size by using disk offerings. This provides &PRODUCT; administrators "
+"with the flexibility to choose how much space they want to make available to"
+" the end users. Volumes within the disk offerings with the same storage tag "
+"can be resized. For example, if you only want to offer 10, 50, and 100 GB "
+"offerings, the allowed resize should stay within those limits. That implies "
+"if you define a 10 GB, a 50 GB and a 100 GB disk offerings, a user can "
+"upgrade from 10 GB to 50 GB, or 50 GB to 100 GB. If you create a custom-"
+"sized disk offering, then you have the option to resize the volume by "
+"specifying a new, larger size."
+msgstr "&PRODUCT;提供重新規劃容量的功能，&PRODUCT;藉由硬碟服務來控制大小。提供了&PRODUCT;管理者多少空間釋出的彈性。相同儲存裝置tag的容量能被重新規劃，例如，如果您只想要提供10, 50, 和 100 GB，允許的規劃就不會超過這些限制，也就是您可以定義分別為10 GB、 50 GB及100 GB 的硬碟服務，使用者可以從10 GB 更新到 50 GB或是 50 GB 更新到 100 GB。如果您建立了自訂大小的硬碟服務，那麼您就可以定義新的硬碟容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additionally, using the resizeVolume API, a data volume can be moved from a "
+"static disk offering to a custom disk offering with the size specified. This"
+" functionality allows those who might be billing by certain volume sizes or "
+"disk offerings to stick to that model, while providing the flexibility to "
+"migrate to whatever custom size necessary."
+msgstr "除此之外，使用resizeVolume API， 資料容量可以從固定硬碟服務移動到自訂硬碟服務。這個功能允許想要在特定容量需要收費的人將收費訂到這個規則"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This feature is supported on KVM, XenServer, and VMware hosts. However, "
+"shrinking volumes is not supported on VMware hosts."
+msgstr "此功能支援KVM, XenServer, 及 VMware主機，但縮小容量的功能並不支援VMware 主機"
+
+#. Tag: para
+#, no-c-format
+msgid "Before you try to resize a volume, consider the following:"
+msgstr "在您重新規劃之前，請先注意："
+
+#. Tag: para
+#, no-c-format
+msgid "The VMs associated with the volume are stopped."
+msgstr "連結容量的VMs已停止"
+
+#. Tag: para
+#, no-c-format
+msgid "The data disks associated with the volume are removed."
+msgstr "連結容量的資料硬碟已經移除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a volume is shrunk, the disk associated with it is simply truncated, "
+"and doing so would put its content at risk of data loss. Therefore, resize "
+"any partitions or file systems before you shrink a data disk so that all the"
+" data is moved off from that disk."
+msgstr "當容量縮小時，連結的硬碟也會被截短，並且會有資料遺失的風險。因此，請在縮小資料硬碟前，重新規劃任何分割或是檔案系統"
+
+#. Tag: para
+#, no-c-format
+msgid "To resize a volume:"
+msgstr "要重新規劃容量："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr "在左邊的導覽視窗，選擇Storage"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr "於Select View中選擇Volumes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select the volume name in the Volumes list, then click the Resize Volume "
+"button <inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/resize-volume-icon.png\" /> </imageobject> <textobject> <phrase>resize-"
+"volume-icon.png: button to display the resize volume option.</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr "在容量列表點選容量名稱，然後按Resize Volume <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/resize-volume-icon.png\" /> </imageobject> <textobject> <phrase>resize-volume-icon.png: button to display the resize volume option.</phrase> </textobject> </inlinemediaobject> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Resize Volume pop-up, choose desired characteristics for the storage."
+msgstr "在 Resize Volume跳出視窗，選擇想要的儲存裝置特性"
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Custom Disk, specify a custom size."
+msgstr "如果您選擇Custom Disk，請指定自訂大小"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Shrink OK to confirm that you are reducing the size of a volume."
+msgstr "點選Shrink OK來確認您要縮小容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This parameter protects against inadvertent shrinking of a disk, which might"
+" lead to the risk of data loss. You must sign off that you know what you are"
+" doing."
+msgstr "此欄位避免不小心的失誤，以免資料遺失，您必須知道您在做甚麼"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"

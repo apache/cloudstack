@@ -1,0 +1,77 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 11:56+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Stopping and Restarting the Management Server"
+msgstr "停止與重啟管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The root administrator will need to stop and restart the Management Server "
+"from time to time."
+msgstr "root管理者需要時常停止和重啟管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For example, after changing a global configuration parameter, a restart is "
+"required. If you have multiple Management Server nodes, restart all of them "
+"to put the new parameter value into effect consistently throughout the "
+"cloud.."
+msgstr "例如，改變廣域設定後，會需要重新啟動。如果您有多個管理伺服器節點，請全部重新啟動"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To stop the Management Server, issue the following command at the operating "
+"system prompt on the Management Server node:"
+msgstr "要停止管理伺服器，在管理伺服器節點的作業系統提示輸入以下指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management stop"
+msgstr "# service cloud-management stop"
+
+#. Tag: para
+#, no-c-format
+msgid "To start the Management Server:"
+msgstr "要啟動管理伺服器："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management start"
+msgstr "# service cloud-management start"
+
+#. Tag: para
+#, no-c-format
+msgid "To stop the Management Server:"
+msgstr "要停止管理伺服器："

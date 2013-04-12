@@ -1,0 +1,68 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-11 15:42+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "What Is &PRODUCT;?"
+msgstr "甚麼是&PRODUCT;？"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; is an open source software platform that pools computing resources"
+" to build public, private, and hybrid Infrastructure as a Service (IaaS) "
+"clouds. &PRODUCT; manages the network, storage, and compute nodes that make "
+"up a cloud infrastructure. Use &PRODUCT; to deploy, manage, and configure "
+"cloud computing environments."
+msgstr "&PRODUCT; 是一個開放原始碼的軟體，將運算資源抽象化成一整個資源庫提供了公有、私有以及混和式的雲端平台服務(IAAS)。&PRODUCT;具備了管理網路、儲存裝置和計算資源的能力，使用者可以運用&PRODUCT; 部屬、管理、設定雲端環境"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Typical users are service providers and enterprises. With &PRODUCT;, you "
+"can:"
+msgstr "一般使用者為服務提供者及企業，有了&PRODUCT;，您可以："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up an on-demand, elastic cloud computing service. Service providers can "
+"sell self service virtual machine instances, storage volumes, and networking"
+" configurations over the Internet."
+msgstr "依照需求建立一個具備彈性的雲端服務，網路服務提供業者可以販售虛擬機、儲存服務、網路設定服務。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up an on-premise private cloud for use by employees. Rather than "
+"managing virtual machines in the same way as physical machines, with "
+"&PRODUCT; an enterprise can offer self-service virtual machines to users "
+"without involving IT departments."
+msgstr "建立一個只提供內部員工所使用的私有雲服務，與傳統管理實體主機的方式有所不同，企業員工不需透過IT部門即可自助式的使用虛擬機"

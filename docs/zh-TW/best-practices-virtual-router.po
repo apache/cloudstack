@@ -1,0 +1,52 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 08:11+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Best Practices for Virtual Routers"
+msgstr "虛擬路由器的最佳練習"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"WARNING: Restarting a virtual router from a hypervisor console deletes all "
+"the iptables rules. To work around this issue, stop the virtual router and "
+"start it from the &PRODUCT; UI."
+msgstr "注意：從超級監督者控制台重新啟動虛擬路由器會刪除所有iptables規則。停止虛擬路由器並由 &PRODUCT; 使用者介面啟動，來處理此問題"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"WARNING: Do not use the destroyRouter API when only one router is available "
+"in the network, because restartNetwork API with the cleanup=false parameter "
+"can't recreate it later. If you want to destroy and recreate the single "
+"router available in the network, use the restartNetwork API with the "
+"cleanup=true parameter."
+msgstr "注意：當您只有一個路由器可用時，不要使用destroyRouter API，因為 restartNetwork API帶有cleanup=false參數，會無法重新建立。如果您要移除並重新建立路由器，請使用restartNetwork API，含有cleanup=true參數"

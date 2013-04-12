@@ -1,0 +1,127 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-09 06:24+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installing the Usage Server (Optional)"
+msgstr "安裝使用伺服器(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can optionally install the Usage Server once the Management Server is "
+"configured properly. The Usage Server takes data from the events in the "
+"system and enables usage-based billing for accounts."
+msgstr "當管理伺服器設定完成，您可以選擇安裝使用伺服器，此伺服器從系統事件擷取資料，及啟用使用收費的帳戶"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When multiple Management Servers are present, the Usage Server may be "
+"installed on any number of them. The Usage Servers will coordinate usage "
+"processing. A site that is concerned about availability should install Usage"
+" Servers on at least two Management Servers."
+msgstr "當多管理伺服器出現時，使用伺服器可以安裝在任意數量上。使用伺服器可以協調使用進程。有可用性疑慮的站點應該要在至少兩個管理伺服器上安裝管理伺服器"
+
+#. Tag: title
+#, no-c-format
+msgid "Requirements for Installing the Usage Server"
+msgstr "安裝需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server must be running when the Usage Server is installed."
+msgstr "管理伺服器必須是執行狀態"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Usage Server must be installed on the same server as a Management "
+"Server."
+msgstr "使用伺服器必須安裝在與管理伺服器相同的伺服器上"
+
+#. Tag: title
+#, no-c-format
+msgid "Steps to Install the Usage Server"
+msgstr "安裝步驟"
+
+#. Tag: para
+#, no-c-format
+msgid "Run ./install.sh."
+msgstr "執行 ./install.sh."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# ./install.sh\n"
+"        "
+msgstr "\n# ./install.sh\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should see a few messages as the installer prepares, followed by a list "
+"of choices."
+msgstr "安裝準備好時，您會在一串選項下看到一些訊息"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose \"S\" to install the Usage Server."
+msgstr "選擇\"S\"來安裝使用伺服器"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"   &gt; S\n"
+"        "
+msgstr "\n   &gt; S\n        "
+
+#. Tag: para
+#, no-c-format
+msgid "Once installed, start the Usage Server with the following command."
+msgstr "安裝好後，使用以下指令啟動使用伺服器"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# service cloud-usage start\n"
+"        "
+msgstr "\n# service cloud-usage start\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Administration Guide discusses further configuration of the Usage "
+"Server."
+msgstr "管理指南有更詳細的設定"

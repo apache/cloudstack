@@ -1,0 +1,79 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:47+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building &PRODUCT; Documentation"
+msgstr "建立&PRODUCT;文件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To build a specific guide, go to the source tree of the documentation in "
+"/docs and identify the guide you want to build."
+msgstr "要建立特別的指南，請到/docs中文件的source tree並確定您要建立的指南"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Currently there are four guides plus the release notes, all defined in "
+"publican configuration files:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"        publican-adminguide.cfg\n"
+"        publican-devguide.cfg\n"
+"        publican-installation.cfg\n"
+"        publican-plugin-niciranvp.cfg\n"
+"        publican-release-notes.cfg\n"
+"    "
+msgstr "\n        publican-adminguide.cfg\n        publican-devguide.cfg\n        publican-installation.cfg\n        publican-plugin-niciranvp.cfg\n        publican-release-notes.cfg\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "To build the Developer guide for example, do the following:"
+msgstr "要建立Developer指南，執行以下："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"publican build --config=publican-devguide.cfg --formats=pdf --langs=en-US"
+msgstr "publican build --config=publican-devguide.cfg --formats=pdf --langs=en-US"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A pdf file will be created in tmp/en-US/pdf, you may choose to build the "
+"guide in a different format like html. In that case just replace the format "
+"value."
+msgstr "有一個PDF檔案會以 tmp/en-US/pdf建立，您或許想建立其他格式，例如html，那麼您只要改變格式的直即可"

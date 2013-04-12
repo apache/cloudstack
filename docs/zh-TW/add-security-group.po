@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2012-09-24 02:45+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-21 06:00+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,12 +31,12 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Adding a Security Group"
-msgstr ""
+msgstr "新增"
 
 #. Tag: para
 #, no-c-format
 msgid "A user or administrator can define a new security group."
-msgstr ""
+msgstr "使用者或管理員可以定義一個新的security group"
 
 #. Tag: para
 #, no-c-format
@@ -45,36 +46,36 @@ msgstr "以管理者或終端使用者登入&PRODUCT; UI "
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation, choose Network"
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Network"
 
 #. Tag: para
 #, no-c-format
 msgid "In Select view, choose Security Groups."
-msgstr ""
+msgstr "在Select中，選擇Security Groups"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add Security Group."
-msgstr ""
+msgstr "選擇Add Security Grou"
 
 #. Tag: para
 #, no-c-format
 msgid "Provide a name and description."
-msgstr ""
+msgstr "提供名稱及敘述"
 
 #. Tag: para
 #, no-c-format
 msgid "Click OK."
-msgstr ""
+msgstr "按OK"
 
 #. Tag: para
 #, no-c-format
 msgid "The new security group appears in the Security Groups Details tab."
-msgstr ""
+msgstr "新的security group會出現在Security Groups Details標籤"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "To make the security group useful, continue to Adding Ingress and Egress "
 "Rules to a Security Group."
-msgstr ""
+msgstr "為使security group有用，新增Ingress and Egress Rule到Security Group"

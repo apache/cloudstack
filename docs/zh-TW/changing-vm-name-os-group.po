@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-06 12:37+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changing the VM Name, OS, or Group"
+msgstr "改變VM名稱、作業系統或群組"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After a VM is created, you can modify the display name, operating system, "
+"and the group it belongs to."
+msgstr "VM建立後，您可以修改名稱、作業系統及所屬群組"
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM through the &PRODUCT; UI:"
+msgstr "從&PRODUCT;使用者介面登入VM："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr "在左邊的導覽視窗，選擇 Instances"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the VM that you want to modify."
+msgstr "選擇要修改的VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Stop button to stop the VM. <inlinemediaobject> <imageobject> "
+"<imagedata fileref=\"./images/stop-instance-icon.png\" /> </imageobject> "
+"<textobject> <phrase>StopButton.png: button to stop a VM</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr "點選Stop按鈕暫停您的虛擬機器<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/stop-instance-icon.png\" /> </imageobject> <textobject> <phrase>StopButton.png: button to stop a VM</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click Edit. <inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/edit-icon.png\" /> </imageobject> <textobject> <phrase>EditButton.png: "
+"button to edit the properties of a VM</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "按下Edit<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>EditButton.png: button to edit the properties of a VM</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid "Make the desired changes to the following:"
+msgstr "依照您的需求修改："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Display name</emphasis>: Enter a new display name if"
+" you want to change the name of the VM."
+msgstr "<emphasis role=\"bold\">Display name</emphasis>：輸入新的名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>: Select the desired operating "
+"system."
+msgstr "<emphasis role=\"bold\">OS Type</emphasis>：選擇想要的作業系統"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Group</emphasis>: Enter the group name for the VM."
+msgstr "<emphasis role=\"bold\">Group</emphasis>：輸入群組名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Apply."
+msgstr "按Apply"

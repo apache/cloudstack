@@ -1,0 +1,131 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 12:22+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting the Global Project Resource Limits"
+msgstr "設定廣域計畫資源的限制"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "以管理者登入&PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr "在左邊的導覽視窗，選擇Global Settings"
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type max.projects and click the search button."
+msgstr "在搜尋欄位裡鍵入max.projects並點選搜尋按鈕。 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the search results, you will see the parameters you can use to set per-"
+"project maximum resource amounts that apply to all projects in the cloud. No"
+" project can have more resources, but an individual project can have lower "
+"limits. Click the edit button to set each parameter. <inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> "
+"</imageobject> <textobject> <phrase>editbutton.png: Edits "
+"parameters</phrase> </textobject> </inlinemediaobject>"
+msgstr "您會在搜尋結果中看到您可以用來設定每個計劃的最大資源數量的欄位，每個計畫的資源只能低，不能高。點選edit來設定每個參數<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>editbutton.png: Edits parameters</phrase> </textobject> </inlinemediaobject> "
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.public.ips"
+msgstr "max.project.public.ips"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum number of public IP addresses that can be owned by any project in "
+"the cloud. See About Public IP Addresses."
+msgstr "最大數量可以給任何計畫使用的公開IP位址，詳見About Public IP Addresses"
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.snapshots"
+msgstr "max.project.snapshots"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum number of snapshots that can be owned by any project in the cloud. "
+"See Working with Snapshots."
+msgstr "最大數量可以給任何計畫使用的快取物件，詳見Working with Snapshots "
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.templates"
+msgstr "max.project.templates"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum number of templates that can be owned by any project in the cloud. "
+"See Working with Templates."
+msgstr "最大數量可以給任何計畫使用的模組，詳見Working with Templates "
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.uservms"
+msgstr "max.project.uservms"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum number of guest virtual machines that can be owned by any project in"
+" the cloud. See Working With Virtual Machines."
+msgstr "最大數量可以給任何計畫使用的訪客虛擬機器，詳見Working With Virtual Machines "
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.volumes"
+msgstr "max.project.volumes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum number of data volumes that can be owned by any project in the "
+"cloud. See Working with Volumes."
+msgstr "最大數量可以給任何計畫使用的資料容量，詳見Working with Volumes "
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr "重新啟動 Management Server "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr "# service cloud-management restart"

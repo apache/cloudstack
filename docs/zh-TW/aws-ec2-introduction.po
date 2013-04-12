@@ -1,0 +1,86 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:34+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Amazon Web Services Compatible Interface"
+msgstr "Amazon Web Services相容的界面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; can translate Amazon Web Services (AWS) API calls to native "
+"&PRODUCT; API calls so that users can continue using existing AWS-compatible"
+" tools. This translation service runs as a separate web application in the "
+"same tomcat server as the management server of &PRODUCT;, listening on a "
+"different port. The Amazon Web Services (AWS) compatible interface provides "
+"the EC2 SOAP and Query APIs as well as the S3 REST API."
+msgstr "&PRODUCT; 可以將Amazon Web Services(AWS)的API指令轉譯成為&PRODUCT;的API指令，所以使用者可以運用現有的AWS相關工具操作&PRODUCT;。此轉譯的服務是利用&PRODUCT;management server的tomcat，但是不同連接埠，Amazon Web Services (AWS) 界面提供了 EC2 SOAP以及Query APIs和S3 REST API。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This service was previously enabled by separate software called CloudBridge."
+" It is now fully integrated with the &PRODUCT; management server."
+msgstr "此服務的前身為CloudBridge，目前已經完全併入&PRODUCT;的management server。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The compatible interface for the EC2 Query API and the S3 API are Work In "
+"Progress. The S3 compatible API offers a way to store data on the management"
+" server file system, it is not an implementation of the S3 backend."
+msgstr "相對應於EC2的查詢API以及S3的API目前正在開發階段， 相容於S3的API提供了將資料儲存於management server檔案系統的方法。"
+
+#. Tag: para
+#, no-c-format
+msgid "Limitations"
+msgstr "限制條件"
+
+#. Tag: para
+#, no-c-format
+msgid "Supported only in zones that use basic networking."
+msgstr "僅支援基礎網路設定的zones。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Available in fresh installations of &PRODUCT;. Not available through upgrade"
+" of previous versions."
+msgstr "新安裝的 &PRODUCT; 才具有此功能，而以舊版本升級方式安裝的是沒有本功能的。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Features such as Elastic IP (EIP) and Elastic Load Balancing (ELB) are only "
+"available in an infrastructure with a Citrix NetScaler device. Users "
+"accessing a Zone with a NetScaler device will need to use a NetScaler-"
+"enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering)."
+msgstr ""

@@ -1,0 +1,78 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-11 14:51+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with Snapshots"
+msgstr "使用快取物件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Supported for the following hypervisors: <emphasis "
+"role=\"bold\">XenServer</emphasis>, <emphasis role=\"bold\">VMware "
+"vSphere</emphasis>, and <emphasis role=\"bold\">KVM</emphasis>)"
+msgstr "(支援以下超級監督者： <emphasis role=\"bold\">XenServer</emphasis>, <emphasis role=\"bold\">VMware vSphere</emphasis>, and <emphasis role=\"bold\">KVM</emphasis>)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports snapshots of disk volumes. Snapshots are a point-in-time "
+"capture of virtual machine disks. Memory and CPU states are not captured."
+msgstr "&PRODUCT;支援硬碟容量的快取物件。快取物件為一時間點的虛擬機器硬碟擷取，記憶體及CPU狀態並不包含"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snapshots may be taken for volumes, including both root and data disks. The "
+"administrator places a limit on the number of stored snapshots per user. "
+"Users can create new volumes from the snapshot for recovery of particular "
+"files and they can create templates from snapshots to boot from a restored "
+"disk."
+msgstr "容量，包含root及資料硬碟，可能需要使用快取物件，管理者會限制每個使用者能儲存快取物件的數量，使用者可以從快取物件建立新的容量，用來復原特定檔案；可以從快取物件建立模組，用來啟動復原的硬碟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Users can create snapshots manually or by setting up automatic recurring "
+"snapshot policies. Users can also create disk volumes from snapshots, which "
+"may be attached to a VM like any other disk volume. Snapshots of both root "
+"disks and data disks are supported. However, &PRODUCT; does not currently "
+"support booting a VM from a recovered root disk. A disk recovered from "
+"snapshot of a root disk is treated as a regular data disk; the data on "
+"recovered disk can be accessed by attaching the disk to a VM."
+msgstr "使用者可以手動新增快取物件，或是建立自動遞迴的快取物件政策。使用者可以從快取物件建立硬碟容量，此容量可能會連結到虛擬機器上，如同其他硬碟容量。root硬碟及資料硬碟皆支援快取物件，但是&PRODUCT;目前並不支援從復原的root硬碟開啟虛擬機器，由root硬碟快取物件復原的硬碟將視為一般資料硬碟，其中的資料可以將硬碟連結到虛擬機器上來存取"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A completed snapshot is copied from primary storage to secondary storage, "
+"where it is stored until deleted or purged by newer snapshot."
+msgstr "完整的快取物件是由主要儲存裝置複製到次要儲存裝置，並會一直儲存在裝置中，除非刪除或是被新的快取物件蓋過去"

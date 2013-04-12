@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2012-09-24 18:39+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 06:57+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Install the Database on the Management Server Node"
-msgstr ""
+msgstr "在管理伺服器節點安裝資料庫"
 
 #. Tag: para
 #, no-c-format
@@ -40,32 +41,32 @@ msgid ""
 "has a single Management Server node. If you have a multi-node Management "
 "Server deployment, you will typically use a separate node for MySQL. See "
 "<xref linkend=\"management-server-install-db-external\" />."
-msgstr ""
+msgstr "這個章節描述如何在與Management Server相同的機器上安裝MySQL，這項技術是有意架設數個Management Server節點。如果您需要安裝多個Management Server，您將使用不同的MySQL節點，參見<xref linkend=\"management-server-install-db-local\" /> "
 
 #. Tag: para
 #, no-c-format
 msgid "Install MySQL from the package repository of your distribution:"
-msgstr ""
+msgstr "從package repository安裝MySQL："
 
 #. Tag: para
 #, no-c-format
 msgid "On RHEL or CentOS:"
-msgstr ""
+msgstr "於RHEL/CentOS："
 
 #. Tag: programlisting
 #, no-c-format
 msgid "yum install mysql-server"
-msgstr ""
+msgstr "yum install mysql-server"
 
 #. Tag: para
 #, no-c-format
 msgid "On Ubuntu:"
-msgstr ""
+msgstr "於Ubuntu"
 
 #. Tag: programlisting
 #, no-c-format
 msgid "apt-get install mysql-server"
-msgstr ""
+msgstr "apt-get install mysql-server"
 
 #. Tag: para
 #, no-c-format
@@ -73,12 +74,12 @@ msgid ""
 "Open the MySQL configuration file. The configuration file is "
 "<filename>/etc/my.cnf</filename> or <filename>/etc/mysql/my.cnf</filename>, "
 "depending on your OS."
-msgstr ""
+msgstr "開啟MySQL設定檔，檔案為<filename>/etc/my.cnf</filename>或"
 
 #. Tag: para
 #, no-c-format
 msgid "Insert the following lines in the [mysqld] section."
-msgstr ""
+msgstr "插入以下幾行到[mysqld]區域"
 
 #. Tag: para
 #, no-c-format
@@ -86,7 +87,7 @@ msgid ""
 "You can put these lines below the datadir line. The max_connections "
 "parameter should be set to 350 multiplied by the number of Management "
 "Servers you are deploying. This example assumes one Management Server."
-msgstr ""
+msgstr "您可以將這些行數放在 datadir，最大連結欄位應該為350乘以管理伺服器的數量，這個範例假設為一個"
 
 #. Tag: para
 #, no-c-format
@@ -95,7 +96,7 @@ msgid ""
 "<filename>/etc/mysql/conf.d/cloudstack.cnf</filename> and add these "
 "directives there. Don't forget to add [mysqld] on the first line of the "
 "file."
-msgstr ""
+msgstr "對Ubuntu，您可以建立<filename>/etc/mysql/conf.d/cloudstack.cnf</filename>檔案，並新增這些指令，不要忘了加入[mysqld]在第一行"
 
 #. Tag: programlisting
 #, no-c-format
@@ -105,39 +106,39 @@ msgid ""
 "max_connections=350\n"
 "log-bin=mysql-bin\n"
 "binlog-format = 'ROW'"
-msgstr ""
+msgstr "innodb_rollback_on_timeout=1\ninnodb_lock_wait_timeout=600\nmax_connections=350\nlog-bin=mysql-bin\nbinlog-format = 'ROW'"
 
 #. Tag: para
 #, no-c-format
 msgid "Start or restart MySQL to put the new configuration into effect."
-msgstr ""
+msgstr "啟動或重新啟動MySQL來使設定生效"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "On RHEL/CentOS, MySQL doesn't automatically start after installation. Start "
 "it manually."
-msgstr ""
+msgstr " 對於RHEL/CentOS，MySQL不會自動啟動，請手動啟動"
 
 #. Tag: programlisting
 #, no-c-format
 msgid "service mysqld start"
-msgstr ""
+msgstr "service mysqld start"
 
 #. Tag: para
 #, no-c-format
 msgid "On Ubuntu, restart MySQL."
-msgstr ""
+msgstr "對於Ubuntu，請重新啟動 MySQL "
 
 #. Tag: programlisting
 #, no-c-format
 msgid "service mysqld restart"
-msgstr ""
+msgstr "service mysqld restart"
 
 #. Tag: para
 #, no-c-format
 msgid "(CentOS and RHEL only; not required on Ubuntu)"
-msgstr ""
+msgstr "(僅CentOS 及 RHEL，Ubuntu不需要)"
 
 #. Tag: para
 #, no-c-format
@@ -145,50 +146,50 @@ msgid ""
 "On RHEL and CentOS, MySQL does not set a root password by default. It is "
 "very strongly recommended that you set a root password as a security "
 "precaution."
-msgstr ""
+msgstr "對於RHEL and CentOS，MySQL預設沒有 root 密碼，強烈建議您設定root密碼"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Run the following command to secure your installation. You can answer \"Y\" "
 "to all questions."
-msgstr ""
+msgstr "執行以下指令強化您的安裝，您可以所有問題回答\"Y\""
 
 #. Tag: programlisting
 #, no-c-format
 msgid "mysql_secure_installation"
-msgstr ""
+msgstr "mysql_secure_installation"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "&PRODUCT; can be blocked by security mechanisms, such as SELinux. Disable "
 "SELinux to ensure + that the Agent has all the required permissions."
-msgstr ""
+msgstr "&PRODUCT;可以被安全機制阻擋，像是SELinux，停用SELinux以便Agent可以正常運作"
 
 #. Tag: para
 #, no-c-format
 msgid "Configure SELinux (RHEL and CentOS):"
-msgstr ""
+msgstr "設定SELinux (RHEL 及 CentOS)："
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Check whether SELinux is installed on your machine. If not, you can skip "
 "this section."
-msgstr ""
+msgstr "檢查您的機器是否有SELinux，沒有的話請跳過這一章"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In RHEL or CentOS, SELinux is installed and enabled by default. You can "
 "verify this with:"
-msgstr ""
+msgstr "對於RHEL 或 CentOS，SELinux是預設啟動的，您可以用以下來驗證："
 
 #. Tag: programlisting
 #, no-c-format
 msgid "<command>$ rpm -qa | grep selinux</command>"
-msgstr ""
+msgstr "<command>$ rpm -qa | grep selinux</command>"
 
 #. Tag: para
 #, no-c-format
@@ -196,7 +197,7 @@ msgid ""
 "Set the SELINUX variable in <filename>/etc/selinux/config</filename> to "
 "\"permissive\". This ensures that the permissive setting will be maintained "
 "after a system reboot."
-msgstr ""
+msgstr "在<filename>/etc/selinux/config</filename>SELINUX變數設為\"permissive\"，此舉會使設定在重新開機後維持不變"
 
 #. Tag: para
 #, no-c-format
@@ -206,53 +207,53 @@ msgstr "於RHEL/CentOS"
 #. Tag: programlisting
 #, no-c-format
 msgid "vi /etc/selinux/config"
-msgstr ""
+msgstr "vi /etc/selinux/config"
 
 #. Tag: para
 #, no-c-format
 msgid "Change the following line"
-msgstr ""
+msgstr "改變以下幾行"
 
 #. Tag: programlisting
 #, no-c-format
 msgid "SELINUX=enforcing"
-msgstr ""
+msgstr "SELINUX=enforcing"
 
 #. Tag: para
 #, no-c-format
 msgid "to this:"
-msgstr ""
+msgstr "為："
 
 #. Tag: programlisting
 #, no-c-format
 msgid "SELINUX=permissive"
-msgstr ""
+msgstr "SELINUX=permissive"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Set SELinux to permissive starting immediately, without requiring a system "
 "reboot."
-msgstr ""
+msgstr "將SELinux設為允許立即啟動，不用重新開機"
 
 #. Tag: programlisting
 #, no-c-format
 msgid "<command>$ setenforce permissive</command>"
-msgstr ""
+msgstr "<command>$ setenforce permissive</command>"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Set up the database. The following command creates the \"cloud\" user on the"
 " database."
-msgstr ""
+msgstr "設定資料庫。以下指令會建立\"雲端\"資料庫的使用者"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In dbpassword, specify the password to be assigned to the \"cloud\" user. "
 "You can choose to provide no password although that is not recommended."
-msgstr ""
+msgstr "在dbpassword，指定雲端使用者的密碼，您也可以不要設密碼"
 
 #. Tag: para
 #, no-c-format
@@ -260,7 +261,7 @@ msgid ""
 "In deploy-as, specify the username and password of the user deploying the "
 "database. In the following command, it is assumed the root user is deploying"
 " the database and creating the \"cloud\" user."
-msgstr ""
+msgstr "在 deploy-as，指定使用者名稱及密碼。在以下指令，假設有root使用者並創建雲端使用者"
 
 #. Tag: para
 #, no-c-format
@@ -268,7 +269,7 @@ msgid ""
 "(Optional) For encryption_type, use file or web to indicate the technique "
 "used to pass in the database encryption password. Default: file. See <xref "
 "linkend=\"about-password-encryption\" />."
-msgstr ""
+msgstr "(選擇性)對於encryption_type，您可以使用文件或網路來指定通過資料庫密碼的技術，預設為：文件，詳見 <xref linkend=\"about-password-encryption\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -277,7 +278,7 @@ msgid ""
 "used to encrypt confidential parameters in the &PRODUCT; properties file. "
 "Default: password. It is highly recommended that you replace this with a "
 "more secure value. See <xref linkend=\"about-password-encryption\" />."
-msgstr ""
+msgstr "(選擇性)對於management_server_key，替換在&PRODUCT;properties file用來編譯機密參數的預設金鑰，預設：password。我們強烈建議您替換成更安全的數值，詳見<xref linkend=\"about-password-encryption\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -286,7 +287,7 @@ msgid ""
 "encrypt confidential parameters in the &PRODUCT; database. Default: "
 "password. It is highly recommended that you replace this with a more secure "
 "value. See <xref linkend=\"about-password-encryption\" />."
-msgstr ""
+msgstr "(選擇性)對於database_key，替換在&PRODUCT;properties file用來編譯機密參數的預設金鑰，預設：password。我們強烈建議您替換成更安全的數值，詳見<xref linkend=\"about-password-encryption\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -294,7 +295,7 @@ msgid ""
 "(Optional) For management_server_ip, you may explicitly specify cluster "
 "management server node IP. If not specified, the local IP address will be "
 "used."
-msgstr ""
+msgstr "(選擇性)對於management_server_ip，您可以分開指定cluster管理伺服器節點IP。如果不指定，則為本地IP位址 "
 
 #. Tag: programlisting
 #, no-c-format
@@ -305,26 +306,26 @@ msgid ""
 "-m &lt;management_server_key&gt; \\\n"
 "-k &lt;database_key&gt; \\\n"
 "-i &lt;management_server_ip&gt;"
-msgstr ""
+msgstr "cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \\\n--deploy-as=root:&lt;password&gt; \\\n-e &lt;encryption_type&gt; \\\n-m &lt;management_server_key&gt; \\\n-k &lt;database_key&gt; \\\n-i &lt;management_server_ip&gt;"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "When this script is finished, you should see a message like “Successfully "
 "initialized the database.”"
-msgstr ""
+msgstr "當程式執行完成後，您將會看到類似訊息“Successfully initialized the database.”"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you are running the KVM hypervisor on the same machine with the "
 "Management Server, edit /etc/sudoers and add the following line:"
-msgstr ""
+msgstr "如果您在管理伺服器上的同一個機器執行KVM超級監督者，請編輯/etc/sudoers並加入以下行數："
 
 #. Tag: programlisting
 #, no-c-format
 msgid "Defaults:cloud !requiretty"
-msgstr ""
+msgstr "Defaults:cloud !requiretty"
 
 #. Tag: para
 #, no-c-format
@@ -332,15 +333,15 @@ msgid ""
 "Now that the database is set up, you can finish configuring the OS for the "
 "Management Server. This command will set up iptables, sudoers, and start the"
 " Management Server."
-msgstr ""
+msgstr "建立好資料庫，您可以結束設定。這個指令會建立iptables、sudoers及啟動管理伺服器"
 
 #. Tag: programlisting
 #, no-c-format
 msgid "<prompt>#</prompt> cloud-setup-management"
-msgstr ""
+msgstr "<prompt>#</prompt> cloud-setup-management"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "You should see the message “&PRODUCT; Management Server setup is done.”"
-msgstr ""
+msgstr "您會看到 “&PRODUCT; Management Server setup is done.” "

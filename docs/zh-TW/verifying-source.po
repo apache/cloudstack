@@ -1,0 +1,149 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-02 08:49+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Verifying the downloaded release"
+msgstr "辨認下載的 release"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There are a number of mechanisms to check the authenticity and validity of a"
+" downloaded release."
+msgstr "有很多種機制能檢查下載的release的正當性"
+
+#. Tag: title
+#, no-c-format
+msgid "Getting the KEYS"
+msgstr "取得KEYS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To enable you to verify the GPG signature, you will need to download the "
+"<ulink "
+"url=\"http://www.apache.org/dist/incubator/cloudstack/KEYS\">KEYS</ulink> "
+"file."
+msgstr "您需要下載<ulink url=\"http://www.apache.org/dist/incubator/cloudstack/KEYS\">KEYS</ulink>檔案來啟用GPG簽證認證"
+
+#. Tag: para
+#, no-c-format
+msgid "You next need to import those keys, which you can do by running:"
+msgstr "您之後需要匯入這些keys："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>gpg</command> --import KEYS"
+msgstr "<prompt>#</prompt> <command>gpg</command> --import KEYS"
+
+#. Tag: title
+#, no-c-format
+msgid "GPG"
+msgstr "GPG"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; project provides a detached GPG signature of the release. To "
+"check the signature, run the following command:"
+msgstr " &PRODUCT;產品提供分離的GPG簽證，利用以下指令來檢查簽證："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>$</prompt> <command>gpg</command> --verify apache-cloudstack-4.0.0"
+"-incubating-src.tar.bz2.asc"
+msgstr "<prompt>$</prompt> <command>gpg</command> --verify apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the signature is valid you will see a line of output that contains 'Good "
+"signature'."
+msgstr "如果您看到 'Good signature'，那麼這個簽證就是合格的"
+
+#. Tag: title
+#, no-c-format
+msgid "MD5"
+msgstr "MD5"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the cryptographic signature, &PRODUCT; has an MD5 checksum "
+"that you can use to verify the download matches the release. You can verify "
+"this hash by executing the following command:"
+msgstr "除了加密簽證，&PRODUCT;還有 MD5 checksum可以檢查下載是否符合release，您可以執行以下指令來檢查："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-"
+"cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-"
+"cloudstack-4.0.0-incubating-src.tar.bz2.md5"
+msgstr "<prompt>$</prompt> <command>gpg</command> --print-md MD5 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this successfully completes you should see no output. If there is any "
+"output from them, then there is a difference between the hash you generated "
+"locally and the hash that has been pulled from the server."
+msgstr "成功的話就不會顯示任何東西，如果顯示了一些東西，那麼您產生的hash及從伺服器拿出來的hash就表示不一樣"
+
+#. Tag: title
+#, no-c-format
+msgid "SHA512"
+msgstr "SHA512"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the MD5 hash, the &PRODUCT; project provides a SHA512 "
+"cryptographic hash to aid in assurance of the validity of the downloaded "
+"release. You can verify this hash by executing the following command:"
+msgstr "除了MD5 hash，&PRODUCT;還提供了SHA512加密hash來加強認證，您可以使用以下指令來檢查："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"<prompt>$</prompt> <command>gpg</command> --print-md SHA512 apache-"
+"cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-"
+"cloudstack-4.0.0-incubating-src.tar.bz2.sha"
+msgstr "<prompt>$</prompt> <command>gpg</command> --print-md SHA512 apache-cloudstack-4.0.0-incubating-src.tar.bz2 | <command>diff</command> - apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this command successfully completes you should see no output. If there is"
+" any output from them, then there is a difference between the hash you "
+"generated locally and the hash that has been pulled from the server."
+msgstr "成功完成的話，您不會看到任何顯示。如果有東西出現的話，就表示hash不同"

@@ -1,0 +1,93 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-10 10:53+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Cloud Infrastructure Overview"
+msgstr "雲端基礎架構簡介"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server manages one or more zones (typically, datacenters) "
+"containing host computers where guest virtual machines will run. The cloud "
+"infrastructure is organized as follows:"
+msgstr "管理伺服器管理多個區域(通常為資料中心)，包含訪客虛擬機器的主機，雲端基礎架構可以組織為下："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Zone: Typically, a zone is equivalent to a single datacenter. A zone "
+"consists of one or more pods and secondary storage."
+msgstr "Zone：通常，區域等於一個資料中心。區域包含一至多個pods極次要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Pod: A pod is usually one rack of hardware that includes a layer-2 switch "
+"and one or more clusters."
+msgstr "Pod：通常是一層硬體架構，包含 layer-2交換器及一至多個叢集"
+
+#. Tag: para
+#, no-c-format
+msgid "Cluster: A cluster consists of one or more hosts and primary storage."
+msgstr "Cluster：通常包含一至多個主機及主要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Host: A single compute node within a cluster. The hosts are where the actual"
+" cloud services run in the form of guest virtual machines."
+msgstr "Host：叢集中的運算節點，以訪客虛擬機器的形式在實際的雲端運行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Primary storage is associated with a cluster, and it stores the disk volumes"
+" for all the VMs running on hosts in that cluster."
+msgstr "主要儲存裝置連結到叢集，存放所有VM的硬碟容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Secondary storage is associated with a zone, and it stores templates, ISO "
+"images, and disk volume snapshots."
+msgstr "次要儲存裝置連結到區域，儲存模組、ISO映像及硬碟容量快取物件"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">More Information</emphasis>"
+msgstr "<emphasis role=\"bold\">More Information</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information, see documentation on cloud infrastructure concepts."
+msgstr "更多資訊，請參閱cloud infrastructure concepts的文件"

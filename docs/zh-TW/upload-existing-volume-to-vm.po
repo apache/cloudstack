@@ -1,0 +1,182 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-04 07:38+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Uploading an Existing Volume to a Virtual Machine"
+msgstr "上傳已存在的Volume到虛擬機器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Existing data can be made accessible to a virtual machine. This is called "
+"uploading a volume to the VM. For example, this is useful to upload data "
+"from a local file system and attach it to a VM. Root administrators, domain "
+"administrators, and end users can all upload existing volumes to VMs."
+msgstr "已存在的資料現在可以被虛擬機器存取，這叫上傳a volume到VM。例如，上傳資料到本地資料系統並將資料連到VM。Root、主要管理者、使用者都可以上傳"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The upload is performed using HTTP. The uploaded volume is placed in the "
+"zone's secondary storage"
+msgstr "上傳是使用HTTP，而上傳的volume會被放在zone的次要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You cannot upload a volume if the preconfigured volume limit has already "
+"been reached. The default limit for the cloud is set in the global "
+"configuration parameter max.account.volumes, but administrators can also set"
+" per-domain limits that are different from the global default. See Setting "
+"Usage Limits"
+msgstr "如果已達容量限制，您就不能上船容量。預設限制設定在廣域設定欄位max.account.volumes，但管理者可以設定為不同的限制，詳見 Setting Usage Limits"
+
+#. Tag: para
+#, no-c-format
+msgid "To upload a volume:"
+msgstr "要上傳容量："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) Create an MD5 hash (checksum) of the disk image file that you are"
+" going to upload. After uploading the data disk, &PRODUCT; will use this "
+"value to verify that no data corruption has occurred."
+msgstr "(選擇性)新增MD5 hash (checksum)硬碟映像檔，上傳資料硬碟後，&PRODUCT;會使用使用此數值來檢查是否有資料中斷"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or user"
+msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr "在左邊的導覽視窗，選擇Storage"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Upload Volume."
+msgstr "選擇Upload Volume"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following:"
+msgstr "提供以下："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Name and Description. Any desired name and a brief description that can be "
+"shown in the UI."
+msgstr "Name and Description：顯示在使用者介面的名稱及簡述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Availability Zone. Choose the zone where you want to store the volume. VMs "
+"running on hosts in this zone can attach the volume."
+msgstr "Availability Zone：選擇您要安置容量的zone，在此zone的VM可以增加容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Format. Choose one of the following to indicate the disk image format of the"
+" volume."
+msgstr "Format：選擇指定的硬碟映像格式"
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor"
+msgstr "超級監督者"
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Image Format"
+msgstr "硬碟映像格式"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer"
+msgstr "XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "VHD"
+msgstr "VHD"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware"
+msgstr "VMware"
+
+#. Tag: para
+#, no-c-format
+msgid "OVA"
+msgstr "OVA"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr "KVM"
+
+#. Tag: para
+#, no-c-format
+msgid "QCOW2"
+msgstr "QCOW2"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"URL. The secure HTTP or HTTPS URL that &PRODUCT; can use to access your "
+"disk. The type of file at the URL must match the value chosen in Format. For"
+" example, if Format is VHD, the URL might look like the following:"
+msgstr "URL： &PRODUCT;可以存取您的硬碟的安全 HTTP 或 HTTPS URL。檔案形式必須符合在Format選擇的數值，例如，格式為VHD，則URL必須像以下："
+
+#. Tag: para
+#, no-c-format
+msgid "http://yourFileServerIP/userdata/myDataDisk.vhd"
+msgstr "http://yourFileServerIP/userdata/myDataDisk.vhd"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"MD5 checksum. (Optional) Use the hash that you created in step <xref linkend"
+"=\"optional-hash\" />."
+msgstr "MD5 checksum：(選擇性)使用您在 <xref linkend=\"optional-hash\" />建立的hash"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Wait until the status of the volume shows that the upload is complete. Click"
+" Instances - Volumes, find the name you specified in step <xref linkend"
+"=\"volume-name\" />, and make sure the status is Uploaded."
+msgstr "等到容量顯示上傳完成，選擇 Instances - Volumes，找到您在<xref linkend=\"volume-name\" />指定的名稱，並確認狀態為Uploaded "

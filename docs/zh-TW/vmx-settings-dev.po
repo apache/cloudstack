@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-03-26 08:42+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Additional VMX Settings"
+msgstr "額外的VMX設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A VMX (.vmx) file is the primary configuration file for a virtual machine. "
+"When a new VM is created, information on the operating system, disk sizes, "
+"and networking is stored in this file. The VM actively writes to its .vmx "
+"file for all the configuration changes. The VMX file is typically located in"
+" the directory where the VM is created. In Windows Vista / Windows 7 / "
+"Windows Server 2008, the default location is "
+"C:\\Users\\&lt;your_user_name&gt;\\My Documents\\Virtual "
+"Machines\\&lt;virtual_machine_name&gt;.vmx. In Linux, vmware-cmd -l lists "
+"the full path to all the registered VMX files. Any manual additions to the "
+".vmx file from ESX/ESXi are overwritten by the entries stored in the vCenter"
+" Server database. Therefore, before you edit a .vmx file, first remove the "
+"VM from the vCenter server's inventory and register the VM again after "
+"editing."
+msgstr "VMX (.vmx)檔案是虛擬機器的主要設定檔，當新的VM建立時，作業系統、硬碟大小及網路等資訊都存在這個檔案裡。VM主動將所有設定變更寫入.vmx檔案內。通常此檔案會在VM的資料夾內。對於Windows Vista / Windows 7 / Windows Server 2008，預設位置為C:\\Users\\&lt;your_user_name&gt;\\My Documents\\Virtual Machines\\&lt;virtual_machine_name&gt;.vmx。對於linux,vmware-cmd -l列出所有登路的VMX檔案的完整路徑。任何從ESX/ESXi的手動新增都會從 vCenter Server database的入口複寫掉。因此，請您在編輯檔案之前，先將VM從vCenter server's inventory移除，等更新完後再登錄回去"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The CloudStack API that supports passing some of the VMX settings is "
+"registerTemplate. The supported parameters are rootDiskController, "
+"nicAdapter, and keyboard. In addition to these existing VMX parameters, you "
+"can now use the keyboard.typematicMinDelay parameter in the registerTemplate"
+" API call. This parameter controls the amount of delay for the repeated key "
+"strokes on remote consoles. For more information on "
+"keyboard.typematicMinDelay, see <ulink url=\" "
+"http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=196\">keyboard.typematicMinDelay</ulink>."
+msgstr "CloudStack API中，registerTemplate支援通過一些VMX設定。支援的參數為rootDiskController, nicAdapter及鍵盤。除了這些已知的VMX參數，您現在可以使用在registerTemplate API call中的 keyboard.typematicMinDelay參數。這個參數控制在遠端主機的重複按鍵延遲，想知道更多內容，參見<ulink url=\" http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=196\">keyboard.typematicMinDelay</ulink> "

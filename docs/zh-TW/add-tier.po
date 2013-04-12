@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2012-12-03 06:25+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-22 01:47+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Adding Tiers"
-msgstr ""
+msgstr "新增層級"
 
 #. Tag: para
 #, no-c-format
@@ -40,7 +41,7 @@ msgid ""
 "different VLANs that can communicate with each other by using a virtual "
 "router. Tiers provide inexpensive, low latency network connectivity to other"
 " tiers within the VPC."
-msgstr ""
+msgstr "Tier在VPC中是個獨立的網路區域，預設上是不能存取其他tier的。藉由虛擬路由器，Tier可以架設在VLAN上與其他溝通，Tier提供一個便宜且低延遲的VPC內部網路"
 
 #. Tag: para
 #, no-c-format
@@ -61,32 +62,32 @@ msgstr "在Select視窗選擇VPC"
 #, no-c-format
 msgid ""
 "All the VPC that you have created for the account is listed in the page."
-msgstr ""
+msgstr "帳戶所有創建的VPC會表列在本頁"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "The end users can see their own VPCs, while root and domain admin can see "
 "any VPC they are authorized to see."
-msgstr ""
+msgstr "終端使用者可以看見自己的VPC，而root和主要管理者可以看見所有被授權的VPC"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Click the Configure button of the VPC for which you want to set up tiers."
-msgstr ""
+msgstr "對想要設置層級的VPC按下\"Configure\""
 
 #. Tag: para
 #, no-c-format
 msgid "The Add new tier dialog is displayed, as follows:"
-msgstr ""
+msgstr "會顯示Add new tier 對話框如下："
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you have already created tiers, the VPC diagram is displayed. Click "
 "Create Tier to add a new tier."
-msgstr ""
+msgstr "如果你已經建立tier，會顯示VPC的圖示，按下Create Tie來新增"
 
 #. Tag: para
 #, no-c-format
@@ -96,14 +97,14 @@ msgstr "具體說明以下："
 #. Tag: para
 #, no-c-format
 msgid "All the fields are mandatory."
-msgstr ""
+msgstr "所有的欄位都必須填寫。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Name</emphasis>: A unique name for the tier you "
 "create."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name</emphasis>: 您建立的tier的名稱"
 
 #. Tag: para
 #, no-c-format
@@ -112,13 +113,13 @@ msgid ""
 "network offerings are listed: "
 "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB, "
 "DefaultIsolatedNetworkOfferingForVpcNetworks"
-msgstr ""
+msgstr "<emphasis role=\"bold\">Network Offering</emphasis>: 列出以下預設的網路服務：DefaultIsolatedNetworkOfferingForVpcNetworksNoLB, DefaultIsolatedNetworkOfferingForVpcNetworks"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In a VPC, only one tier can be created by using LB-enabled network offering."
-msgstr ""
+msgstr "在VPC，只有用LB-enabled network offering才能建立一個tier"
 
 #. Tag: para
 #, no-c-format
@@ -127,14 +128,14 @@ msgid ""
 "create. Ensure that the gateway is within the Super CIDR range that you "
 "specified while creating the VPC, and is not overlapped with the CIDR of any"
 " existing tier within the VPC."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Gateway</emphasis>:  您新增的tier用的閘道，請確定閘道在您建立VPC時指定的 Super CIDR範圍內，並且沒有與其他在VPC內的tier重疊CIDR"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Netmask</emphasis>: The netmask for the tier you "
 "create."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Netmask</emphasis>:  您新增的tier用的網路遮罩"
 
 #. Tag: para
 #, no-c-format
@@ -142,14 +143,14 @@ msgid ""
 "For example, if the VPC CIDR is 10.0.0.0/16 and the network tier CIDR is "
 "10.0.1.0/24, the gateway of the tier is 10.0.1.1, and the netmask of the "
 "tier is 255.255.255.0."
-msgstr ""
+msgstr "例如，如果VPC的CIDR是10.0.0.0/16，而新的tier的CIDR是10.0.1.0/24，閘道為10.0.1.1，遮罩為255.255.255.0"
 
 #. Tag: para
 #, no-c-format
 msgid "Click OK."
-msgstr ""
+msgstr "按OK"
 
 #. Tag: para
 #, no-c-format
 msgid "Continue with configuring access control list for the tier."
-msgstr ""
+msgstr "繼續設定tier的access control list"

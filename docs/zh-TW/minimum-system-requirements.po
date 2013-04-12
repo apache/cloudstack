@@ -1,0 +1,174 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Minimum System Requirements"
+msgstr "最低系統需求"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Server, Database, and Storage System Requirements"
+msgstr "管理伺服器、資料庫及儲存系統需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The machines that will run the Management Server and MySQL database must "
+"meet the following requirements. The same machines can also be used to "
+"provide primary and secondary storage, such as via localdisk or NFS. The "
+"Management Server may be placed on a virtual machine."
+msgstr "運行Management Server以及MySQL資料庫的實體機器必須滿足以下需求：此機器必須也能提供primary和secondary storage的服務，例如透過本機磁碟或是NFS服務。然而，Management Server也可以運行於虛擬機上。"
+
+#. Tag: para
+#, no-c-format
+msgid "Operating system:"
+msgstr "作業系統："
+
+#. Tag: para
+#, no-c-format
+msgid "Preferred: CentOS/RHEL 6.3+ or Ubuntu 12.04(.1)"
+msgstr "推薦： CentOS/RHEL 6.3+ 或 Ubuntu 12.04(.1)"
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "64-bit x86 CPU (多核提供更好的效能)"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "記憶體4GB"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"250 GB of local disk (more results in better capability; 500 GB recommended)"
+msgstr "硬碟250 GB (建議500GB，越多容量越大)"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "至少1個NIC"
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP address"
+msgstr "固定IP"
+
+#. Tag: para
+#, no-c-format
+msgid "Fully qualified domain name as returned by the hostname command"
+msgstr "hosname指令將會回傳您的主機名稱"
+
+#. Tag: title
+#, no-c-format
+msgid "Host/Hypervisor System Requirements"
+msgstr "主機/超級監督者 系統需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host is where the cloud services run in the form of guest virtual "
+"machines. Each host is one machine that meets the following requirements:"
+msgstr "主機是雲端服務以訪客VM的形式執行的地方，每台主機須符合以下需求："
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)."
+msgstr "必須支援HVM (Intel-VT or AMD-V enabled) "
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr "支援Hardware virtualization"
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr "36GB硬碟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If DHCP is used for hosts, ensure that no conflict occurs between DHCP "
+"server used for these hosts and the DHCP router created by &PRODUCT;."
+msgstr "如果主機之前使用DHCP，請確保在原本的DHCP伺服器及&PRODUCT;新增的DHCP路由器間沒有衝突"
+
+#. Tag: para
+#, no-c-format
+msgid "Latest hotfixes applied to hypervisor software"
+msgstr "套用在高層管理者軟體的最新hotfix"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running"
+msgstr "當您配置&PRODUCT;時，所有高層管理者主機的VM都不能是執行狀態"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hosts have additional requirements depending on the hypervisor. See the "
+"requirements listed at the top of the Installation section for your chosen "
+"hypervisor:"
+msgstr "主機還有其他需求，由高層管理者執行。詳見安裝章節最上層的需求表單："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure you fulfill the additional hypervisor requirements and installation "
+"steps provided in this Guide. Hypervisor hosts must be properly prepared to "
+"work with CloudStack. For example, the requirements for XenServer are listed"
+" under Citrix XenServer Installation."
+msgstr "確定您已執行所有要求以及安裝步驟，高層管理者主機必須已準備使用CloudStack，例如，XenServer的需求表列在 Citrix XenServer安裝之下"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"hypervisor-kvm-requirements\" />"
+msgstr "<xref linkend=\"hypervisor-kvm-requirements\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"system-requirements-xenserver-hosts\" />"
+msgstr "<xref linkend=\"system-requirements-xenserver-hosts\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"vmware-requirements\" />"
+msgstr "<xref linkend=\"vmware-requirements\" />"

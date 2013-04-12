@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:10+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-01 01:45+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -76,12 +76,12 @@ msgstr "以管理者或終端使用者登入&PRODUCT; UI "
 msgid ""
 "If you have not already done so, add a public IP address range to a zone in "
 "&PRODUCT;. See Adding a Zone and Pod in the Installation Guide."
-msgstr ""
+msgstr "如果您還沒達到此，請在&PRODUCT;的一個zone中增加公眾IP範圍，詳見安裝指南中的Adding a Zone and Pod "
 
 #. Tag: para
 #, no-c-format
 msgid "Add one or more VM instances to &PRODUCT;."
-msgstr ""
+msgstr "增加一至多個VM instances到&PRODUCT; "
 
 #. Tag: para
 #, no-c-format
@@ -99,7 +99,7 @@ msgid ""
 "Choose an existing IP address or acquire a new IP address. See <xref linkend"
 "=\"acquire-new-ip-address\" />. Click the name of the IP address in the "
 "list."
-msgstr ""
+msgstr "選擇一個存在的IP或是取得一個新的IP，詳見<xref linkend=\"acquire-new-ip-address\" />"
 
 #. Tag: para
 #, no-c-format
@@ -109,7 +109,7 @@ msgstr "選擇Configuration標籤"
 #. Tag: para
 #, no-c-format
 msgid "In the Port Forwarding node of the diagram, click View All."
-msgstr ""
+msgstr "在 Port Forwarding節點，按 View All"
 
 #. Tag: para
 #, no-c-format
@@ -129,14 +129,14 @@ msgstr "<emphasis role=\"bold\">Public Port</emphasis>:公開傳輸的埠會定�
 msgid ""
 "<emphasis role=\"bold\">Private Port</emphasis>. The port on which the "
 "instance is listening for forwarded public traffic."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Private Port</emphasis>：instance正在聆聽公開流量的不"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Protocol</emphasis>. The communication protocol in "
 "use between the two ports"
-msgstr ""
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: 兩個埠之間使用的通訊協定"
 
 #. Tag: para
 #, no-c-format

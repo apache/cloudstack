@@ -1,0 +1,357 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:39+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure the network bridges"
+msgstr "設定網路橋接器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This is a very important section, please make sure you read this thoroughly."
+msgstr "此章節非常重要，請完整閱讀"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section details how to configure bridges using the native "
+"implementation in Linux. Please refer to the next section if you intend to "
+"use OpenVswitch"
+msgstr "此章節詳細描述如何使用Linux本基設定橋接器，如果您想使用 OpenVswitch來設定，請看下一章節"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order to forward traffic to your instances you will need at least two "
+"bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>."
+msgstr "為了轉送流量到您的instances，您需要只少兩個橋接器：<emphasis>public</emphasis> 及 <emphasis>private</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default these bridges are called <emphasis>cloudbr0</emphasis> and "
+"<emphasis>cloudbr1</emphasis>, but you do have to make sure they are "
+"available on each hypervisor."
+msgstr "預設橋接器稱為 <emphasis>cloudbr0</emphasis>及<emphasis>cloudbr1</emphasis>，您需要確定每個超級監督者都能使用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The most important factor is that you keep the configuration consistent on "
+"all your hypervisors."
+msgstr "最重要的因素為，您需要在所有超級監督者都是相同的設定"
+
+#. Tag: title
+#, no-c-format
+msgid "Network example"
+msgstr "網路範例"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There are many ways to configure your network. In the Basic networking mode "
+"you should have two (V)LAN's, one for your private network and one for the "
+"public network."
+msgstr "有很多種方法可以設定網路，在 Basic networking mode，您需要兩個(V)LAN，一個給私人網路，另一個給公開網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:"
+msgstr "假設超級監督者有一個網路卡 (eth0) ，附有三條VLAN："
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 100 for management of the hypervisor"
+msgstr "VLAN 100給超級監督者管理用"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 200 for public network of the instances (cloudbr0)"
+msgstr "VLAN 200給instances的公開網路 (cloudbr0)"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 300 for private network of the instances (cloudbr1)"
+msgstr "VLAN 300給instances的私人網路(cloudbr1)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the "
+"gateway 192.168.42.1"
+msgstr "在VLAN 100，我們給予超級監督者IP位址192.168.42.11/24，閘道為192.168.42.1 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Hypervisor and Management server don't have to be in the same subnet!"
+msgstr "超級監督者及管理伺服器不需要再同一個子網路！"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the network bridges"
+msgstr "設定網路橋接器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It depends on the distribution you are using how to configure these, below "
+"you'll find examples for RHEL/CentOS and Ubuntu."
+msgstr "取決於您的產品，設定會不同，以下為RHEL/CentOS 及Ubuntu的範例"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The goal is to have two bridges called 'cloudbr0' and 'cloudbr1' after this "
+"section. This should be used as a guideline only. The exact configuration "
+"will depend on your network layout."
+msgstr "目標為建立兩個橋接器，稱為 'cloudbr0' 及 'cloudbr1'，但這些應只用為指引，確切的設定取決於您的網路設計"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure in RHEL or CentOS"
+msgstr "設定於RHEL/CentOS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The required packages were installed when libvirt was installed, we can "
+"proceed to configuring the network."
+msgstr "在 libvirt 安裝時，需要的封包都已安裝，我們可以進行到設定網路"
+
+#. Tag: para
+#, no-c-format
+msgid "First we configure eth0"
+msgstr "先設定eth0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-eth0"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure it looks similar to:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=eth0\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet"
+msgstr "DEVICE=eth0\nHWADDR=00:04:xx:xx:xx:xx\nONBOOT=yes\nHOTPLUG=no\nBOOTPROTO=none\nTYPE=Ethernet"
+
+#. Tag: para
+#, no-c-format
+msgid "We now have to configure the three VLAN interfaces:"
+msgstr "現在，設定三條VLAN介面："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.100"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-eth0.100"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=eth0.100\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"IPADDR=192.168.42.11\n"
+"GATEWAY=192.168.42.1\n"
+"NETMASK=255.255.255.0"
+msgstr "DEVICE=eth0.100\nHWADDR=00:04:xx:xx:xx:xx\nONBOOT=yes\nHOTPLUG=no\nBOOTPROTO=none\nTYPE=Ethernet\nVLAN=yes\nIPADDR=192.168.42.11\nGATEWAY=192.168.42.1\nNETMASK=255.255.255.0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.200"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-eth0.200"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=eth0.200\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"BRIDGE=cloudbr0"
+msgstr "DEVICE=eth0.200\nHWADDR=00:04:xx:xx:xx:xx\nONBOOT=yes\nHOTPLUG=no\nBOOTPROTO=none\nTYPE=Ethernet\nVLAN=yes\nBRIDGE=cloudbr0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.300"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-eth0.300"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=eth0.300\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"BRIDGE=cloudbr1"
+msgstr "DEVICE=eth0.300\nHWADDR=00:04:xx:xx:xx:xx\nONBOOT=yes\nHOTPLUG=no\nBOOTPROTO=none\nTYPE=Ethernet\nVLAN=yes\nBRIDGE=cloudbr1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now we have the VLAN interfaces configured we can add the bridges on top of "
+"them."
+msgstr "現在將橋接器加到VLAN上"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0"
+
+#. Tag: para
+#, no-c-format
+msgid "Now we just configure it is a plain bridge without an IP-Address"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=cloudbr0\n"
+"TYPE=Bridge\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPV6INIT=no\n"
+"IPV6_AUTOCONF=no\n"
+"DELAY=5\n"
+"STP=yes"
+msgstr "DEVICE=cloudbr0\nTYPE=Bridge\nONBOOT=yes\nBOOTPROTO=none\nIPV6INIT=no\nIPV6_AUTOCONF=no\nDELAY=5\nSTP=yes"
+
+#. Tag: para
+#, no-c-format
+msgid "We do the same for cloudbr1"
+msgstr "在cloudbr1做相同的設定"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1"
+msgstr "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"DEVICE=cloudbr1\n"
+"TYPE=Bridge\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPV6INIT=no\n"
+"IPV6_AUTOCONF=no\n"
+"DELAY=5\n"
+"STP=yes"
+msgstr "DEVICE=cloudbr1\nTYPE=Bridge\nONBOOT=yes\nBOOTPROTO=none\nIPV6INIT=no\nIPV6_AUTOCONF=no\nDELAY=5\nSTP=yes"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With this configuration you should be able to restart the network, although "
+"a reboot is recommended to see if everything works properly."
+msgstr "建議您在看到所有東西都正常運作後再開機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure you have an alternative way like IPMI or ILO to reach the machine "
+"in case you made a configuration error and the network stops functioning!"
+msgstr "請確定替代方案，像是IPMI 或 ILO，可以達到您的機器，以免您設定錯誤而導致網路停止運作"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure in Ubuntu"
+msgstr "設定於Ubuntu"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the required packages were installed when you installed libvirt, so we "
+"only have to configure the network."
+msgstr "在 libvirt 安裝時，需要的封包都已安裝，我們可以直接進行設定網路"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/network/interfaces"
+msgstr "vi /etc/network/interfaces"
+
+#. Tag: para
+#, no-c-format
+msgid "Modify the interfaces file to look like this:"
+msgstr "修改介面檔案為："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"auto lo\n"
+"iface lo inet loopback\n"
+"\n"
+"# The primary network interface\n"
+"auto eth0.100\n"
+"iface eth0.100 inet static\n"
+"    address 192.168.42.11\n"
+"    netmask 255.255.255.240\n"
+"    gateway 192.168.42.1\n"
+"    dns-nameservers 8.8.8.8 8.8.4.4\n"
+"    dns-domain lab.example.org\n"
+"\n"
+"# Public network\n"
+"auto cloudbr0\n"
+"iface cloudbr0 inet manual\n"
+"    bridge_ports eth0.200\n"
+"    bridge_fd 5\n"
+"    bridge_stp off\n"
+"    bridge_maxwait 1\n"
+"\n"
+"# Private network\n"
+"auto cloudbr1\n"
+"iface cloudbr1 inet manual\n"
+"    bridge_ports eth0.300\n"
+"    bridge_fd 5\n"
+"    bridge_stp off\n"
+"    bridge_maxwait 1"
+msgstr "auto lo\niface lo inet loopback\n\n# The primary network interface\nauto eth0.100\niface eth0.100 inet static\n    address 192.168.42.11\n    netmask 255.255.255.240\n    gateway 192.168.42.1\n    dns-nameservers 8.8.8.8 8.8.4.4\n    dns-domain lab.example.org\n\n# Public network\nauto cloudbr0\niface cloudbr0 inet manual\n    bridge_ports eth0.200\n    bridge_fd 5\n    bridge_stp off\n    bridge_maxwait 1\n\n# Private network\nauto cloudbr1\niface cloudbr1 inet manual\n    bridge_ports eth0.300\n    bridge_fd 5\n    bridge_stp off\n    bridge_maxwait 1"

@@ -1,0 +1,90 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-31 05:53+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Windows Template"
+msgstr "新增Windows 模組"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows templates must be prepared with Sysprep before they can be "
+"provisioned on multiple machines. Sysprep allows you to create a generic "
+"Windows template and avoid any possible SID conflicts."
+msgstr "Windows模組必須在使用到多台機器前，使用Sysprep來準備。 Sysprep允許您建立通用的模組並避免任何可能的SID衝突"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(XenServer) Windows VMs running on XenServer require PV drivers, which may "
+"be provided in the template or added after the VM is created. The PV drivers"
+" are necessary for essential management functions such as mounting "
+"additional volumes and ISO images, live migration, and graceful shutdown."
+msgstr "(XenServer)Windows VMs在XenServer上執行需要PV驅動程式，有可能會在模組中就有，或是在VM建立後新增。PV驅動程式對基礎管理功能如掛在額外的volumes和ISO images、live migration和graceful shutdown是必要的。"
+
+#. Tag: para
+#, no-c-format
+msgid "An overview of the procedure is as follows:"
+msgstr "以下為流程概述："
+
+#. Tag: para
+#, no-c-format
+msgid "Upload your Windows ISO."
+msgstr "上傳您的Windows ISO "
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <xref linkend=\"add-iso\" />."
+msgstr "更多資訊，詳見 <xref linkend=\"add-iso\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VM Instance with this ISO."
+msgstr "使用ISO建立VM Instance"
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <xref linkend=\"creating-vms\" />."
+msgstr "更多資訊，詳見<xref linkend=\"creating-vms\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Follow the steps in Sysprep for Windows Server 2008 R2 (below) or Sysprep "
+"for Windows Server 2003 R2, depending on your version of Windows Server"
+msgstr "使用 Sysprep for Windows Server 2008 R2 (以下)或Sysprep for Windows Server 2003 R2，這取決於您的Windows Server版本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The preparation steps are complete. Now you can actually create the template"
+" as described in Creating the Windows Template."
+msgstr "準備已完成，現在您可以實際藉由Creating the Windows Template的描述建立模組了"

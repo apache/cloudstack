@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-18 12:02+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-22 01:41+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -195,7 +195,7 @@ msgid ""
 "<emphasis role=\"bold\">Stickiness</emphasis>. (Optional) Click Configure "
 "and choose the algorithm for the stickiness policy. See Sticky Session "
 "Policies for Load Balancer Rules."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Stickiness</emphasis>. (非必須) 點選Configure並選擇stickiness policy的演算法，請參Sticky Session Policies for Load Balancer Rules章節"
 
 #. Tag: para
 #, no-c-format

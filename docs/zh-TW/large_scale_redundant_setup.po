@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-11 11:33+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Large-Scale Redundant Setup"
+msgstr "大尺度的Redundant設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This diagram illustrates the network architecture of a large-scale &PRODUCT;"
+" deployment."
+msgstr "此圖描述大尺度&PRODUCT; 部署的網路架構"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-3 switching layer is at the core of the data center. A router "
+"redundancy protocol like VRRP should be deployed. Typically high-end core "
+"switches also include firewall modules. Separate firewall appliances may "
+"also be used if the layer-3 switch does not have integrated firewall "
+"capabilities. The firewalls are configured in NAT mode. The firewalls "
+"provide the following functions:"
+msgstr "layer-3 switching layer為資料中心的核心，應設置router redundancy protocol如VRRP。通常也高等級的核心交換器也包含防火牆，如果layer-3 switch沒有內建的防火牆，分離的防火牆也可使用。防火牆設為NAT模式，並提供以下功能："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Forwards HTTP requests and API calls from the Internet to the Management "
+"Server. The Management Server resides on the management network."
+msgstr "從網際網路轉送HTTP要求及API呼叫到管理伺服器，管理伺服器位於管理網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the cloud spans multiple zones, the firewalls should enable site-to-"
+"site VPN such that servers in different zones can directly reach each other."
+msgstr "當雲端擴展多個區域，防火牆應要開啟站對站VPN，像是不同區域的伺服器，能互相溝通"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A layer-2 access switch layer is established for each pod. Multiple switches"
+" can be stacked to increase port count. In either case, redundant pairs of "
+"layer-2 switches should be deployed."
+msgstr "建立layer-2 access switch layer在每個pod，多交換器可以堆積，來增加通訊埠。不論是哪一種，都應部署redundant pairs of layer-2 switches "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Management Server cluster (including front-end load balancers, "
+"Management Server nodes, and the MySQL database) is connected to the "
+"management network through a pair of load balancers."
+msgstr "管理伺服器叢集(包含前端負載平衡器、管理伺服器節點及MySQL資料庫)藉由一對負載平衡器連結到管理網路"
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage servers are connected to the management network."
+msgstr "次要儲存伺服器連結到管理網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Each pod contains storage and computing servers. Each storage and computing "
+"server should have redundant NICs connected to separate layer-2 access "
+"switches."
+msgstr "每個pod包含儲存及運算伺服器。每個儲存及運算伺服器都應有redundant NICs連接到separate layer-2 access switches"

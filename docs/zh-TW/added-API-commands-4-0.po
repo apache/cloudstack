@@ -1,0 +1,269 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-04 06:24+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API Commands in 4.0.0-incubating"
+msgstr "4.0.0-incubating新增API指令"
+
+#. Tag: para
+#, no-c-format
+msgid "createCounter (Adds metric counter)"
+msgstr "createCounter (增加counter)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCounter (Deletes a counter)"
+msgstr "deleteCounter (移除counter)"
+
+#. Tag: para
+#, no-c-format
+msgid "listCounters (List the counters)"
+msgstr "listCounters (條列counters)"
+
+#. Tag: para
+#, no-c-format
+msgid "createCondition (Creates a condition)"
+msgstr "createCondition (新增條件)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCondition (Removes a condition)"
+msgstr "deleteCondition (移除condition)"
+
+#. Tag: para
+#, no-c-format
+msgid "listConditions (List Conditions for the specific user)"
+msgstr "listConditions (條列特定使用者的condition)"
+
+#. Tag: para
+#, no-c-format
+msgid "createTags. Add tags to one or more resources. Example:"
+msgstr "createTags. 為特定資源新增標籤，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"command=createTags\n"
+"&amp;resourceIds=1,10,12\n"
+"&amp;resourceType=userVm\n"
+"&amp;tags[0].key=region\n"
+"&amp;tags[0].value=canada\n"
+"&amp;tags[1].key=city\n"
+"&amp;tags[1].value=Toronto\t\t\t\t"
+msgstr "command=createTags\n&amp;resourceIds=1,10,12\n&amp;resourceType=userVm\n&amp;tags[0].key=region\n&amp;tags[0].value=canada\n&amp;tags[1].key=city\n&amp;tags[1].value=Toronto\t\t\t\t"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTags. Remove tags from one or more resources. Example:"
+msgstr "deleteTags. 移除選定資源標籤，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"command=deleteTags\n"
+"&amp;resourceIds=1,12\n"
+"&amp;resourceType=Snapshot\n"
+"&amp;tags[0].key=city\t\t\t\t\t\t\t\t"
+msgstr "command=deleteTags\n&amp;resourceIds=1,12\n&amp;resourceType=Snapshot\n&amp;tags[0].key=city\t\t\t\t\t\t\t\t"
+
+#. Tag: para
+#, no-c-format
+msgid "listTags (Show currently defined resource tags)"
+msgstr "listTags (描述選定資源標籤)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVPC (Creates a VPC)"
+msgstr "createVPC (新增VPC)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCs (Lists VPCs)"
+msgstr "listVPCs (條列所有VPC)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPC (Deletes a VPC)"
+msgstr "deleteVPC (刪除一個VPC)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPC (Updates a VPC)"
+msgstr "updateVPC (更新一個VPC)"
+
+#. Tag: para
+#, no-c-format
+msgid "restartVPC (Restarts a VPC)"
+msgstr "restartVPC (重新啟動一個VPC)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVPCOffering (Creates VPC offering)"
+msgstr "createVPCOffering (新增一個VPC offering)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPCOffering (Updates VPC offering)"
+msgstr "updateVPCOffering (更新一個VPC offering)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPCOffering (Deletes VPC offering)"
+msgstr "deleteVPCOffering (刪除一個VPC offering)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCOfferings (Lists VPC offerings)"
+msgstr "listVPCOfferings (條列所有的VPC offerings)"
+
+#. Tag: para
+#, no-c-format
+msgid "createPrivateGateway (Creates a private gateway)"
+msgstr "createPrivateGateway (新增私人扎到)"
+
+#. Tag: para
+#, no-c-format
+msgid "listPrivateGateways (List private gateways)"
+msgstr "listPrivateGateways (列出私人閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "deletePrivateGateway (Deletes a Private gateway)"
+msgstr "deletePrivateGateway (刪除私人閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"createNetworkACL (Creates a ACL rule the given network (the network has to "
+"belong to VPC))"
+msgstr "createNetworkACL (新增ACL來規範網路(網路屬於VPC))"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkACL (Deletes a Network ACL)"
+msgstr "deleteNetworkACL (刪除網路ACL)"
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkACLs (Lists all network ACLs)"
+msgstr "listNetworkACLs (列出所有網路ACL)"
+
+#. Tag: para
+#, no-c-format
+msgid "createStaticRoute (Creates a static route)"
+msgstr "createStaticRoute (建立固定路徑)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStaticRoute (Deletes a static route)"
+msgstr "deleteStaticRoute (刪除固定路徑)"
+
+#. Tag: para
+#, no-c-format
+msgid "listStaticRoutes (Lists all static routes)"
+msgstr "listStaticRoutes (列出所有固定路徑)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnCustomerGateway (Creates site to site vpn customer gateway)"
+msgstr "createVpnCustomerGateway (新增 site to site VPN客戶閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnGateway (Creates site to site vpn local gateway)"
+msgstr "createVpnGateway (建立 site to site VPN本地閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnConnection (Create site to site vpn connection)"
+msgstr "createVpnConnection (新增 site to site VPN連結)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnCustomerGateway (Delete site to site vpn customer gateway)"
+msgstr "deleteVpnCustomerGateway (刪除 site to site VPN訪客閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnGateway (Delete site to site vpn gateway)"
+msgstr "deleteVpnGateway (刪除 site to site VPN閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnConnection (Delete site to site vpn connection)"
+msgstr "deleteVpnConnection (刪除 site to site VPN連結)"
+
+#. Tag: para
+#, no-c-format
+msgid "updateVpnCustomerGateway (Update site to site vpn customer gateway)"
+msgstr "updateVpnCustomerGateway (更新 site to site VPN訪客閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "resetVpnConnection (Reset site to site vpn connection)"
+msgstr "resetVpnConnection (重設 site to site VPN連結)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnCustomerGateways (Lists site to site vpn customer gateways)"
+msgstr "listVpnCustomerGateways (列出 site to site VPN訪客閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnGateways (Lists site 2 site vpn gateways)"
+msgstr "listVpnGateways (列出 site 2 site VPN閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnConnections (Lists site to site vpn connection gateways)"
+msgstr "listVpnConnections (列出 site to site VPN連結閘道)"
+
+#. Tag: para
+#, no-c-format
+msgid "enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr "enableCiscoNexusVSM (在&PRODUCT;啟用 Nexus 1000v dvSwitch)"
+
+#. Tag: para
+#, no-c-format
+msgid "disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr "disableCiscoNexusVSM (在&PRODUCT;停用 Nexus 1000v dvSwitch)"
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr "deleteCiscoNexusVSM (在&PRODUCT;刪除Nexus 1000v dvSwitch)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN"
+" ID, as well as the IP address of the Nexus 1000v dvSwitch.)"
+msgstr "listCiscoNexusVSMs (列出控制VLAN ID、封包VLAN ID及資料VLAN ID，同時也列出Nexus 1000v dvSwitch的IP位址)"

@@ -1,0 +1,61 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2012-09-24 05:15+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation Complete! Next Steps"
+msgstr "安裝完成！下一步"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Congratulations! You have now installed &PRODUCT; Management Server and the "
+"database it uses to persist system data."
+msgstr "恭喜！您已完成安裝&PRODUCT;管理伺服器及用來保存系統資料的資料庫"
+
+#. Tag: para
+#, no-c-format
+msgid "What should you do next?"
+msgstr "您接下來要做甚麼？"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Even without adding any cloud infrastructure, you can run the UI to get a "
+"feel for what's offered and how you will interact with &PRODUCT; on an "
+"ongoing basis. See <xref linkend=\"ui\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you're ready, add the cloud infrastructure and try running some virtual"
+" machines on it, so you can watch how &PRODUCT; manages the infrastructure. "
+"See <xref linkend=\"provisioning-steps\" />."
+msgstr ""

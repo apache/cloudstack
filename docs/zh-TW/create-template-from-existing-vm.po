@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:06+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-07 10:49+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,45 +31,45 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating a Template from an Existing Virtual Machine"
-msgstr ""
+msgstr "從已有的虛擬機器建立模組"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Once you have at least one VM set up in the way you want, you can use it as "
 "the prototype for other VMs."
-msgstr ""
+msgstr "當您至少有一個設定好的VM，您就可以將它使用為其他VM的圓形"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Create and start a virtual machine using any of the techniques given in "
 "<xref linkend=\"creating-vms\" />."
-msgstr ""
+msgstr "使用<xref linkend=\"creating-vms\" />中的技術建立及開始虛擬機器"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Make any desired configuration changes on the running VM, then click Stop."
-msgstr ""
+msgstr "在執行的VM做任何您想要的設定，然後按Stop"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Wait for the VM to stop. When the status shows Stopped, go to the next step."
-msgstr ""
+msgstr "等VM停止，當狀態顯示Stopped，才進行下一步"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Create Template and provide the following:"
-msgstr ""
+msgstr "選擇Create Template 並提供以下資訊："
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Name and Display Text</emphasis>. These will be "
 "shown in the UI, so choose something descriptive."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name and Display Text</emphasis>：這些會出現在使用者介面"
 
 #. Tag: para
 #, no-c-format
@@ -76,24 +77,24 @@ msgid ""
 "<emphasis role=\"bold\">OS Type</emphasis>. This helps &PRODUCT; and the "
 "hypervisor perform certain operations and make assumptions that improve the "
 "performance of the guest. Select one of the following."
-msgstr ""
+msgstr "<emphasis role=\"bold\">OS Type</emphasis>：這項幫助&PRODUCT;及超級監督者可以執行特定指令，並承擔改善訪客效能的責任，從以下選擇一個"
 
 #. Tag: para
 #, no-c-format
 msgid "If the operating system of the stopped VM is listed, choose it."
-msgstr ""
+msgstr "如果您要的停止的VM的作業系統有在裡面，請選它"
 
 #. Tag: para
 #, no-c-format
 msgid "If the OS type of the stopped VM is not listed, choose Other."
-msgstr ""
+msgstr "如果沒有，則選Other"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you want to boot from this template in PV mode, choose Other PV (32-bit) "
 "or Other PV (64-bit). This choice is available only for XenServere:"
-msgstr ""
+msgstr "如果您想要從PV模式啟動模組，請選擇Other PV (32-bit) 或Other PV (64-bit)，此選擇僅適用XenServere："
 
 #. Tag: para
 #, no-c-format
@@ -101,7 +102,7 @@ msgid ""
 "Note: Generally you should not choose an older version of the OS than the "
 "version in the image. For example, choosing CentOS 5.4 to support a CentOS "
 "6.2 image will in general not work. In those cases you should choose Other."
-msgstr ""
+msgstr "注意：您不該選擇較舊的作業系統版本，例如，選擇CentOS 5.4來支援CentOS 6.2映像通常是不行的，這個情況請選Other"
 
 #. Tag: para
 #, no-c-format
@@ -110,7 +111,7 @@ msgid ""
 "accessible to all users of this &PRODUCT; installation. The template will "
 "appear in the Community Templates list. See <xref linkend=\"private-public-"
 "template\" />."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Public</emphasis>：選擇Yes來使模組能被所有使用者存取，模組會出現在Community Templates列表，詳見<xref linkend=\"private-public-template\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -118,7 +119,7 @@ msgid ""
 "<emphasis role=\"bold\">Password Enabled</emphasis>. Choose Yes if your "
 "template has the &PRODUCT; password change script installed. See <xref "
 "linkend=\"add-password-management-to-templates\" />."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Password Enabled</emphasis>：選擇Yes如果您的模組有 &PRODUCT;密碼改變的程式碼，詳見<xref linkend=\"add-password-management-to-templates\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -131,4 +132,4 @@ msgid ""
 "The new template will be visible in the Templates section when the template "
 "creation process has been completed. The template is then available when "
 "creating a new VM."
-msgstr ""
+msgstr "當進度完成，新的模組會出現在Templates，此模組就可以拿來建立新的VM"

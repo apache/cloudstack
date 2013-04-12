@@ -1,0 +1,507 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-07 10:32+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic Zone Configuration"
+msgstr "基礎區域設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you select Basic in the Add Zone wizard and click Next, you will be "
+"asked to enter the following details. Then click Next."
+msgstr "您在Add Zone精靈選擇Basic後，按Next，您會被詢問以下細節，然後按Next "
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> A name for the zone."
+msgstr "<emphasis role=\"bold\">Name.</emphasis>：zone名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">DNS 1 and 2.</emphasis> These are DNS servers for "
+"use by guest VMs in the zone. These DNS servers will be accessed via the "
+"public network you will add later. The public IP addresses for the zone must"
+" have a route to the DNS server named here."
+msgstr "<emphasis role=\"bold\">DNS 1 and 2.</emphasis>：訪客VM使用的DNS伺服器，可由公開網路存取，您之後會新增。公開IP位址必須有路徑到此DNS伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis> These "
+"are DNS servers for use by system VMs in the zone (these are VMs used by "
+"&PRODUCT; itself, such as virtual routers, console proxies, and Secondary "
+"Storage VMs.) These DNS servers will be accessed via the management traffic "
+"network interface of the System VMs. The private IP address you provide for "
+"the pods must have a route to the internal DNS server named here."
+msgstr "<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis>：系統VM使用的DNS伺服器( &PRODUCT;使用的VM，像是虛擬路由器、工作臺代理及次要儲存裝置VM)，這些DNS可經由管理流量網路介面存取，私人IP位址必須有路線到此內部DNS伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1)"
+" Choose the hypervisor for the first cluster in the zone. You can add "
+"clusters with different hypervisors later, after you finish adding the zone."
+msgstr "<emphasis role=\"bold\">Hypervisor.</emphasis>(3.0.1版後有)選擇第一個叢集超級監督者，您之後可以增加不同監督者的叢集"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network Offering.</emphasis> Your choice here "
+"determines what network services will be available on the network for guest "
+"VMs."
+msgstr "<emphasis role=\"bold\">Network Offering.</emphasis>：您的選擇會決定哪種網路服務可以在訪客VM使用"
+
+#. Tag: para
+#, no-c-format
+msgid "Network Offering"
+msgstr "Network Offerings"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "敘述"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOfferingWithSGService"
+msgstr "DefaultSharedNetworkOfferingWithSGService"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to enable security groups for guest traffic isolation, choose "
+"this. (See Using Security Groups to Control Traffic to VMs.)"
+msgstr "如果您想啟用安全群組到訪客流量隔離，請選擇這個(詳見Using Security Groups to Control Traffic to VMs)"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOffering"
+msgstr "DefaultSharedNetworkOffering"
+
+#. Tag: para
+#, no-c-format
+msgid "If you do not need security groups, choose this."
+msgstr "如果您不需要安全群組，請選擇這個"
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetscalerEIPandELBNetworkOffering"
+msgstr "DefaultSharedNetscalerEIPandELBNetworkOffering"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you have installed a Citrix NetScaler appliance as part of your zone "
+"network, and you will be using its Elastic IP and Elastic Load Balancing "
+"features, choose this. With the EIP and ELB features, a basic zone with "
+"security groups enabled can offer 1:1 static NAT and load balancing."
+msgstr "如果您已安裝Citrix NetScaler，並且您會使用彈性IP和彈性負載平衡功能，請選擇這個。使用EIP 及ELB功能，啟用安全群組的基礎區域就可以提供1:1static NAT及負載平衡"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to"
+" assign a special domain name to the guest VM network, specify the DNS "
+"suffix."
+msgstr "<emphasis role=\"bold\">Network Domain.</emphasis> ：(選擇性)如果您想要特殊的網域名稱，請指定DNS suffix"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public.</emphasis> A public zone is available to all"
+" users. A zone that is not public will be assigned to a particular domain. "
+"Only users in that domain will be allowed to create guest VMs in this zone."
+msgstr "<emphasis role=\"bold\">Public.</emphasis>：所有使用者都能用的公開區，非公開區會指定為特定網域，只有此網域內的使用這才能建立訪客VM"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose which traffic types will be carried by the physical network."
+msgstr "選擇流量刑事"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The traffic types are management, public, guest, and storage traffic. For "
+"more information about the types, roll over the icons to display their tool "
+"tips, or see Basic Zone Network Traffic Types. This screen starts out with "
+"some traffic types already assigned. To add more, drag and drop traffic "
+"types onto the network. You can also change the network name if desired."
+msgstr "形式為管理、公開、訪客及儲存流量，更多資訊，滾動圖示來展示技巧，或是參閱Basic Zone Network Traffic Types，此畫面會有一些流量類型已經指定，如果您要加入更多，拉出流量類型到greyed-out的網路就會變成啟動。您也可以變更網路名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"3. (Introduced in version 3.0.1) Assign a network traffic label to each "
+"traffic type on the physical network. These labels must match the labels you"
+" have already defined on the hypervisor host. To assign each label, click "
+"the Edit button under the traffic type icon. A popup dialog appears where "
+"you can type the label, then click OK."
+msgstr "3. (3.0.1版本後)指定網路流量標籤給每個實體網路上的每種流量形式，這些標籤必須符合您在超級監督者主機定義的標籤。在流量圖示點選Edit，會彈出對話框，您可以輸入標籤，然後按OK"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These traffic labels will be defined only for the hypervisor selected for "
+"the first cluster. For all other hypervisors, the labels can be configured "
+"after the zone is created."
+msgstr "這些標籤只會在第一個叢集的超級監督者定義，對於其他所有超級監督者，標籤可以在區域建立後設定"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next."
+msgstr "按Next"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(NetScaler only) If you chose the network offering for NetScaler, you have "
+"an additional screen to fill out. Provide the requested details to set up "
+"the NetScaler, then click Next."
+msgstr "(僅NetScaler)，如果您為NetScaler選擇網路服務，您會有額外的視窗要填寫，提供需要的細節並建立NetScaler，然後按Next"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">IP address.</emphasis> The NSIP (NetScaler IP) "
+"address of the NetScaler device."
+msgstr "<emphasis role=\"bold\">IP address.</emphasis>： NetScaler裝置的NSIP (NetScaler IP) 位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Username/Password.</emphasis> The authentication "
+"credentials to access the device. &PRODUCT; uses these credentials to access"
+" the device."
+msgstr "<emphasis role=\"bold\">Username/Password.</emphasis>：存取裝置的授權證明，&PRODUCT;使用這些證明來存取裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Type.</emphasis> NetScaler device type that is being"
+" added. It could be NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a "
+"comparison of the types, see About Using a NetScaler Load Balancer."
+msgstr "<emphasis role=\"bold\">Type.</emphasis> ：NetScaler裝置類型，可能為NetScaler VPX, NetScaler MPX, 或 NetScaler SDX，關於類型的比較，詳見About Using a NetScaler Load Balancer"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public interface.</emphasis> Interface of NetScaler "
+"that is configured to be part of the public network."
+msgstr "<emphasis role=\"bold\">Public interface.</emphasis>：NetScaler的介面，在公開網路設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private interface.</emphasis> Interface of NetScaler"
+" that is configured to be part of the private network."
+msgstr "<emphasis role=\"bold\">Private interface.</emphasis>： NetScaler的介面，在私人網路設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Number of retries.</emphasis> Number of times to "
+"attempt a command on the device before considering the operation failed. "
+"Default is 2."
+msgstr "<emphasis role=\"bold\">Number of retries.</emphasis>：嘗試指令的次數，不包含失敗，預設為2"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Capacity.</emphasis> Number of guest "
+"networks/accounts that will share this NetScaler device."
+msgstr "<emphasis role=\"bold\">Capacity.</emphasis>：分享此裝置的訪客網路/帳戶的數量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Dedicated.</emphasis> When marked as dedicated, this"
+" device will be dedicated to a single account. When Dedicated is checked, "
+"the value in the Capacity field has no significance – implicitly, its value "
+"is 1."
+msgstr "<emphasis role=\"bold\">Dedicated.</emphasis> ：標示為專用時，此裝置即為一個帳戶專用，而 Capacity欄位數值即為1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(NetScaler only) Configure the IP range for public traffic. The IPs in this "
+"range will be used for the static NAT capability which you enabled by "
+"selecting the network offering for NetScaler with EIP and ELB. Enter the "
+"following details, then click Add. If desired, you can repeat this step to "
+"add more IP ranges. When done, click Next."
+msgstr "(僅NetScaler)為公開流量設定IP範圍，此範圍的IP會被使用為 static NAT容量，此容量為您使用EIP 及 ELB選擇網路服務時啟用。輸入以下細節，然後按Add。您可以重複此步驟來增加IP範圍，結束後，請按Next"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Gateway.</emphasis> The gateway in use for these IP "
+"addresses."
+msgstr "<emphasis role=\"bold\">Gateway.</emphasis> ：IP位址使用的閘道"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Netmask.</emphasis> The netmask associated with this"
+" IP range."
+msgstr "<emphasis role=\"bold\">Netmask</emphasis>: 和VPC閘道關聯的IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLAN.</emphasis> The VLAN that will be used for "
+"public traffic."
+msgstr "<emphasis role=\"bold\">VLAN.</emphasis>：將被用在公用流量的VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start IP/End IP.</emphasis> A range of IP addresses "
+"that are assumed to be accessible from the Internet and will be allocated "
+"for access to guest VMs."
+msgstr "<emphasis role=\"bold\">Start IP/End IP.</emphasis>：一組預定可被網際網路存取的IP，並會被分配來存取訪客VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new zone, &PRODUCT; adds the first pod for you. You can always add more"
+" pods later. For an overview of what a pod is, see <xref linkend=\"about-"
+"pods\" />."
+msgstr "在新的區域中，&PRODUCT;會先新增新的pod給您，您可以之後隨時增加。關於pod簡介，詳見<xref linkend=\"about-pods\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first pod, enter the following, then click Next:"
+msgstr "輸入以下來設定第一個pod，然後按Next"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Pod Name.</emphasis> A name for the pod."
+msgstr "<emphasis role=\"bold\">Pod Name.</emphasis>：pod名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system gateway.</emphasis> The gateway for "
+"the hosts in that pod."
+msgstr "<emphasis role=\"bold\">Reserved system gateway.</emphasis> ：pod中的主機閘道"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Reserved system netmask.</emphasis> The network "
+"prefix that defines the pod's subnet. Use CIDR notation."
+msgstr "<emphasis role=\"bold\">Reserved system netmask.</emphasis>：定義pod子網路的網路prefix ，使用CIDR表示方法"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> The IP "
+"range in the management network that &PRODUCT; uses to manage various system"
+" VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more "
+"information, see System Reserved IP Addresses."
+msgstr "<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> Management網路的IP範圍；被用來分配給system VMs：如secondary storage vm、console proxy vm或是DHCP之用，關於IP範圍更多的資訊，請參閱系統保留IP章節"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the network for guest traffic. Provide the following, then click "
+"Next:"
+msgstr "為訪客流量設定網路，提供以下，然後按Next ："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest gateway.</emphasis> The gateway that the "
+"guests should use."
+msgstr "<emphasis role=\"bold\">Guest gateway.</emphasis> ： 客戶要用的閘道"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest netmask.</emphasis> The netmask in use on the "
+"subnet the guests will use."
+msgstr "<emphasis role=\"bold\">Guest Netmask</emphasis>： 客戶要使用的子網路遮罩"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Guest start IP/End IP.</emphasis> Enter the first "
+"and last IP addresses that define a range that &PRODUCT; can assign to "
+"guests."
+msgstr "<emphasis role=\"bold\">Guest start IP/End IP.</emphasis>：輸入開始及結束的IP位址，此定義&PRODUCT;可以分配的給訪客的範圍"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We strongly recommend the use of multiple NICs. If multiple NICs are used, "
+"they may be in a different subnet."
+msgstr "強烈建議使用多網路卡，如果使用多網路卡，它們可能會在不同的子網域"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If one NIC is used, these IPs should be in the same CIDR as the pod CIDR."
+msgstr "如果使用一張網路卡，這些 IP 應該為與 pod 的 CIDR 相同範圍"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new pod, &PRODUCT; adds the first cluster for you. You can always add "
+"more clusters later. For an overview of what a cluster is, see About "
+"Clusters."
+msgstr "在新的pod，&PRODUCT;會先新增一個叢集給您，您可以之後自行增加，對於叢集的簡介，詳見About Clusters"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first cluster, enter the following, then click Next:"
+msgstr "輸入以下來設定第一個叢集，然後按Next："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor.</emphasis> (Version 3.0.0 only; in "
+"3.0.1, this field is read only) Choose the type of hypervisor software that "
+"all hosts in this cluster will run. If you choose VMware, additional fields "
+"appear so you can give information about a vSphere cluster. For vSphere "
+"servers, we recommend creating the cluster of hosts in vCenter and then "
+"adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere."
+msgstr "<emphasis role=\"bold\">Hypervisor.</emphasis>(僅3.0.0版本；3.0.1版本為唯讀)選擇一種超級監督者軟體給所有主機使用，如果您選擇VMware，會出現額外的欄位，您可以輸入vSphere 叢集的資訊，對於vSphere伺服器，建議您先在vCenter建立叢集主機，然後再將整的叢集加到&PRODUCT;，詳見Add Cluster: vSphere "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the "
+"cluster. This can be text of your choosing and is not used by &PRODUCT;."
+msgstr "<emphasis role=\"bold\">Cluster name.</emphasis>：輸入叢集的名稱。這可以由您來選擇一個未被 &PRODUCT; 使用的文字。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first host for you. You can always add "
+"more hosts later. For an overview of what a host is, see About Hosts."
+msgstr "在新的叢集中，&PRODUCT;會先新增新的主機給您，您可以之後隨時增加。關於主機簡介，詳見About Hosts"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you add a hypervisor host to &PRODUCT;, the host must not have any VMs "
+"already running."
+msgstr "當您增加超級監督者主機給&PRODUCT;時，所有主機的VM都不能是執行狀態"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you can configure the host, you need to install the hypervisor "
+"software on the host. You will need to know which version of the hypervisor "
+"software version is supported by &PRODUCT; and what additional configuration"
+" is required to ensure the host will work with &PRODUCT;. To find these "
+"installation details, see:"
+msgstr "在您設定主機前，您必須安裝超級監督者軟體，您需要知道何種版本支援&PRODUCT; ，及需要那些額外設定，對於這些安裝細節，詳見："
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Installation and Configuration"
+msgstr "Citrix XenServer安裝及設定"
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr "VMware vSphere安裝與設定"
+
+#. Tag: para
+#, no-c-format
+msgid "KVM vSphere Installation and Configuration"
+msgstr "KVM vSphere安裝及設定"
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first host, enter the following, then click Next:"
+msgstr "輸入以下來設定第一個主機，然後按Next"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Name.</emphasis> The DNS name or IP address of "
+"the host."
+msgstr "<emphasis role=\"bold\">Host Name.</emphasis>：主機的DNS名稱或IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The username is root."
+msgstr "<emphasis role=\"bold\">Username.</emphasis>：通常為root"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password.</emphasis> This is the password for the "
+"user named above (from your XenServer or KVM install)."
+msgstr "<emphasis role=\"bold\">Password.</emphasis>：給以上使用者的密碼(從您的 XenServer 或 KVM安裝)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Host Tags.</emphasis> (Optional) Any labels that you"
+" use to categorize hosts for ease of maintenance. For example, you can set "
+"this to the cloud's HA tag (set in the ha.tag global configuration "
+"parameter) if you want this host to be used only for VMs with the \"high "
+"availability\" feature enabled. For more information, see HA-Enabled Virtual"
+" Machines as well as HA for Hosts."
+msgstr "Host Tags(選擇性)：任何您用來分類主機的標籤，例如，如果您想要主機僅使用有\"high availability\"功能的VM，您可以設定雲端HA標籤(ha.tag廣域設定欄位設定)，更多資訊，詳見HA-Enabled Virtual Machines及HA for Hosts"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In a new cluster, &PRODUCT; adds the first primary storage server for you. "
+"You can always add more servers later. For an overview of what primary "
+"storage is, see About Primary Storage."
+msgstr "在新的叢集中，&PRODUCT;會先新增一個主要儲存裝置給您，您可以之後自行增加，對於主要儲存裝置的簡介，詳見About Primary Storage"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure the first primary storage server, enter the following, then "
+"click Next:"
+msgstr "輸入以下來設定第一個主要儲存裝置，然後按Next："
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the storage device."
+msgstr "<emphasis role=\"bold\">Name.</emphasis>儲存裝置的名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Protocol.</emphasis> For XenServer, choose either "
+"NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint,CLVM, or RBD."
+" For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The "
+"remaining fields in the screen vary depending on what you choose here."
+msgstr "<emphasis role=\"bold\">Protocol.</emphasis> Protocol. 以XenServer來說，您可以選擇NFS、iSCSI、或是 PreSetup. 以KVM來說，您可以選擇NFS、SharedMountPoint, CLVM, 及RBD。vSphere您可以選擇VMFS (iSCSI或 FiberChannel)或NFS。其他剩下的欄位取決於您的選擇"

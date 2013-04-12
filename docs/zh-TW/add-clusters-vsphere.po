@@ -1,0 +1,156 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-07 03:33+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Cluster: vSphere"
+msgstr "加入叢集：vSphere "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Host management for vSphere is done through a combination of vCenter and the"
+" &PRODUCT; admin UI. &PRODUCT; requires that all hosts be in a &PRODUCT; "
+"cluster, but the cluster may consist of a single host. As an administrator "
+"you must decide if you would like to use clusters of one host or of multiple"
+" hosts. Clusters of multiple hosts allow for features like live migration. "
+"Clusters also require shared storage such as NFS or iSCSI."
+msgstr "藉由結合vCenter及&PRODUCT;管理介面，可以完成vSphere主機管理， &PRODUCT;需要所有主機都必須在 &PRODUCT;叢集中，但是叢集有可能只包含一個主機。身為管理者，您必須決定叢集是使用一個還多個主機，多主機叢集可以操作live migration等功能，叢集要求像 NFS or iSCSI的分享儲存"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For vSphere servers, we recommend creating the cluster of hosts in vCenter "
+"and then adding the entire cluster to &PRODUCT;. Follow these requirements:"
+msgstr "對於 vSphere伺服器，建議建立主機在vCenter的叢集，並建立整個叢集到&PRODUCT;，依照以下要求："
+
+#. Tag: para
+#, no-c-format
+msgid "Do not put more than 8 hosts in a vSphere cluster"
+msgstr "vSphere叢集不要超過8台主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the hypervisor hosts do not have any VMs already running before "
+"you add them to &PRODUCT;."
+msgstr "確定&PRODUCT;加入前，超級監督者主機還沒有任何VM執行"
+
+#. Tag: para
+#, no-c-format
+msgid "To add a vSphere cluster to &PRODUCT;:"
+msgstr "加入vSphere叢集到&PRODUCT;："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create the cluster of hosts in vCenter. Follow the vCenter instructions to "
+"do this. You will create a cluster that looks something like this in "
+"vCenter."
+msgstr "根據指南來建立主機在vCenter的叢集"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the UI."
+msgstr "登入使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the cluster."
+msgstr "於左邊的navigation列表中點選Infrastructure，接者點選zone並選擇View More，最後點選新增cluster。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Compute tab, and click View All on Pods. Choose the pod to which "
+"you want to add the cluster."
+msgstr "點選 Compute標籤，在 Pods選擇View All，選擇您要加入叢集的pod"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View Clusters."
+msgstr "按 View Clusters"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Cluster."
+msgstr "點選新增Cluster"
+
+#. Tag: para
+#, no-c-format
+msgid "In Hypervisor, choose VMware."
+msgstr "在Hypervisor，選擇VMware"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide the following information in the dialog. The fields below make "
+"reference to values from vCenter."
+msgstr "在對話框提供以下資訊，以下欄位會從 vCenter對應數值"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cluster Name. Enter the name of the cluster you created in vCenter. For "
+"example, \"cloud.cluster.2.2.1\""
+msgstr "Cluster Name：輸入叢集名稱，例如\"cloud.cluster.2.2.1\" "
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Host. Enter the hostname or IP address of the vCenter server."
+msgstr "vCenter Host： vCenter伺服器的主機名稱或IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vCenter Username. Enter the username that &PRODUCT; should use to connect to"
+" vCenter. This user must have all administrative privileges."
+msgstr "vCenter Username：&PRODUCT;連結vCenter的使用者名稱，此使用者必須為管理優先"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Password. Enter the password for the user named above"
+msgstr "vCenter Password：輸入使用者密碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For"
+" example, \"cloud.dc.VM\"."
+msgstr "vCenter Datacenter：輸入叢集位於的 vCenter資料庫，例如\"cloud.dc.VM\" "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There might be a slight delay while the cluster is provisioned. It will "
+"automatically display in the UI"
+msgstr "等待一段時間，它就會自動顯示在使用這介面了"

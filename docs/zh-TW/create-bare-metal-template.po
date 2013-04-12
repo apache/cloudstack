@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:06+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-07 02:27+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating a Bare Metal Template"
-msgstr ""
+msgstr "建立裸機模組"
 
 #. Tag: para
 #, no-c-format
@@ -41,7 +42,7 @@ msgid ""
 "assumed you already have a directory named \"win7_64bit\" on your CIFS "
 "server, containing the image for the bare metal instance. This directory and"
 " image are set up as part of the Bare Metal Installation procedure."
-msgstr ""
+msgstr "建立裸機模組之前，您需要執行其他安裝及設定，詳見Installation Guide的Bare Metal Installation。此章節是假設您已經在CIFS伺服器建立資料夾\"win7_64bit\"，並包含映像。此資料夾及映像將會是安裝的部分"
 
 #. Tag: para
 #, no-c-format
@@ -51,41 +52,41 @@ msgstr "以管理者或終端使用者登入&PRODUCT; UI "
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation bar, click Templates."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Templates"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Create Template."
-msgstr ""
+msgstr "選擇 Create Template"
 
 #. Tag: para
 #, no-c-format
 msgid "In the dialog box, enter the following values."
-msgstr ""
+msgstr "在對話框中，輸入以下數值"
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Name</emphasis>. Short name for the template."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name</emphasis>：模組名稱"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Display Text</emphasis>. Description of the "
 "template."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Display Text</emphasis>：模組的敘述"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">URL</emphasis>. The directory name which contains "
 "image file on your CIFS server. For example, win7_64bit."
-msgstr ""
+msgstr "<emphasis role=\"bold\">URL</emphasis>：資料夾名稱，包含映像，例如win7_64bit "
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Zone</emphasis>. All Zones."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Zone</emphasis>：所有Zone"
 
 #. Tag: para
 #, no-c-format
@@ -93,27 +94,27 @@ msgid ""
 "<emphasis role=\"bold\">OS Type</emphasis>. Select the OS type of the ISO "
 "image. Choose other if the OS Type of the ISO is not listed or if the ISO is"
 " not bootable."
-msgstr ""
+msgstr "<emphasis role=\"bold\">OS Type</emphasis>：ISO映像的作業系統型態，如果沒有或是不可啟動的ISO，請選其他"
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Hypervisor</emphasis>. BareMetal."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Hypervisor</emphasis>. BareMetal."
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Format</emphasis>. BareMetal."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Format</emphasis>. BareMetal."
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Password Enabled</emphasis>. No."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Password Enabled</emphasis>. No."
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Public</emphasis>. No."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Public</emphasis>. No."
 
 #. Tag: para
 #, no-c-format
@@ -121,4 +122,4 @@ msgid ""
 "<emphasis role=\"bold\">Featured</emphasis>. Choose Yes if you would like "
 "this template to be more prominent for users to select. Only administrators "
 "may make templates featured."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Featured</emphasis>：如果您想要模組比較顯眼，這項功能僅管理者能使用"

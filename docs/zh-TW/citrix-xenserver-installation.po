@@ -1,0 +1,1519 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Citrix XenServer Installation for &PRODUCT;"
+msgstr "&PRODUCT;的Citrix XenServer安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to use the Citrix XenServer hypervisor to run guest virtual "
+"machines, install XenServer 6.0 or XenServer 6.0.2 on the host(s) in your "
+"cloud. For an initial installation, follow the steps below. If you have "
+"previously installed XenServer and want to upgrade to another version, see "
+"<xref linkend=\"xenserver-version-upgrading\" />."
+msgstr "如果您使用 Citrix XenServer hypervisor執行訪客虛擬機器，請安裝XenServer 6.0 或 XenServer 6.0.2在雲端主機(s)上。執行以下步驟來初始化安裝，如果您想更新 XenServer，請參照 <xref linkend=\"xenserver-version-upgrading\" />"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for XenServer Hosts"
+msgstr " XenServer主機系統需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host must be certified as compatible with one of the following. See the "
+"Citrix Hardware Compatibility Guide: <ulink "
+"url=\"http://hcl.xensource.com\">http://hcl.xensource.com</ulink>"
+msgstr "主機必須相容以下其中一個，詳見Citrix Hardware Compatibility Guide：<ulink url=\"http://hcl.xensource.com\">http://hcl.xensource.com</ulink> "
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6 SP2"
+msgstr "XenServer 5.6 SP2"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0"
+msgstr "XenServer 6.0"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0.2"
+msgstr "XenServer 6.0.2"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must re-install Citrix XenServer if you are going to re-use a host from "
+"a previous install."
+msgstr "如果您是使用舊主機，您需要重安裝Citrix XenServer"
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr "必須支援HVM (Intel-VT or AMD-V enabled) "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure all the hotfixes provided by the hypervisor vendor are applied. "
+"Track the release of hypervisor patches through your hypervisor vendor’s "
+"support channel, and apply patches as soon as possible after they are "
+"released. &PRODUCT; will not track or notify you of required hypervisor "
+"patches. It is essential that your hosts are completely up to date with the "
+"provided hypervisor patches. The hypervisor vendor is likely to refuse to "
+"support any system that is not up to date with patches."
+msgstr "請確定所有hypervisor vendor提供的hotfixes已經被套用了。在hypervisor vendor’s support channel尋找已釋出的hypervisor patches，並在補丁發布後盡速安裝。&PRODUCT;不會自動搜尋或提醒您。對您的主機來說，更新到最新是必要的，因為hypervisor vendor會拒絕支援非最新的系統"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled in BIOS)"
+msgstr "必須支援HVM (Intel-VT or AMD-V enabled) "
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "64-bit x86 CPU (多核提供更好的效能)"
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr "支援Hardware virtualization"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "記憶體4GB"
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr "36GB硬碟"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "至少1個NIC"
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP Address"
+msgstr "固定IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running"
+msgstr "當您配置&PRODUCT;時，所有高層管理者主機的VM都不能是執行狀態"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr "缺少最新的hotfixes會導致資料毀損及VM錯誤"
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer Installation Steps"
+msgstr "XenServer安裝步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"From <ulink "
+"url=\"https://www.citrix.com/English/ss/downloads/\">https://www.citrix.com/English/ss/downloads/</ulink>,"
+" download the appropriate version of XenServer for your &PRODUCT; version "
+"(see <xref linkend=\"system-requirements-xenserver-hosts\" />). Install it "
+"using the Citrix XenServer Installation Guide."
+msgstr "從<ulink url=\"https://www.citrix.com/English/ss/downloads/\">https://www.citrix.com/English/ss/downloads/</ulink>，為您的&PRODUCT; 下載適當的XenServer版本(詳見<xref linkend=\"system-requirements-xenserver-hosts\" />)，請使用 Citrix XenServer Installation Guide安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After installation, perform the following configuration steps, which are "
+"described in the next few sections:"
+msgstr "安裝後，將執行以下設定，這些設定在接下來的章節做描述："
+
+#. Tag: para
+#, no-c-format
+msgid "Required"
+msgstr "必要的"
+
+#. Tag: para
+#, no-c-format
+msgid "Optional"
+msgstr "非必要的"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"config-xenserver-dom0-memory\" />"
+msgstr "<xref linkend=\"config-xenserver-dom0-memory\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-support-pkg-installation\" />"
+msgstr "<xref linkend=\"xenserver-support-pkg-installation\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-username-password\" />"
+msgstr "<xref linkend=\"xenserver-username-password\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set up SR if not using NFS, iSCSI, or local disk; see <xref linkend"
+"=\"xenserver-primary-storage-setup\" />"
+msgstr "若不是使用NFS、iSCSI或本地硬碟，請建立SR。詳見<xref linkend=\"xenserver-primary-storage-setup\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-time-sync\" />"
+msgstr "<xref linkend=\"xenserver-time-sync\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-iscsi-multipath-setup\" />"
+msgstr "<xref linkend=\"xenserver-iscsi-multipath-setup\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-get-deploy-license\" />"
+msgstr "<xref linkend=\"xenserver-get-deploy-license\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-physical-network-setup\" />"
+msgstr "<xref linkend=\"xenserver-physical-network-setup\" />"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure XenServer dom0 Memory"
+msgstr "設定XenServer dom0記憶體"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the XenServer dom0 settings to allocate more memory to dom0. This "
+"can enable XenServer to handle larger numbers of virtual machines. We "
+"recommend 2940 MB of RAM for XenServer dom0. For instructions on how to do "
+"this, see <ulink "
+"url=\"http://support.citrix.com/article/CTX126531\">http://support.citrix.com/article/CTX126531</ulink>."
+" The article refers to XenServer 5.6, but the same information applies to "
+"XenServer 6.0."
+msgstr "設定XenServer dom0來分配更多記憶體到dom0，使XenServer可以處理更多虛擬機器。建議2940 MB。有關設定指南，詳閱<ulink url=\"http://support.citrix.com/article/CTX126531\">http://support.citrix.com/article/CTX126531</ulink>，此文章為 XenServer 5.6版本，但適用6.0版"
+
+#. Tag: title
+#, no-c-format
+msgid "Username and Password"
+msgstr "使用者名稱與密碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All XenServers in a cluster must have the same username and password as "
+"configured in &PRODUCT;."
+msgstr "所有叢集電腦中的XenServers必須與&PRODUCT;設定的使用者名稱及密碼一致"
+
+#. Tag: title
+#, no-c-format
+msgid "Time Synchronization"
+msgstr "時間同步"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host must be set to use NTP. All hosts in a pod must have the same time."
+msgstr "主機必須使用NTP，所有同槽的主機都必須是同一時間"
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP."
+msgstr "安裝NTP"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# yum install ntp"
+msgstr "# yum install ntp"
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the NTP configuration file to point to your NTP server."
+msgstr "編輯NTP設定檔，將檔案指向 NTP伺服器"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/ntp.conf"
+msgstr "# vi /etc/ntp.conf"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add one or more server lines in this file with the names of the NTP servers "
+"you want to use. For example:"
+msgstr "在此檔案用您想要使用的NTP伺服器來新增一至多個伺服器，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"server 0.xenserver.pool.ntp.org\n"
+"server 1.xenserver.pool.ntp.org\n"
+"server 2.xenserver.pool.ntp.org\n"
+"server 3.xenserver.pool.ntp.org\n"
+"    "
+msgstr "server 0.xenserver.pool.ntp.org\nserver 1.xenserver.pool.ntp.org\nserver 2.xenserver.pool.ntp.org\nserver 3.xenserver.pool.ntp.org\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the NTP client."
+msgstr "重新啟動NTP客戶端"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service ntpd restart"
+msgstr "# service ntpd restart"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure NTP will start again upon reboot."
+msgstr "確定NTP有重新啟動"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# chkconfig ntpd on"
+msgstr "# chkconfig ntpd on"
+
+#. Tag: title
+#, no-c-format
+msgid "Licensing"
+msgstr "授權"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Citrix XenServer Free version provides 30 days usage without a license. "
+"Following the 30 day trial, XenServer requires a free activation and "
+"license. You can choose to install a license now or skip this step. If you "
+"skip this step, you will need to install a license when you activate and "
+"license the XenServer."
+msgstr "Citrix XenServer免費版本提供30天的試用期，您可以選擇安裝免費授權或是跳過這一步，如果您跳過這一步，您之後啟動時仍會需要安裝此授權"
+
+#. Tag: title
+#, no-c-format
+msgid "Getting and Deploying a License"
+msgstr "取得及安裝授權"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you choose to install a license now you will need to use the XenCenter to"
+" activate and get a license."
+msgstr "如果您選擇立即安裝授權，您會需要使用 XenCenter取得及啟動授權"
+
+#. Tag: para
+#, no-c-format
+msgid "In XenCenter, click Tools &gt; License manager."
+msgstr "在XenCenter，選擇Tools &gt; License manager"
+
+#. Tag: para
+#, no-c-format
+msgid "Select your XenServer and select Activate Free XenServer."
+msgstr "選擇您的 XenServer，點選Activate Free XenServer "
+
+#. Tag: para
+#, no-c-format
+msgid "Request a license."
+msgstr "取得授權"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can install the license with XenCenter or using the xe command line "
+"tool."
+msgstr "您可以使用XenCenter或xe 指令工具來安裝授權"
+
+#. Tag: title
+#, no-c-format
+msgid "Install &PRODUCT; XenServer Support Package (CSP)"
+msgstr "安裝&PRODUCT; XenServer Support Package (CSP) "
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional)"
+msgstr "(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To enable security groups, elastic load balancing, and elastic IP on "
+"XenServer, download and install the &PRODUCT; XenServer Support Package "
+"(CSP). After installing XenServer, perform the following additional steps on"
+" each XenServer host."
+msgstr "想要在XenServer啟用security groups、彈性負載平衡及彈性IP，請下載及安裝 &PRODUCT; XenServer Support Package (CSP)。安裝後執行以下額外步驟到每一台XenServer主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Download the CSP software onto the XenServer host from one of the following "
+"links:"
+msgstr "從以下其中一個連結下載CSP軟體到XenServer 主機："
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0.2:"
+msgstr "對於 XenServer 6.0.2："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-"
+"cloud-supp.tgz\">http://download.cloud.com/releases/3.0.1/XS-6.0.2"
+"/xenserver-cloud-supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 5.6 SP2:"
+msgstr "對於XenServer 5.6 SP2："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/2.2.0/xenserver-cloud-"
+"supp.tgz\">http://download.cloud.com/releases/2.2.0/xenserver-cloud-"
+"supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0:"
+msgstr "對於XenServer 6.0："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"http://download.cloud.com/releases/3.0/xenserver-cloud-"
+"supp.tgz\">http://download.cloud.com/releases/3.0/xenserver-cloud-"
+"supp.tgz</ulink>"
+msgstr "<ulink url=\"http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "Extract the file:"
+msgstr "解壓縮檔案："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# tar xf xenserver-cloud-supp.tgz"
+msgstr "# tar xf xenserver-cloud-supp.tgz"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following script:"
+msgstr "執行以下程式碼："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+msgstr "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the XenServer host is part of a zone that uses basic networking, disable "
+"Open vSwitch (OVS):"
+msgstr "如果 XenServer 主機是使用基礎網路的zone的一部分，關閉Open vSwitch (OVS)："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-switch-network-backend  bridge"
+msgstr "# xe-switch-network-backend  bridge"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the host machine when prompted."
+msgstr "如果有提示，請重新啟動"
+
+#. Tag: para
+#, no-c-format
+msgid "The XenServer host is now ready to be added to &PRODUCT;."
+msgstr "XenServer主機現在可以加進&PRODUCT; "
+
+#. Tag: title
+#, no-c-format
+msgid "Primary Storage Setup for XenServer"
+msgstr " XenServer主要儲存裝置設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; natively supports NFS, iSCSI and local storage. If you are using "
+"one of these storage types, there is no need to create the XenServer Storage"
+" Repository (\"SR\")."
+msgstr "&PRODUCT;本身支援 NFS、 iSCSI及本地儲存裝置，如果您使用其中一種的儲存類型，則不需要新增XenServer Storage Repository (\"SR\") "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If, however, you would like to use storage connected via some other "
+"technology, such as FiberChannel, you must set up the SR yourself. To do so,"
+" perform the following steps. If you have your hosts in a XenServer pool, "
+"perform the steps on the master node. If you are working with a single "
+"XenServer which is not part of a cluster, perform the steps on that "
+"XenServer."
+msgstr "如果您想要使用像FiberChannel等來連結儲存裝置，您需要自行建立SR。執行以下步驟來完成建立。如果您使用XenServer群的主機，請在主節點操作；如果您是使用非叢集電腦的XenServer，則在XenServer操作"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Connect FiberChannel cable to all hosts in the cluster and to the "
+"FiberChannel storage host."
+msgstr "接上FiberChannel電纜到每台叢集電腦的主機及FiberChannel儲存裝置主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Rescan the SCSI bus. Either use the following command or use XenCenter to "
+"perform an HBA rescan."
+msgstr "重新掃描SCSI匯流排，請選其中一種方法來執行HBA掃描，使用指令或 XenCenter "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# scsi-rescan"
+msgstr "# scsi-rescan"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step <xref linkend=\"rescan-scsi\" /> on every host."
+msgstr "重複<xref linkend=\"rescan-scsi\" />步驟到每台主機"
+
+#. Tag: para
+#, no-c-format
+msgid "Check to be sure you see the new SCSI disk."
+msgstr "請確定您有看到新的SCSi硬碟"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l"
+msgstr "# ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output should look like this, although the specific file name will be "
+"different (scsi-&lt;scsiID&gt;):"
+msgstr "結果應該會像 (scsi-&lt;scsiID&gt;)，但檔案的名稱會不同："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"lrwxrwxrwx 1 root root 9 Mar 16 13:47\n"
+"/dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -&gt; ../../sdc\n"
+"    "
+msgstr "lrwxrwxrwx 1 root root 9 Mar 16 13:47\n/dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -&gt; ../../sdc\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step <xref linkend=\"verify-scsi\" /> on every host."
+msgstr "重複<xref linkend=\"verify-scsi\" />步驟到每台主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the storage server, run this command to get a unique ID for the new SR."
+msgstr "在儲存裝置伺服器執行此指令來取得新SR的ID"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# uuidgen"
+msgstr "# uuidgen"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output should look like this, although the specific ID will be "
+"different:"
+msgstr "結果應該會像這樣，但ID會不同："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "e6849e96-86c3-4f2c-8fcc-350cc711be3d"
+msgstr "e6849e96-86c3-4f2c-8fcc-350cc711be3d"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create the FiberChannel SR. In name-label, use the unique ID you just "
+"generated."
+msgstr "建立 FiberChannel SR，在name-label輸入剛得到的ID"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# xe sr-create type=lvmohba shared=true\n"
+"device-config:SCSIid=360a98000503365344e6f6177615a516b\n"
+"name-label=\"e6849e96-86c3-4f2c-8fcc-350cc711be3d\"\n"
+"    "
+msgstr "\n# xe sr-create type=lvmohba shared=true\ndevice-config:SCSIid=360a98000503365344e6f6177615a516b\nname-label=\"e6849e96-86c3-4f2c-8fcc-350cc711be3d\"\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This command returns a unique ID for the SR, like the following example "
+"(your ID will be different):"
+msgstr "此指令會回復SR一組唯一的ID，像是以下範例(您的ID會不同)："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "7a143820-e893-6c6a-236e-472da6ee66bf"
+msgstr "7a143820-e893-6c6a-236e-472da6ee66bf"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To create a human-readable description for the SR, use the following "
+"command. In uuid, use the SR ID returned by the previous command. In name-"
+"description, set whatever friendly text you prefer."
+msgstr "使用以下指令來建立人類可讀的描述，在 uuid使用剛剛取得的SR ID，在name-description寫下描述"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-"
+"description=\"Fiber Channel storage repository\""
+msgstr "# xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-description=\"Fiber Channel storage repository\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make note of the values you will need when you add this storage to &PRODUCT;"
+" later (see <xref linkend=\"primary-storage-add\" />). In the Add Primary "
+"Storage dialog, in Protocol, you will choose PreSetup. In SR Name-Label, you"
+" will enter the name-label you set earlier (in this example, e6849e96-86c3"
+"-4f2c-8fcc-350cc711be3d)."
+msgstr "記下這些數值，您在增加此儲存裝置到 &PRODUCT;時會用到 (詳見 <xref linkend=\"primary-storage-add\" />)，在Add Primary Storage對話框中的 Protocol，選擇PreSetup。在SR Name-Label，輸入之前設定的name-label (此範例為e6849e96-86c3-4f2c-8fcc-350cc711be3d) "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you want to enable multipath I/O on a FiberChannel SAN, refer "
+"to the documentation provided by the SAN vendor."
+msgstr "(選擇性)如果您想在 FiberChannel SAN啟用多通道I/O，請參閱SAN vendor提供的文件"
+
+#. Tag: title
+#, no-c-format
+msgid "iSCSI Multipath Setup for XenServer (Optional)"
+msgstr "XenServer iSCSI 多通道設定(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When setting up the storage repository on a Citrix XenServer, you can enable"
+" multipath I/O, which uses redundant physical components to provide greater "
+"reliability in the connection between the server and the SAN. To enable "
+"multipathing, use a SAN solution that is supported for Citrix servers and "
+"follow the procedures in Citrix documentation. The following links provide a"
+" starting point:"
+msgstr "設定Citrix XenServer的儲存裝置庫時，您可以啟用多通道I/O，透過減少硬體來提供更高的可靠性。使用支援 Citrix伺服器的SAN solution來啟用，並按照Citrix文件步驟來設定，連結如下："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://support.citrix.com/article/CTX118791\">http://support.citrix.com/article/CTX118791</ulink>"
+msgstr "<ulink url=\"http://support.citrix.com/article/CTX118791\">http://support.citrix.com/article/CTX118791</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://support.citrix.com/article/CTX125403\">http://support.citrix.com/article/CTX125403</ulink>"
+msgstr "<ulink url=\"http://support.citrix.com/article/CTX125403\">http://support.citrix.com/article/CTX125403</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can also ask your SAN vendor for advice about setting up your Citrix "
+"repository for multipathing."
+msgstr "您也可以詢問SAN vendor建議"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make note of the values you will need when you add this storage to the "
+"&PRODUCT; later (see <xref linkend=\"primary-storage-add\" />). In the Add "
+"Primary Storage dialog, in Protocol, you will choose PreSetup. In SR Name-"
+"Label, you will enter the same name used to create the SR."
+msgstr "記下這些數值，您在增加此儲存裝置到 &PRODUCT;時會用到 (詳見 <xref linkend=\"primary-storage-add\" />)，在Add Primary Storage對話框中的 Protocol，選擇PreSetup。在SR Name-Label，輸入之前建立SR的name-label"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you encounter difficulty, address the support team for the SAN provided "
+"by your vendor. If they are not able to solve your issue, see Contacting "
+"Support."
+msgstr "如果您遇到問題，請向SAN的客服反應，如果他們無法解決，請參閱 Contacting Support "
+
+#. Tag: title
+#, no-c-format
+msgid "Physical Networking Setup for XenServer"
+msgstr " XenServer實體網路設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once XenServer has been installed, you may need to do some additional "
+"network configuration. At this point in the installation, you should have a "
+"plan for what NICs the host will have and what traffic each NIC will carry. "
+"The NICs should be cabled as necessary to implement your plan."
+msgstr "安裝好 XenServer後，您還需要一些網路設定。在此安裝步驟，您應該已經有計畫了，像是主機應該有甚麼NICs，及每種NIC使用那些流量。NIC對您的計畫是必須考慮的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you plan on using NIC bonding, the NICs on all hosts in the cluster must "
+"be cabled exactly the same. For example, if eth0 is in the private bond on "
+"one host in a cluster, then eth0 must be in the private bond on all hosts in"
+" the cluster."
+msgstr "如果您計畫使用NIC連結，所有叢集電腦主機的NIC都必須相同，例如，如果eth0為其中一台主機的私人連結，則eth0就必須是叢集電腦所有主機的私人連結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The IP address assigned for the management network interface must be static."
+" It can be set on the host itself or obtained via static DHCP."
+msgstr "指定給管理網路介面的IP位址必須固定，您可以設定在主機上或使用固定DHCP取得"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; configures network traffic of various types to use different NICs "
+"or bonds on the XenServer host. You can control this process and provide "
+"input to the Management Server through the use of XenServer network name "
+"labels. The name labels are placed on physical interfaces or bonds and "
+"configured in &PRODUCT;. In some simple cases the name labels are not "
+"required."
+msgstr "&PRODUCT;設定多種類型的網路流量可以在 XenServer主機上使用不同的NIC或連結。您可以控制及使用 XenServer網路名稱標題來提供管理伺服器的輸入端，名稱標題位於實體介面或連結上，可以在&PRODUCT;設定。在簡單的例子不用使用名稱標題"
+
+#. Tag: title
+#, no-c-format
+msgid ""
+"Configuring Public Network with a Dedicated NIC for XenServer (Optional)"
+msgstr "使用Dedicated NIC設定公開網路(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports the use of a second NIC (or bonded pair of NICs, "
+"described in <xref linkend=\"xenserver-nic-bonding\" />) for the public "
+"network. If bonding is not used, the public network can be on any NIC and "
+"can be on different NICs on the hosts in a cluster. For example, the public "
+"network can be on eth0 on node A and eth1 on node B. However, the XenServer "
+"name-label for the public network must be identical across all hosts. The "
+"following examples set the network label to \"cloud-public\". After the "
+"management server is installed and running you must configure it with the "
+"name of the chosen network label (e.g. \"cloud-public\"); this is discussed "
+"in <xref linkend=\"management-server-install-flow\" />."
+msgstr "&PRODUCT;支援使用次要NIC(或是NIC鍵結對，<xref linkend=\"xenserver-nic-bonding\" />)，對於公開網路，如果連結未使用，公開網路可以在任一NIC，或是在叢集電腦主機的不同NIC。例如，公開網路可以在節點A的eth0及節點B的eth1。但是XenServer name-label 必須是一樣的，以下範例為設定網路標題為 \"cloud-public\"，安裝及執行管理伺服器後，您必須將其名稱設定為選定的網路標題(e.g. \"cloud-public\")，會在 <xref linkend=\"management-server-install-flow\" />討論"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using two NICs bonded together to create a public network, see "
+"<xref linkend=\"xenserver-nic-bonding\" />."
+msgstr "如果您使用兩個NICs互相連結來建立公開網路，詳見<xref linkend=\"xenserver-nic-bonding\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using a single dedicated NIC to provide public network access, "
+"follow this procedure on each new host that is added to &PRODUCT; before "
+"adding the host."
+msgstr "如果您使用一個NIC提供公開網路存取點，在每個新增到&PRODUCT;的主機執行以下步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run xe network-list and find the public network. This is usually attached to"
+" the NIC that is public. Once you find the network make note of its UUID. "
+"Call this &lt;UUID-Public&gt;."
+msgstr "執行xe network-list，並找到公開網路，通常會連結到公開的NIC，找到後，請記下它的UUID，呼叫&lt;UUID-Public&gt; "
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command."
+msgstr "執行以下指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;"
+msgstr "# xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Multiple Guest Networks for XenServer (Optional)"
+msgstr "設定多訪客網路(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; supports the use of multiple guest networks with the XenServer "
+"hypervisor. Each network is assigned a name-label in XenServer. For example,"
+" you might have two networks with the labels \"cloud-guest\" and \"cloud-"
+"guest2\". After the management server is installed and running, you must add"
+" the networks and use these labels so that &PRODUCT; is aware of the "
+"networks."
+msgstr "&PRODUCT;支援使用多訪客網路，每個網路都會分配一個名稱標題，例如，您或許會有兩個網路標題為 \"cloud-guest\" 及 \"cloud-guest2\"，管理伺服器安裝及執行後，您需要增加網路並使用這些標題，如此&PRODUCT;才會注意到這些網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Follow this procedure on each new host before adding the host to &PRODUCT;:"
+msgstr "，新增主機到&PRODUCT;前，執行以下步驟到每台新主機："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run xe network-list and find one of the guest networks. Once you find the "
+"network make note of its UUID. Call this &lt;UUID-Guest&gt;."
+msgstr "執行xe network-list，並找到訪客網路，找到後記下UUID，呼叫 &lt;UUID-Guest&gt; "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run the following command, substituting your own name-label and uuid values."
+msgstr "執行以下指令，替換名稱標籤及UUID"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-"
+"Guest&gt;"
+msgstr "# xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-Guest&gt;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Repeat these steps for each additional guest network, using a different "
+"name-label and uuid each time."
+msgstr "重複以上步驟到每台額外的訪客網路，並使用不同的名稱標籤及UUID"
+
+#. Tag: title
+#, no-c-format
+msgid "Separate Storage Network for XenServer (Optional)"
+msgstr "分離儲存裝置網路(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can optionally set up a separate storage network. This should be done "
+"first on the host, before implementing the bonding steps below. This can be "
+"done using one or two available NICs. With two NICs bonding may be done as "
+"above. It is the administrator's responsibility to set up a separate storage"
+" network."
+msgstr "您可以選擇建立分離的儲存裝置網路，這必須在連結步驟前，先在主機上執行。可以使用一或兩個NIC來達成。此步驟須由管理者來執行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Give the storage network a different name-label than what will be given for "
+"other networks."
+msgstr "給予儲存裝置網路不同的名稱標籤"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the separate storage network to work correctly, it must be the only "
+"interface that can ping the primary storage device's IP address. For "
+"example, if eth0 is the management network NIC, ping -I eth0 &lt;primary "
+"storage device IP&gt; must fail. In all deployments, secondary storage "
+"devices must be pingable from the management network NIC or bond. If a "
+"secondary storage device has been placed on the storage network, it must "
+"also be pingable via the storage network NIC or bond on the hosts as well."
+msgstr "為了使分離儲存網路能正常運作，必須是唯一可以判斷主要儲存裝置的IP的介面，例如，如果eth0是管理網路的NIC，ping -I eth0 &lt;primary storage device IP&gt;會失敗。次要儲存裝置必須是管理網路NIC或鍵結可判斷的，如果被放在儲存網路上，它也必須能經由儲存網路NIC或鍵結判斷"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can set up two separate storage networks as well. For example, if you "
+"intend to implement iSCSI multipath, dedicate two non-bonded NICs to "
+"multipath. Each of the two networks needs a unique name-label."
+msgstr "您也可以建立兩個分離儲存網路，例如，如果您想要實現多通道iSCSl，或致力於將非鍵結NIC設為多通道。這兩個網路需要不同的名稱標題"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If no bonding is done, the administrator must set up and name-label the "
+"separate storage network on all hosts (masters and slaves)."
+msgstr "如果去鍵結完成了，管理者必須在所有主機(主要及附屬)建立及命名分離儲存網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Here is an example to set up eth5 to access a storage network on "
+"172.16.0.0/24."
+msgstr "以下為建立eth5來存取在172.16.0.0/24儲存網路的範例"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# xe pif-list host-name-label='hostname' device=eth5\n"
+"uuid(RO): ab0d3dd4-5744-8fae-9693-a022c7a3471d\n"
+"device ( RO): eth5\n"
+"#xe pif-reconfigure-ip DNS=172.16.3.3 gateway=172.16.0.1 IP=172.16.0.55 mode=static netmask=255.255.255.0 uuid=ab0d3dd4-5744-8fae-9693-a022c7a3471d"
+msgstr "\n# xe pif-list host-name-label='hostname' device=eth5\nuuid(RO): ab0d3dd4-5744-8fae-9693-a022c7a3471d\ndevice ( RO): eth5\n#xe pif-reconfigure-ip DNS=172.16.3.3 gateway=172.16.0.1 IP=172.16.0.55 mode=static netmask=255.255.255.0 uuid=ab0d3dd4-5744-8fae-9693-a022c7a3471d"
+
+#. Tag: title
+#, no-c-format
+msgid "NIC Bonding for XenServer (Optional)"
+msgstr "NIC 連結 (選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer supports Source Level Balancing (SLB) NIC bonding. Two NICs can be"
+" bonded together to carry public, private, and guest traffic, or some "
+"combination of these. Separate storage networks are also possible. Here are "
+"some example supported configurations:"
+msgstr "XenServer支援 Source Level Balancing (SLB) NIC連結，兩個NIC可以鍵結在一起，可以傳送公用、私人及訪客流量，或是任意組合。分離儲存網路也可以達成，以下是一些支援的設定範例："
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, 2 NICs on storage"
+msgstr "2 NICs分別給私人、公開及儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 1 NIC on public, storage uses management network"
+msgstr "2 NICs給私人、1 NIC給公開，儲存裝置使用管理網路"
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, storage uses management network"
+msgstr "2 NICs給私人、2 NIC給公開，儲存裝置使用管理網路"
+
+#. Tag: para
+#, no-c-format
+msgid "1 NIC for private, public, and storage"
+msgstr "1 NIC分別給私人、公開及儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid "All NIC bonding is optional."
+msgstr "所有NIC鍵結皆為選擇性"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"XenServer expects all nodes in a cluster will have the same network cabling "
+"and same bonds implemented. In an installation the master will be the first "
+"host that was added to the cluster and the slave hosts will be all "
+"subsequent hosts added to the cluster. The bonds present on the master set "
+"the expectation for hosts added to the cluster later. The procedure to set "
+"up bonds on the master and slaves are different, and are described below. "
+"There are several important implications of this:"
+msgstr "XenServer預期所有叢集的節點都是相同的網路配線及鍵結。按照安裝，主要主機會先加到叢集電腦，再來才是附屬主機。鍵結會在其他主機加入時連接主要主機。建立主要主機的鍵結和建立附屬主機的步驟是不一樣的，在以下會說明。這裡有些重要的提示："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must set bonds on the first host added to a cluster. Then you must use "
+"xe commands as below to establish the same bonds in the second and "
+"subsequent hosts added to a cluster."
+msgstr "您必須在第一部部署到叢集的主機先設立鍵結。然後，您必須使用xe指令來建立其他附屬主機的鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Slave hosts in a cluster must be cabled exactly the same as the master. For "
+"example, if eth0 is in the private bond on the master, it must be in the "
+"management network for added slave hosts."
+msgstr "附屬主機必須和主要主機的配線相同，例如，如果eth0是主要主機的私人鍵結，那麼主機必定是位於管理網路中，為了增加附屬主機"
+
+#. Tag: title
+#, no-c-format
+msgid "Management Network Bonding"
+msgstr "管理網路連結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator must bond the management network NICs prior to adding the "
+"host to &PRODUCT;."
+msgstr "管理者必須先連接管理網路NICs，然後才增加主機到 &PRODUCT; "
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Private Bond on the First Host in the Cluster"
+msgstr "在第一台主機建立私人鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use the following steps to create a bond in XenServer. These steps should be"
+" run on only the first host in a cluster. This example creates the cloud-"
+"private network with two physical NICs (eth0 and eth1) bonded into it."
+msgstr "使用以下步驟在XenServer建立連結。這些步驟僅需要在第一台主機執行，此範例為建立雲端私人網路，使用兩組實體NICs (eth0 及 eth1) "
+
+#. Tag: para
+#, no-c-format
+msgid "Find the physical NICs that you want to bond together."
+msgstr "找您想要連結的實體NIC"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pif-list host-name-label='hostname' device=eth0\n"
+"# xe pif-list host-name-label='hostname' device=eth1"
+msgstr "# xe pif-list host-name-label='hostname' device=eth0\n# xe pif-list host-name-label='hostname' device=eth1"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These command shows the eth0 and eth1 NICs and their UUIDs. Substitute the "
+"ethX devices of your choice. Call the UUID's returned by the above command "
+"slave1-UUID and slave2-UUID."
+msgstr "這些指令顯示eth0 及 eth1 NICs 及它們的 UUIDs。依您選擇替換ethX裝置，使用指令slave1-UUID 和 slave2-UUID呼叫UUID"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a new network for the bond. For example, a new network with name "
+"\"cloud-private\"."
+msgstr "為鍵結建立新網路，例如，一個新網路，名稱為 \"cloud-private\" "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a "
+"network by a name you configure. You must use the same name-label for all "
+"hosts in the cloud for the management network.</emphasis>"
+msgstr "<emphasis role=\"bold\">這標籤很重要， &PRODUCT;會依照名稱尋找網路，您必須在所有管理網路的主機皆使用相同的名稱標籤</emphasis> "
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-create name-label=cloud-private\n"
+"# xe bond-create network-uuid=[uuid of cloud-private created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr "# xe network-create name-label=cloud-private\n# xe bond-create network-uuid=[uuid of cloud-private created above]\npif-uuids=[slave1-uuid],[slave2-uuid]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you have a bonded pair that can be recognized by &PRODUCT; as the "
+"management network."
+msgstr "現在您有能被&PRODUCT;的鍵結對，如同管理網路"
+
+#. Tag: title
+#, no-c-format
+msgid "Public Network Bonding"
+msgstr "公開網路鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Bonding can be implemented on a separate, public network. The administrator "
+"is responsible for creating a bond for the public network if that network "
+"will be bonded and will be separate from the management network."
+msgstr "鍵結可以被用在分離、公開的網路。如果網路會被鍵結及分離管理網路，管理者需要為公開網路設立鍵結。"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Public Bond on the First Host in the Cluster"
+msgstr "在第一台主機建立公開鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps should be run on only the first host in a cluster. This example "
+"creates the cloud-public network with two physical NICs (eth2 and eth3) "
+"bonded into it."
+msgstr "這些步驟僅在第一台主機執行，例如，利用兩個實體NICs (eth2 和 eth3) 建立雲端公開網路鍵結"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"#xe pif-list host-name-label='hostname' device=eth2\n"
+"# xe pif-list host-name-label='hostname' device=eth3"
+msgstr "#xe pif-list host-name-label='hostname' device=eth2\n# xe pif-list host-name-label='hostname' device=eth3"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These command shows the eth2 and eth3 NICs and their UUIDs. Substitute the "
+"ethX devices of your choice. Call the UUID's returned by the above command "
+"slave1-UUID and slave2-UUID."
+msgstr "以下指令顯示eth2 及eth3 NICs和它們的UUIDs，依您的選擇替換ethX裝置，用以上指令slave1-UUID 和 slave2-UUID呼叫UUID"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a new network for the bond. For example, a new network with name "
+"\"cloud-public\"."
+msgstr "為鍵結建立新的網路，例如，一個新的網路，名稱為\"cloud-public\" "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a "
+"network by a name you configure. You must use the same name-label for all "
+"hosts in the cloud for the public network.</emphasis>"
+msgstr "<emphasis role=\"bold\">這標籤很重要， &PRODUCT;會依照名稱尋找網路，您必須在所有管理網路的主機皆使用相同的名稱標籤</emphasis> "
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe network-create name-label=cloud-public\n"
+"# xe bond-create network-uuid=[uuid of cloud-public created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr "# xe network-create name-label=cloud-public\n# xe bond-create network-uuid=[uuid of cloud-public created above]\npif-uuids=[slave1-uuid],[slave2-uuid]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you have a bonded pair that can be recognized by &PRODUCT; as the public"
+" network."
+msgstr "現在您有能被&PRODUCT;的鍵結對，如同公開網路"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding More Hosts to the Cluster"
+msgstr "增加更多主機道從集"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With the bonds (if any) established on the master, you should add "
+"additional, slave hosts. Run the following command for all additional hosts "
+"to be added to the cluster. This will cause the host to join the master in a"
+" single XenServer pool."
+msgstr "隨著鍵結(如果有)建立在主要主機上您需要新增附屬主機。在所有即將被新增的主機執行以下指令，此舉會將主機加入單一XenServer群"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pool-join master-address=[master IP] master-username=root\n"
+"master-password=[your password]"
+msgstr "# xe pool-join master-address=[master IP] master-username=root\nmaster-password=[your password]"
+
+#. Tag: title
+#, no-c-format
+msgid "Complete the Bonding Setup Across the Cluster"
+msgstr "完成跨叢集電腦鍵結設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With all hosts added to the pool, run the cloud-setup-bond script. This "
+"script will complete the configuration and set up of the bonds across all "
+"hosts in the cluster."
+msgstr "當所有主機都加入群集後，執行 cloud-setup-bond程式，此程式會完成設定並建立所有主機的鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the script from the Management Server in "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-"
+"bonding.sh to the master host and ensure it is executable."
+msgstr "從管理伺服器/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh複製程式到主要主機，並確定是可執行"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script:"
+msgstr "執行程式碼："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ./cloud-setup-bonding.sh"
+msgstr "# ./cloud-setup-bonding.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "Now the bonds are set up and configured properly across the cluster."
+msgstr "現在鍵結已經建立及設定完成"
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrading XenServer Versions"
+msgstr "更新XenServer版本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section tells how to upgrade XenServer software on &PRODUCT; hosts. The"
+" actual upgrade is described in XenServer documentation, but there are some "
+"additional steps you must perform before and after the upgrade."
+msgstr "此章節教您如何更新&PRODUCT;主機上的 XenServer，實際上的更新寫在 XenServer 文件中，但有些額外步驟需要在更新前/後執行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure the hardware is certified compatible with the new version of "
+"XenServer."
+msgstr "請確定硬體相容新版的XenServer "
+
+#. Tag: para
+#, no-c-format
+msgid "To upgrade XenServer:"
+msgstr "更新XenServer："
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade the database. On the Management Server node:"
+msgstr "更新資料庫，在管理伺服器上："
+
+#. Tag: para
+#, no-c-format
+msgid "Back up the database:"
+msgstr "備份資料庫"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# mysqldump --user=root --databases cloud &gt; cloud.backup.sql\n"
+"# mysqldump --user=root --databases cloud_usage &gt; cloud_usage.backup.sql"
+msgstr "# mysqldump --user=root --databases cloud &gt; cloud.backup.sql\n# mysqldump --user=root --databases cloud_usage &gt; cloud_usage.backup.sql"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You might need to change the OS type settings for VMs running on the "
+"upgraded hosts."
+msgstr "您或許會因VM在更新的主機執行而變更作業系統形式"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 GA to XenServer 5.6 SP2, change any VMs "
+"that have the OS type CentOS 5.5 (32-bit), Oracle Enterprise Linux 5.5 "
+"(32-bit), or Red Hat Enterprise Linux 5.5 (32-bit) to Other Linux (32-bit). "
+"Change any VMs that have the 64-bit versions of these same OS types to Other"
+" Linux (64-bit)."
+msgstr "如果您從 XenServer 5.6 GA更新到XenServer 5.6 SP2，請更換任何有CentOS 5.5 (32-bit), Oracle Enterprise Linux 5.5 (32-bit), 或 Red Hat Enterprise Linux 5.5 (32-bit)作業系統的VM，將其邊更為Other Linux (32-bit)，請更換任何有64位元版本的VM為Other Linux (64-bit) "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 SP2 to XenServer 6.0.2, change any VMs "
+"that have the OS type CentOS 5.6 (32-bit), CentOS 5.7 (32-bit), Oracle "
+"Enterprise Linux 5.6 (32-bit), Oracle Enterprise Linux 5.7 (32-bit), Red Hat"
+" Enterprise Linux 5.6 (32-bit) , or Red Hat Enterprise Linux 5.7 (32-bit) to"
+" Other Linux (32-bit). Change any VMs that have the 64-bit versions of these"
+" same OS types to Other Linux (64-bit)."
+msgstr "如果您從 XenServer 5.6 SP2 更新為 XenServer 6.0.2，請更換任何有CentOS 5.6 (32-bit), CentOS 5.7 (32-bit), Oracle Enterprise Linux 5.6 (32-bit), Oracle Enterprise Linux 5.7 (32-bit), Red Hat Enterprise Linux 5.6 (32-bit), 或 Red Hat Enterprise Linux 5.7 (32-bit)作業系統的VM，將其邊更為Other Linux (32-bit)，請更換任何有64位元版本的VM為Other Linux (64-bit) "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you upgraded from XenServer 5.6 to XenServer 6.0.2, do all of the above."
+msgstr "如果您是從XenServer 5.6更新為XenServer 6.0.2，請執行以上所有動作"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restart the Management Server and Usage Server. You only need to do this "
+"once for all clusters."
+msgstr "重新啟動管理伺服器及使用伺服器，您需要在所有叢集都重新開機一次"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# service cloud-management start\n"
+"# service cloud-usage start"
+msgstr "# service cloud-management start\n# service cloud-usage start"
+
+#. Tag: para
+#, no-c-format
+msgid "Disconnect the XenServer cluster from &PRODUCT;."
+msgstr "從&PRODUCT;切斷XenServer cluster的連線"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as root."
+msgstr "以root登入 &PRODUCT;使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Unmanage."
+msgstr "移動到  XenServer cluster，點選Actions，然後選擇Unmanage"
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the cluster status until it shows Unmanaged."
+msgstr "檢查 cluster直到顯示Unmanaged "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Log in to one of the hosts in the cluster, and run this command to clean up "
+"the VLAN:"
+msgstr "登入其中一台主機，並執行此指令來清理VLAN："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# . /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "# . /opt/xensource/bin/cloud-clean-vlan.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "Still logged in to the host, run the upgrade preparation script:"
+msgstr "然後執行更新準備程式碼："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-prepare-upgrade.sh"
+msgstr "# /opt/xensource/bin/cloud-prepare-upgrade.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: If you see the error \"can't eject CD,\" log in to the VM "
+"and umount the CD, then run the script again."
+msgstr "疑難雜症：如果您看見\"can't eject CD,\"錯誤，請登入VM並卸載CD，再重新執行一遍"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Upgrade the XenServer software on all hosts in the cluster. Upgrade the "
+"master first."
+msgstr "更新所有主機的XenServer，注意，先更新主要主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Live migrate all VMs on this host to other hosts. See the instructions for "
+"live migration in the Administrator's Guide."
+msgstr "移動所有VM到另一台主機，詳見Administrator's Guide的移動指南"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: You might see the following error when you migrate a VM:"
+msgstr "疑難雜症：如果您在移動VM時看到此錯誤："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"[root@xenserver-qa-2-49-4 ~]# xe vm-migrate live=true host=xenserver-qa-2-49-5 vm=i-2-8-VM\n"
+"You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.\n"
+"vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)"
+msgstr "[root@xenserver-qa-2-49-4 ~]# xe vm-migrate live=true host=xenserver-qa-2-49-5 vm=i-2-8-VM\nYou attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.\nvm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)"
+
+#. Tag: para
+#, no-c-format
+msgid "To solve this issue, run the following:"
+msgstr "執行以下來解決問題："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-"
+"49583d9f1a14"
+msgstr "# /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-49583d9f1a14"
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot the host."
+msgstr "重新啟動主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Upgrade to the newer version of XenServer. Use the steps in XenServer "
+"documentation."
+msgstr "更新較新的XenServer版本，使用XenServer文件裡的步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After the upgrade is complete, copy the following files from the management "
+"server to this host, in the directory locations shown below:"
+msgstr "更新完成後，從管理伺服器複製以下檔案到主機中，在以下顯示的資料夾位置："
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this Management Server file..."
+msgstr "複製此管理伺服器文件..."
+
+#. Tag: para
+#, no-c-format
+msgid "...to this location on the XenServer host"
+msgstr "...到此位置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/sm/NFSSR.py"
+msgstr "/opt/xensource/sm/NFSSR.py"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/setupxenserver.sh"
+msgstr "/opt/xensource/bin/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/make_migratable.sh"
+msgstr "/opt/xensource/bin/make_migratable.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh"
+msgstr "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh"
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "/opt/xensource/bin/cloud-clean-vlan.sh"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/setupxenserver.sh"
+msgstr "# /opt/xensource/bin/setupxenserver.sh"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Troubleshooting: If you see the following error message, you can safely "
+"ignore it."
+msgstr "疑難雜症：如果您看到以下錯誤，您可以放心放心忽略"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory"
+msgstr "mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Plug in the storage repositories (physical block devices) to the XenServer "
+"host:"
+msgstr "插入儲存裝置庫(實體方格裝置)到XenServer主機："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print"
+" $NF}'`; do xe pbd-plug uuid=$pbd ; done"
+msgstr "# for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; done"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note: If you add a host to this XenServer pool, you need to migrate all VMs "
+"on this host to other hosts, and eject this host from XenServer pool."
+msgstr "注意：如果您增加一台主機到XenServer群，您需要移動所有此主機的VM到其他主機，然後才從XenServer群移除主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Repeat these steps to upgrade every host in the cluster to the same version "
+"of XenServer."
+msgstr "重複這些步驟來更新所有主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Run the following command on one host in the XenServer cluster to clean up "
+"the host tags:"
+msgstr "在其中一台主機執行以下指令來清理主機tag："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# for host in $(xe host-list | grep ^uuid | awk '{print $NF}') ; do xe host-"
+"param-clear uuid=$host param-name=tags; done;"
+msgstr "# for host in $(xe host-list | grep ^uuid | awk '{print $NF}') ; do xe host-param-clear uuid=$host param-name=tags; done;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "當複製及貼上指令時，請確定指令是貼成單一條線，因為有些文件瀏覽器會多出不必要的中斷"
+
+#. Tag: para
+#, no-c-format
+msgid "Reconnect the XenServer cluster to &PRODUCT;."
+msgstr "XenServer叢集電腦與&PRODUCT;重新連線"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Manage."
+msgstr "移動到  XenServer cluster，點選Actions，然後選擇manage"
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the status to see that all the hosts come up."
+msgstr "等待所有主機出現"
+
+#. Tag: para
+#, no-c-format
+msgid "After all hosts are up, run the following on one host in the cluster:"
+msgstr "所有主機出現後，在一台主機執行以下步驟："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr "# /opt/xensource/bin/cloud-clean-vlan.sh"

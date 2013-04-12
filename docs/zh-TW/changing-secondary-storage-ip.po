@@ -1,0 +1,77 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-03-31 14:40+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changing the Secondary Storage IP Address"
+msgstr "改變次要儲存裝置的IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can change the secondary storage IP address after it has been "
+"provisioned. After changing the IP address on the host, log in to your "
+"management server and execute the following commands. Replace HOSTID below "
+"with your own value, and change the URL to use the appropriate IP address "
+"and path for your server:"
+msgstr "當次要儲存裝置的IP位址已經設定好後，您可以改變它。改變之後，登入您的管理伺服器並執行以下指令，取代HOSTID為您自己的數值，並改變URL為適合您的IP及路徑："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"\t\t# mysql -p\n"
+"\t\tmysql&gt; use cloud;\n"
+"\t\tmysql&gt; select id from host where type = 'SecondaryStorage';\n"
+"\t\tmysql&gt; update host_details set value = 'nfs://192.168.160.20/export/mike-ss1'\n"
+"  \t\twhere host_id = HOSTID and name = 'orig.url';\n"
+"\t\tmysql&gt; update host set name = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+"  \t\t= 'SecondaryStorage' and id = #;\n"
+"\t\tmysql&gt; update host set url = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+" \t\t = 'SecondaryStorage' and id = #;\n"
+"\t\tmysql&gt; update host set guid = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+"  \t\t= 'SecondaryStorage' and id = #;\n"
+"\t\t"
+msgstr "\n\t\t# mysql -p\n\t\tmysql&gt; use cloud;\n\t\tmysql&gt; select id from host where type = 'SecondaryStorage';\n\t\tmysql&gt; update host_details set value = 'nfs://192.168.160.20/export/mike-ss1'\n  \t\twhere host_id = HOSTID and name = 'orig.url';\n\t\tmysql&gt; update host set name = 'nfs://192.168.160.20/export/mike-ss1' where type\n  \t\t= 'SecondaryStorage' and id = #;\n\t\tmysql&gt; update host set url = 'nfs://192.168.160.20/export/mike-ss1' where type\n \t\t = 'SecondaryStorage' and id = #;\n\t\tmysql&gt; update host set guid = 'nfs://192.168.160.20/export/mike-ss1' where type\n  \t\t= 'SecondaryStorage' and id = #;\n\t\t"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "當複製及貼上指令時，請確定指令是貼成單一條線，因為有些文件瀏覽器會多出不必要的中斷"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Then log in to the cloud console UI and stop and start (not reboot) the "
+"Secondary Storage VM for that Zone."
+msgstr "登入雲端主機的使用者介面，然後停止及開始(不是重新開機)該Zone的次要儲存裝置"

@@ -1,0 +1,154 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-07 10:57+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changing the Default System Offering for System VMs"
+msgstr "改變系統VM的預設系統服務"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can manually change the system offering for a particular System VM. "
+"Additionally, as a &PRODUCT; administrator, you can also change the default "
+"system offering used for System VMs."
+msgstr "您可以手動改變系統服務，除此之外，身為&PRODUCT; 管理者，您可以改變預設的系統服務"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new system offering."
+msgstr "建立新的系統服務："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information, see <phrase condition=\"install\"><xref linkend"
+"=\"creating-system-service-offerings\" /></phrase> <phrase "
+"condition=\"admin\">Creating a New System Service Offering</phrase>."
+msgstr "更多資訊，詳見<phrase condition=\"install\"><xref linkend=\"creating-system-service-offerings\" /></phrase> <phrase condition=\"admin\">Creating a New System Service Offering</phrase> "
+
+#. Tag: para
+#, no-c-format
+msgid "Back up the database:"
+msgstr "備份資料庫"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysqldump -u root -p cloud | bzip2 &gt; cloud_backup.sql.bz2"
+msgstr "mysqldump -u root -p cloud | bzip2 &gt; cloud_backup.sql.bz2"
+
+#. Tag: para
+#, no-c-format
+msgid "Open an MySQL prompt:"
+msgstr "開啟MySQL提示："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysql -u cloud -p cloud"
+msgstr "mysql -u cloud -p cloud"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following queries on the cloud database."
+msgstr "在雲端資料庫執行以下疑問"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the disk_offering table, identify the original default offering and the "
+"new offering you want to use by default."
+msgstr "在 disk_offering表，確認原始預設的服務，及您想要做為新的預設的服務"
+
+#. Tag: para
+#, no-c-format
+msgid "Take a note of the ID of the new offering."
+msgstr "記下新服務的ID"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "select id,name,unique_name,type from disk_offering;"
+msgstr "從disk_offering選擇 id,name,unique_name,type："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the original default offering, set the value of unique_name to NULL."
+msgstr "從原始預設服務，設定unique_name為NULL"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# update disk_offering set unique_name = NULL where id = 10;"
+msgstr "# update disk_offering set unique_name = NULL where id = 10;"
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you use the correct value for the ID."
+msgstr "確定您使用正確的ID"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the new offering that you want to use by default, set the value of "
+"unique_name as follows:"
+msgstr "現在新服務已經變成預設值，設定unique_name 數值如下"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For the default Console Proxy VM (CPVM) offering,set unique_name to 'Cloud"
+".com-ConsoleProxy'. For the default Secondary Storage VM (SSVM) offering, "
+"set unique_name to 'Cloud.com-SecondaryStorage'. For example:"
+msgstr "對於預設Console Proxy VM (CPVM)offering，將unique_name設為 'Cloud.com-ConsoleProxy'。對於預設Secondary Storage VM (SSVM) offering，將unique_name設為 'Cloud.com-SecondaryStorage'，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"update disk_offering set unique_name = 'Cloud.com-ConsoleProxy' where id = "
+"16;"
+msgstr "update disk_offering set unique_name = 'Cloud.com-ConsoleProxy' where id = 16;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Restart &PRODUCT; Management Server. Restarting is required because the "
+"default offerings are loaded into the memory at startup."
+msgstr "重新啟動&PRODUCT;管理伺服器，為使變更仔入記憶體"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service cloud-management restart"
+msgstr "service cloud-management restart"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Destroy the existing CPVM or SSVM offerings and wait for them to be "
+"recreated. The new CPVM or SSVM are configured with the new offering."
+msgstr "催毀現存的CPVM 或 SSVM offerings，然後等它們再生，新的CPVM 或 SSVM即有心的設定"

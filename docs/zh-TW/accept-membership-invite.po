@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-06 14:41+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accepting a Membership Invitation"
+msgstr "接受邀請"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you have received an invitation to join a &PRODUCT; project, and you want"
+" to accept the invitation, follow these steps:"
+msgstr "如果您收到加入&PRODUCT;計畫的邀請，您想加入的話，請按照以下步驟："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "在左邊的導覽視窗，選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Invitations."
+msgstr "於Select View中選擇Invitations"
+
+#. Tag: para
+#, no-c-format
+msgid "If you see the invitation listed onscreen, click the Accept button."
+msgstr "如果您看到邀請出現在畫面上方，請點選Accept "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Invitations listed on screen were sent to you using your &PRODUCT; account "
+"name."
+msgstr "邀請會使用您的 &PRODUCT;帳戶送給您"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you received an email invitation, click the Enter Token button, and "
+"provide the project ID and unique ID code (token) from the email."
+msgstr "如果您收到Email邀請，點選Enter Token，並提供計劃ID及獨特的ID編碼 (token) "

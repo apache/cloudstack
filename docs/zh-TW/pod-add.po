@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-02-02 20:44+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-03-22 01:36+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -38,55 +38,55 @@ msgstr "新增Pod"
 msgid ""
 "When you created a new zone, &PRODUCT; adds the first pod for you. You can "
 "add more pods at any time using the procedure in this section."
-msgstr ""
+msgstr "當您建立了一個新的zone，&PRODUCT;同時也為您新增了一個pod，您也可於之後自行新增。"
 
 #. Tag: para
 #, no-c-format
 msgid "Log in to the &PRODUCT; UI. See <xref linkend=\"log-in\" />."
-msgstr ""
+msgstr "登入 &PRODUCT; UI. 請參閱：<xref linkend=\"log-in\" />."
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In the left navigation, choose Infrastructure. In Zones, click View More, "
 "then click the zone to which you want to add a pod."
-msgstr ""
+msgstr "於左側的navigation按鈕中，選擇Infrastructure。於右側Zones的方框下點選View More，接著請選擇您欲新增pod的zone。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Click the Compute and Storage tab. In the Pods node of the diagram, click "
 "View All."
-msgstr ""
+msgstr "點選Compute and Storage分頁，在pod節點的圖中點選View All"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add Pod."
-msgstr ""
+msgstr "點選Add pod"
 
 #. Tag: para
 #, no-c-format
 msgid "Enter the following details in the dialog."
-msgstr ""
+msgstr "於對話視窗中輸入以下資訊。"
 
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the pod."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name.</emphasis> 此pod之名稱。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Gateway.</emphasis> The gateway for the hosts in "
 "that pod."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Gateway.</emphasis> Host於此pod的網路閘道。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Netmask.</emphasis> The network prefix that defines "
 "the pod's subnet. Use CIDR notation."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Netmask.</emphasis> 用於設定pod的子網路，使用CIDR表示方法。"
 
 #. Tag: para
 #, no-c-format
@@ -95,9 +95,9 @@ msgid ""
 "range in the management network that &PRODUCT; uses to manage various system"
 " VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more "
 "information, see System Reserved IP Addresses."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> Management網路的IP範圍；被用來分配給system VMs：如secondary storage vm、console proxy vm或是DHCP之用，關於IP範圍更多的資訊，請參閱系統保留IP章節"
 
 #. Tag: para
 #, no-c-format
 msgid "Click OK."
-msgstr ""
+msgstr "點選OK"

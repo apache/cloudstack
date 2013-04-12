@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2012-09-24 18:41+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 11:51+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,14 +31,14 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Network Service Providers"
-msgstr ""
+msgstr "網路服務提供者"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "For the most up-to-date list of supported network service providers, see the"
 " &PRODUCT; UI or call listNetworkServiceProviders."
-msgstr ""
+msgstr "對於大多最新支援的網路服務提供者，詳見&PRODUCT; UI或呼叫listNetworkServiceProviders"
 
 #. Tag: para
 #, no-c-format
@@ -48,14 +49,14 @@ msgid ""
 "single network, multiple providers can provide the same network service. For"
 " example, a firewall service may be provided by Cisco or Juniper devices in "
 "the same physical network."
-msgstr ""
+msgstr "服務提供者(也稱為網路元素)是使網路服務可用的硬體或虛擬應用，例如，防火牆可以提供防火牆服務。在單一網路，多個提供者可以提供同一種網路服務，例如，同一個網路防火牆可以由Cisco 或 Juniper裝置提供"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "You can have multiple instances of the same service provider in a network "
 "(say, more than one Juniper SRX device)."
-msgstr ""
+msgstr "您可以在同一個服務提供者中(例如不只一個Juniper SRX裝置)有多個instances"
 
 #. Tag: para
 #, no-c-format
@@ -65,94 +66,94 @@ msgid ""
 " which network service provider they prefer (along with the other choices "
 "offered in network offerings). Otherwise, &PRODUCT; will choose which "
 "provider to use whenever the service is called for."
-msgstr ""
+msgstr "如果不同的提供者提供同一種服務，管理者可以建立網路服務讓使用者可以選用哪一個提供者(除了網路服務提供的選擇)，否則&PRODUCT;會任意挑選服務"
 
 #. Tag: title
 #, no-c-format
 msgid "Supported Network Service Providers"
-msgstr ""
+msgstr "支援的網路服務提供者"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "&PRODUCT; ships with an internal list of the supported service providers, "
 "and you can choose from this list when creating a network offering."
-msgstr ""
+msgstr "&PRODUCT;搭載一個內建的支援名單，您可以從名單中挑選建立網路服務的提供者"
 
 #. Tag: para
 #, no-c-format
 msgid "Virtual Router"
-msgstr ""
+msgstr "虛擬路由器"
 
 #. Tag: para
 #, no-c-format
 msgid "Citrix NetScaler"
-msgstr ""
+msgstr "Citrix NetScaler"
 
 #. Tag: para
 #, no-c-format
 msgid "Juniper SRX"
-msgstr ""
+msgstr "Juniper SRX"
 
 #. Tag: para
 #, no-c-format
 msgid "F5 BigIP"
-msgstr ""
+msgstr "F5 BigIP"
 
 #. Tag: para
 #, no-c-format
 msgid "Host based (KVM/Xen)"
-msgstr ""
+msgstr "Host based (KVM/Xen)"
 
 #. Tag: para
 #, no-c-format
 msgid "Remote Access VPN"
-msgstr ""
+msgstr "遠端存取VPN"
 
 #. Tag: para
 #, no-c-format
 msgid "Yes"
-msgstr ""
+msgstr "Yes"
 
 #. Tag: para
 #, no-c-format
 msgid "No"
-msgstr ""
+msgstr "No"
 
 #. Tag: para
 #, no-c-format
 msgid "DNS/DHCP/User Data"
-msgstr ""
+msgstr "DNS/DHCP/User Data"
 
 #. Tag: para
 #, no-c-format
 msgid "Firewall"
-msgstr ""
+msgstr "Firewall"
 
 #. Tag: para
 #, no-c-format
 msgid "Load Balancing"
-msgstr ""
+msgstr "Load Balancing"
 
 #. Tag: para
 #, no-c-format
 msgid "Elastic IP"
-msgstr ""
+msgstr "Elastic IP"
 
 #. Tag: para
 #, no-c-format
 msgid "Elastic LB"
-msgstr ""
+msgstr "Elastic LB"
 
 #. Tag: para
 #, no-c-format
 msgid "Source NAT"
-msgstr ""
+msgstr "Source NAT"
 
 #. Tag: para
 #, no-c-format
 msgid "Static NAT"
-msgstr ""
+msgstr "Static NAT"
 
 #. Tag: para
 #, no-c-format

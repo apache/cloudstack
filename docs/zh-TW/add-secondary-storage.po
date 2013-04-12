@@ -1,0 +1,79 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-08 12:27+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Secondary Storage"
+msgstr "新增次要儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure there is nothing stored on the server. Adding the server to "
+"CloudStack will destroy any existing data."
+msgstr "請確保伺服器端是沒有任何資料的，新增一個伺服器至CloudStack將會刪除所有存在的資料。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you create a new zone, the first secondary storage is added as part of "
+"that procedure. You can add secondary storage servers at any time to add "
+"more servers to an existing zone."
+msgstr "當您新增了一個區域，過程中會加入第一個主要儲存裝置，您可以隨時新增次要儲存伺服器到已有的區域"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are going to use Swift for cloud-wide secondary storage, you must add"
+" the Swift storage to &PRODUCT; before you add the local zone secondary "
+"storage servers."
+msgstr "如果您欲使用Swift作為您的次要儲存裝置，您必須在加入本地區域次要儲存伺服器前，先將Swift儲存裝置加入 &PRODUCT; "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To prepare for local zone secondary storage, you should have created and "
+"mounted an NFS share during Management Server installation."
+msgstr "您需要在安裝管理伺服器時，建立及掛載NFS share來準備建立區域次要儲存伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure you prepared the system VM template during Management Server "
+"installation."
+msgstr "請確定您在管理伺服器安裝已準備系統VM模組"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"4. Now that the secondary storage server for per-zone storage is prepared, "
+"add it to &PRODUCT;. Secondary storage is added as part of the procedure for"
+" adding a new zone."
+msgstr "4. 每個區域儲存裝置的次要儲存伺服器已經準備好了，將他加入&PRODUCT;，次要儲存裝置現在是新增區域的一個部份了"

@@ -1,0 +1,96 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-06 12:58+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accessing VMs"
+msgstr "存取VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Any user can access their own virtual machines. The administrator can access"
+" all VMs running in the cloud."
+msgstr "任何使用者都可以存取他們的虛擬機器，管理者可以存取所有運作的VM"
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM through the &PRODUCT; UI:"
+msgstr "從&PRODUCT;使用者介面登入VM："
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Instances, then click the name of a running VM."
+msgstr "選擇Instances，然後點選運行的VM名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the View Console button <inlinegraphic fileref=\"images/view-console-"
+"button.png\" format=\"PNG\"></inlinegraphic>."
+msgstr "點選View Console <inlinegraphic fileref=\"images/view-console-button.png\" format=\"PNG\"></inlinegraphic>"
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM directly over the network:"
+msgstr "透過網路直接存取VM："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The VM must have some port open to incoming traffic. For example, in a basic"
+" zone, a new VM might be assigned to a security group which allows incoming "
+"traffic. This depends on what security group you picked when creating the "
+"VM. In other cases, you can open a port by setting up a port forwarding "
+"policy. See <xref linkend=\"ip-forwarding-firewalling\" />."
+msgstr "VM必須有輸入流量的通訊埠，例如，在basic zone，新的VM可能會指定給一個允許輸入流量的安全群組，取決於建立VM時您挑的安全群組。另一個例子，您可以建立通訊埠轉送規則來開啟通訊埠，詳見 <xref linkend=\"ip-forwarding-firewalling\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If a port is open but you can not access the VM using ssh, it’s possible "
+"that ssh is not already enabled on the VM. This will depend on whether ssh "
+"is enabled in the template you picked when creating the VM. Access the VM "
+"through the &PRODUCT; UI and enable ssh on the machine using the commands "
+"for the VM’s operating system."
+msgstr "如果通訊埠是開啟的，但您不能用ssh存取VM，有可能是ssh還沒啟用，這取決於模組的ssh是否開啟。透過 &PRODUCT;使用者介面存取VM，然後使用以下指令啟用ssh："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the network has an external firewall device, you will need to create a "
+"firewall rule to allow access. See <xref linkend=\"ip-forwarding-"
+"firewalling\" />."
+msgstr "如果網路有外部防火牆裝置，您需要建立防火牆規則來允許存取，詳見<xref linkend=\"ip-forwarding-firewalling\" /> "

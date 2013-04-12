@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 08:22+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-03-23 16:10+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -152,7 +152,7 @@ msgstr "<emphasis role=\"bold\">Start Port</emphasis>, <emphasis role=\"bold\">E
 msgid ""
 "<emphasis role=\"bold\">Select Tier</emphasis>: Select the tier for which "
 "you want to add this ACL rule."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Select Tier</emphasis>: 選擇您想要新增此ACL規則的層級"
 
 #. Tag: para
 #, no-c-format
@@ -160,14 +160,14 @@ msgid ""
 "<emphasis role=\"bold\">ICMP Type</emphasis>, <emphasis role=\"bold\">ICMP "
 "Code</emphasis> (ICMP only): The type of message and error code that will be"
 " sent."
-msgstr ""
+msgstr "<emphasis role=\"bold\">ICMP Type</emphasis>, <emphasis role=\"bold\">ICMP Code</emphasis>(限ICMP)：訊息的形式及送出錯誤碼"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Traffic Type</emphasis>: Select the traffic type you"
 " want to apply."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Traffic Type</emphasis>: 選擇您想要套用的流量型態"
 
 #. Tag: para
 #, no-c-format
@@ -180,7 +180,7 @@ msgid ""
 " specified in egress rules and the responses to any traffic that has been "
 "allowed in through an ingress rule are allowed out. No egress rule is "
 "required for the VMs in a tier to communicate with each other."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Egress</emphasis>: 從Traffic type下拉式選單選擇Egress ，然後按Add，這會指定哪一種流量在此層級能夠送出VM。如果沒有Egress規則被指定，所有流量就都可以允許送出VM虛擬路由器，一旦規則被指定，只有規則指定的流量及其他被ingress規則允許的流量能被送出。如果同一層級間的VMs需要互相溝通，就不能有egress規則"
 
 #. Tag: para
 #, no-c-format
@@ -190,30 +190,30 @@ msgid ""
 "what network traffic is allowed into the VM instances in this tier. If no "
 "ingress rules are specified, then no traffic will be allowed in, except for "
 "responses to any traffic that has been allowed out through an egress rule."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Ingress</emphasis>: 從Traffic type下拉式選單選擇Ingress，然後按Add。 這會指定哪一種流量在此層級能夠送進VM。如果沒有Ingress規則被指定，所有流量就都不允許送進，除了有被egress規則定義的流量"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "By default, all incoming and outgoing traffic to the guest networks is "
 "blocked. To open the ports, create a new network ACL."
-msgstr ""
+msgstr "預設上，所有訪客網路的輸入輸出流量都是被封鎖的。新增一個ACL網路可以開啟不"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add. The ACL rule is added."
-msgstr ""
+msgstr "按下Add，ACL規則就會被加入"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "To view the list of ACL rules you have added, click the desired tier from "
 "the Network ACLs page, then select the Network ACL tab."
-msgstr ""
+msgstr "從Network ACLs頁面，選擇想要瀏覽的層級，然後選擇Network ACL標籤，可以看到您新增的ACL規則"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "You can edit the tags assigned to the ACL rules and delete the ACL rules you"
 " have created. Click the appropriate button in the Actions column."
-msgstr ""
+msgstr "您可以編輯ACL規則的標籤和刪除規則。在Actions欄位按下適當的按鈕"
