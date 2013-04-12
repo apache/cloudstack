@@ -39,7 +39,7 @@ msgid ""
 "The software that provides AWS API compatibility is installed along with "
 "&PRODUCT;. You must enable the services and perform some setup steps prior "
 "to using it."
-msgstr "提供 AWS API compatibility的軟體已經隨&PRODUCT:安裝了，您必須使用前啟用服務及執行一些設定"
+msgstr "提供 AWS API compatibility的軟體已經隨&PRODUCT;安裝了，您必須使用前啟用服務及執行一些設定"
 
 #. Tag: para
 #, no-c-format

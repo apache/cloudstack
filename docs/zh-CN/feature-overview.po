@@ -68,7 +68,7 @@ msgstr "&PRODUCT;可以管理数万台服务器; 这些服务器可以部署在�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Automatic Configuration Management</emphasis>"
-msgstr "<emphasis role=\\\"bold\\\">自动化配置管理</emphasis>"
+msgstr "<emphasis role=\"bold\">自动化配置管理</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -90,7 +90,7 @@ msgstr "&PRODUCT;内部提供的虚拟设备池用来支持云平台自身功能
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Graphical User Interface</emphasis>"
-msgstr "<emphasis role=\\\"bold\\\">图形用户界面</emphasis>"
+msgstr "<emphasis role=\"bold\">图形用户界面</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -104,7 +104,7 @@ msgstr "&PRODUCT;提供了管理员Web接口, 用来供应和管理整个云平�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">API and Extensibility</emphasis>"
-msgstr "<emphasis role=\\\"bold\\\">API及其扩展性</emphasis>"
+msgstr "<emphasis role=\"bold\">API及其扩展性</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -131,7 +131,7 @@ msgstr "&PRODUCT; 可插拨的allocation架构允许对选择的存储和主机�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">High Availability</emphasis>"
-msgstr "<emphasis role=\\\"bold\\\">高可用性</emphasis>"
+msgstr "<emphasis role=\"bold\">高可用性</emphasis>"
 
 #. Tag: para
 #, no-c-format

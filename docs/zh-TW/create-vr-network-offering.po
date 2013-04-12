@@ -99,7 +99,7 @@ msgstr "<emphasis role=\"bold\">Network Rate</emphasis>：允許的資料傳輸�
 msgid ""
 "<emphasis role=\"bold\">Traffic Type</emphasis>. The type of network traffic"
 " that will be carried on the network."
-msgstr "phasis role=\"bold\">Traffic Type</emphasis>：搭載在網路的流量型式"
+msgstr "<emphasis role=\"bold\">Traffic Type</emphasis>：搭載在網路的流量型式"
 
 #. Tag: para
 #, no-c-format

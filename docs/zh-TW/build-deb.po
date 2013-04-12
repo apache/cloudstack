@@ -136,7 +136,7 @@ msgid ""
 "you pulled in the <application>debhelper</application> application "
 "previously, but if you're generating <filename>Packages.gz</filename> on a "
 "different system, be sure that it's installed there as well."
-msgstr "第一步，確定您有安裝<application>dpkg-dev</application> package。當您pulled in <application>debhelper</application>時就應該安裝了。但是，如果正在不同系統產生filename>Packages.gz</filename>，請確定此系統也有安裝"
+msgstr "第一步，確定您有安裝<application>dpkg-dev</application> package。當您pulled in <application>debhelper</application>時就應該安裝了。但是，如果正在不同系統產生<filename>Packages.gz</filename>，請確定此系統也有安裝"
 
 #. Tag: screen
 #, no-c-format

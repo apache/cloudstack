@@ -38,7 +38,7 @@ msgstr "於Advanced Zone下設定Guest Traffic"
 msgid ""
 "These steps assume you have already logged in to the &PRODUCT; UI. To "
 "configure the base guest network:"
-msgstr "以下步驟將假設您已經登入&PRODUCT的UI並設定基礎的Guest網段："
+msgstr "以下步驟將假設您已經登入&PRODUCT;的UI並設定基礎的Guest網段："
 
 #. Tag: para
 #, no-c-format

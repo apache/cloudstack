@@ -355,7 +355,7 @@ msgstr "如果啟用StaticNAT，不論使否有啟用保存模式，IP都不能�
 msgid ""
 "<emphasis role=\"bold\">Tags</emphasis>. Network tag to specify which "
 "physical network to use."
-msgstr "emphasis role=\"bold\">Tags</emphasis>：將網路tag到要使用的實體網路"
+msgstr "<emphasis role=\"bold\">Tags</emphasis>：將網路tag到要使用的實體網路"
 
 #. Tag: para
 #, no-c-format
