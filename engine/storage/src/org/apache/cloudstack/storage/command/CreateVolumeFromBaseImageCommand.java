@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.ImageOnPrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 
 import com.cloud.agent.api.Command;
 
 public class CreateVolumeFromBaseImageCommand extends Command implements StorageSubSystemCommand {
     private final VolumeTO volume;
-    private final ImageOnPrimaryDataStoreTO image;
+    private final ImageOnPrimayDataStoreTO image;
 
     public CreateVolumeFromBaseImageCommand(VolumeTO volume, String image) {
         this.volume = volume;
@@ -36,7 +36,7 @@ public class CreateVolumeFromBaseImageCommand extends Command implements Storage
         return this.volume;
     }
     
-    public ImageOnPrimaryDataStoreTO getImage() {
+    public ImageOnPrimayDataStoreTO getImage() {
         return this.image;
     }
 
