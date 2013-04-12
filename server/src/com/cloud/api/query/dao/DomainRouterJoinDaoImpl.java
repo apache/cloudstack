@@ -155,6 +155,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setIp6Dns2(router.getIp6Dns2());
 
         routerResponse.setVpcId(router.getVpcUuid());
+        
+        routerResponse.setRole(router.getRole().toString());
 
         // set async job
         routerResponse.setJobId(router.getJobUuid());

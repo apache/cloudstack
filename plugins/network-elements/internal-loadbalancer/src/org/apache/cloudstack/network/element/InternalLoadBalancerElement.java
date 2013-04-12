@@ -61,6 +61,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
@@ -169,12 +170,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
+        List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
         if (internalLbVms == null || internalLbVms.isEmpty()) {
             return true;
         }
         boolean result = true;
-        for (DomainRouterVO internalLbVm : internalLbVms) {
+        for (VirtualRouter internalLbVm : internalLbVms) {
             result = result && _internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
                     context.getAccount(), context.getCaller().getId());
             if (cleanup) {
@@ -193,12 +194,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
+        List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
         if (internalLbVms == null || internalLbVms.isEmpty()) {
             return true;
         }
         boolean result = true;
-        for (DomainRouterVO internalLbVm : internalLbVms) {
+        for (VirtualRouter internalLbVm : internalLbVms) {
             result = result && (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
                     context.getAccount(), context.getCaller().getId()));
         }
@@ -259,7 +260,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         for (Ip sourceIp : rulesToApply.keySet()) {
             if (vmsToDestroy.contains(sourceIp)) {
                 //2.1 Destroy internal lb vm
-                List<DomainRouterVO> vms = _internalLbMgr.findInternalLbVms(network.getId(), sourceIp);
+                List<? extends VirtualRouter> vms = _internalLbMgr.findInternalLbVms(network.getId(), sourceIp);
                 //only one internal lb per IP exists
                 try {
                     s_logger.debug("Destroying internal lb vm for ip " + sourceIp.addr() + " as all the rules for this vm are in Revoke state");
@@ -271,7 +272,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 }
             } else {
                 //2.2 Start Internal LB vm per IP address
-                List<DomainRouterVO> internalLbVms;
+                List<? extends VirtualRouter> internalLbVms;
                 try {
                     DeployDestination dest = new DeployDestination(_configMgr.getZone(network.getDataCenterId()), null, null, null); 
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);

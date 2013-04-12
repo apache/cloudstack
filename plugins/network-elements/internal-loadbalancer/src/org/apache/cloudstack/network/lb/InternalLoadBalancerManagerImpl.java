@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
-import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -57,6 +56,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -117,7 +117,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = { InternalLoadBalancerManager.class })
+@Local(value = { InternalLoadBalancerManager.class})
 public class InternalLoadBalancerManagerImpl extends ManagerBase implements
 InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
@@ -539,8 +539,8 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         return _itMgr.expunge(internalLbVm, _accountMgr.getActiveUser(callerUserId), caller); 
     }
 
-    @Override
-    public VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
+    
+    protected VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         DomainRouterVO internalLbVm = _routerDao.findById(vmId);
         if (internalLbVm == null) {
             return null;
@@ -579,7 +579,7 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
         for (DomainRouterVO internalLbVm : internalLbVms) {
             if (internalLbVm.getState() != VirtualMachine.State.Running) {
-                internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+                internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), User.UID_SYSTEM, params);
             }
             
             if (internalLbVm != null) {
@@ -686,7 +686,7 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         s_logger.debug("Adding nic for Internal LB vm in Control network ");
         List<? extends NetworkOffering> offerings = _ntwkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), controlOffering, plan, null, null, false).get(0);
+        NetworkVO controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
         networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
         return networks;
@@ -769,14 +769,14 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
             if (startVm) {
                 try {
-                    internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+                    internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), User.UID_SYSTEM, params);
                     break;
                 } catch (InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
                         s_logger.debug("Failed to start the Internal lb vm  " + internalLbVm + " with hypervisor type " + hType + ", " +
                                 "destroying it and recreating one more time");
                         // destroy the internal lb vm
-                        destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                        destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getSystemAccount(), User.UID_SYSTEM);
                         continue;
                     } else {
                         throw ex;
@@ -793,10 +793,10 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
     
     
-    @Override
-    public DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, User user, Account caller, Map<Param, Object> params) 
+
+    protected DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, User user, Account caller, long callerUserId, Map<Param, Object> params) 
             throws StorageUnavailableException, InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+            ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
         if (_itMgr.start(internalLbVm, params, user, caller, null) != null) {
             if (internalLbVm.isStopPending()) {
@@ -886,5 +886,16 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             }
         }
         return result;
+    }
+
+
+    protected VirtualRouter startInternalLbVm(long vmId, Account caller, long callerUserId) throws StorageUnavailableException, InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException {
+        DomainRouterVO vm = _routerDao.findById(vmId);
+        if (vm == null || vm.getRole() != VirtualRouter.Role.INTERNAL_LB_VM) {
+            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
+        }
+        
+        return startInternalLbVm(vm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), callerUserId, null);
     }
 }
