@@ -37,11 +37,6 @@
         <listitem><para>Primary storage cannot be added until a host has been added to the cluster.</para></listitem>
         <listitem><para>If you do not provision shared primary storage, you must set the global configuration parameter system.vm.local.storage.required to true, or else you will not be able to start VMs.</para></listitem>
     </itemizedlist>
-    <note><para>There are some differences between hypervisors regarding Primary Storage. See the list below for more information per hypervisor.</para></note>
-    <itemizedlist>
-        <listitem><para><xref linkend="hypervisor-host-install-primary-storage" /></para></listitem>
-        <listitem><para><xref linkend="xenserver-primary-storage-setup" /></para></listitem>
-    </itemizedlist>
     </section>
     <section id="adding-primary-storage">
     <title>Adding Primary Stroage</title>
