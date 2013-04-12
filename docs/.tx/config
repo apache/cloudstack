@@ -1,18 +1,3 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
-#http://www.apache.org/licenses/LICENSE-2.0
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
-
 [main]
 host = https://www.transifex.com
 lang_map = it_IT:it-IT, ko_KR:ko-KR, ja_JP:ja-JP, zh_CN:zh-CN , zh_TW:zh-TW, pt_BR:pt-BR
@@ -2876,6 +2861,30 @@ type = PO
 [ACS_DOCS.writing-new-documentation]
 file_filter = <lang>/writing-new-documentation.po
 source_file = pot/writing-new-documentation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.about-regions]
+file_filter = <lang>/about-regions.po
+source_file = pot/about-regions.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.api-throttling]
+file_filter = <lang>/api-throttling.po
+source_file = pot/api-throttling.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ipv6-support]
+file_filter = <lang>/ipv6-support.po
+source_file = pot/ipv6-support.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.region-add]
+file_filter = <lang>/region-add.po
+source_file = pot/region-add.pot
 source_lang = en
 type = PO
 

@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12T11:19:38\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -30,7 +30,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "CloudMonkey is the &PRODUCT; Command Line Interface (CLI). It is written in Python. CloudMonkey can be used both as an interactive shell and as a command line tool which simplifies &PRODUCT; configuration and management. It can be used with &PRODUCT; CloudStack 4.0-incubating and above"
+msgid "CloudMonkey is the &PRODUCT; Command Line Interface (CLI). It is written in Python. CloudMonkey can be used both as an interactive shell and as a command line tool which simplifies &PRODUCT; configuration and management. It can be used with &PRODUCT; releases since the 4.0.x branch."
 msgstr ""
 
 #. Tag: para
@@ -67,7 +67,7 @@ msgstr ""
 #, no-c-format
 msgid "\n"
 "    \n"
-"$ git clone https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git # (optional if using a release download)\n"
+"$ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git # (optional if using a release download)\n"
 "$ mvn clean install -P developer\n"
 "$ cd tools/cli # cloudmonkey-x.x.x.tar.gz will be built in dist\n"
 "$ python setup.py build\n"

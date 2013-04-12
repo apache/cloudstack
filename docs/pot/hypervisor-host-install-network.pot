@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12T11:19:39\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -130,7 +130,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Make sure it looks similair to:"
+msgid "Make sure it looks similar to:"
 msgstr ""
 
 #. Tag: programlisting
@@ -213,7 +213,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Now we just configure it is a plain bridge without an IP-Adress"
+msgid "Now we just configure it is a plain bridge without an IP-Address"
 msgstr ""
 
 #. Tag: programlisting

@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12T11:19:39\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -65,12 +65,12 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "On &PRODUCT;, add the Traffic Sentinel host by calling the &PRODUCT; API command addTrafficMonitor. Pass in the URL of the Traffic Sentinel as protocol + host + port (optional); for example, http://10.147.28.100:8080. For the addTrafficMonitor command syntax, see the API Reference at <ulink url=\"http://incubator.apache.org/cloudstack/docs/api/index.html\">API Documentation</ulink>."
+msgid "On &PRODUCT;, add the Traffic Sentinel host by calling the &PRODUCT; API command addTrafficMonitor. Pass in the URL of the Traffic Sentinel as protocol + host + port (optional); for example, http://10.147.28.100:8080. For the addTrafficMonitor command syntax, see the API Reference at <ulink url=\"http://cloudstack.apache.org/docs/api/index.html\">API Documentation</ulink>."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "For information about how to call the &PRODUCT; API, see the Developer’s Guide at <ulink url=\"http://incubator.apache.org/cloudstack/docs/en-US/Apache_CloudStack/4.0.0-incubating/html/API_Developers_Guide/index.html\">CloudStack API Developer's Guide</ulink>."
+msgid "For information about how to call the &PRODUCT; API, see the Developer’s Guide at <ulink url=\"http://cloudstack.apache.org/docs/en-US/index.html\"> &PRODUCT; API Developer's Guide</ulink>."
 msgstr ""
 
 #. Tag: para

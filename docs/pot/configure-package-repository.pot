@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12T11:19:38\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -35,7 +35,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "If you didn't follow the steps to build your own packages from source in the sections for <xref linkend=\"sect-source-buildrpm\" /> or <xref linkend=\"sect-source-builddebs\" /> you may find pre-built DEB and RPM packages for your convience linked from the <ulink url=\"http://incubator.apache.org/cloudstack/downloads.html\">downloads</ulink> page."
+msgid "If you didn't follow the steps to build your own packages from source in the sections for <xref linkend=\"sect-source-buildrpm\" /> or <xref linkend=\"sect-source-builddebs\" /> you may find pre-built DEB and RPM packages for your convenience linked from the <ulink url=\"http://cloudstack.apache.org/downloads.html\">downloads</ulink> page."
 msgstr ""
 
 #. Tag: para

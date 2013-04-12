@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12T11:19:40\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -31,6 +31,11 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "CloudStack supports two formats as the response to an API call. The default response is XML. If you would like the response to be in JSON, add &amp;response=json to the Command String."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The two response formats differ in how they handle blank fields. In JSON, if there is no value for a response field, it will not appear in the response. If all the fields were empty, there might be no response at all. In XML, even if there is no value to be returned, an empty field will be returned as a placeholder XML element."
 msgstr ""
 
 #. Tag: para

@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12T11:19:39\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -80,7 +80,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "&PRODUCT; provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at <ulink url=\"http://incubator.apache.org/cloudstack/docs\">Apache CloudStack Guides</ulink> and <ulink url=\"http://incubator.apache.org/cloudstack/docs/api\">Apache CloudStack API Reference</ulink> respectively."
+msgid "&PRODUCT; provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at <ulink url=\"http://cloudstack.apache.org/docs/en-US/index.html\">Apache CloudStack Guides</ulink> and <ulink url=\"http://cloudstack.apache.org/docs/api/index.html\">Apache CloudStack API Reference</ulink> respectively."
 msgstr ""
 
 #. Tag: para

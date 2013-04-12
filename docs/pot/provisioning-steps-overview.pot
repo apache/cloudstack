@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12T11:19:40\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -40,32 +40,37 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add a zone. See <xref linkend=\"zone-add\" />."
+msgid "Define regions (optional). See <xref linkend=\"region-add\" />."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />."
+msgid "Add a zone to the region. See <xref linkend=\"zone-add\" />."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />."
+msgid "Add more pods to the zone (optional). See <xref linkend=\"pod-add\" />."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />."
+msgid "Add more clusters to the pod (optional). See <xref linkend=\"cluster-add\" />."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add primary storage. See <xref linkend=\"primary-storage-add\" />."
+msgid "Add more hosts to the cluster (optional). See <xref linkend=\"host-add\" />."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add secondary storage. See <xref linkend=\"secondary-storage-add\" />."
+msgid "Add primary storage to the cluster. See <xref linkend=\"primary-storage-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add secondary storage to the zone. See <xref linkend=\"secondary-storage-add\" />."
 msgstr ""
 
 #. Tag: para
