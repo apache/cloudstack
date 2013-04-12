@@ -17,8 +17,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:05+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -97,9 +97,9 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"All hosts within a cluster must be homogenous. The CPUs must be of the same "
-"type, count, and feature flags."
-msgstr "Todos os em um cluster devem ser homogêneos. As CPUs devem ser do mesmo tipo, número e mesmos recursos."
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

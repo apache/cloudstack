@@ -19,8 +19,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-02-02 18:50+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -60,9 +60,9 @@ msgstr "hostname --fqdn"
 #, no-c-format
 msgid ""
 "This should return a fully qualified hostname such as "
-"\"managament1.lab.example.org\". If it does not, edit /etc/hosts so that it "
+"\"management1.lab.example.org\". If it does not, edit /etc/hosts so that it "
 "does."
-msgstr "Isto deve retornar um hostname completamente qualificado tal como \"managament1.lab.example.org\". Caso contrário, edite /etc/hosts para que isto aconteça."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

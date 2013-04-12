@@ -19,8 +19,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:05\n"
-"PO-Revision-Date: 2013-03-19 14:13+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:46+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -243,11 +243,11 @@ msgstr "Uma amostra do comando curl  para criar uma nova instância é:"
 #, no-c-format
 msgid ""
 "curl --globoff http://localhost:&lt;port "
-"numbet&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId"
+"number&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId"
 "=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-"
 "48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair"
 "=keypair-doc"
-msgstr "curl --globoff http://localhost:&lt;port numbet&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair=keypair-doc"
+msgstr ""
 
 #. Tag: para
 #, no-c-format
