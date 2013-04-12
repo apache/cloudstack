@@ -50,6 +50,10 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     @Param(description = "session persistence method used for the global load balancer")
     private String stickyMethod;
 
+    @SerializedName(ApiConstants.GSLB_SERVICE_TYPE)
+    @Param(description = "GSLB service type")
+    private String serviceType;
+
     @SerializedName(ApiConstants.REGION_ID)
     @Param(description = "Region Id in which global load balancer is created")
     private Integer regionId;
@@ -94,6 +98,10 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
 
     public void setStickyMethod(String stickyMethod) {
         this.stickyMethod = stickyMethod;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
     }
 
     public void setServiceDomainName(String domainName) {
