@@ -28,7 +28,7 @@
     <para>The exact commands for the following steps may vary depending on your operating system version.</para>
     <orderedlist>
         <listitem><para>On Ubuntu systems, you'll need to install the nfs-kernel-server and portmap packages:</para>
-        <programlisting language="bash">
+        <programlisting language="Bash">
             <prompt>$</prompt> sudo apt-get install nfs-kernel-server portutils
         </programlisting>
         </listitem>
