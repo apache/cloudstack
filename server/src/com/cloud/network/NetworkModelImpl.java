@@ -1009,7 +1009,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Set<Provider> supportedProviders = new HashSet<Provider>();
     
         if (service != null) {
-            supportedProviders.addAll(s_serviceToImplementedProvidersMap.get(service));
+            List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
+            if (providers != null && !providers.isEmpty()) {
+                supportedProviders.addAll(providers);
+            }
         } else {
             for (List<Provider> pList : s_serviceToImplementedProvidersMap.values()) {
                 supportedProviders.addAll(pList);
