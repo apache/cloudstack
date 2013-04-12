@@ -44,14 +44,16 @@ setup(name="Marvin",
     platforms=("Any",),
     url="https://builds.apache.org/job/cloudstack-marvin/",
     packages=["marvin", "marvin.cloudstackAPI", "marvin.integration",
-              "marvin.integration.lib", "marvin.sandbox",
+              "marvin.integration.lib", "marvin.integration.lib.base", "marvin.integration.lib.factory",
               "marvin.sandbox.advanced", "marvin.sandbox.advancedsg", "marvin.sandbox.basic"],
     license="LICENSE.txt",
     install_requires=[
         "mysql-connector-python",
         "requests",
         "paramiko",
-        "nose"
+        "nose",
+        "factory_boy",
+        "should-dsl"
     ],
     py_modules=['marvin.marvinPlugin'],
     zip_safe=False,
