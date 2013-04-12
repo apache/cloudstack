@@ -42,6 +42,7 @@ import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
@@ -51,6 +52,7 @@ import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.EventUtils;
+import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
@@ -122,15 +124,15 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         UserAccountJoinDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, HostDaoImpl.class,
         VMInstanceDaoImpl.class, HostTransferMapDaoImpl.class, PortForwardingRulesDaoImpl.class,
         PrivateIpDaoImpl.class, UsageEventDaoImpl.class, PodVlanMapDaoImpl.class, DiskOfferingDaoImpl.class,
-        DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
+        DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, 
         DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DcDetailsDaoImpl.class, NicSecondaryIpDaoImpl.class,
         UserIpv6AddressDaoImpl.class, S3DaoImpl.class, UserDaoImpl.class, NicDaoImpl.class, NetworkDomainDaoImpl.class,
         HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, FirewallRulesDaoImpl.class,
         FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class,
         PhysicalNetworkServiceProviderDaoImpl.class, LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class, AffinityGroupServiceImpl.class,
-        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class,
-        EventDaoImpl.class }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
+        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class
+        }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
 public class AffinityApiTestConfiguration {
 
     @Bean
@@ -308,6 +310,11 @@ public class AffinityApiTestConfiguration {
     public NetworkOfferingDao networkOfferingDao() {
         return Mockito.mock(NetworkOfferingDao.class);
     }
+    
+    @Bean
+    public EventDao eventDao() {
+        return Mockito.mock(EventDao.class);
+    }
 
     @Bean
     public NetworkDao networkDao() {
@@ -319,6 +326,11 @@ public class AffinityApiTestConfiguration {
         return Mockito.mock(NetworkOfferingServiceMapDao.class);
     }
 
+    @Bean
+    public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
+    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
+    }
+    
     public static class Library implements TypeFilter {
 
         @Override

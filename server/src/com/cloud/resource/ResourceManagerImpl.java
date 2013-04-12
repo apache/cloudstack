@@ -1181,29 +1181,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-       ClusterDetailsVO memory_detail = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
-       if( memory_detail == null){
-           if (memoryovercommitratio.compareTo(1f) > 0){
-               memory_detail = new ClusterDetailsVO(cluster.getId(),"memoryOvercommitRatio",Float.toString(memoryovercommitratio));
-               _clusterDetailsDao.persist(memory_detail);
-           }
-       }
-       else {
+       if (memoryovercommitratio != null) {
+           ClusterDetailsVO memory_detail = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
            memory_detail.setValue(Float.toString(memoryovercommitratio));
            _clusterDetailsDao.update(memory_detail.getId(),memory_detail);
        }
 
-        ClusterDetailsVO cpu_detail = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
-        if( cpu_detail == null){
-            if (cpuovercommitratio.compareTo(1f) > 0){
-                cpu_detail = new ClusterDetailsVO(cluster.getId(),"cpuOvercommitRatio",Float.toString(cpuovercommitratio));
-                _clusterDetailsDao.persist(cpu_detail);
-            }
-        }
-        else {
+       if (cpuovercommitratio != null) {
+            ClusterDetailsVO cpu_detail = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
             cpu_detail.setValue(Float.toString(cpuovercommitratio));
             _clusterDetailsDao.update(cpu_detail.getId(),cpu_detail);
-        }
+       }
 
 
         if (doUpdate) {

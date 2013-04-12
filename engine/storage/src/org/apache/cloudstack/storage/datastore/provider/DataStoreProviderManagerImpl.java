@@ -64,7 +64,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         return null;
     }
     
-    public List<StorageProviderResponse> getPrimayrDataStoreProviders() {
+    public List<StorageProviderResponse> getPrimaryDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
             if (provider instanceof PrimaryDataStoreProvider) {
@@ -138,7 +138,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             throw new InvalidParameterValueException("Invalid parameter, need to specify type: either primary or image");
         }
         if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.PRIMARY.toString())) {
-            return this.getPrimayrDataStoreProviders();
+            return this.getPrimaryDataStoreProviders();
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.IMAGE.toString())) {
             return this.getImageDataStoreProviders();
         } else {

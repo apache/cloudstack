@@ -140,11 +140,11 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
 	}
 
     @Override
-    public AffinityGroupVMMapVO findByVmIdType(long instanceId, String type) {
+    public List<AffinityGroupVMMapVO> findByVmIdType(long instanceId, String type) {
         SearchCriteria<AffinityGroupVMMapVO> sc = ListByVmIdType.create();
         sc.setParameters("instanceId", instanceId);
         sc.setJoinParameters("groupSearch", "type", type);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
