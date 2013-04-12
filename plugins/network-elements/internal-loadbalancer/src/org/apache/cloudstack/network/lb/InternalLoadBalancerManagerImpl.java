@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -522,7 +523,7 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public VirtualRouter destroyInternalLbVm(long vmId, Account caller, Long callerUserId)
+    public boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId)
             throws ResourceUnavailableException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy Internal LB vm " + vmId);
@@ -530,17 +531,12 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
         DomainRouterVO internalLbVm = _routerDao.findById(vmId);
         if (internalLbVm == null) {
-            return null;
+            return true;
         }
 
         _accountMgr.checkAccess(caller, null, true, internalLbVm);
 
-        boolean result = _itMgr.expunge(internalLbVm, _accountMgr.getActiveUser(callerUserId), caller);
-
-        if (result) {
-            return internalLbVm;
-        }
-        return null;
+        return _itMgr.expunge(internalLbVm, _accountMgr.getActiveUser(callerUserId), caller); 
     }
 
     @Override
@@ -582,12 +578,13 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         }
 
         for (DomainRouterVO internalLbVm : internalLbVms) {
-            internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+            if (internalLbVm.getState() != VirtualMachine.State.Running) {
+                internalLbVm = startInternalLbVm(internalLbVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+            }
             
             if (internalLbVm != null) {
                 runningInternalLbVms.add(internalLbVm);
             }
-            
         }
         return runningInternalLbVms;
     }
@@ -699,6 +696,14 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     protected Pair<DeploymentPlan, List<DomainRouterVO>> getDeploymentPlanAndInternalLbVms(DeployDestination dest, long guestNetworkId, Ip requestedGuestIp) {
         long dcId = dest.getDataCenter().getId();
         DeploymentPlan plan = new DataCenterDeployment(dcId);
+        List<DomainRouterVO> internalLbVms = findInternalLbVms(guestNetworkId, requestedGuestIp);
+
+        return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, internalLbVms);
+    
+    }
+
+    @Override
+    public List<DomainRouterVO> findInternalLbVms(long guestNetworkId, Ip requestedGuestIp) {
         List<DomainRouterVO> internalLbVms = _routerDao.listByNetworkAndRole(guestNetworkId, Role.INTERNAL_LB_VM); 
         if (requestedGuestIp != null) {
             Iterator<DomainRouterVO> it = internalLbVms.iterator();
@@ -710,8 +715,7 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
                 }
             }
         }
-
-        return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, internalLbVms);
+        return internalLbVms;
     }
     
     

@@ -1602,7 +1602,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 }
 
                 txn.commit();
-                if (checkForReleaseElasticIp) {
+                if (checkForReleaseElasticIp && lb.getSourceIpAddressId() != null) {
                     boolean success = true;
                     long count = _firewallDao.countRulesByIpId(lb.getSourceIpAddressId());
                     if (count == 0) {

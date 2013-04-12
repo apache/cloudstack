@@ -44,7 +44,7 @@ public interface InternalLoadBalancerManager extends Manager{
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
      */
-    VirtualRouter destroyInternalLbVm(long vmId, Account caller, Long callerUserId) 
+    boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId) 
             throws ResourceUnavailableException, ConcurrentOperationException;
     
    
@@ -106,5 +106,8 @@ public interface InternalLoadBalancerManager extends Manager{
      */
     boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms)
             throws ResourceUnavailableException;
+
+
+    List<DomainRouterVO> findInternalLbVms(long guestNetworkId, Ip requestedGuestIp);
 
 }
