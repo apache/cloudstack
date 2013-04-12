@@ -31,6 +31,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -42,21 +43,30 @@ import com.cloud.utils.db.UpdateBuilder;
 public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
     private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
+    private SearchBuilder<VolumeDataStoreVO> volumeSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
-    private SearchBuilder<VolumeDataStoreVO> liveStoreSearch;
+    private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
 
+
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeSearch.done();
 
-        liveStoreSearch = createSearchBuilder();
-        liveStoreSearch.and("store_id", liveStoreSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        liveStoreSearch.and("destroyed", liveStoreSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        liveStoreSearch.done();
+        volumeSearch = createSearchBuilder();
+        volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeSearch.and("destroyed", volumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        volumeSearch.done();
+
+        storeVolumeSearch = createSearchBuilder();
+        storeVolumeSearch.and("store_id", storeVolumeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeVolumeSearch.and("volume_id", storeVolumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        storeVolumeSearch.and("destroyed", storeVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeVolumeSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
@@ -102,15 +112,10 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         return rows > 0;
     }
 
+
     @Override
     public List<VolumeDataStoreVO> listByStoreId(long id) {
         SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", id);
-        return listIncludingRemovedBy(sc);
-    }
-    @Override
-    public List<VolumeDataStoreVO> listLiveByStoreId(long id) {
-        SearchCriteria<VolumeDataStoreVO> sc = liveStoreSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
@@ -125,4 +130,23 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         remove(sc);
         txn.commit();
     }
+
+
+    @Override
+    public VolumeDataStoreVO findByVolumeId(long volumeId) {
+        SearchCriteria<VolumeDataStoreVO> sc = volumeSearch.create();
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("destroyed", false);
+        return findOneBy(sc);
+    }
+    @Override
+    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeVolumeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("destroyed", false);
+        return findOneBy(sc);
+    }
+
+
 }

@@ -58,7 +58,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -187,8 +187,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-@Local(value={TemplateManager.class, TemplateService.class})
-public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateService {
+@Local(value={TemplateManager.class, TemplateApiService.class})
+public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _tmpltHostDao;
@@ -246,7 +246,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
-    ImageService imageSvr;
+    TemplateService imageSvr;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject

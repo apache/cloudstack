@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.storage.download;
 
-import java.util.Map;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -28,7 +26,6 @@ import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -37,23 +34,17 @@ import com.cloud.utils.component.Manager;
  */
 public interface DownloadMonitor extends Manager{
 
-	public boolean downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
+	public void downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
 
 	public void cancelAllDownloads(Long templateId);
-
-	public void handleTemplateSync(DataStore store);
 
 	public boolean copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
 			throws StorageUnavailableException;
 
-    void handleSysTemplateDownload(HostVO hostId);
+    //void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateProp> templateInfos);
 
-    void handleSync(Long dcId);
+	//public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format);
 
-    void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos);
-
-	boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format);
-
-	void handleVolumeSync(HostVO ssHost);
+	public void downloadVolumeToStorage(VolumeVO volume, DataStore store, String url, String checkSum, ImageFormat format, AsyncCompletionCallback<CreateCmdResult> callback);
 
 }

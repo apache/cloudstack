@@ -318,6 +318,10 @@ public class VolumeObject implements VolumeInfo {
        return this.payload;
     }
 
+    public VolumeVO getVolume(){
+        return this.volumeVO;
+    }
+
 	@Override
 	public HypervisorType getHypervisorType() {
 		return this.volumeDao.getHypervisorType(this.volumeVO.getId());

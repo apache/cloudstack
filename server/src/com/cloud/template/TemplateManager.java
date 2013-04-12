@@ -35,7 +35,7 @@ import com.cloud.utils.Pair;
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
  */
-public interface TemplateManager extends TemplateService{
+public interface TemplateManager extends TemplateApiService{
 
     /**
      * Prepares a template for vm creation for a certain storage pool.

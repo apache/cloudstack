@@ -114,7 +114,7 @@ import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -458,7 +458,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			
 			setupHeartBeat(pool.getUuid());
 			OvmStoragePool.Details d = OvmStoragePool.getDetailsByUuid(_conn, pool.getUuid());
-			Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+			Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
 			ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, d.totalSpace, d.freeSpace, tInfo);
 			return answer;
 		} catch (Exception e) {

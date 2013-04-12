@@ -60,7 +60,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
@@ -650,7 +650,7 @@ public class CifsSecondaryStorageResource extends ServerResourceBase implements 
             return null;
         }*/
 
-        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.NetworkFilesystem, getTotalSize(), new HashMap<String, TemplateInfo>());
+        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.NetworkFilesystem, getTotalSize(), new HashMap<String, TemplateProp>());
 
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);

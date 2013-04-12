@@ -233,7 +233,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -5287,7 +5287,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn(msg);
                     return new Answer(cmd, false, msg);
                 }
-                Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+                Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
                 ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
                 return answer;
             } catch (XenAPIException e) {

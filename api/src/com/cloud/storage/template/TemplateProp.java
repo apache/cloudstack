@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.storage.template;
 
-public class TemplateInfo {
+public class TemplateProp {
     String templateName;
     String installPath;
     long size;
@@ -25,11 +25,11 @@ public class TemplateInfo {
     boolean isPublic;
     boolean isCorrupted;
 
-    protected TemplateInfo() {
+    protected TemplateProp() {
 
     }
 
-    public TemplateInfo(String templateName, String installPath, long size, long physicalSize, boolean isPublic, boolean isCorrupted) {
+    public TemplateProp(String templateName, String installPath, long size, long physicalSize, boolean isPublic, boolean isCorrupted) {
         this.templateName = templateName;
         this.installPath = installPath;
         this.size = size;
@@ -38,7 +38,7 @@ public class TemplateInfo {
         this.isCorrupted = isCorrupted;
     }
 
-    public TemplateInfo(String templateName, String installPath, boolean isPublic, boolean isCorrupted) {
+    public TemplateProp(String templateName, String installPath, boolean isPublic, boolean isCorrupted) {
         this(templateName, installPath, 0, 0, isPublic, isCorrupted);
     }
 

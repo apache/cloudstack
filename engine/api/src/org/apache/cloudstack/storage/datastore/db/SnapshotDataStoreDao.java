@@ -30,7 +30,5 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
 
     public List<SnapshotDataStoreVO> listByStoreId(long id);
 
-    public List<SnapshotDataStoreVO> listLiveByStoreId(long id);
-
     public void deletePrimaryRecordsForStore(long id);
 }

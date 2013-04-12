@@ -744,7 +744,7 @@
   <bean id="imageDataManagerImpl" class="org.apache.cloudstack.storage.image.manager.ImageDataManagerImpl" />
   <bean id="imageStoreHelper" class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
   <bean id="imageFormatHelper" class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
-  <bean id="imageServiceImpl" class="org.apache.cloudstack.storage.image.ImageServiceImpl" />
+  <bean id="templateServiceImpl" class="org.apache.cloudstack.storage.image.TemplateServiceImpl" />
   <bean id="iso" class="org.apache.cloudstack.engine.subsystem.api.storage.type.Iso" />
   <bean id="networkFileSystem" class="org.apache.cloudstack.storage.datastore.type.NetworkFileSystem" />
   <bean id="networkRestService" class="org.apache.cloudstack.engine.rest.service.api.NetworkRestService" />

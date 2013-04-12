@@ -74,7 +74,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -357,7 +357,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateInfo>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -398,7 +398,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateInfo>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -449,9 +449,9 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             List<MockVolumeVO> volumes = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
                     MockVolumeType.VOLUME);
 
-            Map<Long, TemplateInfo> templateInfos = new HashMap<Long, TemplateInfo>();
+            Map<Long, TemplateProp> templateInfos = new HashMap<Long, TemplateProp>();
             for (MockVolumeVO volume : volumes) {
-                templateInfos.put(volume.getId(), new TemplateInfo(volume.getName(), volume.getPath()
+                templateInfos.put(volume.getId(), new TemplateProp(volume.getName(), volume.getPath()
                         .replaceAll(storage.getMountPoint(), ""), volume.getSize(), volume.getSize(), true, false));
             }
             txn.commit();
@@ -492,9 +492,9 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             List<MockVolumeVO> templates = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
                     MockVolumeType.TEMPLATE);
 
-            Map<String, TemplateInfo> templateInfos = new HashMap<String, TemplateInfo>();
+            Map<String, TemplateProp> templateInfos = new HashMap<String, TemplateProp>();
             for (MockVolumeVO template : templates) {
-                templateInfos.put(template.getName(), new TemplateInfo(template.getName(), template.getPath()
+                templateInfos.put(template.getName(), new TemplateProp(template.getName(), template.getPath()
                         .replaceAll(storage.getMountPoint(), ""), template.getSize(), template.getSize(), true, false));
             }
             txn.commit();

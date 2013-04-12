@@ -20,10 +20,16 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 
-public interface ImageService {
+
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
+public interface TemplateService {
     AsyncCallFuture<CommandResult> createTemplateAsync(TemplateInfo template, DataStore store);
     AsyncCallFuture<CommandResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
     AsyncCallFuture<CommandResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
     AsyncCallFuture<CommandResult> deleteTemplateAsync(TemplateInfo template);
-    
+
+    void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
+    void handleTemplateSync(DataStore store);
 }

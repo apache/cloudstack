@@ -35,6 +35,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -118,11 +119,10 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             TemplateObject tData = (TemplateObject)data;
             _downloadMonitor.downloadTemplateToStorage(tData.getImage(), tData.getDataStore(), callback);
         } else if (data.getType() == DataObjectType.VOLUME) {
-            VolumeVO vol = this.volumeDao.findById(data.getId());
-            VolumeInfo volInfo = (VolumeInfo)data;
+            VolumeObject volInfo = (VolumeObject)data;
             RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
-            _downloadMonitor.downloadVolumeToStorage(vol, vol.getDataCenterId(), payload.getUrl(),
-                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()));
+            _downloadMonitor.downloadVolumeToStorage(volInfo.getVolume(), volInfo.getDataStore(), payload.getUrl(),
+                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), callback);
         }
 
         CreateCmdResult result = new CreateCmdResult(null, null);

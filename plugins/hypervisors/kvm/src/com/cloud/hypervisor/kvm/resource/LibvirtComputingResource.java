@@ -215,7 +215,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -2381,7 +2381,7 @@ ServerResource {
             return new Answer(cmd, false, " Failed to create storage pool");
         }
 
-        Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+        Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
         ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd,
                 storagepool.getCapacity(), storagepool.getUsed(), tInfo);
 

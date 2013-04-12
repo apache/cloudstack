@@ -156,8 +156,8 @@ public class TemplateLocation {
         return true;
     }
     
-    public TemplateInfo getTemplateInfo() {
-        TemplateInfo tmplInfo = new TemplateInfo();       
+    public TemplateProp getTemplateInfo() {
+        TemplateProp tmplInfo = new TemplateProp();       
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
         tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
         if (_resourceType == ResourceType.VOLUME){

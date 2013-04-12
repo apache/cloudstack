@@ -36,7 +36,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public interface TemplateService {
+public interface TemplateApiService {
 
     VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
 

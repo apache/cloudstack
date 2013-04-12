@@ -48,7 +48,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.component.ComponentContext;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
@@ -109,7 +109,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 
     private Answer execute(ListTemplateCommand cmd) {
         String root = getRootDir();
-        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+        Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
         return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
     }
 

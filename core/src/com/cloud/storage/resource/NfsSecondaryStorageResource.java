@@ -100,7 +100,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
@@ -1073,12 +1073,12 @@ SecondaryStorageResource {
         }
     }
 
-    Map<String, TemplateInfo> swiftListTemplate(SwiftTO swift) {
+    Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
         String[] containers = swiftList(swift, "", "");
         if (containers == null) {
             return null;
         }
-        Map<String, TemplateInfo> tmpltInfos = new HashMap<String, TemplateInfo>();
+        Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
         for( String container : containers) {
             if ( container.startsWith("T-")) {
                 String ldir = _tmpltDir + "/" + UUID.randomUUID().toString();
@@ -1095,7 +1095,7 @@ SecondaryStorageResource {
                     s_logger.warn("Unable to load template location " + ldir + " due to " + e.toString(), e);
                     continue;
                 }
-                TemplateInfo tInfo = loc.getTemplateInfo();
+                TemplateProp tInfo = loc.getTemplateInfo();
                 tInfo.setInstallPath(container);
                 tmpltInfos.put(tInfo.getTemplateName(), tInfo);
                 loc.purge();
@@ -1111,11 +1111,11 @@ SecondaryStorageResource {
             return new Answer(cmd, true, null);
         }
         if (cmd.getSwift() != null) {
-            Map<String, TemplateInfo> templateInfos = swiftListTemplate(cmd.getSwift());
+            Map<String, TemplateProp> templateInfos = swiftListTemplate(cmd.getSwift());
             return new ListTemplateAnswer(cmd.getSwift().toString(), templateInfos);
         } else {
             String root = getRootDir(cmd.getSecUrl());
-            Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+            Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
             return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
         }
     }
@@ -1126,7 +1126,7 @@ SecondaryStorageResource {
         }
 
         String root = getRootDir(cmd.getSecUrl());
-        Map<Long, TemplateInfo> templateInfos = _dlMgr.gatherVolumeInfo(root);
+        Map<Long, TemplateProp> templateInfos = _dlMgr.gatherVolumeInfo(root);
         return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
 
     }

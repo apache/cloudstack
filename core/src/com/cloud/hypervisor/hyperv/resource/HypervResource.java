@@ -105,7 +105,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Volume;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
@@ -765,7 +765,7 @@ public class HypervResource extends ServerResourceBase implements ServerResource
         try {
             StorageFilerTO pool = cmd.getPool();
             s_logger.info("Primary storage pool  details: " + pool.getHost() + " " + pool.getPath());
-            Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+            Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             // FIXME: get the actual storage capacity and storage stats of CSV volume
             // by running powershell cmdlet. This hardcoding just for prototype.
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd,

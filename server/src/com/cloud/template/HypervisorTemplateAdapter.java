@@ -36,7 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.log4j.Logger;
@@ -75,7 +75,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 	@Inject AgentManager _agentMgr;
 
     @Inject DataStoreManager storeMgr;
-    @Inject ImageService imageService;
+    @Inject TemplateService imageService;
     @Inject ImageDataFactory imageFactory;
     @Inject TemplateManager templateMgr;
 

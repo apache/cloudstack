@@ -23,18 +23,20 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore>  {
 
-    public List<TemplateDataStoreVO> listByStoreId(long id);
 
-    public List<TemplateDataStoreVO> listLiveByStoreId(long id);
+    public List<TemplateDataStoreVO> listByStoreId(long id);
 
     public void deletePrimaryRecordsForStore(long id);
 
     List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states);
+
+    List<TemplateDataStoreVO> listByTemplateStoreDownloadStatus(long templateId, long storeId, Status... status);
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId);
 }

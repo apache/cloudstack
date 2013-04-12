@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -29,7 +30,9 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
 
     public List<VolumeDataStoreVO> listByStoreId(long id);
 
-    public List<VolumeDataStoreVO> listLiveByStoreId(long id);
-
     public void deletePrimaryRecordsForStore(long id);
+
+    public VolumeDataStoreVO findByVolumeId(long volumeId);
+
+    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId);
 }

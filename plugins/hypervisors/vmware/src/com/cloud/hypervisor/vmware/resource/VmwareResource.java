@@ -210,7 +210,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StoragePoolResource;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -3137,7 +3137,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
-            Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+            Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
             return answer;
         } catch (Throwable e) {

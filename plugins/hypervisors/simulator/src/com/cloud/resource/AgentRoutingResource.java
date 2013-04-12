@@ -51,7 +51,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -168,7 +168,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     }
 
     private StartupStorageCommand initializeLocalSR() {
-        Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+        Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
 
         StoragePoolInfo poolInfo = _simMgr.getLocalStorage(hostGuid);
 

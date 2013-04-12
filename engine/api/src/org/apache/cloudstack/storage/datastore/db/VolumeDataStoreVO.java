@@ -203,14 +203,14 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 	}
 
-	public VolumeDataStoreVO(long hostId, long volumeId, long zoneId, Date lastUpdated,
+	public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated,
 			int downloadPercent, Status downloadState,
 			String localDownloadPath, String errorString, String jobId,
 			String installPath, String downloadUrl, String checksum, ImageFormat format) {
 		//super();
 		this.dataStoreId = hostId;
 		this.volumeId = volumeId;
-		this.zoneId = zoneId;
+		//this.zoneId = zoneId;
 		this.lastUpdated = lastUpdated;
 		this.downloadPercent = downloadPercent;
 		this.downloadState = downloadState;

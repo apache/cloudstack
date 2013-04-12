@@ -717,8 +717,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public Map<String, TemplateInfo> gatherTemplateInfo(String rootDir) {
-        Map<String, TemplateInfo> result = new HashMap<String, TemplateInfo>();
+    public Map<String, TemplateProp> gatherTemplateInfo(String rootDir) {
+        Map<String, TemplateProp> result = new HashMap<String, TemplateProp>();
         String templateDir = rootDir + File.separator + _templateDir;
 
         if (! _storage.exists(templateDir)) {
@@ -741,7 +741,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 continue;
             }
 
-            TemplateInfo tInfo = loc.getTemplateInfo();
+            TemplateProp tInfo = loc.getTemplateInfo();
 
             if ((tInfo.size == tInfo.physicalSize) && (tInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
@@ -774,8 +774,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public Map<Long, TemplateInfo> gatherVolumeInfo(String rootDir) {	
-        Map<Long, TemplateInfo> result = new HashMap<Long, TemplateInfo>();
+    public Map<Long, TemplateProp> gatherVolumeInfo(String rootDir) {	
+        Map<Long, TemplateProp> result = new HashMap<Long, TemplateProp>();
         String volumeDir = rootDir + File.separator + _volumeDir;
 
         if (! _storage.exists(volumeDir)) {
@@ -798,7 +798,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 continue;
             }
 
-            TemplateInfo vInfo = loc.getTemplateInfo();
+            TemplateProp vInfo = loc.getTemplateInfo();
 
             if ((vInfo.size == vInfo.physicalSize) && (vInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {

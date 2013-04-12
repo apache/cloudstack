@@ -25,13 +25,13 @@ import com.cloud.exception.ConcurrentOperationException;
 
 
 public interface VolumeService {
-    
+
     public class VolumeApiResult extends CommandResult {
         private final VolumeInfo volume;
         public VolumeApiResult(VolumeInfo volume) {
             this.volume = volume;
         }
-        
+
         public VolumeInfo getVolume() {
             return this.volume;
         }
@@ -39,16 +39,16 @@ public interface VolumeService {
 
     /**
      * Creates the volume based on the given criteria
-     * 
+     *
      * @param cmd
-     * 
+     *
      * @return the volume object
      */
     AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore store);
 
     /**
      * Delete volume
-     * 
+     *
      * @param volumeId
      * @return
      * @throws ConcurrentOperationException
@@ -56,12 +56,12 @@ public interface VolumeService {
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
     /**
-     * 
+     *
      */
     boolean cloneVolume(long volumeId, long baseVolId);
 
     /**
-     * 
+     *
      */
     AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store,  SnapshotInfo snapshot);
 
@@ -74,7 +74,9 @@ public interface VolumeService {
     boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
-    
+
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
+
+    void handleVolumeSync(DataStore store);
 
 }

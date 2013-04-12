@@ -291,6 +291,12 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.state;
     }
 
+
+    public void setState(ObjectInDataStoreStateMachine.State state) {
+        this.state = state;
+    }
+
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }

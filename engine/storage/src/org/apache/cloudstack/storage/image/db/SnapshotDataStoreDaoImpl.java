@@ -42,20 +42,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
-    private SearchBuilder<SnapshotDataStoreVO> liveStoreSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
 
-    	storeSearch = createSearchBuilder();
+        storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeSearch.done();
-
-        liveStoreSearch = createSearchBuilder();
-        liveStoreSearch.and("store_id", liveStoreSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        liveStoreSearch.and("destroyed", liveStoreSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        liveStoreSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
@@ -102,16 +97,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return rows > 0;
     }
 
+
     @Override
     public List<SnapshotDataStoreVO> listByStoreId(long id) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", id);
-        return listIncludingRemovedBy(sc);
-    }
-
-    @Override
-    public List<SnapshotDataStoreVO> listLiveByStoreId(long id) {
-        SearchCriteria<SnapshotDataStoreVO> sc = liveStoreSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
