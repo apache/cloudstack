@@ -2119,7 +2119,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
+
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL);
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
 
             // include also public offering if no keyword, name and id specified
             if ( keyword == null && name == null && id == null ){
