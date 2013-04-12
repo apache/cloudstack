@@ -181,7 +181,7 @@ msgstr "关闭虚拟机，从NFS存储拷贝虚拟到一个web服务器；比如
 #. Tag: para
 #, no-c-format
 msgid "In &PRODUCT;, create a new template using the following values:"
-msgstr "在&PRODUCT中;使用以下值创建模板"
+msgstr "在&PRODUCT;使用以下值创建模板"
 
 #. Tag: para
 #, no-c-format
