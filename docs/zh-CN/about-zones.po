@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-02-02 18:32+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-12 11:28+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -36,14 +36,14 @@ msgstr "关于资源域"
 #. Tag: para
 #, no-c-format
 msgid ""
-"A zone is the largest organizational unit within a &PRODUCT; deployment. A "
-"zone typically corresponds to a single datacenter, although it is "
-"permissible to have multiple zones in a datacenter. The benefit of "
+"A zone is the second largest organizational unit within a &PRODUCT; "
+"deployment. A zone typically corresponds to a single datacenter, although it"
+" is permissible to have multiple zones in a datacenter. The benefit of "
 "organizing infrastructure into zones is to provide physical isolation and "
 "redundancy. For example, each zone can have its own power supply and network"
 " uplink, and the zones can be widely separated geographically (though this "
 "is not required)."
-msgstr "资源域在&PRODUCT; 部署中是最大的组织单位。一个资源与通常对应于一个数据中心，但是一个数据中心中也允许有多个资源域。以资源与的方组织设备有利于提供物理隔离和冗余。比如，每个资源域可以有自己的电源和上行链路网络，同事各个资源域可以广泛的分布于不同的地理位置（虽然这不是必需的）。"
+msgstr ""
 
 #. Tag: para
 #, no-c-format

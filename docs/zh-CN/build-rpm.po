@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:35+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -157,15 +157,51 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
+msgid "You should see six RPMs in that directory:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-agent-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-awsapi-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-cli-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-common-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-management-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>cloudstack-usage-4.1.0.el6.x86_64.rpm</filename>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Filename Variations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
 msgid ""
-"You should see seven RPMs in that directory: <filename>cloudstack-"
-"agent-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
-"awsapi-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
-"cli-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
-"common-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
-"docs-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-"
-"management-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, and <filename"
-">cloudstack-usage-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>."
+"The file names may vary slightly. For instance, if you were to build the "
+"RPMs on a Fedora 18 system, you'd see \"fc18\" instead of \"el6\" in the "
+"filename. (Fedora 18 isn't a supported platform at this time, just providing"
+" an example.)"
 msgstr ""
 
 #. Tag: title

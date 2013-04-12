@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 14:04+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:35+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -53,11 +53,11 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"If successfull the build will have created the cloudstackAPI Python package "
+"If successful the build will have created the cloudstackAPI Python package "
 "under tools/marvin/marvin/cloudstackAPI as well as a gziped Marvin package "
 "under tools/marvin dist. To install the Python Marvin module do the "
 "following in tools/marvin:"
-msgstr "如果编译成功,cloudstackAPI Python包将会在 tools/marvin/marvin/cloudstackAPI下创建, 同时一个Marvin gzip包会生成在 tools/marvin/dist下. 要安装Python Marvin模块, 在tools/marvin目录下执行下面的命令:"
+msgstr ""
 
 #. Tag: programlisting
 #, no-c-format
