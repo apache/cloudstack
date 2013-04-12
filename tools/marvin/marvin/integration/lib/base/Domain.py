@@ -44,19 +44,17 @@ class Domain(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Domain(e.__dict__), domain)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateDomain.updateDomainCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         domain = apiclient.updateDomain(cmd)
         return domain
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteDomain.deleteDomainCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         domain = apiclient.deleteDomain(cmd)
         return domain

@@ -52,10 +52,9 @@ class NetworkOffering(CloudStackEntity.CloudStackEntity):
         return networkoffering
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteNetworkOffering.deleteNetworkOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkoffering = apiclient.deleteNetworkOffering(cmd)
         return networkoffering

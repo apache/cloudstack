@@ -44,19 +44,17 @@ class DiskOffering(CloudStackEntity.CloudStackEntity):
         return map(lambda e: DiskOffering(e.__dict__), diskoffering)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateDiskOffering.updateDiskOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         diskoffering = apiclient.updateDiskOffering(cmd)
         return diskoffering
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteDiskOffering.deleteDiskOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         diskoffering = apiclient.deleteDiskOffering(cmd)
         return diskoffering

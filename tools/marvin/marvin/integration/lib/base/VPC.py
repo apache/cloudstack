@@ -61,10 +61,9 @@ class VPC(CloudStackEntity.CloudStackEntity):
         return vpc
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteVPC.deleteVPCCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpc = apiclient.deleteVPC(cmd)
         return vpc

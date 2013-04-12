@@ -53,28 +53,25 @@ class Host(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Host(e.__dict__), host)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateHost.updateHostCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.updateHost(cmd)
         return host
 
 
-    def reconnect(self, apiclient, id, **kwargs):
+    def reconnect(self, apiclient, **kwargs):
         cmd = reconnectHost.reconnectHostCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.reconnectHost(cmd)
         return host
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         host = apiclient.deleteHost(cmd)
         return host

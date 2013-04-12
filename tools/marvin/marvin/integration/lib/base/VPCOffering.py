@@ -52,10 +52,9 @@ class VPCOffering(CloudStackEntity.CloudStackEntity):
         return vpcoffering
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteVPCOffering.deleteVPCOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpcoffering = apiclient.deleteVPCOffering(cmd)
         return vpcoffering

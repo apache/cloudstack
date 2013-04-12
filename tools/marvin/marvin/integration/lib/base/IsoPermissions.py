@@ -26,18 +26,16 @@ class IsoPermissions(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def list(self, apiclient, id, **kwargs):
+    def list(self, apiclient, **kwargs):
         cmd = listIsoPermissions.listIsoPermissionsCmd()
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         isopermissions = apiclient.listIsoPermissions(cmd)
         return map(lambda e: IsoPermissions(e.__dict__), isopermissions)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateIsoPermissions.updateIsoPermissionsCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         isopermissions = apiclient.updateIsoPermissions(cmd)
         return isopermissions

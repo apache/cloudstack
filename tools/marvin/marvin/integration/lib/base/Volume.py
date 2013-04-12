@@ -70,10 +70,9 @@ class Volume(CloudStackEntity.CloudStackEntity):
         return volume
 
 
-    def attach(self, apiclient, id, virtualmachineid, **kwargs):
+    def attach(self, apiclient, virtualmachineid, **kwargs):
         cmd = attachVolume.attachVolumeCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.virtualmachineid = virtualmachineid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.attachVolume(cmd)
@@ -88,10 +87,9 @@ class Volume(CloudStackEntity.CloudStackEntity):
         return volume
 
 
-    def extract(self, apiclient, zoneid, id, mode, **kwargs):
+    def extract(self, apiclient, zoneid, mode, **kwargs):
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.mode = mode
         cmd.zoneid = zoneid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
@@ -99,10 +97,9 @@ class Volume(CloudStackEntity.CloudStackEntity):
         return volume
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         volume = apiclient.deleteVolume(cmd)
         return volume

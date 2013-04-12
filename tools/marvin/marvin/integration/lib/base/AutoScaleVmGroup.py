@@ -29,10 +29,9 @@ class AutoScaleVmGroup(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def enable(self, apiclient, id, **kwargs):
+    def enable(self, apiclient, **kwargs):
         cmd = enableAutoScaleVmGroup.enableAutoScaleVmGroupCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.enableAutoScaleVmGroup(cmd)
         return autoscalevmgroup
@@ -55,28 +54,25 @@ class AutoScaleVmGroup(CloudStackEntity.CloudStackEntity):
         return map(lambda e: AutoScaleVmGroup(e.__dict__), autoscalevmgroup)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateAutoScaleVmGroup.updateAutoScaleVmGroupCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.updateAutoScaleVmGroup(cmd)
         return autoscalevmgroup
 
 
-    def disable(self, apiclient, id, **kwargs):
+    def disable(self, apiclient, **kwargs):
         cmd = disableAutoScaleVmGroup.disableAutoScaleVmGroupCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.disableAutoScaleVmGroup(cmd)
         return autoscalevmgroup
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteAutoScaleVmGroup.deleteAutoScaleVmGroupCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmgroup = apiclient.deleteAutoScaleVmGroup(cmd)
         return autoscalevmgroup

@@ -45,28 +45,25 @@ class Network(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Network(e.__dict__), network)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateNetwork.updateNetworkCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         network = apiclient.updateNetwork(cmd)
         return network
 
 
-    def restart(self, apiclient, id, **kwargs):
+    def restart(self, apiclient, **kwargs):
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         network = apiclient.restartNetwork(cmd)
         return network
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteNetwork.deleteNetworkCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         network = apiclient.deleteNetwork(cmd)
         return network

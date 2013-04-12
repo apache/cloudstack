@@ -44,19 +44,17 @@ class ServiceOffering(CloudStackEntity.CloudStackEntity):
         return map(lambda e: ServiceOffering(e.__dict__), serviceoffering)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateServiceOffering.updateServiceOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         serviceoffering = apiclient.updateServiceOffering(cmd)
         return serviceoffering
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteServiceOffering.deleteServiceOfferingCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         serviceoffering = apiclient.deleteServiceOffering(cmd)
         return serviceoffering

@@ -39,10 +39,9 @@ class SystemVm(CloudStackEntity.CloudStackEntity):
         return systemvm
 
 
-    def stop(self, apiclient, id, **kwargs):
+    def stop(self, apiclient, **kwargs):
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.stopSystemVm(cmd)
         return systemvm
@@ -56,28 +55,25 @@ class SystemVm(CloudStackEntity.CloudStackEntity):
         return map(lambda e: SystemVm(e.__dict__), systemvm)
 
 
-    def reboot(self, apiclient, id, **kwargs):
+    def reboot(self, apiclient, **kwargs):
         cmd = rebootSystemVm.rebootSystemVmCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.rebootSystemVm(cmd)
         return systemvm
 
 
-    def start(self, apiclient, id, **kwargs):
+    def start(self, apiclient, **kwargs):
         cmd = startSystemVm.startSystemVmCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.startSystemVm(cmd)
         return systemvm
 
 
-    def destroy(self, apiclient, id, **kwargs):
+    def destroy(self, apiclient, **kwargs):
         cmd = destroySystemVm.destroySystemVmCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         systemvm = apiclient.destroySystemVm(cmd)
         return systemvm

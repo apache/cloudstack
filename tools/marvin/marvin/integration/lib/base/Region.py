@@ -27,10 +27,9 @@ class Region(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def add(self, apiclient, endpoint, id, name, **kwargs):
+    def add(self, apiclient, endpoint, name, **kwargs):
         cmd = addRegion.addRegionCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.endpoint = endpoint
         cmd.name = name
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
@@ -46,19 +45,17 @@ class Region(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Region(e.__dict__), region)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateRegion.updateRegionCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         region = apiclient.updateRegion(cmd)
         return region
 
 
-    def remove(self, apiclient, id, **kwargs):
+    def remove(self, apiclient, **kwargs):
         cmd = removeRegion.removeRegionCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         region = apiclient.removeRegion(cmd)
         return region

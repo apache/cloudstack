@@ -43,10 +43,9 @@ class Counter(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Counter(e.__dict__), counter)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteCounter.deleteCounterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         counter = apiclient.deleteCounter(cmd)
         return counter

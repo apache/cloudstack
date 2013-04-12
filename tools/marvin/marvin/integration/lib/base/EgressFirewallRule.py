@@ -43,10 +43,9 @@ class EgressFirewallRule(CloudStackEntity.CloudStackEntity):
         return map(lambda e: EgressFirewallRule(e.__dict__), egressfirewallrule)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteEgressFirewallRule.deleteEgressFirewallRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         egressfirewallrule = apiclient.deleteEgressFirewallRule(cmd)
         return egressfirewallrule

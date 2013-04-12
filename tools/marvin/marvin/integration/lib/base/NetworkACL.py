@@ -43,10 +43,9 @@ class NetworkACL(CloudStackEntity.CloudStackEntity):
         return map(lambda e: NetworkACL(e.__dict__), networkacl)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteNetworkACL.deleteNetworkACLCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkacl = apiclient.deleteNetworkACL(cmd)
         return networkacl

@@ -44,10 +44,9 @@ class VpnCustomerGateway(CloudStackEntity.CloudStackEntity):
         return map(lambda e: VpnCustomerGateway(e.__dict__), vpncustomergateway)
 
 
-    def update(self, apiclient, ikepolicy, cidrlist, gateway, ipsecpsk, esppolicy, id, **kwargs):
+    def update(self, apiclient, ikepolicy, cidrlist, gateway, ipsecpsk, esppolicy, **kwargs):
         cmd = updateVpnCustomerGateway.updateVpnCustomerGatewayCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.cidrlist = cidrlist
         cmd.esppolicy = esppolicy
         cmd.gateway = gateway
@@ -58,10 +57,9 @@ class VpnCustomerGateway(CloudStackEntity.CloudStackEntity):
         return vpncustomergateway
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteVpnCustomerGateway.deleteVpnCustomerGatewayCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpncustomergateway = apiclient.deleteVpnCustomerGateway(cmd)
         return vpncustomergateway

@@ -74,19 +74,17 @@ class Template(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Template(e.__dict__), template)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateTemplate.updateTemplateCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.updateTemplate(cmd)
         return template
 
 
-    def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
+    def copy(self, apiclient, sourcezoneid, destzoneid, **kwargs):
         cmd = copyTemplate.copyTemplateCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.destzoneid = destzoneid
         cmd.sourcezoneid = sourcezoneid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
@@ -94,20 +92,18 @@ class Template(CloudStackEntity.CloudStackEntity):
         return template
 
 
-    def extract(self, apiclient, id, mode, **kwargs):
+    def extract(self, apiclient, mode, **kwargs):
         cmd = extractTemplate.extractTemplateCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.mode = mode
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.extractTemplate(cmd)
         return template
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.deleteTemplate(cmd)
         return template

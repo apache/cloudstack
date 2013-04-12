@@ -84,10 +84,9 @@ class Account(CloudStackEntity.CloudStackEntity):
         return account
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteAccount.deleteAccountCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.deleteAccount(cmd)
         return account

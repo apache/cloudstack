@@ -48,19 +48,17 @@ class Cluster(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Cluster(e.__dict__), cluster)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateCluster.updateClusterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.updateCluster(cmd)
         return cluster
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteCluster.deleteClusterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         cluster = apiclient.deleteCluster(cmd)
         return cluster

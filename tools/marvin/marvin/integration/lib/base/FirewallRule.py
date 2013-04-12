@@ -43,10 +43,9 @@ class FirewallRule(CloudStackEntity.CloudStackEntity):
         return map(lambda e: FirewallRule(e.__dict__), firewallrule)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteFirewallRule.deleteFirewallRuleCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         firewallrule = apiclient.deleteFirewallRule(cmd)
         return firewallrule

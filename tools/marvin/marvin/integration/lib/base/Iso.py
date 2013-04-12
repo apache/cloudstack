@@ -31,10 +31,9 @@ class Iso(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
+    def copy(self, apiclient, sourcezoneid, destzoneid, **kwargs):
         cmd = copyIso.copyIsoCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.destzoneid = destzoneid
         cmd.sourcezoneid = sourcezoneid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
@@ -62,19 +61,17 @@ class Iso(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Iso(e.__dict__), iso)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateIso.updateIsoCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.updateIso(cmd)
         return iso
 
 
-    def attach(self, apiclient, id, virtualmachineid, **kwargs):
+    def attach(self, apiclient, virtualmachineid, **kwargs):
         cmd = attachIso.attachIsoCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.virtualmachineid = virtualmachineid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.attachIso(cmd)
@@ -90,20 +87,18 @@ class Iso(CloudStackEntity.CloudStackEntity):
         return iso
 
 
-    def extract(self, apiclient, id, mode, **kwargs):
+    def extract(self, apiclient, mode, **kwargs):
         cmd = extractIso.extractIsoCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.mode = mode
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.extractIso(cmd)
         return iso
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteIso.deleteIsoCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         iso = apiclient.deleteIso(cmd)
         return iso

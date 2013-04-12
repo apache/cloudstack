@@ -24,10 +24,9 @@ class ServiceForRouter(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def change(self, apiclient, id, serviceofferingid, **kwargs):
+    def change(self, apiclient, serviceofferingid, **kwargs):
         cmd = changeServiceForRouter.changeServiceForRouterCmd()
         cmd.id = self.id
-        cmd.id = id
         cmd.serviceofferingid = serviceofferingid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         serviceforrouter = apiclient.changeServiceForRouter(cmd)

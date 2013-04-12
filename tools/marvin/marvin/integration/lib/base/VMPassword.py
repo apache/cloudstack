@@ -24,10 +24,9 @@ class VMPassword(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def get(self, apiclient, id, **kwargs):
+    def get(self, apiclient, **kwargs):
         cmd = getVMPassword.getVMPasswordCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vmpassword = apiclient.getVMPassword(cmd)
         return vmpassword

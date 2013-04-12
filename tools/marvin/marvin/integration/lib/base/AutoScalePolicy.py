@@ -36,19 +36,17 @@ class AutoScalePolicy(CloudStackEntity.CloudStackEntity):
         return AutoScalePolicy(autoscalepolicy.__dict__)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalepolicy = apiclient.updateAutoScalePolicy(cmd)
         return autoscalepolicy
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalepolicy = apiclient.deleteAutoScalePolicy(cmd)
         return autoscalepolicy

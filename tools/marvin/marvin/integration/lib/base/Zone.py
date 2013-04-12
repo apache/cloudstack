@@ -44,19 +44,17 @@ class Zone(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Zone(e.__dict__), zone)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         zone = apiclient.updateZone(cmd)
         return zone
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteZone.deleteZoneCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         zone = apiclient.deleteZone(cmd)
         return zone

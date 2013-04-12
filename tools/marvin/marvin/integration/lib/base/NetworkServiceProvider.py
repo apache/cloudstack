@@ -45,19 +45,17 @@ class NetworkServiceProvider(CloudStackEntity.CloudStackEntity):
         return map(lambda e: NetworkServiceProvider(e.__dict__), networkserviceprovider)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.updateNetworkServiceProvider(cmd)
         return networkserviceprovider
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteNetworkServiceProvider.deleteNetworkServiceProviderCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         networkserviceprovider = apiclient.deleteNetworkServiceProvider(cmd)
         return networkserviceprovider

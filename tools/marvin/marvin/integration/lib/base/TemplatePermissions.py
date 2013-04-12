@@ -26,18 +26,16 @@ class TemplatePermissions(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def list(self, apiclient, id, **kwargs):
+    def list(self, apiclient, **kwargs):
         cmd = listTemplatePermissions.listTemplatePermissionsCmd()
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         templatepermissions = apiclient.listTemplatePermissions(cmd)
         return map(lambda e: TemplatePermissions(e.__dict__), templatepermissions)
 
 
-    def update(self, apiclient, id, **kwargs):
+    def update(self, apiclient, **kwargs):
         cmd = updateTemplatePermissions.updateTemplatePermissionsCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         templatepermissions = apiclient.updateTemplatePermissions(cmd)
         return templatepermissions

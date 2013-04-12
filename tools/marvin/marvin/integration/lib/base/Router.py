@@ -28,10 +28,9 @@ class Router(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
-    def destroy(self, apiclient, id, **kwargs):
+    def destroy(self, apiclient, **kwargs):
         cmd = destroyRouter.destroyRouterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.destroyRouter(cmd)
         return router
@@ -45,28 +44,25 @@ class Router(CloudStackEntity.CloudStackEntity):
         return map(lambda e: Router(e.__dict__), router)
 
 
-    def stop(self, apiclient, id, **kwargs):
+    def stop(self, apiclient, **kwargs):
         cmd = stopRouter.stopRouterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.stopRouter(cmd)
         return router
 
 
-    def reboot(self, apiclient, id, **kwargs):
+    def reboot(self, apiclient, **kwargs):
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.rebootRouter(cmd)
         return router
 
 
-    def start(self, apiclient, id, **kwargs):
+    def start(self, apiclient, **kwargs):
         cmd = startRouter.startRouterCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         router = apiclient.startRouter(cmd)
         return router

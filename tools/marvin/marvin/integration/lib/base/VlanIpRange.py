@@ -43,10 +43,9 @@ class VlanIpRange(CloudStackEntity.CloudStackEntity):
         return map(lambda e: VlanIpRange(e.__dict__), vlaniprange)
 
 
-    def delete(self, apiclient, id, **kwargs):
+    def delete(self, apiclient, **kwargs):
         cmd = deleteVlanIpRange.deleteVlanIpRangeCmd()
         cmd.id = self.id
-        cmd.id = id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vlaniprange = apiclient.deleteVlanIpRange(cmd)
         return vlaniprange

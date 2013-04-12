@@ -38,7 +38,7 @@ class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
     def delete(self, apiclient, id, **kwargs):
         cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
         cmd.id = self.id
-        cmd.id = id
+
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)
         return lbstickinesspolicy
