@@ -52,35 +52,37 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
             ExcludeList avoid)
             throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        AffinityGroupVMMapVO vmGroupMapping = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
+        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
-        if (vmGroupMapping != null) {
-            AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
+        for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+            if (vmGroupMapping != null) {
+                AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
-            }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+                }
 
-            List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
-            groupVMIds.remove(vm.getId());
+                List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
+                groupVMIds.remove(vm.getId());
 
-            for (Long groupVMId : groupVMIds) {
-                VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-                if (groupVM != null && !groupVM.isRemoved()) {
-                    if (groupVM.getHostId() != null) {
-                        avoid.addHost(groupVM.getHostId());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM "
-                                    + groupVM.getId() + " is present on the host");
+                for (Long groupVMId : groupVMIds) {
+                    VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
+                    if (groupVM != null && !groupVM.isRemoved()) {
+                        if (groupVM.getHostId() != null) {
+                            avoid.addHost(groupVM.getHostId());
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM "
+                                        + groupVM.getId() + " is present on the host");
+                            }
+                        } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
+                                && groupVM.getLastHostId() != null) {
+                            avoid.addHost(groupVM.getLastHostId());
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM "
+                                        + groupVM.getId() + " is present on the host, in Stopped state");
+                            }
+
                         }
-                    } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
-                            && groupVM.getLastHostId() != null) {
-                        avoid.addHost(groupVM.getLastHostId());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM "
-                                    + groupVM.getId() + " is present on the host, in Stopped state");
-                        }
-
                     }
                 }
             }

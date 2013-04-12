@@ -91,7 +91,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostype": 'CentOS 5.6 (64-bit)',
+            "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
         }
 
@@ -164,7 +164,7 @@ class TestScaleVm(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "basic", "multicluster", "storagemotion", "xenserver"])
+    @attr(tags = ["xenserver", "advanced", "basic"])
     def test_01_scale_vm(self):
         """Test scale virtual machine 
         """

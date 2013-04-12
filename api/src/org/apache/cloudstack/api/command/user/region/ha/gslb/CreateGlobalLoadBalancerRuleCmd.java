@@ -93,6 +93,9 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     }
 
     public String getStickyMethod() {
+        if (stickyMethod == null) {
+            return "sourceip";
+        }
         return stickyMethod;
     }
 
