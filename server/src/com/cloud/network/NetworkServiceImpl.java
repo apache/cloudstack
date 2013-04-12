@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -258,6 +259,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     HostDao _hostDao;
     @Inject
     HostPodDao _hostPodDao;
+    @Inject 
+    InternalLoadBalancerElementService _internalLbElementSvc;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -2256,6 +2259,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             // add baremetal as the defualt network service provider
             /* addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId()); */
             
+            //Add Internal Load Balancer element as a default network service provider
+            addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
+            
             txn.commit();
             return pNetwork;
         } catch (Exception ex) {
@@ -3078,6 +3084,22 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         
         VpcVirtualRouterElement element = (VpcVirtualRouterElement)networkElement;
         element.addElement(nsp.getId(), VirtualRouterProviderType.VPCVirtualRouter);
+
+        return nsp;
+    }
+    
+    
+    protected PhysicalNetworkServiceProvider addDefaultInternalLbProviderToPhysicalNetwork(long physicalNetworkId) {
+
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, 
+                Network.Provider.InternalLbVm.getName(), null, null);
+ 
+        NetworkElement networkElement =  _networkModel.getElementImplementingProvider(Network.Provider.InternalLbVm.getName());
+        if (networkElement == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Network.Provider.InternalLbVm.getName() + " Provider");
+        }
+        
+        _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
 
         return nsp;
     }

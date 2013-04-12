@@ -39,14 +39,14 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 
-@APICommand(name = "listInternalLoadBalancerElements", description="Lists all available internal load balancer elements.",
+@APICommand(name = "listInternalLoadBalancerElements", description="Lists all available Internal Load Balancer elements.",
             responseObject=VirtualRouterProviderResponse.class, since="4.2.0")
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String _name = "listinternalloadbalancerelementsresponse";
 
     @Inject
-    private List<InternalLoadBalancerElementService> _service;
+    private InternalLoadBalancerElementService _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,24 +66,12 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public void setNspId(Long nspId) {
-        this.nspId = nspId;
-    }
-
     public Long getNspId() {
         return nspId;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     public Boolean getEnabled() {
@@ -97,7 +85,7 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        List<? extends VirtualRouterProvider> providers = _service.get(0).searchForInternalLoadBalancerElements(this);
+        List<? extends VirtualRouterProvider> providers = _service.searchForInternalLoadBalancerElements(getId(), getNspId(), getEnabled());
         ListResponse<VirtualRouterProviderResponse> response = new ListResponse<VirtualRouterProviderResponse>();
         List<VirtualRouterProviderResponse> providerResponses = new ArrayList<VirtualRouterProviderResponse>();
         for (VirtualRouterProvider provider : providers) {

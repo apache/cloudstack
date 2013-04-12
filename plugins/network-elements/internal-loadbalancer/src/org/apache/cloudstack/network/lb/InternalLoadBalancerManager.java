@@ -108,6 +108,12 @@ public interface InternalLoadBalancerManager extends Manager{
             throws ResourceUnavailableException;
 
 
+    /**
+     * Returns existing Internal Load Balancer elements based on guestNetworkId (requried) and requestedIp (optional)
+     * @param guestNetworkId
+     * @param requestedGuestIp
+     * @return
+     */
     List<DomainRouterVO> findInternalLbVms(long guestNetworkId, Ip requestedGuestIp);
 
 }

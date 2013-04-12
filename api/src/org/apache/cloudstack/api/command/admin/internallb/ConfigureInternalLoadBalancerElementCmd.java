@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -41,7 +40,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @APICommand(name = "configureInternalLoadBalancerElement", responseObject=VirtualRouterProviderResponse.class,
-            description="Configures an internal load balancer element.", since="4.2.0")
+            description="Configures an Internal Load Balancer element.", since="4.2.0")
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
     private static final String s_name = "configureinternalloadbalancerelementresponse";
@@ -57,23 +56,16 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
             required=true, description="the ID of the internal lb provider")
     private Long id;
 
-    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enables/Disables the Internal load balancer element")
+    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enables/Disables the Internal Load Balancer element")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public Long getId() {
         return id;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     public Boolean getEnabled() {
@@ -87,10 +79,6 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     @Override
     public String getCommandName() {
         return s_name;
-    }
-
-    public static String getResultObjectName() {
-        return "boolean";
     }
 
     @Override
@@ -108,20 +96,12 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
         return  "configuring internal load balancer element: " + id;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
-    }
-
-    public Long getInstanceId() {
-        return id;
-    }
-
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         s_logger.debug("hello alena");
         UserContext.current().setEventDetails("Internal load balancer element: " + id);
         s_logger.debug("hello alena");
-        VirtualRouterProvider result = _service.get(0).configure(this);
+        VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
         s_logger.debug("hello alena");
         if (result != null){
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);

@@ -18,15 +18,39 @@ package org.apache.cloudstack.network.element;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
-import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.component.PluggableService;
 
 public interface InternalLoadBalancerElementService extends PluggableService{
-    VirtualRouterProvider configure(ConfigureInternalLoadBalancerElementCmd cmd);
-    VirtualRouterProvider addElement(Long nspId);
-    VirtualRouterProvider getCreatedElement(long id);
-    List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(ListInternalLoadBalancerElementsCmd cmd);
+    /**
+     * Configures existing Internal Load Balancer Element (enables or disables it)
+     * @param id
+     * @param enable
+     * @return
+     */
+    VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable);
+    
+    /**
+     * Adds Internal Load Balancer element to the Network Service Provider
+     * @param ntwkSvcProviderId
+     * @return
+     */
+    VirtualRouterProvider addInternalLoadBalancerElement(long ntwkSvcProviderId);
+    
+    /**
+     * Retrieves existing Internal Load Balancer element
+     * @param id
+     * @return
+     */
+    VirtualRouterProvider getInternalLoadBalancerElement(long id);
+    
+    /**
+     * Searches for existing Internal Load Balancer elements based on parameters passed to the call
+     * @param id
+     * @param ntwkSvsProviderId
+     * @param enabled
+     * @return
+     */
+    List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(Long id, Long ntwkSvsProviderId, Boolean enabled);
 }

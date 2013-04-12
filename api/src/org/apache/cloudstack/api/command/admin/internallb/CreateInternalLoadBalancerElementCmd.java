@@ -83,7 +83,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
-        VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
+        VirtualRouterProvider result = _service.get(0).getInternalLoadBalancerElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
             response.setResponseName(getCommandName());
@@ -95,7 +95,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterProvider result = _service.get(0).addElement(getNspId());
+        VirtualRouterProvider result = _service.get(0).addInternalLoadBalancerElement(getNspId());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
