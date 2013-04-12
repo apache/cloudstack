@@ -271,10 +271,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             String sourceChecksum = _vmMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
 			DownloadCommand dcmd =  
               new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
-			dcmd.setProxy(getHttpProxy());
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
 	 		}
+			dcmd.setProxy(getHttpProxy());
 			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
             HostVO ssAhost = _ssvmMgr.pickSsvmHost(destServer);
             if( ssAhost == null ) {
@@ -356,10 +356,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 	        }
+			dcmd.setProxy(getHttpProxy());
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
@@ -445,12 +445,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		if(volumeHost != null) {
 		    start();
 			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
 	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
-			
+			dcmd.setProxy(getHttpProxy());
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssvm == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
