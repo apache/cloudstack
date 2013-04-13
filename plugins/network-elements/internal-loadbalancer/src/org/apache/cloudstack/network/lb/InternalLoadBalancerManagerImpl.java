@@ -56,7 +56,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -886,16 +885,5 @@ InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             }
         }
         return result;
-    }
-
-
-    protected VirtualRouter startInternalLbVm(long vmId, Account caller, long callerUserId) throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
-        DomainRouterVO vm = _routerDao.findById(vmId);
-        if (vm == null || vm.getRole() != VirtualRouter.Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
-        }
-        
-        return startInternalLbVm(vm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), callerUserId, null);
     }
 }
