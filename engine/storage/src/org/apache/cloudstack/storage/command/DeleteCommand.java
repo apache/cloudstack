@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.Command;
 

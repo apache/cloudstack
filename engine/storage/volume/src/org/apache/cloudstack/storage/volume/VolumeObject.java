@@ -29,7 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -339,7 +339,7 @@ public class VolumeObject implements VolumeInfo {
     public DataTO getTO() {
         DataTO to = this.getDataStore().getDriver().getTO(this);
         if (to == null) {
-            to = new VolumeTO(this);
+            to = new VolumeObjectTO(this);
         }
         return to;
     }

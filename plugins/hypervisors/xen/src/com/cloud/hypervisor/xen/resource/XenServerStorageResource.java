@@ -47,8 +47,8 @@ import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateTO;
-import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -194,7 +194,7 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(DeleteVolumeCommand cmd) {
-        VolumeTO volume = null;
+        VolumeObjectTO volume = null;
         Connection conn = hypervisorResource.getConnection();
         String errorMsg = null;
         try {
@@ -216,7 +216,7 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
-        VolumeTO volume = cmd.getVolume();
+        VolumeObjectTO volume = cmd.getVolume();
         ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
         Connection conn = hypervisorResource.getConnection();
         
@@ -683,7 +683,7 @@ public class XenServerStorageResource {
         try {
             if (srcStore.getRole() == DataStoreRole.ImageCache && srcData.getObjectType() == DataObjectType.TEMPLATE) {
                 ImageStoreTO srcImageStore = (ImageStoreTO)srcStore;
-                TemplateTO srcTemplate = (TemplateTO)srcData;
+                TemplateObjectTO srcTemplate = (TemplateObjectTO)srcData;
                 String storeUrl = srcImageStore.getUri();
                 if (!storeUrl.startsWith("nfs")) {
                     return new PrimaryStorageDownloadAnswer("only nfs image cache store supported");

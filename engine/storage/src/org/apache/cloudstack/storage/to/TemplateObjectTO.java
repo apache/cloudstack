@@ -23,14 +23,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
-public class TemplateTO implements DataTO {
+public class TemplateObjectTO implements DataTO {
     private final String path;
     private final String uuid;
     private  DiskFormat diskType;
     private final ImageStoreTO imageDataStore;
     private final String name;
 
-    public TemplateTO(TemplateInfo template) {
+    public TemplateObjectTO(TemplateInfo template) {
         this.path = template.getUri();
         this.uuid = template.getUuid();
         //this.diskType = template.getDiskType();

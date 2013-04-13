@@ -31,7 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
-import org.apache.cloudstack.storage.to.TemplateTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -187,7 +187,7 @@ public class TemplateObject implements TemplateInfo {
     public DataTO getTO() {
         DataTO to = this.dataStore.getDriver().getTO(this);
         if (to == null) {
-            to = new TemplateTO(this);
+            to = new TemplateObjectTO(this);
         }
         
         return to;

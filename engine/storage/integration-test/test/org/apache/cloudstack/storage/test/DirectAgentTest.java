@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.annotations.Test;
@@ -134,7 +134,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         ImageStoreTO imageStore = Mockito.mock(ImageStoreTO.class);
         Mockito.when(imageStore.getType()).thenReturn("http");
         
-        TemplateTO template = Mockito.mock(TemplateTO.class);
+        TemplateObjectTO template = Mockito.mock(TemplateObjectTO.class);
         Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
         Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
         
