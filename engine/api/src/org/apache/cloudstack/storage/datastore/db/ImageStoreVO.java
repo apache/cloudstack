@@ -28,10 +28,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 
 
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.GenericDao;

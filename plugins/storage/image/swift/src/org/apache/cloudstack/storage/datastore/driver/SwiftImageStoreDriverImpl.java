@@ -19,10 +19,12 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -34,7 +36,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
+import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
@@ -43,6 +47,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.host.HostVO;
@@ -77,6 +82,8 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     @Inject DownloadMonitor _downloadMonitor;
     @Inject
     VMTemplateHostDao _vmTemplateHostDao;
+    @Inject
+    ImageStoreDetailsDao _imageStoreDetailsDao;
     @Inject VolumeDao volumeDao;
     @Inject VolumeHostDao volumeHostDao;
     @Inject HostDao hostDao;
@@ -92,10 +99,20 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @Override
     public DataTO getTO(DataObject data) {
         return null;
+    }
+
+
+    @Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        ImageStoreImpl imgStore = (ImageStoreImpl)store;
+        Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
+        return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT),
+                details.get(ApiConstants.USERNAME),
+                details.get(ApiConstants.KEY));
     }
 
     @Override

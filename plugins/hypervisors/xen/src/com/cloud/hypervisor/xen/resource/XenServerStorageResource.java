@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
@@ -62,7 +60,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;

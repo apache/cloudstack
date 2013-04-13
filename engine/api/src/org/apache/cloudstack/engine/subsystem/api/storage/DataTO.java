@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.agent.api.to.DataStoreTO;
+
 public interface DataTO {
     public DataObjectType getObjectType();
     public DataStoreTO getDataStore();

@@ -46,6 +46,7 @@ import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
@@ -91,13 +92,20 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
     public DataTO getTO(DataObject data) {
         return null;
     }
 
+
 	@Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
 	public boolean revokeAccess(DataObject data, EndPoint ep) {
 		// TODO Auto-generated method stub
 		return false;
@@ -148,7 +156,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 									+ template.getId() + " "
 									+ template.getName());
 							throw new CloudRuntimeException("cannot find template"
-									+ template.getId() 
+									+ template.getId()
 									+ template.getName());
 						}
 						HostVO secondaryStorageHost = hostDao
@@ -304,11 +312,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	            parentSnapshotPath = preSnapshotVO.getPath();
 	        }
 	        StoragePool srcPool = (StoragePool)volume.getDataStore();
-	        
+
 	        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshot.getId(), volume.getPath(), srcPool, parentSnapshotPath, snapshot.getName(), vmName);
 
 	        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) this.snapshotMgr.sendToPool(volume, cmd);
-	        
+
 	        if ((answer != null) && answer.getResult()) {
 	            result = new CreateCmdResult(answer.getSnapshotPath(), null);
 	        } else {

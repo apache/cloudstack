@@ -17,11 +17,12 @@
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
+
+import com.cloud.agent.api.to.DataStoreTO;
 
 public class TemplateObjectTO implements DataTO {
     private final String path;

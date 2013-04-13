@@ -18,14 +18,13 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import java.util.Date;
 import java.util.Set;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -37,6 +36,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.storage.encoding.EncodingType;
@@ -132,6 +133,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return this.imageDataStoreVO.getUuid();
     }
 
+    public Date getCreated(){
+        return this.imageDataStoreVO.getCreated();
+    }
+
+
     @Override
     public DataObject create(DataObject obj) {
         DataObject object = objectInStoreMgr.create(obj, this);
@@ -164,6 +170,8 @@ public class ImageStoreImpl implements ImageStoreEntity {
     public String getProtocol() {
         return imageDataStoreVO.getProtocol();
     }
+
+
 
     @Override
     public DataStoreTO getTO() {

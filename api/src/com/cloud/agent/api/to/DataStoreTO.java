@@ -16,7 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package com.cloud.agent.api.to;
+
+import com.cloud.storage.DataStoreRole;
+
 
 public interface DataStoreTO {
     public DataStoreRole getRole();

@@ -16,9 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.DataStoreRole;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
     private final String uuid;

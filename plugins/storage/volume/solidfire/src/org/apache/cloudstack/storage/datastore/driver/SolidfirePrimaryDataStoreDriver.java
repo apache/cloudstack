@@ -29,6 +29,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
+import com.cloud.agent.api.to.DataStoreTO;
+
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
@@ -36,9 +38,16 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @Override
     public DataTO getTO(DataObject data) {
+        return null;
+    }
+
+
+    @Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        // TODO Auto-generated method stub
         return null;
     }
 
@@ -57,19 +66,19 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -81,21 +90,21 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
-        
+
     }
 
 	@Override
 	public void resize(DataObject data,
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void takeSnapshot(SnapshotInfo snapshot,
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 

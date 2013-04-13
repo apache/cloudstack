@@ -21,6 +21,8 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.DataStoreRole;
+
 
 public interface DataStoreManager {
     public DataStore getDataStore(long storeId, DataStoreRole role);

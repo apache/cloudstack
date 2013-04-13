@@ -16,26 +16,32 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreTO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.DataStoreRole;
+
 public class ImageStoreTO implements DataStoreTO {
-    private final String type;
-    private final String uri;
-    private final String providerName;
-    private final DataStoreRole role;
+    private String type;
+    private String uri;
+    private String providerName;
+    private DataStoreRole role;
+
+    public ImageStoreTO(){
+
+    }
+
     public ImageStoreTO(ImageStoreInfo dataStore) {
         this.type = dataStore.getType();
         this.uri = dataStore.getUri();
         this.providerName = null;
         this.role = dataStore.getRole();
     }
-    
+
     public String getType() {
         return this.type;
     }
-    
+
     public String getUri() {
         return this.uri;
     }
@@ -47,8 +53,26 @@ public class ImageStoreTO implements DataStoreTO {
         return providerName;
     }
 
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
+    }
+
+    public void setRole(DataStoreRole role) {
+        this.role = role;
+    }
+
     @Override
     public DataStoreRole getRole() {
         return this.role;
     }
+
 }

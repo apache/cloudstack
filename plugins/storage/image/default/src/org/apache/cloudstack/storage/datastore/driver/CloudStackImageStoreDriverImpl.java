@@ -35,7 +35,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
+import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -43,10 +45,12 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.SnapshotVO;
@@ -92,10 +96,21 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @Override
     public DataTO getTO(DataObject data) {
         return null;
+    }
+
+
+    @Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        ImageStoreImpl nfsStore = (ImageStoreImpl)store;
+        ImageStoreTO nfsTO = new ImageStoreTO();
+        nfsTO.setProviderName("CloudStack");
+        nfsTO.setRole(DataStoreRole.Image);
+        nfsTO.setUri(nfsStore.getUri());
+        return nfsTO;
     }
 
     @Override

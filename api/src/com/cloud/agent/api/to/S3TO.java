@@ -18,9 +18,10 @@ package com.cloud.agent.api.to;
 
 import java.util.Date;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.S3Utils;
 
-public final class S3TO implements S3Utils.ClientOptions {
+public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     private Long id;
     private String uuid;
@@ -248,5 +249,11 @@ public final class S3TO implements S3Utils.ClientOptions {
     public void setCreated(final Date created) {
         this.created = created;
     }
+
+    @Override
+    public DataStoreRole getRole() {
+        return DataStoreRole.Image;
+    }
+
 
 }

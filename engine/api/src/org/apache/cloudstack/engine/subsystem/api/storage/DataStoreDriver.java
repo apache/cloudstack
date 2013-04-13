@@ -22,6 +22,8 @@ import java.util.Set;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
+import com.cloud.agent.api.to.DataStoreTO;
+
 public interface DataStoreDriver {
     public String grantAccess(DataObject data, EndPoint ep);
     public boolean revokeAccess(DataObject data, EndPoint ep);
@@ -32,4 +34,5 @@ public interface DataStoreDriver {
     public boolean canCopy(DataObject srcData, DataObject destData);
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
     public DataTO getTO(DataObject data);
+    public DataStoreTO getStoreTO(DataStore store);
 }

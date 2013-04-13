@@ -36,6 +36,7 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.dao.VMTemplateDao;
 
 //http-read-only based image store
@@ -46,9 +47,16 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     VMTemplateDao imageDataDao;
     public SampleImageStoreDriverImpl() {
     }
-    
+
     @Override
     public DataTO getTO(DataObject data) {
+        return null;
+    }
+
+
+    @Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        // TODO Auto-generated method stub
         return null;
     }
 
@@ -79,7 +87,7 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
             callback.complete(result);
             return;
         }
-        
+
         if (data.getSize() == null && data.getType() == DataObjectType.TEMPLATE) {
             //the template size is unknown during registration, need to find out the size of template
             EndPoint ep = selector.select(data);
@@ -92,14 +100,14 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
             CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
             if (answer.getResult()) {
                 //update imagestorevo
-               
+
                 result = new CreateCmdResult(answer.getPath(), answer.getSize());
             } else {
                 result.setResult(answer.getDetails());
             }
-            
+
         }
-        
+
         callback.complete(result);
     }
 
@@ -120,13 +128,13 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     public void copyAsync(DataObject srcdata, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
-        
+
     }
 
 	@Override
 	public void resize(DataObject data,
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }
