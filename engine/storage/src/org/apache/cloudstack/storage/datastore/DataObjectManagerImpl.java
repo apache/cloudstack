@@ -109,7 +109,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
                 if (obj == null) {
                     CreateCmdResult result = new CreateCmdResult(
                             null, null);
-                    result.setSucess(false);
+                    result.setSuccess(false);
                     result.setResult(e.toString());
                     callback.complete(result);
                     return;
@@ -124,7 +124,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
                         data, store);
             } catch (Exception e) {
                 CreateCmdResult result = new CreateCmdResult(null, null);
-                result.setSucess(false);
+                result.setSuccess(false);
                 result.setResult(e.toString());
                 callback.complete(result);
                 return;
@@ -153,7 +153,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
                 s_logger.debug("state transation failed", e1);
             }
             CreateCmdResult result = new CreateCmdResult(null, null);
-            result.setSucess(false);
+            result.setSuccess(false);
             result.setResult(e.toString());
             callback.complete(result);
             return;

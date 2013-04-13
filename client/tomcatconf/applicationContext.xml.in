@@ -454,11 +454,11 @@
     <property name="name" value="Balance"/>
   </bean>
 
-  <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
+  <bean id="ExternalIpAddressAllocator" class="com.cloud.network.ExternalIpAddressAllocator">
     <property name="name" value="Basic"/>
   </bean>
 
-  <bean id="hyervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter" />
+  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter" />
   <bean id="clusterAlertAdapter" class="com.cloud.alert.ClusterAlertAdapter" />
   <bean id="consoleProxyAlertAdapter" class="com.cloud.alert.ConsoleProxyAlertAdapter" />
   <bean id="secondaryStorageVmAlertAdapter" class="com.cloud.alert.SecondaryStorageVmAlertAdapter" />
@@ -733,7 +733,7 @@
   <bean id="defaultEndPointSelector" class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
   <bean id="defaultPrimaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.DefaultPrimaryDataStoreProviderManagerImpl" />
   <bean id="eventUtils" class="com.cloud.event.EventUtils" />
-  <bean id="hypervsiorHostEndPointRpcServer" class="org.apache.cloudstack.storage.HypervsiorHostEndPointRpcServer" />
+  <bean id="hypervisorHostEndPointRpcServer" class="org.apache.cloudstack.storage.HypervisorHostEndPointRpcServer" />
   <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
   <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
   <bean id="imageDataFactoryImpl" class="org.apache.cloudstack.storage.image.ImageDataFactoryImpl" />

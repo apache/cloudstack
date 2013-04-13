@@ -71,14 +71,14 @@ public class ComponentContext implements ApplicationContextAware {
     		beanFactory.configureBean(bean, entry.getKey());
     	}
     	
-    	Map<String, ComponentLifecycle> lifecyleComponents = getApplicationContext().getBeansOfType(ComponentLifecycle.class);
+    	Map<String, ComponentLifecycle> lifecycleComponents = getApplicationContext().getBeansOfType(ComponentLifecycle.class);
  
     	Map[] classifiedComponents = new Map[ComponentLifecycle.MAX_RUN_LEVELS];
     	for(int i = 0; i < ComponentLifecycle.MAX_RUN_LEVELS; i++) {
     		classifiedComponents[i] = new HashMap<String, ComponentLifecycle>();
     	}
     	
-    	for(Map.Entry<String, ComponentLifecycle> entry : lifecyleComponents.entrySet()) {
+    	for(Map.Entry<String, ComponentLifecycle> entry : lifecycleComponents.entrySet()) {
     		classifiedComponents[entry.getValue().getRunLevel()].put(entry.getKey(), entry.getValue());
     	}
 
