@@ -48,13 +48,13 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
         return true;
     }

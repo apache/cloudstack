@@ -1429,7 +1429,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             host.setManagementServerId(msId);
             try {
-                return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+                return _statusStateMachine.transitTo(host, e, null, host.getId(), _hostDao);
             } catch (NoTransitionException e1) {
                 status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName()
                         + ", mangement server id is " + msId);

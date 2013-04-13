@@ -63,7 +63,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
     }
 
     @Override
-    public boolean updateState(State currentState, Event event, State nextState, TemplatePrimaryDataStoreVO vo, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, TemplatePrimaryDataStoreVO vo, String eventArgs, Object data) {
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getLastUpdated();
         

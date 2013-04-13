@@ -127,7 +127,7 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long>
     }
 
     @Override
-    public boolean updateState(State currentState, Event event, State nextState, VMSnapshot vo, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, VMSnapshot vo, String eventArgs, Object data) {
         
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();

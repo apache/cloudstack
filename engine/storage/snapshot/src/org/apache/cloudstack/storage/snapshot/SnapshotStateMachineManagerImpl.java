@@ -49,6 +49,6 @@ SnapshotStateMachineManager {
 	}
 	
 	public void processEvent(SnapshotVO snapshot, Event event) throws NoTransitionException {
-		stateMachine.transitTo(snapshot, event, null, snapshotDao);
+		stateMachine.transitTo(snapshot, event, null, null, snapshotDao);
 	}
 } 

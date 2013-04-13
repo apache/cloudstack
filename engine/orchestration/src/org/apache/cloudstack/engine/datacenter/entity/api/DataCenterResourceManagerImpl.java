@@ -72,13 +72,13 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	public boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException {
 
 		if(entity instanceof ZoneEntity){
-			return _stateMachine.transitTo(entity, event, null, _dataCenterDao);
+			return _stateMachine.transitTo(entity, event, null, null, _dataCenterDao);
 		}else if(entity instanceof PodEntity){
-			return _stateMachine.transitTo(entity, event, null, _podDao);
+			return _stateMachine.transitTo(entity, event, null, null, _podDao);
 		}else if(entity instanceof ClusterEntity){
-			return _stateMachine.transitTo(entity, event, null, _clusterDao);
+			return _stateMachine.transitTo(entity, event, null, null, _clusterDao);
 		}else if(entity instanceof HostEntity){
-			return _stateMachine.transitTo(entity, event, null, _hostDao);
+			return _stateMachine.transitTo(entity, event, null, null, _hostDao);
 		}
 
 		return false;

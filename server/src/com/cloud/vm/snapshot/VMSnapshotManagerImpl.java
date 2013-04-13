@@ -433,7 +433,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected boolean vmSnapshotStateTransitTo(VMSnapshotVO vsnp, VMSnapshot.Event event) throws NoTransitionException {
-        return _vmSnapshottateMachine.transitTo(vsnp, event, null, _vmSnapshotDao);
+        return _vmSnapshottateMachine.transitTo(vsnp, event, null, null, _vmSnapshotDao);
     }
     
     @DB

@@ -629,12 +629,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
     
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean transitionStatus, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean transitionStatus, String eventArgs, Object opaque) {
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, String eventArgs, Object opaque) {
         if (!status) {
             return false;
         }

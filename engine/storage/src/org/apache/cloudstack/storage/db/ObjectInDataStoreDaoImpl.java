@@ -49,7 +49,7 @@ public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO
     }
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore dataObj, Object data) {
+            State nextState, DataObjectInStore dataObj, String eventArgs, Object data) {
         ObjectInDataStoreVO vo = (ObjectInDataStoreVO)dataObj;
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();

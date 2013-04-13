@@ -43,13 +43,13 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
         return true;
     }

@@ -343,7 +343,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
-    public boolean updateState(Network.State currentState, Network.Event event, Network.State nextState, Network vo, Object data) {
+    public boolean updateState(Network.State currentState, Network.Event event, Network.State nextState, Network vo, String eventArgs, Object data) {
         return true;
     }
 

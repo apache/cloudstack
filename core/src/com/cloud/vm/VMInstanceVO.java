@@ -37,6 +37,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
@@ -95,6 +96,21 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="last_host_id", updatable=true, nullable=true)
     protected Long lastHostId;
 
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="last_event", updatable=true)
+    protected VirtualMachine.Event lastEvent;
+    
+    @Column(name="last_event_args", updatable=true, nullable=true)
+    protected String lastEventArgs;
+    
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="power_state", updatable=true)
+    protected PowerState powerState;
+    
+    @Column(name="power_state_update_time", updatable = true, nullable=false)
+    @Temporal(value=TemporalType.TIMESTAMP)
+    protected Date powerStateUpdateTime;
+    
     @Column(name="pod_id", updatable=true, nullable=false)
     protected Long podIdToDeployIn;
 
@@ -184,6 +200,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         this.limitCpuUse = false;
+        
+        this.lastEvent = Event.OperationNop;
+        this.powerState = PowerState.PowerUnknown;
+        this.powerStateUpdateTime = DateUtil.currentGMTTime();
     }
 
     public VMInstanceVO(long id,
@@ -201,6 +221,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
+
+        this.lastEvent = Event.OperationNop;
+        this.powerState = PowerState.PowerUnknown;
+        this.powerStateUpdateTime = DateUtil.currentGMTTime();
     }
 
     protected VMInstanceVO() {
@@ -478,5 +502,36 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	public Long getDiskOfferingId() {
 		return diskOfferingId;
 	}
-
+	
+	public VirtualMachine.Event getLastEvent() {
+		return lastEvent;
+	}
+	
+	public void setLastEvent(VirtualMachine.Event event) {
+		this.lastEvent = event;
+	}
+	
+	public String getLastEventArgs() {
+		return this.lastEventArgs;
+	}
+	
+	public void setLastEventArgs(String eventArgs) {
+		this.lastEventArgs = eventArgs;
+	}
+	
+	public VirtualMachine.PowerState getPowerState() {
+		return this.powerState;
+	}
+	
+	public void setPowerState(PowerState powerState) {
+		this.powerState = powerState;
+	}
+	
+	public Date getPowerStateUpdateTime() {
+		return this.powerStateUpdateTime;
+	}
+    
+	public void setPowerStateUpdateTime(Date updateTime) {
+		this.powerStateUpdateTime = updateTime;
+	}
 }

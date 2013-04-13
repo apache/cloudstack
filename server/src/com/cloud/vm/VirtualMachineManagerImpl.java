@@ -1134,7 +1134,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) throws NoTransitionException {
         vm.setReservationId(reservationId);
-        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, null, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -1155,7 +1155,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vm.setLastHostId(vm.getHostId());
             }
         }
-        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, null, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override

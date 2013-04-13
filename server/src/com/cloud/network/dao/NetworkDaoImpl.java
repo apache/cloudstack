@@ -587,7 +587,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, Network vo, String eventArgs, Object data) {
        // TODO: ensure this update is correct
        Transaction txn = Transaction.currentTxn();
        txn.start();

@@ -291,7 +291,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
 
 
     @Override
-    public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, String eventArgs, Object data) {
 
         EngineDataCenterVO vo = findById(zoneEntity.getId());
 

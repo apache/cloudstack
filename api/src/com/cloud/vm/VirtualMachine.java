@@ -159,6 +159,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     }
 
     public enum Event {
+    	OperationNop,
         CreateRequested,
         StartRequested,
         StopRequested,
@@ -201,6 +202,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             }
             return false;
         }
+    }
+    
+    public enum PowerState {
+    	PowerUnknown,
+    	PowerOn,
+    	PowerOff,
     }
 
     /**

@@ -49,13 +49,13 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, String eventArgs, Object opaque) {
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
         return true;
     }
