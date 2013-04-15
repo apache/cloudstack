@@ -390,8 +390,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
@@ -399,17 +404,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
-    @Inject
     protected List<AffinityGroupProcessor> _affinityProcessors;
+    public List<AffinityGroupProcessor> getAffinityGroupProcessors() {
+        return _affinityProcessors;
+    }
+    public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
+        this._affinityProcessors = affinityProcessors;
+    }
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
-    
+
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
     }
-    
+
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }

@@ -609,8 +609,10 @@
     <property name="UserAuthenticators" value="#{userAuthenticators.Adapters}" />
     <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
+    <property name="Planners" value="#{deploymentPlanners.Adapters}" />
+	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
   </bean>
-
+  
   <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
     <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
   </bean>
@@ -838,7 +840,10 @@
 -->
 
   <bean id="AffinityGroupServiceImpl" class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl"/>
-  <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl" />
+  <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl">
+    <property name="Planners" value="#{deploymentPlanners.Adapters}" />
+	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
+  </bean>
   
   <bean id="AffinityGroupJoinDaoImpl" class="com.cloud.api.query.dao.AffinityGroupJoinDaoImpl">
   </bean>
