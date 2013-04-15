@@ -56,6 +56,7 @@ import com.cloud.upgrade.dao.Upgrade301to302;
 import com.cloud.upgrade.dao.Upgrade302to40;
 import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.Upgrade40to401;
+import com.cloud.upgrade.dao.Upgrade401to402;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
