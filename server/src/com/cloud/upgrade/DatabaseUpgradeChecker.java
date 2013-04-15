@@ -164,6 +164,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("3.0.2", new DbUpgrade[] { new Upgrade302to40(), new Upgrade40to401() });
 
         _upgradeMap.put("4.0.0", new DbUpgrade[] { new Upgrade40to401()});
+
+        _upgradeMap.put("4.0.1", new DbUpgrade[] { new Upgrade40to401() });
+
+        _upgradeMap.put("4.0.2", new DbUpgrade[] { new Upgrade40to401() });
+
     }
 
     protected void runScript(Connection conn, File file) {
