@@ -109,9 +109,11 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
+import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -129,7 +131,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -234,6 +235,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     RulesManager _rulesMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    ManagementServer _ms;
 
     private ConsoleProxyListener _listener;
 
@@ -268,7 +271,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
 
-    private String _hashKey;
     private String _staticPublicIp;
     private int _staticPort;
 
@@ -1731,6 +1733,33 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         _consoleProxyDao.update(proxy.getId(), proxy);
     }
 
+    private String getEncryptorPassword() {
+    	
+    	String key;
+    	String iv;
+    	ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = null;
+    	
+    	// if we failed after reset, something is definitely wrong
+    	for(int i = 0; i < 2; i++) {
+	    	key = _ms.getEncryptionKey();
+	    	iv = _ms.getEncryptionIV();
+	    	
+	    	keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
+	    	
+	    	if(keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 ||
+	    		keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
+	    		
+	    		s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
+	    		_ms.resetEncryptionKeyIV();
+	    	} else {
+	    		break;
+	    	}
+    	}
+    	
+		Gson gson = new GsonBuilder().create();
+		return gson.toJson(keyIvPair);
+    }
+    
     @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
         StartConsoleProxyAgentHttpHandlerCommand cmd = null;
@@ -1743,10 +1772,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 s_logger.error("Could not find and construct a valid SSL certificate");
             }
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-            cmd.setEncryptorPassword(getHashKey());
+            cmd.setEncryptorPassword(getEncryptorPassword());
         } else {
             cmd = new StartConsoleProxyAgentHttpHandlerCommand();
-            cmd.setEncryptorPassword(getHashKey());
+            cmd.setEncryptorPassword(getEncryptorPassword());
         }
 
         try {
@@ -1998,15 +2027,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return sc.find();
     }
 
-    public String getHashKey() {
-        // although we may have race conditioning here, database transaction serialization should
-        // give us the same key
-        if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
-        }
-        return _hashKey;
-    }
-
     @Override
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
@@ -2026,4 +2046,5 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
+    
 }

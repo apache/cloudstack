@@ -94,6 +94,9 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c);
 
     String getHashKey();
+    String getEncryptionKey();
+    String getEncryptionIV();
+    void resetEncryptionKeyIV();
     
     public void enableAdminUser(String password);
 }
