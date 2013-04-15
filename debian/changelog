@@ -1,12 +1,30 @@
+cloudstack (4.1.0) unstable; urgency=low
+
+  * Set release version to 4.1.0
+
+ -- Chip Childers <chip.childers@gmail.com>  Mon, 15 Apr 2013 21:00:00 +0000
+
 cloudstack (4.1.0-incubating-0.0.snapshot) unstable; urgency=low
 
   * Incorporate incubating into version, remove epoch
 
  -- Noa Resare <noa@spotify.com>  Tue, 05 Feb 2013 18:05:28 +0000
 
-cloud (1:4.0.0-1) unstable; urgency=low
+cloud (1:4.0.2) unstable; urgency=low
 
-  * Bumping the version to 4.0.0
+  * Bumping the version to 4.0.2
+
+ -- Chip Childers <chip.childers@gmail.com>  Mon, 15 Apr 2013 13:00:00 +0000
+
+cloud (1:4.0.1-incubating) unstable; urgency=low
+
+  * Bumping the version to 4.0.1-incubating
+
+ -- David Nalley <david@gnsa.us>  Fri, 7 Dec 2012 17:30:00 +0000
+
+cloud (1:4.0.0-incubating) unstable; urgency=low
+
+  * Bumping the version to 4.0.0-incubating
 
  -- Chip Childers <chipchilders@apache.org>  Fri, 5 Oct 2012 16:00:00 -0500
 
