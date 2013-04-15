@@ -33,6 +33,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
@@ -69,12 +70,13 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     protected KeystoreManager _ksMgr;
 
     @Inject ConfigurationDao _configDao;
+    @Inject ManagementServer _ms;
 
     public class AgentBasedAgentHook extends AgentHookBase {
 
         public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
-                KeystoreManager ksMgr, AgentManager agentMgr) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr);
+                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
         }
 
         @Override
@@ -120,7 +122,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
         _listener =
-                new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr));
+                new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         if (s_logger.isInfoEnabled()) {
