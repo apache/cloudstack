@@ -83,8 +83,6 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName(ApiConstants.SCOPE) @Param(description="the scope of the storage pool")
     private String scope;
 
-
-
     /**
      * @return the scope
      */
@@ -239,5 +237,4 @@ public class StoragePoolResponse extends BaseResponse {
     public void setState(StoragePoolStatus state) {
         this.state = state;
     }
-
 }

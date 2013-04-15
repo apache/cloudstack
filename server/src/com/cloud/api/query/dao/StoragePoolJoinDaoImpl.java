@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -108,10 +109,6 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return poolResponse;
     }
 
-
-
-
-
     @Override
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
@@ -126,7 +123,61 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return response;
     }
 
+    @Override
+    public StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
+        StoragePoolForMigrationResponse poolResponse = new StoragePoolForMigrationResponse();
+        poolResponse.setId(pool.getUuid());
+        poolResponse.setName(pool.getName());
+        poolResponse.setState(pool.getStatus());
+        poolResponse.setPath(pool.getPath());
+        poolResponse.setIpAddress(pool.getHostAddress());
+        poolResponse.setZoneId(pool.getZoneUuid());
+        poolResponse.setZoneName(pool.getZoneName());
+        if (pool.getPoolType() != null) {
+            poolResponse.setType(pool.getPoolType().toString());
+        }
+        poolResponse.setPodId(pool.getPodUuid());
+        poolResponse.setPodName(pool.getPodName());
+        poolResponse.setCreated(pool.getCreated());
+        poolResponse.setScope(pool.getScope().toString());
 
+
+        long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
+        poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
+        poolResponse.setDiskSizeAllocated(allocatedSize);
+
+        //TODO: StatsCollector does not persist data
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        if (stats != null) {
+            Long used = stats.getByteUsed();
+            poolResponse.setDiskSizeUsed(used);
+        }
+
+        poolResponse.setClusterId(pool.getClusterUuid());
+        poolResponse.setClusterName(pool.getClusterName());
+        poolResponse.setTags(pool.getTag());
+
+        // set async job
+        poolResponse.setJobId(pool.getJobUuid());
+        poolResponse.setJobStatus(pool.getJobStatus());
+
+        poolResponse.setObjectName("storagepool");
+        return poolResponse;
+    }
+
+    @Override
+    public StoragePoolForMigrationResponse setStoragePoolForMigrationResponse(StoragePoolForMigrationResponse response,
+            StoragePoolJoinVO sp) {
+        String tag = sp.getTag();
+        if (tag != null) {
+            if ( response.getTags() != null && response.getTags().length() > 0){
+                response.setTags(response.getTags() + "," + tag);
+            } else {
+                response.setTags(tag);
+            }
+        }
+        return response;
+    }
 
     @Override
     public List<StoragePoolJoinVO> newStoragePoolView(StoragePool host) {

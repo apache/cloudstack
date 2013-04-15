@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -43,6 +44,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -1518,6 +1520,14 @@ public class ApiDBUtils {
         return _hostJoinDao.setHostResponse(vrData, vr);
     }
 
+    public static HostForMigrationResponse newHostForMigrationResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
+        return _hostJoinDao.newHostForMigrationResponse(vr, details);
+    }
+
+    public static HostForMigrationResponse fillHostForMigrationDetails(HostForMigrationResponse vrData, HostJoinVO vr) {
+        return _hostJoinDao.setHostForMigrationResponse(vrData, vr);
+    }
+
     public static List<HostJoinVO> newHostView(Host vr){
         return _hostJoinDao.newHostView(vr);
     }
@@ -1541,6 +1551,15 @@ public class ApiDBUtils {
 
     public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
         return _poolJoinDao.setStoragePoolResponse(vrData, vr);
+    }
+
+    public static StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO vr) {
+        return _poolJoinDao.newStoragePoolForMigrationResponse(vr);
+    }
+
+    public static StoragePoolForMigrationResponse fillStoragePoolForMigrationDetails(StoragePoolForMigrationResponse
+            vrData, StoragePoolJoinVO vr){
+        return _poolJoinDao.setStoragePoolForMigrationResponse(vrData, vr);
     }
 
     public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){

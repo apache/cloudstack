@@ -18,13 +18,23 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.Map;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 
 public interface DataMotionStrategy {
     public boolean canHandle(DataObject srcData, DataObject destData);
+    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
     public Void copyAsync(DataObject srcData, DataObject destData,
+            AsyncCompletionCallback<CopyCommandResult> callback);
+    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             AsyncCompletionCallback<CopyCommandResult> callback);
 }
