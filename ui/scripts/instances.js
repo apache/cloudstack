@@ -645,9 +645,9 @@
                     dataProvider: function(args) {
                       args.response.success({
                         data: [
-                          { id: 1, name: 'Affinity Group 1', type: 'Affinity' },
+                          { id: 1, name: 'Affinity Group 1', type: 'Affinity', _isSelected: true },
                           { id: 2, name: 'Affinity Group 2', type: 'Anti-affinity' },
-                          { id: 3, name: 'Anti-affinity Group', type: 'Anti-affinity' }
+                          { id: 3, name: 'Anti-affinity Group', type: 'Anti-affinity', _isSelected: true }
                         ]
                       });
                     }
