@@ -88,9 +88,22 @@
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var items = json.listzonesresponse.zone;
-                          args.response.success({descriptionField: 'name', data: items});
+                        success: function(json) {												 
+													var zoneObjs;
+							            if(args.context.zoneType == null || args.context.zoneType == '') { //all types
+														zoneObjs = json.listzonesresponse.zone;			
+													}
+													else { //Basic type or Advanced type
+														zoneObjs = [];
+														var items = json.listzonesresponse.zone;
+														if(items != null) {
+															for(var i = 0; i < items.length; i++) {
+																if(items[i].networktype == args.context.zoneType) 
+																	zoneObjs.push(items[i]);
+															}
+														}
+													}						
+													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
                       });
                     }
@@ -208,16 +221,29 @@
                   availabilityZone: {
                     label: 'label.availability.zone',
                     docID: 'helpUploadVolumeZone',
-                    select: function(args) {
-                      $.ajax({
+                    select: function(args) {                      
+											$.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var items = json.listzonesresponse.zone;
-                          args.response.success({descriptionField: 'name', data: items});
+                        success: function(json) {												 
+													var zoneObjs;
+							            if(args.context.zoneType == null || args.context.zoneType == '') { //all types
+														zoneObjs = json.listzonesresponse.zone;			
+													}
+													else { //Basic type or Advanced type
+														zoneObjs = [];
+														var items = json.listzonesresponse.zone;
+														if(items != null) {
+															for(var i = 0; i < items.length; i++) {
+																if(items[i].networktype == args.context.zoneType) 
+																	zoneObjs.push(items[i]);
+															}
+														}
+													}						
+													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
-                      });
+                      });											
                     }
                   },
                   format: {
