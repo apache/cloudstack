@@ -408,4 +408,10 @@ VpcVirtualNetworkApplianceService {
         return false;
     }
 
+    @Override
+    public VirtualRouter findRouter(long routerId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

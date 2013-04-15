@@ -3742,4 +3742,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         }
     }
+
+
+
+    @Override
+    public VirtualRouter findRouter(long routerId) {
+        return _routerDao.findById(routerId);
+    }
 }

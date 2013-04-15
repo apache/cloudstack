@@ -29,8 +29,10 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -100,7 +102,15 @@ public class StartRouterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Router Id: "+getId());
-        VirtualRouter result = _routerService.startRouter(id);
+        VirtualRouter result = null;
+        VirtualRouter router = _routerService.findRouter(getId());
+        if (router == null) {
+            throw new InvalidParameterValueException("Can't find router by id");
+        } else if (router.getRole() == Role.INTERNAL_LB_VM) {
+            result = _internalLbSvc.startInternalLbVm(getId(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
+        } else {
+            result = _routerService.startRouter(getId());
+        }
         if (result != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());

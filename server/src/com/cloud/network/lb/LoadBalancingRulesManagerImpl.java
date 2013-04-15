@@ -1475,6 +1475,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Revoking " + lbs.size() + " " + scheme + " load balancing rules for network id=" + networkId);
+        }
         if (lbs != null) {
             for(LoadBalancerVO lb : lbs) { // called during restart, not persisting state in db
                 lb.setState(FirewallRule.State.Revoke);
