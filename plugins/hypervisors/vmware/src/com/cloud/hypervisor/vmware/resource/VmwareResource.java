@@ -232,6 +232,7 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
@@ -2147,6 +2148,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
+           
+            if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
+                s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
+                ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
+                ManagedObjectReference computeMor = context.getVimClient().getMoRefProp(hostMor, "parent");
+                ManagedObjectReference environmentBrowser = 
+                        context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
+                HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
+                if (hostCapability.isNestedHVSupported()) {
+                    s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
+                    vmConfigSpec.setNestedHVEnabled(true);                   
+                }
+                else {
+                	s_logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " +vmSpec.getName());
+                	vmConfigSpec.setNestedHVEnabled(false);
+                }
+            }
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;

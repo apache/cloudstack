@@ -50,8 +50,6 @@ install_packages() {
   echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install openswan
 
-  # vmware tools
-  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   # xenstore utils
   apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
   # keepalived and conntrackd for redundant router
@@ -64,6 +62,22 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+
+  # vmware tools
+  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
+  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
+  # df -h
+  # PREVDIR=$PWD
+  # cd /opt
+  # wget http://people.apache.org/~bhaisaab/cloudstack/VMwareTools-9.2.1-818201.tar.gz
+  # tar xzf VMwareTools-9.2.1-818201.tar.gz
+  # rm VMwareTools-*.tar.gz
+  # cd vmware-tools-distrib
+  # ./vmware-install.pl -d
+  # cd $PREV
+  # rm -fr /opt/vmware-tools-distrib
+  # apt-get -q -y --force-yes purge build-essential
 }
 
 setup_accounts() {
@@ -171,7 +185,7 @@ configure_services() {
   snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
   snapshot_dir="/opt/cloudstack*"
   cd /opt
-  wget $snapshot_url -O cloudstack.tar.gz
+  wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
   cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /

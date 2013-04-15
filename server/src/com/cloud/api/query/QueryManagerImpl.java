@@ -27,6 +27,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -69,6 +74,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
@@ -86,6 +92,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -138,6 +145,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -245,6 +253,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    private AffinityGroupJoinDao _affinityGroupJoinDao;
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
@@ -1927,7 +1941,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+        SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
 
 
         Account account = UserContext.current().getCaller();
@@ -1942,9 +1956,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || isPermissible(account.getDomainId(), domainId) ) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
-                sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-                SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-                sc.setParameters("domainId", domainId);
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                 return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
             } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName()
@@ -1952,11 +1964,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-
-        boolean includePublicOfferings = false;
         List<Long> domainIds = null;
         // For non-root users, only return all offerings for the user's domain, and everything above till root
         if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
@@ -1973,16 +1981,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sb.and("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            
+            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+            sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
+            
         }
 
-        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-        if (keyword != null) {
+         if (keyword != null) {
             SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1990,26 +1999,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        if (domainIds != null ){
-            sc.setParameters("domainIdIn", domainIds.toArray());
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-
-        if (includePublicOfferings){
-            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
-        }
-
+        
         // FIXME: disk offerings should search back up the hierarchy for
         // available disk offerings...
         /*
@@ -2086,10 +2083,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        boolean includePublicOfferings = false;
+       // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // For non-root users
+            // For non-root users. 
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
@@ -2105,12 +2102,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+
         }
         else {
             // for root users
@@ -2153,22 +2150,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (isSystem != null) {
+            // note that for non-root users, isSystem is always false when control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-
-        if (includePublicOfferings){
-            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
@@ -2328,5 +2319,99 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return false;
     }
 
+    @Override
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
+                affinityGroupName, affinityGroupType, vmId, startIndex, pageSize);
+        ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
+        List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
+        response.setResponses(agResponses, result.second());
+        return response;
+    }
+
+
+    public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
+            String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+
+        Account caller = UserContext.current().getCaller();
+
+        Long accountId = caller.getAccountId();
+        Long domainId = caller.getDomainId();
+
+        if (vmId != null) {
+            UserVmVO userVM = _userVmDao.findById(vmId);
+            if (userVM == null){
+                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance "
+                        + vmId + "; instance not found.");
+            }
+            _accountMgr.checkAccess(caller, null, true, userVM);
+            return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
+        }
+
+        Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
+        SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
+        groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
+                                                                               // distinct
+
+        SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
+
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
+        }
+
+        if (affinityGroupName != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
+        }
+
+        if (affinityGroupType != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
+        }
+
+
+        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
+                searchFilter);
+        // search group details by ids
+        Integer count = uniqueGroupsPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueGroupsPair;
+        }
+        List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
+        Long[] vrIds = new Long[uniqueGroups.size()];
+        int i = 0;
+        for (AffinityGroupJoinVO v : uniqueGroups) {
+            vrIds[i++] = v.getId();
+        }
+        List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(vrs, count);
+
+    }
+
+    private Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsByVM(long vmId, long pageInd, long pageSize) {
+        Filter sf = new Filter(SecurityGroupVMMapVO.class, null, true, pageInd, pageSize);
+        Pair<List<AffinityGroupVMMapVO>, Integer> agVmMappingPair = _affinityGroupVMMapDao.listByInstanceId(vmId, sf);
+        Integer count = agVmMappingPair.second();
+        if (count.intValue() == 0) {
+            // handle empty result cases
+            return new Pair<List<AffinityGroupJoinVO>, Integer>(new ArrayList<AffinityGroupJoinVO>(), count);
+        }
+        List<AffinityGroupVMMapVO> agVmMappings = agVmMappingPair.first();
+        Long[] agIds = new Long[agVmMappings.size()];
+        int i = 0;
+        for (AffinityGroupVMMapVO agVm : agVmMappings) {
+            agIds[i++] = agVm.getAffinityGroupId();
+        }
+        List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+    }
 
 }

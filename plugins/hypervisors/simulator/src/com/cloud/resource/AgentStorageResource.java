@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -35,7 +36,6 @@ import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.agent.manager.SimulatorManager.AgentType;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.vm.SecondaryStorageVm;
 
 

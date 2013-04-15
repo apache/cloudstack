@@ -276,6 +276,7 @@ public enum Config {
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
+    VmwareEnableNestedVirtualization("Advanced", ManagementServer.class, Boolean.class, "vmware.nested.virtualization", "false", "When set to true this will enable nested virtualization when this is supported by the hypervisor", null),
 
     // Midonet
     MidoNetAPIServerAddress("Network", ManagementServer.class, String.class, "midonet.apiserver.address", "http://localhost:8081", "Specify the address at which the Midonet API server can be contacted (if using Midonet)", null),
@@ -397,9 +398,7 @@ public enum Config {
 	
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
-    VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "600", "In second, timeout for create vm snapshot", null),
-    VMSnapshotExpungeInterval("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.interval", "60", "The interval (in seconds) to wait before running the expunge thread.", null),
-    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null),
+    VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null);
     

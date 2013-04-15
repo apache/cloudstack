@@ -18,6 +18,7 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
+import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;

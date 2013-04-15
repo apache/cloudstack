@@ -69,7 +69,7 @@
                 we can proceed to configuring the network.</para>
             <para>First we configure eth0</para>
             <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0</programlisting>
-            <para>Make sure it looks similair to:</para>
+            <para>Make sure it looks similar to:</para>
             <programlisting><![CDATA[DEVICE=eth0
 HWADDR=00:04:xx:xx:xx:xx
 ONBOOT=yes

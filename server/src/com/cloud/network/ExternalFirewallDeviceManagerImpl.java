@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -541,8 +542,15 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
                 _fwRulesDao.loadSourceCidrs((FirewallRuleVO)rule);
             }
-            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            FirewallRuleTO ruleTO;
+            if (rule.getPurpose() == Purpose.Firewall && rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                String guestVlanTag = network.getBroadcastUri().getHost();
+                String guestCidr = network.getCidr();
+                ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType());
+            } else {
+                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            }
             rulesTO.add(ruleTO);
         }
 

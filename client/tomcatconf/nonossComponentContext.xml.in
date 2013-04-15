@@ -43,7 +43,12 @@
     
 -->
   <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
-  
+  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
+    <property name="GslbServiceProvider">
+      <ref bean="Netscaler"/>
+    </property>
+  </bean>
+
   <!--
     DAO with customized configuration under non-OSS deployment
   -->
@@ -345,5 +350,13 @@
       </list>
     </property>
   </bean>
+  
+  <!--
+   AffinityGroup Processors
+  -->
+    <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+    	<property name="name" value="HostAntiAffinityProcessor"/>
+    	<property name="type" value="host anti-affinity"/>
+ 	</bean>
 
 </beans>

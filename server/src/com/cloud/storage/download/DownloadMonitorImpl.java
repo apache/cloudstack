@@ -37,21 +37,17 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
-
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
-import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-
 import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
-
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -72,13 +68,12 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
-
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
@@ -91,7 +86,6 @@ import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
-
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -284,10 +278,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
             String sourceChecksum = this.templateMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
 			DownloadCommand dcmd =  
               new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
-			dcmd.setProxy(getHttpProxy());
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
 	 		}
+            dcmd.setProxy(getHttpProxy());
 			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
             HostVO ssAhost = _ssvmMgr.pickSsvmHost(destServer);
             if( ssAhost == null ) {
@@ -369,10 +363,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 	        }
+            dcmd.setProxy(getHttpProxy());
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
@@ -458,12 +452,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		if(volumeHost != null) {
 		    start();
 			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
 	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
-			
+            dcmd.setProxy(getHttpProxy());
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssvm == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
@@ -858,7 +851,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
                 toBeDownloaded.remove(tmplt);
                 if (tmpltHost != null) {
-                    s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
+                    s_logger.info("Template Sync found " + tmplt.getName() + " already in the template host table");
                     if (tmpltHost.getDownloadState() != Status.DOWNLOADED) {
                         tmpltHost.setErrorString("");
                     }
@@ -918,10 +911,12 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                 continue;
             }
             if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
+                s_logger.info("Template Sync did not find " + tmplt.getName() + " ready on server " + sserverId
+                        + ", will request download to start/resume shortly");
 
             } else if (tmpltHost == null) {
-                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
+                s_logger.info("Template Sync did not find " + tmplt.getName() + " on the server " + sserverId
+                        + ", will request download shortly");
                 VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateHostDao.persist(templtHost);
                 VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
@@ -971,6 +966,9 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
                     downloadTemplateToStorage(tmplt, ssHost);
+                } else {
+                    s_logger.info("Skipping download of template " + tmplt.getName() + " since we don't have any "
+                            + tmplt.getHypervisorType() + " hypervisors");
                 }
             }
         }

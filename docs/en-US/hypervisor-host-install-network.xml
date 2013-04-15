@@ -29,7 +29,7 @@
     <para>In order to forward traffic to your instances you will need at least two bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>.</para>
     <para>By default these bridges are called <emphasis>cloudbr0</emphasis> and <emphasis>cloudbr1</emphasis>, but you do have to make sure they are available on each hypervisor.</para>
     <para>The most important factor is that you keep the configuration consistent on all your hypervisors.</para>
-    <section id="hypervisor-host-install-network-vlan">
+    <section>
         <title>Network example</title>
         <para>There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network.</para>
         <para>We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:</para>
@@ -41,16 +41,16 @@
         <para>On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1</para>
         <note><para>The Hypervisor and Management server don't have to be in the same subnet!</para></note>
     </section>
-    <section id="hypervisor-host-install-network-configure">
+    <section>
         <title>Configuring the network bridges</title>
         <para>It depends on the distribution you are using how to configure these, below you'll find examples for RHEL/CentOS and Ubuntu.</para>
         <note><para>The goal is to have two bridges called 'cloudbr0' and 'cloudbr1' after this section. This should be used as a guideline only. The exact configuration will depend on your network layout.</para></note>
-        <section id="hypervisor-host-install-network-configure-rhel">
+        <section>
             <title>Configure in RHEL or CentOS</title>
             <para>The required packages were installed when libvirt was installed, we can proceed to configuring the network.</para>
             <para>First we configure eth0</para>
             <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0</programlisting>
-            <para>Make sure it looks similair to:</para>
+            <para>Make sure it looks similar to:</para>
             <programlisting><![CDATA[DEVICE=eth0
 HWADDR=00:04:xx:xx:xx:xx
 ONBOOT=yes
@@ -89,7 +89,7 @@ VLAN=yes
 BRIDGE=cloudbr1]]></programlisting>
             <para>Now we have the VLAN interfaces configured we can add the bridges on top of them.</para>
             <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0</programlisting>
-            <para>Now we just configure it is a plain bridge without an IP-Adress</para>
+            <para>Now we just configure it is a plain bridge without an IP-Address</para>
             <programlisting><![CDATA[DEVICE=cloudbr0
 TYPE=Bridge
 ONBOOT=yes
@@ -111,7 +111,7 @@ STP=yes]]></programlisting>
             <para>With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.</para>
             <warning><para>Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!</para></warning>
         </section>
-        <section id="hypervisor-host-install-network-configure-ubuntu">
+        <section>
             <title>Configure in Ubuntu</title>
             <para>All the required packages were installed when you installed libvirt, so we only have to configure the network.</para>
             <programlisting language="Bash">vi /etc/network/interfaces</programlisting>

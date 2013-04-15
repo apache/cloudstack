@@ -86,7 +86,7 @@ under the License.
             <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
         </adapters>
         <adapters key="com.cloud.network.IpAddrAllocator">
-            <adapter name="Basic" class="com.cloud.network.ExteralIpAddressAllocator"/>
+            <adapter name="Basic" class="com.cloud.network.ExternalIpAddressAllocator"/>
         </adapters>
         <adapters key="com.cloud.server.auth.UserAuthenticator">
             <!-- <adapter name="SHA256SALT" class="com.cloud.server.auth.SHA256SaltedUserAuthenticator"/> -->

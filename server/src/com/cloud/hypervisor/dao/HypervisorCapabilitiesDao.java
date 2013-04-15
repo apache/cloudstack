@@ -33,4 +33,6 @@ public interface HypervisorCapabilitiesDao extends GenericDao<HypervisorCapabili
     Integer getMaxDataVolumesLimit(HypervisorType hypervisorType, String hypervisorVersion);
 
     Integer getMaxHostsPerCluster(HypervisorType hypervisorType, String hypervisorVersion);
+    
+    Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion);
 }
