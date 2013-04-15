@@ -20,7 +20,7 @@
 -->
 <section id="add-remove-nic">
   <title>Reconfiguring Physical Networks in VMs</title>
-  <para>&PRODUCT; provides you the ability to move VMs between networks and reconfigure a VM's
+  <para>&PRODUCT; provides the ability to move VMs between networks and reconfigure a VM's
     network. You can remove a VM from a physical network and add to a new physical network. You can
     also change the default physical network of a virtual machine. With this functionality, hybrid
     or traditional server loads can be accommodated with ease. </para>

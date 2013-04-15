@@ -24,9 +24,8 @@
   <para>AutoScaling allows you to scale your back-end services or application VMs up or down
     seamlessly and automatically according to the conditions you define. With AutoScaling enabled,
     you can ensure that the number of VMs you are using seamlessly scale up when demand increases,
-    and automatically decreases when demand subsides. Thus it helps you save compute costs by
-    terminating underused VMs automatically and launching new VMs when you need them, without the
-    need for manual intervention.</para>
+    and automatically decreases when demand subsides. Using AutoScaling, you can automatically 
+    shut down instances you don't need, or launch new instances, depending on demand.</para>
   <para>NetScaler AutoScaling is designed to seamlessly launch or terminate VMs based on
     user-defined conditions. Conditions for triggering a scaleup or scaledown action can vary from a
     simple use case like monitoring the CPU usage of a server to a complex use case of monitoring a

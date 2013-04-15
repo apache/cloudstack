@@ -124,38 +124,57 @@ under the License.
             </section>
             <section id="apidiscover">
                 <title>API Discovery Service</title>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-926">CLOUDSTACK-926</ulink>: CloudStack has more than 300 APIs and more are added in each major release. CloudStack admins can enable or disable APIs, or add plugins which provide more APIs. The API Discovery Service is a plugin which will help users discover the APIs available to them on a CloudStack Management Server.</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-926">CLOUDSTACK-926</ulink>: &PRODUCT; has more than 300 APIs and more are added in each major release. &PRODUCT; admins can enable or disable APIs, or add plugins which provide more APIs. The API Discovery Service is a plugin which will help users discover the APIs available to them on a &PRODUCT; Management Server.</para>
                 <para>The discovery service implements a method called <command>listApis</command> which will return information about APIs for a user. It currently accepts an apiName to list api information of that particular API. The method ensures that user can only list APIs they are entitled to.</para>
-                <para>All CloudStack APIs are implemented by annotated command class and PluggableService is a contract implemented by all the components such as the Management Server and all the plugins which provide an API. During load time, API discovery service asks all the pluggable services to return list of API cmd classes from whose fields and annotations it gathers information about each API, the information consists of name, description, parameter name, parameter description, etc.</para>
-                <para>For more information on the implementation of the API Discovery Service for 4.1.0, see the <ulink url="https://cwiki.apache.org/CLOUDSTACK/api-discovery-service.html">CloudStack wiki</ulink>.</para> 
+                <para>All &PRODUCT; APIs are implemented by annotated command class and PluggableService is a contract implemented by all the components such as the Management Server and all the plugins which provide an API. During load time, API discovery service asks all the pluggable services to return list of API cmd classes from whose fields and annotations it gathers information about each API, the information consists of name, description, parameter name, parameter description, etc.</para>
+                <para>For more information on the implementation of the API Discovery Service for 4.1.0, see the <ulink url="https://cwiki.apache.org/CLOUDSTACK/api-discovery-service.html">&PRODUCT; wiki</ulink>.</para> 
             </section>
             <section id="events-framework">
                 <title>Events Framework</title>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-820">CLOUDSTACK-820</ulink>: The Events Framework provides a mechanism to publish and subscribe to events in &PRODUCT;.</para>
-            </section>
-            <section id="additional-vmx-settings">
-                <title>Additional VMX Settings</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-820">CLOUDSTACK-820</ulink>:The event notification framework provides a means for the Management Server components to publish and subscribe to &PRODUCT; events. Event notification is achieved by implementing the concept of event bus abstraction in the Management Server. An event bus is introduced in the Management Server that allows the &PRODUCT;components and extension plug-ins to subscribe to the events by using the Advanced Message Queuing Protocol (AMQP) client. In &PRODUCT;, a default implementation of event bus is provided as a plug-in that uses the RabbitMQ AMQP client. The AMQP client pushes the published events to a compatible AMQP server. Therefore all the &PRODUCT; events are published to an exchange in the AMQP server. </para> 
+                <para>A new event for state change, resource state change, is introduced as part of Event notification framework. Every resource, such as user VM, volume, NIC, network, public IP, snapshot, and template, is associated with a state machine and generates events as part of the state change. That implies that a change in the state of a resource results in a state change event, and the event is published in the corresponding state machine on the event bus. All the &PRODUCT; events (alerts, action events, usage events) and the additional category of resource state change events, are published on to the events bus.</para>
+                <para>See the Events Framework section of the Admin Guide for more information on using the events framework.</para>
             </section>
             <section id="l3-nicira">
-                <title>L3 Router Functionality in Nicira Nvp Plugin</title>
-                <para>###</para>
+                <title>L3 Router Functionality in Nicira NVP Plugin</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-726">CLOUDSTACK-726</ulink>: Adds on work done in &PRODUCT; 4.0.x series to add support for the Nicira Network Virtualization Platform (NVP). The 4.0.x releases added L2 (data link layer) support for NVP, but L3 (network layer) support was missing.</para>
+                <para>With 4.1.0, &PRODUCT; adds support for the following features:</para>
+                <itemizedlist>
+                    <listitem><para>L3 Routing (Gateway)</para></listitem>
+                    <listitem><para>Source NAT</para></listitem>
+                    <listitem><para>Static NAT</para></listitem>
+                    <listitem><para>Port Forwarding</para></listitem>
+                </itemizedlist>
             </section>
             <section id="persistent-networks">
                 <title>Persistent Networks without Running VM</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-706">CLOUDSTACK-706</ulink>: Prior to &PRODUCT; 4.1.0, a network had to have at least one instance (VM) running to actually deploy a network. In 4.1.0, we add the ability to deploy physical network devices without having a instance (VM) running on that network.</para>
+                <para>One use case for this is creating a Virtual Private Cloud (VPC) with a tier consisting only of physical devices. For example, you might create a VPC for a three-tier application, deploy VMs for Web and Application tier, and use physical machines for the Database tier. Another use case is that if you are providing services by using physical hardware, you can define the network as persistent and therefore even if all its VMs are destroyed the services will not be discontinued.</para>
+                <para>See the <emphasis>Persistent Networks</emphasis> section in the Admin Guide for more on this feature.</para>
             </section>
             <section id="add-remove-network-vm">
                 <title>Add/Remove Network on VM</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-645">CLOUDSTACK-645</ulink>: provides the ability to move VMs between networks and reconfigure a VM's network. You can remove a VM from a physical network and add to a new physical network. You can also change the default physical network of a virtual machine. With this functionality, hybrid or traditional server loads can be accommodated with ease.</para>
+                <para>This feature is supported on XenServer and KVM hypervisors.</para>
+                <para>The following APIs have been added to support this feature. These API calls can function only while the VM is in running or stopped state:</para>
+                <itemizedlist>
+                    <listitem><para><command>addNicToVirtualMachine</command></para></listitem>
+                    <listitem><para><command>removeNicFromVirtualMachine</command></para></listitem>
+                    <listitem><para><command>updateDefaultNicForVirtualMachine</command></para></listitem>
+                </itemizedlist>
+                <para>See the Developer's Guide for more on using the new APIs.</para>
             </section>
             <section id="resize-volumes">
                 <title>Resize Volumes Feature</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-644">CLOUDSTACK-644</ulink>: With 4.1.0 &PRODUCT; now provides the ability to resize data disks. Volumes within the disk offerings with the same storage tag can be resized. For example, if you only want to offer 10GB, 50GB, and 100GB offerings, the allowed resize should stay within those limits. That implies if you define a 10GB, a 50GB and a 100GB disk offerings, a user can upgrade from 10GB to 50GB, or 50GB to 100GB. If you create a custom-sized disk offering, then you have the option to resize the volume by specifying a new, larger size.</para> 
+                <para>This feature is supported on KVM, XenServer, and VMware hosts. However, shrinking volumes is <emphasis>not</emphasis> supported on VMware hosts.</para> 
+                <para>Using the <command>resizeVolume</command> API, a data volume can be moved from a static disk offering to a custom disk offering with the size specified. This functionality allows those who might be billing by certain volume sizes or disk offerings to stick to that model, while providing the flexibility to migrate to whatever custom size necessary.</para>
             </section>
             <section id="autoscale">
                 <title>Autoscale</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-637">CLOUDSTACK-637</ulink>: AutoScaling allows you to scale your back-end services or application instances up or down automatically according to the conditions you define. With AutoScaling enabled, you can ensure that the number of instances you are using seamlessly scale up when demand increases, and automatically decreases when demand subsides.</para> 
+                <para>Conditions for triggering a scaleup or scaledown action can vary from a simple use case like monitoring the CPU usage of a server to a complex use case of monitoring a combination of server's responsiveness and its CPU usage. For example, you can configure AutoScaling to launch an additional instance whenever CPU usage exceeds 80 percent for 15 minutes, or to remove a VM whenever CPU usage is less than 20 percent for 30 minutes.</para> 
+                <para>AutoScale is supported on NetScaler Release 10 Build 73.e and beyond.</para>
             </section>
             <section id="api-throttling">
                 <title>API Request Throttling</title>
