@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-01-05 05:18+0000\n"
-"Last-Translator: Gavin Lee <gavin.lxh@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:43+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -40,6 +40,16 @@ msgid ""
 "response is XML. If you would like the response to be in JSON, add "
 "&amp;response=json to the Command String."
 msgstr "&PRODUCT;API调用支持两种格式的响应. 默认响应格式是XML. 如果你想要JSON的响应格式, 在命令请求字串里添加&amp;response=json."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The two response formats differ in how they handle blank fields. In JSON, if"
+" there is no value for a response field, it will not appear in the response."
+" If all the fields were empty, there might be no response at all. In XML, "
+"even if there is no value to be returned, an empty field will be returned as"
+" a placeholder XML element."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2012-09-24 05:03+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-05 12:20+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,56 +31,56 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating a New System Service Offering"
-msgstr ""
+msgstr "建立新的系統服務"
 
 #. Tag: para
 #, no-c-format
 msgid "To create a system service offering:"
-msgstr ""
+msgstr "想要新增系統服務："
 
 #. Tag: para
 #, no-c-format
 msgid "Log in with admin privileges to the &PRODUCT; UI."
-msgstr ""
+msgstr "以管理者優先登入&PRODUCT;使用者介面"
 
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation bar, click Service Offerings."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Service Offerings"
 
 #. Tag: para
 #, no-c-format
 msgid "In Select Offering, choose System Offering."
-msgstr ""
+msgstr "在Select Offering中，選擇 System Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add System Service Offering."
-msgstr ""
+msgstr "按下Add System Service Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "In the dialog, make the following choices:"
-msgstr ""
+msgstr "在對話框中，選擇以下："
 
 #. Tag: para
 #, no-c-format
 msgid "Name. Any desired name for the system offering."
-msgstr ""
+msgstr "Name：系統服務的名稱"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Description. A short description of the offering that can be displayed to "
 "users"
-msgstr ""
+msgstr "Description：使用者可見的簡述"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "System VM Type. Select the type of system virtual machine that this offering"
 " is intended to support."
-msgstr ""
+msgstr "System VM Type：選擇此服務支援的系統虛擬機器的形式"
 
 #. Tag: para
 #, no-c-format
@@ -87,59 +88,59 @@ msgid ""
 "Storage type. The type of disk that should be allocated. Local allocates "
 "from storage attached directly to the host where the system VM is running. "
 "Shared allocates from storage accessible via NFS."
-msgstr ""
+msgstr "Storage type：硬碟分配的形式。本地分配會直接連結到系統VM正在執行的主機；分享分配則經由NFS存取"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "# of CPU cores. The number of cores which should be allocated to a system VM"
 " with this offering"
-msgstr ""
+msgstr "# of CPU cores：應分配的核心數"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "CPU (in MHz). The CPU speed of the cores that the system VM is allocated. "
 "For example, \"2000\" would provide for a 2 GHz clock."
-msgstr ""
+msgstr "CPU (in MHz)：CPU的核心時脈，例如 \"2000\" 為2GHz"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Memory (in MB). The amount of memory in megabytes that the system VM should "
 "be allocated. For example, \"2048\" would provide for a 2 GB RAM allocation."
-msgstr ""
+msgstr "Memory (in MB)：記憶體的數量，例如\"2048\"為2GB的記憶體分配"
 
 #. Tag: para
 #, no-c-format
 msgid "Network Rate. Allowed data transfer rate in MB per second."
-msgstr ""
+msgstr "Network Rate：允許的資料傳輸速率，單位為MB每秒"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Offer HA. If yes, the administrator can choose to have the system VM be "
 "monitored and as highly available as possible."
-msgstr ""
+msgstr "Offer HA：如果為是，則管理者可以選擇監視系統VM"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Storage Tags. The tags that should be associated with the primary storage "
 "used by the system VM."
-msgstr ""
+msgstr "Storage Tags：連結到主要儲存裝置的tags"
 
 #. Tag: para
 #, no-c-format
 msgid "Host Tags. (Optional) Any tags that you use to organize your hosts"
-msgstr ""
+msgstr "Host Tags：(選擇性)您組織主機的tag"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "CPU cap. Whether to limit the level of CPU usage even if spare capacity is "
 "available."
-msgstr ""
+msgstr "CPU cap：是否限制CPU使用率"
 
 #. Tag: para
 #, no-c-format
@@ -148,7 +149,7 @@ msgid ""
 "domains or only some domains. Choose Yes to make it available to all "
 "domains. Choose No to limit the scope to a subdomain; &PRODUCT; will then "
 "prompt for the subdomain's name."
-msgstr ""
+msgstr "Public：決定服務使否為所有網域使用，選擇Yes使所有網域都可使用；選擇No，&PRODUCT;會出現提示要您輸入子網域的名稱。 "
 
 #. Tag: para
 #, no-c-format

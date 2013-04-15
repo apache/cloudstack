@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-06 14:30+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Sending Project Membership Invitations"
+msgstr "送出計畫成員邀請"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use these steps to add a new member to a project if the invitations feature "
+"is enabled in the cloud as described in <xref linkend=\"set-up-invitations\""
+" />. If the invitations feature is not turned on, use the procedure in "
+"Adding Project Members From the UI."
+msgstr "在邀請功能，在<xref linkend=\"set-up-invitations\" />描述，可用的前提下此步驟教如何新增成員到計畫中您，如果邀請功能不能用的話，請按照Adding Project Members From the UI來進行"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "在左邊的導覽視窗，選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "於Select View中選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr "選擇你想要套用的計畫"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Invitations tab."
+msgstr "選擇Invitations標籤"
+
+#. Tag: para
+#, no-c-format
+msgid "In Add by, select one of the following:"
+msgstr "在 Add，璇則其中一項："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Account – The invitation will appear in the user’s Invitations tab in the "
+"Project View. See Using the Project View."
+msgstr "Account：邀請會出現在使用者Project View的邀請標籤，參照Using the Project View "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Email – The invitation will be sent to the user’s email address. Each "
+"emailed invitation includes a unique code called a token which the recipient"
+" will provide back to &PRODUCT; when accepting the invitation. Email "
+"invitations will work only if the global parameters related to the SMTP "
+"server have been set. See <xref linkend=\"set-up-invitations\" />."
+msgstr "Email：邀請會寄到使用者的信箱，每個信箱包含特殊的編碼，當接受邀請後，點選連結會回到 &PRODUCT;。此方法僅在 SMTP伺服器的廣域欄位有設定才能用，詳見 <xref linkend=\"set-up-invitations\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Type the user name or email address of the new member you want to add, and "
+"click Invite. Type the &PRODUCT; user name if you chose Account in the "
+"previous step. If you chose Email, type the email address. You can invite "
+"only people who have an account in this cloud within the same domain as the "
+"project. However, you can send the invitation to any email address."
+msgstr "輸入使用者名稱或Email，然後點選Invite。如果您選擇 Account，請輸入 &PRODUCT; 使用者名稱。如果您選擇Email，請輸入地址。您只能邀請在同一網域的雲端使用者，但您可以寄Email給任意人"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To view and manage the invitations you have sent, return to this tab. When "
+"an invitation is accepted, the new member will appear in the project’s "
+"Accounts tab."
+msgstr "您可以會到這個標籤來看和管理您寄出的邀請，當邀請接受了，新成員就會出現在計畫的 Accounts標籤"

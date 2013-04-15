@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-22 01:49+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Firewall Rules"
-msgstr ""
+msgstr "Firewall Rules"
 
 #. Tag: para
 #, no-c-format
@@ -40,7 +41,7 @@ msgid ""
 "specifying firewall rules. You can optionally specify one or more CIDRs to "
 "filter the source IPs. This is useful when you want to allow only incoming "
 "requests from certain IP addresses."
-msgstr ""
+msgstr "所有公開IP的輸入流量預設上是被防火牆隔絕的，您可以定訂防火牆規則來開啟防火牆的埠。您可以選擇性的指定一至多個CIDR來過濾來源IP。當你想要只允許特定IP的輸入請求時，是很有用的"
 
 #. Tag: para
 #, no-c-format
@@ -48,7 +49,7 @@ msgid ""
 "You cannot use firewall rules to open ports for an elastic IP address. When "
 "elastic IP is used, outside access is instead controlled through the use of "
 "security groups. See <xref linkend=\"add-security-group\" />."
-msgstr ""
+msgstr "您不行用防火牆規則來開啟埠給彈性IP。當彈性IP被使用時，外部存取將會被security group所控制，詳見"
 
 #. Tag: para
 #, no-c-format
@@ -56,7 +57,7 @@ msgid ""
 "In an advanced zone, you can also create egress firewall rules by using the "
 "virtual router. For more information, see <xref linkend=\"egress-firewall-"
 "rule\" />."
-msgstr ""
+msgstr "在一個具有advanced zone的環境下，你可以藉由virtual router新增egress firewall rules，更多資訊請參閱：<xref linkend=\"egress-firewall-rule\" />"
 
 #. Tag: para
 #, no-c-format
@@ -65,12 +66,12 @@ msgid ""
 "Server UI. This tab is not displayed by default when &PRODUCT; is installed."
 " To display the Firewall tab, the &PRODUCT; administrator must set the "
 "global configuration parameter firewall.rule.ui.enabled to \"true.\""
-msgstr ""
+msgstr "防火牆規則可以藉由Management Server UI中的 Firewall標籤建立。 &PRODUCT; 後，標籤並不是預設顯示的。 &PRODUCT; 管理員必須要設定在總體系統設定中的參數 firewall.rule.ui.enabled為True才會顯示"
 
 #. Tag: para
 #, no-c-format
 msgid "To create a firewall rule:"
-msgstr ""
+msgstr "建立防火牆規則："
 
 #. Tag: para
 #, no-c-format
@@ -100,7 +101,7 @@ msgstr "選擇你想要套用的IP"
 #. Tag: para
 #, no-c-format
 msgid "Click the Configuration tab and fill in the following values."
-msgstr ""
+msgstr "選擇Configuration標籤，然後填入以下數值"
 
 #. Tag: para
 #, no-c-format
@@ -109,14 +110,14 @@ msgid ""
 "traffic from IP addresses within a particular address block, enter a CIDR or"
 " a comma-separated list of CIDRs. Example: 192.168.0.0/22. Leave empty to "
 "allow all CIDRs."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Source CIDR</emphasis>(選擇性)為了在特定位址區域中允許流量自IP位址，進入CIDR或CIDR的comma-separated list，比如說， 192.168.0.0/22，為了允許所有CIDR"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Protocol</emphasis>. The communication protocol in "
 "use on the opened port(s)."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: 開放埠(一至多個)之間使用的通訊協定"
 
 #. Tag: para
 #, no-c-format
@@ -124,7 +125,7 @@ msgid ""
 "<emphasis role=\"bold\">Start Port and End Port</emphasis>. The port(s) you "
 "want to open on the firewall. If you are opening a single port, use the same"
 " number in both fields"
-msgstr ""
+msgstr "<emphasis role=\"bold\">Start Port and End Port</emphasis>，您想要在防火牆上開啟的埠(一至多個)的數量，如果你要開啟一個埠，在所有區內使用同一數字"
 
 #. Tag: para
 #, no-c-format
@@ -133,7 +134,7 @@ msgid ""
 "Protocol is set to ICMP. Provide the type and code required by the ICMP "
 "protocol to fill out the ICMP header. Refer to ICMP documentation for more "
 "details if you are not sure what to enter"
-msgstr ""
+msgstr "<emphasis role=\"bold\">ICMP Type and ICMP Code</emphasis>，僅在協定已經設定給ICMP後使用。提供ICMP協定需要的形式和程式碼來填入標頭。如果您不清楚的話，可以參閱ICMP文件"
 
 #. Tag: para
 #, no-c-format

@@ -1,0 +1,45 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-06 07:41+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure XenServer dom0 Memory"
+msgstr "設定XenServer dom0記憶體"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure the XenServer dom0 settings to allocate more memory to dom0. This "
+"can enable XenServer to handle larger numbers of virtual machines. We "
+"recommend 2940 MB of RAM for XenServer dom0. For instructions on how to do "
+"this, see <ulink url=\"http://support.citrix.com/article/CTX126531\">Citrix "
+"Knowledgebase Article</ulink>.The article refers to XenServer 5.6, but the "
+"same information applies to XenServer 6"
+msgstr "設定XenServer dom0來分配更多記憶體到dom0，使XenServer可以處理更多虛擬機器。建議2940 MB。有關設定指南，詳閱<ulink url=\"http://support.citrix.com/article/CTX126531\">Citrix Knowledgebase Article</ulink>，此文章為 XenServer 5.6版本，但適用6版"

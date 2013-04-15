@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-02-02 18:32+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-12 11:28+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -36,14 +36,14 @@ msgstr "Sobre zonas"
 #. Tag: para
 #, no-c-format
 msgid ""
-"A zone is the largest organizational unit within a &PRODUCT; deployment. A "
-"zone typically corresponds to a single datacenter, although it is "
-"permissible to have multiple zones in a datacenter. The benefit of "
+"A zone is the second largest organizational unit within a &PRODUCT; "
+"deployment. A zone typically corresponds to a single datacenter, although it"
+" is permissible to have multiple zones in a datacenter. The benefit of "
 "organizing infrastructure into zones is to provide physical isolation and "
 "redundancy. For example, each zone can have its own power supply and network"
 " uplink, and the zones can be widely separated geographically (though this "
 "is not required)."
-msgstr "Uma zona é a maior unidade organizacional em uma instalação CloudStack&#8482; . Uma zona tipicamente corresponde a um único datacenter, apesar de ser possível ter múltiplas zonas no mesmo datacenter. O benefício de se organizar a infraestrutura em zonas é permitir o isolamento físico e redundância. Por exemplo, cada zona pode possuir sua própria alimentação de  energia e link de saída de internet, e zonas podem estar geograficamente separadas (apesar de não ser obrigatório)."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

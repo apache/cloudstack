@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-03-26 08:59+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Snapshot Job Throttling"
+msgstr "Snapshot Job 調節"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a snapshot of a virtual machine is requested, the snapshot job runs on "
+"the same host where the VM is running or, in the case of a stopped VM, the "
+"host where it ran last. If many snapshots are requested for VMs on a single "
+"host, this can lead to problems with too many snapshot jobs overwhelming the"
+" resources of the host."
+msgstr "當您要快取虛擬機器的圖案時，snapshot job會在和VM同一台主機上執行，或是最後執行的主機。如果在一台主機上有太多snapshots的工作，會導致這些工作佔用太多主機的資源"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To address this situation, the cloud's root administrator can throttle how "
+"many snapshot jobs are executed simultaneously on the hosts in the cloud by "
+"using the global configuration setting "
+"concurrent.snapshots.threshold.perhost. By using this setting, the "
+"administrator can better ensure that snapshot jobs do not time out and "
+"hypervisor hosts do not experience performance issues due to hosts being "
+"overloaded with too many snapshot requests."
+msgstr "雲端的root管理者可以調節有多少snapshot能夠同時執行，利用廣域設定來設定concurrent.snapshots.threshold.perhost。藉由此設定，管理者可以確定snapshot job不會超時，而超級監督者的主機不會有效能的問題"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set concurrent.snapshots.threshold.perhost to a value that represents a best"
+" guess about how many snapshot jobs the hypervisor hosts can execute at one "
+"time, given the current resources of the hosts and the number of VMs running"
+" on the hosts. If a given host has more snapshot requests, the additional "
+"requests are placed in a waiting queue. No new snapshot jobs will start "
+"until the number of currently executing snapshot jobs falls below the "
+"configured limit."
+msgstr "設定concurrent.snapshots.threshold.perhost 為一個在已知現有資源及VM執行數量的情況下，所猜的最佳值，如果一個主機有很多snapshot要求，則新的要求會排到等待主列"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The admin can also set job.expire.minutes to place a maximum on how long a "
+"snapshot request will wait in the queue. If this limit is reached, the "
+"snapshot request fails and returns an error message."
+msgstr "管理者也可以設定 job.expire.minute來規定工作等待的最大值，如果超時了，要求會失敗並回覆錯誤訊息"

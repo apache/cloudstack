@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-02-02 18:33+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-12 11:29+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -172,8 +172,8 @@ msgstr "listProjects （列出项目详细信息）"
 
 #. Tag: para
 #, no-c-format
-msgid "addAccountToProject (Adds acoount to a project)"
-msgstr "addAccountToProject （向项目中添加账户）"
+msgid "addAccountToProject (Adds account to a project)"
+msgstr ""
 
 #. Tag: para
 #, no-c-format

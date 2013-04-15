@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2012-09-24 02:44+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-07 01:49+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,24 +31,24 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Adding Ingress and Egress Rules to a Security Group"
-msgstr ""
+msgstr "在安全群組增加輸入及輸出規則"
 
 #. Tag: para
 #, no-c-format
 msgid "Log in to the &PRODUCT; UI as an administrator or end user."
-msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+msgstr "以管理者或終端使用者登入&PRODUCT; 使用者介面"
 
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation, choose Network"
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Network"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In Select view, choose Security Groups, then click the security group you "
 "want ."
-msgstr ""
+msgstr "在Select中，選擇 Security Groups，然後選擇您想要的安全群組"
 
 #. Tag: para
 #, no-c-format
@@ -57,7 +58,7 @@ msgid ""
 "instances in this security group. If no ingress rules are specified, then no"
 " traffic will be allowed in, except for responses to any traffic that has "
 "been allowed out through an egress rule."
-msgstr ""
+msgstr "想要增加輸入規則，選擇Ingress Rules標籤，然後填入以下欄位指定哪一種流量在此安全層級能夠送進VM。如果沒有Ingress規則被指定，所有流量就都不允許送進，除了有被egress規則定義的流量"
 
 #. Tag: para
 #, no-c-format
@@ -66,7 +67,7 @@ msgid ""
 " source of the traffic will be defined by IP address (CIDR) or an existing "
 "security group in a &PRODUCT; account (Account). Choose Account if you want "
 "to allow incoming traffic from all VMs in another security group"
-msgstr ""
+msgstr "<emphasis role=\"bold\">Add by CIDR/Account</emphasis>：流量來源是否被IP 位址 (CIDR)定義，或&PRODUCT; 帳戶 (Account)中已有的安全群組。如果您想要允許其他安全群組VM的輸入流量，請選擇Account"
 
 #. Tag: para
 #, no-c-format
@@ -75,7 +76,7 @@ msgid ""
 "sources will use to send traffic to the security group. TCP and UDP are "
 "typically used for data exchange and end-user communications. ICMP is "
 "typically used to send error messages or network monitoring data."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: 來源送流量到安全群組的網路協定。TCP和UDP協定常被用作資料交換和終端使用者傳輸，ICMP常被用作傳送錯誤訊息或網路監視資料"
 
 #. Tag: para
 #, no-c-format
@@ -83,14 +84,14 @@ msgid ""
 "<emphasis role=\"bold\">Start Port, End Port</emphasis>. (TCP, UDP only) A "
 "range of listening ports that are the destination for the incoming traffic. "
 "If you are opening a single port, use the same number in both fields."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Start Port</emphasis> (TCP, UDP限定): 一個範圍內，輸出流量目標的正在等候埠，如果你要開啟一個埠，在所有欄位內使用同一數字"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">ICMP Type, ICMP Code</emphasis>. (ICMP only) The "
 "type of message and error code that will be accepted."
-msgstr ""
+msgstr "<emphasis role=\"bold\">ICMP Type, ICMP Code</emphasis>: (ICMP限定)資料型態及被接受的錯誤碼"
 
 #. Tag: para
 #, no-c-format
@@ -100,7 +101,7 @@ msgid ""
 " a comma-separated list of CIDRs. The CIDR is the base IP address of the "
 "incoming traffic. For example, 192.168.0.0/22. To allow all CIDRs, set to "
 "0.0.0.0/0."
-msgstr ""
+msgstr "<emphasis role=\"bold\">CIDR</emphasis>: (只能被CIDR新增)為了送流量到特定區域裡的IP位址，進入CIDR或是CIDR的comma-separated list。CIDR是輸入流量的基礎IP位址，比如說， 192.168.0.0/22，為了允許所有CIDR，設定 0.0.0.0/0"
 
 #. Tag: para
 #, no-c-format
@@ -110,12 +111,12 @@ msgid ""
 "&PRODUCT; account and name of a security group that has already been defined"
 " in that account. To allow traffic between VMs within the security group you"
 " are editing now, enter the same name you used in step 7."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Account, Security Group</emphasis>：(僅能被Account新增)輸入&PRODUCT;帳號及張祜中安全群組名稱，來允許從其他安全群組來的流量，在步驟7輸入相同的名稱來允許安全群組的VM互相傳輸"
 
 #. Tag: para
 #, no-c-format
 msgid "The following example allows inbound HTTP access from anywhere:"
-msgstr ""
+msgstr "以下範例為允許從任何地方回來的HTTP存取"
 
 #. Tag: para
 #, no-c-format
@@ -127,7 +128,7 @@ msgid ""
 " types of traffic are allowed out: traffic specified in egress rules; "
 "queries to DNS and DHCP servers; and responses to any traffic that has been "
 "allowed in through an ingress rule"
-msgstr ""
+msgstr "想要增加輸出規則，選擇Egress Rules標籤，然後填入以下欄位指定哪一種流量在此安全層級能夠送出VM。如果沒有輸出規則被指定，所有流量就都允許送出；如果有指定，只有以下類型可以被送出：規則規定的流量；DNS及DHCP伺服器的貯列；輸入規則允許的流量"
 
 #. Tag: para
 #, no-c-format
@@ -136,7 +137,7 @@ msgid ""
 " destination of the traffic will be defined by IP address (CIDR) or an "
 "existing security group in a &PRODUCT; account (Account). Choose Account if "
 "you want to allow outgoing traffic to all VMs in another security group."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Add by CIDR/Account</emphasis>：流量來源是否被IP 位址 (CIDR)定義，或&PRODUCT; 帳戶 (Account)中已有的安全群組。如果您想要允許其他安全群組VM的輸入流量，請選擇Account"
 
 #. Tag: para
 #, no-c-format
@@ -145,7 +146,7 @@ msgid ""
 "VMs will use to send outgoing traffic. TCP and UDP are typically used for "
 "data exchange and end-user communications. ICMP is typically used to send "
 "error messages or network monitoring data."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Protocol</emphasis>: VM送出流量的網路協定。TCP和UDP協定常被用作資料交換和終端使用者傳輸，ICMP協定常被用作傳送錯誤訊息或網路監視資料"
 
 #. Tag: para
 #, no-c-format
@@ -153,14 +154,14 @@ msgid ""
 "<emphasis role=\"bold\">Start Port, End Port</emphasis>. (TCP, UDP only) A "
 "range of listening ports that are the destination for the outgoing traffic. "
 "If you are opening a single port, use the same number in both fields."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Start Port</emphasis> (TCP, UDP限定): 一個範圍內，輸出流量目標的正在等候埠，如果你要開啟一個埠，在所有區內使用同一數字"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">ICMP Type, ICMP Code</emphasis>. (ICMP only) The "
 "type of message and error code that will be sent"
-msgstr ""
+msgstr "<emphasis role=\"bold\">ICMP Type, ICMP Code</emphasis>: (ICMP限定)資料型態及送出的錯誤碼"
 
 #. Tag: para
 #, no-c-format
@@ -170,7 +171,7 @@ msgid ""
 "comma-separated list of CIDRs. The CIDR is the base IP address of the "
 "destination. For example, 192.168.0.0/22. To allow all CIDRs, set to "
 "0.0.0.0/0."
-msgstr ""
+msgstr "<emphasis role=\"bold\">CIDR</emphasis>: (只能被CIDR新增)為了送流量到特定區域裡的IP位址，進入CIDR或是CIDR的comma-separated list。CIDR是目的地的基礎IP位址，比如說， 192.168.0.0/22，為了允許所有CIDR，設定 0.0.0.0/0"
 
 #. Tag: para
 #, no-c-format
@@ -180,7 +181,7 @@ msgid ""
 "&PRODUCT; account and name of a security group that has already been defined"
 " in that account. To allow traffic between VMs within the security group you"
 " are editing now, enter its name."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Account, Security Group</emphasis>：(僅能被Account增加)輸入&PRODUCT; 帳戶及安全群組名稱來允許流量送到另一個安全群組；輸入安全群組名稱來允許其包含的VM可以互通"
 
 #. Tag: para
 #, no-c-format

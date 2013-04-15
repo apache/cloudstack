@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:05\n"
-"PO-Revision-Date: 2013-03-19T13:38:05\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12T11:19:41\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -143,7 +143,7 @@ msgid "\n"
 "        &lt;section id=\"building-documentation\"&gt;\n"
 "            &lt;title&gt;Building &PRODUCT; Documentation&lt;/title&gt;\n"
 "            &lt;para&gt;To build a specific guide, go to the source tree of the documentation in /docs and identify the guide you want to build.&lt;/para&gt;\n"
-"            &lt;para&gt;Currenlty there are four guides plus the release notes, all defined in publican configuration files:&lt;/para&gt;\n"
+"            &lt;para&gt;Currently there are four guides plus the release notes, all defined in publican configuration files:&lt;/para&gt;\n"
 "            &lt;programlisting&gt;\n"
 "               publican-adminguide.cfg\n"
 "               publican-devguide.cfg\n"
@@ -161,6 +161,6 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Happy Publicaning and DocBooking."
+msgid "Happy Publicating and DocBooking."
 msgstr ""
 

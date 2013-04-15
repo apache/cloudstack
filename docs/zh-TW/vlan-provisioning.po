@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:49+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VLAN Provisioning"
+msgstr "設置VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; automatically creates and destroys interfaces bridged to VLANs on "
+"the hosts. In general the administrator does not need to manage this "
+"process."
+msgstr "&PRODUCT;會自動新增或移除主機上的VLAN橋接介面，通常管理者不需要管理此步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; manages VLANs differently based on hypervisor type. For XenServer "
+"or KVM, the VLANs are created on only the hosts where they will be used and "
+"then they are destroyed when all guests that require them have been "
+"terminated or moved to another host."
+msgstr "&PRODUCT; 會依據不同的超級監督者，用不同方法管理VLAN。對於XenServer或KVM，VLAN只會建立在要使用的主機上，如果所有訪客都終止或移到其他主機，VLAN就會被移除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For vSphere the VLANs are provisioned on all hosts in the cluster even if "
+"there is no guest running on a particular Host that requires the VLAN. This "
+"allows the administrator to perform live migration and other functions in "
+"vCenter without having to create the VLAN on the destination Host. "
+"Additionally, the VLANs are not removed from the Hosts when they are no "
+"longer needed."
+msgstr "對於vSphere，VLAN會提共給所有叢集的主機，即使沒有任何訪客。此允許管理者執行實時移動及其他功能，不用再建立VLAN到目的地。除此之外，VLAN不會因主機不需要而被移除"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can use the same VLANs on different physical networks provided that each"
+" physical network has its own underlying layer-2 infrastructure, such as "
+"switches. For example, you can specify VLAN range 500 to 1000 while "
+"deploying physical networks A and B in an Advanced zone setup. This "
+"capability allows you to set up an additional layer-2 physical "
+"infrastructure on a different physical NIC and use the same set of VLANs if "
+"you run out of VLANs. Another advantage is that you can use the same set of "
+"IPs for different customers, each one with their own routers and the guest "
+"networks on different physical NICs."
+msgstr "您可以在不同實體網路使用相同的VLAN，使實體網路可以有自己的層級-2基礎架構，像是交換器。例如，在進階區域設定部署實體網路A及B時，您可以指定VLAN範圍500到1000。此功能允許您建立一個額外的層級-2實體基礎架構在不同的實體NIC，並且可以使用相同的VLAN。其他優點像是不同客戶可以使用相同組的IP，但是在不同的實體NIC使用自己的路由器及訪客網路"

@@ -1,0 +1,133 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-23 15:20+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for KVM Hypervisor Hosts"
+msgstr " KVM Hypervisor主機系統需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM is included with a variety of Linux-based operating systems. Although "
+"you are not required to run these distributions, the following are "
+"recommended:"
+msgstr "KVM包含很多種Linux作業系統，雖然您並不需要執行這些產品，但建議以下："
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS / RHEL: 6.3"
+msgstr "CentOS / RHEL: 6.3"
+
+#. Tag: para
+#, no-c-format
+msgid "Ubuntu: 12.04(.1)"
+msgstr "Ubuntu: 12.04(.1)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The main requirement for KVM hypervisors is the libvirt and Qemu version. No"
+" matter what Linux distribution you are using, make sure the following "
+"requirements are met:"
+msgstr "KVM hypervisors最主要的要求是libvirt 和 Qemu的版本，不論是哪種Linux系統，請確保有達到以下要求："
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.4 or higher"
+msgstr "libvirt: 0.9.4或更高"
+
+#. Tag: para
+#, no-c-format
+msgid "Qemu/KVM: 1.0 or higher"
+msgstr "Qemu/KVM: 1.0 或更高"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The default bridge in &PRODUCT; is the Linux native bridge implementation "
+"(bridge module). &PRODUCT; includes an option to work with OpenVswitch, the "
+"requirements are listed below"
+msgstr "在&PRODUCT;的預設橋接器是Linux原生的橋接器(bridge module)，&PRODUCT; 包含了能運作 OpenVswitch的選項，需求表列於下"
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.11 or higher"
+msgstr "libvirt: 0.9.11 或更高"
+
+#. Tag: para
+#, no-c-format
+msgid "openvswitch: 1.7.1 or higher"
+msgstr "openvswitch: 1.7.1 或更高"
+
+#. Tag: para
+#, no-c-format
+msgid "In addition, the following hardware requirements apply:"
+msgstr "除此之外，以下硬體需求："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Within a single cluster, the hosts must be of the same distribution version."
+msgstr "在單一個cluster中，所有主機必須是同一產品版本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogenous. The CPUs must be of the same "
+"type, count, and feature flags."
+msgstr "同一cluster內的主機都必須是同質的，CPU的形式、數量及特色旗標都必須一樣"
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr "必須支援HVM (Intel-VT or AMD-V enabled) "
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "64-bit x86 CPU (多核提供更好的效能)"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "記憶體4GB"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "至少1個NIC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When you deploy &PRODUCT;, the hypervisor host must not have any VMs already"
+" running"
+msgstr "當您配置&PRODUCT;時，所有高層管理者主機的VM都不能是執行狀態"

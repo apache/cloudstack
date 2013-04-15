@@ -1,0 +1,122 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2012-09-24 21:21+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Virtual Machine Usage Record Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For running and allocated virtual machine usage, the following fields exist "
+"in a usage record:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "account – name of the account"
+msgstr "account：帳戶名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "accountid – ID of the account"
+msgstr "accountid：帳戶的ID"
+
+#. Tag: para
+#, no-c-format
+msgid "domainid – ID of the domain in which this account resides"
+msgstr "domainid：帳戶所在的網域ID"
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid – Zone where the usage occurred"
+msgstr "zoneid：使用的區域"
+
+#. Tag: para
+#, no-c-format
+msgid "description – A string describing what the usage record is tracking"
+msgstr "description：使用紀錄追蹤的字串描述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"usage – String representation of the usage, including the units of usage "
+"(e.g. 'Hrs' for VM running time)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype – A number representing the usage type (see Usage Types)"
+msgstr "usagetype：代表使用形式的數字(詳見Usage Types)"
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage – A number representing the actual usage in hours"
+msgstr "rawusage：代表實際使用率的數字，單位為小時"
+
+#. Tag: para
+#, no-c-format
+msgid "virtualMachineId – The ID of the virtual machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "name – The name of the virtual machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "offeringid – The ID of the service offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"templateid – The ID of the template or the ID of the parent template. The "
+"parent template value is present when the current template was created from "
+"a volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usageid – Virtual machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "type – Hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"startdate, enddate – The range of time for which the usage is aggregated; "
+"see Dates in the Usage Record"
+msgstr "startdate, enddate：使用總計的時間，詳見Dates in the Usage Record"

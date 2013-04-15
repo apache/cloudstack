@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 08:54+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-02 07:45+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -39,7 +39,7 @@ msgid ""
 "When creating the VPC, you simply provide the zone and a set of IP addresses"
 " for the VPC network address space. You specify this set of addresses in the"
 " form of a Classless Inter-Domain Routing (CIDR) block."
-msgstr ""
+msgstr "建立VPC時，您只需要提供zone及一組IP位址。您需要以Classless Inter-Domain Routing (CIDR)方格的形式來設定這組IP"
 
 #. Tag: para
 #, no-c-format
@@ -85,7 +85,7 @@ msgstr "<emphasis role=\"bold\">Description</emphasis>: VPC的簡述"
 msgid ""
 "<emphasis role=\"bold\">Zone</emphasis>: Choose the zone where you want the "
 "VPC to be available."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Zone</emphasis>：選擇您要使用VPC的zone"
 
 #. Tag: para
 #, no-c-format
@@ -94,7 +94,7 @@ msgid ""
 "the CIDR range for all the tiers (guest networks) within a VPC. When you "
 "create a tier, ensure that its CIDR is within the Super CIDR value you "
 "enter. The CIDR must be RFC1918 compliant."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Super CIDR for Guest Networks</emphasis>：對VPC內的所有tier(訪客網路)定義CIDR範圍。當您新增一個tier時，請確定它的CIDR是在 Super CIDR數值中，CIDR必須適應RFC1918 "
 
 #. Tag: para
 #, no-c-format
@@ -104,4 +104,4 @@ msgid ""
 " is applied to all the tiers within the VPC. That implies, all the tiers you"
 " create in the VPC belong to the same DNS domain. If the parameter is not "
 "specified, a DNS domain name is generated automatically."
-msgstr ""
+msgstr "<emphasis role=\"bold\">DNS domain for Guest Networks</emphasis>：如果您想指定一個特別的domain名稱，請指定DNS suffix。這個欄位套用到所有VPC中的tier，亦即所有tier皆屬於同一個DNS domain。如果欄位沒有指定，則名稱會自動產生"

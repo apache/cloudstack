@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2012-09-24 02:44+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-03 14:15+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Adding an ISO"
-msgstr ""
+msgstr "新增ISO"
 
 #. Tag: para
 #, no-c-format
@@ -40,7 +41,7 @@ msgid ""
 "operating system image, but you can also add ISOs for other types of "
 "software, such as desktop applications that you want to be installed as part"
 " of a template."
-msgstr ""
+msgstr "為了使額外的作業系統或其他軟體可以被訪客VM使用，您可以新增一個ISO。ISO典型上是作業系統的映像，但是您需要為其他型態的軟體新增ISO，例如您想要將\"桌面\"設為安裝模組"
 
 #. Tag: para
 #, no-c-format
@@ -50,36 +51,36 @@ msgstr "以管理者或終端使用者登入&PRODUCT; UI "
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation bar, click Templates."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Templates"
 
 #. Tag: para
 #, no-c-format
 msgid "In Select View, choose ISOs."
-msgstr ""
+msgstr "於Select View中選擇ISO"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add ISO."
-msgstr ""
+msgstr "點選Add ISO"
 
 #. Tag: para
 #, no-c-format
 msgid "In the Add ISO screen, provide the following:"
-msgstr ""
+msgstr "在Add ISO畫面，提供以下："
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Name</emphasis>: Short name for the ISO image. For "
 "example, CentOS 6.2 64-bit."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name</emphasis>：ISO映像的短名，例如 CentOS 6.2 64-bit "
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Description</emphasis>: Display test for the ISO "
 "image. For example, CentOS 6.2 64-bit."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Description</emphasis>：顯示ISO映像的描述，例如CentOS 6.2 64-bit "
 
 #. Tag: para
 #, no-c-format
@@ -87,14 +88,14 @@ msgid ""
 "<emphasis role=\"bold\">URL</emphasis>: The URL that hosts the ISO image. "
 "The Management Server must be able to access this location via HTTP. If "
 "needed you can place the ISO image directly on the Management Server"
-msgstr ""
+msgstr "<emphasis role=\"bold\">URL</emphasis>：接管ISO映像的URL，管理伺服器必須能夠透過HTTP存取這個位址。您可以直接將映像放在管理伺服器"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Zone</emphasis>: Choose the zone where you want the "
 "ISO to be available, or All Zones to make it available throughout &PRODUCT;."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Zone</emphasis>：選擇您想要用ISO的zone，選擇 All Zones使整個&PRODUCT;都能使用"
 
 #. Tag: para
 #, no-c-format
@@ -102,7 +103,7 @@ msgid ""
 "<emphasis role=\"bold\">Bootable</emphasis>: Whether or not a guest could "
 "boot off this ISO image. For example, a CentOS ISO is bootable, a Microsoft "
 "Office ISO is not bootable."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Bootable</emphasis>：訪客是否能啟動映像，例如，CentOS ISO 可以啟動，Microsoft Office ISO不能啟動"
 
 #. Tag: para
 #, no-c-format
@@ -110,27 +111,27 @@ msgid ""
 "<emphasis role=\"bold\">OS Type</emphasis>: This helps &PRODUCT; and the "
 "hypervisor perform certain operations and make assumptions that improve the "
 "performance of the guest. Select one of the following."
-msgstr ""
+msgstr "<emphasis role=\"bold\">OS Type</emphasis>：這項幫助&PRODUCT;及超級監督者可以執行特定指令，並承擔改善訪客效能的責任，從以下選擇一個"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If the operating system of your desired ISO image is listed, choose it."
-msgstr ""
+msgstr "如果您要的作業系統映像有在裡面，請選它"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If the OS Type of the ISO is not listed or if the ISO is not bootable, "
 "choose Other."
-msgstr ""
+msgstr "如果沒有或是不可啟動，則選Other"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "(XenServer only) If you want to boot from this ISO in PV mode, choose Other "
 "PV (32-bit) or Other PV (64-bit)"
-msgstr ""
+msgstr "(僅XenServer)如果您想用PV模式啟動這個ISO，選擇PV (32-bit) 或 Other PV (64-bit)"
 
 #. Tag: para
 #, no-c-format
@@ -138,77 +139,77 @@ msgid ""
 "(KVM only) If you choose an OS that is PV-enabled, the VMs created from this"
 " ISO will have a SCSI (virtio) root disk. If the OS is not PV-enabled, the "
 "VMs will have an IDE root disk. The PV-enabled types are:"
-msgstr ""
+msgstr "(僅KVM)如果您選擇啟用PV的作業系統，從ISO建立的VM將會有 SCSI (virtio) root 硬碟；如果不是，VM會產生IDE root硬碟。PV啟用的形式為："
 
 #. Tag: para
 #, no-c-format
 msgid "Fedora 13"
-msgstr ""
+msgstr "Fedora 13"
 
 #. Tag: para
 #, no-c-format
 msgid "Fedora 12"
-msgstr ""
+msgstr "Fedora 12"
 
 #. Tag: para
 #, no-c-format
 msgid "Fedora 11"
-msgstr ""
+msgstr "Fedora 11"
 
 #. Tag: para
 #, no-c-format
 msgid "Fedora 10"
-msgstr ""
+msgstr "Fedora 10"
 
 #. Tag: para
 #, no-c-format
 msgid "Fedora 9"
-msgstr ""
+msgstr "Fedora 9"
 
 #. Tag: para
 #, no-c-format
 msgid "Other PV"
-msgstr ""
+msgstr "Other PV"
 
 #. Tag: para
 #, no-c-format
 msgid "Debian GNU/Linux"
-msgstr ""
+msgstr "Debian GNU/Linux"
 
 #. Tag: para
 #, no-c-format
 msgid "CentOS 5.3"
-msgstr ""
+msgstr "CentOS 5.3"
 
 #. Tag: para
 #, no-c-format
 msgid "CentOS 5.4"
-msgstr ""
+msgstr "CentOS 5.4"
 
 #. Tag: para
 #, no-c-format
 msgid "CentOS 5.5"
-msgstr ""
+msgstr "CentOS 5.5"
 
 #. Tag: para
 #, no-c-format
 msgid "Red Hat Enterprise Linux 5.3"
-msgstr ""
+msgstr "Red Hat Enterprise Linux 5.3"
 
 #. Tag: para
 #, no-c-format
 msgid "Red Hat Enterprise Linux 5.4"
-msgstr ""
+msgstr "Red Hat Enterprise Linux 5.4"
 
 #. Tag: para
 #, no-c-format
 msgid "Red Hat Enterprise Linux 5.5"
-msgstr ""
+msgstr "Red Hat Enterprise Linux 5.5"
 
 #. Tag: para
 #, no-c-format
 msgid "Red Hat Enterprise Linux 6"
-msgstr ""
+msgstr "Red Hat Enterprise Linux 6"
 
 #. Tag: para
 #, no-c-format
@@ -216,21 +217,21 @@ msgid ""
 "It is not recommended to choose an older version of the OS than the version "
 "in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image"
 " will usually not work. In these cases, choose Other."
-msgstr ""
+msgstr "我們不建議您選擇較舊的版本，例如，選擇CentOS 5.4來支援CentOS 6.2映像通常是不行的，這個情況請選Other"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Extractable</emphasis>: Choose Yes if the ISO should"
 " be available for extraction."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Extractable</emphasis>：如果想要ISO可以解壓縮，請選Yes"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Public</emphasis>: Choose Yes if this ISO should be "
 "available to other users."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Public</emphasis>：如果想要ISO可以給其他使用者使用，請選Yes"
 
 #. Tag: para
 #, no-c-format
@@ -238,12 +239,12 @@ msgid ""
 "<emphasis role=\"bold\">Featured</emphasis>: Choose Yes if you would like "
 "this ISO to be more prominent for users to select. The ISO will appear in "
 "the Featured ISOs list. Only an administrator can make an ISO Featured."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Featured</emphasis>：如果您想要ISO比較顯眼，請選Yes。ISO會在Featured ISOs表中出現，這項功能僅管理者能使用"
 
 #. Tag: para
 #, no-c-format
 msgid "Click OK."
-msgstr ""
+msgstr "按OK"
 
 #. Tag: para
 #, no-c-format
@@ -252,7 +253,7 @@ msgid ""
 "ISO, this may take a long time. The ISO status column will display Ready "
 "once it has been successfully downloaded into secondary storage. Clicking "
 "Refresh updates the download percentage."
-msgstr ""
+msgstr "管理伺服器會開始下載ISO，時間由ISO大小決定。下載完成會顯示Ready，按Refresh可以更新下載進度"
 
 #. Tag: para
 #, no-c-format
@@ -261,4 +262,4 @@ msgid ""
 "downloading. If you move on to the next task and try to use the ISO right "
 "away, it will appear to fail. The entire ISO must be available before "
 "&PRODUCT; can work with it."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Important</emphasis>：請等ISO下載完成，如果您在還沒下載完成就直接使用，會出現錯誤。因此請等到&PRODUCT;能夠使用"

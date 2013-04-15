@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -189,8 +189,9 @@ msgstr "秘密鍵の形式を PKCS#8 暗号化形式に変換します。"
 #. Tag: programlisting
 #, no-c-format
 msgid ""
-"openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encryped.key"
-msgstr "openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encryped.key"
+"openssl pkcs8 -topk8 -in yourprivate.key -out "
+"yourprivate.pkcs8.encrypted.key"
+msgstr ""
 
 #. Tag: para
 #, no-c-format

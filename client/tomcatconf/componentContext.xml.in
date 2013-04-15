@@ -170,6 +170,7 @@
           <ref bean="elasticLoadBalancerElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp"/>
       </list>
     </property>
   </bean>

@@ -1,0 +1,174 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 10:11+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Preparation for Windows Server 2003 R2"
+msgstr "Windows Server 2003 R2的系統準備"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Earlier versions of Windows have a different sysprep tool. Follow these "
+"steps for Windows Server 2003 R2."
+msgstr "之前的Windows版本有不同的sysprep tool，此為Windows Server 2003 R2的步驟："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Extract the content of \\support\\tools\\deploy.cab on the Windows "
+"installation CD into a directory called c:\\sysprep on the Windows 2003 R2 "
+"VM."
+msgstr "從 Windows安裝光碟取出\\support\\tools\\deploy.cab，將其移到Windows 2003 R2虛擬機器的 c:\\sysprep資料夾"
+
+#. Tag: para
+#, no-c-format
+msgid "Run c:\\sysprep\\setupmgr.exe to create the sysprep.inf file."
+msgstr "執行c:\\sysprep\\setupmgr.exe來新增sysprep.inf檔案"
+
+#. Tag: para
+#, no-c-format
+msgid "Select Create New to create a new Answer File."
+msgstr "點選Create New來建立新的 Answer檔案"
+
+#. Tag: para
+#, no-c-format
+msgid "Enter “Sysprep setup” for the Type of Setup."
+msgstr "輸入 “Sysprep setup” 來設定"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the appropriate OS version and edition."
+msgstr "選擇適當的作業系統版本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the License Agreement screen, select “Yes fully automate the "
+"installation”."
+msgstr "在License Agreement視窗，選擇 “Yes fully automate the installation\""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide your name and organization."
+msgstr "提供您的名稱及組織"
+
+#. Tag: para
+#, no-c-format
+msgid "Leave display settings at default."
+msgstr "將顯示設定設為預設"
+
+#. Tag: para
+#, no-c-format
+msgid "Set the appropriate time zone."
+msgstr "設定適當的時區"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide your product key."
+msgstr "提供您的產品金鑰"
+
+#. Tag: para
+#, no-c-format
+msgid "Select an appropriate license mode for your deployment"
+msgstr "選擇適當的 license模式"
+
+#. Tag: para
+#, no-c-format
+msgid "Select “Automatically generate computer name”."
+msgstr "選擇 “Automatically generate computer name”"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Type a default administrator password. If you enable the password reset "
+"feature, the users will not actually use this password. This password will "
+"be reset by the instance manager after the guest boots up."
+msgstr "輸入預設的管理者密碼，如果您啟用密碼重設功能，使用者有可能不會使用此密碼。此密碼會被訪客重設"
+
+#. Tag: para
+#, no-c-format
+msgid "Leave Network Components at “Typical Settings”."
+msgstr "將Network Components設為“Typical Settings”"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the “WORKGROUP” option."
+msgstr "選擇“WORKGROUP” "
+
+#. Tag: para
+#, no-c-format
+msgid "Leave Telephony options at default."
+msgstr "將Telephony選項設為預設"
+
+#. Tag: para
+#, no-c-format
+msgid "Select appropriate Regional Settings."
+msgstr "選擇適當的Regional Settings"
+
+#. Tag: para
+#, no-c-format
+msgid "Select appropriate language settings."
+msgstr "選擇適當的語言"
+
+#. Tag: para
+#, no-c-format
+msgid "Do not install printers."
+msgstr "不要安裝印表機"
+
+#. Tag: para
+#, no-c-format
+msgid "Do not specify “Run Once commands”."
+msgstr "不要指定“Run Once commands”"
+
+#. Tag: para
+#, no-c-format
+msgid "You need not specify an identification string."
+msgstr "不要指定相同的字串"
+
+#. Tag: para
+#, no-c-format
+msgid "Save the Answer File as c:\\sysprep\\sysprep.inf."
+msgstr "將Answer檔案存為 c:\\sysprep\\sysprep.inf"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to sysprep the image:"
+msgstr "執行以下指令來準備映像："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "c:\\sysprep\\sysprep.exe -reseal -mini -activated"
+msgstr "c:\\sysprep\\sysprep.exe -reseal -mini -activated"
+
+#. Tag: para
+#, no-c-format
+msgid "After this step the machine will automatically shut down"
+msgstr "此步驟後，機器會自動關機"

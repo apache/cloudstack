@@ -1,0 +1,101 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-09 06:10+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building &PRODUCT; from Source"
+msgstr "從原始碼建立 &PRODUCT;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Prior to the 4.0.0 incubating release, Ant was used to build &PRODUCT;. "
+"Starting with 4.0.0 a migration to Maven is underway."
+msgstr "4.0.0 incubating 前的釋出版本，是使用Ant來建立&PRODUCT;，從4.0.0版開始，移植到Maven的工作正在進行"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The website and the wiki contain up to date information on the build "
+"procedure at:"
+msgstr "網站及維基皆包含最新的資訊："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink url=\"https://cwiki.apache.org/CLOUDSTACK/building-with-"
+"maven.html\">https://cwiki.apache.org/CLOUDSTACK/building-with-"
+"maven.html</ulink>"
+msgstr "<ulink url=\"https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html\">https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<ulink "
+"url=\"http://incubator.apache.org/cloudstack/develop/environment.html\">http://incubator.apache.org/cloudstack/develop/environment.html</ulink>"
+msgstr "<ulink url=\"http://incubator.apache.org/cloudstack/develop/environment.html\">http://incubator.apache.org/cloudstack/develop/environment.html</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid "The overarching steps to build &PRODUCT; are:."
+msgstr "建立 &PRODUCT; 的首要步驟為："
+
+#. Tag: para
+#, no-c-format
+msgid "Install the prerequisites and setup your environment"
+msgstr "安裝先決條件及設定環境"
+
+#. Tag: para
+#, no-c-format
+msgid "Understand that various Maven profiles and build targets"
+msgstr "理解Maven外型的多樣性及建立目標"
+
+#. Tag: para
+#, no-c-format
+msgid "Deploy and test your build"
+msgstr "部署及測試"
+
+#. Tag: para
+#, no-c-format
+msgid "If needed, learn how to build binaries"
+msgstr "如果需要，學習如何建立二進為文件"
+
+#. Tag: para
+#, no-c-format
+msgid "Learning Maven is outside the scope of this documentation."
+msgstr "學習Maven不再此文件範圍中"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Go to the Maven website at <ulink url=\"http://maven.apache.org/guides"
+"/getting-started/index.html\">http://maven.apache.org/guides/getting-"
+"started/index.html</ulink>"
+msgstr "到Maven網站<ulink url=\"http://maven.apache.org/guides/getting-started/index.html\">http://maven.apache.org/guides/getting-started/index.html</ulink> "

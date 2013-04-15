@@ -1924,7 +1924,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+        SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
 
 
         Account account = UserContext.current().getCaller();
@@ -1939,9 +1939,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || isPermissible(account.getDomainId(), domainId) ) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
-                sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-                SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-                sc.setParameters("domainId", domainId);
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                 return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
             } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName()
@@ -1949,11 +1947,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-
-        boolean includePublicOfferings = false;
         List<Long> domainIds = null;
         // For non-root users, only return all offerings for the user's domain, and everything above till root
         if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
@@ -1970,16 +1964,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sb.and("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            
+            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+            sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
+            
         }
 
-        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-        if (keyword != null) {
+         if (keyword != null) {
             SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1987,26 +1982,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        if (domainIds != null ){
-            sc.setParameters("domainIdIn", domainIds.toArray());
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-
-        if (includePublicOfferings){
-            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
-        }
-
+        
         // FIXME: disk offerings should search back up the hierarchy for
         // available disk offerings...
         /*
@@ -2083,10 +2066,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        boolean includePublicOfferings = false;
+       // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // For non-root users
+            // For non-root users. 
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
@@ -2102,12 +2085,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+
         }
         else {
             // for root users
@@ -2150,22 +2133,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (isSystem != null) {
+            // note that for non-root users, isSystem is always false when control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-
-        if (includePublicOfferings){
-            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);

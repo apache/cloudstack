@@ -19,8 +19,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:05+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -99,8 +99,8 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"All hosts within a cluster must be homogenous. The CPUs must be of the same "
-"type, count, and feature flags."
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
 msgstr ""
 
 #. Tag: para
@@ -871,7 +871,7 @@ msgid ""
 "devices must be pingable from the management network NIC or bond. If a "
 "secondary storage device has been placed on the storage network, it must "
 "also be pingable via the storage network NIC or bond on the hosts as well."
-msgstr "为了让单独的存储网络工作正常，主机上对应存储网络的接口必须是能ping通主存储设备IP地址的唯一接口。例如，如果eth0是内网网卡，ping -I eth0 <replaceable>primary storage IP</replaceable> 必须失败。在所有部署的主机上，二级存储设备必须可通过内网网卡或对应的绑定网卡ping通。如果二级存储设备在存储网络中，则通过存储网络对应网卡或绑定网卡也必须可以ping通。"
+msgstr "为了让单独的存储网络工作正常，主机上对应存储网络的接口必须是能ping通主存储设备IP地址的唯一接口。例如，如果eth0是内网网卡，ping -I eth0 (primary storage device IP)必须失败。在所有部署的主机上，二级存储设备必须可通过内网网卡或对应的绑定网卡ping通。如果二级存储设备在存储网络中，则通过存储网络对应网卡或绑定网卡也必须可以ping通。"
 
 #. Tag: para
 #, no-c-format

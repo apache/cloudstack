@@ -14,11 +14,12 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -30,12 +31,12 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Configuring VPN"
-msgstr ""
+msgstr "設定VPN"
 
 #. Tag: para
 #, no-c-format
 msgid "To set up VPN for the cloud:"
-msgstr ""
+msgstr "為雲端設定VPN"
 
 #. Tag: para
 #, no-c-format
@@ -45,17 +46,17 @@ msgstr "以管理者或終端使用者登入&PRODUCT; UI "
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation, click Global Settings."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Global Settings"
 
 #. Tag: para
 #, no-c-format
 msgid "Set the following global configuration parameters."
-msgstr ""
+msgstr "設定以下全域設定參數"
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"remote.access.vpn.client.ip.range – The range of IP addressess to be "
+"remote.access.vpn.client.ip.range – The range of IP addresses to be "
 "allocated to remote access VPN clients. The first IP in the range is used by"
 " the VPN server."
 msgstr ""
@@ -63,33 +64,33 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "remote.access.vpn.psk.length – Length of the IPSec key."
-msgstr ""
+msgstr "remote.access.vpn.psk.length，IPSec key的長度"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "remote.access.vpn.user.limit – Maximum number of VPN users per account."
-msgstr ""
+msgstr "remote.access.vpn.user.limit，每個帳戶最多的VPN使用者"
 
 #. Tag: para
 #, no-c-format
 msgid "To enable VPN for a particular network:"
-msgstr ""
+msgstr "想要開啟VPN給特定網路"
 
 #. Tag: para
 #, no-c-format
 msgid "Log in as a user or administrator to the &PRODUCT; UI."
-msgstr ""
+msgstr "以使用者或管理者登入"
 
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation, click Network."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Network"
 
 #. Tag: para
 #, no-c-format
 msgid "Click the name of the network you want to work with."
-msgstr ""
+msgstr "選擇你想要套用的網路"
 
 #. Tag: para
 #, no-c-format
@@ -99,7 +100,7 @@ msgstr "按 View IP Addresses."
 #. Tag: para
 #, no-c-format
 msgid "Click one of the displayed IP address names."
-msgstr ""
+msgstr "選擇其中一個顯示出來的IP位址"
 
 #. Tag: para
 #, no-c-format
@@ -108,9 +109,9 @@ msgid ""
 "fileref=\"./images/vpn-icon.png\" /> </imageobject> <textobject> "
 "<phrase>AttachDiskButton.png: button to attach a volume</phrase> "
 "</textobject> </inlinemediaobject>"
-msgstr ""
+msgstr "按Enable VPN"
 
 #. Tag: para
 #, no-c-format
 msgid "The IPsec key is displayed in a popup window."
-msgstr ""
+msgstr "IPsec key會顯示在彈跳視窗"

@@ -1,0 +1,89 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-06 14:33+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Removing a Member From a Project"
+msgstr "從計畫移除成員"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When a member is removed from a project, the member’s resources continue to "
+"be owned by the project. The former project member cannot create any new "
+"resources within the project or use any of the project’s existing resources."
+msgstr "當成員被移除後，該成員的資源會被計畫收回去。前計畫成員不能建立新資源或使用已有的資源"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A member of a project can be removed by the project administrator, the "
+"domain administrator of the domain the project belongs to or of its parent "
+"domain, or the &PRODUCT; root administrator."
+msgstr "計畫管理者、網域管理者、上層網域管理者或&PRODUCT; root 管理者可以移除成員"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr "在左邊的導覽視窗，選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr "於Select View中選擇Projects"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project."
+msgstr "選擇你想要套用的計畫"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Accounts tab."
+msgstr "點選 Accounts分頁"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the member."
+msgstr "選擇成員"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Delete button.<inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/delete-button.png\" /> </imageobject> "
+"<textobject><phrase>deletebutton.png: Removes a member</phrase></textobject>"
+" </inlinemediaobject>"
+msgstr "點選Delete .<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/delete-button.png\" /> </imageobject> <textobject><phrase>deletebutton.png: Removes a member</phrase></textobject> </inlinemediaobject>"

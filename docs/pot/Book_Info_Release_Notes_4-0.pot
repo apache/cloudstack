@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:01\n"
-"PO-Revision-Date: 2013-03-19T13:38:01\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-04-12T11:19:37\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -25,12 +25,7 @@ msgstr ""
 
 #. Tag: title
 #, no-c-format
-msgid "Version 4.0.0-incubating Release Notes"
-msgstr ""
-
-#. Tag: subtitle
-#, no-c-format
-msgid "Revised October 17, 2012 19:49 UTC"
+msgid "Version 4.1.0 Release Notes"
 msgstr ""
 
 #. Tag: productname
@@ -40,6 +35,6 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Release notes for the Apache CloudStack 4.0.0-incubating release."
+msgid "Release notes for the Apache CloudStack 4.1.0 release."
 msgstr ""
 

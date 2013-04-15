@@ -1,0 +1,183 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-03-28 01:39+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Zone"
+msgstr "新增Zone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These steps assume you have already logged in to the &PRODUCT; UI. See <xref"
+" linkend=\"log-in\" />."
+msgstr "以下步驟假設您已經登入了 &PRODUCT; UI。請參閱：<xref linkend=\"log-in\" />。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you are going to use Swift for cloud-wide secondary storage, "
+"you need to add it before you add zones."
+msgstr "(非必要)如果您欲使用Swift作為您的secondary storage，在新增zone之前，您需要事先將Swift準備好。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "以administrator身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this is your first time visiting the UI, you will see the guided tour "
+"splash screen. Choose “Experienced user.” The Dashboard appears."
+msgstr "如果這是您第一次造訪使用者介面，系統將提供一個安裝精靈給您。請選擇\"Experienced user\"，接著您會看到主控台。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Global Settings."
+msgstr "於左側的navigation按鈕中，點選Global Settings。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type swift.enable and click the search button."
+msgstr "在搜尋欄位裡鍵入swift.enable並點選搜尋按鈕。 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the edit button and set swift.enable to true. <inlinemediaobject> "
+"<imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> "
+"</imageobject> <textobject><phrase>edit-icon.png: button to modify "
+"data</phrase></textobject> </inlinemediaobject>"
+msgstr "點選編輯按鈕並將swift.enable設定為true <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject><phrase>edit-icon.png: button to modify data</phrase></textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr "重新啟動 Management Server "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr "# service cloud-management restart"
+
+#. Tag: para
+#, no-c-format
+msgid "Refresh the &PRODUCT; UI browser tab and log back in."
+msgstr "重新整理 &PRODUCT; UI 的瀏覽器分頁並重新登入。"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Infrastructure."
+msgstr "於左側的navigation按鈕中，點選Infrastructure。"
+
+#. Tag: para
+#, no-c-format
+msgid "On Zones, click View More."
+msgstr "於Zones的方框中點選View More"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) If you are using Swift storage, click Enable Swift. Provide the "
+"following:"
+msgstr "(非必要)如果您使用的是 Swift儲存裝置，請將開啟Swift並輸入以下資訊："
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">URL.</emphasis> The Swift URL."
+msgstr "<emphasis role=\"bold\">URL.</emphasis> Swift的URL"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Account.</emphasis> The Swift account."
+msgstr "<emphasis role=\"bold\">Account.</emphasis> Swift帳號。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The Swift account’s username."
+msgstr "<emphasis role=\"bold\">Username.</emphasis> Swift帳號的密碼。"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Key.</emphasis> The Swift key."
+msgstr "<emphasis role=\"bold\">Key.</emphasis> Swift的key"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Zone. The zone creation wizard will appear."
+msgstr "點選新增Zone，將會出現Zone安裝精靈"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose one of the following network types:"
+msgstr "選擇您要建立的網路類型："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Basic.</emphasis> For AWS-style networking. Provides"
+" a single network where each VM instance is assigned an IP directly from the"
+" network. Guest isolation can be provided through layer-3 means such as "
+"security groups (IP address source filtering)."
+msgstr "<emphasis role=\"bold\">Basic.</emphasis> 為類似AWS模式的網路架構，提供每一台虛擬機器實體網路IP位置，並可提供layer-3的Security group安全機制(IP位置過濾機制)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Advanced.</emphasis> For more sophisticated network "
+"topologies. This network model provides the most flexibility in defining "
+"guest networks and providing custom network offerings such as firewall, VPN,"
+" or load balancer support."
+msgstr "<emphasis role=\"bold\">Advanced.</emphasis> 提供使用者更多的網路拓撲結構，選擇此選項將可更彈性的設定網路，且提供了更多的網路服務，例如：firewall、VPN、Load balancer。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information about the network types, see <xref linkend=\"about-"
+"physical-networks\" />."
+msgstr "更多有關網路類型的資訊請參閱：<xref linkend=\"about-physical-networks\" />。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The rest of the steps differ depending on whether you chose Basic or "
+"Advanced. Continue with the steps that apply to you:"
+msgstr "以下步驟將視您選擇Basic網路或是Advance網路而定，請選擇您的設定並繼續以下步驟："
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"basic-zone-configuration\" />"
+msgstr "<xref linkend=\"basic-zone-configuration\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"advanced-zone-configuration\" />"
+msgstr "<xref linkend=\"advanced-zone-configuration\" />"

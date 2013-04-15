@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:41+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -137,8 +137,8 @@ msgstr "部署&PRODUCT;时宿主机务必不能有任何运行中的虚拟机。
 #. Tag: para
 #, no-c-format
 msgid ""
-"All hosts within a cluster must be homogenous. The CPUs must be of the same "
-"type, count, and feature flags."
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
 msgstr ""
 
 #. Tag: para

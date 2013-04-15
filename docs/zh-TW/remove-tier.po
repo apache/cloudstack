@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 09:18+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-03-21 12:59+0000\n"
 "Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -31,7 +31,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Removing Tiers"
-msgstr "移除層級"
+msgstr "移除Tiers"
 
 #. Tag: para
 #, no-c-format
@@ -41,7 +41,7 @@ msgid ""
 "network rules (port forwarding, load balancing and staticNAT) and the IP "
 "addresses associated to the tier are removed. The IP address still be "
 "belonging to the same VPC."
-msgstr ""
+msgstr "您可以從VPC移除層級，被移除的層級將不能回復，當層級被刪除時，只有層級內的資源會被刪除。所有網路規則(port forwarding, load balancing and staticNAT) 和關聯的IP位址將會被移除，但IP位址仍屬於同一個VPC"
 
 #. Tag: para
 #, no-c-format
@@ -62,26 +62,26 @@ msgstr "在Select視窗選擇VPC"
 #, no-c-format
 msgid ""
 "All the VPC that you have created for the account is listed in the page."
-msgstr ""
+msgstr "帳戶所有創建的VPC會表列在本頁"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Click the Configure button of the VPC for which you want to set up tiers."
-msgstr ""
+msgstr "對想要設置層級的VPC按下\"Configure\""
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "The Configure VPC page is displayed. Locate the tier you want to work with."
-msgstr ""
+msgstr "Configure VPC 頁面會顯示，選擇您想要套用的層級"
 
 #. Tag: para
 #, no-c-format
 msgid "Click the Remove VPC button:"
-msgstr ""
+msgstr "按下"
 
 #. Tag: para
 #, no-c-format
 msgid "Wait for some time for the tier to be removed."
-msgstr ""
+msgstr "等待層級被移除"

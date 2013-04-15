@@ -1,0 +1,273 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:46+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for vSphere Hosts"
+msgstr " vSphere主機系統需求"
+
+#. Tag: title
+#, no-c-format
+msgid "Software requirements:"
+msgstr "軟體需求："
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere and vCenter, both version 4.1 or 5.0."
+msgstr "vSphere 及 vCenter, 皆為 version 4.1 或 5.0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vSphere Standard is recommended. Note however that customers need to "
+"consider the CPU constraints in place with vSphere licensing. See <ulink "
+"url=\"http://www.vmware.com/files/pdf/vsphere_pricing.pdf\">http://www.vmware.com/files/pdf/vsphere_pricing.pdf</ulink>"
+" and discuss with your VMware sales representative."
+msgstr "推薦vSphere Standard。但客戶需要考慮vSphere licensing下的CPU限制，詳見 <ulink url=\"http://www.vmware.com/files/pdf/vsphere_pricing.pdf\">http://www.vmware.com/files/pdf/vsphere_pricing.pdf</ulink>，並與您的 VMware銷售員討論"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Server Standard is recommended."
+msgstr "推薦vCenter Server Standard "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure all the hotfixes provided by the hypervisor vendor are applied. "
+"Track the release of hypervisor patches through your hypervisor vendor's "
+"support channel, and apply patches as soon as possible after they are "
+"released. &PRODUCT; will not track or notify you of required hypervisor "
+"patches. It is essential that your hosts are completely up to date with the "
+"provided hypervisor patches. The hypervisor vendor is likely to refuse to "
+"support any system that is not up to date with patches."
+msgstr "請確定所有hypervisor vendor提供的hotfixes已經被套用了。在hypervisor vendor’s support channel尋找已釋出的hypervisor patches，並在補丁發布後盡速安裝。&PRODUCT;不會自動搜尋或提醒您。對您的主機來說，更新到最新是必要的，因為hypervisor vendor會拒絕支援非最新的系統"
+
+#. Tag: title
+#, no-c-format
+msgid "Apply All Necessary Hotfixes"
+msgstr "套用到所有必要的Hotfixes "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr "缺少最新的hotfixes會導致資料毀損及VM錯誤"
+
+#. Tag: title
+#, no-c-format
+msgid "Hardware requirements:"
+msgstr "硬體需求："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The host must be certified as compatible with vSphere. See the VMware "
+"Hardware Compatibility Guide at <ulink "
+"url=\"http://www.vmware.com/resources/compatibility/search.php\">http://www.vmware.com/resources/compatibility/search.php</ulink>."
+msgstr "主機必須相容vSphere，詳見VMware Hardware Compatibility Guide <ulink url=\"http://www.vmware.com/resources/compatibility/search.php\">http://www.vmware.com/resources/compatibility/search.php</ulink> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled)."
+msgstr "所有主機必須是64位元及支援HVM (Intel-VT 或 AMD-V)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts within a cluster must be homogenous. That means the CPUs must be "
+"of the same type, count, and feature flags."
+msgstr "同一cluster內的主機都必須是同質的，CPU的形式、數量及特色旗標都必須一樣"
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr "64-bit x86 CPU (多核提供更好的效能)"
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr "支援Hardware virtualization"
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr "記憶體4GB"
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr "36GB硬碟"
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr "至少1個NIC"
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP Address"
+msgstr "固定IP"
+
+#. Tag: title
+#, no-c-format
+msgid "vCenter Server requirements:"
+msgstr "vCenter 伺服器需求："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors. Processor "
+"requirements may be higher if the database runs on the same machine."
+msgstr "Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors。處理器需求可能因資料庫在同一台機器上運行而需要更高"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Memory - 3GB RAM. RAM requirements may be higher if your database runs on "
+"the same machine."
+msgstr "Memory - 3GB RAM。記憶體需求可能因資料庫在同一台機器上運行而需要更高"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Disk storage - 2GB. Disk requirements may be higher if your database runs on"
+" the same machine."
+msgstr "Disk storage - 2GB。硬碟需求可能因資料庫在同一台機器上運行而需要更高"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Microsoft SQL Server 2005 Express disk requirements. The bundled database "
+"requires up to 2GB free disk space to decompress the installation archive."
+msgstr "Microsoft SQL Server 2005 Express disk requirements。一大組資料庫需要至少2GB硬碟空間來解壓縮安裝壓縮檔"
+
+#. Tag: para
+#, no-c-format
+msgid "Networking - 1Gbit or 10Gbit."
+msgstr "Networking - 1Gbit or 10Gbit."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For more information, see \"vCenter Server and the vSphere Client Hardware "
+"Requirements\" at <ulink "
+"url=\"http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html\">http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html</ulink>."
+msgstr "更多資訊，詳見 \"vCenter Server and the vSphere Client Hardware Requirements\"  <ulink url=\"http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html\">http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html</ulink> "
+
+#. Tag: title
+#, no-c-format
+msgid "Other requirements:"
+msgstr "其他需求："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"VMware vCenter Standard Edition 4.1 or 5.0 must be installed and available "
+"to manage the vSphere hosts."
+msgstr "VMware vCenter Standard Edition 4.1 或 5.0必須安裝及能夠管理vSphere 主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"vCenter must be configured to use the standard port 443 so that it can "
+"communicate with the &PRODUCT; Management Server."
+msgstr "vCenter必須設定為使用標準port 443，讓它可以與&PRODUCT;管理伺服器溝通"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You must re-install VMware ESXi if you are going to re-use a host from a "
+"previous install."
+msgstr "如果您是使用舊主機，您需要重安裝VMware ESXi"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; requires VMware vSphere 4.1 or 5.0. VMware vSphere 4.0 is not "
+"supported."
+msgstr "&PRODUCT;僅支援VMware vSphere 4.1 或 5.0，不支援4.0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). "
+"All hosts within a cluster must be homogeneous. That means the CPUs must be "
+"of the same type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; management network must not be configured as a separate "
+"virtual network. The &PRODUCT; management network is the same as the vCenter"
+" management network, and will inherit its configuration. See <xref linkend"
+"=\"vmware-physical-host-networking-config-vcenter-mgt\" />."
+msgstr "&PRODUCT;管理網路不能被設為分離虛擬網路，&PRODUCT;管理網路與 vCenter管理網路相同，並會繼承它的設定，詳見<xref linkend=\"vmware-physical-host-networking-config-vcenter-mgt\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; requires ESXi. ESX is not supported."
+msgstr "&PRODUCT; 僅支援ESXi，不支援ESX"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All resources used for &PRODUCT; must be used for &PRODUCT; only. &PRODUCT; "
+"cannot share instance of ESXi or storage with other management consoles. Do "
+"not share the same storage volumes that will be used by &PRODUCT; with a "
+"different set of ESXi servers that are not managed by &PRODUCT;."
+msgstr "所有之前使用&PRODUCT;的資源必須只使用在&PRODUCT;，&PRODUCT;無法分享ESXi的instance或其他管理控制台的儲存裝置。不要分享會被不同組ESXi的&PRODUCT;使用的儲存裝置容量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Put all target ESXi hypervisors in a cluster in a separate Datacenter in "
+"vCenter."
+msgstr "將所有目標ESXi超級監督者放到cluster，cluster屬於 vCenter中的分離資料庫"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The cluster that will be managed by &PRODUCT; should not contain any VMs. Do"
+" not run the management server, vCenter or any other VMs on the cluster that"
+" is designated for &PRODUCT; use. Create a separate cluster for use of "
+"&PRODUCT; and make sure that they are no VMs in this cluster."
+msgstr "會被&PRODUCT;管理的cluster不能包含任何VM，不要執行管理伺服器、vCenter或是其他指定給&PRODUCT;使用的VM，可以建立分離cluster來給&PRODUCT;使用，但請確定cluster中沒有任何VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All the required VLANS must be trunked into all network switches that are "
+"connected to the ESXi hypervisor hosts. These would include the VLANS for "
+"Management, Storage, vMotion, and guest VLANs. The guest VLAN (used in "
+"Advanced Networking; see Network Setup) is a contiguous range of VLANs that "
+"will be managed by &PRODUCT;."
+msgstr "所有需要的VLAN會被集中到所有連結ESXi 超級監督者主機的網路切換器，其中會包含管理、儲存裝置、vMotion及訪客的VLAN。訪客VLAN(使用在Advanced Networking，詳見Network Setup)是 &PRODUCT;管理的連續VLAN範圍"

@@ -1,0 +1,174 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-08 14:00+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Inter-VLAN Routing"
+msgstr "關於 Inter-VLAN Routing "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Inter-VLAN Routing is the capability to route network traffic between VLANs."
+" This feature enables you to build Virtual Private Clouds (VPC), an isolated"
+" segment of your cloud, that can hold multi-tier applications. These tiers "
+"are deployed on different VLANs that can communicate with each other. You "
+"provision VLANs to the tiers your create, and VMs can be deployed on "
+"different tiers. The VLANs are connected to a virtual router, which "
+"facilitates communication between the VMs. In effect, you can segment VMs by"
+" means of VLANs into different networks that can host multi-tier "
+"applications, such as Web, Application, or Database. Such segmentation by "
+"means of VLANs logically separate application VMs for higher security and "
+"lower broadcasts, while remaining physically connected to the same device."
+msgstr "Inter-VLAN Routing是在網路流量及VLANs間建立路線的功能。此功能允許您設定Virtual Private Clouds (VPC)，一個您雲端的獨立部分，使它能夠控制多tier的應用。架設在不同VLAN的這些tier就能夠互相溝通。您可以提供VLAN給tiers，以及VMs可以架設在不同的tier上，例如Web、 Application或 Database。這些VLANs是連接到一個促進VM溝通的虛擬路由器上，您可以藉由VLAN將VM分段為不同網路，因而能夠執行多tier的應用，這種分割邏輯上是為了更高的安全性及更低的廣播性，但維持同樣的實體連結"
+
+#. Tag: para
+#, no-c-format
+msgid "This feature is supported on XenServer and VMware hypervisors."
+msgstr "此特色支援了XenServer以及VMware的hypervisors。"
+
+#. Tag: para
+#, no-c-format
+msgid "The major advantages are:"
+msgstr "主要優點為："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator can deploy a set of VLANs and allow users to deploy VMs on"
+" these VLANs. A guest VLAN is randomly alloted to an account from a pre-"
+"specified set of guest VLANs. All the VMs of a certain tier of an account "
+"reside on the guest VLAN allotted to that account."
+msgstr "管理者可以部署一組VLAN，及允許使用者在這些VLAN部署VM，訪客VLAN是隨機分配到帳戶，所有特定層級的VM會坐落於份配到帳戶的訪客VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A VLAN allocated for an account cannot be shared between multiple accounts."
+msgstr "非配給帳戶的VLAN不能再多帳戶間分享"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator can allow users create their own VPC and deploy the "
+"application. In this scenario, the VMs that belong to the account are "
+"deployed on the VLANs allotted to that account."
+msgstr "管理者允許使用者建立他們自己的VPC，及安裝應用程式，在此範本，屬於帳戶的VM部署在分配到的VLAN上"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Both administrators and users can create multiple VPCs. The guest network "
+"NIC is plugged to the VPC virtual router when the first VM is deployed in a "
+"tier."
+msgstr "管理者及使用者都可以建立多VPC，訪客網路的網路卡在第一台VM部署到層級後，插進VPC虛擬路由器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator can create the following gateways to send to or receive "
+"traffic from the VMs:"
+msgstr "管理者可以建立以下閘道來送出或收到VM的流量："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VPN Gateway</emphasis>: For more information, see "
+"<xref linkend=\"create-vpn-gateway-for-vpc\" />."
+msgstr "<emphasis role=\"bold\">VPN Gateway</emphasis>：更多資訊，詳見<xref linkend=\"create-vpn-gateway-for-vpc\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public Gateway</emphasis>: The public gateway for a "
+"VPC is added to the virtual router when the virtual router is created for "
+"VPC. The public gateway is not exposed to the end users. You are not allowed"
+" to list it, nor allowed to create any static routes."
+msgstr "<emphasis role=\"bold\">Public Gateway</emphasis>：VPC的公開閘道，在VPC的虛擬路由器建立時加入，公開閘道無法給終端使用者看到，您不允許列出它或是建立任何固定路徑"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Private Gateway</emphasis>: For more information, "
+"see <xref linkend=\"add-gateway-vpc\" />."
+msgstr "<emphasis role=\"bold\">Private Gateway</emphasis>: 更多資訊，詳見 <xref linkend=\"add-gateway-vpc\" />."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Both administrators and users can create various possible destinations-"
+"gateway combinations. However, only one gateway of each type can be used in "
+"a deployment."
+msgstr "管理者及使用者都可以建立多種destinations-gateway 組合，但是，只有一種閘道能使用"
+
+#. Tag: para
+#, no-c-format
+msgid "For example:"
+msgstr "例如："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLANs and Public Gateway</emphasis>: For example, an"
+" application is deployed in the cloud, and the Web application VMs "
+"communicate with the Internet."
+msgstr "<emphasis role=\"bold\">VLANs and Public Gateway</emphasis>：例如，應用程式安裝在雲端，以及Web application VMs與網際網路溝通"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">VLANs, VPN Gateway, and Public Gateway</emphasis>: "
+"For example, an application is deployed in the cloud; the Web application "
+"VMs communicate with the Internet; and the database VMs communicate with the"
+" on-premise devices."
+msgstr "<emphasis role=\"bold\">VLANs, VPN Gateway, and Public Gateway</emphasis>：例如，應用程式安裝在雲端，以及Web application VMs與網際網路溝通，以及資料庫VM與內部裝置溝通"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The administrator can define Access Control List (ACL) on the virtual router"
+" to filter the traffic among the VLANs or between the Internet and a VLAN. "
+"You can define ACL based on CIDR, port range, protocol, type code (if ICMP "
+"protocol is selected) and Ingress/Egress type."
+msgstr "管理者可以在虛擬路由器定義 Access Control List (ACL) ，來過濾VLAN的流量，或網際網路及VLAN間的流量。您可以基於CIDR、通訊埠範圍、type code(如果選擇ICMP協定)及輸入/輸出形式來定義ACL"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The following figure shows the possible deployment scenarios of a Inter-VLAN"
+" setup:"
+msgstr "以下圖示顯示可用的Inter-VLAN 設定範本："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To set up a multi-tier Inter-VLAN deployment, see <xref linkend=\"configure-"
+"vpc\" />."
+msgstr "想要建立多層級 Inter-VLAN，詳見 <xref linkend=\"configure-vpc\" />"

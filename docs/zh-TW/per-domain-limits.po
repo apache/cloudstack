@@ -1,0 +1,77 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-03-22 02:01+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Per-Domain Limits"
+msgstr "Domain限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; allows the configuration of limits on a domain basis. With a "
+"domain limit in place, all users still have their account limits. They are "
+"additionally limited, as a group, to not exceed the resource limits set on "
+"their domain. Domain limits aggregate the usage of all accounts in the "
+"domain as well as all accounts in all subdomains of that domain. Limits set "
+"at the root domain level apply to the sum of resource usage by the accounts "
+"in all domains and sub-domains below that root domain."
+msgstr "&PRODUCT; 允許針對domain設定限制，然而於每一個domain中使用者仍然會受到所屬account的限制。例如：不超過domain所能使的資源範圍，domain限制了以下所屬的accouts，當然也包含的子domain底的所有accounts。所有設定於root domain層級的限制，將會套用到所有的domains及accounts。"
+
+#. Tag: para
+#, no-c-format
+msgid "To set a domain limit:"
+msgstr "設定domain限制"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation tree, click Domains."
+msgstr "在左邊的導覽視窗，選擇Domains"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Select the domain you want to modify. The current domain limits are "
+"displayed. A value of -1 shows that there is no limit in place."
+msgstr "選擇您想要修改的domain，會顯示現在的限制，-1代表在這區沒有限制"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Edit button<inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/edit-icon.png\" /> </imageobject> "
+"<textobject><phrase>editbutton.png: edits the "
+"settings.</phrase></textobject> </inlinemediaobject>"
+msgstr "按下Edit <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject><phrase>editbutton.png: edits the settings.</phrase></textobject> </inlinemediaobject>"

@@ -1,0 +1,318 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-07 14:23+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "External Guest Firewall Integration for Juniper SRX (Optional)"
+msgstr "Juniper SRX的外部訪客防火牆累積(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid "Available only for guests using advanced networking."
+msgstr "僅適用使用進階網路的訪客"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides for direct management of the Juniper SRX series of "
+"firewalls. This enables &PRODUCT; to establish static NAT mappings from "
+"public IPs to guest VMs, and to use the Juniper device in place of the "
+"virtual router for firewall services. You can have one or more Juniper SRX "
+"per zone. This feature is optional. If Juniper integration is not "
+"provisioned, &PRODUCT; will use the virtual router for these services."
+msgstr "&PRODUCT;提供Juniper SRX series直接管理防火牆的功能，此允許 &PRODUCT; 建立static NAT的公開IP及訪客VM對照，並使用Juniper裝置作為虛擬路由器的防火牆，您可以在每個區域內有多個 Juniper SRX，此功能為選擇性，如果沒有配置，&PRODUCT;會使用虛擬路由器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Juniper SRX can optionally be used in conjunction with an external load "
+"balancer. External Network elements can be deployed in a side-by-side or "
+"inline configuration."
+msgstr "Juniper SRX可以選擇性地與外部負載平衡器連結，外部網路元素可以設為side-by-side或inline 連結"
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; requires the Juniper to be configured as follows:"
+msgstr "&PRODUCT;需要Junipe設定為下："
+
+#. Tag: para
+#, no-c-format
+msgid "Supported SRX software version is 10.3 or higher."
+msgstr "支援SRX的版本為10.3或更高"
+
+#. Tag: para
+#, no-c-format
+msgid "Install your SRX appliance according to the vendor's instructions."
+msgstr "根據供應商指示安裝您的SRX工具"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Connect one interface to the management network and one interface to the "
+"public network. Alternatively, you can connect the same interface to both "
+"networks and a use a VLAN for the public network."
+msgstr "連結一個介面到管理網路，及一個介面到公開網路。您可以連結相同的介面到兩個網路，使用一個VLAN連到公眾網路"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure \"vlan-tagging\" is enabled on the private interface."
+msgstr "確定\"vlan-tagging\"在私人介面是啟用的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Record the public and private interface names. If you used a VLAN for the "
+"public interface, add a \".[VLAN TAG]\" after the interface name. For "
+"example, if you are using ge-0/0/3 for your public interface and VLAN tag "
+"301, your public interface name would be \"ge-0/0/3.301\". Your private "
+"interface name should always be untagged because the &PRODUCT; software "
+"automatically creates tagged logical interfaces."
+msgstr "記錄公開及私人介面名稱，如果您使用VLAN連結公開介面，請加一個\".[VLAN TAG]\"在介面名稱後面，例如，您使用ge-0/0/3連到公開網路，VLAN tag 301，您的公開網路介面名稱應該為\"ge-0/0/3.301\"。您的私人介面名稱應維持相同，因為 &PRODUCT;會自動建立邏輯介面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create a public security zone and a private security zone. By default, these"
+" will already exist and will be called \"untrust\" and \"trust\". Add the "
+"public interface to the public zone and the private interface to the private"
+" zone. Note down the security zone names."
+msgstr "建立公開安全區及私人安全區，預設上，這些都已經存在，並稱為\"untrust\" 及 \"trust\"，將公開介面加到公開區；私人介面加到私人區，記下安全區的名稱"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure there is a security policy from the private zone to the public "
+"zone that allows all traffic."
+msgstr "確定私人區到公開區的安全政策允許所有流量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Note the username and password of the account you want the &PRODUCT; "
+"software to log in to when it is programming rules."
+msgstr "記下帳戶的使用者名稱及密碼，此帳戶為&PRODUCT; 編譯規則時的登入口"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure the \"ssh\" and \"xnm-clear-text\" system services are enabled."
+msgstr "確定\"ssh\" 及 \"xnm-clear-text\"系統服務啟用"
+
+#. Tag: para
+#, no-c-format
+msgid "If traffic metering is desired:"
+msgstr "如果想要流量計量："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"a. Create an incoming firewall filter and an outgoing firewall filter. These"
+" filters should be the same names as your public security zone name and "
+"private security zone name respectively. The filters should be set to be "
+"\"interface-specific\". For example, here is the configuration where the "
+"public zone is \"untrust\" and the private zone is \"trust\":"
+msgstr "a.建立輸入防火牆過濾器及輸出防火牆過濾器，這些過濾器必須在公開及私人安全區內悶別是相同的名稱，過濾器應設為\"interface-specific\"，例如，以下為公開區是 \"untrust\"；私人區是\"trust\"的設定"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"root@cloud-srx# show firewall\n"
+"filter trust {\n"
+"    interface-specific;\n"
+"}\n"
+"filter untrust {\n"
+"    interface-specific;\n"
+"}"
+msgstr "root@cloud-srx# show firewall\nfilter trust {\n    interface-specific;\n}\nfilter untrust {\n    interface-specific;\n}"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add the firewall filters to your public interface. For example, a sample "
+"configuration output (for public interface ge-0/0/3.0, public security zone "
+"untrust, and private security zone trust) is:"
+msgstr "加入防火牆過濾器到您的公開介面，例如，範例設定結果(對於公開介面：ge-0/0/3.0，公開安全區： untrust，及私人安全區：trust)為："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"ge-0/0/3 {\n"
+"    unit 0 {\n"
+"        family inet {\n"
+"            filter {\n"
+"                input untrust;\n"
+"                output trust;\n"
+"            }\n"
+"            address 172.25.0.252/16;\n"
+"        }\n"
+"    }\n"
+"}"
+msgstr "ge-0/0/3 {\n    unit 0 {\n        family inet {\n            filter {\n                input untrust;\n                output trust;\n            }\n            address 172.25.0.252/16;\n        }\n    }\n}"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure all VLANs are brought to the private interface of the SRX."
+msgstr "確定所有VLAN都已經在SRX的私人介面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After the &PRODUCT; Management Server is installed, log in to the &PRODUCT; "
+"UI as administrator."
+msgstr " 安裝&PRODUCT;管理伺服器後，以管理者登入&PRODUCT;使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Infrastructure."
+msgstr "於左側的navigation按鈕中，點選Infrastructure。"
+
+#. Tag: para
+#, no-c-format
+msgid "In Zones, click View More."
+msgstr "於Zones的方框中點選View More"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone you want to work with."
+msgstr "選擇想要套用的區域"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr "選擇Network標籤"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Network Service Providers node of the diagram, click Configure. (You "
+"might have to scroll down to see this.)"
+msgstr "在圖中的 Network Service Providers節點，點選Configure(您可能會需要滾動畫面)"
+
+#. Tag: para
+#, no-c-format
+msgid "Click SRX."
+msgstr "點選SRX"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Add New SRX button (+) and provide the following:"
+msgstr "選擇Add New SRX  (+) 並提供以下："
+
+#. Tag: para
+#, no-c-format
+msgid "IP Address: The IP address of the SRX."
+msgstr "IP Address：SRX的IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Username: The user name of the account on the SRX that &PRODUCT; should use."
+msgstr "Username：SRX的使用者名稱，&PRODUCT;會使用"
+
+#. Tag: para
+#, no-c-format
+msgid "Password: The password of the account."
+msgstr "Password：帳戶密碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Public Interface. The name of the public interface on the SRX. For example, "
+"ge-0/0/2. A \".x\" at the end of the interface indicates the VLAN that is in"
+" use."
+msgstr "Public Interface：公開介面的名稱，例如ge-0/0/2，\".x\" 結尾表示使用VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Private Interface: The name of the private interface on the SRX. For "
+"example, ge-0/0/1."
+msgstr "Private Interface：私人介面的名稱，例如，ge-0/0/1 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Usage Interface: (Optional) Typically, the public interface is used to meter"
+" traffic. If you want to use a different interface, specify its name here"
+msgstr "Usage Interface：(選擇性)通常，公開介面用來計量流量，如果您想要用不同的介面，請指定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Number of Retries: The number of times to attempt a command on the SRX "
+"before failing. The default value is 2."
+msgstr "Number of retries：嘗試指令的次數，不包含失敗，預設為2"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Timeout (seconds): The time to wait for a command on the SRX before "
+"considering it failed. Default is 300 seconds."
+msgstr "Timeout (seconds)：在判斷失敗前，等待指令的時間，預設為300秒"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Public Network: The name of the public network on the SRX. For example, "
+"trust."
+msgstr "Public Network：公眾網路名稱，例如：trust"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Private Network: The name of the private network on the SRX. For example, "
+"untrust."
+msgstr "Private Network：私人網路名稱，例如：untrust"
+
+#. Tag: para
+#, no-c-format
+msgid "Capacity: The number of networks the device can handle"
+msgstr "Capacity：裝置可以處理的網路數量"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Dedicated: When marked as dedicated, this device will be dedicated to a "
+"single account. When Dedicated is checked, the value in the Capacity field "
+"has no significance implicitly, its value is 1"
+msgstr "Dedicated：標示為專用時，此裝置即為一個帳戶專用，而 Capacity欄位數值即為1 "
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click Global Settings. Set the parameter external.network.stats.interval to "
+"indicate how often you want &PRODUCT; to fetch network usage statistics from"
+" the Juniper SRX. If you are not using the SRX to gather network usage "
+"statistics, set to 0."
+msgstr "點選Global Settings，設定欄位external.network.stats.interval來指定您想要&PRODUCT;多常從 Juniper SRX抓取一次網路使用統計，如果您不是使用SRX，請社為0"

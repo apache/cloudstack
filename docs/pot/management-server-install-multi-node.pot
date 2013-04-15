@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12T11:19:40\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -105,6 +105,6 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing."
+msgid "Be sure to configure a load balancer for the Management Servers. See <xref linkend=\"management-server-lb\" />."
 msgstr ""
 

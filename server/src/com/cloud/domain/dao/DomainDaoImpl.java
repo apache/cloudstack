@@ -262,11 +262,14 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     public Set<Long> getDomainParentIds(long domainId) {
         Set<Long> parentDomains = new HashSet<Long>();
         Domain domain = findById(domainId);
-        parentDomains.add(domain.getId());
-        
-        while (domain.getParent() != null) {
-            domain = findById(domain.getParent());
+
+        if (domain != null) {
             parentDomains.add(domain.getId());
+
+            while (domain.getParent() != null) {
+                domain = findById(domain.getParent());
+                parentDomains.add(domain.getId());
+            }
         }
         
         return parentDomains;

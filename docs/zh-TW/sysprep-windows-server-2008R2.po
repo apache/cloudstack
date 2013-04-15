@@ -1,0 +1,205 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-03-30 09:28+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Preparation for Windows Server 2008 R2"
+msgstr "Windows Server 2008 R2的系統準備"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For Windows 2008 R2, you run Windows System Image Manager to create a custom"
+" sysprep response XML file. Windows System Image Manager is installed as "
+"part of the Windows Automated Installation Kit (AIK). Windows AIK can be "
+"downloaded from <ulink url=\"http://www.microsoft.com/en-"
+"us/download/details.aspx?id=9085\">Microsoft Download Center</ulink>."
+msgstr "對於Windows 2008 R2，請您執行Windows System Image Manager來建立自訂的sysprep對應 XML檔案， Windows System Image Manager是Windows Automated Installation Kit (AIK)安裝的一部份。 Windows AIK可以在<ulink url=\"http://www.microsoft.com/en-us/download/details.aspx?id=9085\">Microsoft Download Center</ulink>下載"
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to run sysprep for Windows 2008 R2:"
+msgstr "使用以下步驟來執行Windows 2008 R2 系統準備："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The steps outlined here are derived from the excellent guide by Charity "
+"Shelbourne, originally published at <ulink "
+"url=\"http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-"
+"oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx\">Windows "
+"Server 2008 Sysprep Mini-Setup.</ulink>"
+msgstr "這裡的步驟是擷取自Charity Shelbourne的指南，原始版本 <ulink url=\"http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx\">Windows Server 2008 Sysprep Mini-Setup.</ulink> "
+
+#. Tag: para
+#, no-c-format
+msgid "Download and install the Windows AIK"
+msgstr "下載及安裝 Windows AIK "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Windows AIK should not be installed on the Windows 2008 R2 VM you just "
+"created. Windows AIK should not be part of the template you create. It is "
+"only used to create the sysprep answer file."
+msgstr " 僅被使用來建立sysprep answer檔案。請不要安裝在Windows 2008 R2 VM，Windows AIK不應該是模組的一部份"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the install.wim file in the \\sources directory of the Windows 2008 R2 "
+"installation DVD to the hard disk. This is a very large file and may take a "
+"long time to copy. Windows AIK requires the WIM file to be writable."
+msgstr "複製Windows 2008 R2安裝光碟\\sources資料夾中的 install.wim到硬碟，這是一個非常大的檔案，會傳有點久，但 Windows AIK可寫的 WIM檔案，因此請耐心等候"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Start the Windows System Image Manager, which is part of the Windows AIK."
+msgstr "啟動Windows System Image Manager "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the Windows Image pane, right click the Select a Windows image or catalog"
+" file option to load the install.wim file you just copied."
+msgstr "在Windows Image方格，右鍵選擇Select a Windows image或 catalog file option來讀取 install.wim文件"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the Windows 2008 R2 Edition."
+msgstr "選擇Windows 2008 R2 Edition "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You may be prompted with a warning that the catalog file cannot be opened. "
+"Click Yes to create a new catalog file."
+msgstr "您會被提示catalog file無法被開啟，選擇Yes建立新的 catalog file "
+
+#. Tag: para
+#, no-c-format
+msgid "In the Answer File pane, right click to create a new answer file."
+msgstr "在Answer File格子中，右鍵點選建立新的answer file "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Generate the answer file from the Windows System Image Manager using the "
+"following steps:"
+msgstr "從Windows System Image Manager用以下步驟建立answer file："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The first page you need to automate is the Language and Country or Region "
+"Selection page. To automate this, expand Components in your Windows Image "
+"pane, right-click and add the Microsoft-Windows-International-Core setting "
+"to Pass 7 oobeSystem. In your Answer File pane, configure the InputLocale, "
+"SystemLocale, UILanguage, and UserLocale with the appropriate settings for "
+"your language and country or region. Should you have a question about any of"
+" these settings, you can right-click on the specific setting and select "
+"Help. This will open the appropriate CHM help file with more information, "
+"including examples on the setting you are attempting to configure."
+msgstr "您需要自動化的頁面是Language and Country or Region Selection，在Windows Image方格展開Components，右鍵點選增加Microsoft-Windows-International-Core設定為Pass 7 oobeSystem。在Answer File方格設定 InputLocale、SystemLocale、UILanguage及UserLocale為您的語言及地區，如果您對這些設定有疑問，您可以在設定上右鍵點選Help。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to automate the Software License Terms Selection page, otherwise "
+"known as the End-User License Agreement (EULA). To do this, expand the "
+"Microsoft-Windows-Shell-Setup component. High-light the OOBE setting, and "
+"add the setting to the Pass 7 oobeSystem. In Settings, set HideEULAPage "
+"true."
+msgstr "您需要自動化Software License Terms Selection，或是End-User License Agreement (EULA)。展開Microsoft-Windows-Shell-Setup物件，反白 OOBE設定並增加設定到 Pass 7 oobeSystem。在 Settings設定 HideEULAPage為true"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the license key is properly set. If you use MAK key, you can just "
+"enter the MAK key on the Windows 2008 R2 VM. You need not input the MAK into"
+" the Windows System Image Manager. If you use KMS host for activation you "
+"need not enter the Product Key. Details of Windows Volume Activation can be "
+"found at <ulink url=\"http://technet.microsoft.com/en-"
+"us/library/bb892849.aspx\" />"
+msgstr "確保 license key已經設定好。如果您是使用MAK key，您可以在Windows 2008 R2 VM進入 MAK key，不用先輸入MAK到Windows System Image Manager。如果您是使用KMS主機來啟動license，您不需要輸入Product Key。您可以在<ulink url=\"http://technet.microsoft.com/en-us/library/bb892849.aspx\" />得到 Windows Volume Activation的詳細資料"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to automate is the Change Administrator Password page. Expand the "
+"Microsoft-Windows-Shell-Setup component (if it is not still expanded), "
+"expand UserAccounts, right-click on AdministratorPassword, and add the "
+"setting to the Pass 7 oobeSystem configuration pass of your answer file. "
+"Under Settings, specify a password next to Value."
+msgstr "您需要自動化Change Administrator Password，展開Microsoft-Windows-Shell-Setup物件(還沒有展開的話)，展開 UserAccounts，右鍵點選AdministratorPassword並增加Pass 7 oobeSystem configuration pass設定到您的 answer file，在Settings下，在 Value旁指定一個密碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You may read the AIK documentation and set many more options that suit your "
+"deployment. The steps above are the minimum needed to make Windows "
+"unattended setup work."
+msgstr "您可以閱讀AIK文件並設定適合您的設定，以上步驟為最少的需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Save the answer file as unattend.xml. You can ignore the warning messages "
+"that appear in the validation window."
+msgstr "將answer file存為unattend.xml，您可以忽略警示訊息"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the unattend.xml file into the c:\\windows\\system32\\sysprep directory"
+" of the Windows 2008 R2 Virtual Machine"
+msgstr "複製 unattend.xml到Windows 2008 R2 Virtual Machine的 c:\\windows\\system32\\sysprep資料夾"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once you place the unattend.xml file in c:\\windows\\system32\\sysprep "
+"directory, you run the sysprep tool as follows:"
+msgstr "當您複製好unattend.xml到c:\\windows\\system32\\sysprep資料夾後，請您執行sysprep tool："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"cd c:\\Windows\\System32\\sysprep\n"
+"sysprep.exe /oobe /generalize /shutdown\n"
+msgstr "cd c:\\Windows\\System32\\sysprep\nsysprep.exe /oobe /generalize /shutdown\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Windows 2008 R2 VM will automatically shut down after sysprep is "
+"complete."
+msgstr "Windows 2008 R2 VM會在sysprep完成後自動關機"

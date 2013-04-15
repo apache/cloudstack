@@ -1,0 +1,259 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-07 02:10+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Host (XenServer or KVM)"
+msgstr "(XenServer 或 KVM)增加主機"
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer and KVM hosts can be added to a cluster at any time."
+msgstr "XenServer 及 KVM主機可以隨時加到叢集"
+
+#. Tag: title
+#, no-c-format
+msgid "Requirements for XenServer and KVM Hosts"
+msgstr "XenServer 及 KVM主機需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the hypervisor host does not have any VMs already running before "
+"you add it to &PRODUCT;."
+msgstr "確定&PRODUCT;加入前，超級監督者主機還沒有任何VM執行"
+
+#. Tag: para
+#, no-c-format
+msgid "Configuration requirements:"
+msgstr "設定需求："
+
+#. Tag: para
+#, no-c-format
+msgid "Each cluster must contain only hosts with the identical hypervisor."
+msgstr "每個叢集必須有相同的超級監督者主機"
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer, do not put more than 8 hosts in a cluster."
+msgstr "對於 XenServer，請勿放置超過8台主機"
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM, do not put more than 16 hosts in a cluster."
+msgstr "對於KVM，請不要超過16台主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For hardware requirements, see the installation section for your hypervisor "
+"in the &PRODUCT; Installation Guide."
+msgstr "硬體需求，詳見&PRODUCT; Installation Guide的安裝部分"
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer Host Additional Requirements"
+msgstr "XenServer主機額外需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If network bonding is in use, the administrator must cable the new host "
+"identically to other hosts in the cluster."
+msgstr "如果網路鍵結正在使用，管理者必須將新主機接成跟其他主機一樣的接線"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For all additional hosts to be added to the cluster, run the following "
+"command. This will cause the host to join the master in a XenServer pool."
+msgstr "對於所有額外的主機，執行以下指令。此步驟會將主機加入XenServer群的主要主機"
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"# xe pool-join master-address=[master IP] master-username=root master-"
+"password=[your password]"
+msgstr "# xe pool-join master-address=[master IP] master-username=root master-password=[your password]"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When copying and pasting a command, be sure the command has pasted as a "
+"single line before executing. Some document viewers may introduce unwanted "
+"line breaks in copied text."
+msgstr "當複製及貼上指令時，請確定指令是貼成單一條線，因為有些文件瀏覽器會多出不必要的中斷"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With all hosts added to the XenServer pool, run the cloud-setup-bond script."
+" This script will complete the configuration and setup of the bonds on the "
+"new hosts in the cluster."
+msgstr "當所有主機都加入XenServer後，執行 cloud-setup-bond程式，此程式會完成設定並建立所有主機的鍵結"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy the script from the Management Server in "
+"/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-"
+"bonding.sh to the master host and ensure it is executable."
+msgstr "從管理伺服器/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh複製程式到主要主機，並確定是可執行"
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script:"
+msgstr "執行程式碼："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ./cloud-setup-bonding.sh"
+msgstr "# ./cloud-setup-bonding.sh"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Host Additional Requirements"
+msgstr "KVM主機額外需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If shared mountpoint storage is in use, the administrator should ensure that"
+" the new host has all the same mountpoints (with storage mounted) as the "
+"other hosts in the cluster."
+msgstr "如果 shared mountpoint儲存正在使用，管理者必須確定新主機有與其他主機相同的mountpoints (搭載儲存裝置) "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure the new host has the same network configuration (guest, private, "
+"and public network) as other hosts in the cluster."
+msgstr "確定新主機跟其他主機有相同的網路設定(訪客、私人及公開網路)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are using OpenVswitch bridges edit the file agent.properties on the "
+"KVM host and set the parameter <emphasis "
+"role=\"italic\">network.bridge.type</emphasis> to <emphasis "
+"role=\"italic\">openvswitch</emphasis> before adding the host to &PRODUCT;"
+msgstr "如果您在使用 OpenVswitch橋接器編輯agent.properties檔案，並在加入主機到&PRODUCT;前設定欄位<emphasis role=\"italic\">network.bridge.type</emphasis>為<emphasis role=\"italic\">openvswitch</emphasis>"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a XenServer or KVM Host"
+msgstr "增加XenServer 或 KVM主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you have not already done so, install the hypervisor software on the "
+"host. You will need to know which version of the hypervisor software version"
+" is supported by &PRODUCT; and what additional configuration is required to "
+"ensure the host will work with &PRODUCT;. To find these installation "
+"details, see the appropriate section for your hypervisor in the &PRODUCT; "
+"Installation Guide."
+msgstr "請先安裝超級監督者軟體到主機上，如果您想知道哪個版本支援&PRODUCT;，及額外設定，請參閱&PRODUCT; Installation Guide的部分章節"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr "以administrator身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the left navigation, choose Infrastructure. In Zones, click View More, "
+"then click the zone in which you want to add the host."
+msgstr "於左邊的navigation列表中點選Infrastructure，接者點選zone並選擇View More，最後點選想要新增主機的zone。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute tab. In the Clusters node, click View All."
+msgstr "點選Compute標籤，在Clusters節點點選View All"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the cluster where you want to add the host."
+msgstr "點選要新增主機的叢集"
+
+#. Tag: para
+#, no-c-format
+msgid "Click View Hosts."
+msgstr "按 View Hosts"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Host."
+msgstr "按 Add Host"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information."
+msgstr "提供以下資訊："
+
+#. Tag: para
+#, no-c-format
+msgid "Host Name. The DNS name or IP address of the host."
+msgstr "Host Name：DNS名稱或IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid "Username. Usually root."
+msgstr "Username：通常為root"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Password. This is the password for the user from your XenServer or KVM "
+"install)."
+msgstr "Password：這是使用者在上面命名的密碼，來自您的 XenServer 安裝)。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Host Tags (Optional). Any labels that you use to categorize hosts for ease "
+"of maintenance. For example, you can set to the cloud's HA tag (set in the "
+"ha.tag global configuration parameter) if you want this host to be used only"
+" for VMs with the \"high availability\" feature enabled. For more "
+"information, see HA-Enabled Virtual Machines as well as HA for Hosts."
+msgstr "Host Tags(選擇性)：任何您用來分類主機的標籤，例如，如果您想要主機僅使用有\"high availability\"功能的VM，您可以設定雲端HA標籤(ha.tag廣域設定欄位設定)，更多資訊，詳見HA-Enabled Virtual Machines及HA for Hosts"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There may be a slight delay while the host is provisioned. It should "
+"automatically display in the UI."
+msgstr "等待一段時間，它就會自動顯示在使用這介面了"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat for additional hosts."
+msgstr "如有其他主機，重複以上步驟"

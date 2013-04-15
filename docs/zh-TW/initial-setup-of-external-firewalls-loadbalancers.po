@@ -1,0 +1,82 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-11 12:40+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Initial Setup of External Firewalls and Load Balancers"
+msgstr "外部防火牆及負載平衡器的初始設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the first VM is created for a new account, &PRODUCT; programs the "
+"external firewall and load balancer to work with the VM. The following "
+"objects are created on the firewall:"
+msgstr "在為新帳戶建立第一個VM時，&PRODUCT;規劃外部防火牆及負載平衡器給VM，以下物件會建立在防火牆上："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A new logical interface to connect to the account's private VLAN. The "
+"interface IP is always the first IP of the account's private subnet (e.g. "
+"10.1.1.1)."
+msgstr "新的邏輯介面連結到帳戶私人VLAN，介面IP為帳戶私人子網域(e.g. 10.1.1.1)的第一個IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A source NAT rule that forwards all outgoing traffic from the account's "
+"private VLAN to the public Internet, using the account's public IP address "
+"as the source address"
+msgstr "source NAT rule，轉送所有私人VLAN的輸出流量到公開網路，使用帳戶公開IP為來源位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A firewall filter counter that measures the number of bytes of outgoing "
+"traffic for the account"
+msgstr "測量輸出流量的位元組數量的防火牆過濾計數器"
+
+#. Tag: para
+#, no-c-format
+msgid "The following objects are created on the load balancer:"
+msgstr "以下物件會新增到負載平衡器："
+
+#. Tag: para
+#, no-c-format
+msgid "A new VLAN that matches the account's provisioned Zone VLAN"
+msgstr "新的VLAN，符合帳戶提供的區域VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A self IP for the VLAN. This is always the second IP of the account's "
+"private subnet (e.g. 10.1.1.2)."
+msgstr "VLAN自己的IP，為帳戶私人子網路(e.g. 10.1.1.2)的第二個IP"

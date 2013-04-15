@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-01 01:39+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Security Groups in Advanced Zones (KVM Only)"
+msgstr "(僅限KVM)進階Zone的Security Groups"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; provides the ability to use security groups to provide isolation "
+"between guests on a single shared, zone-wide network in an advanced zone "
+"where KVM is the hypervisor. Using security groups in advanced zones rather "
+"than multiple VLANs allows a greater range of options for setting up guest "
+"isolation in a cloud."
+msgstr "&PRODUCT; 提供使用security groups來隔離進階zone中分享且zone-wide網路的訪客互相來往的功能，而KVM為超級監督者。使用security groups在進階zone可以比用在多個VLANs能有更大的設定選擇"
+
+#. Tag: title
+#, no-c-format
+msgid "Limitations"
+msgstr "限制"
+
+#. Tag: para
+#, no-c-format
+msgid "The following are not supported for this feature:"
+msgstr "以下不支援此功能："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Two IP ranges with the same VLAN and different gateway or netmask in "
+"security group-enabled shared network."
+msgstr "在相同的VLAN有兩個IP範圍，及security group啟用的分享網路中有不同的閘道或遮罩"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Two IP ranges with the same VLAN and different gateway or netmask in "
+"account-specific shared networks."
+msgstr "在相同的VLAN有兩個IP範圍，及 account-specific的分享網路中有不同的閘道或遮罩"
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple VLAN ranges in security group-enabled shared network."
+msgstr "security group啟用的分享網路中有多個VLAN範圍"
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple VLAN ranges in account-specific shared networks."
+msgstr "account-specific的分享網路中有多個VLAN範圍"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security groups must be enabled in the zone in order for this feature to be "
+"used."
+msgstr "Security groups必須要在zone中啟用"

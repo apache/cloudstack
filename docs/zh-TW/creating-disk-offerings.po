@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2012-09-24 05:03+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-05 12:13+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,63 +31,63 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating a New Disk Offering"
-msgstr ""
+msgstr "新增硬碟服務"
 
 #. Tag: para
 #, no-c-format
 msgid "To create a system service offering:"
-msgstr ""
+msgstr "想要新增系統服務："
 
 #. Tag: para
 #, no-c-format
 msgid "Log in with admin privileges to the &PRODUCT; UI."
-msgstr ""
+msgstr "以管理者優先登入&PRODUCT;使用者介面"
 
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation bar, click Service Offerings."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Service Offerings"
 
 #. Tag: para
 #, no-c-format
 msgid "In Select Offering, choose Disk Offering."
-msgstr ""
+msgstr "在Select Offering中，選擇Disk Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add Disk Offering."
-msgstr ""
+msgstr "按下Add Disk Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "In the dialog, make the following choices:"
-msgstr ""
+msgstr "在對話框中，選擇以下："
 
 #. Tag: para
 #, no-c-format
 msgid "Name. Any desired name for the system offering."
-msgstr ""
+msgstr "Name：系統服務的名稱"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Description. A short description of the offering that can be displayed to "
 "users"
-msgstr ""
+msgstr "Description：使用者可見的簡述"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Custom Disk Size. If checked, the user can set their own disk size. If not "
 "checked, the root administrator must define a value in Disk Size."
-msgstr ""
+msgstr "Custom Disk Size：如果啟用，使用者可以自訂硬碟大小；不啟用，則只有root管理者能定義"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Disk Size. Appears only if Custom Disk Size is not selected. Define the "
 "volume size in GB."
-msgstr ""
+msgstr "Disk Size：只有Custom Disk Size不啟用時才會顯示，定義容量大小，單位為GB"
 
 #. Tag: para
 #, no-c-format
@@ -98,7 +99,7 @@ msgid ""
 "is present on a disk offering that tag (or tags) must also be present on "
 "Primary Storage for the volume to be provisioned. If no such primary storage"
 " exists, allocation from the disk offering will fail.."
-msgstr ""
+msgstr "(選擇性)Storage Tags：tag應該會連結到硬碟的主要儲存區，而tag是comma separated list屬性的儲存，例如 \"ssd,blue\"。tag也會被主要儲存裝置加入，&PRODUCT;會比對硬碟及儲存裝置的tag。如果硬碟有tag(tags)，則主要儲存裝置就會有相同的tag，如果沒有，容量分配就會失敗"
 
 #. Tag: para
 #, no-c-format
@@ -107,7 +108,7 @@ msgid ""
 "domains or only some domains. Choose Yes to make it available to all "
 "domains. Choose No to limit the scope to a subdomain; &PRODUCT; will then "
 "prompt for the subdomain's name."
-msgstr ""
+msgstr "Public：決定服務使否為所有網域使用，選擇Yes使所有網域都可使用；選擇No，&PRODUCT;會出現提示要您輸入子網域的名稱。"
 
 #. Tag: para
 #, no-c-format

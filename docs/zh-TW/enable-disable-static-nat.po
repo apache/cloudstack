@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:07+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-22 15:21+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -79,18 +79,18 @@ msgid ""
 "fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject> "
 "<phrase>ReleaseIPButton.png: button to release an IP</phrase> </textobject> "
 "</inlinemediaobject>button."
-msgstr ""
+msgstr "按下Static NAT<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject> <phrase>ReleaseIPButton.png: button to release an IP</phrase> </textobject> </inlinemediaobject>button."
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "The button toggles between Enable and Disable, depending on whether static "
 "NAT is currently enabled for the IP address."
-msgstr ""
+msgstr "按鈕會依照static NAT 的狀態來顯示開啟或關閉"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you are enabling static NAT, a dialog appears where you can choose the "
 "destination VM and click Apply."
-msgstr ""
+msgstr "如果你正在使用static NAT，會跳出選擇目標VM的對話框，然後按Apply"

@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-09 08:15+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "UUID References"
+msgstr "UUID相關文件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The plugin maintains several references in the &PRODUCT; database to items "
+"created on the NVP Controller."
+msgstr "插件維持多個&PRODUCT; 資料庫的引用到建立在NVP Controller物件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Every guest network that is created will have its broadcast type set to "
+"Lswitch and if the network is in state \"Implemented\", the broadcast URI "
+"will have the UUID of the Logical Switch that was created for this network "
+"on the NVP Controller."
+msgstr "每個訪客網路會有自己的廣播形式，設定在 Lswitch。如果網路在\"Implemented\"狀態，廣播URI會得到邏輯交換器的UUID"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Nics that are connected to one of the Logical Switches will have their "
+"Logical Switch Port UUID listed in the nicira_nvp_nic_map table"
+msgstr "連結到其中一個邏輯交換器的Nics，會有自己的邏輯交換通訊埠UUID，列在nicira_nvp_nic_map表"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All devices created on the NVP Controller will have a tag set to domain-"
+"account of the owner of the network, this string can be used to search for "
+"items in the NVP Controller."
+msgstr "所有建在 NVP Controller的裝置，會有標籤連結到擁有者的網域帳戶，此字串可以用來搜尋NVP Controller中的物件"

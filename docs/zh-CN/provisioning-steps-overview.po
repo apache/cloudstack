@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:10+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:43+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -51,33 +51,45 @@ msgstr "为了提供云基础架构, 或者在任何时个需要扩展过规模,
 
 #. Tag: para
 #, no-c-format
-msgid "Add a zone. See <xref linkend=\"zone-add\" />."
-msgstr "添加一个资源域. 参照 <xref linkend=\"zone-add\" />."
+msgid "Define regions (optional). See <xref linkend=\"region-add\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />."
-msgstr "添加更多机架 (可选). 参照<xref linkend=\"pod-add\" />."
+msgid "Add a zone to the region. See <xref linkend=\"zone-add\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />."
-msgstr "添加更多集群 (可选). 参照<xref linkend=\"cluster-add\" />."
+msgid "Add more pods to the zone (optional). See <xref linkend=\"pod-add\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />."
-msgstr "添加更多主机 (可选). 参照<xref linkend=\"host-add\" />."
+msgid ""
+"Add more clusters to the pod (optional). See <xref linkend=\"cluster-add\" "
+"/>."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add primary storage. See <xref linkend=\"primary-storage-add\" />."
-msgstr "添加主存储. 参照<xref linkend=\"primary-storage-add\" />."
+msgid ""
+"Add more hosts to the cluster (optional). See <xref linkend=\"host-add\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Add secondary storage. See <xref linkend=\"secondary-storage-add\" />."
-msgstr "添加二级存储. 参照<xref linkend=\"secondary-storage-add\" />."
+msgid ""
+"Add primary storage to the cluster. See <xref linkend=\"primary-storage-"
+"add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add secondary storage to the zone. See <xref linkend=\"secondary-storage-"
+"add\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

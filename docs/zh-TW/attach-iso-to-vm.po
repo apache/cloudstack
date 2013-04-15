@@ -1,0 +1,63 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-03-21 06:03+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Attaching an ISO to a VM"
+msgstr "附加ISO到VM"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr "在左邊的導覽視窗，選擇 Instances"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the virtual machine you want to work with."
+msgstr "選擇想要套用的VM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Attach ISO button. <inlinemediaobject> <imageobject> <imagedata "
+"fileref=\"./images/iso-icon.png\" /> </imageobject> <textobject> "
+"<phrase>iso.png: depicts adding an iso image</phrase> </textobject> "
+"</inlinemediaobject>"
+msgstr "按下Attach ISO"
+
+#. Tag: para
+#, no-c-format
+msgid "In the Attach ISO dialog box, select the desired ISO."
+msgstr "在Attach ISO對話框，選擇想要的ISO"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"

@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:38+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Getting the release"
+msgstr "取得release"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can download the latest &PRODUCT; release from the <ulink "
+"url=\"http://cloudstack.apache.org/downloads.html\"> Apache CloudStack "
+"project download page</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Prior releases are available via archive.apache.org as well. See the "
+"downloads page for more information on archived releases."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You'll notice several links under the 'Latest release' section. A link to a "
+"file ending in <filename>tar.bz2</filename>, as well as a PGP/GPG signature,"
+" MD5, and SHA512 file."
+msgstr "您或許會注意到'Latest release'的幾個連結，檔案的結尾為<filename>tar.bz2</filename>或是PGP/GPG、MD5和 SHA512檔案"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <filename>tar.bz2</filename> file contains the Bzip2-compressed tarball "
+"with the source code."
+msgstr " <filename>tar.bz2</filename>檔案包含Bzip2-compressed tarball的原始碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <filename>.asc</filename> file is a detached cryptographic signature "
+"that can be used to help verify the authenticity of the release."
+msgstr " <filename>.asc</filename>檔案是分離的加密簽證，可以用來認證release的真實性"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <filename>.md5</filename> file is an MD5 hash of the release to aid in "
+"verify the validity of the release download."
+msgstr "<filename>.md5</filename>是release的MD5散列，幫助確認下載的正當性"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <filename>.sha</filename> file is a SHA512 hash of the release to aid in"
+" verify the validity of the release download."
+msgstr "<filename>.sha</filename>是release的SHA512散列，幫助確認下載的正當性"

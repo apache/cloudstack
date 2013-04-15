@@ -1,0 +1,74 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-03-31 05:59+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating Templates: Overview"
+msgstr "新增模組：總覽"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; ships with a default template for the CentOS operating system. "
+"There are a variety of ways to add more templates. Administrators and end "
+"users can add templates. The typical sequence of events is:"
+msgstr "&PRODUCT;為CentOS搭載預設模組。而管理者及使用者可以用很多方法來新增模組，常用的方法為："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Launch a VM instance that has the operating system you want. Make any other "
+"desired configuration changes to the VM."
+msgstr "執行有您要的作業系統的VM instance，設定其他您要的設定"
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the VM."
+msgstr "停止VM"
+
+#. Tag: para
+#, no-c-format
+msgid "Convert the volume into a template."
+msgstr "將volume轉成模組"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There are other ways to add templates to &PRODUCT;. For example, you can "
+"take a snapshot of the VM's volume and create a template from the snapshot, "
+"or import a VHD from another system into &PRODUCT;."
+msgstr "有很多方式能將模組加到 &PRODUCT;，例如，您可以snapshot您的VM volume並由snapshot建立模組，或是從其他系統匯入VHD到 &PRODUCT; "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The various techniques for creating templates are described in the next few "
+"sections."
+msgstr "更多建立模組的技術將在以下章節描述"

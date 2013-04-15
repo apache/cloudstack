@@ -1,0 +1,45 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-09 05:37+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Storage Network Topology Requirements"
+msgstr "儲存網路拓樸需求"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The secondary storage NFS export is mounted by the secondary storage VM. "
+"Secondary storage traffic goes over the management traffic network, even if "
+"there is a separate storage network. Primary storage traffic goes over the "
+"storage network, if available. If you choose to place secondary storage NFS "
+"servers on the storage network, you must make sure there is a route from the"
+" management traffic network to the storage network."
+msgstr "次要儲存NFS匯出由次要儲存VM掛載，即使有分離儲存網路，次要儲存流量仍會經過管理流量網路。主要儲存流量如果可用的話，會經過儲存網路。如果您選擇將次要儲存NFS伺服器置於儲存網路，您必須確定在管理流量網路及儲存網路間存在路徑"

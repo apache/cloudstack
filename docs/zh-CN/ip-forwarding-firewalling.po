@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:40+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -37,9 +37,15 @@ msgstr "IP转发及防火墙"
 #, no-c-format
 msgid ""
 "By default, all incoming traffic to the public IP address is rejected. All "
-"outgoing traffic from the guests is translated via NAT to the public IP "
-"address and is allowed."
-msgstr "默认情况下, 所有在公共IP接收的流量都会被拒绝. 所有在客户网络经由NAT到公共网络的流量都被允许."
+"outgoing traffic from the guests is also blocked by default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To allow outgoing traffic, follow the procedure in <xref linkend=\"egress-"
+"firewall-rule\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
@@ -50,5 +56,6 @@ msgid ""
 "forwarding rules to direct traffic from individual ports within that range "
 "to specific ports on user VMs. For example, one port forwarding rule could "
 "route incoming traffic on the public IP's port 33 to port 100 on one user "
-"VM's private IP."
-msgstr "为了允许接收到的流量, 用户可以设置一些防火墙规则和/或端口转发规则. 例如, 你可以在公共IP地址上设定防火墙规则来打开一个端口范围, 比如从33到44端口. 然后使用端口转发将流量从这个特定的范围内的端口直接送到指定的用户虚机端口. 例如, 一个端口转发的规则可以将接收的流量从公共IP的33端口到用户虚机私有IP的100端口."
+"VM's private IP. For more information, see <xref linkend=\"firewall-rules\" "
+"/> and <xref linkend=\"port-forwarding\" />."
+msgstr ""

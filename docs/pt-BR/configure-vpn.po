@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:06+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12 11:36+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -56,10 +56,10 @@ msgstr "Configure os seguintes parâmetros de configuração global."
 #. Tag: para
 #, no-c-format
 msgid ""
-"remote.access.vpn.client.ip.range – The range of IP addressess to be "
+"remote.access.vpn.client.ip.range – The range of IP addresses to be "
 "allocated to remote access VPN clients. The first IP in the range is used by"
 " the VPN server."
-msgstr "remote.access.vpn.client.ip.range – O intervalo de endereços IP a ser alocados para clientes de acesso remoto VPN. O primeiro IP no intervalo é utilizado pelo servidor VPN."
+msgstr ""
 
 #. Tag: para
 #, no-c-format

@@ -1,0 +1,89 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-03-26 01:13+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changing the Service Offering for a VM"
+msgstr "更改虛擬機的Service Offering"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To upgrade or downgrade the level of compute resources available to a "
+"virtual machine, you can change the VM's compute offering."
+msgstr "您可以透過修改虛擬機器的Compute Offering調整運算資源。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr "以使用者或管理者身分登入&PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr "在左邊的導覽視窗，選擇 Instances"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VM that you want to work with."
+msgstr "選擇一台虛擬機器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Stop button to stop the VM.<inlinemediaobject> <imageobject> "
+"<imagedata fileref=\"./images/stop-instance-icon.png\" /> </imageobject> "
+"<textobject> <phrase>StopButton.png: button to stop a VM</phrase> "
+"</textobject> </inlinemediaobject>"
+msgstr "點選Stop按鈕暫停您的虛擬機器<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/stop-instance-icon.png\" /> </imageobject> <textobject> <phrase>StopButton.png: button to stop a VM</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Change Service button.<inlinemediaobject> <imageobject> <imagedata"
+" fileref=\"./images/change-service-icon.png\" /> </imageobject> <textobject>"
+" <phrase>ChangeServiceButton.png: button to change the service of a "
+"VM</phrase> </textobject> </inlinemediaobject>"
+msgstr "點選Change Service按鈕。<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/change-service-icon.png\" /> </imageobject> <textobject> <phrase>ChangeServiceButton.png: button to change the service of a VM</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid "The Change service dialog box is displayed."
+msgstr "將出現修改Service Offering的對話視窗"
+
+#. Tag: para
+#, no-c-format
+msgid "Select the offering you want to apply to the selected VM."
+msgstr "選擇一個您想要提供虛擬機器的Service Offering。"
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr "按OK"

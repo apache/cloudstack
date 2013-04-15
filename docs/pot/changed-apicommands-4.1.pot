@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12T11:19:38\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -25,7 +25,7 @@ msgstr ""
 
 #. Tag: title
 #, no-c-format
-msgid "Changed API Commands in 4.1-incubating"
+msgid "Changed API Commands in 4.1"
 msgstr ""
 
 #. Tag: para
@@ -45,6 +45,36 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
+msgid "The following request parameters have been added:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "isPersistent"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "startipv6"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "endipv6"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ip6gateway"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ip6cidr"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
 msgid "listNetworkOfferings"
 msgstr ""
 
@@ -55,12 +85,82 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "The following request parameters is added: isPersistent."
+msgid "This parameter determines if the network or network offering listed are persistent or not."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "This parameter determines if the network or network offering created or listed by using this offering are persistent or not."
+msgid "createVlanIpRange"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deployVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following parameter has been added: ip6Address."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following parameter is updated to accept the IPv6 address: iptonetworklist."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CreateZoneCmd"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following parameter have been added: ip6dns1, ip6dns2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listRouters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVirtualMachines"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For nic responses, the following fields have been added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ip6address"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVlanIpRanges"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listZones"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For DomainRouter and DataCenter response, the following fields have been added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ip6dns1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ip6dns2"
 msgstr ""
 
 #. Tag: para
@@ -155,7 +255,32 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "listZones"
+msgid "createAccount"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following new request parameters are added: accountid, userid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createUser"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following new request parameter is added: userid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createDomain"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following new request parameter is added: domainid"
 msgstr ""
 
 #. Tag: para

@@ -1,0 +1,168 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-10 09:13+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring SNMP Community String on a RHEL Server"
+msgstr "在RHEL伺服器設定SNMP Community String "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The SNMP Community string is similar to a user id or password that provides "
+"access to a network device, such as router. This string is sent along with "
+"all SNMP requests. If the community string is correct, the device responds "
+"with the requested information. If the community string is incorrect, the "
+"device discards the request and does not respond."
+msgstr "SNMP Community String 類似使用者ID或密碼，用作存取網路裝置，像是路由器。此string隨著所有SNMP要求傳送，如果 community string 正確，裝置會回應要求資訊；如果不正確，裝置會丟棄要求及不回應"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The NetScaler device uses SNMP to communicate with the VMs. You must install"
+" SNMP and configure SNMP Community string for a secure communication between"
+" the NetScaler device and the RHEL machine."
+msgstr "NetScaler裝置使用SNMP來與VM通信，您必須安裝SNMP及設定SNMP Community string 來建立安全的通訊"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that you installed SNMP on RedHat. If not, run the following command:"
+msgstr "確保您在RedHat安裝SNMP，如果沒有，請依照以下指令："
+
+#. Tag: screen
+#, no-c-format
+msgid "yum install net-snmp-utils"
+msgstr "yum install net-snmp-utils"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Edit the /etc/snmp/snmpd.conf file to allow the SNMP polling from the "
+"NetScaler device."
+msgstr "編輯/etc/snmp/snmpd.conf 來允許SNMP從NetScaler 裝置採樣"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Map the community name into a security name (local and mynetwork, depending "
+"on where the request is coming from):"
+msgstr "對照community名稱到一個security 名稱(本地及mynetwork，取決於要求從哪來)："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use a strong password instead of public when you edit the following table."
+msgstr "您在編輯表格時，請使用高強度密碼，不要用公開"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"#         sec.name   source        community\n"
+"com2sec    local      localhost     public\n"
+"com2sec   mynetwork   0.0.0.0       public"
+msgstr "#         sec.name   source        community\ncom2sec    local      localhost     public\ncom2sec   mynetwork   0.0.0.0       public"
+
+#. Tag: para
+#, no-c-format
+msgid "Setting to 0.0.0.0 allows all IPs to poll the NetScaler server."
+msgstr "設定0.0.0.0允許所有IP poll NetScaler server"
+
+#. Tag: para
+#, no-c-format
+msgid "Map the security names into group names:"
+msgstr "對照 security 名稱到群組名稱："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"#      group.name   sec.model  sec.name\n"
+"group   MyRWGroup     v1         local\n"
+"group   MyRWGroup     v2c        local\n"
+"group   MyROGroup     v1        mynetwork\n"
+"group   MyROGroup     v2c       mynetwork"
+msgstr "#      group.name   sec.model  sec.name\ngroup   MyRWGroup     v1         local\ngroup   MyRWGroup     v2c        local\ngroup   MyROGroup     v1        mynetwork\ngroup   MyROGroup     v2c       mynetwork"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a view to allow the groups to have the permission to:"
+msgstr "建立view讓群組有許可："
+
+#. Tag: screen
+#, no-c-format
+msgid "incl/excl subtree mask view all included .1 "
+msgstr "incl/excl subtree mask view all included .1 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Grant access with different write permissions to the two groups to the view "
+"you created."
+msgstr "允許兩個不同群組的存取給您建立的view"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"# context     sec.model     sec.level     prefix     read     write     notif\n"
+"  access      MyROGroup \"\"  any noauth     exact      all      none     none\n"
+"  access      MyRWGroup \"\"  any noauth     exact      all      all      all "
+msgstr "# context     sec.model     sec.level     prefix     read     write     notif\n  access      MyROGroup \"\"  any noauth     exact      all      none     none\n  access      MyRWGroup \"\"  any noauth     exact      all      all      all "
+
+#. Tag: para
+#, no-c-format
+msgid "Unblock SNMP in iptables."
+msgstr "解除封鎖iptables的SNMP"
+
+#. Tag: screen
+#, no-c-format
+msgid "iptables -A INPUT -p udp --dport 161 -j ACCEPT"
+msgstr "iptables -A INPUT -p udp --dport 161 -j ACCEPT"
+
+#. Tag: para
+#, no-c-format
+msgid "Start the SNMP service:"
+msgstr "啟動SNMP服務："
+
+#. Tag: screen
+#, no-c-format
+msgid "service snmpd start"
+msgstr "service snmpd start"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Ensure that the SNMP service is started automatically during the system "
+"startup:"
+msgstr "確定SNMP服務有隨開機自動啟動"
+
+#. Tag: screen
+#, no-c-format
+msgid "chkconfig snmpd on"
+msgstr "chkconfig snmpd on"

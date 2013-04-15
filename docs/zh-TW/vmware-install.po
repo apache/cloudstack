@@ -1,0 +1,718 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 11:50+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr "VMware vSphere安裝與設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to use the VMware vSphere hypervisor to run guest virtual "
+"machines, install vSphere on the host(s) in your cloud."
+msgstr "如果您想使用 VMware vSphere hypervisor 來執行訪客的VM，請安裝vSphere在您的雲端主機(一至多個)"
+
+#. Tag: title
+#, no-c-format
+msgid "Preparation Checklist for VMware"
+msgstr "VMware的準備清單"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For a smoother installation, gather the following information before you "
+"start:"
+msgstr "為了順利安裝，請先準備以下資訊："
+
+#. Tag: para
+#, no-c-format
+msgid "Information listed in <xref linkend=\"vmware-vcenter-checklist\" />"
+msgstr "列在 <xref linkend=\"vmware-vcenter-checklist\" />的資訊"
+
+#. Tag: para
+#, no-c-format
+msgid "Information listed in <xref linkend=\"vmware-network-checklist\" />"
+msgstr "列在<xref linkend=\"vmware-network-checklist\" />的資訊"
+
+#. Tag: title
+#, no-c-format
+msgid "vCenter Checklist"
+msgstr "vCenter Checklist"
+
+#. Tag: para
+#, no-c-format
+msgid "You will need the following information about vCenter."
+msgstr "您會需要以下關於vCenter的資訊："
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Requirement"
+msgstr "vCenter 需求"
+
+#. Tag: para
+#, no-c-format
+msgid "Value"
+msgstr "數值"
+
+#. Tag: para
+#, no-c-format
+msgid "Notes"
+msgstr "備註"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter User"
+msgstr "vCenter 使用者"
+
+#. Tag: para
+#, no-c-format
+msgid "This user must have admin privileges."
+msgstr "使用者必須有管理優先權"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter User Password"
+msgstr "vCenter使用者密碼"
+
+#. Tag: para
+#, no-c-format
+msgid "Password for the above user."
+msgstr "以上使用者的密碼"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Datacenter Name"
+msgstr "vCenter資料庫名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the datacenter."
+msgstr "資料庫名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Cluster Name"
+msgstr "vCenter Cluster名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the cluster."
+msgstr "Cluster名稱"
+
+#. Tag: title
+#, no-c-format
+msgid "Networking Checklist for VMware"
+msgstr "VMware的網路清單"
+
+#. Tag: para
+#, no-c-format
+msgid "You will need the following information about VLAN."
+msgstr "您會需要以下關於VLAN的資訊："
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN Information"
+msgstr "VLAN 資訊"
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN"
+msgstr "ESXi VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN on which all your ESXi hypervisors reside."
+msgstr "您所有ESXi hypervisors位於的VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "ESXI VLAN IP Address"
+msgstr "ESXI VLAN IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"IP Address Range in the ESXi VLAN. One address per Virtual Router is used "
+"from this range."
+msgstr "ESXi VLAN中的IP Address Range，每個虛擬路由器由此範圍使用IP"
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN IP Gateway"
+msgstr "ESXi VLAN IP閘道"
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN Netmask"
+msgstr "ESXi VLAN遮罩"
+
+#. Tag: para
+#, no-c-format
+msgid "Management Server VLAN"
+msgstr "VLAN管理伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN on which the &PRODUCT; Management server is installed."
+msgstr "&PRODUCT; 管理伺服器安裝的VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN"
+msgstr "公開VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN for the Public Network."
+msgstr "公開網路的VLAN"
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN Gateway"
+msgstr "公開VLAN閘道"
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN Netmask"
+msgstr "公開VLAN遮罩"
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN IP Address Range"
+msgstr "公開"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Range of Public IP Addresses available for &PRODUCT; use. These addresses "
+"will be used for virtual router on &PRODUCT; to route private traffic to "
+"external networks."
+msgstr "Range of Public IP Addresses提供&PRODUCT;使用，這些位址將被使用在&PRODUCT; 上的虛擬路由器，將私人流量導向外部網路"
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN Range for Customer use"
+msgstr "客戶使用的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A contiguous range of non-routable VLANs. One VLAN will be assigned for each"
+" customer."
+msgstr "一段連續範圍VLAN，一個使用者會被配發一個VLAN。"
+
+#. Tag: title
+#, no-c-format
+msgid "vSphere Installation Steps"
+msgstr "vSphere安裝步驟"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you haven't already, you'll need to download and purchase vSphere from "
+"the VMware Website (<ulink "
+"url=\"https://www.vmware.com/tryvmware/index.php?p=vmware-"
+"vsphere&amp;lp=1\">https://www.vmware.com/tryvmware/index.php?p=vmware-"
+"vsphere&amp;lp=1</ulink>) and install it by following the VMware vSphere "
+"Installation Guide."
+msgstr "您需要從VMware網頁下載及購買vSphere如果您還沒有 (<ulink url=\"https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1\">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>)，然後跟著VMware vSphere 安裝指南安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Following installation, perform the following configuration, which are "
+"described in the next few sections:"
+msgstr "以下安裝將執行以下設定，這些設定在接下來的章節做描述："
+
+#. Tag: para
+#, no-c-format
+msgid "Required"
+msgstr "必要的"
+
+#. Tag: para
+#, no-c-format
+msgid "Optional"
+msgstr "非必要的"
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi host setup"
+msgstr "ESXi 主機設定"
+
+#. Tag: para
+#, no-c-format
+msgid "NIC bonding"
+msgstr "NIC 結合"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure host physical networking, virtual switch, vCenter Management "
+"Network, and extended port range"
+msgstr "設定主機的實體網路、虛擬開關、vCenter管理網路及擴充埠的範圍"
+
+#. Tag: para
+#, no-c-format
+msgid "Multipath storage"
+msgstr "多途徑儲存"
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare storage for iSCSI"
+msgstr "準備 iSCSI 儲存裝置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Configure clusters in vCenter and add hosts to them, or add hosts without "
+"clusters to vCenter"
+msgstr "設定 vCenter 的 cluster 並增加主機到cluster，或是增加沒有cluster的主機到"
+
+#. Tag: title
+#, no-c-format
+msgid "ESXi Host setup"
+msgstr "ESXi主機設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"All ESXi hosts should enable CPU hardware virtualization support in BIOS. "
+"Please note hardware virtualization support is not enabled by default on "
+"most servers."
+msgstr "所有ESXi 主機都應該在BIOS允許CPU硬體虛擬化支援。請注意，硬體虛擬化支援預設都是關閉的"
+
+#. Tag: title
+#, no-c-format
+msgid "Physical Host Networking"
+msgstr "實體主機網路"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should have a plan for cabling the vSphere hosts. Proper network "
+"configuration is required before adding a vSphere host to &PRODUCT;. To "
+"configure an ESXi host, you can use vClient to add it as standalone host to "
+"vCenter first. Once you see the host appearing in the vCenter inventory "
+"tree, click the host node in the inventory tree, and navigate to the "
+"Configuration tab."
+msgstr "您需要為 vSphere主機的牽線做規劃，適當的網路設定是在您新增 vSphere主機到&PRODUCT;前所需要的。關於設定ESXi主機，您可以先使用vClient，並以獨立主機的形式新增到vCenter，一旦您看見主機出現在vCenter的清單中，您就可以點選清單中主機的 Configuration標籤"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the host configuration tab, click the \"Hardware/Networking\" link to "
+"bring up the networking configuration page as above."
+msgstr "在host configuration標籤中，點選\"Hardware/Networking\"進入網路設定葉面"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure Virtual Switch"
+msgstr "設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A default virtual switch vSwitch0 is created. &PRODUCT; requires all ESXi "
+"hosts in the cloud to use the same set of virtual switch names. If you "
+"change the default virtual switch name, you will need to configure one or "
+"more &PRODUCT; configuration variables as well."
+msgstr "有一個預設的virtual switch vSwitch0會被新增，&PRODUCT;需要所有ESXi 雲端主機都使用同一組virtual switch名稱。如果您改變預設的名稱，您也會需要設定一至多個&PRODUCT; 變數"
+
+#. Tag: title
+#, no-c-format
+msgid "Separating Traffic"
+msgstr "Separating Traffic"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; allows you to use vCenter to configure three separate networks per"
+" ESXi host. These networks are identified by the name of the vSwitch they "
+"are connected to. The allowed networks for configuration are public (for "
+"traffic to/from the public internet), guest (for guest-guest traffic), and "
+"private (for management and usually storage traffic). You can use the "
+"default virtual switch for all three, or create one or two other vSwitches "
+"for those traffic types."
+msgstr "&PRODUCT;允許您使用vCenter在每個ESXi 主機設定三個獨立的網路，這些網路由它們連結到的 vSwitch名稱來區分。可被設定的網路分別為公用(流量從/到公用網路)、訪客(訪客網路間的流量)和私人(管理及儲存流量)。您可以套用預設的virtual switch到這三個網路，或是創建一、二個"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you want to separate traffic in this way you should first create and "
+"configure vSwitches in vCenter according to the vCenter instructions. Take "
+"note of the vSwitch names you have used for each traffic type. You will "
+"configure &PRODUCT; to use these vSwitches."
+msgstr "如果您想要這樣分離流量，您需要先根據 vCenter指示建立及設定vSwitches，記錄下每個流量型態的vSwitch名稱，您會需要用這些設定&PRODUCT; "
+
+#. Tag: title
+#, no-c-format
+msgid "Increasing Ports"
+msgstr "Increasing Ports"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default a virtual switch on ESXi hosts is created with 56 ports. We "
+"recommend setting it to 4088, the maximum number of ports allowed. To do "
+"that, click the \"Properties...\" link for virtual switch (note this is not "
+"the Properties link for Networking)."
+msgstr " ESXi主機上的virtual switch預設上有56個埠，我們建議您設定到4088個，最大的允許量。選擇virtual switch的\"Properties...\"(注意，這不是Networking的Properties連結)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In vSwitch properties dialog, select the vSwitch and click Edit. You should "
+"see the following dialog:"
+msgstr "在vSwitch properties對話框，選擇vSwitch然後按 Edit，您應該會看到以下對話框："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In this dialog, you can change the number of switch ports. After you've done"
+" that, ESXi hosts are required to reboot in order for the setting to take "
+"effect."
+msgstr "在這個對話框，您可以改變switch埠的數量。當您完成改變後，ESXi主機會重新開機"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure vCenter Management Network"
+msgstr "設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the vSwitch properties dialog box, you may see a vCenter management "
+"network. This same network will also be used as the &PRODUCT; management "
+"network. &PRODUCT; requires the vCenter management network to be configured "
+"properly. Select the management network item in the dialog, then click Edit."
+msgstr "在vSwitch properties對話框，您會看到vCenter management network，這個一樣的 network也會用在 &PRODUCT; management network。&PRODUCT;要求vCenter management network必須要適當地設定。選擇對話框中的management network item然後按下"
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure the following values are set:"
+msgstr "請先確定以下數值已經設定："
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN ID set to the desired ID"
+msgstr "VLAN ID 已設定為想要的ID"
+
+#. Tag: para
+#, no-c-format
+msgid "vMotion enabled."
+msgstr "啟用vMotion"
+
+#. Tag: para
+#, no-c-format
+msgid "Management traffic enabled."
+msgstr "啟用Management traffic"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the ESXi hosts have multiple VMKernel ports, and ESXi is not using the "
+"default value \"Management Network\" as the management network name, you "
+"must follow these guidelines to configure the management network port group "
+"so that &PRODUCT; can find it:"
+msgstr "如果ESXi主機有多個VMKernelports，以及不是使用預設的\"Management Network\"為management network名稱，您必須按照指南來設定management network port group，&PRODUCT;才能找到："
+
+#. Tag: para
+#, no-c-format
+msgid "Use one label for the management network port across all ESXi hosts."
+msgstr "使用一個 management network port標籤橫跨所有ESXi主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the &PRODUCT; UI, go to Configuration - Global Settings and set "
+"vmware.management.portgroup to the management network label from the ESXi "
+"hosts."
+msgstr "在&PRODUCT; UI中，到Configuration - Global Settings設定vmware.management.portgroup到ESXi主機的management network標籤"
+
+#. Tag: title
+#, no-c-format
+msgid "Extend Port Range for &PRODUCT; Console Proxy"
+msgstr "為&PRODUCT; Console Proxy擴展部的範圍"
+
+#. Tag: para
+#, no-c-format
+msgid "(Applies only to VMware vSphere version 4.x)"
+msgstr "(只能套用到 VMware vSphere version 4.x)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You need to extend the range of firewall ports that the console proxy works "
+"with on the hosts. This is to enable the console proxy to work with VMware-"
+"based VMs. The default additional port range is 59000-60000. To extend the "
+"port range, log in to the VMware ESX service console on each host and run "
+"the following commands:"
+msgstr "您需要擴展防火牆的埠範圍，讓主機上的console proxy能夠在VMware-based VMs能夠工作。預設的額外埠範圍是59000-60000。登入到每個主機的 VMware ESX service console，然後執行以下指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"esxcfg-firewall -o 59000-60000,tcp,in,vncextras\n"
+"esxcfg-firewall -o 59000-60000,tcp,out,vncextras\n"
+"        "
+msgstr "\nesxcfg-firewall -o 59000-60000,tcp,in,vncextras\nesxcfg-firewall -o 59000-60000,tcp,out,vncextras\n        "
+
+#. Tag: title
+#, no-c-format
+msgid "Configure NIC Bonding for vSphere"
+msgstr "設定vSphere的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NIC bonding on vSphere hosts may be done according to the vSphere "
+"installation guide."
+msgstr " vSphere主機上的NIC bonding可以依照 vSphere安裝指南來完成"
+
+#. Tag: title
+#, no-c-format
+msgid "Storage Preparation for vSphere (iSCSI only)"
+msgstr "vSphere的儲存裝置準備工作(限)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use of iSCSI requires preparatory work in vCenter. You must add an iSCSI "
+"target and create an iSCSI datastore."
+msgstr "使用 iSCSI，在vCenter會有準備工作。您必須要新增一個 iSCSI 目標以及新增一個 iSCSI datastore"
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using NFS, skip this section."
+msgstr "如果您是使用NFS，請跳過這個章節"
+
+#. Tag: title
+#, no-c-format
+msgid "Enable iSCSI initiator for ESXi hosts"
+msgstr "啟用 ESXi 主機的"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In vCenter, go to hosts and Clusters/Configuration, and click Storage "
+"Adapters link. You will see:"
+msgstr "在vCenter，到hosts and Clusters/Configuration，然後按下 Storage Adapters連結，您會看到："
+
+#. Tag: para
+#, no-c-format
+msgid "Select iSCSI software adapter and click Properties."
+msgstr "選擇 iSCSI software adapter ，然後選擇Properties"
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure... button."
+msgstr "選擇Configure..."
+
+#. Tag: para
+#, no-c-format
+msgid "Check Enabled to enable the initiator."
+msgstr "勾選 Enabled來啟用 initiator "
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK to save."
+msgstr "按下OK並儲存"
+
+#. Tag: title
+#, no-c-format
+msgid "Add iSCSI target"
+msgstr "新增iSCSI target "
+
+#. Tag: para
+#, no-c-format
+msgid "Under the properties dialog, add the iSCSI target info:"
+msgstr "在properties對話框，新增 iSCSI target資訊"
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for all ESXi hosts in the cluster."
+msgstr "在所有 ESXi 主機重複這些步驟"
+
+#. Tag: title
+#, no-c-format
+msgid "Create an iSCSI datastore"
+msgstr "新增一個 iSCSI datastore "
+
+#. Tag: para
+#, no-c-format
+msgid "You should now create a VMFS datastore. Follow these steps to do so:"
+msgstr "按照以下步驟來新增  VMFS datastore "
+
+#. Tag: para
+#, no-c-format
+msgid "Select Home/Inventory/Datastores."
+msgstr "選擇Home/Inventory/Datastores."
+
+#. Tag: para
+#, no-c-format
+msgid "Right click on the datacenter node."
+msgstr "在datacenter node按右鍵"
+
+#. Tag: para
+#, no-c-format
+msgid "Choose Add Datastore... command."
+msgstr "選擇Add Datastore..."
+
+#. Tag: para
+#, no-c-format
+msgid "Follow the wizard to create a iSCSI datastore."
+msgstr "使用安裝精靈來新增iSCSI datastore "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This procedure should be done on one host in the cluster. It is not "
+"necessary to do this on all hosts."
+msgstr "這個步驟只需要在一台主機上執行即可"
+
+#. Tag: title
+#, no-c-format
+msgid "Multipathing for vSphere (Optional)"
+msgstr "Multipathing for vSphere(選擇性)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Storage multipathing on vSphere nodes may be done according to the vSphere "
+"installation guide."
+msgstr "vSphere node上的Storage multipathing可以依照vSphere安裝指南來完成"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Hosts or Configure Clusters (vSphere)"
+msgstr "新增主機 或 設定 Clusters (vSphere)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Use vCenter to create a vCenter cluster and add your desired hosts to the "
+"cluster. You will later add the entire cluster to &PRODUCT;. (see <xref "
+"linkend=\"add-clusters-vsphere\" />)."
+msgstr "使用vCenter來建立vCenter cluster以及新增主機到cluster。您之後會新增整個cluster到&PRODUCT; (詳見 <xref linkend=\"add-clusters-vsphere\" />)."
+
+#. Tag: title
+#, no-c-format
+msgid "Applying Hotfixes to a VMware vSphere Host"
+msgstr "套用Hotfixes到 VMware vSphere主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Disconnect the VMware vSphere cluster from &PRODUCT;. It should remain "
+"disconnected long enough to apply the hotfix on the host."
+msgstr "從&PRODUCT;切斷VMware vSphere cluster連結，時間足夠我們套用hotfix到主機上"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as root."
+msgstr "以root登入"
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"log-in\" />."
+msgstr "詳見"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the VMware cluster, click Actions, and select Unmanage."
+msgstr "移動到 VMware cluster，點選Actions，然後選擇Unmanage"
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the cluster status until it shows Unmanaged."
+msgstr "檢查 cluster直到顯示Unmanaged "
+
+#. Tag: para
+#, no-c-format
+msgid "Perform the following on each of the ESXi hosts in the cluster:"
+msgstr "執行以下到每個cluster上的 ESXi主機： "
+
+#. Tag: para
+#, no-c-format
+msgid "Move each of the ESXi hosts in the cluster to maintenance mode."
+msgstr "移動每個主機到maintenance mode "
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that all the VMs are migrated to other hosts in that cluster."
+msgstr "確保所有VM都已經移到其他cluster 的主機了"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If there is only one host in that cluster, shutdown all the VMs and move the"
+" host into maintenance mode."
+msgstr "如果只有一台主機，關閉所有VM，然後將主機移至maintenance mode "
+
+#. Tag: para
+#, no-c-format
+msgid "Apply the patch on the ESXi host."
+msgstr "將補釘套用到ESXi主機"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the host if prompted."
+msgstr "如果有提示，請重新啟動"
+
+#. Tag: para
+#, no-c-format
+msgid "Cancel the maintenance mode on the host."
+msgstr "取消maintenance mode "
+
+#. Tag: para
+#, no-c-format
+msgid "Reconnect the cluster to &PRODUCT;:"
+msgstr "重新連線到&PRODUCT;"
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the VMware cluster, click Actions, and select Manage."
+msgstr "移動到VMware cluster，點選Actions，然後選擇"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Watch the status to see that all the hosts come up. It might take several "
+"minutes for the hosts to come up."
+msgstr "等待所有主機出現，這可能會等待數分鐘"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Alternatively, verify the host state is properly synchronized and updated in"
+" the &PRODUCT; database."
+msgstr "確認主機的狀態是否適當地同步以及更新到&PRODUCT;資料庫"

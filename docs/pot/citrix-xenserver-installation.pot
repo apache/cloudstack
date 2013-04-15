@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19T13:38:03\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12T11:19:38\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -75,7 +75,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags."
+msgid "All hosts within a cluster must be homogeneous. The CPUs must be of the same type, count, and feature flags."
 msgstr ""
 
 #. Tag: para

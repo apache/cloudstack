@@ -1,0 +1,88 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-04 06:27+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Project Creator Permissions"
+msgstr "設定允許 Project Creator"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can configure &PRODUCT; to allow any user to create a new project, or "
+"you can restrict that ability to just &PRODUCT; administrators."
+msgstr "您可以設定&PRODUCT;為允許所有使用者可以建立新的計畫，或是僅限&PRODUCT; 管理者"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "以管理者登入&PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr "在左邊的導覽視窗，選擇Global Settings"
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type allow.user.create.projects."
+msgstr "在搜尋欄位裡鍵入allow.user.create.projects並點選搜尋按鈕。 "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the edit button to set the parameter.<inlinemediaobject> <imageobject>"
+" <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> "
+"<textobject> <phrase>editbutton.png: Edits parameters</phrase> </textobject>"
+" </inlinemediaobject>"
+msgstr "按下edit並設定參數<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>editbutton.png: Edits parameters</phrase> </textobject> </inlinemediaobject>"
+
+#. Tag: para
+#, no-c-format
+msgid "allow.user.create.projects"
+msgstr "allow.user.create.projects"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Set to true to allow end users to create projects. Set to false if you want "
+"only the &PRODUCT; root administrator and domain administrators to create "
+"projects."
+msgstr "設為\"true\"使終端使用者可以建立計畫；設為\"false\"則只有&PRODUCT; root及網域管理者可以建立"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr "重新啟動 Management Server "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr "# service cloud-management restart"

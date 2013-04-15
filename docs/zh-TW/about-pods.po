@@ -1,0 +1,44 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-31 14:44+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Pods"
+msgstr "關於Pods"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A pod often represents a single rack. Hosts in the same pod are in the same "
+"subnet. A pod is the second-largest organizational unit within a &PRODUCT; "
+"deployment. Pods are contained within zones. Each zone can contain one or "
+"more pods. A pod consists of one or more clusters of hosts and one or more "
+"primary storage servers. Pods are not visible to the end user."
+msgstr "Pod通常代表一個單一的架子，同一個pod的主機會有相同的子網路。pod是&PRODUCT;架構中第二大的組織單位，而pod包含在zone之下，每個zone都包含一至多個pod；每一個pod都包含一至多個cluster主機及主要儲存裝置，並且終端使用者是看不見的 "

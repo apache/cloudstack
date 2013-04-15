@@ -37,10 +37,17 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
+import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -59,9 +66,24 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.*;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.SwiftVO;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.dao.*;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.SwiftDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateSwiftDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -80,6 +102,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+
 import edu.emory.mathcs.backport.java.util.Collections;
 
 
@@ -236,10 +259,10 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
             String sourceChecksum = _vmMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
 			DownloadCommand dcmd =  
               new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
-			dcmd.setProxy(getHttpProxy());
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
 	 		}
+            dcmd.setProxy(getHttpProxy());
 			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
             HostVO ssAhost = _ssvmMgr.pickSsvmHost(destServer);
             if( ssAhost == null ) {
@@ -321,10 +344,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 	        }
+            dcmd.setProxy(getHttpProxy());
+
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
@@ -410,12 +434,11 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		if(volumeHost != null) {
 		    start();
 			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
-			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
 	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
-			
+            dcmd.setProxy(getHttpProxy());
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssvm == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());

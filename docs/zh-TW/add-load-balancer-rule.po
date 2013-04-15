@@ -18,9 +18,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 14:03+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-26 08:20+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -122,14 +122,14 @@ msgid ""
 "<emphasis role=\"bold\">Stickiness</emphasis>: (Optional) Click Configure "
 "and choose the algorithm for the stickiness policy. See Sticky Session "
 "Policies for Load Balancer Rules."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Stickiness</emphasis>. (選擇性) 點選Configure並選擇stickiness policy的演算法，請參Sticky Session Policies for Load Balancer Rules章節"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">AutoScale</emphasis>: Click Configure and complete "
 "the AutoScale configuration as explained in <xref linkend=\"autoscale\" />."
-msgstr ""
+msgstr "<emphasis role=\"bold\">AutoScale</emphasis>：點選Configure並如<xref linkend=\"autoscale\" />說明完成AutoScale的設定"
 
 #. Tag: para
 #, no-c-format

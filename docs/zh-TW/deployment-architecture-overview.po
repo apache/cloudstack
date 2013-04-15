@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-03-31 05:45+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Deployment Architecture Overview"
+msgstr "架設架構總攬"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A &PRODUCT; installation consists of two parts: the Management Server and "
+"the cloud infrastructure that it manages. When you set up and manage a "
+"&PRODUCT; cloud, you provision resources such as hosts, storage devices, and"
+" IP addresses into the Management Server, and the Management Server manages "
+"those resources."
+msgstr "&PRODUCT;的安裝包含兩個部分：管理伺服器及雲端基礎架構，當您架設及管理一個&PRODUCT;雲端時，您需要提供如主機、儲存裝置及IP位址等資源給管理伺服器，而管理伺服器幫您管理這些資源"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The minimum production installation consists of one machine running the "
+"&PRODUCT; Management Server and another machine to act as the cloud "
+"infrastructure (in this case, a very simple infrastructure consisting of one"
+" host running hypervisor software). In its smallest deployment, a single "
+"machine can act as both the Management Server and the hypervisor host (using"
+" the KVM hypervisor)."
+msgstr "產品的最少安裝包含一個執行&PRODUCT;管理伺服器的機器及雲端基礎架構的機器(這個例子是只包含一個執行超級監督者程式的主機)，在最小的架構中，一個機器可以同時執行管理伺服器及超級監督者主機(使用 KVM hypervisor )"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A more full-featured installation consists of a highly-available multi-node "
+"Management Server installation and up to tens of thousands of hosts using "
+"any of several advanced networking setups. For information about deployment "
+"options, see the \"Choosing a Deployment Architecture\" section of the "
+"$PRODUCT; Installation Guide."
+msgstr "完全安裝包含多點管理伺服器及上千上萬使用多種進階網路設定的主機，更多資訊詳見 $PRODUCT;安裝指南的\"Choosing a Deployment Architecture\"部分"

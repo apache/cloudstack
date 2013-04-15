@@ -1,0 +1,79 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-03-23 10:27+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using the Project View"
+msgstr "使用Project View"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are a member of a project, you can use &PRODUCT;’s project view to "
+"see project members, resources consumed, and more. The project view shows "
+"only information related to one project. It is a useful way to filter out "
+"other information so you can concentrate on a project status and resources."
+msgstr "如果您是專案的一員，你可以使用 &PRODUCT; 的project view，透過project view 您可以檢視專案成員、以消耗的專案資源以及其他專案相關資訊。Project view僅呈現單一專案，您可以先行過濾一些其他資訊，然而就可以專住在單一專案的狀態以及資源。"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr "登入 &PRODUCT; UI"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Project View."
+msgstr "點選Project View"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The project dashboard appears, showing the project’s VMs, volumes, users, "
+"events, network settings, and more. From the dashboard, you can:"
+msgstr "專案的主控台將呈現再您面前，其中包含了虛擬機、磁碟、專案成員、專案相關事件、網路設定以及其他專案相關資訊。於主控台您可以："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Click the Accounts tab to view and manage project members. If you are the "
+"project administrator, you can add new members, remove members, or change "
+"the role of a member from user to admin. Only one member at a time can have "
+"the admin role, so if you set another user’s role to admin, your role will "
+"change to regular user."
+msgstr "點選Accounts分頁檢視並管理專案成員，如果你是專案管理者，你可以新增專案成員、移除專案成員、或是更改專案角色，專案同時間只能有一個專案管理者，如果您設定了其他使用者為管理者，您本身的角色將更換成為一般使用者。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(If invitations are enabled) Click the Invitations tab to view and manage "
+"invitations that have been sent to new project members but not yet accepted."
+" Pending invitations will remain in this list until the new member accepts, "
+"the invitation timeout is reached, or you cancel the invitation."
+msgstr "(如果有開啟邀請功能) 點選Invitations分頁您可以檢視並管理新邀請但仍未接受的專案成員，等待中的邀請會一直出現在列表中，直到該位使用者接受邀請、邀請時間過期或是您取消邀請。"

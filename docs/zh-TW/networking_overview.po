@@ -1,0 +1,59 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-02 08:53+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Networking Overview"
+msgstr "網路簡介"
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack offers two types of networking scenario:"
+msgstr "CloudStack提供兩種網路範本："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Basic. For AWS-style networking. Provides a single network where guest "
+"isolation can be provided through layer-3 means such as security groups (IP "
+"address source filtering)."
+msgstr "基本。為類似AWS模式的網路架構，提供layer-3的Security group安全機制(IP位置過濾機制)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Advanced. For more sophisticated network topologies. This network model "
+"provides the most flexibility in defining guest networks."
+msgstr "進階。 提供使用者更多的網路拓撲結構，選擇此選項將可更彈性的設定網路"
+
+#. Tag: para
+#, no-c-format
+msgid "For more details, see Network Setup."
+msgstr "更多細節，見Network Setup"

@@ -1,0 +1,72 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-10 03:11+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Features of the Nicira NVP Plugin"
+msgstr "Nicira NVP插件特色"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In &PRODUCT; release 4.0.0-incubating this plugin supports the Connectivity "
+"service. This service is responsible for creating Layer 2 networks "
+"supporting the networks created by Guests. In other words when an tenant "
+"creates a new network, instead of the traditional VLAN a logical network "
+"will be created by sending the appropriate calls to the Nicira NVP "
+"Controller."
+msgstr "在&PRODUCT;  4.0.0-incubating釋出，這個插件支援Connectivity服務，負責建立Layer 2網路，並支援訪客建立的網路。當租戶新增新的網路時，藉由呼叫Nicira NVP Controller，會建立邏輯網路，而不是傳統的VLAN。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The plugin has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1"
+msgstr "此插件已在Nicira NVP versions 2.1.0, 2.2.0 及 2.2.1測試過"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In &PRODUCT; 4.0.0-incubating only the XenServer hypervisor is supported for"
+" use in combination with Nicira NVP."
+msgstr "在&PRODUCT;  4.0.0-incubating，只有支援XenServer超級監督者能與Nicira NV憶起使用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In &PRODUCT; 4.1.0-incubating both KVM and XenServer hypervisors are "
+"supported."
+msgstr "&PRODUCT; 4.1.0-incubating，可支援KVM 及 XenServer超級監督者"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In &PRODUCT; 4.0.0-incubating the UI components for this plugin are not "
+"complete, configuration is done by sending commands to the API."
+msgstr "&PRODUCT; 4.0.0-incubating的使用者介面對此插件並沒有完成，設定可以藉由送指令到API完成"

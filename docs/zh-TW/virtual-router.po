@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-03-26 09:44+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Virtual Router"
+msgstr "虛擬路由器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The virtual router is a type of System Virtual Machine. The virtual router "
+"is one of the most frequently used service providers in &PRODUCT;. The end "
+"user has no direct access to the virtual router. Users can ping the virtual "
+"router and take actions that affect it (such as setting up port forwarding),"
+" but users do not have SSH access into the virtual router."
+msgstr "虛擬路由器使一種System Virtual Machine。它是最常被&PRODUCT;服務提供者使用的服務。端點使用者沒有直接的存取，使用者可以先檢查虛擬路由器是否存在，然後開始動作(例如設定port forwarding)，但是使用者無法使用SSH存取"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"There is no mechanism for the administrator to log in to the virtual router."
+" Virtual routers can be restarted by administrators, but this will interrupt"
+" public network access and other services for end users. A basic test in "
+"debugging networking issues is to attempt to ping the virtual router from a "
+"guest VM. Some of the characteristics of the virtual router are determined "
+"by its associated system service offering.."
+msgstr "虛擬路由器沒有伺服機制給管理者登入。虛擬路由器可以被管理者重新啟動，但會中斷公眾網路存取及使用者的服務，最簡單的檢查網路方式為先檢查訪客VM的虛擬路由器是否存在，有些虛擬路由器的特徵由其關聯的網路服務決定"

@@ -1,0 +1,220 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-10 12:25+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building DEB packages"
+msgstr "建立DEB packages"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the bootstrap dependencies, you'll also need to install "
+"several other dependencies. Note that we recommend using Maven 3, which is "
+"not currently available in 12.04.1 LTS. So, you'll also need to add a PPA "
+"repository that includes Maven 3. After running the command <command>add-"
+"apt-repository</command>, you will be prompted to continue and a GPG key "
+"will be added."
+msgstr "除了bootstrap dependencies，您也需要安裝許多其他的dependencies，建議使用Maven 3，目前在12.04.1 LTS無法使用，因此您需要加一個包含Maven 3的PPA repository，執行指令<command>add-apt-repository</command>後，您會被提示繼續，並且會新增一個GPG key"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<command>$ sudo apt-get update</command>\n"
+"<command>$ sudo apt-get install python-software-properties</command>\n"
+"<command>$ sudo add-apt-repository ppa:natecarlson/maven3</command>\n"
+"<command>$ sudo apt-get update</command>\n"
+"<command>$ sudo apt-get install ant debhelper openjdk-6-jdk tomcat6 libws-commons-util-java genisoimage python-mysqldb libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven3</command>\n"
+msgstr "\n<command>$ sudo apt-get update</command>\n<command>$ sudo apt-get install python-software-properties</command>\n<command>$ sudo add-apt-repository ppa:natecarlson/maven3</command>\n<command>$ sudo apt-get update</command>\n<command>$ sudo apt-get install ant debhelper openjdk-6-jdk tomcat6 libws-commons-util-java genisoimage python-mysqldb libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven3</command>\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"While we have defined, and you have presumably already installed the "
+"bootstrap prerequisites, there are a number of build time prerequisites that"
+" need to be resolved. &PRODUCT; uses maven for dependency resolution. You "
+"can resolve the buildtime depdencies for CloudStack by running:"
+msgstr "在定義，並且您已安裝 bootstrap prerequisites後，會有一段建立時間給prerequisites resolved，&PRODUCT;使用maven為dependency resolution。您可以為 CloudStack resolve建立時間depdencies，藉由執行："
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ mvn3 -P deps</command>"
+msgstr "<command>$ mvn3 -P deps</command>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we have resolved the dependencies we can move on to building "
+"&PRODUCT; and packaging them into DEBs by issuing the following command."
+msgstr "現在我們已resolved the dependencies，接著執行以下指令來建立&PRODUCT;並將它們打包成DEB："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<command>$ dpkg-buildpackge -uc -us</command>\n"
+msgstr "\n<command>$ dpkg-buildpackge -uc -us</command>\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This command will build 16 Debian packages. You should have all of the "
+"following:"
+msgstr "此指令會建立16 Debian packages，您應該會有以下全部："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"cloud-agent_4.0.0-incubating_amd64.deb\n"
+"cloud-agent-deps_4.0.0-incubating_amd64.deb\n"
+"cloud-agent-libs_4.0.0-incubating_amd64.deb\n"
+"cloud-awsapi_4.0.0-incubating_amd64.deb\n"
+"cloud-cli_4.0.0-incubating_amd64.deb\n"
+"cloud-client_4.0.0-incubating_amd64.deb\n"
+"cloud-client-ui_4.0.0-incubating_amd64.deb\n"
+"cloud-core_4.0.0-incubating_amd64.deb\n"
+"cloud-deps_4.0.0-incubating_amd64.deb\n"
+"cloud-python_4.0.0-incubating_amd64.deb\n"
+"cloud-scripts_4.0.0-incubating_amd64.deb\n"
+"cloud-server_4.0.0-incubating_amd64.deb\n"
+"cloud-setup_4.0.0-incubating_amd64.deb\n"
+"cloud-system-iso_4.0.0-incubating_amd64.deb\n"
+"cloud-usage_4.0.0-incubating_amd64.deb\n"
+"cloud-utils_4.0.0-incubating_amd64.deb\n"
+msgstr "\ncloud-agent_4.0.0-incubating_amd64.deb\ncloud-agent-deps_4.0.0-incubating_amd64.deb\ncloud-agent-libs_4.0.0-incubating_amd64.deb\ncloud-awsapi_4.0.0-incubating_amd64.deb\ncloud-cli_4.0.0-incubating_amd64.deb\ncloud-client_4.0.0-incubating_amd64.deb\ncloud-client-ui_4.0.0-incubating_amd64.deb\ncloud-core_4.0.0-incubating_amd64.deb\ncloud-deps_4.0.0-incubating_amd64.deb\ncloud-python_4.0.0-incubating_amd64.deb\ncloud-scripts_4.0.0-incubating_amd64.deb\ncloud-server_4.0.0-incubating_amd64.deb\ncloud-setup_4.0.0-incubating_amd64.deb\ncloud-system-iso_4.0.0-incubating_amd64.deb\ncloud-usage_4.0.0-incubating_amd64.deb\ncloud-utils_4.0.0-incubating_amd64.deb\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting up an APT repo"
+msgstr "建立APT repo"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you've created the packages, you'll want to copy them to a system "
+"where you can serve the packages over HTTP. You'll create a directory for "
+"the packages and then use <code>dpkg-scanpackages</code> to create "
+"<filename>Packages.gz</filename>, which holds information about the archive "
+"structure. Finally, you'll add the repository to your system(s) so you can "
+"install the packages using APT."
+msgstr "建立後，您會想要使用HTTP複製它們到服務 packages的系統。您須建立資料夾給packages，然後使用 <code>dpkg-scanpackages</code>來建立<filename>Packages.gz</filename>，此package包含壓縮檔結構的資訊。最後將repository加到您的系統(s)，讓您可以使用APT安裝packages"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The first step is to make sure that you have the <application>dpkg-"
+"dev</application> package installed. This should have been installed when "
+"you pulled in the <application>debhelper</application> application "
+"previously, but if you're generating <filename>Packages.gz</filename> on a "
+"different system, be sure that it's installed there as well."
+msgstr "第一步，確定您有安裝<application>dpkg-dev</application> package。當您pulled in <application>debhelper</application>時就應該安裝了。但是，如果正在不同系統產生<filename>Packages.gz</filename>，請確定此系統也有安裝"
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ sudo apt-get install dpkg-dev</command>"
+msgstr "<command>$ sudo apt-get install dpkg-dev</command>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The next step is to copy the DEBs to the directory where they can be served "
+"over HTTP. We'll use <filename>/var/www/cloudstack/repo</filename> in the "
+"examples, but change the directory to whatever works for you."
+msgstr "下一步，複製DEB到可以服務HTTP的資料夾，我們使用<filename>/var/www/cloudstack/repo</filename>作為範例，您可以改變"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<command>sudo mkdir -p /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo cp *.deb /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo cd /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo dpkg-scanpackages . /dev/null | tee Packages | gzip -9 &gt; Packages.gz</command>\n"
+msgstr "\n<command>sudo mkdir -p /var/www/cloudstack/repo/binary</command>\n<command>sudo cp *.deb /var/www/cloudstack/repo/binary</command>\n<command>sudo cd /var/www/cloudstack/repo/binary</command>\n<command>sudo dpkg-scanpackages . /dev/null | tee Packages | gzip -9 &gt; Packages.gz</command>\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Note: Override Files"
+msgstr "Note: Override Files"
+
+#. Tag: para
+#, no-c-format
+msgid "You can safely ignore the warning about a missing override file."
+msgstr "您可以放心忽略警示"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you should have all of the DEB packages and "
+"<filename>Packages.gz</filename> in the <filename>binary</filename> "
+"directory and available over HTTP. (You may want to use "
+"<command>wget</command> or <command>curl</command> to test this before "
+"moving on to the next step.)"
+msgstr "現在您應該有所有的DEB packages 及<filename>Packages.gz</filename>，在<filename>binary</filename>資料夾中，並可以使用HTTP。(您或許會想用<command>wget</command> 或 <command>curl</command>來測試)"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring your machines to use the APT repository"
+msgstr "使用APT repository設定您的機器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we have created the repository, you need to configure your machine "
+"to make use of the APT repository. You can do this by adding a repository "
+"file under <filename>/etc/apt/sources.list.d</filename>. Use your preferred "
+"editor to create "
+"<filename>/etc/apt/sources.list.d/cloudstack.list</filename> with this line:"
+msgstr "現在我們已經建立repository，您需要設定您的機器來使用APT repository，您可以在<filename>/etc/apt/sources.list.d</filename>下增加repository file來達到此目的，使用您偏好的編輯器來建立<filename>/etc/apt/sources.list.d/cloudstack.list</filename> ，並包含此行："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"deb http://<replaceable>server.url</replaceable>/cloudstack/repo binary ./"
+msgstr "deb http://<replaceable>server.url</replaceable>/cloudstack/repo binary ./"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that you have the repository info in place, you'll want to run another "
+"update so that APT knows where to find the &PRODUCT; packages."
+msgstr "現在您有repository info，您想要執行其他更新，APT會知道到哪找&PRODUCT; packages"
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ sudo apt-get update</command>"
+msgstr "<command>$ sudo apt-get update</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "You can now move on to the instructions under Install on Ubuntu."
+msgstr "您可以繼續Ubuntu的安裝指南"

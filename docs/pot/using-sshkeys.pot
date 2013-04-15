@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:05\n"
-"PO-Revision-Date: 2013-03-19T13:38:05\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12T11:19:41\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -203,7 +203,7 @@ msgstr ""
 
 #. Tag: programlisting
 #, no-c-format
-msgid "curl --globoff http://localhost:&lt;port numbet&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair=keypair-doc"
+msgid "curl --globoff http://localhost:&lt;port number&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair=keypair-doc"
 msgstr ""
 
 #. Tag: para

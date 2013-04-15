@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-03 12:31+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Up a Site-to-Site VPN Connection"
+msgstr "設定 Site-to-Site VPN連線"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A Site-to-Site VPN connection helps you establish a secure connection from "
+"an enterprise datacenter to the cloud infrastructure. This allows users to "
+"access the guest VMs by establishing a VPN connection to the virtual router "
+"of the account from a device in the datacenter of the enterprise. Having "
+"this facility eliminates the need to establish VPN connections to individual"
+" VMs."
+msgstr "Site-to-Site VPN幫助您在企業資料庫及雲端間建立一個安全的連結。藉由建立VPN連結到企業資料庫帳戶的虛擬路由器，可以允許使用者存取訪客VM。有了這個功能，我們就不需要再建立VPN到獨立VM的連結了"
+
+#. Tag: para
+#, no-c-format
+msgid "The supported endpoints on the remote datacenters are:"
+msgstr "支援遠端資料庫的端點為："
+
+#. Tag: para
+#, no-c-format
+msgid "Cisco ISR with IOS 12.4 or later"
+msgstr "Cisco ISR  版本IOS 12.4或之後。"
+
+#. Tag: para
+#, no-c-format
+msgid "Juniper J-Series routers with JunOS 9.5 or later"
+msgstr "Juniper J-Series routers韌體JunOS 9.5或之後的版本"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In addition to the specific Cisco and Juniper devices listed above, the "
+"expectation is that any Cisco or Juniper device running on the supported "
+"operating systems are able to establish VPN connections."
+msgstr "除了以上特定的Cisco及Juniper裝置，其他任何Cisco或是Juniper應該都能在相容的作業系統上建立VPN連結"
+
+#. Tag: para
+#, no-c-format
+msgid "To set up a Site-to-Site VPN connection, perform the following:"
+msgstr "執行以下步驟來建立Site-to-Site VPN連結"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a Virtual Private Cloud (VPC)."
+msgstr "建立Virtual Private Cloud (VPC) "
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"configure-vpc\" />."
+msgstr "請參閱： <xref linkend=\"configure-vpc\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VPN Customer Gateway."
+msgstr "建立VPN Customer Gateway."
+
+#. Tag: para
+#, no-c-format
+msgid "Create a VPN gateway for the VPC that you created."
+msgstr "創建一個VPN閘道給VPC"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create VPN connection from the VPC VPN gateway to the customer VPN gateway."
+msgstr "建立VPN連結給VPC；VPN閘道給客戶VPN閘道"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Appropriate events are generated on the &PRODUCT; UI when status of a Site-"
+"to-Site VPN connection changes from connected to disconnected, or vice "
+"versa. Currently no events are generated when establishing a VPN connection "
+"fails or pending."
+msgstr "當 Site-to-Site VPN連結從連線變成斷線，&PRODUCT; UI會出現提示，反之亦然。如果為失敗或判定中則不會有提示"

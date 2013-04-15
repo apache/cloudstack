@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:08+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:40+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -37,9 +37,15 @@ msgstr "Encaminhamento de IP e firewall"
 #, no-c-format
 msgid ""
 "By default, all incoming traffic to the public IP address is rejected. All "
-"outgoing traffic from the guests is translated via NAT to the public IP "
-"address and is allowed."
-msgstr "Por default, todo o tráfego entrante em um endereço IP público é rejeitado. Todo o tráfego sainte da máquinas hóspedes é traduzido via NAT para o endereço IP público e é permitido."
+"outgoing traffic from the guests is also blocked by default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To allow outgoing traffic, follow the procedure in <xref linkend=\"egress-"
+"firewall-rule\" />."
+msgstr ""
 
 #. Tag: para
 #, no-c-format
@@ -50,5 +56,6 @@ msgid ""
 "forwarding rules to direct traffic from individual ports within that range "
 "to specific ports on user VMs. For example, one port forwarding rule could "
 "route incoming traffic on the public IP's port 33 to port 100 on one user "
-"VM's private IP."
-msgstr "Para permitir tráfego entrante, usuários podem configurar regras de firewall e/ou regras de encaminhamento de portas. Por exemplo, você pode usar uma regra de firewall para abrir um intervalo de portas no endereço IP público, tal como 33 a 44. Então use regras de encaminhamento de portas para direcionar tráfego de portas individuais naquele intervalo para portas específicas nas máquinas virtuais de usuários. Por exemplo, uma regra de encaminhamento de porta poderia rotear tráfego entrante na porta 33 do endereço IP público à porta 100 em um endereço IP privado de uma máquina virtual de usuário."
+"VM's private IP. For more information, see <xref linkend=\"firewall-rules\" "
+"/> and <xref linkend=\"port-forwarding\" />."
+msgstr ""

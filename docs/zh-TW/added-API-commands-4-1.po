@@ -1,0 +1,115 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:37\n"
+"PO-Revision-Date: 2013-03-26 09:35+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API Commands in 4.1-incubating"
+msgstr "4.1-incubating新增API指令"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"createEgressFirewallRules (creates an egress firewall rule on the guest "
+"network.)"
+msgstr "createEgressFirewallRules (在訪客網路建立egress firewall rule)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"deleteEgressFirewallRules (deletes a egress firewall rule on the guest "
+"network.)"
+msgstr "deleteEgressFirewallRules (在訪客網路刪除egress firewall rule)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listEgressFirewallRules (lists the egress firewall rules configured for a "
+"guest network.)"
+msgstr "listEgressFirewallRules (為訪客網路設定的egress firewall rules表單)"
+
+#. Tag: para
+#, no-c-format
+msgid "resetSSHKeyForVirtualMachine (Resets the SSHkey for virtual machine.)"
+msgstr "resetSSHKeyForVirtualMachine (重新設定虛擬機器的SSHkey)"
+
+#. Tag: para
+#, no-c-format
+msgid "addBaremetalHost (Adds a new host.)"
+msgstr "addBaremetalHost (新增主機.)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"addNicToVirtualMachine (Adds a new NIC to the specified VM on a selected "
+"network.)"
+msgstr "addNicToVirtualMachine (在選定的網路新增NIC到指定的VM)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"removeNicFromVirtualMachine (Removes the specified NIC from a selected VM.)"
+msgstr "removeNicFromVirtualMachine(在選定的VM刪除指定的NIC)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateDefaultNicForVirtualMachine (Updates the specified NIC to be the "
+"default one for a selected VM.)"
+msgstr "updateDefaultNicForVirtualMachine (在選定的VM更新指定的NIC成為預設值)"
+
+#. Tag: para
+#, no-c-format
+msgid "addRegion (Registers a Region into another Region.)"
+msgstr "addRegion (登路一個Region到另一個Region)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"updateRegion (Updates Region details: ID, Name, Endpoint, User API Key, and "
+"User Secret Key.)"
+msgstr "updateRegion (更新Region細節： ID, 名稱, 端點, 使用者 API Key, 及使用者Secret Key.)"
+
+#. Tag: para
+#, no-c-format
+msgid "removeRegion (Removes a Region from current Region.)"
+msgstr "removeRegion (從現在的Region移除一個Region)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"listRegions (List all the Regions. Filter them by using the ID or Name.)"
+msgstr "listRegions (列出所有 Regions. 用ID 或 Name過濾)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"getUser (This API can only be used by the Admin. Get user details by using "
+"the API Key.)"
+msgstr "getUser (此API 只能由管理者使用。用API Key取得使用者細節)"

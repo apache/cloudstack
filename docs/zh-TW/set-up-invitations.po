@@ -1,0 +1,177 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-07 03:22+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Up Invitations"
+msgstr "建立邀請"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"&PRODUCT; can be set up either so that project administrators can add people"
+" directly to a project, or so that it is necessary to send an invitation "
+"which the recipient must accept. The invitation can be sent by email or "
+"through the user’s &PRODUCT; account. If you want administrators to use "
+"invitations to add members to projects, turn on and set up the invitations "
+"feature in &PRODUCT;."
+msgstr "&PRODUCT;允許計畫管理者直接加入新成員，也可以藉由Email或使用者&PRODUCT; 帳戶寄送來邀請，如果管理者使用邀請來加入成員，請開啟並設定&PRODUCT;的邀請功能"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr "以管理者登入&PRODUCT; 使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr "在左邊的導覽視窗，選擇Global Settings"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the search box, type project and click the search "
+"button.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images"
+"/search-button.png\" /> </imageobject> <textobject><phrase>searchbutton.png:"
+" Searches projects</phrase></textobject> </inlinemediaobject>"
+msgstr "在搜尋列中，輸入計畫然後搜尋<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/search-button.png\" /> </imageobject> <textobject><phrase>searchbutton.png: Searches projects</phrase></textobject> </inlinemediaobject> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In the search results, you can see a few other parameters you need to set to"
+" control how invitations behave. The table below shows global configuration "
+"parameters related to project invitations. Click the edit button to set each"
+" parameter."
+msgstr "在搜尋結果，您會看到一些欄位，您需要設定邀請如何作用，下方表格顯示廣域設定，按下編輯鈕來設定參數"
+
+#. Tag: para
+#, no-c-format
+msgid "Configuration Parameters"
+msgstr "設定參數"
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr "敘述"
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.required"
+msgstr "project.invite.required"
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true to turn on the invitations feature."
+msgstr "設為true"
+
+#. Tag: para
+#, no-c-format
+msgid "project.email.sender"
+msgstr "project.email.sender"
+
+#. Tag: para
+#, no-c-format
+msgid "The email address to show in the From field of invitation emails."
+msgstr "Email會顯示在 From欄位"
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.timeout"
+msgstr "project.invite.timeout"
+
+#. Tag: para
+#, no-c-format
+msgid "Amount of time to allow for a new member to respond to the invitation."
+msgstr "允許新成員回應的時間"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.host"
+msgstr "project.smtp.host"
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the host that acts as an email server to handle invitations."
+msgstr "當作處理邀請的主機名稱"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.password"
+msgstr "project.smtp.password"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) Password required by the SMTP server. You must also set "
+"project.smtp.username and set project.smtp.useAuth to true."
+msgstr "(選擇性)SMTP要求的密碼，您必須設定project.smtp.username及project.smtp.useAuth為true"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.port"
+msgstr "project.smtp.port"
+
+#. Tag: para
+#, no-c-format
+msgid "SMTP server’s listening port."
+msgstr "SMTP伺服器的等候不"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.useAuth"
+msgstr "project.smtp.useAuth"
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true if the SMTP server requires a username and password."
+msgstr "如果SMTP伺服器需要使用者名稱及密碼，設為true"
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.username"
+msgstr "project.smtp.username"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"(Optional) User name required by the SMTP server for authentication. You "
+"must also set project.smtp.password and set project.smtp.useAuth to true.."
+msgstr "(選擇性)認證SMTP伺服器要求的使用者名稱，您必須設定project.smtp.password及project.smtp.useAuth為true"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server:"
+msgstr "重新啟動 Management Server ："
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service cloud-management restart"
+msgstr "service cloud-management restart"

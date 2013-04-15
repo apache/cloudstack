@@ -69,7 +69,7 @@ install:
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -D agent/bindir/cloud-setup-agent.in $(DESTDIR)/usr/bin/cloudstack-setup-agent
-	install -D agent/bindir/cloud-ssh.in $(DESTDIR)/usr/bin/cloud-ssh
+	install -D agent/bindir/cloud-ssh.in $(DESTDIR)/usr/bin/cloudstack-ssh
 	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
 
 	# cloudstack-management
@@ -100,7 +100,7 @@ install:
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	ln -s server-nonssl.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/server.xml
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
-	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloud-update-xenserver-licenses
+	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
 	ln -s /usr/share/tomcat6/bin $(DESTDIR)/usr/share/$(PACKAGE)-management/bin
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
@@ -121,11 +121,13 @@ install:
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/util $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/vm $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
-	install -D client/target/utilities/bin/cloud-migrate-databases $(DESTDIR)/usr/bin
-	install -D client/target/utilities/bin/cloud-set-guest-password $(DESTDIR)/usr/bin
-	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin
-	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
-	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
+	install -D client/target/utilities/bin/cloud-migrate-databases $(DESTDIR)/usr/bin/cloudstack-migrate-databases
+	install -D client/target/utilities/bin/cloud-set-guest-password $(DESTDIR)/usr/bin/cloudstack-set-guest-password
+	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin/cloudstack-set-guest-sshkey
+	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin/cloudstack-setup-databases
+	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin/cloudstack-setup-management
+	install -D client/target/utilities/bin/cloud-setup-encryption $(DESTDIR)/usr/bin/cloudstack-setup-encryption
+	install -D client/target/utilities/bin/cloud-sysvmadm $(DESTDIR)/usr/bin/cloudstack-sysvmadm
 	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.0.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib

@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-05 01:28+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,19 +31,19 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Changing the Network Offering on a Guest Network"
-msgstr ""
+msgstr "改變訪客網路的服務"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "A user or administrator can change the network offering that is associated "
 "with an existing guest network."
-msgstr ""
+msgstr "使用者及管理者可以改變連結到已知的訪客網路服務"
 
 #. Tag: para
 #, no-c-format
 msgid "Log in to the &PRODUCT; UI as an administrator or end user."
-msgstr "以管理者或終端使用者登入&PRODUCT; UI "
+msgstr "以管理者或終端使用者登入&PRODUCT; 使用者介面"
 
 #. Tag: para
 #, no-c-format
@@ -53,7 +54,7 @@ msgid ""
 "condition=\"install\">See \"Stopping and Starting Virtual Machines\" in the "
 "Administrator's Guide.</phrase> <phrase condition=\"admin\">See <xref "
 "linkend=\"stopping-and-starting-vms\" />.</phrase>"
-msgstr ""
+msgstr "如果您要將使用 &PRODUCT;虛擬路由器的網路服務，改用到像網路服務提供者這樣的外部裝置，您必須停止所有網路上的VM<phrase condition=\"install\">詳見Administrator's Guide的\"Stopping and Starting Virtual Machines\"</phrase> <phrase condition=\"admin\">See <xref linkend=\"stopping-and-starting-vms\" />.</phrase> "
 
 #. Tag: para
 #, no-c-format
@@ -63,7 +64,7 @@ msgstr "在左邊的導覽視窗，選擇Network"
 #. Tag: para
 #, no-c-format
 msgid "Click the name of the network you want to modify."
-msgstr ""
+msgstr "選擇你想要修改的網路"
 
 #. Tag: para
 #, no-c-format
@@ -72,13 +73,13 @@ msgid ""
 "fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> "
 "<phrase>EditButton.png: button to edit a network</phrase> </textobject> "
 "</inlinemediaobject>"
-msgstr ""
+msgstr "在 Details標籤，按下Edit<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>EditButton.png: button to edit a network</phrase> </textobject> </inlinemediaobject>"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In Network Offering, choose the new network offering, then click Apply."
-msgstr ""
+msgstr "在Network Offering中，選擇新的網路服務，然後按Apply "
 
 #. Tag: para
 #, no-c-format
@@ -86,16 +87,16 @@ msgid ""
 "A prompt is displayed asking whether you want to keep the existing CIDR. "
 "This is to let you know that if you change the network offering, the CIDR "
 "will be affected. Choose No to proceed with the change."
-msgstr ""
+msgstr "出現提示詢問您是否要保留已存在的CIDR。這是告訴您，如果您改變了網路服務，CIDR也會受影響，選擇No來完成變更"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Wait for the update to complete. Don’t try to restart VMs until the network "
 "change is complete."
-msgstr ""
+msgstr "等待更新完畢，請不要中途重新啟動VM"
 
 #. Tag: para
 #, no-c-format
 msgid "If you stopped any VMs, restart them."
-msgstr ""
+msgstr "重新啟動停止的VM"

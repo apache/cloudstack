@@ -19,8 +19,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-12 11:50+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -138,9 +138,9 @@ msgstr "&PRODUCT; が展開された際、ハイパーバイザーホストに�
 #. Tag: para
 #, no-c-format
 msgid ""
-"All hosts within a cluster must be homogenous. The CPUs must be of the same "
-"type, count, and feature flags."
-msgstr "1つのクラスター内のホストは種類が同じである必要があります。つまり、CPUの種類と数が同じで、同じ機能フラグ である必要があります。"
+"All hosts within a cluster must be homogeneous. The CPUs must be of the same"
+" type, count, and feature flags."
+msgstr "クラスター内にあるホストは全て同スペックでなければいけません。CPU の種類や数、機能フラグが同じでなければいけません。"
 
 #. Tag: para
 #, no-c-format

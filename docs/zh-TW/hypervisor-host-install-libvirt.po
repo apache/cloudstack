@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19 14:18+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:39+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -52,8 +52,8 @@ msgstr "為了具備live migration的能力 ,libviry必須傾聽不安全的TCP�
 
 #. Tag: para
 #, no-c-format
-msgid "Set the following paramaters:"
-msgstr "設定以下參數"
+msgid "Set the following parameters:"
+msgstr ""
 
 #. Tag: programlisting
 #, no-c-format

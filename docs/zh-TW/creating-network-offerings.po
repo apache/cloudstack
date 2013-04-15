@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-03-19 14:06+0000\n"
-"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-05 11:55+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,77 +31,77 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating a New Network Offering"
-msgstr ""
+msgstr "新增新的網路服務"
 
 #. Tag: para
 #, no-c-format
 msgid "To create a network offering:"
-msgstr ""
+msgstr "想新增網路服務："
 
 #. Tag: para
 #, no-c-format
 msgid "Log in with admin privileges to the &PRODUCT; UI."
-msgstr ""
+msgstr "以管理者優先登入&PRODUCT;使用者介面"
 
 #. Tag: para
 #, no-c-format
 msgid "In the left navigation bar, click Service Offerings."
-msgstr ""
+msgstr "在左邊的導覽視窗，選擇Service Offerings"
 
 #. Tag: para
 #, no-c-format
 msgid "In Select Offering, choose Network Offering."
-msgstr ""
+msgstr "在Select Offering中，選擇Network Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add Network Offering."
-msgstr ""
+msgstr "按下Add Network Offering"
 
 #. Tag: para
 #, no-c-format
 msgid "In the dialog, make the following choices:"
-msgstr ""
+msgstr "在對話框中，選擇以下："
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Name</emphasis>. Any desired name for the network "
 "offering."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name</emphasis>：網路服務的名稱"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Description</emphasis>. A short description of the "
 "offering that can be displayed to users."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Description</emphasis>：使用者可見的簡述"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Network Rate</emphasis>. Allowed data transfer rate "
 "in MB per second."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Network Rate</emphasis>：允許的資料傳輸速率，單位為MB每秒"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Guest Type</emphasis>. Choose whether the guest "
 "network is isolated or shared."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Guest Type</emphasis>：選擇訪客網路為獨立或分享"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "For a description of this term, see <xref linkend=\"about-virtual-networks\""
 " />."
-msgstr ""
+msgstr "這項的詳細敘述，參見<xref linkend=\"about-virtual-networks\" /> "
 
 #. Tag: para
 #, no-c-format
 msgid "For a description of this term, see the Administration Guide."
-msgstr ""
+msgstr "這項的詳細敘述，參見Administration Guide"
 
 #. Tag: para
 #, no-c-format
@@ -109,7 +110,7 @@ msgid ""
 "network is persistent or not. The network that you can provision without "
 "having to deploy a VM on it is termed persistent network. For more "
 "information, see <xref linkend=\"persistent-network\" />."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Persistent</emphasis>：訪客網路是否持續，即您是否需要部屬VM在這個網路，更多資訊，詳見<xref linkend=\"persistent-network\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -117,7 +118,7 @@ msgid ""
 "<emphasis role=\"bold\">Specify VLAN</emphasis>. (Isolated guest networks "
 "only) Indicate whether a VLAN should be specified when this offering is "
 "used."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Specify VLAN</emphasis>：(僅獨立訪客網路)使用服務時，VLAN使否需要指定"
 
 #. Tag: para
 #, no-c-format
@@ -127,7 +128,7 @@ msgid ""
 "(VPC) is a private, isolated part of &PRODUCT;. A VPC can have its own "
 "virtual network topology that resembles a traditional physical network. For "
 "more information on VPCs, see <xref linkend=\"vpc\" />."
-msgstr ""
+msgstr "<emphasis role=\"bold\">VPC</emphasis>：訪客網路是否Virtual Private Cloud-enabled，Virtual Private Cloud (VPC)是私人、獨立的&PRODUCT;部件。VPC擁有自己的虛擬網路拓樸，像傳統實體網路。更多資訊，參見<xref linkend=\"vpc\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -138,105 +139,105 @@ msgid ""
 "the &PRODUCT; virtual router or any other load balancers that have been "
 "configured in the cloud. Depending on which services you choose, additional "
 "fields may appear in the rest of the dialog box."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Supported Services</emphasis>：選擇一至多個可用的服務。有些服務您必須選擇提供者，例如，如果您選擇Load Balancer，則您可以選擇&PRODUCT; 虛擬路由器或是其他已設定的負載平衡器，取決於您選擇的服務，其他欄位可能會出現在其他對話框"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Based on the guest network type selected, you can see the following "
 "supported services:"
-msgstr ""
+msgstr "基於訪客網路類型選擇，您可以看到以下支援的服務"
 
 #. Tag: para
 #, no-c-format
 msgid "Supported Services"
-msgstr ""
+msgstr "支援的服務"
 
 #. Tag: para
 #, no-c-format
 msgid "Description"
-msgstr ""
+msgstr "Description"
 
 #. Tag: para
 #, no-c-format
 msgid "Isolated"
-msgstr ""
+msgstr "Isolated"
 
 #. Tag: para
 #, no-c-format
 msgid "Shared"
-msgstr ""
+msgstr "Shared"
 
 #. Tag: para
 #, no-c-format
 msgid "DHCP"
-msgstr ""
+msgstr "DHCP"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"dns-dhcp\" />."
-msgstr ""
+msgstr "更多資訊，詳見 <xref linkend=\"dns-dhcp\" />"
 
 #. Tag: para
 #, no-c-format
 msgid "Supported"
-msgstr ""
+msgstr "Supported"
 
 #. Tag: para
 #, no-c-format
 msgid "DNS"
-msgstr ""
+msgstr "DNS"
 
 #. Tag: para
 #, no-c-format
 msgid "Load Balancer"
-msgstr ""
+msgstr "Load Balancer"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you select Load Balancer, you can choose the &PRODUCT; virtual router or "
 "any other load balancers that have been configured in the cloud."
-msgstr ""
+msgstr "如果您選擇Load Balancer，您可以選擇&PRODUCT;虛擬路由器或是其他已設定的負載平衡器"
 
 #. Tag: para
 #, no-c-format
 msgid "Firewall"
-msgstr ""
+msgstr "Firewall"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"firewall-rules\" />."
-msgstr ""
+msgstr "更多資訊，詳見<xref linkend=\"firewall-rules\" />"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see the Administration Guide."
-msgstr ""
+msgstr "更多資訊，詳見 Administration Guide"
 
 #. Tag: para
 #, no-c-format
 msgid "Source NAT"
-msgstr ""
+msgstr "Source NAT"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you select Source NAT, you can choose the &PRODUCT; virtual router or any"
 " other Source NAT providers that have been configured in the cloud."
-msgstr ""
+msgstr "如果您選擇Source NAT，您可以選擇 &PRODUCT;虛擬路由器或是其他已設定的Source NAT提供者"
 
 #. Tag: para
 #, no-c-format
 msgid "Static NAT"
-msgstr ""
+msgstr "Static NAT"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "If you select Static NAT, you can choose the &PRODUCT; virtual router or any"
 " other Static NAT providers that have been configured in the cloud."
-msgstr ""
+msgstr "如果您選擇Static NAT，您可以選擇 &PRODUCT;虛擬路由器或是其他已設定的Static NAT提供者"
 
 #. Tag: para
 #, no-c-format
@@ -249,52 +250,52 @@ msgid ""
 "If you select Port Forwarding, you can choose the &PRODUCT; virtual router "
 "or any other Port Forwarding providers that have been configured in the "
 "cloud."
-msgstr ""
+msgstr "如果您選擇Port Forwarding，您可以選擇 &PRODUCT;虛擬路由器或是其他已設定的Port Forwarding提供者"
 
 #. Tag: para
 #, no-c-format
 msgid "Not Supported"
-msgstr ""
+msgstr "不支援"
 
 #. Tag: para
 #, no-c-format
 msgid "VPN"
-msgstr ""
+msgstr "VPN"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"vpn\" />."
-msgstr ""
+msgstr "更多資訊，詳見<xref linkend=\"vpn\" /> "
 
 #. Tag: para
 #, no-c-format
 msgid "User Data"
-msgstr ""
+msgstr "User Data"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"user-data-and-meta-data\" />."
-msgstr ""
+msgstr "更多資訊，詳見<xref linkend=\"user-data-and-meta-data\" /> "
 
 #. Tag: para
 #, no-c-format
 msgid "Network ACL"
-msgstr ""
+msgstr "Network ACL"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"configure-acl\" />."
-msgstr ""
+msgstr "更多資訊，詳見<xref linkend=\"configure-acl\" /> "
 
 #. Tag: para
 #, no-c-format
 msgid "Security Groups"
-msgstr ""
+msgstr "Security Groups"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"add-security-group\" />."
-msgstr ""
+msgstr "更多資訊，詳見<xref linkend=\"add-security-group\" /> "
 
 #. Tag: para
 #, no-c-format
@@ -308,12 +309,12 @@ msgid ""
 "choose between the &PRODUCT; default system service offering and any custom "
 "system service offerings that have been defined by the &PRODUCT; root "
 "administrator."
-msgstr ""
+msgstr "<emphasis role=\"bold\">System Offering</emphasis>：如果服務提供者在 Supported Services中選擇虛擬路由器，則會出現 System Offering欄位。選擇您想要的虛擬路由器系統服務，例如，您選擇了 Load Balancer，並選擇虛擬路由器提供負載平衡，則 System Offering欄位就會出現在&PRODUCT;預設系統服務及其他由&PRODUCT; root管理者定義的自訂系統服務之間"
 
 #. Tag: para
 #, no-c-format
 msgid "For more information, see <xref linkend=\"system-service-offerings\" />."
-msgstr ""
+msgstr "更多資訊，詳見 <xref linkend=\"system-service-offerings\" />"
 
 #. Tag: para
 #, no-c-format
@@ -327,7 +328,7 @@ msgid ""
 "only when the master is down. After the failover, the backup becomes the "
 "master virtual router. &PRODUCT; deploys the routers on different hosts to "
 "ensure reliability if one host is down."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Redundant router capability</emphasis>：只有當虛擬路由器被選為Source NAT provider時才能使用。如果您想要用兩個虛擬路由器作為不間斷連結，請選此選項：一個做為主路由器，另一個作為備份，主路由器接收要求，備份路由器僅在主路由器故障時啟動，此時備份路由器就變成主路由器。&PRODUCT;會在多個主機部署路由器以增加網路可靠性"
 
 #. Tag: para
 #, no-c-format
@@ -339,7 +340,7 @@ msgid ""
 "IP used for a port forwarding rule cannot be used for defining other "
 "services, such as SaticNAT or load balancing. When the conserve mode is on, "
 "you can define more than one service on the same public IP."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Conserve mode</emphasis>：是否為保存模式。網路資源只會分到第一個啟動的虛擬機器，當此模式停止時，公用IP只能被一個服務使用。例如套用通訊埠轉送規則的公用IP即不能用為定義其他像是SaticNAT及負載平衡等服務。啟用此模式則可以定義多個模式"
 
 #. Tag: para
 #, no-c-format
@@ -347,14 +348,14 @@ msgid ""
 "If StaticNAT is enabled, irrespective of the status of the conserve mode, no"
 " port forwarding or load balancing rule can be created for the IP. However, "
 "you can add the firewall rules by using the createFirewallRule command."
-msgstr ""
+msgstr "如果啟用StaticNAT，不論使否有啟用保存模式，IP都不能建立通訊埠轉送及負載平衡規則，但您可以使用createFirewallRule指令來建立防火牆規則"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Tags</emphasis>. Network tag to specify which "
 "physical network to use."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Tags</emphasis>：將網路tag到要使用的實體網路"
 
 #. Tag: para
 #, no-c-format

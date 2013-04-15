@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:02\n"
-"PO-Revision-Date: 2013-03-19T13:38:02\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-12T11:19:38\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -50,7 +50,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Install &PRODUCT; 4.0.0-incubating by following the instructions given in the INSTALL.txt file."
+msgid "Install &PRODUCT; by following the instructions given in the INSTALL.txt file."
 msgstr ""
 
 #. Tag: para

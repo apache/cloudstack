@@ -14,12 +14,13 @@
 #under the License.
 # 
 # Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2012-09-24 05:03+0000\n"
-"Last-Translator: Automatically generated\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-07 02:46+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,18 +31,18 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Creating and Updating a VPN Customer Gateway"
-msgstr ""
+msgstr "建立及更新VPN客戶閘道"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "A VPN customer gateway can be connected to only one VPN gateway at a time."
-msgstr ""
+msgstr "VPN客戶閘道僅能一時連上VPN閘道"
 
 #. Tag: para
 #, no-c-format
 msgid "To add a VPN Customer Gateway:"
-msgstr ""
+msgstr "增加VPN客戶閘道："
 
 #. Tag: para
 #, no-c-format
@@ -56,12 +57,12 @@ msgstr "在左邊的導覽視窗，選擇Network"
 #. Tag: para
 #, no-c-format
 msgid "In the Select view, select VPN Customer Gateway."
-msgstr ""
+msgstr "在Select視窗選擇VPC Customer Gateway"
 
 #. Tag: para
 #, no-c-format
 msgid "Click Add site-to-site VPN."
-msgstr ""
+msgstr "按Add site-to-site VPN "
 
 #. Tag: para
 #, no-c-format
@@ -73,14 +74,14 @@ msgstr "提供以下資訊："
 msgid ""
 "<emphasis role=\"bold\">Name</emphasis>: A unique name for the VPN customer "
 "gateway you create."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Name</emphasis>: 您建立的VPN客戶閘道的名稱"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">Gateway</emphasis>: The IP address for the remote "
 "gateway."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Gateway</emphasis>：遠端閘道的IP位址"
 
 #. Tag: para
 #, no-c-format
@@ -89,7 +90,7 @@ msgid ""
 "remote subnets. Enter a CIDR or a comma-separated list of CIDRs. Ensure that"
 " a guest CIDR list is not overlapped with the VPC’s CIDR, or another guest "
 "CIDR. The CIDR must be RFC1918-compliant."
-msgstr ""
+msgstr "<emphasis role=\"bold\">CIDR list</emphasis>：訪客 CIDR列表，輸入CIDR或CIDR的comma-separated list，確保訪客 CIDR列表沒有與VPC CIDR或其他訪客CIDR重疊，CIDR必須是RFC1918-compliant "
 
 #. Tag: para
 #, no-c-format
@@ -98,7 +99,7 @@ msgid ""
 "a method where the endpoints of the VPN share a secret key. This key value "
 "is used to authenticate the customer gateway and the VPC VPN gateway to each"
 " other."
-msgstr ""
+msgstr "<emphasis role=\"bold\">IPsec Preshared Key</emphasis>：Preshared keying是VPN終端分享祕密金鑰的方法，此金鑰用於認證客戶閘道及VPC VPN閘道"
 
 #. Tag: para
 #, no-c-format
@@ -108,7 +109,7 @@ msgid ""
 "receiving peer is able to create the same hash independently by using its "
 "Preshared key, it knows that both peers must share the same secret, thus "
 "authenticating the customer gateway."
-msgstr ""
+msgstr " IKE peers(VPN終端)藉由運算及送出Preshared key包含keyed hash資料來互相認證，如果收到相同的hash，則表示分享相同的秘密"
 
 #. Tag: para
 #, no-c-format
@@ -117,7 +118,7 @@ msgid ""
 " (IKE) policy for phase-1. The supported encryption algorithms are AES128, "
 "AES192, AES256, and 3DES. Authentication is accomplished through the "
 "Preshared Keys."
-msgstr ""
+msgstr "<emphasis role=\"bold\">IKE Encryption</emphasis>： Internet Key Exchange (IKE) 政策為phase-1，支援的加密演算法為AES128, AES192, AES256, 及 3DES。認證藉由 Preshared Keys完成"
 
 #. Tag: para
 #, no-c-format
@@ -127,14 +128,14 @@ msgid ""
 "provide security for the underlying IP traffic. The phase-1 authenticates "
 "the two VPN gateways to each other, by confirming that the remote gateway "
 "has a matching Preshared Key."
-msgstr ""
+msgstr "phase-1是 IKE過程的第一相位。在此交涉的相位，兩個VPN端點同意此方法來提供安全IP流量。 藉由確認遠端閘道有符合的 Preshared Key，phase-1互相認證兩個VPN閘道"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">IKE Hash</emphasis>: The IKE hash for phase-1. The "
 "supported hash algorithms are SHA1 and MD5."
-msgstr ""
+msgstr "<emphasis role=\"bold\">IKE Hash</emphasis>：給phase-1的IKE hash，支援演算法為SHA1 及 MD5"
 
 #. Tag: para
 #, no-c-format
@@ -144,7 +145,7 @@ msgid ""
 "insecure communications channel. The 1536-bit Diffie-Hellman group is used "
 "within IKE to establish session keys. The supported options are None, "
 "Group-5 (1536-bit) and Group-2 (1024-bit)."
-msgstr ""
+msgstr "<emphasis role=\"bold\">IKE DH</emphasis>：公開密碼協定，允許兩方在不安全通訊通道建立分享的祕密，1536-bit Diffie-Hellman使用為IKE工作金鑰，支援選項為 None, Group-5 (1536-bit) and Group-2 (1024-bit) "
 
 #. Tag: para
 #, no-c-format
@@ -152,7 +153,7 @@ msgid ""
 "<emphasis role=\"bold\">ESP Encryption</emphasis>: Encapsulating Security "
 "Payload (ESP) algorithm within phase-2. The supported encryption algorithms "
 "are AES128, AES192, AES256, and 3DES."
-msgstr ""
+msgstr "<emphasis role=\"bold\">ESP Encryption</emphasis>：Encapsulating Security Payload (ESP)演算法為 phase-2，支援加密演算法為 AES128, AES192, AES256,及 3DES"
 
 #. Tag: para
 #, no-c-format
@@ -162,14 +163,14 @@ msgid ""
 " tunnel. In phase-2, new keying material is extracted from the Diffie-"
 "Hellman key exchange in phase-1, to provide session keys to use in "
 "protecting the VPN data flow."
-msgstr ""
+msgstr "phase-2是在 IKE過程的第二相位，用意為交涉IPSec security associations (SA) 來建立IPSec通道。從 phase-1交換的Diffie-Hellman key萃取出新的keying material，來提供工作金鑰保護VPN資料流"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<emphasis role=\"bold\">ESP Hash</emphasis>: Encapsulating Security Payload "
 "(ESP) hash for phase-2. Supported hash algorithms are SHA1 and MD5."
-msgstr ""
+msgstr "<emphasis role=\"bold\">IKE Hash</emphasis>：給phase-2的Encapsulating Security Payload (ESP) hash，支援演算法為SHA1 及 MD5"
 
 #. Tag: para
 #, no-c-format
@@ -182,7 +183,7 @@ msgid ""
 "resistance to cryptographic attacks. The available options are None, Group-5"
 " (1536-bit) and Group-2 (1024-bit). The security of the key exchanges "
 "increase as the DH groups grow larger, as does the time of the exchanges."
-msgstr ""
+msgstr "<emphasis role=\"bold\">Perfect Forward Secrecy</emphasis>： Perfect Forward Secrecy (or PFS) 是確保工作金鑰不會被超長的公開及私人金鑰連累。此特性強迫Diffie-Hellman key交換。提供更長生命時間的keying material，提升加密攻擊的持久性。可用選項為None, Group-5 (1536-bit) and Group-2 (1024-bit)。DH groups越大或是交換時間越久，安全性越好"
 
 #. Tag: para
 #, no-c-format
@@ -224,7 +225,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Click OK."
-msgstr ""
+msgstr "按OK"
 
 #. Tag: title
 #, no-c-format

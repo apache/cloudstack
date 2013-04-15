@@ -18,8 +18,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache CloudStack Docs\n"
-"POT-Creation-Date: 2013-03-19T13:38:03\n"
-"PO-Revision-Date: 2013-02-02 18:41+0000\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 11:38+0000\n"
 "Last-Translator: sebgoa <runseb@gmail.com>\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -36,7 +36,7 @@ msgstr "&PRODUCT;能做什么?"
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Multiple Hypervisor Support</emphasis>"
-msgstr "<emphasis>多种Hypervisor支持</emphasis>"
+msgstr "<emphasis role=\"bold\">多种Hypervisor支持</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -52,7 +52,7 @@ msgstr ""
 msgid ""
 "<emphasis role=\"bold\">Massively Scalable Infrastructure "
 "Management</emphasis>"
-msgstr "<emphasis>大规模可扩展的管理架构</emphasis>"
+msgstr "<emphasis role=\"bold\">大规模可扩展的管理架构</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -68,7 +68,7 @@ msgstr "&PRODUCT;可以管理数万台服务器; 这些服务器可以部署在�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Automatic Configuration Management</emphasis>"
-msgstr "<emphasis>自动化配置管理</emphasis>"
+msgstr "<emphasis role=\"bold\">自动化配置管理</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -90,7 +90,7 @@ msgstr "&PRODUCT;内部提供的虚拟设备池用来支持云平台自身功能
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">Graphical User Interface</emphasis>"
-msgstr "<emphasis>图形用户界面</emphasis>"
+msgstr "<emphasis role=\"bold\">图形用户界面</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -104,7 +104,7 @@ msgstr "&PRODUCT;提供了管理员Web接口, 用来供应和管理整个云平�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">API and Extensibility</emphasis>"
-msgstr "<emphasis>API及其扩展性</emphasis>"
+msgstr "<emphasis role=\"bold\">API及其扩展性</emphasis>"
 
 #. Tag: para
 #, no-c-format
@@ -113,10 +113,9 @@ msgid ""
 "management features available in the UI. The API is maintained and "
 "documented. This API enables the creation of command line tools and new user"
 " interfaces to suit particular needs. See the Developer’s Guide and API "
-"Reference, both available at <ulink "
-"url=\"http://incubator.apache.org/cloudstack/docs\">Apache CloudStack "
-"Guides</ulink> and <ulink "
-"url=\"http://incubator.apache.org/cloudstack/docs/api\">Apache CloudStack "
+"Reference, both available at <ulink url=\"http://cloudstack.apache.org/docs"
+"/en-US/index.html\">Apache CloudStack Guides</ulink> and <ulink "
+"url=\"http://cloudstack.apache.org/docs/api/index.html\">Apache CloudStack "
 "API Reference</ulink> respectively."
 msgstr ""
 
@@ -132,7 +131,7 @@ msgstr "&PRODUCT; 可插拨的allocation架构允许对选择的存储和主机�
 #. Tag: para
 #, no-c-format
 msgid "<emphasis role=\"bold\">High Availability</emphasis>"
-msgstr "<emphasis >高可用性</emphasis>"
+msgstr "<emphasis role=\"bold\">高可用性</emphasis>"
 
 #. Tag: para
 #, no-c-format

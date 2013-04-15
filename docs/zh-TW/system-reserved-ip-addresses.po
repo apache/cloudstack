@@ -1,0 +1,143 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-12 09:19+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Reserved IP Addresses"
+msgstr "系統保留IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In each zone, you need to configure a range of reserved IP addresses for the"
+" management network. This network carries communication between the "
+"&PRODUCT; Management Server and various system VMs, such as Secondary "
+"Storage VMs, Console Proxy VMs, and DHCP."
+msgstr "在每個區域，您需要設定一組保留IP範圍給管理網路，此網路保持&PRODUCT;管理伺服器及多種系統虛擬機器，如次要儲存虛擬機器、控制台代理虛擬機器及DHCP，間的通信"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The reserved IP addresses must be unique across the cloud. You cannot, for "
+"example, have a host in one zone which has the same private IP address as a "
+"host in another zone."
+msgstr "保留IP必須在雲端中是唯一的，您不行有個主機在一個區域和另一個區域內的主機有相同的私人IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The hosts in a pod are assigned private IP addresses. These are typically "
+"RFC1918 addresses. The Console Proxy and Secondary Storage system VMs are "
+"also allocated private IP addresses in the CIDR of the pod that they are "
+"created in."
+msgstr "pod中的主機會指定私人IP位址，通常為RFC1918 位址。控制台代理及次要儲存裝置系統虛擬機器也會在pod中的CIDR分配私人IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Make sure computing servers and Management Servers use IP addresses outside "
+"of the System Reserved IP range. For example, suppose the System Reserved IP"
+" range starts at 192.168.154.2 and ends at 192.168.154.7. &PRODUCT; can use "
+".2 to .7 for System VMs. This leaves the rest of the pod CIDR, from .8 to "
+".254, for the Management Server and hypervisor hosts."
+msgstr "請確定計算伺服器及管理伺服器使用不是保留IP範圍內的IP位址。例如，假設保留IP範圍為192.168.154.2到 192.168.154.7，則 &PRODUCT;的系統虛擬機器可以使用.2到.7的IP，而pod CIDR就分.8 到 .254給管理伺服器及超級監督者主機"
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">In all zones:</emphasis>"
+msgstr "<emphasis role=\"bold\">In all zones:</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Provide private IPs for the system in each pod and provision them in "
+"&PRODUCT;."
+msgstr "提供私人IP給每個pod中的系統，並提供給&PRODUCT;"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For KVM and XenServer, the recommended number of private IPs per pod is one "
+"per host. If you expect a pod to grow, add enough private IPs now to "
+"accommodate the growth."
+msgstr "對於KVM及XenServer，建議每個pod的私人IP數量為每個主機1個，如果您希望pod持續增長，請加入足夠的私人IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">In a zone that uses advanced networking:</emphasis>"
+msgstr "<emphasis role=\"bold\">In a zone that uses advanced networking:</emphasis>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"For zones with advanced networking, we recommend provisioning enough private"
+" IPs for your total number of customers, plus enough for the required "
+"&PRODUCT; System VMs. Typically, about 10 additional IPs are required for "
+"the System VMs. For more information about System VMs, see Working with "
+"System Virtual Machines in the Administrator's Guide."
+msgstr "對於使用進階網路的區域，建議提拱足夠的私人IP給您所有的客戶，以及&PRODUCT; 系統虛擬機器需要的數量。通常系統虛擬機器需要10個額外的IP。更多資訊，詳見管理者指南的Working with System Virtual Machines"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When advanced networking is being used, the number of private IP addresses "
+"available in each pod varies depending on which hypervisor is running on the"
+" nodes in that pod. Citrix XenServer and KVM use link-local addresses, which"
+" in theory provide more than 65,000 private IP addresses within the address "
+"block. As the pod grows over time, this should be more than enough for any "
+"reasonable number of hosts as well as IP addresses for guest virtual "
+"routers. VMWare ESXi, by contrast uses any administrator-specified "
+"subnetting scheme, and the typical administrator provides only 255 IPs per "
+"pod. Since these are shared by physical machines, the guest virtual router, "
+"and other entities, it is possible to run out of private IPs when scaling up"
+" a pod whose nodes are running ESXi."
+msgstr "當進階網路被使用時，每個pod中的可用私人IP數量會依超級監督者的類型不同而不同。 Citrix XenServer 及 KVM使用連接本地的位址，理論上提供超過65,000個私人IP位址。隨著pod增長，這些應該是足夠的。 VMWare ESXi，相較之下，使用任一管理者限定的子網域計畫，以及典型的管理者，提供每個pod僅255個IP。因為這些IP與實體機器、訪客虛擬路由器及其他可操作的單位。私人IP可能會不夠用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To ensure adequate headroom to scale private IP space in an ESXi pod that "
+"uses advanced networking, use one or both of the following techniques:"
+msgstr "使用一個或全部以下的技術來確保足夠的擴展高度給使用進階網路的ESXi pod中的私人IP空間"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Specify a larger CIDR block for the subnet. A subnet mask with a /20 suffix "
+"will provide more than 4,000 IP addresses."
+msgstr "指定一個大的CIDR給子網路，使用 /20 字尾的子遮罩可以提供超過4,000個IP位址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Create multiple pods, each with its own subnet. For example, if you create "
+"10 pods and each pod has 255 IPs, this will provide 2,550 IP addresses."
+msgstr "建立多個pod，並有自己的子網域。例如，如果您建立10個pod，每個pod有255個IP，這樣就有總共2,550個IP位址"

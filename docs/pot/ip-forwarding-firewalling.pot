@@ -15,8 +15,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0\n"
-"POT-Creation-Date: 2013-03-19T13:38:04\n"
-"PO-Revision-Date: 2013-03-19T13:38:04\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12T11:19:39\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: None\n"
 "MIME-Version: 1.0\n"
@@ -30,11 +30,16 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "By default, all incoming traffic to the public IP address is rejected. All outgoing traffic from the guests is translated via NAT to the public IP address and is allowed."
+msgid "By default, all incoming traffic to the public IP address is rejected. All outgoing traffic from the guests is also blocked by default."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "To allow incoming traffic, users may set up firewall rules and/or port forwarding rules. For example, you can use a firewall rule to open a range of ports on the public IP address, such as 33 through 44. Then use port forwarding rules to direct traffic from individual ports within that range to specific ports on user VMs. For example, one port forwarding rule could route incoming traffic on the public IP's port 33 to port 100 on one user VM's private IP."
+msgid "To allow outgoing traffic, follow the procedure in <xref linkend=\"egress-firewall-rule\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To allow incoming traffic, users may set up firewall rules and/or port forwarding rules. For example, you can use a firewall rule to open a range of ports on the public IP address, such as 33 through 44. Then use port forwarding rules to direct traffic from individual ports within that range to specific ports on user VMs. For example, one port forwarding rule could route incoming traffic on the public IP's port 33 to port 100 on one user VM's private IP. For more information, see <xref linkend=\"firewall-rules\" /> and <xref linkend=\"port-forwarding\" />."
 msgstr ""
 

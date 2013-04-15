@@ -2226,7 +2226,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     network = _networkModel.getNetworkWithSecurityGroupEnabled(zoneId);
                     if (network == null) {
-                        throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
+                        throw new InvalidParameterValueException("Network id is required for Direct vlan creation ");
                     }
                     networkId = network.getId();
                     zoneId = network.getDataCenterId();

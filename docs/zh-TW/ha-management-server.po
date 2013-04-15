@@ -1,0 +1,58 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:39\n"
+"PO-Revision-Date: 2013-04-12 01:18+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "HA for Management Server"
+msgstr "管理伺服器的HA"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The &PRODUCT; Management Server should be deployed in a multi-node "
+"configuration such that it is not susceptible to individual server failures."
+" The Management Server itself (as distinct from the MySQL database) is "
+"stateless and may be placed behind a load balancer."
+msgstr "&PRODUCT;管理伺服器應部署在多節點的組態中，以使伺服器不會易受單一主機故障影響。管理伺服器本身(不同於MySQL資料庫)是無歸屬的，且應置於負載平衡器之後"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Normal operation of Hosts is not impacted by an outage of all Management "
+"Serves. All guest VMs will continue to work."
+msgstr "正常運作的主機不會受所有管理伺服器的停止運轉影響，所有訪客虛擬網路會持續工作"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the Management Server is down, no new VMs can be created, and the end "
+"user and admin UI, API, dynamic load distribution, and HA will cease to "
+"work."
+msgstr "當管理伺服器離線後，就不能新增虛擬機器，及終端使用者、管理使用者介面、API、動態負載分配，HA會停止工作"

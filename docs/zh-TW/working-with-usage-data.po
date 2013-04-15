@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-11 13:22+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working With Usage Data"
+msgstr "使用使用資料"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Usage Server provides aggregated usage records which you can use to "
+"create billing integration for the &PRODUCT; platform. The Usage Server "
+"works by taking data from the events log and creating summary usage records "
+"that you can access using the listUsageRecords API call."
+msgstr "使用伺服器提供彙整使用紀錄，讓您可以在&PRODUCT;上建立廣告整合。使用伺服器會從事件紀錄擷取資料，然後創立使用記錄總結，您可以用istUsageRecords API call來存取"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The usage records show the amount of resources, such as VM run time or "
+"template storage space, consumed by guest instances. In the special case of "
+"bare metal instances, no template storage resources are consumed, but "
+"records showing zero usage are still included in the Usage Server's output."
+msgstr "使用紀錄顯示資源的數量，像是VM執行時間或guest instances消耗的模組儲存空間。對於裸金 instances這個特例，沒有消耗模組儲存資源，但會紀錄零使用率，並顯示在使用伺服器的使用結果"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Usage Server runs at least once per day. It can be configured to run "
+"multiple times per day. Its behavior is controlled by configuration settings"
+" as described in the &PRODUCT; Administration Guide."
+msgstr "使用伺服器至少每天執行一次，也可以透過設定，每天執行多次。其行為由 &PRODUCT;管理者指南中描述的系統設定控制"

@@ -383,33 +383,39 @@ setup_common() {
   ip route delete default
   if [ "$RROUTER" != "1" ]
   then
-      if [ -z "$3" ]
+    gwdev=$3
+    if [ -z "$gwdev" ]
+    then
+      gwdev="eth0"
+    fi
+
+    timer=0
+    #default route add fails if we run before interface configured with ip
+    log_it "checking that $gwdev has IP before setting default route to $GW"
+    echo "checking that $gwdev has IP before setting default route to $GW"
+    while true
+    do
+      ip=$(ifconfig $gwdev | grep "inet addr:" | awk '{print $2}' | awk -F: '{print $2}')
+      if [ -z $ip ] 
       then
-          ip route add default via $GW dev eth0
+	      sleep 1;
+	      #waiting for the interface to setup with ip
+              log_it "waiting for $gwdev interface setup with ip"
+	      echo "waiting for $gwdev interface setup with ip"
       else
-	  timer=0
-	  #default route add fails if we run before interface configured with ip
-	  while true
-	  do
-      	      ip=$(ifconfig $3 | grep "inet addr:" | awk '{print $2}' | awk -F: '{print $2}')
-	      if [ -z $ip ] 
-	      then
-		      sleep 1;
-		      #waiting for the interface to setup with ip
-		      echo "waiting for $3 interface setup with ip"
-	      else
-         	      ip route add default via $GW dev $3
-		      break
-	      fi
-	      
-	      if [ $timer -gt 5 ] 
-	      then
-	          echo "interface $3 is not set up with ip... configuring default route failed"
-		  break
-	  fi
-	  timer=`expr $timer + 1`
-	 done
+              ip route add default via $GW dev $gwdev
+	      break
       fi
+
+      if [ $timer -gt 15 ] 
+      then
+          log_it  "interface $gwdev is not set up with ip... configuring default route failed";
+          echo "interface $gwdev is not set up with ip... configuring default route failed"
+	  break
+      fi
+      timer=`expr $timer + 1`
+    done
+      
   fi
  
   # a hacking way to activate vSwitch under VMware
@@ -696,7 +702,7 @@ setup_vpcrouter() {
   fi
 
     cat > /etc/network/interfaces << EOF
-auto lo $1
+auto lo eth0
 iface lo inet loopback
 EOF
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW

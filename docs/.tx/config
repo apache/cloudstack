@@ -2879,3 +2879,27 @@ source_file = pot/writing-new-documentation.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.about-regions]
+file_filter = <lang>/about-regions.po
+source_file = pot/about-regions.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.api-throttling]
+file_filter = <lang>/api-throttling.po
+source_file = pot/api-throttling.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ipv6-support]
+file_filter = <lang>/ipv6-support.po
+source_file = pot/ipv6-support.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.region-add]
+file_filter = <lang>/region-add.po
+source_file = pot/region-add.pot
+source_lang = en
+type = PO
+

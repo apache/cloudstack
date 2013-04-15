@@ -1,0 +1,275 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-04-02 08:28+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using the Management Server as the NFS Server"
+msgstr "將管理伺服器用為NFS伺服器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This section tells how to set up NFS shares for primary and secondary "
+"storage on the same node with the Management Server. This is more typical of"
+" a trial installation, but is technically possible in a larger deployment. "
+"It is assumed that you will have less than 16TB of storage on the host."
+msgstr "這個章節會教您如何使用管理伺服器來為同意節點的主要及次要儲存裝置設定NFS分享。這是個基本的安裝，但是技術上能夠有更大的擴充空間。在此假設您指少有16TB的空間"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The exact commands for the following steps may vary depending on your "
+"operating system version."
+msgstr "以下指令會依您的作業系統版本不同，會有所不同"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL/CentOS systems, you'll need to install the nfs-utils package:"
+msgstr "在RHEL/CentOS系統，您需要安裝 nfs-utils ："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"$ sudo yum install nfs-utils\n"
+"        "
+msgstr "\n$ sudo yum install nfs-utils\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"On the Management Server host, create two directories that you will use for "
+"primary and secondary storage. For example:"
+msgstr "在管理伺服器的主機上建立兩個資料夾，這兩個資料夾之後會給主要及次要儲存裝置使用，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# mkdir -p /export/primary\n"
+"# mkdir -p /export/secondary\n"
+"        "
+msgstr "\n# mkdir -p /export/primary\n# mkdir -p /export/secondary\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure the new directories as NFS exports, edit /etc/exports. Export "
+"the NFS share(s) with rw,async,no_root_squash. For example:"
+msgstr "編輯/etc/exports來設定新的資料夾為NFS exports，使用rw,async,no_root_squash來匯出NFS share(s) "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/exports"
+msgstr "# vi /etc/exports"
+
+#. Tag: para
+#, no-c-format
+msgid "Insert the following line."
+msgstr "插入以下幾行"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/export  *(rw,async,no_root_squash)"
+msgstr "/export  *(rw,async,no_root_squash)"
+
+#. Tag: para
+#, no-c-format
+msgid "Export the /export directory."
+msgstr "輸出 /export資料夾"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# exportfs -a"
+msgstr "# exportfs -a"
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/sysconfig/nfs file."
+msgstr "編輯/etc/sysconfig/nfs檔案"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/sysconfig/nfs"
+msgstr "# vi /etc/sysconfig/nfs"
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following lines:"
+msgstr "取消下列程式碼註解："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"LOCKD_TCPPORT=32803\n"
+"LOCKD_UDPPORT=32769\n"
+"MOUNTD_PORT=892\n"
+"RQUOTAD_PORT=875\n"
+"STATD_PORT=662\n"
+"STATD_OUTGOING_PORT=2020\n"
+"            "
+msgstr "\nLOCKD_TCPPORT=32803\nLOCKD_UDPPORT=32769\nMOUNTD_PORT=892\nRQUOTAD_PORT=875\nSTATD_PORT=662\nSTATD_OUTGOING_PORT=2020\n            "
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/sysconfig/iptables file."
+msgstr "編輯/etc/sysconfig/iptables檔案"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/sysconfig/iptables"
+msgstr "# vi /etc/sysconfig/iptables"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add the following lines at the beginning of the INPUT chain where "
+"&lt;NETWORK&gt; is the network that you'll be using:"
+msgstr "加入以下行數到INPUT chain的開頭，&lt;NETWORK&gt;是您之後會使用的網路："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 111 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 111 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 32769 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 892 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 892 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 875 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 875 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 662 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT                \n"
+"            "
+msgstr "\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 111 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 111 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 32769 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 892 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 892 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 875 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 875 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 662 -j ACCEPT\n-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT                \n            "
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following commands:"
+msgstr "執行以下指令："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# service iptables restart\n"
+"# service iptables save\n"
+"            "
+msgstr "\n# service iptables restart\n# service iptables save\n            "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If NFS v4 communication is used between client and server, add your domain "
+"to /etc/idmapd.conf on both the hypervisor host and Management Server."
+msgstr "如果客戶及伺服器間是使用NFS v4 communication，請加入您的domain到 /etc/idmapd.conf，超級監督者主機及管理伺服器都需要"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/idmapd.conf"
+msgstr "# vi /etc/idmapd.conf"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Remove the character # from the beginning of the Domain line in idmapd.conf "
+"and replace the value in the file with your own domain. In the example "
+"below, the domain is company.com."
+msgstr "移除 idmapd.conf中Domain那一行一開始的所有\"#\"，並換成您的domain，以下範例為company.com "
+
+#. Tag: programlisting
+#, no-c-format
+msgid "Domain = company.com"
+msgstr "Domain = company.com"
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot the Management Server host."
+msgstr "重新開啟管理伺服器主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Two NFS shares called /export/primary and /export/secondary are now set up."
+msgstr "兩個稱為/export/primary and /export/secondary的NFS shares就建立好了"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"It is recommended that you test to be sure the previous steps have been "
+"successful."
+msgstr "我們推薦您先測試，確定前幾步有做對"
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the hypervisor host."
+msgstr "登入超級監督者主機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Be sure NFS and rpcbind are running. The commands might be different "
+"depending on your OS. For example:"
+msgstr "確定NFS 及 rpcbind有執行，指令會依您的作業系統不同而不同，例如："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# service rpcbind start\n"
+"# service nfs start\n"
+"# chkconfig nfs on\n"
+"# chkconfig rpcbind on\n"
+"# reboot                        \n"
+"                    "
+msgstr "\n# service rpcbind start\n# service nfs start\n# chkconfig nfs on\n# chkconfig rpcbind on\n# reboot                        \n                    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Log back in to the hypervisor host and try to mount the /export directories."
+" For example (substitute your own management server name):"
+msgstr "回到超級監督者主機，嘗試掛載/export資料夾，例如(換成您的管理伺服器名稱)："
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"# mkdir /primarymount\n"
+"# mount -t nfs &lt;management-server-name&gt;:/export/primary /primarymount\n"
+"# umount /primarymount\n"
+"# mkdir /secondarymount\n"
+"# mount -t nfs &lt;management-server-name&gt;:/export/secondary /secondarymount\n"
+"# umount /secondarymount                        \n"
+"                    "
+msgstr "\n# mkdir /primarymount\n# mount -t nfs &lt;management-server-name&gt;:/export/primary /primarymount\n# umount /primarymount\n# mkdir /secondarymount\n# mount -t nfs &lt;management-server-name&gt;:/export/secondary /secondarymount\n# umount /secondarymount                        \n                    "

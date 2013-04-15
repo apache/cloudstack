@@ -1,0 +1,172 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:41\n"
+"PO-Revision-Date: 2013-04-07 10:42+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Uploading Templates"
+msgstr "上船模組"
+
+#. Tag: title
+#, no-c-format
+msgid "vSphere Templates and ISOs"
+msgstr "vSphere 模組及ISOs"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If you are uploading a template that was created using vSphere Client, be "
+"sure the OVA file does not contain an ISO. If it does, the deployment of VMs"
+" from the template will fail."
+msgstr "如果您上傳使用vSphere Client建立的模組，請確定OVA 檔案不包含ISO，如果有，從模組架設V會失敗"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Templates are uploaded based on a URL. HTTP is the supported access "
+"protocol. Templates are frequently large files. You can optionally gzip them"
+" to decrease upload times."
+msgstr "模組藉由URL上傳，HTTP為支援的協定。模組通常為很大的檔案，您可以選擇gzip來減少上傳時間"
+
+#. Tag: para
+#, no-c-format
+msgid "To upload a template:"
+msgstr "想要上傳模組："
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr "在左邊的導覽視窗，選擇Templates"
+
+#. Tag: para
+#, no-c-format
+msgid "Click Register Template."
+msgstr "選擇 Register template"
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following:"
+msgstr "提供以下："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Name and Description</emphasis>. These will be shown"
+" in the UI, so choose something descriptive."
+msgstr "<emphasis role=\"bold\">Name and Description</emphasis>：這些會出現在使用者介面"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">URL</emphasis>. The Management Server will download "
+"the file from the specified URL, such as "
+"http://my.web.server/filename.vhd.gz."
+msgstr "<emphasis role=\"bold\">URL</emphasis>：管理伺服器會從指定的URL下載檔案，像是 http://my.web.server/filename.vhd.gz"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Zone</emphasis>. Choose the zone where you want the "
+"template to be available, or All Zones to make it available throughout "
+"&PRODUCT;."
+msgstr "<emphasis role=\"bold\">Zone</emphasis>：選擇您想要用模組的區域，選擇 All Zones使整個&PRODUCT;都能使用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">OS Type</emphasis>: This helps &PRODUCT; and the "
+"hypervisor perform certain operations and make assumptions that improve the "
+"performance of the guest. Select one of the following:"
+msgstr "<emphasis role=\"bold\">OS Type</emphasis>：這項幫助&PRODUCT;及超級監督者可以執行特定指令，並承擔改善訪客效能的責任，從以下選擇一個"
+
+#. Tag: para
+#, no-c-format
+msgid "If the operating system of the stopped VM is listed, choose it."
+msgstr "如果您要的停止的VM的作業系統有在裡面，請選它"
+
+#. Tag: para
+#, no-c-format
+msgid "If the OS type of the stopped VM is not listed, choose Other."
+msgstr "如果沒有，則選Other"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should not choose an older version of the OS than the version in the "
+"image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will "
+"in general not work. In those cases you should choose Other."
+msgstr "您不該選擇較舊的作業系統版本，例如，選擇CentOS 5.4來支援CentOS 6.2映像通常是不行的，這個情況請選Other"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Hypervisor</emphasis>: The supported hypervisors are"
+" listed. Select the desired one."
+msgstr "<emphasis role=\"bold\">Hypervisor</emphasis>：會列出支援的超級監督者，選擇其一"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Format</emphasis>. The format of the template upload"
+" file, such as VHD or OVA."
+msgstr "<emphasis role=\"bold\">Format</emphasis>：上傳模組的格式，像是VHD 或 OVA"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Password Enabled</emphasis>. Choose Yes if your "
+"template has the &PRODUCT; password change script installed. See Adding "
+"Password Management to Your Templates"
+msgstr "<emphasis role=\"bold\">Password Enabled</emphasis>：選擇Yes如果您的模組有 &PRODUCT;密碼改變的程式碼，詳見Adding Password Management to Your Templates "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Extractable</emphasis>. Choose Yes if the template "
+"is available for extraction. If this option is selected, end users can "
+"download a full image of a template."
+msgstr "<emphasis role=\"bold\">Extractable</emphasis>：選擇Yes如果模組可解壓縮，如果有選擇，終端使用者可以下載完整的模組映像"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Public</emphasis>. Choose Yes to make this template "
+"accessible to all users of this &PRODUCT; installation. The template will "
+"appear in the Community Templates list. See <xref linkend=\"private-public-"
+"template\" />."
+msgstr "<emphasis role=\"bold\">Public</emphasis>：選擇Yes來使模組可以被所有使用者使用，模組會出現在Community Templates列表，詳見<xref linkend=\"private-public-template\" /> "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<emphasis role=\"bold\">Featured</emphasis>. Choose Yes if you would like "
+"this template to be more prominent for users to select. The template will "
+"appear in the Featured Templates list. Only an administrator can make a "
+"template Featured."
+msgstr "<emphasis role=\"bold\">Featured</emphasis>：如果您想要模組比較顯眼，請選Yes。模組會在Featured Templates表中出現，這項功能僅管理者能使用"

@@ -1,0 +1,67 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:38\n"
+"PO-Revision-Date: 2013-04-10 11:45+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building DevCloud"
+msgstr "建立DevCloud"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The DevCloud appliance can be downloaded from the wiki at <ulink "
+"url=\"https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud\" />. "
+"It can also be built from scratch. Code is being developed to provide this "
+"alternative build. It is based on <emphasis>veewee</emphasis>, "
+"<emphasis>Vagrant</emphasis> and <emphasis>Puppet</emphasis>."
+msgstr "DevCloud應用程式可以從Wiki下載。<ulink url=\"https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud\" />。也可以從scratch建立，程式正在開發，以提供替代的方法建立，DevCloud以<emphasis>veewee</emphasis>, <emphasis>Vagrant</emphasis> 及<emphasis>Puppet</emphasis>為基礎"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The goal is to automate the DevCloud build and make this automation "
+"capability available to all within the source release of &PRODUCT;"
+msgstr "目標為自動化DevCloud build，並相容任何&PRODUCT;釋出的原始碼"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This is under heavy development. The code is located in the source tree "
+"under <emphasis>tools/devcloud</emphasis>"
+msgstr "正在努力研發，程式位於<emphasis>tools/devcloud</emphasis>下的source tree"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A preliminary wiki page describes the build at <ulink "
+"url=\"https://cwiki.apache.org/CLOUDSTACK/building-"
+"devcloud.html\">https://cwiki.pache.org/CLOUDSTACK/building-"
+"devcloud.html</ulink>"
+msgstr "初步的Wiki頁面描述建構方法，<ulink url=\"https://cwiki.apache.org/CLOUDSTACK/building-devcloud.html\">https://cwiki.pache.org/CLOUDSTACK/building-devcloud.html</ulink>"

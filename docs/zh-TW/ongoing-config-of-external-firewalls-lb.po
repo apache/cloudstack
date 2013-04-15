@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Docs\n"
+"POT-Creation-Date: 2013-04-12T11:19:40\n"
+"PO-Revision-Date: 2013-02-02 20:42+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Ongoing Configuration of External Firewalls and Load Balancers"
+msgstr "持續設定外部防火牆及"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Additional user actions (e.g. setting a port forward) will cause further "
+"programming of the firewall and load balancer. A user may request additional"
+" public IP addresses and forward traffic received at these IPs to specific "
+"VMs. This is accomplished by enabling static NAT for a public IP address, "
+"assigning the IP to a VM, and specifying a set of protocols and port ranges "
+"to open. When a static NAT rule is created, &PRODUCT; programs the zone's "
+"external firewall with the following objects:"
+msgstr "額外的使用者動作(例如設定port forward)會導致更多防火牆及load balancer的程式執行。使用者可能會要求額外的公開IP及IP的順向流量來指定VM，藉由啟用static NAT，指定IP到VM及指定一組協定及埠範圍開啟，我們可以達到這個要求，當static NAT rule建立時，&PRODUCT;會用以下物件來載入zone的外部防火牆："
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A static NAT rule that maps the public IP address to the private IP address "
+"of a VM."
+msgstr "對照公開IP位址和私人IP位址的 static NAT rule"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A security policy that allows traffic within the set of protocols and port "
+"ranges that are specified."
+msgstr "在一組協定及埠範圍中允許流量的security policy "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A firewall filter counter that measures the number of bytes of incoming "
+"traffic to the public IP."
+msgstr "測量輸出到公開IP的流量位元組數量的防火牆過濾計數器"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The number of incoming and outgoing bytes through source NAT, static NAT, "
+"and load balancing rules is measured and saved on each external element. "
+"This data is collected on a regular basis and stored in the &PRODUCT; "
+"database."
+msgstr "輸入輸出位元組的數量，會在通過source NAT, static NAT及 load balancing rules被測量並存在外部元件中，這些資料會被收集及儲存在&PRODUCT;資料庫"
