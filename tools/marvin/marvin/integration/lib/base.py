@@ -1873,7 +1873,7 @@ class PublicIpRange:
         """Delete VlanIpRange"""
 
         cmd = deleteVlanIpRange.deleteVlanIpRangeCmd()
-        cmd.id = self.id
+        cmd.id = self.vlan.id
         apiclient.deleteVlanIpRange(cmd)
 
     @classmethod
@@ -1884,6 +1884,23 @@ class PublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVlanIpRanges(cmd))
 
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate VLAN IP range"""
+
+        cmd = dedicatePublicIpRange.dedicatePublicIpRangeCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PublicIpRange(apiclient.dedicatePublicIpRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release VLAN IP range"""
+
+        cmd = releasePublicIpRange.releasePublicIpRangeCmd()
+        cmd.id = self.vlan.id
+        return apiclient.releasePublicIpRange(cmd)
 
 class SecondaryStorage:
     """Manage Secondary storage"""
@@ -2427,7 +2444,6 @@ class VPC:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
 
-
 class AffinityGroup:
     def __init__(self, items):
         self.__dict__.update(items)
@@ -2450,9 +2466,71 @@ class AffinityGroup:
         cmd.id = self.id
         return apiclient.deleteVPC(cmd)
 
-
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listAffinityGroups.listAffinityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
+
+class VNMC:
+    """Manage VNMC lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    def create(cls, apiclient, hostname, username, password, physicalnetworkid):
+        """Registers VNMC appliance"""
+
+        cmd = addCiscoVnmcResource.addCiscoVnmcResourceCmd()
+        cmd.hostname = hostname
+        cmd.username = username
+        cmd.password = password
+        cmd.physicalnetworkid = physicalnetworkid
+        return VNMC(apiclient.addCiscoVnmcResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes VNMC appliance"""
+
+        cmd = deleteCiscoVnmcResource.deleteCiscoVnmcResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoVnmcResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List VNMC appliances"""
+
+        cmd = listCiscoVnmcResources.listCiscoVnmcResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoVnmcResources(cmd))
+
+class ASA1000V:
+    """Manage ASA 1000v lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, hostname, insideportprofile, clusterid, physicalnetworkid):
+        """Registers ASA 1000v appliance"""
+
+        cmd = addCiscoAsa1000vResource.addCiscoAsa1000vResourceCmd()
+        cmd.hostname = hostname
+        cmd.insideportprofile = insideportprofile
+        cmd.clusterid = clusterid
+        cmd.physicalnetworkid = physicalnetworkid
+        return ASA1000V(apiclient.addCiscoAsa1000vResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes ASA 1000v appliance"""
+
+        cmd = deleteCiscoAsa1000vResource.deleteCiscoAsa1000vResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoAsa1000vResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List ASA 1000v appliances"""
+
+        cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoAsa1000vResources(cmd))

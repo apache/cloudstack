@@ -36,16 +36,16 @@ import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
-    private static final Logger s_logger = Logger.getLogger(HypervsiorHostEndPointRpcServer.class);
+public class HypervisorHostEndPointRpcServer implements HostEndpointRpcServer {
+    private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPointRpcServer.class);
     
     @Inject
     private RpcProvider rpcProvider;
     
-    public HypervsiorHostEndPointRpcServer() {
+    public HypervisorHostEndPointRpcServer() {
     }
     
-    public HypervsiorHostEndPointRpcServer(RpcProvider rpcProvider) {
+    public HypervisorHostEndPointRpcServer(RpcProvider rpcProvider) {
         rpcProvider = rpcProvider;
         rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
@@ -91,7 +91,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     @Override
     public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
         SendCommandContext<Answer> context = new SendCommandContext<Answer>(null);
-        AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer, Answer> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<HypervisorHostEndPointRpcServer, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().sendCommandCallback(null, null))
         .setContext(context);
         
@@ -109,7 +109,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
         return context.getAnswer();
     }
     
-    protected Object sendCommandCallback(AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer, Answer> callback, SendCommandContext<Answer> context) {
+    protected Object sendCommandCallback(AsyncCallbackDispatcher<HypervisorHostEndPointRpcServer, Answer> callback, SendCommandContext<Answer> context) {
         context.setAnswer((Answer)callback.getResult());
         synchronized(context) {
             context.notify();

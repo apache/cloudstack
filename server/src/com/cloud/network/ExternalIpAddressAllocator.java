@@ -37,8 +37,8 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=IpAddrAllocator.class)
-public class ExteralIpAddressAllocator extends AdapterBase implements IpAddrAllocator{
-    private static final Logger s_logger = Logger.getLogger(ExteralIpAddressAllocator.class);
+public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator{
+    private static final Logger s_logger = Logger.getLogger(ExternalIpAddressAllocator.class);
     String _name;
     @Inject ConfigurationDao _configDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
@@ -135,7 +135,7 @@ public class ExteralIpAddressAllocator extends AdapterBase implements IpAddrAllo
     }
 
     @Override
-    public boolean exteralIpAddressAllocatorEnabled() {
+    public boolean externalIpAddressAllocatorEnabled() {
         return _isExternalIpAllocatorEnabled;
     }
 

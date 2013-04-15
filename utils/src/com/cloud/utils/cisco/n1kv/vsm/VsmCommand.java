@@ -70,6 +70,40 @@ public class VsmCommand {
     }
 
     public static String getAddPortProfile(String name, PortProfileType type,
+            BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to create the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(configPortProfileDetails(doc, name, type, binding, mode, vlanid, vdc, espName));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static String getAddPortProfile(String name, PortProfileType type,
             BindingType binding, SwitchPortMode mode, int vlanid) {
         try {
             // Create the document and root element.
@@ -366,6 +400,184 @@ public class VsmCommand {
         }
     }
 
+    public static String getVServiceNode(String vlanId, String ipAddr) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to create the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(configVServiceNodeDetails(doc, vlanId, ipAddr));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static Element configVServiceNodeDetails(Document doc, String vlanId, String ipAddr) {
+        // In mode, exec_configure.
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // vservice node %name% type asa
+        Element vservice = doc.createElement("vservice");
+        vservice.appendChild(doc.createElement("node"))
+                .appendChild(doc.createElement("ASA_" + vlanId))
+                .appendChild(doc.createElement("type"))
+                .appendChild(doc.createElement("asa"));
+        modeConfigure.appendChild(vservice);
+
+        Element address = doc.createElement(s_paramvalue);
+        address.setAttribute("isKey", "true");
+        address.setTextContent(ipAddr);
+
+        // ip address %ipAddr%
+        modeConfigure.appendChild(doc.createElement("ip"))
+        		.appendChild(doc.createElement("address"))
+                .appendChild(doc.createElement("value"))
+        		.appendChild(address);
+
+        Element vlan = doc.createElement(s_paramvalue);
+        vlan.setAttribute("isKey", "true");
+        vlan.setTextContent(vlanId);
+
+        // adjacency l2 vlan %vlanId%
+        modeConfigure.appendChild(doc.createElement("adjacency"))
+                .appendChild(doc.createElement("l2"))
+                .appendChild(doc.createElement("vlan"))
+                .appendChild(doc.createElement("value"))
+                .appendChild(vlan);
+
+        // fail-mode close
+        modeConfigure.appendChild(doc.createElement("fail-mode"))
+                .appendChild(doc.createElement("close"));
+
+        // Persist the configuration across reboots.
+        modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+
+    private static Element configPortProfileDetails(Document doc, String name, PortProfileType type,
+            BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
+
+        // In mode, exec_configure.
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // Port profile name and type configuration.
+        Element portProfile = doc.createElement("port-profile");
+        modeConfigure.appendChild(portProfile);
+
+        // Port profile type.
+        Element portDetails = doc.createElement("name");
+        switch (type) {
+        case none:
+            portProfile.appendChild(portDetails);
+            break;
+        case ethernet:
+            {
+                Element typetag = doc.createElement("type");
+                Element ethernettype = doc.createElement("ethernet");
+                portProfile.appendChild(typetag);
+                typetag.appendChild(ethernettype);
+                ethernettype.appendChild(portDetails);
+            }
+            break;
+        case vethernet:
+            {
+                Element typetag = doc.createElement("type");
+                Element ethernettype = doc.createElement("vethernet");
+                portProfile.appendChild(typetag);
+                typetag.appendChild(ethernettype);
+                ethernettype.appendChild(portDetails);
+            }
+            break;
+        }
+
+        // Port profile name.
+        Element value = doc.createElement(s_paramvalue);
+        value.setAttribute("isKey", "true");
+        value.setTextContent(name);
+        portDetails.appendChild(value);
+
+        // element for port prof mode.
+        Element portProf = doc.createElement(s_portprofmode);
+        portDetails.appendChild(portProf);
+
+        // Binding type.
+        if (binding != BindingType.none) {
+            portProf.appendChild(getBindingType(doc, binding));
+        }
+
+        if (mode != SwitchPortMode.none) {
+            // Switchport mode.
+            portProf.appendChild(getSwitchPortMode(doc, mode));
+            // Adding vlan details.
+            if (vlanid > 0) {
+                portProf.appendChild(getAddVlanDetails(doc, mode, Integer.toString(vlanid)));
+            }
+        }
+
+        // Command "vmware port-group".
+        Element vmware = doc.createElement("vmware");
+        Element portgroup = doc.createElement("port-group");
+        vmware.appendChild(portgroup);
+        portProf.appendChild(vmware);
+
+        // org root/%vdc%
+        // vservice node <Node Name> profile <Edge Security Profile Name in VNMC>
+        Element org = doc.createElement("org");
+        org.appendChild(doc.createElement(vdc));
+        portProf.appendChild(org);
+
+        String asaNodeName = "ASA_" + vlanid;
+        Element vservice = doc.createElement("vservice");
+        vservice.appendChild(doc.createElement("node"))
+                .appendChild(doc.createElement(asaNodeName))
+                .appendChild(doc.createElement("profile"))
+                .appendChild(doc.createElement(espName));
+        portProf.appendChild(vservice);
+
+        // no shutdown.
+        Element no = doc.createElement("no");
+        Element shutdown = doc.createElement("shutdown");
+        no.appendChild(shutdown);
+        portProf.appendChild(no);
+
+        // Enable the port profile.
+        Element state = doc.createElement("state");
+        Element enabled = doc.createElement("enabled");
+        state.appendChild(enabled);
+        portProf.appendChild(state);
+
+        // Persist the configuration across reboots.
+        modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+    
     private static Element configPortProfileDetails(Document doc, String name, PortProfileType type,
             BindingType binding, SwitchPortMode mode, int vlanid) {
 
@@ -433,6 +645,7 @@ public class VsmCommand {
         Element portgroup = doc.createElement("port-group");
         vmware.appendChild(portgroup);
         portProf.appendChild(vmware);
+        
 
         // no shutdown.
         Element no = doc.createElement("no");

@@ -16,44 +16,13 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.InetAddress;
-import java.net.Inet6Address;
-import java.net.UnknownHostException;
-import java.security.InvalidParameterException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.bouncycastle.util.IPAddress;
-
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -70,10 +39,8 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.*;
-import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress.State;
-import com.cloud.vm.Nic;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -89,10 +56,10 @@ import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
@@ -114,19 +81,33 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.*;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.NicSecondaryIpVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.InvalidParameterException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -433,7 +414,40 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
+             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        if (networkId != null) {
+            Network network = _networksDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Invalid network id is given");
+            }
+            if (network.getGuestType() == Network.GuestType.Shared) {
+                DataCenter zone = _configMgr.getZone(zoneId);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("Invalid zone Id is given");
+                }
+
+                // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
+                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
+                    Account caller = UserContext.current().getCaller();
+                    long callerUserId = UserContext.current().getCallerUserId();
+                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                    }
+                    return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+                } else {
+                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                        " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
+                }
+            }
+        }
+
+        return allocateIP(ipOwner, false,  zoneId);
+    }
+
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         // check permissions
@@ -695,15 +709,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
         if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
             throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
-        }
-
-        // Check for account wide pool. It will have an entry for account_vlan_map.
-        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {            
-            //see IPaddressVO.java
-            InvalidParameterValueException ex = new InvalidParameterValueException("Sepcified IP address uuid belongs to" +
-                    " Account wide IP pool and cannot be disassociated");
-            ex.addProxyObject("user_ip_address", ipAddressId, "ipAddressId");
-            throw ex;
         }
 
         // don't allow releasing system ip address

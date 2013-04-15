@@ -1152,9 +1152,36 @@
 
           scaleUp:{
             label:'scaleUp VM',
+            createForm:{
+              title:'Scale UP Virtual Machine',
+              label:'Scale UP Virtual Machine',
+              fields:{
+                  serviceOffering: {
+                  label: 'label.compute.offering',
+                  select: function(args) {
+                    $.ajax({
+                      url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                        var items = [];
+                        $(serviceofferings).each(function() {
+                          items.push({id: this.id, description: this.displaytext});
+                        });
+                        args.response.success({data: items});
+                      }
+                    });
+                  }
+                }
+
+
+               }
+            },
+
             action: function(args) {
               $.ajax({
-                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id + "&serviceofferingid=" + args.context.instances[0].serviceofferingid),
+                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id + "&serviceofferingid=" + args.data.serviceOffering),
                 dataType: "json",
                 async: true,
                 success: function(json) {

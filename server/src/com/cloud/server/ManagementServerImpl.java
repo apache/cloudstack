@@ -59,6 +59,7 @@ import org.apache.cloudstack.api.command.admin.storage.*;
 import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.usage.*;
 import org.apache.cloudstack.api.command.admin.user.*;
+import org.apache.cloudstack.api.command.admin.vlan.*;
 import org.apache.cloudstack.api.command.admin.vpc.*;
 import org.apache.cloudstack.api.command.user.autoscale.*;
 import org.apache.cloudstack.api.command.user.firewall.*;
@@ -2037,6 +2038,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(DeleteVlanIpRangeCmd.class);
         cmdList.add(ListVlanIpRangesCmd.class);
+        cmdList.add(DedicatePublicIpRangeCmd.class);
+        cmdList.add(ReleasePublicIpRangeCmd.class);
         cmdList.add(AssignVMCmd.class);
         cmdList.add(MigrateVMCmd.class);
         cmdList.add(RecoverVMCmd.class);

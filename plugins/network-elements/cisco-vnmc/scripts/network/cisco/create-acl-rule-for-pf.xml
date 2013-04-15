@@ -1,0 +1,156 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+
+    <pair key="%aclruledn%">
+      <policyRule
+        descr="%descr%"
+        dn="%aclruledn%"
+        name="%aclrulename%"
+        order="%order%"
+        status="created"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-action-0">
+      <fwpolicyAction
+        actionType="%actiontype%"
+        dn="%aclruledn%/rule-action-0"
+        id="0"
+        status="created"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-cond-2">
+      <policyRuleCondition
+        dn="%aclruledn%/rule-cond-2"
+        id="2"
+        order="unspecified"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2">
+      <policyNetworkExpression
+        dn="%aclruledn%/rule-cond-2/nw-expr2"
+        id="2"
+        opr="eq"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-protocol-2">
+      <policyProtocol
+        dataType="string"
+        descr=""
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-protocol-2"
+        id="2"
+        name=""
+        placement="none"
+        status="created"
+        value="%protocolvalue%"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-cond-3">
+      <policyRuleCondition
+        dn="%aclruledn%/rule-cond-3"
+        id="3"
+        order="unspecified"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-3/nw-expr2">
+      <policyNetworkExpression
+        dn="%aclruledn%/rule-cond-3/nw-expr2"
+        id="2"
+        opr="eq"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
+      <policyNwAttrQualifier
+        attrEp="destination"
+        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-2">
+      <policyIPAddress
+        dataType="string"
+        descr=""
+        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-2"
+        id="2"
+        name=""
+        placement="begin"
+        status="created"
+        value="%ip%"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-cond-4">
+      <policyRuleCondition
+        dn="%aclruledn%/rule-cond-4"
+        id="4"
+        order="unspecified"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2">
+      <policyNetworkExpression
+        dn="%aclruledn%/rule-cond-4/nw-expr2"
+        id="2"
+        opr="range"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-attr-qual">
+      <policyNwAttrQualifier
+        attrEp="destination"
+        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-attr-qual"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-port-2">
+      <policyNetworkPort
+        appType="Other"
+        dataType="string"
+        descr=""
+        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-port-2"
+        id="2"
+        name=""
+        placement="begin"
+        status="created"
+        value="%startport%"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-port-3">
+      <policyNetworkPort
+        appType="Other"
+        dataType="string"
+        descr=""
+        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-port-3"
+        id="3"
+        name=""
+        placement="end"
+        status="created"
+        value="%endport%"/>
+    </pair>
+
+  </inConfigs>
+</configConfMos>
+
+<!--
+    aclruledn="org-root/org-vlan-123/org-VDC-vlan-123/pol-test_policy/rule-dummy"
+    aclrulename="dummy"
+    descr=value
+    actiontype="drop" or "permit"
+    protocolvalue="TCP" or "UDP"
+    ip="public ip at destination"
+    startport="start port at destination"
+    endport="end port at destination"
+--!>

@@ -680,7 +680,41 @@ CREATE VIEW `cloud`.`affinity_group_view` AS
             left join
         `cloud`.`vm_instance` ON vm_instance.id = affinity_group_vm_map.instance_id
             left join
-		`cloud`.`user_vm` ON user_vm.id = vm_instance.id;
-		
+        `cloud`.`user_vm` ON user_vm.id = vm_instance.id;
+
+CREATE TABLE `cloud`.`external_cisco_vnmc_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which cisco vnmc device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this cisco vnmc device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the cisco vnmc device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external cisco vnmc device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_cisco_vnmc_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_cisco_vnmc_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_cisco_asa1000v_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which cisco asa1kv device is added',
+  `management_ip` varchar(255) UNIQUE NOT NULL COMMENT 'mgmt. ip of cisco asa1kv device',
+  `in_port_profile` varchar(255) NOT NULL COMMENT 'inside port profile name of cisco asa1kv device',
+  `cluster_id` bigint unsigned NOT NULL COMMENT 'id of the Vmware cluster to which cisco asa1kv device is attached (cisco n1kv switch)',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_cisco_asa1000v_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_cisco_asa1000v_devices__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_asa1000v_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of guest network',
+  `asa1000v_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of asa1000v device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_asa1000v_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_asa1000v_map__asa1000v_id` FOREIGN KEY (`asa1000v_id`) REFERENCES `external_cisco_asa1000v_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
+
