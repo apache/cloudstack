@@ -2449,7 +2449,7 @@ class AffinityGroup:
         self.__dict__.update(items)
 
     @classmethod
-        def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None):
         agCmd = createAffinityGroup.createAffinityGroupCmd()
         agCmd.name = services['name']
         agCmd.displayText = services['displaytext'] if 'displaytext' in services else services['name']
@@ -2465,7 +2465,6 @@ class AffinityGroup:
         cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
         cmd.id = self.id
         return apiclient.deleteVPC(cmd)
-
 
     @classmethod
     def list(cls, apiclient, **kwargs):
