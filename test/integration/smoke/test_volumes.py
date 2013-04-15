@@ -84,7 +84,6 @@ class Services:
                         "protocol": 'TCP',
                         "diskdevice": "/dev/xvdb",
                         "ostype": 'CentOS 5.5 (64-bit)',
-                        "mode": 'advanced',
                         "sleep": 10,
                         "timeout": 600,
                     }
@@ -100,6 +99,7 @@ class TestCreateVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]

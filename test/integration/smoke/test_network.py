@@ -38,8 +38,6 @@ class Services:
         self.services = {
                             "ostype": "CentOS 5.3 (64-bit)",
                             # Cent OS 5.3 (64 bit)
-                            "mode": 'advanced',
-                            # Networking mode: Basic or advanced
                             "lb_switch_wait": 10,
                             # Time interval after which LB switches the requests
                             "sleep": 60,
@@ -120,7 +118,7 @@ class TestPublicIP(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-
+        cls.services['mode'] = zone.networktype
         # Create Accounts & networks
         cls.account = Account.create(
                             cls.api_client,
