@@ -729,7 +729,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (systemVmIsoPath == null) {
             throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
         }
-        final Script command = new Script("/bin/bash " + scriptPath, s_logger);
+        final Script command = new Script("/bin/bash", s_logger);
+        command.add(scriptPath);
         command.add(publicKeyPath);
         command.add(privKeyPath);
         command.add(systemVmIsoPath);
