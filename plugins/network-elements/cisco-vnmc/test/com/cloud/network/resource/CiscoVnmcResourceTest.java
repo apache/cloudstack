@@ -213,7 +213,7 @@ public class CiscoVnmcResourceTest {
                 anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclRuleForDNat(anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.associateNatPolicySet(anyString())).thenReturn(true);
+        when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);
         System.out.println(answer.getDetails());
@@ -253,7 +253,7 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclRuleForPF(anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.associateNatPolicySet(anyString())).thenReturn(true);
+        when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);
         System.out.println(answer.getDetails());

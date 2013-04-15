@@ -48,14 +48,14 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID, required=true, entityType=CiscoVnmcResourceResponse.class, description="Cisco Vnmc resource ID")
-    private Long CiscoVnmcResourceId;
+    private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getCiscoVnmcResourceId() {
-        return CiscoVnmcResourceId;
+        return ciscoVnmcResourceId;
     }
 
     /////////////////////////////////////////////////////
