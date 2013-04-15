@@ -159,15 +159,13 @@ under the License.
             </section>
             <section id="api-throttling">
                 <title>API Request Throttling</title>
-                <para>###</para>
-            </section>
-            <section id="ceph-rdb-setup">
-                <title>Ceph RDB Setup</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-618">CLOUDSTACK-618</ulink>: Limits the number of API requests per second that can be placed against a management server to avoid DoS attacks via API requests.</para>
+                <para>The throttling is controlled by the <command>api.throttling.enabled</command>, <command>api.throttling.interval</command>, and <command>api.throttling.max</command> configuration settings. Note that <command>api.throttling.enabled</command> is set to <emphasis>false</emphasis> by default.</para>
             </section>
             <section id="s3-backed-storage">
                 <title>S3 Backed Secondary Storage</title>
-                <para>###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-509">CLOUDSTACK-509</ulink>: This enhancement backs NFS secondary storage with an S3-compatible object store. Periodically, a reaper thread synchronizes the templates, ISOs, and snapshots stored on a NFS secondary storage mount with a configured S3 object store. In addition to permitting the use of commodity or IaaS storage solutions for static assets, it provides a means of automatically synchronizing template and ISO assets across multiple zones.</para>
+                <para>See the <ulink url="https://cwiki.apache.org/CLOUDSTACK/s3-backed-secondary-storage.html">&PRODUCT; wiki</ulink> for more information on this feature, currently the <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-878">documentation is incomplete</ulink>.</para>
             </section>
             <section id="user-domain-admin-create-key">
                 <title>User and Domain Admin Can Create API Key and Secret</title>
@@ -175,15 +173,16 @@ under the License.
             </section>
             <section id="inline-srx-f5-mode">
                 <title>Support Inline Mode for F5 and SRX</title>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-306">CLOUDSTACK-306</ulink>: ### </para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-306">CLOUDSTACK-306</ulink>: For &PRODUCT; deployments using the Juniper SRX (firewall) and F5 Big IP (load balancer), &PRODUCT; 4.1.0 supports putting the firewall in front of the load balancer, making the firewall device the gateway and putting the load balancer behind the public network.</para>
             </section>
             <section id="egress-firewall">
                 <title>Egress Firewall Rules for Guest Networks</title>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-299">CLOUDSTACK-299</ulink>: ###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-299">CLOUDSTACK-299</ulink>: This feature allows users to create egress (exit) traffic rules from private networks to public networks (<emphasis>e.g.</emphasis> from your internal network to the public Internet). By default all traffic is blocked from internal networks to the public networks, this allows you to open ports as necessary.</para>
+                <para>Egress traffic rules are suppored only on virtual routers at this time, physical devices are not supported.</para>
             </section>
             <section id="reset-ssh-key">
                 <title>Reset SSH Key to Access VM</title>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-297">CLOUDSTACK-297</ulink>: ###</para>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-297">CLOUDSTACK-297</ulink>: &PRODUCT; 4.1.0 introduces a new API <command>resetSSHKeyForVirtualMachine</command>, that can allow them to set or reset the SSH keypair assigned to a virtual machine.</para>
             </section>
         </section>
         <section id="issues-fixed-4.0">
