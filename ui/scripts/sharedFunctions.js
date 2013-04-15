@@ -325,7 +325,8 @@ cloudStack.converters = {
 	    if(g_timezoneoffset != null) 
 	      localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
 	    else 
-	      localDate = disconnected.getTimePlusTimezoneOffset(0);	 
+	      localDate = disconnected.toUTCString();
+             // localDate = disconnected.getTimePlusTimezoneOffset(0);	 
     }
 		return localDate; 		
 	},
