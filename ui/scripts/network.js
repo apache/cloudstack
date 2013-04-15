@@ -320,21 +320,14 @@
         title: 'label.guest.networks',
         listView: {
           actions: {
-            add: {
+            add: { //add Isolated guest network (can't add Shared guest network here)
               label: 'label.add.guest.network',
 
-              preFilter: function(args) {
-                var advSgDisabledZones;
-								$.ajax({
-									url: createURL('listZones'),
-									async: false,
-									success: function(json) {									 
-										advSgDisabledZones = $.grep(json.listzonesresponse.zone, function(zone) {
-											return (zone.networktype == 'Advanced' && zone.securitygroupsenabled	!= true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
-										});										
-									}
-								});								
-								return (advSgDisabledZones != null && advSgDisabledZones.length > 0);							
+              preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone 
+                if(args.context.zoneType != 'Basic') 
+								  return true;
+								else
+								  return false;								
               },
 
               createForm: {
