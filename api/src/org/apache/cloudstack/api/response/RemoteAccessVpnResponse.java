@@ -107,5 +107,4 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     public void setId(String id) {
         this.id = id;
     }
-
 }
