@@ -3302,8 +3302,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
 
-                        if (provider == Provider.JuniperSRX) {
-                            firewallProvider = Provider.JuniperSRX;
+                        if (provider == Provider.JuniperSRX || provider == Provider.CiscoVnmc) {
+                            firewallProvider = provider;
                         }
                         
                         if ((service == Service.PortForwarding || service == Service.StaticNat) && provider == Provider.VirtualRouter){

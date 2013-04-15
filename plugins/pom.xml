@@ -138,6 +138,7 @@
       </activation>
       <modules>
         <module>hypervisors/vmware</module>
+        <module>network-elements/cisco-vnmc</module>
       </modules>
     </profile>
     <profile>

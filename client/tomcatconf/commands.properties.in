@@ -577,3 +577,14 @@ deleteAffinityGroup=15
 listAffinityGroups=15
 updateVMAffinityGroup=15
 listAffinityGroupTypes=15
+
+#### Cisco Vnmc commands
+addCiscoVnmcResource=1
+deleteCiscoVnmcResource=1
+listCiscoVnmcResources=1
+
+#### Cisco Asa1000v commands
+addCiscoAsa1000vResource=1
+deleteCiscoAsa1000vResource=1
+listCiscoAsa1000vResources=1
+

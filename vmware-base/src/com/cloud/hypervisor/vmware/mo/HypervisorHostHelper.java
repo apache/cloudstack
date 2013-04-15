@@ -163,7 +163,8 @@ public class HypervisorHostHelper {
     }
 
     public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName,
-            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstSize) throws Exception {
+            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstSize,
+            String gateway, boolean configureVServiceInNexus) throws Exception {
         Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
         String vsmIp = vsmCredentials.get("vsmip");
         String vsmUserName = vsmCredentials.get("vsmusername");
@@ -233,8 +234,18 @@ public class HypervisorHostHelper {
                 s_logger.info("Adding port profile configured over untagged VLAN.");
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, 0);
             } else {
-                s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
-                netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
+                if (!configureVServiceInNexus) {
+                    s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
+                    netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
+                } else {
+                    String tenant = "vlan-" + vlanId.intValue();
+                    String vdc = "root/" + tenant + "/VDC-" + tenant;
+                    String esp = "ESP-" + tenant;
+                    s_logger.info("Adding vservice node in Nexus VSM for VLAN : " + vlanId.toString());
+                    netconfClient.addVServiceNode(vlanId.toString(), gateway);
+                    s_logger.info("Adding port profile with vservice details configured over VLAN : " + vlanId.toString());
+                    netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue(), vdc, esp);
+                }
             }
         } catch (CloudRuntimeException e) {
             msg = "Failed to add vEthernet port profile " + networkName + "." + ". Exception: " + e.toString();
@@ -402,7 +413,7 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
-            VirtualSwitchType vSwitchType, int numPorts) throws Exception {
+            VirtualSwitchType vSwitchType, int numPorts, String gateway, boolean configureVServiceInNexus) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -504,22 +515,22 @@ public class HypervisorHostHelper {
             } else {
                 s_logger.info("Found Ethernet port profile " + ethPortProfileName);
             }
-        long averageBandwidth = 0L;
-        if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
-            averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
-        }
-        // We chose 50% higher allocation than average bandwidth.
+            long averageBandwidth = 0L;
+            if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
+                averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
+            }
+            // We chose 50% higher allocation than average bandwidth.
             // TODO(sateesh): Optionally let user specify the peak coefficient
-        long peakBandwidth = (long) (averageBandwidth * 1.5);
+            long peakBandwidth = (long) (averageBandwidth * 1.5);
             // TODO(sateesh): Optionally let user specify the burst coefficient
-        long burstSize = 5 * averageBandwidth / 8;
+            long burstSize = 5 * averageBandwidth / 8;
 
-        if (!dataCenterMo.hasDvPortGroup(networkName)) {
-            s_logger.info("Port profile " + networkName + " not found.");
-                createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
-            bWaitPortGroupReady = true;
-        } else {
-            s_logger.info("Port profile " + networkName + " found.");
+            if (!dataCenterMo.hasDvPortGroup(networkName)) {
+                s_logger.info("Port profile " + networkName + " not found.");
+                createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize, gateway, configureVServiceInNexus);
+                bWaitPortGroupReady = true;
+            } else {
+                s_logger.info("Port profile " + networkName + " found.");
                 updatePortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
             }
         }
