@@ -69,7 +69,7 @@
       }).dialog({
         dialogClass: 'multi-edit-add-list panel',
         width: 825,
-        title: _l('label.select.vm.for.static.nat'),
+        title: _l('label.affinity.groups'),
         buttons: [
           {
             text: _l('label.apply'),
