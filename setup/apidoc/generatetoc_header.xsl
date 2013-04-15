@@ -52,7 +52,7 @@ version="1.0">
                 <div class="inside_apileftpanel">
                 	<div class="inside_contentpanel" style="width:930px;">
               		  	<!-- Modify this line for the release version -->
-                    	<h1>Apache CloudStack 4.0.1-incubating API Documentation</h1>
+                    	<h1>Apache CloudStack 4.0.2 API Documentation</h1>
                         <div class="apiannouncement_box">
                         	<div class="apiannouncement_contentarea">
                                 <h3>Using the CloudStack API</h3>

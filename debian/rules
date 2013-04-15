@@ -20,8 +20,8 @@ export DH_OPTIONS
 
 
 
-export PACKAGEVERSION=4.0.1-incubating
-export BUILDNUMBER=4.0.1-incubating
+export PACKAGEVERSION=4.0.2
+export BUILDNUMBER=4.0.2
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
