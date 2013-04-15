@@ -1,3 +1,9 @@
+cloud (1:4.0.2) unstable; urgency=low
+
+  * Bumping the version to 4.0.2
+
+ -- Chip Childers <chip.childers@gmail.com> Mon, 15 Apr 2013 13:00:00 +0000
+
 cloud (1:4.0.1-incubating) unstable; urgency=low
 
   * Bumping the version to 4.0.1-incubating
