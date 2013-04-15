@@ -119,6 +119,7 @@ Summary:   CloudStack library dependencies
 Requires: java >= 1.6.0
 Requires: mysql-connector-java
 Obsoletes: vmops-deps < %{version}-%{release}
+Conflicts: antlr
 Group:     System Environment/Libraries
 %description deps
 This package contains a number of third-party dependencies
