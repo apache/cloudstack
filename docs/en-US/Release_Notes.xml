@@ -37,6 +37,154 @@ under the License.
                 <para>The 4.1.0 release adds partial User Interface (UI) support for Catalan, Chinese, French, German, Italian, Japanese, Korean, Norwegian, Portuguese, Russian, and Spanish. Not all languages are complete.</para>
                 <para>The 4.1.0 release also adds documentation translations for Chinese, Chinese (Taiwan), Italian, Japanese, Korean, and Portuguese.</para>
             </section>
+            <section id="aws-style-regions">
+                <title>Added Region Support</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-241">CLOUDSTACK-241</ulink>: This feature adds a "region" construct that spans several management servers. The objective of this feature is to add AWS EC2 like Regions implementation into CloudStack.  Regions are dispersed and located in separate geographic areas. Availability Zones (or Zones in CloudStack) are distinct locations within a Region that are engineered to be isolated from failures in other Zones and provide inexpensive, low latency network connectivity to other Zones in the same Region.</para>
+                <para>Regions are expected to add the following benefits</para>
+                <itemizedlist>
+                    <listitem><para>Higher availability of the services: users can deploy services across AZs and even if one of the AZ goes down the services are still available to the end-user through VMs deployed in other zones.</para></listitem>
+                    <listitem><para>Higher availability of the Management Server (MS): Since each MS Cluster only manages a single Region, if that MS Cluster goes down, only that particular Region is impacted. Admin should be able to access all the other Regions.</para></listitem>
+                    <listitem><para>Scalability: The scalability limit of CloudStack dramatically improves, as the scalability limit of MS Cluster is limited to a single Region.</para></listitem>
+                    <listitem><para>Object Store: With Regions construct, CloudStack would also allow users to define Object Store (Secondary Storage) across AZs. This helps users easily deploy VMs in different AZs using the same template, offerings.</para></listitem>
+                    <listitem><para>Geographical Grouping: Regions allow admins to group AZs (that have low latency and are geographically located nearby) into a broader region construct.</para></listitem>
+                </itemizedlist>
+                <para>Currently the Region feature is exposed in the API, but does not have a UI component.</para>
+            </section>
+            <section id="ec2-query-api">
+                <title>Support for EC2 Query API</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-197">CLOUDSTACK-197</ulink>: This introduces a query API for the AWS APIs that are currently only supported by SOAP. The AWS Java SDK and AWS PHP SDK should now be supported by the AWSAPI in CloudStack.</para>
+                <para>Supported Query APIs in 4.1.0:</para>
+                <itemizedlist>
+                    <listitem><para><command>AllocateAddress</command></para></listitem>
+                    <listitem><para><command>AssociateAddress</command></para></listitem>
+                    <listitem><para><command>AttachVolume</command></para></listitem>
+                    <listitem><para><command>AuthorizeSecurityGroupIngress</command></para></listitem>
+                    <listitem><para><command>CreateImage</command></para></listitem>
+                    <listitem><para><command>CreateKeyPair</command></para></listitem>
+                    <listitem><para><command>CreateSecurityGroup</command></para></listitem>
+                    <listitem><para><command>CreateSnapshot</command></para></listitem>
+                    <listitem><para><command>CreateTags</command></para></listitem>
+                    <listitem><para><command>CreateVolume</command></para></listitem>
+                    <listitem><para><command>DeleteKeyPair</command></para></listitem>
+                    <listitem><para><command>DeleteSecurityGroup</command></para></listitem>
+                    <listitem><para><command>DeleteSnapshot</command></para></listitem>
+                    <listitem><para><command>DeleteTags</command></para></listitem>
+                    <listitem><para><command>DeleteVolume</command></para></listitem>
+                    <listitem><para><command>DeregisterImage</command></para></listitem>
+                    <listitem><para><command>DescribeAddresses</command></para></listitem>
+                    <listitem><para><command>DescribeAvailabilityZones</command></para></listitem>
+                    <listitem><para><command>DescribeImageAttribute</command></para></listitem>
+                    <listitem><para><command>DescribeImages</command></para></listitem>
+                    <listitem><para><command>DescribeInstanceAttribute</command></para></listitem>
+                    <listitem><para><command>DescribeInstances</command></para></listitem>
+                    <listitem><para><command>DescribeKeyPairs</command></para></listitem>
+                    <listitem><para><command>DescribeSecurityGroups</command></para></listitem>
+                    <listitem><para><command>DescribeSnapshots</command></para></listitem>
+                    <listitem><para><command>DescribeTags</command></para></listitem>
+                    <listitem><para><command>DescribeVolumes</command></para></listitem>
+                    <listitem><para><command>DetachVolume</command></para></listitem>
+                    <listitem><para><command>DisassociateAddress</command></para></listitem>
+                    <listitem><para><command>GetPasswordData</command></para></listitem>
+                    <listitem><para><command>ImportkeyPair</command></para></listitem>
+                    <listitem><para><command>ModifyImageAttribute</command></para></listitem>
+                    <listitem><para><command>RebootInstances</command></para></listitem>
+                    <listitem><para><command>RegisterImage</command></para></listitem>
+                    <listitem><para><command>ReleaseAddress</command></para></listitem>
+                    <listitem><para><command>ResetImageAttribute</command></para></listitem>
+                    <listitem><para><command>RevokeSecurityGroupIngress</command></para></listitem>
+                    <listitem><para><command>RunInstances</command></para></listitem>
+                    <listitem><para><command>StartInstances</command></para></listitem>
+                    <listitem><para><command>StopInstances</command></para></listitem>
+                    <listitem><para><command>TerminateInstances</command></para></listitem>
+                </itemizedlist>
+                <para>See the <ulink url="https://cwiki.apache.org/CLOUDSTACK/ec2-functional-spec-for-query-api-support.html">Feature Specification</ulink> for more information on the Query API support.</para>
+            </section>
+            <section id="cloudmonkey">
+                <title>Auto-Completing Shell for CloudStack (CloudMonkey)</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-132">CLOUDSTACK-132</ulink>: Adds a auto-completing shell and command-line tool for &PRODUCT; written in Python, called <application>CloudMonkey</application>.</para>
+                <para>CloudMonkey includes the following features:</para>
+                <itemizedlist>
+                    <listitem><para>Usable as a command line tool and interactive shell.</para></listitem>
+                    <listitem><para>All commands are lowercase unlike API.</para></listitem>
+                    <listitem><para>Api Discovery using sync feature, with build time api precaching for failsafe sync.</para></listitem>
+                    <listitem><para>Raw api execution support.</para></listitem>
+                    <listitem><para>Auto-completion via double <command>tab</command>.</para></listitem>
+                    <listitem><para>Reverse search using <command>Ctrl+R</command></para></listitem>
+                    <listitem><para>Emacs compatible key bindings.</para></listitem>
+                    <listitem><para>Output that's "pipeable" to other *nix programs.</para></listitem>
+                    <listitem><para>Unix shell execution.</para></listitem>
+                    <listitem><para>Support to handle asynchronous jobs using user defined blocking or non-blocking way.</para></listitem>
+                    <listitem><para>Tabular or JSON output with filtering of table columns.</para></listitem>
+                    <listitem><para>Colored output.</para></listitem>
+                    <listitem><para>API parameter value completion (based on predication, fuzzy results may fail sometimes).</para></listitem>
+                </itemizedlist>
+                <para>CloudMonkey has a few requirements above and beyond CloudStack, and does not need to be run on the same machine as a management server. If you wish to run <application>CloudMonkey</application> you'll need Python 2.5 or later, <application>readline</application>, <application>Pygments</application>, and <application>prettytable</application>. CloudMonkey can be installed with <application>pip</application>:</para>
+                <programlisting language="Bash"><prompt>$</prompt> pip install cloudmonkey</programlisting>
+                <para>See the Developer's Guide and <ulink url="https://cwiki.apache.org/CLOUDSTACK/cloudstack-cloudmonkey-cli.html">the CloudStack wiki</ulink> for the latest information on <application>CloudMonkey</application> installation and use.</para>
+            </section>
+            <section id="apidiscover">
+                <title>API Discovery Service</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-926">CLOUDSTACK-926</ulink>: CloudStack has more than 300 APIs and more are added in each major release. CloudStack admins can enable or disable APIs, or add plugins which provide more APIs. The API Discovery Service is a plugin which will help users discover the APIs available to them on a CloudStack Management Server.</para>
+                <para>The discovery service implements a method called <command>listApis</command> which will return information about APIs for a user. It currently accepts an apiName to list api information of that particular API. The method ensures that user can only list APIs they are entitled to.</para>
+                <para>All CloudStack APIs are implemented by annotated command class and PluggableService is a contract implemented by all the components such as the Management Server and all the plugins which provide an API. During load time, API discovery service asks all the pluggable services to return list of API cmd classes from whose fields and annotations it gathers information about each API, the information consists of name, description, parameter name, parameter description, etc.</para>
+                <para>For more information on the implementation of the API Discovery Service for 4.1.0, see the <ulink url="https://cwiki.apache.org/CLOUDSTACK/api-discovery-service.html">CloudStack wiki</ulink>.</para> 
+            </section>
+            <section id="events-framework">
+                <title>Events Framework</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-820">CLOUDSTACK-820</ulink>: The Events Framework provides a mechanism to publish and subscribe to events in &PRODUCT;.</para>
+            </section>
+            <section id="additional-vmx-settings">
+                <title>Additional VMX Settings</title>
+                <para>###</para>
+            </section>
+            <section id="l3-nicira">
+                <title>L3 Router Functionality in Nicira Nvp Plugin</title>
+                <para>###</para>
+            </section>
+            <section id="persistent-networks">
+                <title>Persistent Networks without Running VM</title>
+                <para>###</para>
+            </section>
+            <section id="add-remove-network-vm">
+                <title>Add/Remove Network on VM</title>
+                <para>###</para>
+            </section>
+            <section id="resize-volumes">
+                <title>Resize Volumes Feature</title>
+                <para>###</para>
+            </section>
+            <section id="autoscale">
+                <title>Autoscale</title>
+                <para>###</para>
+            </section>
+            <section id="api-throttling">
+                <title>API Request Throttling</title>
+                <para>###</para>
+            </section>
+            <section id="ceph-rdb-setup">
+                <title>Ceph RDB Setup</title>
+                <para>###</para>
+            </section>
+            <section id="s3-backed-storage">
+                <title>S3 Backed Secondary Storage</title>
+                <para>###</para>
+            </section>
+            <section id="user-domain-admin-create-key">
+                <title>User and Domain Admin Can Create API Key and Secret</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-437">CLOUDSTACK-437</ulink>: This feature adds the ability for domain admins and users to create their own API Key and Secret. Domain admins can create keys for themselves, subdomain admins, and for regular users, but not for other domain admins.</para>
+            </section>
+            <section id="inline-srx-f5-mode">
+                <title>Support Inline Mode for F5 and SRX</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-306">CLOUDSTACK-306</ulink>: ### </para>
+            </section>
+            <section id="egress-firewall">
+                <title>Egress Firewall Rules for Guest Networks</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-299">CLOUDSTACK-299</ulink>: ###</para>
+            </section>
+            <section id="reset-ssh-key">
+                <title>Reset SSH Key to Access VM</title>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-297">CLOUDSTACK-297</ulink>: ###</para>
+            </section>
         </section>
         <section id="issues-fixed-4.0">
             <title>Issues Fixed in 4.1.0</title>
