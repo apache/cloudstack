@@ -28,7 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -65,6 +65,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -130,7 +131,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     VolumeManager volumeMgr;
     @Inject
     private SwiftManager _swiftMgr;
-    @Inject 
+    @Inject
     private S3Manager _s3Mgr;
     @Inject
     StorageCacheManager cacheMgr;
@@ -314,12 +315,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
         }
     }
-    
+
     protected Answer cloneVolume(DataObject template, DataObject volume) {
         VolumeInfo volInfo = (VolumeInfo)volume;
         DiskOfferingVO offering = diskOfferingDao.findById(volInfo.getDiskOfferingId());
         VMTemplateStoragePoolVO  tmpltStoredOn =  templatePoolDao.findByPoolTemplate(template.getDataStore().getId(), template.getId());
-        
+
         DiskProfile diskProfile = new DiskProfile(volInfo, offering,
                 null);
         CreateCommand cmd = new CreateCommand(diskProfile,
@@ -334,7 +335,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
-        
+
         if (answer.getResult()) {
             VolumeVO vol = this.volDao.findById(volume.getId());
             CreateAnswer createAnswer = (CreateAnswer) answer;
@@ -345,7 +346,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             vol.setPoolId(pool.getId());
             vol.setPodId(pool.getPodId());
             this.volDao.update(vol.getId(), vol);
-           
+
         } else {
             if (tmpltStoredOn != null
                     && (answer instanceof CreateAnswer)
@@ -354,15 +355,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 if (!templateMgr
                         .resetTemplateDownloadStateOnPool(tmpltStoredOn
                                 .getId())) {
-                   
+
                 }
             }
             errMsg = answer.getDetails();
         }
-        
+
         return answer;
     }
-    
+
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
         VolumeInfo volume = (VolumeInfo)srcData;
         VolumeInfo destVolume = (VolumeInfo)destData;
@@ -370,9 +371,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 .getDataCenterId());
         StoragePool srcPool = (StoragePool)this.dataStoreMgr.getDataStore(volume
                 .getPoolId(), DataStoreRole.Primary);
-        
+
         StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destVolume.getPoolId(), DataStoreRole.Primary);
-        
+
         String value = this.configDao.getValue(Config.CopyVolumeWait.toString());
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -394,7 +395,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
 
         String secondaryStorageVolumePath = cvAnswer.getVolumePath();
-        
+
         cvCmd = new CopyVolumeCommand(volume.getId(),
                 secondaryStorageVolumePath, destPool,
                 secondaryStorageURL, false, _copyvolumewait);
@@ -409,7 +410,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(
                     "Failed to copy the volume from secondary storage to the destination primary storage pool.");
         }
-        
+
         VolumeVO destVol = this.volDao.findById(destVolume.getId());
         destVol.setPath(cvAnswer.getVolumePath());
         this.volDao.update(destVol.getId(), destVol);
@@ -437,7 +438,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             } else if (srcData.getType() == DataObjectType.VOLUME
                     && destData.getType() == DataObjectType.TEMPLATE) {
             	answer = createTemplateFromVolume(srcData, destData);
-            } else if (srcData.getType() == DataObjectType.TEMPLATE 
+            } else if (srcData.getType() == DataObjectType.TEMPLATE
                     && destData.getType() == DataObjectType.VOLUME) {
             	answer = cloneVolume(srcData, destData);
             } else if (destData.getType() == DataObjectType.VOLUME
@@ -667,21 +668,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return sendCommand(cmd, pool, template.getId(), zoneId,
                 secondaryStorageHost.getId());
     }
-    
+
     private HostVO getSecHost(long volumeId, long dcId) {
         Long id = snapshotDao.getSecHostId(volumeId);
-        if ( id != null) { 
+        if ( id != null) {
             return hostDao.findById(id);
         }
         return this.templateMgr.getSecondaryStorageHost(dcId);
     }
-    
+
     protected Answer copySnapshot(DataObject srcObject, DataObject destObject) {
     	SnapshotInfo srcSnapshot = (SnapshotInfo)srcObject;
     	VolumeInfo baseVolume = srcSnapshot.getBaseVolume();
     	 Long dcId = baseVolume.getDataCenterId();
          Long accountId = baseVolume.getAccountId();
-         
+
          HostVO secHost = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
          Long secHostId = secHost.getId();
          String secondaryStoragePoolUrl = secHost.getStorageUrl();
@@ -696,12 +697,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
          SwiftTO swift = _swiftMgr.getSwiftTO();
          S3TO s3 = _s3Mgr.getS3TO();
-         
+
          long prevSnapshotId = srcSnapshot.getPrevSnapshotId();
          if (prevSnapshotId > 0) {
              prevSnapshot = snapshotDao.findByIdIncludingRemoved(prevSnapshotId);
              if ( prevSnapshot.getBackupSnapshotId() != null && swift == null) {
-                 if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2")) {                   
+                 if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2")) {
                      prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                      prevSnapshotUuid = prevSnapshot.getPath();
                  }

@@ -34,7 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -90,6 +93,8 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
@@ -106,6 +111,7 @@ import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
 import com.cloud.utils.S3Utils.ObjectNamingStrategy;
 import com.cloud.utils.component.ComponentContext;
@@ -126,7 +132,7 @@ SecondaryStorageResource {
 
     int _timeout;
 
-    String _instance;  
+    String _instance;
     String _dc;
     String _pod;
     String _guid;
@@ -162,8 +168,8 @@ SecondaryStorageResource {
         if (cmd instanceof DownloadProgressCommand) {
             return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
-            return _dlMgr.handleDownloadCommand(this, (DownloadCommand)cmd);
-        } else if (cmd instanceof UploadCommand) {        	
+            return execute((DownloadCommand)cmd);
+        } else if (cmd instanceof UploadCommand) {
             return _upldMgr.handleUploadCommand(this, (UploadCommand)cmd);
         } else if (cmd instanceof CreateEntityDownloadURLCommand){
             return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
@@ -323,6 +329,51 @@ SecondaryStorageResource {
             s_logger.warn(errMsg, e);
             return new Answer(cmd, false, errMsg);
         }
+    }
+
+    private Answer execute(DownloadCommand cmd){
+        DataStoreTO dstore = cmd.getDataStore();
+        if ( dstore instanceof NfsTO ){
+            return _dlMgr.handleDownloadCommand(this, cmd);
+        }
+        else if ( dstore instanceof S3TO ){
+            //TODO: how to handle download progress for S3
+            S3TO s3 = (S3TO)cmd.getDataStore();
+            String url = cmd.getUrl();
+            String user = null;
+            String password = null;
+            if (cmd.getAuth() != null) {
+                user = cmd.getAuth().getUserName();
+                password = new String(cmd.getAuth().getPassword());
+            }
+            // get input stream from the given url
+            InputStream in = UriUtils.getInputStreamFromUrl(url, user, password);
+            URI uri;
+            URL urlObj;
+            try {
+                uri = new URI(url);
+                urlObj = new URL(url);
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("URI is incorrect: " + url);
+            } catch (MalformedURLException e) {
+                throw new CloudRuntimeException("URL is incorrect: " + url);
+            }
+
+            final String bucket = s3.getBucketName();
+            String key = join(asList(determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId()), urlObj.getFile()), S3Utils.SEPARATOR);
+            S3Utils.putObject(s3, in, bucket, key);
+            return new Answer(cmd, true, format("Uploaded the contents of input stream from %1$s for template id %2$s to S3 bucket %3$s", url,
+                    cmd.getResourceId(), bucket));
+        }
+        else if ( dstore instanceof SwiftTO ){
+            //TODO: need to move code from execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here, but we need to handle
+            // source is url, most likely we need to modify our existing swiftUpload python script.
+            return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
+        }
+        else{
+            return new Answer(cmd, false, "Unsupport image data store: " + dstore);
+        }
+
     }
 
     private Answer execute(uploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
@@ -834,33 +885,33 @@ SecondaryStorageResource {
         String absoluteTemplatePath = parent + relativeTemplatePath;
         MessageDigest digest;
         String checksum = null;
-        File f = new File(absoluteTemplatePath);   
+        File f = new File(absoluteTemplatePath);
         InputStream is = null;
         byte[] buffer = new byte[8192];
         int read = 0;
         if(s_logger.isDebugEnabled()){
-            s_logger.debug("parent path " +parent+ " relative template path " +relativeTemplatePath );   
+            s_logger.debug("parent path " +parent+ " relative template path " +relativeTemplatePath );
         }
 
 
         try {
-            digest = MessageDigest.getInstance("MD5");           
-            is = new FileInputStream(f);     
+            digest = MessageDigest.getInstance("MD5");
+            is = new FileInputStream(f);
             while( (read = is.read(buffer)) > 0) {
                 digest.update(buffer, 0, read);
-            }       
+            }
             byte[] md5sum = digest.digest();
             BigInteger bigInt = new BigInteger(1, md5sum);
             checksum = bigInt.toString(16);
             if(s_logger.isDebugEnabled()){
-                s_logger.debug("Successfully calculated checksum for file " +absoluteTemplatePath+ " - " +checksum );   
+                s_logger.debug("Successfully calculated checksum for file " +absoluteTemplatePath+ " - " +checksum );
             }
 
         }catch(IOException e) {
             String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
             s_logger.error(logMsg);
-            return new Answer(cmd, false, checksum); 
-        }catch (NoSuchAlgorithmException e) {         
+            return new Answer(cmd, false, checksum);
+        }catch (NoSuchAlgorithmException e) {
             return new Answer(cmd, false, checksum);
         }
         finally {
@@ -869,10 +920,10 @@ SecondaryStorageResource {
                     is.close();
             } catch (IOException e) {
                 if(s_logger.isDebugEnabled()){
-                    s_logger.debug("Could not close the file " +absoluteTemplatePath);   
+                    s_logger.debug("Could not close the file " +absoluteTemplatePath);
                 }
-                return new Answer(cmd, false, checksum);   
-            }                        
+                return new Answer(cmd, false, checksum);
+            }
         }
 
         return new Answer(cmd, true, checksum);
@@ -1141,7 +1192,7 @@ SecondaryStorageResource {
             if (nfsIps.contains(cidr)) {
                 /*
                  * if the internal download ip is the same with secondary storage ip, adding internal sites will flush
-                 * ip route to nfs through storage ip. 
+                 * ip route to nfs through storage ip.
                  */
                 continue;
             }
@@ -1243,7 +1294,7 @@ SecondaryStorageResource {
 
         for (PortConfig pCfg:cmd.getPortConfigs()){
             if (pCfg.isAdd()) {
-                ipList.add(pCfg.getSourceIp());		
+                ipList.add(pCfg.getSourceIp());
             }
         }
         boolean success = true;
@@ -1401,7 +1452,7 @@ SecondaryStorageResource {
             String nfsPath = nfsHostIp + ":" + uri.getPath();
             String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
             String root = _parent + "/" + dir;
-            mount(root, nfsPath);    
+            mount(root, nfsPath);
             return root;
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
@@ -1470,7 +1521,7 @@ SecondaryStorageResource {
         String eth2ip = (String) params.get("eth2ip");
         if (eth2ip != null) {
             params.put("public.network.device", "eth2");
-        }         
+        }
         _publicIp = (String) params.get("eth2ip");
         _hostname = (String) params.get("name");
 
@@ -1677,7 +1728,7 @@ SecondaryStorageResource {
         command.add(String.valueOf(isAppend));
         for (String ip : ipList){
             command.add(ip);
-        }		
+        }
 
         String result = command.execute();
         if (result != null) {
@@ -1693,7 +1744,7 @@ SecondaryStorageResource {
                 s_logger.debug("create mount point: " + root);
             } else {
                 s_logger.debug("Unable to create mount point: " + root);
-                return null;       
+                return null;
             }
         }
 
@@ -1813,13 +1864,13 @@ SecondaryStorageResource {
 	@Override
 	public void setName(String name) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void setConfigParams(Map<String, Object> params) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -1837,6 +1888,6 @@ SecondaryStorageResource {
 	@Override
 	public void setRunLevel(int level) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

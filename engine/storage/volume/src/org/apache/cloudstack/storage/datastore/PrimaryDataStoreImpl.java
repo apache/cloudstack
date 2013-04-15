@@ -83,10 +83,10 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     private VolumeDao volumeDao;
 
-    public	 PrimaryDataStoreImpl() {				
-       
+    public	 PrimaryDataStoreImpl() {
+
     }
-    
+
     public void configure(StoragePoolVO pdsv,
             PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         this.pdsv = pdsv;
@@ -245,9 +245,9 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     }
                 }
             }
-            
+
         }
-        
+
         return objectInStoreMgr.get(obj, this);
     }
 
@@ -341,9 +341,9 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public String getStorageProviderName() {
         return this.pdsv.getStorageProviderName();
     }
-    
+
     @Override
     public DataStoreTO getTO() {
-        return null;
+        return getDriver().getStoreTO(this);
     }
 }

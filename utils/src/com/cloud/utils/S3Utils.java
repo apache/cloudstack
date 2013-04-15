@@ -138,6 +138,24 @@ public final class S3Utils {
 
     }
 
+    public static void putObject(final ClientOptions clientOptions,
+            final InputStream sourceStream, final String bucketName, final String key) {
+
+        assert clientOptions != null;
+        assert sourceStream != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Sending stream as S3 object %1$s in "
+                    + "bucket %2$s", key, bucketName));
+        }
+
+        acquireClient(clientOptions).putObject(bucketName, key, sourceStream, null);
+
+    }
+
+
     @SuppressWarnings("unchecked")
     public static File getFile(final ClientOptions clientOptions,
             final String bucketName, final String key,
@@ -239,6 +257,7 @@ public final class S3Utils {
 
     }
 
+
     public static void putDirectory(final ClientOptions clientOptions,
             final String bucketName, final File directory,
             final FilenameFilter fileNameFilter,
@@ -283,6 +302,8 @@ public final class S3Utils {
         }
 
     }
+
+
 
     public static void deleteObject(final ClientOptions clientOptions,
             final String bucketName, final String key) {

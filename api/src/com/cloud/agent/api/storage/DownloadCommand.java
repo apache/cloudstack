@@ -20,6 +20,7 @@ import java.net.URI;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -105,6 +106,8 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	private Long maxDownloadSizeInBytes = null;
 	private long id;
 	private ResourceType resourceType = ResourceType.TEMPLATE;
+	private DataStoreTO _store;
+    private Long resourceId;
 
 	protected DownloadCommand() {
 	}
@@ -122,14 +125,16 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	    this.resourceType = that.resourceType;
 	}
 
-	public DownloadCommand(String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
+	public DownloadCommand(DataStoreTO store, String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), template.getUrl(), template.getFormat(), template.getAccountId());
+	    this._store = store;
 	    this.hvm = template.isRequiresHvm();
 	    this.checksum = template.getChecksum();
 	    this.id = template.getId();
 	    this.description = template.getDisplayText();
 	    this.setSecUrl(secUrl);
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+	    this.resourceId = template.getId();
 	}
 
 	public DownloadCommand(String secUrl, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
@@ -216,4 +221,26 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	public void setResourceType(ResourceType resourceType) {
 		this.resourceType = resourceType;
 	}
+
+
+    public DataStoreTO getDataStore() {
+        return _store;
+    }
+
+
+    public void setDataStore(DataStoreTO _store) {
+        this._store = _store;
+    }
+
+
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+
+    public void setResourceId(Long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+
 }

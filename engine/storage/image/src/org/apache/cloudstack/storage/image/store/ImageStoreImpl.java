@@ -175,7 +175,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public DataStoreTO getTO() {
-        return null;
+        return getDriver().getStoreTO(this);
     }
 
 

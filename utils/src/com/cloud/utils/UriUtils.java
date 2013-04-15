@@ -18,16 +18,34 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UriUtils {
+
+    public static final Logger s_logger = Logger.getLogger(UriUtils.class.getName());
+
     public static String formNfsUri(String host, String path) {
         try {
             URI uri = new URI("nfs", host, path, null);
@@ -110,5 +128,68 @@ public class UriUtils {
             }
         }
         return remoteSize;
+    }
+
+    public static  Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
+        try {
+            URI uri = new URI(url);
+            if (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") ) {
+                throw new IllegalArgumentException("Unsupported scheme for url");
+            }
+            int port = uri.getPort();
+            if (!(port == 80 || port == 443 || port == -1)) {
+                throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+            }
+
+            if (port == -1 && uri.getScheme().equalsIgnoreCase("https")) {
+                port = 443;
+            } else if (port == -1 && uri.getScheme().equalsIgnoreCase("http")) {
+                port = 80;
+            }
+
+            String host = uri.getHost();
+            try {
+                InetAddress hostAddr = InetAddress.getByName(host);
+                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+                    throw new IllegalArgumentException("Illegal host specified in url");
+                }
+                if (hostAddr instanceof Inet6Address) {
+                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+                }
+                return new Pair<String, Integer>(host, port);
+            } catch (UnknownHostException uhe) {
+                throw new IllegalArgumentException("Unable to resolve " + host);
+            }
+        } catch (URISyntaxException use) {
+            throw new IllegalArgumentException("Invalid URL: " + url);
+        }
+    }
+
+    public static InputStream getInputStreamFromUrl(String url, String user, String password) {
+
+        try{
+          Pair<String, Integer> hostAndPort = validateUrl(url);
+          HttpClient httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
+          if ((user != null) && (password != null)) {
+              httpclient.getParams().setAuthenticationPreemptive(true);
+              Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
+              httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+              s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+          }
+          // Execute the method.
+          GetMethod method = new GetMethod(url);
+          int statusCode = httpclient.executeMethod(method);
+
+          if (statusCode != HttpStatus.SC_OK) {
+            s_logger.error("Failed to read from URL: " + url);
+            return null;
+          }
+
+          return method.getResponseBodyAsStream();
+        }
+        catch (Exception ex){
+            s_logger.error("Failed to read from URL: " + url);
+            return null;
+        }
     }
 }

@@ -46,6 +46,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.host.HostVO;
@@ -106,10 +107,9 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl nfsStore = (ImageStoreImpl)store;
-        ImageStoreTO nfsTO = new ImageStoreTO();
-        nfsTO.setProviderName("CloudStack");
+        NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(DataStoreRole.Image);
-        nfsTO.setUri(nfsStore.getUri());
+        nfsTO.setUrl(nfsStore.getUri());
         return nfsTO;
     }
 

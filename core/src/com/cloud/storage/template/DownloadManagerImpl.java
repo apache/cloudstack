@@ -16,9 +16,15 @@
 // under the License.
 package com.cloud.storage.template;
 
+import static com.cloud.utils.S3Utils.putDirectory;
+import static com.cloud.utils.StringUtils.join;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -41,14 +47,21 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -59,6 +72,9 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.S3Utils;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.S3Utils.ObjectNamingStrategy;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -224,7 +240,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     /**
      * Get notified of change of job status. Executed in context of downloader thread
-     * 
+     *
      * @param jobId
      *            the id of the job
      * @param status
@@ -279,21 +295,21 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         byte[] buffer = new byte[8192];
         int read = 0;
         MessageDigest digest;
-        String checksum = null;        
+        String checksum = null;
         InputStream is = null;
         try {
-            digest = MessageDigest.getInstance("MD5");           
-            is = new FileInputStream(f);     
+            digest = MessageDigest.getInstance("MD5");
+            is = new FileInputStream(f);
             while( (read = is.read(buffer)) > 0) {
                 digest.update(buffer, 0, read);
-            }       
+            }
             byte[] md5sum = digest.digest();
             BigInteger bigInt = new BigInteger(1, md5sum);
             checksum = String.format("%032x",bigInt);
             return checksum;
         }catch(IOException e) {
             return null;
-        }catch (NoSuchAlgorithmException e) {         
+        }catch (NoSuchAlgorithmException e) {
             return null;
         }
         finally {
@@ -302,19 +318,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     is.close();
             } catch (IOException e) {
                 return null;
-            }                        
+            }
         }
     }
 
     /**
      * Post download activity (install and cleanup). Executed in context of downloader thread
-     * 
+     *
      * @throws IOException
      */
     private String postDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String resourcePath = null;               
+        String resourcePath = null;
         ResourceType resourceType = dnld.getResourceType();
 
         // once template path is set, remove the parent dir so that the template is installed with a relative path
@@ -458,7 +474,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 return "Unable to create " + tmpDir;
             }
             //	TO DO - define constant for volume properties.
-            File file = ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : 
+            File file = ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) :
                 _storage.getFile(tmpDir + File.separator + "volume.properties");
             if ( file.exists() ) {
                 file.delete();
@@ -582,6 +598,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public com.cloud.storage.VMTemplateHostVO.Status getDownloadStatus2(String jobId) {
         return convertStatus(getDownloadStatus(jobId));
     }
+
 
     @Override
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
@@ -774,7 +791,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public Map<Long, TemplateProp> gatherVolumeInfo(String rootDir) {	
+    public Map<Long, TemplateProp> gatherVolumeInfo(String rootDir) {
         Map<Long, TemplateProp> result = new HashMap<Long, TemplateProp>();
         String volumeDir = rootDir + File.separator + _volumeDir;
 
@@ -1045,5 +1062,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return;
         }
     }
+
 
 }

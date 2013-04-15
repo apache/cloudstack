@@ -31,19 +31,21 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateVO;
 
 /**
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 
 public class RequestTest extends TestCase {
@@ -51,7 +53,7 @@ public class RequestTest extends TestCase {
 
     public void testSerDeser() {
         s_logger.info("Testing serializing and deserializing works as expected");
-        
+
         s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
         s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
@@ -89,7 +91,7 @@ public class RequestTest extends TestCase {
         logger.setLevel(level);
 
         byte[] bytes = sreq.getBytes();
-        
+
         assert Request.getSequence(bytes) == 892403717;
         assert Request.getManagementServerId(bytes) == 3;
         assert Request.getAgentId(bytes) == 2;
@@ -130,7 +132,7 @@ public class RequestTest extends TestCase {
         s_logger.info("Testing Download answer");
         VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
                 HypervisorType.KVM, null);
-        DownloadCommand cmd = new DownloadCommand("secUrl", template, 30000000l);
+        DownloadCommand cmd = new DownloadCommand(new NfsTO("secUrl", DataStoreRole.Image), "secUrl", template, 30000000l);
         Request req = new Request(1, 1, cmd, true);
 
         req.logD("Debug for Download");
@@ -161,7 +163,7 @@ public class RequestTest extends TestCase {
             }
         }
     }
-    
+
     public void testLogging() {
         s_logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);

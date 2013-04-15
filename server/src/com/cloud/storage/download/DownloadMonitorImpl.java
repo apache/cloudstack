@@ -366,7 +366,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 		if(vmTemplateStore != null) {
 		    start();
 			DownloadCommand dcmd =
-             new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
+             new DownloadCommand(store.getTO(), secUrl, template, maxTemplateSizeInBytes);
 			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateStore.getJobId(), RequestType.GET_OR_RESTART);
