@@ -17,6 +17,7 @@
 package com.cloud.offerings.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
@@ -56,5 +57,7 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering);
 
     List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type);
+
+    NetworkOfferingVO persist(NetworkOfferingVO off, Map<String, String> details);
 
 }

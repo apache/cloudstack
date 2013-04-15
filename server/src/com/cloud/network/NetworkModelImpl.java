@@ -88,6 +88,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.user.Account;
@@ -185,6 +186,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    NetworkOfferingDetailsDao _ntwkOffDetailsDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     static Long _privateOfferingId = null;
@@ -2073,5 +2076,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         
         return _ipAddressDao.findByIpAndSourceNetworkId(networks.get(0).getId(), ipAddress);
+    }
+    
+    @Override
+    public Map<String, String> getNtwkOffDetails(long offId) {
+        return _ntwkOffDetailsDao.getNtwkOffDetails(offId);
     }
 }

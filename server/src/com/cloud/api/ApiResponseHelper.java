@@ -188,6 +188,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -288,6 +289,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
     @Inject private EntityManager _entityMgr = null;
     @Inject private UsageService _usageSvc = null;
+    @Inject NetworkModel _ntwkModel;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2223,6 +2225,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setForVpc(ApiDBUtils.isOfferingForVpc(offering));
 
         response.setServices(serviceResponses);
+        
+        //set network offering details
+        response.setDetails(_ntwkModel.getNtwkOffDetails(offering.getId()));
+        
         response.setObjectName("networkoffering");
         return response;
     }

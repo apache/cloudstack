@@ -268,4 +268,6 @@ public interface NetworkModel {
 
     List<String> getUsedIpsInNetwork(Network network);
 
+    Map<String, String> getNtwkOffDetails(long offId);
+
 }

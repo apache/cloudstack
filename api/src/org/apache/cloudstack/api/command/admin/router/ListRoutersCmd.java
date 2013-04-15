@@ -75,7 +75,7 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC routers")
     private Boolean forVpc;
     
-    @Parameter(name=ApiConstants.ROLE, type=CommandType.STRING, description="list routers by role (Virtual_router or Internal_lb_vm)")
+    @Parameter(name=ApiConstants.ROLE, type=CommandType.STRING, description="list routers by role (Virtual_router or Internal_lb_vm)", since="4.2.0")
     private String role;
 
     /////////////////////////////////////////////////////

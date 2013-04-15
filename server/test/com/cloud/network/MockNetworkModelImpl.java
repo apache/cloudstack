@@ -862,4 +862,10 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Map<String, String> getNtwkOffDetails(long offId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

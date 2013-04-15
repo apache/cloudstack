@@ -3198,6 +3198,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Network.GuestType guestType = null;
         boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         boolean isPersistent = cmd.getIsPersistent();
+        Map<String, String> details = cmd.getDetails();
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3368,7 +3369,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3456,7 +3457,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
-            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent) {
+            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<String, String> details) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3568,13 +3569,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
         }
+        
+        //validate the details
+        if (details != null) {
+            validateNtwkOffDetails(details, serviceProviderMap);
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // create network offering object
+        //1) create network offering object
         s_logger.debug("Adding network offering " + offering);
-        offering = _networkOfferingDao.persist(offering);
-        // populate services and providers
+        offering = _networkOfferingDao.persist(offering, details);
+        //2) populate services and providers
         if (serviceProviderMap != null) {
             for (Network.Service service : serviceProviderMap.keySet()) {
                 Set<Provider> providers = serviceProviderMap.get(service);
@@ -3606,6 +3612,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
+    }
+
+    protected void validateNtwkOffDetails(Map<String, String> details, Map<Service, Set<Provider>> serviceProviderMap) {
+        for (String key : details.keySet()) {
+            NetworkOffering.Details detail = null;
+            for (NetworkOffering.Details value : NetworkOffering.Details.values()) {
+                if (key.equalsIgnoreCase(value.toString())) {
+                    detail = value;
+                    break;
+                }
+            }
+            if (detail == null) {
+                throw new InvalidParameterValueException("Unsupported detail key");
+            }
+            if (detail == NetworkOffering.Details.internalLbProvider || detail == NetworkOffering.Details.publicLbProvider) {
+                Provider provider = Network.Provider.getProvider(details.get(key));
+                if (provider == null) {
+                    throw new InvalidParameterValueException("Invalid value for the key " + key);
+                }
+                Set<Provider> providers = serviceProviderMap.get(Service.Lb);
+                if (providers == null || !providers.contains(details.get(key))) {
+                    throw new InvalidParameterValueException("Invalid value for the key " + key + ". The provider is not supported by the network offering");
+                }
+            }
+        }
     }
 
 

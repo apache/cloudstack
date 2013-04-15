@@ -16,14 +16,24 @@
 // under the License.
 package com.cloud.offerings;
 
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
-
-import javax.persistence.*;
-import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
@@ -123,6 +133,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     public String getDisplayText() {
         return displayText;
     }
+    
+    @Transient
+    Map details;
 
     @Override
     public long getId() {
@@ -376,6 +389,10 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public boolean getIsPersistent() {
         return isPersistent;
+    }
+    
+    public Map getDetails() {
+        return this.details;
     }
 
 }
