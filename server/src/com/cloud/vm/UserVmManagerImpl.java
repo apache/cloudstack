@@ -2890,6 +2890,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
+                long networkId = ip.getAssociatedWithNetworkId();
+                Network guestNetwork = _networkDao.findById(networkId);
+                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn(

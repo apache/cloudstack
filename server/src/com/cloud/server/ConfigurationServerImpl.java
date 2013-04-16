@@ -1008,7 +1008,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
