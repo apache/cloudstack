@@ -597,7 +597,7 @@
                           });
                         }
                       },											
-											/*
+											
 											releaseFromAccount: {
                         label: 'Release from Account',
                         action: function(args) {
@@ -622,6 +622,7 @@
                           });
                         }
                       },
+											
 											addAccount: {
 											  label: 'Add Account',												
 												createForm: {
@@ -675,7 +676,7 @@
                           });
                         }
 											}	
-                      */											
+                      										
                     },
                     dataProvider: function(args) {
                       $.ajax({
