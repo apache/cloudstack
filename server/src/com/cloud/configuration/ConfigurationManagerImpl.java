@@ -2154,6 +2154,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
             if (vlanOwner == null) {
                 throw new InvalidParameterValueException("Please specify a valid account.");
+            } else if (vlanOwner.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                // by default vlan is dedicated to system account
+                vlanOwner = null;
             }
         }
 
@@ -2705,14 +2708,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if ((accountName != null) && (domainId != null)) {
             vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
             if (vlanOwner == null) {
-                throw new InvalidParameterValueException("Please specify a valid account");
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName);
+            } else if (vlanOwner.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException("Please specify a valid account. Cannot dedicate IP range to system account");
             }
         }
 
         // Check if range is valid
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if (vlan == null) {
-            throw new InvalidParameterValueException("Please specify a valid Public IP range id");
+            throw new InvalidParameterValueException("Unable to find vlan by id " + vlanDbId);
         }
 
         // Check if range has already been dedicated
@@ -2742,7 +2747,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (allocatedToAccountId != null) {
                 Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
                 if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName))
-                    throw new InvalidParameterValueException("Public IP address in range is already allocated to another account");
+                    throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is allocated to another account ");
             }
         }
 

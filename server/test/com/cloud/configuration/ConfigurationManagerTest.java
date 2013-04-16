@@ -224,7 +224,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.dedicatePublicIpRange(dedicatePublicIpRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Please specify a valid Public IP range id"));
+            Assert.assertTrue(e.getMessage().contains("Unable to find vlan by id"));
         } finally {
             txn.close("runDedicatePublicIpRangeInvalidRange");
         }
@@ -306,7 +306,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.dedicatePublicIpRange(dedicatePublicIpRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Public IP address in range is already allocated to another account"));
+            Assert.assertTrue(e.getMessage().contains("Public IP address in range is allocated to another account"));
         } finally {
             txn.close("runDedicatePublicIpRangeIPAdressAllocated");
         }
