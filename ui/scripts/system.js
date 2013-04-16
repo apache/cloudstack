@@ -5381,6 +5381,28 @@
                         }
                       }
                     }
+                  },
+
+                  // Granular settings for zone
+                  settings: {
+                    title: 'label.menu.global.settings',
+                    custom: cloudStack.uiCustom.granularSettings({
+                      dataProvider: function(args) {
+                        args.response.success({
+                          data: [
+                            { name: 'config.param.1', value: 1 },
+                            { name: 'config.param.2', value: 2 }
+                          ]
+                        });
+                      },
+                      actions: {
+                        edit: function(args) {
+                          debugger;
+                          // call updateZoneLevelParamter
+                          args.response.success();
+                        }
+                      }
+                    })
                   }
                 }
               }
