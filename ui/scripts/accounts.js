@@ -277,6 +277,7 @@
 
           detailView: {
             name: 'Account details',
+            isMaximized: true,
             viewAll: { path: 'accounts.users', label: 'label.users' },
 
             actions: {

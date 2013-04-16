@@ -10255,6 +10255,7 @@
 
           detailView: {
             name: "Primary storage details",
+            isMaximized: true,
             actions: {
 							edit: {
                 label: 'label.edit',
@@ -10598,6 +10599,7 @@
 
           detailView: {
             name: 'Secondary storage details',
+            isMaximized: true,
             actions: {
               remove: {
                 label: 'label.action.delete.secondary.storage' ,
