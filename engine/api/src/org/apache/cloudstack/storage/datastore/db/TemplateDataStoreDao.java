@@ -44,6 +44,8 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId);
 
+    TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId, boolean lock);
+
     TemplateDataStoreVO findByTemplate(long templateId);
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);

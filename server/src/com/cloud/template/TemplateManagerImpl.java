@@ -125,6 +125,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -839,6 +840,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    public String getChecksum(DataStore store, String templatePath) {
+
+        String secUrl = store.getUri();
+        Answer answer;
+        answer = _agentMgr.sendToSecStorage(store, new ComputeChecksumCommand(
+                secUrl, templatePath));
+        if (answer != null && answer.getResult()) {
+            return answer.getDetails();
+        }
+        return null;
+    }
+
+
+    @Override
     @DB
     public VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool) {
         template = _tmpltDao.findById(template.getId(), true);
@@ -897,18 +912,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @DB
-    public boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
-        List<HostVO> dstSecHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dstZone.getId());
+    public boolean copy(long userId, VMTemplateVO template, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
         long tmpltId = template.getId();
         long dstZoneId = dstZone.getId();
-        if (dstSecHosts == null || dstSecHosts.isEmpty() ) {
-            throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
+        // find all eligible image stores for the destination zone
+        List<DataStore> dstSecStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dstZoneId));
+        if (dstSecStores == null || dstSecStores.isEmpty() ) {
+            throw new StorageUnavailableException("Destination zone is not ready, no image store associated", DataCenter.class, dstZone.getId());
         }
         AccountVO account = _accountDao.findById(template.getAccountId());
-        VMTemplateHostVO srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), tmpltId);
+        // find the size of the template to be copied
+        TemplateDataStoreVO srcTmpltStore = this._tmplStoreDao.findByStoreTemplate(srcSecStore.getId(), tmpltId);
 
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltHost.getSize()));
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, new Long(srcTmpltStore.getSize()));
 
         // Event details
         String copyEventType;
@@ -924,30 +941,31 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        for ( HostVO dstSecHost : dstSecHosts ) {
-            VMTemplateHostVO dstTmpltHost = null;
+        //Copy will just find one eligible image store for the destination zone and copy template there, not propagate to all image stores
+        // for that zone
+        for ( DataStore dstSecStore : dstSecStores ) {
+            TemplateDataStoreVO dstTmpltStore = null;
             try {
-            	dstTmpltHost = _tmpltHostDao.findByHostTemplate(dstSecHost.getId(), tmpltId, true);
-            	if (dstTmpltHost != null) {
-            		dstTmpltHost = _tmpltHostDao.lockRow(dstTmpltHost.getId(), true);
-            		if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOADED) {
-            			if (dstTmpltHost.getDestroyed() == false)  {
-            				return true;
+            	dstTmpltStore = this._tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId, true);
+            	if (dstTmpltStore != null) {
+            		dstTmpltStore = _tmplStoreDao.lockRow(dstTmpltStore.getId(), true);
+            		if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
+            			if (dstTmpltStore.getDestroyed() == false)  {
+            				return true; // already downloaded on this image store
             			} else {
-            				dstTmpltHost.setDestroyed(false);
-            				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
-
+            				dstTmpltStore.setDestroyed(false);
+            				_tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
             				return true;
             			}
-            		} else if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOAD_ERROR){
-            			if (dstTmpltHost.getDestroyed() == true)  {
-            				dstTmpltHost.setDestroyed(false);
-            				dstTmpltHost.setDownloadState(Status.NOT_DOWNLOADED);
-            				dstTmpltHost.setDownloadPercent(0);
-            				dstTmpltHost.setCopy(true);
-            				dstTmpltHost.setErrorString("");
-            				dstTmpltHost.setJobId(null);
-            				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
+            		} else if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOAD_ERROR){
+            			if (dstTmpltStore.getDestroyed() == true)  {
+            				dstTmpltStore.setDestroyed(false);
+            				dstTmpltStore.setDownloadState(Status.NOT_DOWNLOADED);
+            				dstTmpltStore.setDownloadPercent(0);
+            				dstTmpltStore.setCopy(true);
+            				dstTmpltStore.setErrorString("");
+            				dstTmpltStore.setJobId(null);
+            				_tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
             			}
             		}
             	}
@@ -955,11 +973,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             	txn.commit();
             }
 
-            if(_downloadMonitor.copyTemplate(template, srcSecHost, dstSecHost) ) {
+            if(_downloadMonitor.copyTemplate(template, srcSecStore, dstSecStore) ) {
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
             	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
-                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize(),
+                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getSize(),
                             template.getClass().getName(), template.getUuid());
             	}
             	return true;
@@ -967,6 +985,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         return false;
     }
+
+
 
 
     @Override
@@ -978,6 +998,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	Long destZoneId = cmd.getDestinationZoneId();
     	Account caller = UserContext.current().getCaller();
 
+    	/*
         if (_swiftMgr.isSwiftEnabled()) {
             throw new CloudRuntimeException("copytemplate API is disabled in Swift setup, templates in Swift can be accessed by all Zones");
         }
@@ -986,6 +1007,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new CloudRuntimeException(
                     "copytemplate API is disabled in S3 setup -- S3 templates are accessible in all zones.");
         }
+        */
 
         //Verify parameters
         if (sourceZoneId == destZoneId) {
@@ -1007,20 +1029,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
-        HostVO dstSecHost = getSecondaryStorageHost(destZoneId, templateId);
-        if ( dstSecHost != null ) {
-            s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecHost.getId() + " in zone " + destZoneId + " , don't need to copy");
+        DataStore dstSecStore = getImageStore(destZoneId, templateId);
+        if ( dstSecStore != null ) {
+            s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() + " in zone " + destZoneId + " , don't need to copy");
             return template;
         }
 
-        HostVO srcSecHost = getSecondaryStorageHost(sourceZoneId, templateId);
-        if ( srcSecHost == null ) {
+        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
+        if ( srcSecStore == null ) {
             throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId );
+        }
+        if ( srcSecStore.getScope().getScopeType() == ScopeType.REGION){
+            s_logger.debug("Template " + templateId + " is in region-wide secondary storage " + dstSecStore.getName() + " , don't need to copy");
+            return template;
         }
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
 
-        boolean success = copy(userId, template, srcSecHost, sourceZone, dstZone);
+        boolean success = copy(userId, template, srcSecStore, dstZone);
 
     	if (success){
         	return template;
@@ -2071,6 +2097,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         return secondaryStorageHost.getStorageUrl();
+    }
+
+    // get the image store where a template in a given zone is downloaded to, just pick one is enough.
+    @Override
+    public DataStore getImageStore(long zoneId, long tmpltId) {
+        List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        for (DataStore host : stores) {
+            List<TemplateDataStoreVO> tmpltStore = this._tmplStoreDao.listByTemplateStoreDownloadStatus(
+                    tmpltId, host.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            if ( tmpltStore != null && tmpltStore.size() > 0 ){
+                return host;
+            }
+        }
+        return null;
     }
 
     @Override

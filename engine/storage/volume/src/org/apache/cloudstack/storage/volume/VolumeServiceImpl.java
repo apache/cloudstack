@@ -814,8 +814,7 @@ public class VolumeServiceImpl implements VolumeService {
             TemplateProp vInfo = volumeInfos.get(uniqueName);
             DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(store.getUri(), vInfo.getInstallPath());
             try {
-                HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
-                _agentMgr.sendToSecStorage(ssAhost, dtCommand, null);
+                _agentMgr.sendToSecStorage(store, dtCommand, null);
             } catch (AgentUnavailableException e) {
                 String err = "Failed to delete " + vInfo.getTemplateName() + " on image store " + storeId + " which isn't in the database";
                 s_logger.error(err);
@@ -830,8 +829,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     private Map<Long, TemplateProp> listVolume(DataStore store) {
         ListVolumeCommand cmd = new ListVolumeCommand(store.getUri());
-        HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
-        Answer answer = _agentMgr.sendToSecStorage(ssAhost, cmd);
+        Answer answer = _agentMgr.sendToSecStorage(store, cmd);
         if (answer != null && answer.getResult()) {
             ListVolumeAnswer tanswer = (ListVolumeAnswer)answer;
             return tanswer.getTemplateInfo();

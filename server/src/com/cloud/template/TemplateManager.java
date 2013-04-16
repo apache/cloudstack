@@ -55,15 +55,14 @@ public interface TemplateManager extends TemplateApiService{
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
      *
      * @param template
-     * @param srcSecHost
-     * @param srcZone
+     * @param srcSecStore
      * @param destZone
      * @return true if success
      * @throws InternalErrorException
      * @throws StorageUnavailableException
      * @throws ResourceAllocationException
      */
-    boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException;
+    boolean copy(long userId, VMTemplateVO template, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Deletes a template from secondary storage servers
@@ -107,6 +106,8 @@ public interface TemplateManager extends TemplateApiService{
 
     HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
 
+    DataStore getImageStore(long zoneId, long tmpltId);
+
     VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
             boolean readyOnly);
 
@@ -119,6 +120,8 @@ public interface TemplateManager extends TemplateApiService{
     DataStore getImageStore(String storeUuid, Long zoneId);
 
     String getChecksum(Long hostId, String templatePath);
+
+    String getChecksum(DataStore store, String templatePath);
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 

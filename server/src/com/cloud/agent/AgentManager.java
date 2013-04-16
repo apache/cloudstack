@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
@@ -44,10 +46,10 @@ public interface AgentManager extends Manager {
         Del,
         Contains,
     }
-    
+
     /**
      * easy send method that returns null if there's any errors. It handles all exceptions.
-     * 
+     *
      * @param hostId
      *            host id
      * @param cmd
@@ -58,7 +60,7 @@ public interface AgentManager extends Manager {
 
     /**
      * Synchronous sending a command to the agent.
-     * 
+     *
      * @param hostId
      *            id of the agent on host
      * @param cmd
@@ -70,7 +72,7 @@ public interface AgentManager extends Manager {
 
     /**
      * Synchronous sending a list of commands to the agent.
-     * 
+     *
      * @param hostId
      *            id of the agent on host
      * @param cmds
@@ -87,7 +89,7 @@ public interface AgentManager extends Manager {
 
     /**
      * Asynchronous sending of a command to the agent.
-     * 
+     *
      * @param hostId
      *            id of the agent on the host.
      * @param cmds
@@ -102,7 +104,7 @@ public interface AgentManager extends Manager {
 
     /**
      * Register to listen for host events. These are mostly connection and disconnection events.
-     * 
+     *
      * @param listener
      * @param connections
      *            listen for connections
@@ -125,7 +127,7 @@ public interface AgentManager extends Manager {
 
     /**
      * Unregister for listening to host events.
-     * 
+     *
      * @param id
      *            returned from registerForHostEvents
      */
@@ -138,20 +140,24 @@ public interface AgentManager extends Manager {
     void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException;
 
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
-    
+
+    void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException;
+
+    Answer sendToSecStorage(DataStore ssStore, Command cmd);
+
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
-    
+
     public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
-    
+
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
-    
+
     public AgentAttache findAttache(long hostId);
-    
+
     void disconnectWithoutInvestigation(long hostId, Status.Event event);
-    
+
     public void pullAgentToMaintenance(long hostId);
-    
+
     public void pullAgentOutMaintenance(long hostId);
 
 	boolean reconnect(long hostId);

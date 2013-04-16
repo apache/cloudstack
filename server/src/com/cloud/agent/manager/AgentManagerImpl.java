@@ -39,6 +39,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -381,6 +382,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
+    public Answer sendToSecStorage(DataStore ssStore, Command cmd) {
+        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssStore);
+        return easySend(ssAhost.getId(), cmd);
+    }
+
+    @Override
+    public void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException {
+        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssStore);
+        send(ssAhost.getId(), new Commands(cmd), listener);
+    }
+
+    @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
             return  easySend(ssHost.getId(), cmd);
@@ -405,6 +418,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new CloudRuntimeException(err);
         }
     }
+
 
     private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
         List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);

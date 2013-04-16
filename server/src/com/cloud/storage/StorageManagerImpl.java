@@ -1266,11 +1266,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         String installPath = destroyedTemplateStoreVO
                                 .getInstallPath();
 
-                        HostVO ssAhost = this._ssvmMgr.pickSsvmHost(store);
                         if (installPath != null) {
 
-                            Answer answer = _agentMgr.sendToSecStorage(
-                                    ssAhost,
+                            Answer answer = _agentMgr.sendToSecStorage(store,
                                     new DeleteTemplateCommand(
                                             store.getTO(),
                                             store.getUri(),

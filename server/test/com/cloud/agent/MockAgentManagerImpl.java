@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -140,6 +141,19 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
         return null;
     }
 
+
+    @Override
+    public void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Answer sendToSecStorage(DataStore ssStore, Command cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         // TODO Auto-generated method stub
@@ -191,7 +205,7 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
 	@Override
 	public void disconnectWithInvestigation(long hostId, Event event) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

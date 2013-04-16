@@ -206,6 +206,19 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return findOneIncludingRemovedBy(sc);
     }
 
+
+    @Override
+    public TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId, boolean lock) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("destroyed", false);
+        if (!lock)
+            return findOneIncludingRemovedBy(sc);
+        else
+            return lockOneRandomRow(sc, true);
+    }
+
     @Override
     public TemplateDataStoreVO findByTemplate(long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();

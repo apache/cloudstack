@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -91,12 +92,12 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         params.put("password", "password");
         params.put("zone", String.valueOf(host.getDataCenterId()));
         params.put("pod", String.valueOf(host.getPodId()));
-        
+
         ServerResource resource = null;
         if (host.getHypervisorType() == HypervisorType.XenServer) {
              resource = new XcpOssResource();
         }
-        
+
         try {
             resource.configure(host.getName(), params);
             hostResourcesMap.put(hostId, resource);
@@ -106,7 +107,7 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         HostEnvironment env = new HostEnvironment();
         SetupCommand cmd = new SetupCommand(env);
         cmd.setNeedSetup(true);
-        
+
         resource.executeRequest(cmd);
     }
 
@@ -117,11 +118,11 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
             loadResource(hostId);
             resource = hostResourcesMap.get(hostId);
         }
-        
+
         if (resource == null) {
             return null;
         }
-        
+
         Answer answer = resource.executeRequest(cmd);
         return answer;
     }
@@ -186,6 +187,19 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         return null;
     }
 
+
+    @Override
+    public void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Answer sendToSecStorage(DataStore ssStore, Command cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         // TODO Auto-generated method stub
@@ -243,7 +257,7 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 	@Override
 	public void disconnectWithInvestigation(long hostId, Event event) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

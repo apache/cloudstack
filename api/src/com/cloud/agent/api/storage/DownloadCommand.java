@@ -147,9 +147,10 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	    this.resourceType = ResourceType.VOLUME;
 	}
 
-	public DownloadCommand(String secUrl, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
+	public DownloadCommand(DataStoreTO store, String secUrl, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), url, template.getFormat(), template.getAccountId());
-        this.hvm = template.isRequiresHvm();
+        this._store = store;
+	    this.hvm = template.isRequiresHvm();
         this.checksum = template.getChecksum();
         this.id = template.getId();
         this.description = template.getDisplayText();

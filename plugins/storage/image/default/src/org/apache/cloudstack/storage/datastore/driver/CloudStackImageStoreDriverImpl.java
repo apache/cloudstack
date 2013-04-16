@@ -236,12 +236,11 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
         // check if there is any VM using this ISO.
         if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-            HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
-            // get installpath of this template on image store
+             // get installpath of this template on image store
             TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
             String installPath = tmplStore.getInstallPath();
             if (installPath != null) {
-                Answer answer = _agentMgr.sendToSecStorage(ssAhost, new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId()));
+                Answer answer = _agentMgr.sendToSecStorage(store, new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId()));
 
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to deleted template at store: " + store.getName());

@@ -388,8 +388,7 @@ public class TemplateServiceImpl implements TemplateService {
                 VMTemplateVO template = _templateDao.findById(tInfo.getId());
                 DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), store.getUri(), tInfo.getInstallPath(), template.getId(), template.getAccountId());
                 try {
-                    HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
-                    _agentMgr.sendToSecStorage(ssAhost, dtCommand, null);
+                    _agentMgr.sendToSecStorage(store, dtCommand, null);
                 } catch (AgentUnavailableException e) {
                     String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + storeId + " which isn't in the database";
                     s_logger.error(err);
@@ -430,16 +429,15 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
 
-    private Map<String, TemplateProp> listTemplate(DataStore ssHost) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssHost.getUri());
-        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssHost);
-        Answer answer = _agentMgr.sendToSecStorage(ssAhost, cmd);
+    private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getUri());
+        Answer answer = _agentMgr.sendToSecStorage(ssStore, cmd);
         if (answer != null && answer.getResult()) {
             ListTemplateAnswer tanswer = (ListTemplateAnswer)answer;
             return tanswer.getTemplateInfo();
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("can not list template for secondary storage host " + ssHost.getId());
+                s_logger.debug("can not list template for secondary storage host " + ssStore.getId());
             }
         }
 

@@ -22,7 +22,6 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -38,7 +37,7 @@ public interface DownloadMonitor extends Manager{
 
 	public void cancelAllDownloads(Long templateId);
 
-	public boolean copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
+	public boolean copyTemplate(VMTemplateVO template, DataStore sourceStore, DataStore Store)
 			throws StorageUnavailableException;
 
     //void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateProp> templateInfos);
