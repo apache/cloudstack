@@ -451,16 +451,15 @@
 					}					
         }
       },
-			
-			//???
+						
 			lbUnderGSLB: {
         id: 'lbUnderGSLB',
         type: 'select',
-        title: 'load balancer rules assigned to this GSLB',
+        title: 'assigned load balancer rules',
         listView: {
           section: 'lbUnderGSLB',
           id: 'lbUnderGSLB',
-          label: 'load balancer rules assigned to this GSLB',
+          label: 'assigned load balancer rules',
           fields: {
             name: { label: 'label.name' },
             publicport: { label: 'label.public.port' },
@@ -482,7 +481,71 @@
                 });
               }
             });
-          },					
+          },	        
+					actions: {            
+            add: {
+              label: 'assign load balancer rule to GSLB',
+              messages: {
+                confirm: function(args) {
+                  return 'Please confirm you want to assign load balancer rule to GSLB';
+                },
+                notification: function(args) {
+                  return 'assign load balancer rule to GSLB';
+                }
+              },
+              createForm: {
+                title: 'assign load balancer rule to GSLB',              
+                fields: {                  
+                  loadbalancerrule: {
+                    label: 'load balancer rule',                    
+                    select: function(args) {		
+											var data = {
+												globalloadbalancerruleid: args.context.GSLB[0].id,
+												listAll: true
+											};
+											$.ajax({
+												url: createURL('listLoadBalancerRules'),
+												data: data,
+												success: function(json) {
+													var items = json.listloadbalancerrulesresponse.loadbalancerrule;
+													args.response.success({								 
+														data: items,
+														descriptionField: 'name'
+													});													
+												}
+											});																						
+                    }
+                  }  
+                }
+              },
+              action: function(args) {							  
+								var data = {
+								  id: args.context.GSLB[0].id,
+									loadbalancerrulelist: args.data.loadbalancerrule
+								};			
+                $.ajax({
+                  url: createURL('assignToGlobalLoadBalancerRule'),
+                  data: data,                 
+                  success: function(json) {
+                    var jid = json.assigntogloballoadbalancerruleresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                        }
+                       }
+                      }
+                    );
+                  }
+                });
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+					},						
+									
 					detailView: {
             name: 'load balancer rule details',            
             actions: {              
@@ -528,12 +591,12 @@
 										publicport: { label: 'label.public.port' },
 										privateport: { label: 'label.private.port' },
 										algorithm: { label: 'label.algorithm' },
-										publicip: { label: 'label.public.ip' },										
+										publicip: { label: 'label.public.ip' },	
+                    state: { label: 'label.state' },												
 										id: { label: 'label.id' },
                     cidrlist: { label: 'label.cidr' },
                     domain: { label: 'label.domain' },
-                    account: { label: 'label.account' },
-                    state: { label: 'label.state' }										
+                    account: { label: 'label.account' }                    								
                   }
                 ],
                 dataProvider: function(args) {									
@@ -554,8 +617,7 @@
             }
           }
 				}
-			}
-			//???
+			}			
     }
   };
 		
