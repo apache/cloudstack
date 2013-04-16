@@ -1,7 +1,59 @@
-Apache CloudStack (Incubating) CHANGES
+Apache CloudStack CHANGES
 ======================================
 
 Full release notes for each release are located in the project's documentation website:  http://incubator.apache.org/cloudstack/docs
+
+Version 4.0.2
+------------------------
+
+This is a maintenance release for the Apache CloudStack 4.0.x series, with no new features.
+
+Issues fixed in this release:
+
+* CLOUDSTACK-354: Display of storage statistics is wrong.
+* CLOUDSTACK-397: Install Guide: Section 11.1 (Guest Traffic): Diagram is the wrong diagram
+* CLOUDSTACK-398: Install Guide: Section 11.17.3 (Using VPN with Mac OSX): Not complete?
+* CLOUDSTACK-462: A few corrections to make to the 4.0.0 installation guide
+* CLOUDSTACK-524: http proxy used by ssvm (secstorage.proxy) NOT working
+* CLOUDSTACK-528: Failed to create secondary storage
+* CLOUDSTACK-587: MEMORY_CONSTRAINT_VIOLATIONMemory limits must satisfy:
+* CLOUDSTACK-643: KVM snapshots deleted on UI/API do not physically delete from secondary storage
+* CLOUDSTACK-803: HA gets triggered even when the host investigator is unable to determine the state of the host
+* CLOUDSTACK-810: Make DirectAgent thread pool size configurable
+* CLOUDSTACK-974: listServiceOfferings doesn't sort by sortKey for non-root users
+* CLOUDSTACK-976: unable to start cloudstack (error: "java.lang.NoSuchMethodError: org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString([B)Ljava/lang/String;")
+* CLOUDSTACK-986: Add Ubuntu instructions to 'Using the Management Server As the NFS Server'
+* CLOUDSTACK-988: HV version must be updated in hypervisor_version column of host table
+* CLOUDSTACK-990: Documentation issue with libvirtd.conf tcp_port configuration
+* CLOUDSTACK-1088: EnableStaticNat error will clear the data in database
+* CLOUDSTACK-1106: Missing documentation for cloud-setup-databases
+* CLOUDSTACK-1110: Documentation missing "Management Server Load Balancing"
+* CLOUDSTACK-1112: Errors in "Prepare the System VM Template"
+* CLOUDSTACK-1137: Force reconnect of a disconnected state complains about the state of the host.
+* CLOUDSTACK-1150: Documentation for libvirt on Ubuntu 12.04
+* CLOUDSTACK-1151: vmware systemVm template upgrade is missing in 4.0 upgrade
+* CLOUDSTACK-1211: Network operations are Blocked for the Read-only file system of Virtual Router
+* CLOUDSTACK-1265: logrotate dnsmasq configuration is wrong
+* CLOUDSTACK-1291: duplicate arguments in commands.xml prevents cloudapis.py to run to completion
+* CLOUDSTACK-1298: typo in deb package setup
+* CLOUDSTACK-1299: Errors in 4.5.5 section of installation guide
+* CLOUDSTACK-1300: section in wrong order in installation guide
+* CLOUDSTACK-1341: URL for the KEYs file is wrong in the installation guide
+* CLOUDSTACK-1419: Apache-ify and apply trademark logos in the UI
+* CLOUDSTACK-1420: Ensure trademarks are properly attributed in publican brand.
+* CLOUDSTACK-1589: Ubuntu 4.0 packages depend on non-existent chkconfig
+* CLOUDSTACK-1629: Need to move location or conflict with antlr
+* CLOUDSTACK-1638: Network plugins won't be notified VM migration.
+* CLOUDSTACK-1642: Add support CentOS 6.4
+* CLOUDSTACK-1648: Unable to add KVM host
+* CLOUDSTACK-1652: /etc/hosts error in virtual router when deploy instance with the name same to previous instances
+* CLOUDSTACK-1666: KVM VPC NetworkUsage doesnot work
+* CLOUDSTACK-1668: IP conflict in VPC tier
+* CLOUDSTACK-1761: Available local storage disk capacity incorrectly reported in KVM to manager.
+* CLOUDSTACK-1845: KVM - storage migration often fails
+* CLOUDSTACK-1846: KVM - storage pools can silently fail to be unregistered, leading to failure to register later
+* CLOUDSTACK-2003: Deleting domain while deleted account is cleaning up leaves VMs expunging forever due to 'Failed to update resource count'
+
 
 Version 4.0.1-incubating
 ------------------------
