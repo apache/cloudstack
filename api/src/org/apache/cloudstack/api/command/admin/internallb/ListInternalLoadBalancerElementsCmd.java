@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
@@ -42,7 +41,7 @@ import com.cloud.network.VirtualRouterProvider;
 @APICommand(name = "listInternalLoadBalancerElements", description="Lists all available Internal Load Balancer elements.",
             responseObject=VirtualRouterProviderResponse.class, since="4.2.0")
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListInternalLoadBalancerElementsCmd.class.getName());
     private static final String _name = "listinternalloadbalancerelementsresponse";
 
     @Inject
