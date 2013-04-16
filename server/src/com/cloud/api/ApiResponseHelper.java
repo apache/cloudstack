@@ -2667,7 +2667,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setZoneId(zone.getUuid());
         }
         response.setNetworkSpeed(result.getSpeed());
-        response.setVlan(result.getVnet());
+        response.setVlan(result.getVnetString());
         if (result.getDomainId() != null) {
             Domain domain = ApiDBUtils.findDomainById(result.getDomainId());
             if (domain != null) {

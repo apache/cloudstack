@@ -2633,7 +2633,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (vlan == null) {
                         throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
                     }
-                    
+
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                     }
