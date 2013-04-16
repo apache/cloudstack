@@ -243,7 +243,7 @@ under the License.
                                 <para>CLOUDSTACK-97</para>
                             </entry>
                             <entry>
-                                <para>Vmware network labels are ignored when creating a Zone using basic networkin</para>
+                                <para>Vmware network labels are ignored when creating a Zone using basic networking</para>
                             </entry>
                         </row>
                         <row>
@@ -259,7 +259,7 @@ under the License.
                                 <para>CLOUDSTACK-118</para>
                             </entry>
                             <entry>
-                                <para>"Status of host resorce stuck in ""ErrorInMaintenance""</para>
+                                <para>Status of host resorce stuck in "ErrorInMaintenance"</para>
                             </entry>
                         </row>
                         <row>
@@ -267,7 +267,7 @@ under the License.
                                 <para>CLOUDSTACK-119</para>
                             </entry>
                             <entry>
-                                <para>Move Agent-Simulator in to the hypervisor plugin mode</para>
+                                <para>Move Agent-Simulator in to the hypervisor plugin model</para>
                             </entry>
                         </row>
                         <row>
@@ -275,7 +275,7 @@ under the License.
                                 <para>CLOUDSTACK-130</para>
                             </entry>
                             <entry>
-                                <para>Clarify docs on tags parameter in API referenc</para>
+                                <para>Clarify docs on tags parameter in API reference</para>
                             </entry>
                         </row>
                         <row>
@@ -291,7 +291,7 @@ under the License.
                                 <para>CLOUDSTACK-178</para>
                             </entry>
                             <entry>
-                                <para>Expose name parameter of VM in list Vm view</para>
+                                <para>Expose name parameter of VM in list Vm view.</para>
                             </entry>
                         </row>
                         <row>
@@ -299,7 +299,7 @@ under the License.
                                 <para>CLOUDSTACK-198</para>
                             </entry>
                             <entry>
-                                <para>vpn:failto add VPN Users deletes all the existing Vpn use</para>
+                                <para>vpn:failto add VPN Users deletes all the existing Vpn user</para>
                             </entry>
                         </row>
                         <row>
@@ -307,7 +307,7 @@ under the License.
                                 <para>CLOUDSTACK-222</para>
                             </entry>
                             <entry>
-                                <para>Admin UI prompts to restart Management server with cancel edit operatio</para>
+                                <para>Admin UI prompts to restart Management server with cancel edit operation</para>
                             </entry>
                         </row>
                         <row>
@@ -323,7 +323,7 @@ under the License.
                                 <para>CLOUDSTACK-226</para>
                             </entry>
                             <entry>
-                                <para>UpdatePhysicalNetworkcommand failed due to java.sql.BatchUpdateException ; Tried to extend the existing Guest VLAN Range of one physical network into the Guest VLAN range of the other physical networ</para>
+                                <para>UpdatePhysicalNetworkcommand failed due to java.sql.BatchUpdateException ; Tried to extend the existing Guest VLAN Range of one physical network into the Guest VLAN range of the other physical network</para>
                             </entry>
                         </row>
                         <row>
@@ -331,7 +331,7 @@ under the License.
                                 <para>CLOUDSTACK-227</para>
                             </entry>
                             <entry>
-                                <para>ReconnectHostCmd: NullPointerException: Unable to get host Information for XenServer 6.0.2 host - on intentionally changing the traffic labels on the physical networ</para>
+                                <para>ReconnectHostCmd: NullPointerException: Unable to get host Information for XenServer 6.0.2 host - on intentionally changing the traffic labels on the physical network</para>
                             </entry>
                         </row>
                         <row>
@@ -339,7 +339,7 @@ under the License.
                                 <para>CLOUDSTACK-228</para>
                             </entry>
                             <entry>
-                                <para>UI provides an option to reconnect a disconnected host - ServerApiException is thrown on an attemp</para>
+                                <para>UI provides an option to reconnect a disconnected host - ServerApiException is thrown on an attempt</para>
                             </entry>
                         </row>
                         <row>
@@ -347,7 +347,7 @@ under the License.
                                 <para>CLOUDSTACK-232</para>
                             </entry>
                             <entry>
-                                <para>Zone infrastructure chart -- disable resource total displa</para>
+                                <para>Zone infrastructure chart -- disable resource total display</para>
                             </entry>
                         </row>
                         <row>
@@ -363,7 +363,7 @@ under the License.
                                 <para>CLOUDSTACK-249</para>
                             </entry>
                             <entry>
-                                <para>Add host id to failed VM deploy alert</para>
+                                <para>Add host id to failed VM deploy alerts</para>
                             </entry>
                         </row>
                         <row>
@@ -371,7 +371,7 @@ under the License.
                                 <para>CLOUDSTACK-250</para>
                             </entry>
                             <entry>
-                                <para>Incorrect description of maintenance mode in admin guid</para>
+                                <para>Incorrect description of maintenance mode in admin guide</para>
                             </entry>
                         </row>
                         <row>
@@ -387,7 +387,7 @@ under the License.
                                 <para>CLOUDSTACK-271</para>
                             </entry>
                             <entry>
-                                <para>updatePhysicalNetwork dies with an NPE when the vlan range is empt</para>
+                                <para>updatePhysicalNetwork dies with an NPE when the vlan range is empty</para>
                             </entry>
                         </row>
                         <row>
@@ -395,7 +395,7 @@ under the License.
                                 <para>CLOUDSTACK-274</para>
                             </entry>
                             <entry>
-                                <para>Two error codes mapped to same value in AP</para>
+                                <para>Two error codes mapped to same value in API</para>
                             </entry>
                         </row>
                         <row>
@@ -403,7 +403,7 @@ under the License.
                                 <para>CLOUDSTACK-275</para>
                             </entry>
                             <entry>
-                                <para>hostid not always a UUI</para>
+                                <para>hostid not always a UUID</para>
                             </entry>
                         </row>
                         <row>
@@ -411,7 +411,7 @@ under the License.
                                 <para>CLOUDSTACK-277</para>
                             </entry>
                             <entry>
-                                <para>Message during CloudStack management server Installation: cannot access /usr/share/cloud/bridge/lib: No such file or director</para>
+                                <para>Message during CloudStack management server Installation: cannot access /usr/share/cloud/bridge/lib: No such file or directory</para>
                             </entry>
                         </row>
                         <row>
@@ -419,7 +419,7 @@ under the License.
                                 <para>CLOUDSTACK-279</para>
                             </entry>
                             <entry>
-                                <para>deleteProject fails when executed by the regular user (works fine for root/domain admin</para>
+                                <para>deleteProject fails when executed by the regular user (works fine for root/domain admin)</para>
                             </entry>
                         </row>
                         <row>
@@ -427,7 +427,7 @@ under the License.
                                 <para>CLOUDSTACK-284</para>
                             </entry>
                             <entry>
-                                <para>listVirtualMachines does not return deleted machines when zone is specifie</para>
+                                <para>listVirtualMachines does not return deleted machines when zone is specified</para>
                             </entry>
                         </row>
                         <row>
@@ -435,7 +435,7 @@ under the License.
                                 <para>CLOUDSTACK-290</para>
                             </entry>
                             <entry>
-                                <para>3.0.0 template also needed for 2.2.14 to 3.0.5 direct upgrade</para>
+                                <para>3.0.0 template also needed for 2.2.14 to 3.0.5 direct upgrade.</para>
                             </entry>
                         </row>
                         <row>
@@ -443,7 +443,7 @@ under the License.
                                 <para>CLOUDSTACK-293</para>
                             </entry>
                             <entry>
-                                <para>"We do awful, hacky things in our spec file for client</para>
+                                <para>"We do awful, hacky things in our spec file for client"</para>
                             </entry>
                         </row>
                         <row>
@@ -451,7 +451,7 @@ under the License.
                                 <para>CLOUDSTACK-304</para>
                             </entry>
                             <entry>
-                                <para>Add synchronization for createSnapshot command per host basi</para>
+                                <para>Add synchronization for createSnapshot command per host basis</para>
                             </entry>
                         </row>
                         <row>
@@ -459,7 +459,7 @@ under the License.
                                 <para>CLOUDSTACK-309</para>
                             </entry>
                             <entry>
-                                <para>iptables rules being deleted from wrong VM after a migratio</para>
+                                <para>iptables rules being deleted from wrong VM after a migration</para>
                             </entry>
                         </row>
                         <row>
@@ -467,7 +467,7 @@ under the License.
                                 <para>CLOUDSTACK-318</para>
                             </entry>
                             <entry>
-                                <para>Adding XenServer Host Fails - 6.0.2 fails with 4.0.</para>
+                                <para>Adding XenServer Host Fails - 6.0.2 fails with 4.0.0</para>
                             </entry>
                         </row>
                         <row>
@@ -475,7 +475,7 @@ under the License.
                                 <para>CLOUDSTACK-320</para>
                             </entry>
                             <entry>
-                                <para>"sessionKey query parameter should be case-insensitive, now only sessionkey is accepted</para>
+                                <para>"sessionKey query parameter should be case-insensitive, now only sessionkey is accepted"</para>
                             </entry>
                         </row>
                         <row>
@@ -491,7 +491,7 @@ under the License.
                                 <para>CLOUDSTACK-332</para>
                             </entry>
                             <entry>
-                                <para>"""count"" property in list* API response should be equal to how many entries in database, not how many objects in API response</para>
+                                <para>"count" property in list* API response should be equal to how many entries in database, not how many objects in API response</para>
                             </entry>
                         </row>
                         <row>
@@ -499,7 +499,7 @@ under the License.
                                 <para>CLOUDSTACK-333</para>
                             </entry>
                             <entry>
-                                <para>When Datacenter name in VCenter has spaces Primary Storage (VMFS) discovery will fai</para>
+                                <para>When Datacenter name in VCenter has spaces Primary Storage (VMFS) discovery will fail</para>
                             </entry>
                         </row>
                         <row>
@@ -507,7 +507,7 @@ under the License.
                                 <para>CLOUDSTACK-335</para>
                             </entry>
                             <entry>
-                                <para>KVM VPC load balancer not workin</para>
+                                <para>KVM VPC load balancer not working</para>
                             </entry>
                         </row>
                         <row>
@@ -515,7 +515,7 @@ under the License.
                                 <para>CLOUDSTACK-336</para>
                             </entry>
                             <entry>
-                                <para>listZones doesn't honour pagin</para>
+                                <para>listZones doesn't honour paging</para>
                             </entry>
                         </row>
                         <row>
@@ -531,7 +531,7 @@ under the License.
                                 <para>CLOUDSTACK-346</para>
                             </entry>
                             <entry>
-                                <para>Cannot add Vmware cluster with class loader conflict exceptio</para>
+                                <para>Cannot add Vmware cluster with class loader conflict exception</para>
                             </entry>
                         </row>
                         <row>
@@ -539,7 +539,7 @@ under the License.
                                 <para>CLOUDSTACK-347</para>
                             </entry>
                             <entry>
-                                <para>listNetworks API: return vlan information only when the caller is ROOT admi</para>
+                                <para>listNetworks API: return vlan information only when the caller is ROOT admin</para>
                             </entry>
                         </row>
                         <row>
@@ -547,7 +547,7 @@ under the License.
                                 <para>CLOUDSTACK-348</para>
                             </entry>
                             <entry>
-                                <para>deleteNetwork does not clean up network resource count correctl</para>
+                                <para>deleteNetwork does not clean up network resource count correctly</para>
                             </entry>
                         </row>
                         <row>
@@ -579,7 +579,7 @@ under the License.
                                 <para>CLOUDSTACK-359</para>
                             </entry>
                             <entry>
-                                <para>PropagateResourceEventCommand failes in cluster configuratio</para>
+                                <para>PropagateResourceEventCommand failes in cluster configuration</para>
                             </entry>
                         </row>
                         <row>
@@ -587,7 +587,7 @@ under the License.
                                 <para>CLOUDSTACK-361</para>
                             </entry>
                             <entry>
-                                <para>Wrong creation of guest networks on a KVM host in Multiple Physical Networks with guest traffi</para>
+                                <para>Wrong creation of guest networks on a KVM host in Multiple Physical Networks with guest traffic</para>
                             </entry>
                         </row>
                         <row>
@@ -595,7 +595,7 @@ under the License.
                                 <para>CLOUDSTACK-364</para>
                             </entry>
                             <entry>
-                                <para>Docs point to download.cloud.com for AWS API scrip</para>
+                                <para>Docs point to download.cloud.com for AWS API script</para>
                             </entry>
                         </row>
                         <row>
@@ -603,7 +603,7 @@ under the License.
                                 <para>CLOUDSTACK-368</para>
                             </entry>
                             <entry>
-                                <para>OVM - cannot create guest V</para>
+                                <para>OVM - cannot create guest VM</para>
                             </entry>
                         </row>
                         <row>
@@ -611,7 +611,7 @@ under the License.
                                 <para>CLOUDSTACK-369</para>
                             </entry>
                             <entry>
-                                <para>ASF 4.0 - unable to support XenServer 6.1 hos</para>
+                                <para>ASF 4.0 - unable to support XenServer 6.1 host</para>
                             </entry>
                         </row>
                         <row>
@@ -627,7 +627,7 @@ under the License.
                                 <para>CLOUDSTACK-377</para>
                             </entry>
                             <entry>
-                                <para>provide deployment config access to marvin's testcas</para>
+                                <para>provide deployment config access to marvin's testcase</para>
                             </entry>
                         </row>
                         <row>
@@ -635,7 +635,7 @@ under the License.
                                 <para>CLOUDSTACK-378</para>
                             </entry>
                             <entry>
-                                <para>mavenize marvin on maste</para>
+                                <para>mavenize marvin on master</para>
                             </entry>
                         </row>
                         <row>
@@ -643,7 +643,7 @@ under the License.
                                 <para>CLOUDSTACK-390</para>
                             </entry>
                             <entry>
-                                <para>Install Guide: Section 4.5.7 (Prepare the System VM Template): Links go to cloud.co</para>
+                                <para>Install Guide: Section 4.5.7 (Prepare the System VM Template): Links go to cloud.com</para>
                             </entry>
                         </row>
                         <row>
@@ -651,7 +651,7 @@ under the License.
                                 <para>CLOUDSTACK-397</para>
                             </entry>
                             <entry>
-                                <para>Install Guide: Section 11.1 (Guest Traffic): Diagram is the wrong diagra</para>
+                                <para>Install Guide: Section 11.1 (Guest Traffic): Diagram is the wrong diagram</para>
                             </entry>
                         </row>
                         <row>
@@ -691,7 +691,7 @@ under the License.
                                 <para>CLOUDSTACK-416</para>
                             </entry>
                             <entry>
-                                <para>XCP 1.6beta2 (61002c) - can't add a hos</para>
+                                <para>XCP 1.6beta2 (61002c) - can't add a host</para>
                             </entry>
                         </row>
                         <row>
@@ -699,7 +699,7 @@ under the License.
                                 <para>CLOUDSTACK-417</para>
                             </entry>
                             <entry>
-                                <para>Handle password server securely to run on port 8080 on V</para>
+                                <para>Handle password server securely to run on port 8080 on VR</para>
                             </entry>
                         </row>
                         <row>
@@ -723,7 +723,7 @@ under the License.
                                 <para>CLOUDSTACK-428</para>
                             </entry>
                             <entry>
-                                <para>Storage capacity shown in UI is incorrec</para>
+                                <para>Storage capacity shown in UI is incorrect</para>
                             </entry>
                         </row>
                         <row>
@@ -731,7 +731,7 @@ under the License.
                                 <para>CLOUDSTACK-435</para>
                             </entry>
                             <entry>
-                                <para>Vmware network labels are ignored when creating a Zone using basic networkin</para>
+                                <para>Vmware network labels are ignored when creating a Zone using basic networking</para>
                             </entry>
                         </row>
                         <row>
@@ -739,7 +739,7 @@ under the License.
                                 <para>CLOUDSTACK-441</para>
                             </entry>
                             <entry>
-                                <para>Running mgmt server using jetty fails to start api serve</para>
+                                <para>Running mgmt server using jetty fails to start api server</para>
                             </entry>
                         </row>
                         <row>
@@ -755,7 +755,7 @@ under the License.
                                 <para>CLOUDSTACK-448</para>
                             </entry>
                             <entry>
-                                <para>SSVM bootstrap failure on XenServer hosts with E3 CP</para>
+                                <para>SSVM bootstrap failure on XenServer hosts with E3 CPU</para>
                             </entry>
                         </row>
                         <row>
@@ -763,7 +763,7 @@ under the License.
                                 <para>CLOUDSTACK-456</para>
                             </entry>
                             <entry>
-                                <para>License tag in SPEC isn't what RPM is expectin</para>
+                                <para>License tag in SPEC isn't what RPM is expecting</para>
                             </entry>
                         </row>
                         <row>
@@ -771,7 +771,7 @@ under the License.
                                 <para>CLOUDSTACK-459</para>
                             </entry>
                             <entry>
-                                <para>[Optional Public IP assignment for EIP with Basic Zone] Associate IP Checkbox in Create Network Offering Dialog is Displayed When Elastic LB is Selecte</para>
+                                <para>[Optional Public IP assignment for EIP with Basic Zone] Associate IP Checkbox in Create Network Offering Dialog is Displayed When Elastic LB is Selected</para>
                             </entry>
                         </row>
                         <row>
@@ -779,7 +779,7 @@ under the License.
                                 <para>CLOUDSTACK-462</para>
                             </entry>
                             <entry>
-                                <para>A few corrections to make to the 4.0.0 installation guid</para>
+                                <para>A few corrections to make to the 4.0.0 installation guide</para>
                             </entry>
                         </row>
                         <row>
@@ -803,7 +803,7 @@ under the License.
                                 <para>CLOUDSTACK-467</para>
                             </entry>
                             <entry>
-                                <para>Developer's Guide points to cloud.com for API referenc</para>
+                                <para>Developer's Guide points to cloud.com for API reference</para>
                             </entry>
                         </row>
                         <row>
@@ -811,7 +811,7 @@ under the License.
                                 <para>CLOUDSTACK-479</para>
                             </entry>
                             <entry>
-                                <para>UpdateVirtualMachine api fails to propagate userdata to dom</para>
+                                <para>UpdateVirtualMachine api fails to propagate userdata to domr</para>
                             </entry>
                         </row>
                         <row>
@@ -819,7 +819,7 @@ under the License.
                                 <para>CLOUDSTACK-481</para>
                             </entry>
                             <entry>
-                                <para>Installation Guide Doc Erro</para>
+                                <para>Installation Guide Doc Error</para>
                             </entry>
                         </row>
                         <row>
@@ -907,7 +907,7 @@ under the License.
                                 <para>CLOUDSTACK-520</para>
                             </entry>
                             <entry>
-                                <para>Dependency jar names mismatch with install-non-oss.s</para>
+                                <para>Dependency jar names mismatch with install-non-oss.sh</para>
                             </entry>
                         </row>
                         <row>
@@ -915,7 +915,7 @@ under the License.
                                 <para>CLOUDSTACK-521</para>
                             </entry>
                             <entry>
-                                <para>Build will hung up when doing test for TestAgentShel</para>
+                                <para>Build will hung up when doing test for TestAgentShell</para>
                             </entry>
                         </row>
                         <row>
@@ -931,7 +931,7 @@ under the License.
                                 <para>CLOUDSTACK-527</para>
                             </entry>
                             <entry>
-                                <para>List API performance optimization by using DB views and removing UUID conversion</para>
+                                <para>List API performance optimization by using DB views and removing UUID conversion.</para>
                             </entry>
                         </row>
                         <row>
@@ -939,7 +939,7 @@ under the License.
                                 <para>CLOUDSTACK-534</para>
                             </entry>
                             <entry>
-                                <para>Failed to add hos</para>
+                                <para>Failed to add host</para>
                             </entry>
                         </row>
                         <row>
@@ -1091,7 +1091,7 @@ under the License.
                                 <para>CLOUDSTACK-606</para>
                             </entry>
                             <entry>
-                                <para>Starting VM fails with 'ConcurrentOperationException' in a clustered MS scenari</para>
+                                <para>Starting VM fails with 'ConcurrentOperationException' in a clustered MS scenario</para>
                             </entry>
                         </row>
                         <row>
@@ -1107,7 +1107,7 @@ under the License.
                                 <para>CLOUDSTACK-617</para>
                             </entry>
                             <entry>
-                                <para>Unable to edit a Sub domai</para>
+                                <para>Unable to edit a Sub domain</para>
                             </entry>
                         </row>
                         <row>
@@ -1115,7 +1115,7 @@ under the License.
                                 <para>CLOUDSTACK-639</para>
                             </entry>
                             <entry>
-                                <para>API Refactoring: Adapters for AC</para>
+                                <para>API Refactoring: Adapters for ACL</para>
                             </entry>
                         </row>
                         <row>
@@ -1147,7 +1147,7 @@ under the License.
                                 <para>CLOUDSTACK-689</para>
                             </entry>
                             <entry>
-                                <para>RVR: Stop pending flag is not cleared when user start the disconnected router from another hos</para>
+                                <para>RVR: Stop pending flag is not cleared when user start the disconnected router from another host</para>
                             </entry>
                         </row>
                         <row>
@@ -1283,7 +1283,7 @@ under the License.
                                 <para>CLOUDSTACK-928</para>
                             </entry>
                             <entry>
-                                <para>[Simulator] Latency for Agent Commands - change unit of wait from seconds to millisecond</para>
+                                <para>[Simulator] Latency for Agent Commands - change unit of wait from seconds to milliseconds</para>
                             </entry>
                         </row>
                         <row>
@@ -1307,7 +1307,7 @@ under the License.
                                 <para>CLOUDSTACK-968</para>
                             </entry>
                             <entry>
-                                <para>marvin: vlan should be an attribute of the physical_network and not the zon</para>
+                                <para>marvin: vlan should be an attribute of the physical_network and not the zone</para>
                             </entry>
                         </row>
                         <row>
@@ -1331,7 +1331,7 @@ under the License.
                                 <para>CLOUDSTACK-985</para>
                             </entry>
                             <entry>
-                                <para>Different MAC address for RvR caused issue in short term network outrag</para>
+                                <para>Different MAC address for RvR caused issue in short term network outage</para>
                             </entry>
                         </row>
                         <row>
@@ -1339,7 +1339,7 @@ under the License.
                                 <para>CLOUDSTACK-987</para>
                             </entry>
                             <entry>
-                                <para>Sections missing in Working With Snapshot</para>
+                                <para>Sections missing in Working With Snapshots</para>
                             </entry>
                         </row>
                         <row>
@@ -1475,7 +1475,7 @@ under the License.
                                 <para>CLOUDSTACK-1051</para>
                             </entry>
                             <entry>
-                                <para>API dispatcher unable to find objectVO corresponding to DeleteTemplatecm</para>
+                                <para>API dispatcher unable to find objectVO corresponding to DeleteTemplatecmd</para>
                             </entry>
                         </row>
                         <row>
@@ -1491,7 +1491,7 @@ under the License.
                                 <para>CLOUDSTACK-1056</para>
                             </entry>
                             <entry>
-                                <para>S3 secondary storage fails to upload systemvm template due to KVMHA director</para>
+                                <para>S3 secondary storage fails to upload systemvm template due to KVMHA directory</para>
                             </entry>
                         </row>
                         <row>
@@ -1507,7 +1507,7 @@ under the License.
                                 <para>CLOUDSTACK-1063</para>
                             </entry>
                             <entry>
-                                <para>"SG Enabled Advanced Zone - "Add Guest Networks" - When user tries to add a guest Network with scope as "Account" he should NOT be presented with ""Offering for shared security group enabled""</para>
+                                <para>"SG Enabled Advanced Zone - "Add Guest Networks" - When user tries to add a guest Network with scope as "Account" he should NOT be presented with "Offering for shared security group enabled"</para>
                             </entry>
                         </row>
                         <row>
@@ -1523,7 +1523,7 @@ under the License.
                                 <para>CLOUDSTACK-1068</para>
                             </entry>
                             <entry>
-                                <para>Names in VR list is useles</para>
+                                <para>Names in VR list is useless</para>
                             </entry>
                         </row>
                         <row>
@@ -1531,7 +1531,7 @@ under the License.
                                 <para>CLOUDSTACK-1070</para>
                             </entry>
                             <entry>
-                                <para>javelin: NPE on executing registerIso AP</para>
+                                <para>javelin: NPE on executing registerIso API</para>
                             </entry>
                         </row>
                         <row>
@@ -1547,7 +1547,7 @@ under the License.
                                 <para>CLOUDSTACK-1078</para>
                             </entry>
                             <entry>
-                                <para>Not able to start System Vms on Rhel 6.3 KVM hos</para>
+                                <para>Not able to start System Vms on Rhel 6.3 KVM host</para>
                             </entry>
                         </row>
                         <row>
@@ -1571,7 +1571,7 @@ under the License.
                                 <para>CLOUDSTACK-1083</para>
                             </entry>
                             <entry>
-                                <para>listUsageRecords api: removed project results in NP</para>
+                                <para>listUsageRecords api: removed project results in NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -1579,7 +1579,7 @@ under the License.
                                 <para>CLOUDSTACK-1087</para>
                             </entry>
                             <entry>
-                                <para>Update the Developer Guide for ASFCS 4.1 Releas</para>
+                                <para>Update the Developer Guide for ASFCS 4.1 Release</para>
                             </entry>
                         </row>
                         <row>
@@ -1587,7 +1587,7 @@ under the License.
                                 <para>CLOUDSTACK-1088</para>
                             </entry>
                             <entry>
-                                <para>EnableStaticNat error will clear the data in databas</para>
+                                <para>EnableStaticNat error will clear the data in database</para>
                             </entry>
                         </row>
                         <row>
@@ -1611,7 +1611,7 @@ under the License.
                                 <para>CLOUDSTACK-1100</para>
                             </entry>
                             <entry>
-                                <para>Expunge thread is not kicked off based on global configuration if the global setting is less than 60 second</para>
+                                <para>Expunge thread is not kicked off based on global configuration if the global setting is less than 60 seconds</para>
                             </entry>
                         </row>
                         <row>
@@ -1659,7 +1659,7 @@ under the License.
                                 <para>CLOUDSTACK-1109</para>
                             </entry>
                             <entry>
-                                <para>"Ipv6 - Unable to expunge User Vms that are ""Destroyed"".</para>
+                                <para>"Ipv6 - Unable to expunge User Vms that are "Destroyed".</para>
                             </entry>
                         </row>
                         <row>
@@ -1667,7 +1667,7 @@ under the License.
                                 <para>CLOUDSTACK-1111</para>
                             </entry>
                             <entry>
-                                <para>Ipv6 - listRouters() does not return guestipaddress</para>
+                                <para>Ipv6 - listRouters() does not return guestipaddress/</para>
                             </entry>
                         </row>
                         <row>
@@ -1675,7 +1675,7 @@ under the License.
                                 <para>CLOUDSTACK-1112</para>
                             </entry>
                             <entry>
-                                <para>"Errors in ""Prepare the System VM Template""</para>
+                                <para>"Errors in "Prepare the System VM Template"</para>
                             </entry>
                         </row>
                         <row>
@@ -1683,7 +1683,7 @@ under the License.
                                 <para>CLOUDSTACK-1113</para>
                             </entry>
                             <entry>
-                                <para>"Ipv6 - Not able to deploy a new VM in this network because of ""Unable to allocate Unique Ipv6 address""</para>
+                                <para>"Ipv6 - Not able to deploy a new VM in this network because of "Unable to allocate Unique Ipv6 address"</para>
                             </entry>
                         </row>
                         <row>
@@ -1691,7 +1691,7 @@ under the License.
                                 <para>CLOUDSTACK-1114</para>
                             </entry>
                             <entry>
-                                <para>unable to execute listegressfirewallrules API due invalid value i</para>
+                                <para>unable to execute listegressfirewallrules API due invalid value id</para>
                             </entry>
                         </row>
                         <row>
@@ -1699,7 +1699,7 @@ under the License.
                                 <para>CLOUDSTACK-1115</para>
                             </entry>
                             <entry>
-                                <para>In multiple shared network unable to login with default nic - KV</para>
+                                <para>In multiple shared network unable to login with default nic - KVM</para>
                             </entry>
                         </row>
                         <row>
@@ -1707,7 +1707,7 @@ under the License.
                                 <para>CLOUDSTACK-1123</para>
                             </entry>
                             <entry>
-                                <para>ListStoragePools API broken by refacto</para>
+                                <para>ListStoragePools API broken by refactor</para>
                             </entry>
                         </row>
                         <row>
@@ -1739,7 +1739,7 @@ under the License.
                                 <para>CLOUDSTACK-1152</para>
                             </entry>
                             <entry>
-                                <para>Missing tag in host-add.xm</para>
+                                <para>Missing tag in host-add.xml</para>
                             </entry>
                         </row>
                         <row>
@@ -1819,7 +1819,7 @@ under the License.
                                 <para>CLOUDSTACK-1176</para>
                             </entry>
                             <entry>
-                                <para>Issue with snapshots(create/list</para>
+                                <para>Issue with snapshots(create/list)</para>
                             </entry>
                         </row>
                         <row>
@@ -1827,7 +1827,7 @@ under the License.
                                 <para>CLOUDSTACK-1181</para>
                             </entry>
                             <entry>
-                                <para>mvn deploy db failing with NP</para>
+                                <para>mvn deploy db failing with NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -2027,7 +2027,7 @@ under the License.
                                 <para>CLOUDSTACK-1239</para>
                             </entry>
                             <entry>
-                                <para>Unable to registerISO :unhandled exception executing api command: registerIs</para>
+                                <para>Unable to registerISO :unhandled exception executing api command: registerIso</para>
                             </entry>
                         </row>
                         <row>
@@ -2051,7 +2051,7 @@ under the License.
                                 <para>CLOUDSTACK-1242</para>
                             </entry>
                             <entry>
-                                <para>[F5-SRX-InlineMode] Failed to create LB rule with F5-SRX inlinemode deployemen</para>
+                                <para>[F5-SRX-InlineMode] Failed to create LB rule with F5-SRX inlinemode deployment</para>
                             </entry>
                         </row>
                         <row>
@@ -2179,7 +2179,7 @@ under the License.
                                 <para>CLOUDSTACK-1278</para>
                             </entry>
                             <entry>
-                                <para>Improper permissions on injectkeys.s</para>
+                                <para>Improper permissions on injectkeys.sh</para>
                             </entry>
                         </row>
                         <row>
@@ -2195,7 +2195,7 @@ under the License.
                                 <para>CLOUDSTACK-1289</para>
                             </entry>
                             <entry>
-                                <para>[F5-SRX-InlineMode] Usage stats are not generated for Juniper SRX Firewall in inlinemod</para>
+                                <para>[F5-SRX-InlineMode] Usage stats are not generated for Juniper SRX Firewall in inlinemode</para>
                             </entry>
                         </row>
                         <row>
@@ -2259,7 +2259,7 @@ under the License.
                                 <para>CLOUDSTACK-1310</para>
                             </entry>
                             <entry>
-                                <para>ASF-build-master-nonoss-rhel63 - create advance zone FAIL - CreatePhysicalNetworkCmd FAIL - MySQLIntegrityConstraintViolationException: Duplicate entry '200-Public' for key 'physical_network_id</para>
+                                <para>ASF-build-master-nonoss-rhel63 - create advance zone FAIL - CreatePhysicalNetworkCmd FAIL - MySQLIntegrityConstraintViolationException: Duplicate entry '200-Public' for key 'physical_network_id'</para>
                             </entry>
                         </row>
                         <row>
@@ -2283,7 +2283,7 @@ under the License.
                                 <para>CLOUDSTACK-1315</para>
                             </entry>
                             <entry>
-                                <para>[F5-SRX-InlineMode] Network implement failed with Run time Exception during network upgrade from VR to SRX-F</para>
+                                <para>[F5-SRX-InlineMode] Network implement failed with Run time Exception during network upgrade from VR to SRX-F5</para>
                             </entry>
                         </row>
                         <row>
@@ -2443,7 +2443,7 @@ under the License.
                                 <para>CLOUDSTACK-1347</para>
                             </entry>
                             <entry>
-                                <para>"Not able to delete network. Error - ""Unable to insert queue item into database, DB is full?""</para>
+                                <para>"Not able to delete network. Error - "Unable to insert queue item into database, DB is full?"</para>
                             </entry>
                         </row>
                         <row>
@@ -2475,7 +2475,7 @@ under the License.
                                 <para>CLOUDSTACK-1353</para>
                             </entry>
                             <entry>
-                                <para>KVM 6.3 snapshot Scheduling snapshot failed due to java.lang.NullPointerExceptio</para>
+                                <para>KVM 6.3 snapshot Scheduling snapshot failed due to java.lang.NullPointerException</para>
                             </entry>
                         </row>
                         <row>
@@ -2563,7 +2563,7 @@ under the License.
                                 <para>CLOUDSTACK-1383</para>
                             </entry>
                             <entry>
-                                <para>Deploying basic zone on 4.1 fails in NP</para>
+                                <para>Deploying basic zone on 4.1 fails in NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -2595,7 +2595,7 @@ under the License.
                                 <para>CLOUDSTACK-1394</para>
                             </entry>
                             <entry>
-                                <para>[F5-SRX-InlineMode] Failure in static nat configuration on SRX does not result in LB configuration error in CS during LB rule configuratio</para>
+                                <para>[F5-SRX-InlineMode] Failure in static nat configuration on SRX does not result in LB configuration error in CS during LB rule configuration</para>
                             </entry>
                         </row>
                         <row>
@@ -2603,7 +2603,7 @@ under the License.
                                 <para>CLOUDSTACK-1397</para>
                             </entry>
                             <entry>
-                                <para>Static Nat configuration is failing with NP</para>
+                                <para>Static Nat configuration is failing with NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -2619,7 +2619,7 @@ under the License.
                                 <para>CLOUDSTACK-1402</para>
                             </entry>
                             <entry>
-                                <para>listRouters API response doesn't return linklocal IP and public IP detail</para>
+                                <para>listRouters API response doesn't return linklocal IP and public IP details</para>
                             </entry>
                         </row>
                         <row>
@@ -2739,7 +2739,7 @@ under the License.
                                 <para>CLOUDSTACK-1446</para>
                             </entry>
                             <entry>
-                                <para>[UI]VPC Router type should be of type vpc and not syste</para>
+                                <para>[UI]VPC Router type should be of type vpc and not system</para>
                             </entry>
                         </row>
                         <row>
@@ -2755,7 +2755,7 @@ under the License.
                                 <para>CLOUDSTACK-1449</para>
                             </entry>
                             <entry>
-                                <para>listAccounts and listProjectAccounts API lists all the users not account-specific users for each account returne</para>
+                                <para>listAccounts and listProjectAccounts API lists all the users not account-specific users for each account returned</para>
                             </entry>
                         </row>
                         <row>
@@ -2763,7 +2763,7 @@ under the License.
                                 <para>CLOUDSTACK-1451</para>
                             </entry>
                             <entry>
-                                <para>Getting EntityExistsException while creating more than one project in CS 4.</para>
+                                <para>Getting EntityExistsException while creating more than one project in CS 4.1</para>
                             </entry>
                         </row>
                         <row>
@@ -2787,7 +2787,7 @@ under the License.
                                 <para>CLOUDSTACK-1463</para>
                             </entry>
                             <entry>
-                                <para>IPV6 - Ubuntu 12.10 - Multiple Nic - IPV6 address is assigned automatically for 1 nic only. Need to do a manual dhclient request to get the ipv6 for other nic</para>
+                                <para>IPV6 - Ubuntu 12.10 - Multiple Nic - IPV6 address is assigned automatically for 1 nic only. Need to do a manual dhclient request to get the ipv6 for other nic.</para>
                             </entry>
                         </row>
                         <row>
@@ -2803,7 +2803,7 @@ under the License.
                                 <para>CLOUDSTACK-1465</para>
                             </entry>
                             <entry>
-                                <para>List Zones returns null under create instance when logged is as use</para>
+                                <para>List Zones returns null under create instance when logged is as user</para>
                             </entry>
                         </row>
                         <row>
@@ -2811,7 +2811,7 @@ under the License.
                                 <para>CLOUDSTACK-1467</para>
                             </entry>
                             <entry>
-                                <para>Failed to create Volume for the System Vm's</para>
+                                <para>Failed to create Volume for the System VMs</para>
                             </entry>
                         </row>
                         <row>
@@ -2819,7 +2819,7 @@ under the License.
                                 <para>CLOUDSTACK-1469</para>
                             </entry>
                             <entry>
-                                <para>kvm agent: agent service fails to start u</para>
+                                <para>kvm agent: agent service fails to start up</para>
                             </entry>
                         </row>
                         <row>
@@ -2827,7 +2827,7 @@ under the License.
                                 <para>CLOUDSTACK-1470</para>
                             </entry>
                             <entry>
-                                <para>unhandled exception executing api command: deployVirtualMachin</para>
+                                <para>unhandled exception executing api command: deployVirtualMachine</para>
                             </entry>
                         </row>
                         <row>
@@ -2835,7 +2835,7 @@ under the License.
                                 <para>CLOUDSTACK-1472</para>
                             </entry>
                             <entry>
-                                <para>AssignVirtualMachine API with wrong Virtual Instance ID failed with NP</para>
+                                <para>AssignVirtualMachine API with wrong Virtual Instance ID failed with NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -2843,7 +2843,7 @@ under the License.
                                 <para>CLOUDSTACK-1473</para>
                             </entry>
                             <entry>
-                                <para>deleteDomain is failing with NP</para>
+                                <para>deleteDomain is failing with NPE</para>
                             </entry>
                         </row>
                         <row>
@@ -2867,7 +2867,7 @@ under the License.
                                 <para>CLOUDSTACK-1484</para>
                             </entry>
                             <entry>
-                                <para>"API Throttling : api.throttling.enabled, Global setting missing</para>
+                                <para>API Throttling : api.throttling.enabled, Global setting missing</para>
                             </entry>
                         </row>
                         <row>
@@ -2875,7 +2875,7 @@ under the License.
                                 <para>CLOUDSTACK-1485</para>
                             </entry>
                             <entry>
-                                <para>Add Baremetal Provider back to 4.1 branc</para>
+                                <para>Add Baremetal Provider back to 4.1 branch</para>
                             </entry>
                         </row>
                         <row>
@@ -2883,7 +2883,7 @@ under the License.
                                 <para>CLOUDSTACK-1487</para>
                             </entry>
                             <entry>
-                                <para>cloudstack-setup-agent fails to set private.network.device on KVM host ad</para>
+                                <para>cloudstack-setup-agent fails to set private.network.device on KVM host add</para>
                             </entry>
                         </row>
                         <row>
@@ -2907,7 +2907,7 @@ under the License.
                                 <para>CLOUDSTACK-1496</para>
                             </entry>
                             <entry>
-                                <para>List API Performance: listAccounts failing with OOME for high values of pagesize (>1000 </para>
+                                <para>List API Performance: listAccounts failing with OOME for high values of pagesize (>1000) </para>
                             </entry>
                         </row>
                         <row>
@@ -2915,7 +2915,7 @@ under the License.
                                 <para>CLOUDSTACK-1499</para>
                             </entry>
                             <entry>
-                                <para>ListAPI Performance for few APIs not as good as it was before API optimizatio</para>
+                                <para>ListAPI Performance for few APIs not as good as it was before API optimization</para>
                             </entry>
                         </row>
                         <row>
@@ -2923,7 +2923,7 @@ under the License.
                                 <para>CLOUDSTACK-1503</para>
                             </entry>
                             <entry>
-                                <para>listHypervisor API not getting fired when logged in as Use</para>
+                                <para>listHypervisor API not getting fired when logged in as User</para>
                             </entry>
                         </row>
                         <row>
@@ -2931,7 +2931,7 @@ under the License.
                                 <para>CLOUDSTACK-1505</para>
                             </entry>
                             <entry>
-                                <para>Unknown column 'domain.region_id' in 'field list</para>
+                                <para>Unknown column 'domain.region_id' in 'field list'</para>
                             </entry>
                         </row>
                         <row>
@@ -2947,7 +2947,7 @@ under the License.
                                 <para>CLOUDSTACK-1511</para>
                             </entry>
                             <entry>
-                                <para>[UI] Instances NIC details does not have Network Nam</para>
+                                <para>[UI] Instances NIC details does not have Network Name</para>
                             </entry>
                         </row>
                         <row>
@@ -2955,7 +2955,7 @@ under the License.
                                 <para>CLOUDSTACK-1512</para>
                             </entry>
                             <entry>
-                                <para>[UI] Wrong message[message.configure.all.traffic.types] when trying to create zone with mulitple physical networks without providing the traffic labe</para>
+                                <para>[UI] Wrong message[message.configure.all.traffic.types] when trying to create zone with mulitple physical networks without providing the traffic label</para>
                             </entry>
                         </row>
                         <row>
@@ -2963,7 +2963,7 @@ under the License.
                                 <para>CLOUDSTACK-1515</para>
                             </entry>
                             <entry>
-                                <para>None of the cloudstack packges are marked for upgrade when tried to upgrade from.4.0/4.0.1 to 4.</para>
+                                <para>None of the cloudstack packges are marked for upgrade when tried to upgrade from.4.0/4.0.1 to 4.1</para>
                             </entry>
                         </row>
                         <row>
@@ -2971,7 +2971,7 @@ under the License.
                                 <para>CLOUDSTACK-1516</para>
                             </entry>
                             <entry>
-                                <para>Create documentation in languages that have translations availabl</para>
+                                <para>Create documentation in languages that have translations available</para>
                             </entry>
                         </row>
                         <row>
@@ -2979,7 +2979,7 @@ under the License.
                                 <para>CLOUDSTACK-1517</para>
                             </entry>
                             <entry>
-                                <para>Check UI in languages availabl</para>
+                                <para>Check UI in languages available</para>
                             </entry>
                         </row>
                         <row>
@@ -2987,7 +2987,7 @@ under the License.
                                 <para>CLOUDSTACK-1521</para>
                             </entry>
                             <entry>
-                                <para>Redundant router: Services are not stopped when switch to BACKUP stat</para>
+                                <para>Redundant router: Services are not stopped when switch to BACKUP state</para>
                             </entry>
                         </row>
                         <row>
@@ -3003,7 +3003,7 @@ under the License.
                                 <para>CLOUDSTACK-1531</para>
                             </entry>
                             <entry>
-                                <para>vmware create volume from snapshot will missing dat</para>
+                                <para>vmware create volume from snapshot will missing date</para>
                             </entry>
                         </row>
                         <row>
@@ -3011,7 +3011,7 @@ under the License.
                                 <para>CLOUDSTACK-1537</para>
                             </entry>
                             <entry>
-                                <para>Restart network with clean up set to true causes Autoscaled LB rule to get mangled and unusabl</para>
+                                <para>Restart network with clean up set to true causes Autoscaled LB rule to get mangled and unusable</para>
                             </entry>
                         </row>
                         <row>
@@ -3019,7 +3019,7 @@ under the License.
                                 <para>CLOUDSTACK-1541</para>
                             </entry>
                             <entry>
-                                <para>NPE while deleting snapshot :Unexpected exception while executing org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCm</para>
+                                <para>NPE while deleting snapshot :Unexpected exception while executing org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd</para>
                             </entry>
                         </row>
                         <row>
@@ -3027,7 +3027,7 @@ under the License.
                                 <para>CLOUDSTACK-1542</para>
                             </entry>
                             <entry>
-                                <para>unhandled exception while creating projec</para>
+                                <para>unhandled exception while creating project</para>
                             </entry>
                         </row>
                         <row>
@@ -3035,7 +3035,7 @@ under the License.
                                 <para>CLOUDSTACK-1544</para>
                             </entry>
                             <entry>
-                                <para>The description and the response format for the deleteUser command are incorrec</para>
+                                <para>The description and the response format for the deleteUser command are incorrect</para>
                             </entry>
                         </row>
                         <row>
@@ -3067,7 +3067,7 @@ under the License.
                                 <para>CLOUDSTACK-1557</para>
                             </entry>
                             <entry>
-                                <para>EC2 REST API : cloudbridge database is missing on the CloudStack Installatio</para>
+                                <para>EC2 REST API : cloudbridge database is missing on the CloudStack Installation</para>
                             </entry>
                         </row>
                         <row>
@@ -3075,7 +3075,7 @@ under the License.
                                 <para>CLOUDSTACK-1562</para>
                             </entry>
                             <entry>
-                                <para>Replace the short-cut solution of supportting @DB with the formal on</para>
+                                <para>Replace the short-cut solution of supportting @DB with the formal one</para>
                             </entry>
                         </row>
                         <row>
@@ -3091,7 +3091,7 @@ under the License.
                                 <para>CLOUDSTACK-1566</para>
                             </entry>
                             <entry>
-                                <para>Baremetal API addBaremetalPxePingServer fail to add PXE PING server to deployment causing create instance with PING style image to fai</para>
+                                <para>Baremetal API addBaremetalPxePingServer fail to add PXE PING server to deployment causing create instance with PING style image to fail</para>
                             </entry>
                         </row>
                         <row>
@@ -3115,7 +3115,7 @@ under the License.
                                 <para>CLOUDSTACK-1574</para>
                             </entry>
                             <entry>
-                                <para>updateResourceCount API is failed saying to specify valida resource type even after parsing the valid resource typ</para>
+                                <para>updateResourceCount API is failed saying to specify valida resource type even after parsing the valid resource type</para>
                             </entry>
                         </row>
                         <row>
@@ -3131,7 +3131,7 @@ under the License.
                                 <para>CLOUDSTACK-1587</para>
                             </entry>
                             <entry>
-                                <para>"Basic zone - CPVM fail to go to running state, Exception while trying to start secondary storage vm</para>
+                                <para>Basic zone - CPVM fail to go to running state, Exception while trying to start secondary storage vm</para>
                             </entry>
                         </row>
                         <row>
@@ -3139,7 +3139,7 @@ under the License.
                                 <para>CLOUDSTACK-1588</para>
                             </entry>
                             <entry>
-                                <para>"AWS Regions - When registerUserKeys() is called for a user from a region that is not the owner, it is handled by this region.</para>
+                                <para>AWS Regions - When registerUserKeys() is called for a user from a region that is not the owner, it is handled by this region.</para>
                             </entry>
                         </row>
                         <row>
@@ -3147,7 +3147,7 @@ under the License.
                                 <para>CLOUDSTACK-1600</para>
                             </entry>
                             <entry>
-                                <para>Typo in dpkg-buildpackage comman</para>
+                                <para>Typo in dpkg-buildpackage command</para>
                             </entry>
                         </row>
                         <row>
@@ -3155,7 +3155,7 @@ under the License.
                                 <para>CLOUDSTACK-1604</para>
                             </entry>
                             <entry>
-                                <para>"deploy VM failed when global setting ""vm.allocation.algorithm"" is set to ""userdispersing""</para>
+                                <para>deploy VM failed when global setting "vm.allocation.algorithm" is set to "userdispersing</para>
                             </entry>
                         </row>
                         <row>
@@ -3171,7 +3171,7 @@ under the License.
                                 <para>CLOUDSTACK-1620</para>
                             </entry>
                             <entry>
-                                <para>Cannot provision CentOS 6 VMs on XenServer 6.</para>
+                                <para>Cannot provision CentOS 6 VMs on XenServer 6.1</para>
                             </entry>
                         </row>
                         <row>
@@ -3187,7 +3187,7 @@ under the License.
                                 <para>CLOUDSTACK-1624</para>
                             </entry>
                             <entry>
-                                <para>API is not returning response in details:UI is also not returning any outpu</para>
+                                <para>API is not returning response in details:UI is also not returning any output</para>
                             </entry>
                         </row>
                         <row>
@@ -3195,7 +3195,7 @@ under the License.
                                 <para>CLOUDSTACK-1625</para>
                             </entry>
                             <entry>
-                                <para>NPE with updateResourceCount when &amp;&amp; is passed thru AP</para>
+                                <para>NPE with updateResourceCount when &amp;&amp; is passed thru API</para>
                             </entry>
                         </row>
                         <row>
@@ -3211,7 +3211,7 @@ under the License.
                                 <para>CLOUDSTACK-1631</para>
                             </entry>
                             <entry>
-                                <para>4.1 RPM packaging broke</para>
+                                <para>4.1 RPM packaging broken</para>
                             </entry>
                         </row>
                         <row>
@@ -3227,7 +3227,7 @@ under the License.
                                 <para>CLOUDSTACK-1642</para>
                             </entry>
                             <entry>
-                                <para>Add support CentOS 6.</para>
+                                <para>Add support CentOS 6.4</para>
                             </entry>
                         </row>
                         <row>
@@ -3235,7 +3235,7 @@ under the License.
                                 <para>CLOUDSTACK-1648</para>
                             </entry>
                             <entry>
-                                <para>Unable to add KVM hos</para>
+                                <para>Unable to add KVM host.</para>
                             </entry>
                         </row>
                         <row>
@@ -3243,7 +3243,7 @@ under the License.
                                 <para>CLOUDSTACK-1649</para>
                             </entry>
                             <entry>
-                                <para>vmware vm os type erro</para>
+                                <para>vmware vm os type error</para>
                             </entry>
                         </row>
                         <row>
@@ -3259,7 +3259,7 @@ under the License.
                                 <para>CLOUDSTACK-1656</para>
                             </entry>
                             <entry>
-                                <para>NicResponses in a UserVmResponse are not preseving the natural order</para>
+                                <para>NicResponses in a UserVmResponse are not preserving the natural order</para>
                             </entry>
                         </row>
                         <row>
@@ -3291,7 +3291,7 @@ under the License.
                                 <para>CLOUDSTACK-1666</para>
                             </entry>
                             <entry>
-                                <para>KVM VPC NetworkUsage doesnot wor</para>
+                                <para>KVM VPC NetworkUsage does not work</para>
                             </entry>
                         </row>
                         <row>
@@ -3299,7 +3299,7 @@ under the License.
                                 <para>CLOUDSTACK-1668</para>
                             </entry>
                             <entry>
-                                <para>IP conflict in VPC tie</para>
+                                <para>IP conflict in VPC tier</para>
                             </entry>
                         </row>
                         <row>
@@ -3347,7 +3347,7 @@ under the License.
                                 <para>CLOUDSTACK-1690</para>
                             </entry>
                             <entry>
-                                <para>NPE from API server when starting mgmt serve</para>
+                                <para>NPE from API server when starting mgmt server</para>
                             </entry>
                         </row>
                         <row>
@@ -3355,7 +3355,7 @@ under the License.
                                 <para>CLOUDSTACK-1694</para>
                             </entry>
                             <entry>
-                                <para>Issues to start/access Management Server after upgrade from 4.0 to 4.</para>
+                                <para>Issues to start/access Management Server after upgrade from 4.0 to 4.1</para>
                             </entry>
                         </row>
                         <row>
@@ -3363,7 +3363,7 @@ under the License.
                                 <para>CLOUDSTACK-1697</para>
                             </entry>
                             <entry>
-                                <para>Six DB tables are not available with upgraded setup(4.0 to 4.1) when compare to 4.1 newly installatio</para>
+                                <para>Six DB tables are not available with upgraded setup(4.0 to 4.1) when compare to 4.1 newly installation</para>
                             </entry>
                         </row>
                         <row>
@@ -3371,7 +3371,7 @@ under the License.
                                 <para>CLOUDSTACK-1706</para>
                             </entry>
                             <entry>
-                                <para>"Failed to deploy VM with error ""cannot find DeployPlannerSelector""</para>
+                                <para>Failed to deploy VM with error "cannot find DeployPlannerSelector"</para>
                             </entry>
                         </row>
                         <row>
@@ -3379,7 +3379,7 @@ under the License.
                                 <para>CLOUDSTACK-1709</para>
                             </entry>
                             <entry>
-                                <para>"AWS Regions - As part of adding a new region, project related entries should not be synced from accounts table.</para>
+                                <para>AWS Regions - As part of adding a new region, project related entries should not be synced from accounts table.</para>
                             </entry>
                         </row>
                         <row>
@@ -3387,7 +3387,7 @@ under the License.
                                 <para>CLOUDSTACK-1710</para>
                             </entry>
                             <entry>
-                                <para>"AWS Regions - As part of adding a new region,default_zone_id column for the account entries should not be synced.</para>
+                                <para>AWS Regions - As part of adding a new region,default_zone_id column for the account entries should not be synced.</para>
                             </entry>
                         </row>
                         <row>
@@ -3443,7 +3443,7 @@ under the License.
                                 <para>CLOUDSTACK-1719</para>
                             </entry>
                             <entry>
-                                <para>EC2 REST API: AWS APIs are not getting translated on the CloudStack Management Serve</para>
+                                <para>EC2 REST API: AWS APIs are not getting translated on the CloudStack Management Server</para>
                             </entry>
                         </row>
                         <row>
@@ -3451,7 +3451,7 @@ under the License.
                                 <para>CLOUDSTACK-1720</para>
                             </entry>
                             <entry>
-                                <para>Have an upgrade path from 4.0.x to 4.1 and 4.0.x to 4.2.</para>
+                                <para>Have an upgrade path from 4.0.x to 4.1 and 4.0.x to 4.2.0</para>
                             </entry>
                         </row>
                         <row>
@@ -3459,7 +3459,7 @@ under the License.
                                 <para>CLOUDSTACK-1729</para>
                             </entry>
                             <entry>
-                                <para>Ensure adapter execution order in runtim</para>
+                                <para>Ensure adapter execution order in runtime</para>
                             </entry>
                         </row>
                         <row>
@@ -3475,7 +3475,7 @@ under the License.
                                 <para>CLOUDSTACK-1736</para>
                             </entry>
                             <entry>
-                                <para>Ubuntu 12.04 cloud-setup-management Failed to configure CloudStack Management Serve</para>
+                                <para>Ubuntu 12.04 cloud-setup-management Failed to configure CloudStack Management Server</para>
                             </entry>
                         </row>
                         <row>
@@ -3483,7 +3483,7 @@ under the License.
                                 <para>CLOUDSTACK-1738</para>
                             </entry>
                             <entry>
-                                <para>StatsCollector is not runnin</para>
+                                <para>StatsCollector is not running</para>
                             </entry>
                         </row>
                         <row>
@@ -3491,7 +3491,7 @@ under the License.
                                 <para>CLOUDSTACK-1740</para>
                             </entry>
                             <entry>
-                                <para>Failed to view consol</para>
+                                <para>Failed to view console</para>
                             </entry>
                         </row>
                         <row>
@@ -3499,7 +3499,7 @@ under the License.
                                 <para>CLOUDSTACK-1746</para>
                             </entry>
                             <entry>
-                                <para>Cloudstack Usage Server won't star</para>
+                                <para>Cloudstack Usage Server won't start</para>
                             </entry>
                         </row>
                         <row>
@@ -3659,7 +3659,7 @@ under the License.
                                 <para>CLOUDSTACK-1812</para>
                             </entry>
                             <entry>
-                                <para>create physical network fails while creating basic zon</para>
+                                <para>create physical network fails while creating basic zone</para>
                             </entry>
                         </row>
                         <row>
@@ -3667,7 +3667,7 @@ under the License.
                                 <para>CLOUDSTACK-1825</para>
                             </entry>
                             <entry>
-                                <para>EC2 REST API: AWS APIs fail to execute due to BeanCreationException: Error creating bean with name 'SAclDaoImpl</para>
+                                <para>EC2 REST API: AWS APIs fail to execute due to BeanCreationException: Error creating bean with name 'SAclDaoImpl'</para>
                             </entry>
                         </row>
                         <row>
@@ -3739,7 +3739,7 @@ under the License.
                                 <para>CLOUDSTACK-1845</para>
                             </entry>
                             <entry>
-                                <para>KVM - storage migration often fail.</para>
+                                <para>KVM - storage migration often fails</para>
                             </entry>
                         </row>
                         <row>
@@ -3763,7 +3763,7 @@ under the License.
                                 <para>CLOUDSTACK-1856</para>
                             </entry>
                             <entry>
-                                <para>Upgrade 4.0 -> 4.1 - Fresh install of 4.1 has 3 parameters missing in db.properties compared to an upgraded 4.0 set up</para>
+                                <para>Upgrade 4.0 -> 4.1 - Fresh install of 4.1 has 3 parameters missing in db.properties compared to an upgraded 4.0 setup</para>
                             </entry>
                         </row>
                         <row>
@@ -3811,7 +3811,7 @@ under the License.
                                 <para>CLOUDSTACK-1890</para>
                             </entry>
                             <entry>
-                                <para>listProjects is not listing state in the respons</para>
+                                <para>listProjects is not listing state in the response</para>
                             </entry>
                         </row>
                         <row>
@@ -3827,7 +3827,7 @@ under the License.
                                 <para>CLOUDSTACK-1929</para>
                             </entry>
                             <entry>
-                                <para>ASF 4.1 cloudstack agent fail to install in KVM host CENTOS 6.3 OS: qemu-kvm-0.12.1.2-3.295.el6.10.x86_64 requires libusbredirparser.so.</para>
+                                <para>ASF 4.1 cloudstack agent fail to install in KVM host CENTOS 6.3 OS: qemu-kvm-0.12.1.2-3.295.el6.10.x86_64 requires libusbredirparser.so.0</para>
                             </entry>
                         </row>
                         <row>
@@ -3835,7 +3835,7 @@ under the License.
                                 <para>CLOUDSTACK-1934</para>
                             </entry>
                             <entry>
-                                <para>NPE with listSupportedNetworkServices after upgrade from 4.0 to 4.1 (Ubuntu MS</para>
+                                <para>NPE with listSupportedNetworkServices after upgrade from 4.0 to 4.1 (Ubuntu MS)</para>
                             </entry>
                         </row>
                         <row>
@@ -3843,7 +3843,7 @@ under the License.
                                 <para>CLOUDSTACK-1935</para>
                             </entry>
                             <entry>
-                                <para>Cloud utilities are not renamed to Cloudstack after upgrade from 4.0 to 4.1 [Ubutnu MS</para>
+                                <para>Cloud utilities are not renamed to Cloudstack after upgrade from 4.0 to 4.1 [Ubutnu MS]</para>
                             </entry>
                         </row>
                         <row>
@@ -3907,7 +3907,7 @@ under the License.
                                 <para>CLOUDSTACK-1988</para>
                             </entry>
                             <entry>
-                                <para>AWS API using SOAP client - User Registeration fails</para>
+                                <para>AWS API using SOAP client - User Registration fails</para>
                             </entry>
                         </row>
                         <row>
@@ -3933,10 +3933,6 @@ under the License.
                             <entry>
                                 <para>Release Notes failing to build on jenkins.cs.</para>
                             </entry>
-                        </row>
-                        <row>
-                            <entry><para>CS-16135</para></entry>
-                            <entry><para>Creating volumes after upgrading from snapshot taken in 2.2.14 no longer deletes the snapshot physically from the secondary storage.</para></entry>
                         </row>
                     </tbody>
                 </tgroup>
