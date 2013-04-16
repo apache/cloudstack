@@ -43,9 +43,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private static final Logger s_logger = Logger.getLogger(TemplateDataStoreDaoImpl.class);
     private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeSearch;
+    private SearchBuilder<TemplateDataStoreVO> templateSearch;
+    private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
-    private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
+
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -57,11 +59,23 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         storeSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeSearch.done();
 
+        templateSearch = createSearchBuilder();
+        templateSearch.and("template_id", templateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        templateSearch.and("destroyed", templateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        templateSearch.done();
+
+
     	updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        storeTemplateSearch = createSearchBuilder();
+        storeTemplateSearch.and("template_id", storeTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.and("store_id", storeTemplateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.and("destroyed", storeTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeTemplateSearch.done();
 
         storeTemplateStateSearch = createSearchBuilder();
         storeTemplateStateSearch.and("template_id", storeTemplateStateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -134,6 +148,14 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public List<TemplateDataStoreVO> listDestroyed(long id) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", true);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     public void deletePrimaryRecordsForStore(long id) {
         SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
@@ -145,11 +167,21 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
 
     @Override
+    public List<TemplateDataStoreVO> listByTemplateStore(long templateId, long storeId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        return search(sc, null);
+    }
+
+    @Override
     public List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states) {
         SearchCriteria<TemplateDataStoreVO> sc = storeTemplateStateSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("store_id", storeId);
         sc.setParameters("states", (Object[])states);
+        sc.setParameters("destroyed", false);
         return search(sc, null);
     }
 
@@ -157,10 +189,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public List<TemplateDataStoreVO> listByTemplateStoreDownloadStatus(long templateId, long storeId, Status... status) {
-        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateStateSearch.create();
+        SearchCriteria<TemplateDataStoreVO> sc = storeTemplateDownloadStatusSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("store_id", storeId);
         sc.setParameters("downloadState", (Object[])status);
+        sc.setParameters("destroyed", false);
         return search(sc, null);
     }
 
@@ -171,6 +204,22 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("template_id", templateId);
         sc.setParameters("destroyed", false);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public TemplateDataStoreVO findByTemplate(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("destroyed", false);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listByTemplate(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("destroyed", false);
+        return search(sc, null);
     }
 
 

@@ -69,9 +69,6 @@ public class TemplateObject implements TemplateInfo {
         return to;
     }
 
-    public void setImageStoreId(long id) {
-        this.imageVO.setImageDataStoreId(id);
-    }
 
     public void setSize(Long size) {
         this.imageVO.setSize(size);
@@ -85,7 +82,7 @@ public class TemplateObject implements TemplateInfo {
     public DataStore getDataStore() {
         return this.dataStore;
     }
-    
+
     @Override
     public String getUniqueName() {
         return this.imageVO.getUniqueName();
@@ -126,7 +123,7 @@ public class TemplateObject implements TemplateInfo {
 
             if (templateHostVO == null) {
                 VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(templateForVmCreation.getId());
-                if (templateSwiftVO != null) {                                    
+                if (templateSwiftVO != null) {
                     long templateSize = templateSwiftVO.getPhysicalSize();
                     if (templateSize == 0) {
                         templateSize = templateSwiftVO.getSize();
@@ -172,7 +169,7 @@ public class TemplateObject implements TemplateInfo {
             throw new CloudRuntimeException("Failed to update state" + e.toString());
         }
     }
-    
+
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
@@ -182,14 +179,14 @@ public class TemplateObject implements TemplateInfo {
             throw new CloudRuntimeException("Failed to update state" + e.toString());
         }
     }
-    
+
     @Override
     public DataTO getTO() {
         DataTO to = this.dataStore.getDriver().getTO(this);
         if (to == null) {
             to = new TemplateObjectTO(this);
         }
-        
+
         return to;
     }
 }

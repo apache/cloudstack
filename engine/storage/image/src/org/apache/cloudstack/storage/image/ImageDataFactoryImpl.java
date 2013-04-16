@@ -28,6 +28,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -50,6 +52,8 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
     DataStoreManager storeMgr;
     @Inject
     VMTemplatePoolDao templatePoolDao;
+    @Inject
+    TemplateDataStoreDao templateStoreDao;
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
@@ -77,13 +81,17 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
         TemplateObject tmpl =  TemplateObject.getTemplate(templ, store);
         return tmpl;
     }
+
+    //TODO: this method is problematic, since one template can be stored in multiple image stores.
+    // need to see if we can get rid of this method or change to plural format.
     @Override
     public TemplateInfo getTemplate(long templateId) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
-        if (templ.getImageDataStoreId() == null) {
-            return this.getTemplate(templateId, null);
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplate(templateId);
+        DataStore store = null;
+        if ( tmplStore != null ){
+            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
         }
-        DataStore store = this.storeMgr.getDataStore(templ.getImageDataStoreId(), DataStoreRole.Image);
         return this.getTemplate(templateId, store);
     }
     @Override

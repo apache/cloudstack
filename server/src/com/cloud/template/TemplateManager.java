@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
@@ -39,7 +40,7 @@ public interface TemplateManager extends TemplateApiService{
 
     /**
      * Prepares a template for vm creation for a certain storage pool.
-     * 
+     *
      * @param template
      *            template to prepare
      * @param pool
@@ -52,7 +53,7 @@ public interface TemplateManager extends TemplateApiService{
 
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
-     * 
+     *
      * @param template
      * @param srcSecHost
      * @param srcZone
@@ -66,7 +67,7 @@ public interface TemplateManager extends TemplateApiService{
 
     /**
      * Deletes a template from secondary storage servers
-     * 
+     *
      * @param userId
      * @param templateId
      * @param zoneId
@@ -77,7 +78,7 @@ public interface TemplateManager extends TemplateApiService{
 
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
-     * 
+     *
      * @param pool
      * @return list of VMTemplateStoragePoolVO
      */
@@ -85,12 +86,14 @@ public interface TemplateManager extends TemplateApiService{
 
     /**
      * Deletes a template in the specified storage pool.
-     * 
+     *
      * @param templatePoolVO
      */
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
 
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
+
+    boolean templateIsDeleteable(TemplateDataStoreVO templateStoreRef);
 
     VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
 
@@ -116,5 +119,7 @@ public interface TemplateManager extends TemplateApiService{
     DataStore getImageStore(String storeUuid, Long zoneId);
 
     String getChecksum(Long hostId, String templatePath);
+
+    List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 
 }

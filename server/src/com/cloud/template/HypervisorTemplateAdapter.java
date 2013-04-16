@@ -38,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -180,7 +181,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		}
         for (DataStore imageStore : imageStores) {
             AsyncCallFuture<CommandResult> future = this.imageService
-                    .createTemplateAsync(this.imageFactory.getTemplate(template.getId()), imageStore);
+                    .createTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore), imageStore);
             try {
                 future.get();
             } catch (InterruptedException e) {
@@ -202,123 +203,60 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		boolean success = true;
 
     	VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
-    	Long zoneId = profile.getZoneId();
-    	Long templateId = template.getId();
 
-    	String zoneName;
-    	List<HostVO> secondaryStorageHosts;
-    	if (!template.isCrossZones() && zoneId != null) {
-    		DataCenterVO zone = _dcDao.findById(zoneId);
-    		zoneName = zone.getName();
-    		secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
-    	} else {
-    		zoneName = "(all zones)";
-    		secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
-    	}
+        // find all eligible image stores for this template
+        List<DataStore> imageStores = this.templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
+        if ( imageStores == null || imageStores.size() == 0 ){
+            throw new CloudRuntimeException("Unable to find image store to delete template "+ profile.getTemplate());
+        }
 
-    	s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
+        // Make sure the template is downloaded to all found image stores
+        for (DataStore store : imageStores) {
+            long storeId = store.getId();
+            List<TemplateDataStoreVO> templateStores = _tmpltStoreDao.listByTemplateStore(template.getId(), storeId);
+            for (TemplateDataStoreVO templateStore : templateStores) {
+                if (templateStore.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+                    String errorMsg = "Please specify a template that is not currently being downloaded.";
+                    s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + store.getName() + "; cant' delete it.");
+                    throw new CloudRuntimeException(errorMsg);
+                }
+            }
+        }
 
-		// Make sure the template is downloaded to all the necessary secondary storage hosts
-		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-			long hostId = secondaryStorageHost.getId();
-			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
-			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-				if (templateHostVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-					String errorMsg = "Please specify a template that is not currently being downloaded.";
-					s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + secondaryStorageHost.getName() + "; cant' delete it.");
-					throw new CloudRuntimeException(errorMsg);
-				}
-			}
-		}
 
-		Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
-		String eventType = "";
+        for (DataStore imageStore : imageStores) {
+            s_logger.info("Delete template from image store: " + imageStore.getName());
+            AsyncCallFuture<CommandResult> future = this.imageService
+                    .deleteTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore));
+            try {
+                CommandResult result = future.get();
+                success = result.isSuccess();
+                if ( !success )
+                    break;
+            } catch (InterruptedException e) {
+                s_logger.debug("delete template Failed", e);
+                throw new CloudRuntimeException("delete template Failed", e);
+            } catch (ExecutionException e) {
+                s_logger.debug("delete template Failed", e);
+                throw new CloudRuntimeException("delete template Failed", e);
+            }
+        }
 
-		if (template.getFormat().equals(ImageFormat.ISO)){
-			eventType = EventTypes.EVENT_ISO_DELETE;
-		} else {
-			eventType = EventTypes.EVENT_TEMPLATE_DELETE;
-		}
+        if (success) {
+            s_logger.info("Delete template from template table");
+            // remove template from vm_templates table
+            if (_tmpltDao.remove(template.getId())) {
+                // Decrement the number of templates and total secondary storage
+                // space used by the account
+                Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
+                _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
+                _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(),
+                        ResourceType.secondary_storage.getOrdinal());
+            }
+        }
+        return success;
 
-		// Iterate through all necessary secondary storage hosts and mark the template on each host as destroyed
-		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-			long hostId = secondaryStorageHost.getId();
-			long sZoneId = secondaryStorageHost.getDataCenterId();
-			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
-			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-				VMTemplateHostVO lock = _tmpltHostDao.acquireInLockTable(templateHostVO.getId());
-				try {
-					if (lock == null) {
-						s_logger.debug("Failed to acquire lock when deleting templateHostVO with ID: " + templateHostVO.getId());
-						success = false;
-						break;
-					}
-					UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
-                    templateHostVO.setDestroyed(true);
-					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
-                    String installPath = templateHostVO.getInstallPath();
-                    List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
-                    //check if there is any VM using this ISO.
-                    if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                    if (installPath != null) {
-                        Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
 
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
-                        } else {
-                            _tmpltHostDao.remove(templateHostVO.getId());
-                            s_logger.debug("Deleted template at: " + installPath);
-                        }
-                    } else {
-                        _tmpltHostDao.remove(templateHostVO.getId());
-                    }
-                    }
-					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
-
-					if (templateZone != null) {
-						_tmpltZoneDao.remove(templateZone.getId());
-					}
-				} finally {
-					if (lock != null) {
-						_tmpltHostDao.releaseFromLockTable(lock.getId());
-					}
-				}
-			}
-
-			if (!success) {
-				break;
-			}
-		}
-
-		s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-
-		// If there are no more non-destroyed template host entries for this template, delete it
-		if (success && (_tmpltHostDao.listByTemplateId(templateId).size() == 0)) {
-			long accountId = template.getAccountId();
-
-			VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
-
-			try {
-				if (lock == null) {
-					s_logger.debug("Failed to acquire lock when deleting template with ID: " + templateId);
-					success = false;
-				} else if (_tmpltDao.remove(templateId)) {
-				    // Decrement the number of templates and total secondary storage space used by the account
-				    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
-				    _resourceLimitMgr.recalculateResourceCount(accountId, account.getDomainId(),
-				            ResourceType.secondary_storage.getOrdinal());
-				}
-
-			} finally {
-				if (lock != null) {
-					_tmpltDao.releaseFromLockTable(lock.getId());
-				}
-			}
-
-			s_logger.debug("Removed template: " + template.getName() + " because all of its template host refs were marked as destroyed.");
-		}
-
-		return success;
 	}
 
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {

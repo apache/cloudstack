@@ -40,6 +40,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import com.cloud.storage.template.TemplateProp;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -137,6 +139,28 @@ public class TemplateServiceImpl implements TemplateService {
             this.store = store;
             this.templateOnStore = templateOnStore;
         }
+    }
+
+    class DeleteTemplateContext<T> extends AsyncRpcConext<T> {
+        final TemplateObject template;
+        final AsyncCallFuture<CommandResult> future;
+
+        public DeleteTemplateContext(AsyncCompletionCallback<T> callback, TemplateObject template,
+                AsyncCallFuture<CommandResult> future) {
+            super(callback);
+            this.template = template;
+            this.future = future;
+        }
+
+        public TemplateObject getTemplate() {
+            return template;
+        }
+
+        public AsyncCallFuture<CommandResult> getFuture() {
+            return future;
+        }
+
+
     }
 
     @Override
@@ -361,7 +385,8 @@ public class TemplateServiceImpl implements TemplateService {
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getUri(), tInfo.getInstallPath());
+                VMTemplateVO template = _templateDao.findById(tInfo.getId());
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), store.getUri(), tInfo.getInstallPath(), template.getId(), template.getAccountId());
                 try {
                     HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
                     _agentMgr.sendToSecStorage(ssAhost, dtCommand, null);
@@ -458,7 +483,28 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public AsyncCallFuture<CommandResult> deleteTemplateAsync(
             TemplateInfo template) {
-        // TODO Auto-generated method stub
+        TemplateObject to = (TemplateObject) template;
+        // update template_store_ref status
+        to.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+
+        DeleteTemplateContext<CommandResult> context = new DeleteTemplateContext<CommandResult>(null, to, future);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().deleteTemplateCallback(null, null)).setContext(context);
+        to.getDataStore().getDriver().deleteAsync(to, caller);
+        return future;
+    }
+
+    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, DeleteTemplateContext<CommandResult> context) {
+        CommandResult result = callback.getResult();
+        TemplateObject vo = context.getTemplate();
+        // we can only update state in template_store_ref table
+         if (result.isSuccess()) {
+            vo.processEvent(Event.OperationSuccessed);
+        } else {
+            vo.processEvent(Event.OperationFailed);
+         }
+        context.getFuture().complete(result);
         return null;
     }
 

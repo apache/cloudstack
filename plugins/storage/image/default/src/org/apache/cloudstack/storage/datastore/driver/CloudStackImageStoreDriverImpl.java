@@ -34,6 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -44,17 +46,23 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -68,9 +76,14 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 
 public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger
@@ -92,6 +105,15 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     private SwiftManager _swiftMgr;
     @Inject
     private S3Manager _s3Mgr;
+    @Inject AccountDao _accountDao;
+    @Inject UserVmDao _userVmDao;
+    @Inject
+    SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    private AgentManager _agentMgr;
+    @Inject TemplateDataStoreDao _templateStoreDao;
+
+
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
@@ -188,6 +210,60 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     private void deleteTemplate(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+
+        TemplateObject templateObj = (TemplateObject) data;
+        VMTemplateVO template = templateObj.getImage();
+        ImageStoreImpl store = (ImageStoreImpl) templateObj.getDataStore();
+        long storeId = store.getId();
+        Long sZoneId = store.getDataCenterId();
+        long templateId = template.getId();
+
+        Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
+        String eventType = "";
+
+        if (template.getFormat().equals(ImageFormat.ISO)) {
+            eventType = EventTypes.EVENT_ISO_DELETE;
+        } else {
+            eventType = EventTypes.EVENT_TEMPLATE_DELETE;
+        }
+
+        // TODO: need to understand why we need to mark destroyed in
+        // template_store_ref table here instead of in callback.
+        // Currently I did that in callback, so I removed previous code to mark template_host_ref
+
+        UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
+
+        List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
+        // check if there is any VM using this ISO.
+        if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
+            HostVO ssAhost = _ssvmMgr.pickSsvmHost(store);
+            // get installpath of this template on image store
+            TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
+            String installPath = tmplStore.getInstallPath();
+            if (installPath != null) {
+                Answer answer = _agentMgr.sendToSecStorage(ssAhost, new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId()));
+
+                if (answer == null || !answer.getResult()) {
+                    s_logger.debug("Failed to deleted template at store: " + store.getName());
+                    CommandResult result = new CommandResult();
+                    result.setSucess(false);
+                    result.setResult("Delete template failed");
+                    callback.complete(result);
+
+                } else {
+                    s_logger.debug("Deleted template at: " + installPath);
+                    CommandResult result = new CommandResult();
+                    result.setSucess(false);
+                    callback.complete(result);
+                }
+
+                VMTemplateZoneVO templateZone = templateZoneDao.findByZoneTemplate(sZoneId, templateId);
+
+                if (templateZone != null) {
+                    templateZoneDao.remove(templateZone.getId());
+                }
+            }
+        }
 
     }
 

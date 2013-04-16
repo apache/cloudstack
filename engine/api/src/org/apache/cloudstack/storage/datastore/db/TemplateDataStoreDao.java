@@ -32,11 +32,19 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     public List<TemplateDataStoreVO> listByStoreId(long id);
 
+    public List<TemplateDataStoreVO> listDestroyed(long storeId);
+
     public void deletePrimaryRecordsForStore(long id);
+
+    List<TemplateDataStoreVO> listByTemplateStore(long templateId, long storeId);
 
     List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states);
 
     List<TemplateDataStoreVO> listByTemplateStoreDownloadStatus(long templateId, long storeId, Status... status);
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId);
+
+    TemplateDataStoreVO findByTemplate(long templateId);
+
+    List<TemplateDataStoreVO> listByTemplate(long templateId);
 }

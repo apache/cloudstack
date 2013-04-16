@@ -16,17 +16,26 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.to.DataStoreTO;
+
 
 public class DeleteTemplateCommand extends ssCommand {
+    private DataStoreTO store;
 	private String templatePath;
+	private Long templateId;
+	private Long accountId;
 
 
 	public DeleteTemplateCommand() {
 	}
 
-	public DeleteTemplateCommand(String secUrl, String templatePath) {
+
+	public DeleteTemplateCommand(DataStoreTO store, String secUrl, String templatePath, Long templateId, Long accountId) {
 	    this.setSecUrl(secUrl);
     	this.templatePath = templatePath;
+    	this.templateId = templateId;
+    	this.accountId = accountId;
+    	this.store = store;
     }
 
 	@Override
@@ -37,4 +46,18 @@ public class DeleteTemplateCommand extends ssCommand {
 	public String getTemplatePath() {
 		return templatePath;
 	}
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public DataStoreTO getDataStore() {
+        return store;
+    }
+
+
 }

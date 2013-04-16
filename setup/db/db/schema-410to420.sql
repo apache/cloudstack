@@ -140,7 +140,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   INDEX `i_template_store_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
+-- ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
 
 -- Do we still need these columns? TODO, to delete them, remove FK constraints from snapshots table
 -- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `swift_id`;

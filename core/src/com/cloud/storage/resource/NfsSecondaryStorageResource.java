@@ -371,7 +371,7 @@ SecondaryStorageResource {
             return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
         }
         else{
-            return new Answer(cmd, false, "Unsupport image data store: " + dstore);
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
 
     }
@@ -503,6 +503,8 @@ SecondaryStorageResource {
         }
 
     }
+
+
 
     private Answer execute(final DeleteTemplateFromS3Command cmd) {
 
@@ -1318,51 +1320,107 @@ SecondaryStorageResource {
     }
 
     protected Answer execute(final DeleteTemplateCommand cmd) {
-        String relativeTemplatePath = cmd.getTemplatePath();
-        String parent = getRootDir(cmd);
+        DataStoreTO dstore = cmd.getDataStore();
+        if (dstore instanceof NfsTO) {
+            String relativeTemplatePath = cmd.getTemplatePath();
+            String parent = getRootDir(cmd);
 
-        if (relativeTemplatePath.startsWith(File.separator)) {
-            relativeTemplatePath = relativeTemplatePath.substring(1);
-        }
-
-        if (!parent.endsWith(File.separator)) {
-            parent += File.separator;
-        }
-        String absoluteTemplatePath = parent + relativeTemplatePath;
-        File tmpltParent = new File(absoluteTemplatePath).getParentFile();
-        String details = null;
-        if (!tmpltParent.exists()) {
-            details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
-            s_logger.debug(details);
-            return new Answer(cmd, true, details);
-        }
-        File[] tmpltFiles = tmpltParent.listFiles();
-        if (tmpltFiles == null || tmpltFiles.length == 0) {
-            details = "No files under template parent directory " + tmpltParent.getName();
-            s_logger.debug(details);
-        } else {
-            boolean found = false;
-            for (File f : tmpltFiles) {
-                if (!found && f.getName().equals("template.properties")) {
-                    found = true;
-                }
-                if (!f.delete()) {
-                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Template path "
-                            + relativeTemplatePath);
-                }
+            if (relativeTemplatePath.startsWith(File.separator)) {
+                relativeTemplatePath = relativeTemplatePath.substring(1);
             }
-            if (!found) {
-                details = "Can not find template.properties under " + tmpltParent.getName();
+
+            if (!parent.endsWith(File.separator)) {
+                parent += File.separator;
+            }
+            String absoluteTemplatePath = parent + relativeTemplatePath;
+            File tmpltParent = new File(absoluteTemplatePath).getParentFile();
+            String details = null;
+            if (!tmpltParent.exists()) {
+                details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
                 s_logger.debug(details);
+                return new Answer(cmd, true, details);
+            }
+            File[] tmpltFiles = tmpltParent.listFiles();
+            if (tmpltFiles == null || tmpltFiles.length == 0) {
+                details = "No files under template parent directory " + tmpltParent.getName();
+                s_logger.debug(details);
+            } else {
+                boolean found = false;
+                for (File f : tmpltFiles) {
+                    if (!found && f.getName().equals("template.properties")) {
+                        found = true;
+                    }
+                    if (!f.delete()) {
+                        return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Template path " + relativeTemplatePath);
+                    }
+                }
+                if (!found) {
+                    details = "Can not find template.properties under " + tmpltParent.getName();
+                    s_logger.debug(details);
+                }
+            }
+            if (!tmpltParent.delete()) {
+                details = "Unable to delete directory " + tmpltParent.getName() + " under Template path " + relativeTemplatePath;
+                s_logger.debug(details);
+                return new Answer(cmd, false, details);
+            }
+            return new Answer(cmd, true, null);
+        }
+        else if (dstore instanceof S3TO ){
+            final S3TO s3 = (S3TO)dstore;
+            final Long accountId = cmd.getAccountId();
+            final Long templateId = cmd.getTemplateId();
+
+            if (accountId == null || (accountId != null && accountId <= 0)) {
+                final String errorMessage = "No account id specified for S3 template deletion.";
+                s_logger.error(errorMessage);
+                return new Answer(cmd, false, errorMessage);
+            }
+
+            if (templateId == null || (templateId != null && templateId <= 0)) {
+                final String errorMessage = "No template id specified for S3 template deletion.";
+                s_logger.error(errorMessage);
+                return new Answer(cmd, false, errorMessage);
+            }
+
+
+            final String bucket = s3.getBucketName();
+            try {
+                S3Utils.deleteDirectory(s3, bucket,
+                        determineS3TemplateDirectory(templateId, accountId));
+                return new Answer(cmd, true, String.format(
+                        "Deleted template %1%s from bucket %2$s.", templateId,
+                        bucket));
+            } catch (Exception e) {
+                final String errorMessage = String
+                        .format("Failed to delete templaet id %1$s from bucket %2$s due to the following error: %3$s",
+                                templateId, bucket, e.getMessage());
+                s_logger.error(errorMessage, e);
+                return new Answer(cmd, false, errorMessage);
             }
         }
-        if (!tmpltParent.delete()) {
-            details = "Unable to delete directory " + tmpltParent.getName() + " under Template path "
-                    + relativeTemplatePath;
-            s_logger.debug(details);
-            return new Answer(cmd, false, details);
+        else if (dstore instanceof SwiftTO){
+            SwiftTO swift = (SwiftTO)dstore;
+            String container = "T-" + cmd.getTemplateId();
+            String object = "";
+
+            try {
+                String result = swiftDelete(swift, container, object);
+                if (result != null) {
+                    String errMsg = "failed to delete object " + container + "/" + object + " , err=" + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+                return new Answer(cmd, true, "success");
+            } catch (Exception e) {
+                String errMsg = cmd + " Command failed due to " + e.toString();
+                s_logger.warn(errMsg, e);
+                return new Answer(cmd, false, errMsg);
+            }
         }
-        return new Answer(cmd, true, null);
+        else{
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
+        }
     }
 
     protected Answer execute(final DeleteVolumeCommand cmd) {

@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -75,6 +76,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject DataCenterDao _dcDao;
 	protected @Inject VMTemplateDao _tmpltDao;
 	protected @Inject VMTemplateHostDao _tmpltHostDao;
+	protected @Inject TemplateDataStoreDao _tmpltStoreDao;
 	protected @Inject VMTemplateZoneDao _tmpltZoneDao;
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;

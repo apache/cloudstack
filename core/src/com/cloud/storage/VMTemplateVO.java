@@ -128,19 +128,16 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 
     @Column(name="enable_sshkey")
     private boolean enableSshKey;
-    
-    @Column(name = "image_data_store_id")
-    private long imageDataStoreId;
-    
+
     @Column(name = "size")
     private Long size;
-    
+
     @Column(name = "state")
     private TemplateState state;
-    
+
     @Column(name="update_count", updatable = true)
     protected long updatedCount;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
@@ -489,31 +486,24 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 	public void setEnableSshKey(boolean enable) {
 		enableSshKey = enable;
 	}
-	
-	 public Long getImageDataStoreId() {
-	        return this.imageDataStoreId;
-	    }
 
-	    public void setImageDataStoreId(long dataStoreId) {
-	        this.imageDataStoreId = dataStoreId;
-	    }
-	    
+
 	    public void setSize(Long size) {
 	        this.size = size;
 	    }
-	    
+
 	    public Long getSize() {
 	        return this.size;
 	    }
-	    
+
 	    public TemplateState getState() {
 	        return this.state;
 	    }
-	    
+
 	    public long getUpdatedCount() {
 	        return this.updatedCount;
 	    }
-	    
+
 	    public void incrUpdatedCount() {
 	        this.updatedCount++;
 	    }
@@ -521,11 +511,11 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 	    public void decrUpdatedCount() {
 	        this.updatedCount--;
 	    }
-	    
+
 	    public Date getUpdated() {
 	        return updated;
 	    }
-	    
+
 	    public void setUpdated(Date updated) {
 	        this.updated = updated;
 	    }

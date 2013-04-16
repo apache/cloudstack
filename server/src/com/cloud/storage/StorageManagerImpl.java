@@ -1234,69 +1234,80 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public void cleanupSecondaryStorage(boolean recurring) {
         try {
             // Cleanup templates in secondary storage hosts
-            List<HostVO> secondaryStorageHosts = _ssvmMgr
-                    .listSecondaryStorageHostsInAllZones();
-            for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+            List<DataStore> imageStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(null));
+             for (DataStore store : imageStores) {
                 try {
-                    long hostId = secondaryStorageHost.getId();
-                    List<VMTemplateHostVO> destroyedTemplateHostVOs = _vmTemplateHostDao
-                            .listDestroyed(hostId);
+                    long storeId = store.getId();
+                    List<TemplateDataStoreVO> destroyedTemplateStoreVOs = this._templateStoreDao.listDestroyed(storeId);
                     s_logger.debug("Secondary storage garbage collector found "
-                            + destroyedTemplateHostVOs.size()
+                            + destroyedTemplateStoreVOs.size()
                             + " templates to cleanup on secondary storage host: "
-                            + secondaryStorageHost.getName());
-                    for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
+                            + store.getName());
+                    for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
                         if (!_tmpltMgr
-                                .templateIsDeleteable(destroyedTemplateHostVO)) {
+                                .templateIsDeleteable(destroyedTemplateStoreVO)) {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Not deleting template at: "
-                                        + destroyedTemplateHostVO);
+                                        + destroyedTemplateStoreVO);
                             }
                             continue;
                         }
 
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Deleting template host: "
-                                    + destroyedTemplateHostVO);
+                            s_logger.debug("Deleting template store: "
+                                    + destroyedTemplateStoreVO);
                         }
 
-                        String installPath = destroyedTemplateHostVO
+                        VMTemplateVO destroyedTemplate = this._vmTemplateDao.findById(destroyedTemplateStoreVO.getTemplateId());
+                        if ( destroyedTemplate == null ){
+                            s_logger.error("Cannot find template : " + destroyedTemplateStoreVO.getTemplateId() + " from template table");
+                            throw new CloudRuntimeException("Template " + destroyedTemplateStoreVO.getTemplateId() + " is found in secondary storage, but not found in template table");
+                        }
+                        String installPath = destroyedTemplateStoreVO
                                 .getInstallPath();
 
+                        HostVO ssAhost = this._ssvmMgr.pickSsvmHost(store);
                         if (installPath != null) {
+
                             Answer answer = _agentMgr.sendToSecStorage(
-                                    secondaryStorageHost,
+                                    ssAhost,
                                     new DeleteTemplateCommand(
-                                            secondaryStorageHost
-                                                    .getStorageUrl(),
-                                            destroyedTemplateHostVO
-                                                    .getInstallPath()));
+                                            store.getTO(),
+                                            store.getUri(),
+                                            destroyedTemplateStoreVO
+                                                    .getInstallPath(),
+                                            destroyedTemplate.getId(),
+                                            destroyedTemplate.getAccountId()
+
+                                            ));
 
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete "
-                                        + destroyedTemplateHostVO
+                                        + destroyedTemplateStoreVO
                                         + " due to "
                                         + ((answer == null) ? "answer is null"
                                                 : answer.getDetails()));
                             } else {
                                 _vmTemplateHostDao
-                                        .remove(destroyedTemplateHostVO.getId());
+                                        .remove(destroyedTemplateStoreVO.getId());
                                 s_logger.debug("Deleted template at: "
-                                        + destroyedTemplateHostVO
+                                        + destroyedTemplateStoreVO
                                                 .getInstallPath());
                             }
                         } else {
-                            _vmTemplateHostDao.remove(destroyedTemplateHostVO
+                            _vmTemplateHostDao.remove(destroyedTemplateStoreVO
                                     .getId());
                         }
                     }
                 } catch (Exception e) {
                     s_logger.warn(
-                            "problem cleaning up templates in secondary storage "
-                                    + secondaryStorageHost, e);
+                            "problem cleaning up templates in secondary storage store "
+                                    + store.getName(), e);
                 }
             }
 
+            List<HostVO> secondaryStorageHosts = _ssvmMgr
+                    .listSecondaryStorageHostsInAllZones();
             // Cleanup snapshot in secondary storage hosts
             for (HostVO secondaryStorageHost : secondaryStorageHosts) {
                 try {
@@ -2037,16 +2048,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (scope != null) {
             try {
                 scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
-             
+
             } catch (Exception e) {
                 throw new InvalidParameterValueException("invalid scope" + scope);
             }
-            
+
             if (scopeType != ScopeType.ZONE) {
                 throw new InvalidParameterValueException("Only zone wide cache storage is supported");
             }
         }
-        
+
         if (scopeType == ScopeType.ZONE && dcId == null) {
             throw new InvalidParameterValueException("zone id can't be null, if scope is zone");
         }
