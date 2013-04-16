@@ -3433,20 +3433,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateStaticNatServiceCapablities(Map<Capability, String> staticNatServiceCapabilityMap) {
         if (staticNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            if (staticNatServiceCapabilityMap.keySet().size() > 1) {
-                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " capability can be specified for static nat service");
+            if (staticNatServiceCapabilityMap.keySet().size() > 2) {
+                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
             }
 
+            boolean eipEnabled = false;
+            boolean eipDisabled = false;
+            boolean associatePublicIP = true;
             for (Capability capability : staticNatServiceCapabilityMap.keySet()) {
                 String value = staticNatServiceCapabilityMap.get(capability);
                 if (capability == Capability.ElasticIp) {
-                    boolean enabled = value.contains("true");
-                    boolean disabled = value.contains("false");
-                    if (!enabled && !disabled) {
+                    eipEnabled = value.contains("true");
+                    eipDisabled = value.contains("false");
+                    if (!eipEnabled && !eipDisabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticIp.getName());
                     }
+                } else if (capability == Capability.AssociatePublicIP) {
+                    if (value.contains("true")) {
+                        associatePublicIP = true;
+                    } else if (value.contains("false")) {
+                        associatePublicIP = false;
+                    } else {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.AssociatePublicIP.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capability can be specified for static nat service");
+                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
+                }
+                if (eipDisabled && associatePublicIP) {
+                    throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
                 }
             }
         }
@@ -3508,6 +3522,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
         boolean elasticIp = false;
+        boolean associatePublicIp = false;
         boolean inline = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
@@ -3557,13 +3572,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
                 if (param != null) {
                     elasticIp = param.contains("true");
+                    String associatePublicIP = staticNatServiceCapabilityMap.get(Capability.AssociatePublicIP);
+                    if (associatePublicIP != null) {
+                        associatePublicIp = associatePublicIP.contains("true");
+                    }
                 }
             }
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
