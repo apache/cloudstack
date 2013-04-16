@@ -1,0 +1,112 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Hiroaki Kawai <kawai@stratosphere.co.jp>, 2013.
+# Kenichi Mineta <>, 2012.
+#   <kimihiko.kitase@citrix.co.jp>, 2012.
+# Mineta Kenichi <>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-03-29 15:37+0000\n"
+"Last-Translator: kawai <kawai@stratosphere.co.jp>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview"
+msgstr "概要"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, "
+"and by definition they have a plethora of options, which often lead to "
+"confusion for even experienced admins who are newcomers to building cloud "
+"platforms. The goal for this runbook is to provide a straightforward set of "
+"instructions to get you up and running with CloudStack with a minimum amount"
+" of trouble."
+msgstr "Infrastructure-as-a-Service (IaaS) のクラウドは、複雑な構築物になり得ます。また、定義上過剰な選択肢があるので、それがまた、経験のある管理者であったとしても、クラウドプラットフォームを構築する初心者には混乱を招きがちです。この runbook の目的は、単純な手順を提供し、CloudStack をできるだけトラブルなく動かせるようにすることです。"
+
+#. Tag: title
+#, no-c-format
+msgid "What exactly are we building?"
+msgstr "実際私たちは何を構築するのでしょうか？"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This runbook will focus on building a CloudStack cloud using KVM with CentOS"
+" 6.3 with NFS storage on a flat layer-2 network utilizing layer-3 network "
+"isolation (aka Security Groups), and doing it all on a single piece of "
+"hardware."
+msgstr "この runbook では、KVM, CnetOS 6.3, NFS ストレージ, フラットな Layer-2 ネットワーク上で layer-3 ネットワーク隔離（セキュリティグループ）, そしてそれら全てをひとつのマシン上で実行するという構成に焦点を絞っています。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM, or Kernel-based Virtual Machine is a virtualization technology for the "
+"Linux kernel. KVM supports native virtualization atop processors with "
+"hardware virtualization extensions."
+msgstr "KVM（Kernel-based Virtual Machine）はLinuxカーネルの仮想化技術です。KVMは、ハードウェア仮想化機能を持つプロセッサー上で動作し、ネイティブの仮想化をサポートします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security Groups act as distributed firewalls that control access to a group "
+"of virtual machines."
+msgstr "セキュリティグループは分散されたファイアーウォールとして動き、仮想マシンのグループへのアクセスをコントロールします。"
+
+#. Tag: title
+#, no-c-format
+msgid "High level overview of the process"
+msgstr "プロセスのハイレベルの概要"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before we actually get to installing CloudStack, we'll start with installing"
+" our base operating system, and then configuring that to act as an NFS "
+"server for several types of storage. We'll install the management server, "
+"download the systemVMs, and finally install the agent software. Finally "
+"we'll spend a good deal of time configuring the entire cloud in the "
+"CloudStack web interface."
+msgstr "CloudStackのインストールを実際に始める前に、ベースとなるオペレーティングシステムのインストールから始めます。そして、それをいくつかのタイプのストレージとして使う NFS サーバーとして構成します。管理サーバーをインストールして、システム VM をダウンロードして、最後にエージェントソフトウェアをインストールします。そこまでできたら、クラウド全体を設定するために、CloudStack のウェブインターフェースで多くの時間を過ごすことになります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "要件"
+
+#. Tag: para
+#, no-c-format
+msgid "To complete this runbook you'll need the following items:"
+msgstr "この runbook を完了するために、次のものが必要です："
+
+#. Tag: para
+#, no-c-format
+msgid "At least one computer which supports hardware virtualization."
+msgstr "少なくとも1台のハードウェア仮想化をサポートするコンピューター"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <ulink "
+"url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\">"
+" CentOS 6.3 x86_64 minimal install CD </ulink>"
+msgstr "<ulink url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\"> CentOS 6.3 x86_64 最小インストール CD </ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on "
+"this network and none of the computers running CloudStack will have a "
+"dynamic address. Again this is done for the sake of simplicity."
+msgstr "xxx.xxx.xxx.1 で始まるゲートウェイを持つ /24 ネットワークで、DHCP が存在せず、かつ、CloudStack を実行しているコンピュータでは動的アドレスを使っていないこと。念のために言うと、簡単ためこの条件にしています。"

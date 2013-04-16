@@ -1,0 +1,109 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Mariano Iumiento <miumiento@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-02-07 16:03+0000\n"
+"Last-Translator: miumiento <miumiento@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview"
+msgstr "Panoramica"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, "
+"and by definition they have a plethora of options, which often lead to "
+"confusion for even experienced admins who are newcomers to building cloud "
+"platforms. The goal for this runbook is to provide a straightforward set of "
+"instructions to get you up and running with CloudStack with a minimum amount"
+" of trouble."
+msgstr "Soluzioni cloud noti come Infrastructure-as-a-Service (IaaS) possono risultare complessi da installare, e per definizione sono disponibili una pletora di opzioni, che spesso portano a confondere anche amministratori di sistema esperto che si avvicinano ai concetti di piattaforme cloud. L'obiettivo di questo runbook è quello di fornire un set di istruzioni chiare per riuscire ad avere una installazione CloudStack in esecuzione in modo semplice."
+
+#. Tag: title
+#, no-c-format
+msgid "What exactly are we building?"
+msgstr "Che cosa stiamo per costruire?"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This runbook will focus on building a CloudStack cloud using KVM with CentOS"
+" 6.3 with NFS storage on a flat layer-2 network utilizing layer-3 network "
+"isolation (aka Security Groups), and doing it all on a single piece of "
+"hardware."
+msgstr "Questo runbook assume che l'installazione del cloud CloudStack sia fatta utilizzando la tecnologia di virtualizzazione KVM con CentOS 6.3 e con storage NFS in una rete flat layer-2 che utilizza l'isolamento di tipo layer-3 (noto anche come Security Group), ed installando il tutto su un singolo sistema hardware."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM, or Kernel-based Virtual Machine is a virtualization technology for the "
+"Linux kernel. KVM supports native virtualization atop processors with "
+"hardware virtualization extensions."
+msgstr "KVM, o Kernel-based Virtual Machine è una tecnologia di virtualizzazione presente nel kernel Linux. KVM supporta nativamente la virtualizzazione al di sopra dei processori che includono estensioni di virtualizzazione."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security Groups act as distributed firewalls that control access to a group "
+"of virtual machines."
+msgstr "I Security Group sono funzioni simili a firewall distribuiti che controllano l'accesso ad un gruppo di virtual machine."
+
+#. Tag: title
+#, no-c-format
+msgid "High level overview of the process"
+msgstr "Panoramica generale del processo"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before we actually get to installing CloudStack, we'll start with installing"
+" our base operating system, and then configuring that to act as an NFS "
+"server for several types of storage. We'll install the management server, "
+"download the systemVMs, and finally install the agent software. Finally "
+"we'll spend a good deal of time configuring the entire cloud in the "
+"CloudStack web interface."
+msgstr "Prima di procedere con l'installazione di CloudStack, si effettua l'installazione del sistema operativo di base, e poi si configura il sistema per offrire servizi server NFS per vari tipi di storage. Si procederà poi con l'installazione di un management server, con il download delle VM di sistema, e infine con l'installazione del software agent. Al termine si procederà in maniera corposa con la configurazione dell'intera infrastruttura cloud utilizzando l'interfaccia web di CloudStack."
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "Prerequisiti"
+
+#. Tag: para
+#, no-c-format
+msgid "To complete this runbook you'll need the following items:"
+msgstr "Per completare questo runbook occorre disporre di:"
+
+#. Tag: para
+#, no-c-format
+msgid "At least one computer which supports hardware virtualization."
+msgstr "Almeno un sistema che supporta la virtualizzazione hardware."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <ulink "
+"url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\">"
+" CentOS 6.3 x86_64 minimal install CD </ulink>"
+msgstr "Il <ulink url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\"> CD di installazione minimal di CentOS 6.3 x86_64 </ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on "
+"this network and none of the computers running CloudStack will have a "
+"dynamic address. Again this is done for the sake of simplicity."
+msgstr "Una rete /24 con gateway assegnato all'indirizzo xxx.xxx.xxx.1, senza la presenza di servizi DHCP server e in cui nessuno dei sistemi dell'installazione CloudStack deve avere indirizzo di tipo dinamico. Si ricorda che questa impostazione è per consentire la semplificazione dell'infrastruttura."

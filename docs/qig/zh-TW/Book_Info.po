@@ -1,0 +1,42 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-03-05 14:18+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Quick Install Guide"
+msgstr "快速安裝指引"
+
+#. Tag: subtitle
+#, no-c-format
+msgid "Prescriptive instructions for deploying Apache CloudStack"
+msgstr "Apache CloudStack的佈署指南"
+
+#. Tag: productname
+#, no-c-format
+msgid "Apache CloudStack"
+msgstr "Apache CloudStack"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This guide is designed to provide a strict environment to guarantee a higher"
+" degree of success in initial deployments of Apache CloudStack. All of the "
+"elements of the environment will be provided to you. Apache CloudStack is "
+"capable of much more complex configurations, but they are beyond the scope "
+"of this document."
+msgstr "本安裝手冊描述了一個嚴謹的安裝環境，確保能成功安裝Apache CloudStack，所有相關的環境需求，我們都將一一為您介紹。Apache Cloud能夠做更進階的設定，但都不在本手冊的範疇內"

@@ -17,7 +17,7 @@
 
 [main]
 host = https://www.transifex.net
-lang_map = fr:fr-FR, ja:ja-JP, zh_CN:zh-CN , zh_TW:zh-TW
+lang_map = fr:fr-FR, it_IT:it-IT, ja:ja-JP, zh_CN:zh-CN , zh_TW:zh-TW
 
 [ACS-Runbook.book_info]
 file_filter = <lang>/Book_Info.po

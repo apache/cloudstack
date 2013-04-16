@@ -1,0 +1,181 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Isaac Chiang <isaacchiang@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-03-07 02:25+0000\n"
+"Last-Translator: isaac.chiang <isaacchiang@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation of the management server"
+msgstr "安裝management server"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now it is time to start installing CloudStack's management server and some "
+"of the related components."
+msgstr "現在需要安裝CloudStack的management server以及相關套件"
+
+#. Tag: title
+#, no-c-format
+msgid "Database Installation and Configuration"
+msgstr "安裝及設定資料庫"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We'll start out by installing <application>MySQL</application> and "
+"configuring some options to ensure CloudStack runs well."
+msgstr "首先，安裝 <application>MySQL</application>並設定，以確保CloudStack能正常操作資料庫"
+
+#. Tag: para
+#, no-c-format
+msgid "To install <application>MySQL</application> run the following command:"
+msgstr "執行以下指令進行安裝<application>MySQL</application>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install mysql-"
+"server</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install mysql-server</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With <application>MySQL</application> installed we need to make a few "
+"configuration changes to <filename>/etc/my.cnf</filename>. Specifically we "
+"need to add the following options to the [mysqld] section:"
+msgstr "<application>MySQL</application>安裝完成後，需修改<filename>/etc/my.cnf</filename>設定檔，您必須於[mysqld]區塊修改內容如下："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"innodb_rollback_on_timeout=1\n"
+"innodb_lock_wait_timeout=600\n"
+"max_connections=350\n"
+"log-bin=mysql-bin\n"
+"binlog-format = 'ROW' \n"
+"        "
+msgstr "\ninnodb_rollback_on_timeout=1\ninnodb_lock_wait_timeout=600\nmax_connections=350\nlog-bin=mysql-bin\nbinlog-format = 'ROW'"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that <application>MySQL</application> is properly configured we can "
+"start it and configure it to start on boot as follows:"
+msgstr "<application>MySQL</application>設定完成後，於作業系統中設定為開機後自動執行"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<prompt># </prompt><userinput><command>service</command> mysqld start</userinput>\n"
+"<prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>\n"
+"        "
+msgstr "\n<prompt># </prompt><userinput><command>service</command> mysqld start</userinput>\n<prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>\n        "
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr "安裝"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We are now going to install the management server. We do that by executing "
+"the following command:"
+msgstr "現在我們即將開始安裝CloudStack的management server。我們採用以下指令開始安裝"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install cloud-"
+"client</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install cloud-client</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With the application itself installed we can now setup the database, we'll "
+"do that with the following command and options:"
+msgstr "Management server安裝完後，我們需要初始化資料庫，可以透過以下指令完成："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>cloud-setup-databases</command> "
+"cloud:<replaceable>password</replaceable>@localhost --deploy-"
+"as=root</userinput>"
+msgstr "<prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When this process is finished, you should see a message like \"CloudStack "
+"has successfully initialized the database.\""
+msgstr "當初始化過程完成後，您將會看到類似訊息\"CloudStack has successfully initialized the database.\""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that the database has been created, we can take the final step in "
+"setting up the management server by issuing the following command:"
+msgstr "資料庫建立後，最後一個步驟是設定management server，請執行以下指令："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>cloud-setup-"
+"management</command></userinput>"
+msgstr "<prompt># </prompt><userinput><command>cloud-setup-management</command></userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "System Template Setup"
+msgstr "設定系統模板"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CloudStack uses a number of system VMs to provide functionality for "
+"accessing the console of virtual machines, providing various networking "
+"services, and managing various aspects of storage. This step will acquire "
+"those system images ready for deployment when we bootstrap your cloud."
+msgstr "CloudStack透過一系列的系統虛擬機提供許多的功能，例如：遠端登入虛擬機、提供各式的網路服務、以及管理次存儲中的各種資源。在此步驟中，您將會了解如何取得system VM模板 ，並用於佈署之後的虛擬機"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now we need to download the system VM template and deploy that to the share "
+"we just mounted. The management server includes a script to properly "
+"manipulate the system VMs images."
+msgstr "接著，需要下載system VM 模板，並將這些模板佈署於剛才建立的secondary storage中；管理伺服器中包含一個腳本可以正確的導入system VM模板 ："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>\n"
+"    "
+msgstr "<prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That concludes our setup of the management server. We still need to "
+"configure CloudStack, but we will do that after we get our hypervisor set "
+"up."
+msgstr "以上是management server的安裝及設定過程；我們仍然需要設定CloudStack，但在之前，我們必須啟用hypervisor"

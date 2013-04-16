@@ -1,0 +1,264 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+#   <arkray0701@gmail.com>, 2012.
+# Hiroaki Kawai <kawai@stratosphere.co.jp>, 2013.
+# Kenichi Mineta <>, 2012.
+# Shinya Adachi <>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-03-29 15:03+0000\n"
+"Last-Translator: kawai <kawai@stratosphere.co.jp>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Setup and installation"
+msgstr "KVMのセットアップとインストール"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM is the hypervisor we'll be using - we will recover the initial setup "
+"which has already been done on the hypervisor host and cover installation of"
+" the agent software, you can use the same steps to add additional KVM nodes "
+"to your CloudStack environment."
+msgstr "KVMがこれから使用するハイパーバイザーです。ここではすでにハイパーバイザーホストに対して行った初期設定を振り返り、エージェントソフトウェアのインストールを取り上げます。追加のKVMノードをCloudStack環境に追加する場合は同じ手順を使うことができます。"
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "前提条件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We explicitly are using the management server as a compute node as well, "
+"which means that we have already performed many of the prerequisite steps "
+"when setting up the management server, but we will list them here for "
+"clarity. Those steps are:"
+msgstr "ここでは管理サーバーをコンピュートノードとしても使用します。つまり、管理サーバーをセットアップした際に、すでに多くの必要な事前手順はすでに実行しているということです。しかし、明確にするために、ここにリストします。そのステップは："
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-qig-Environment-operatingsys-network\" />"
+msgstr "<xref linkend=\"sect-qig-Environment-operatingsys-network\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-qig-Environment-operatingsys-hostname\" />"
+msgstr "<xref linkend=\"sect-qig-Environment-operatingsys-hostname\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-qig-Environment-operatingsys-selinux\" />"
+msgstr "<xref linkend=\"sect-qig-Environment-operatingsys-selinux\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-qig-Environment-operatingsys-ntp\" />"
+msgstr "<xref linkend=\"sect-qig-Environment-operatingsys-ntp\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-qig-Environment-operatingsys-repoconfig\" />"
+msgstr "<xref linkend=\"sect-qig-Environment-operatingsys-repoconfig\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You shouldn't need to do that for the management server, of course, but any "
+"additional hosts will need for you to complete the above steps."
+msgstr "もちろん、あなたは管理サーバー用にそれをする必要はありません。しかし、どんな追加のホストも上記の手順を終える必要があるでしょう。"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr "インストール"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Installation of the KVM agent is trivial with just a single command, but "
+"afterwards we'll need to configure a few things."
+msgstr "KVM agent のインストール自体はコマンドひとつで終わる簡単なものですが、その後いくつか設定しなければいけません。"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install cloud-"
+"agent</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install cloud-agent</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Configuration"
+msgstr "KVMの設定"
+
+#. Tag: para
+#, no-c-format
+msgid "We have two different parts of KVM to configure, libvirt, and QEMU."
+msgstr "KVM 設定には libvirt と QEMU の二つのパートがあります。"
+
+#. Tag: title
+#, no-c-format
+msgid "QEMU Configuration"
+msgstr "QEMU 設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM configuration is relatively simple at only a single item. We need to "
+"edit the QEMU VNC configuration. This is done by editing "
+"<filename>/etc/libvirt/qemu.conf</filename> and ensuring the following line "
+"is present and uncommented."
+msgstr "KVMの設定は一つの項目しかないので、比較的シンプルです。ここではQEMUのVNCの設定を変更する必要があります。<filename>/etc/libvirt/qemu.conf</filename>を編集して、以下の行が存在し、コメントアウトされていないことを確認します。"
+
+#. Tag: screen
+#, no-c-format
+msgid "vnc_listen=0.0.0.0"
+msgstr "vnc_listen=0.0.0.0"
+
+#. Tag: title
+#, no-c-format
+msgid "Libvirt Configuration"
+msgstr "Libvirt 設定"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CloudStack uses libvirt for managing virtual machines. Therefore it is vital"
+" that libvirt is configured correctly. Libvirt is a dependency of cloud-"
+"agent and should already be installed."
+msgstr "CloudStack は仮想マシンの管理に libvirt を使います。ですから libvirt が正しく設定されていなければなりません。Libvirt は cloud-agent の dependency に指定されているので、インストール済みになっているはずです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order to have live migration working libvirt has to listen for unsecured "
+"TCP connections. We also need to turn off libvirts attempt to use Multicast "
+"DNS advertising. Both of these settings are in "
+"<filename>/etc/libvirt/libvirtd.conf</filename>"
+msgstr "Live migration ができるためには、libvirt は非セキュアな TCP 接続を開いていなければなりません。Multicast DNS 広告を試みるオプションも無効化する必要があります。両方とも <filename>/etc/libvirt/libvirtd.conf</filename> で設定できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following paramaters:"
+msgstr "次のパラメータを設定します:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tls = 0"
+msgstr "listen_tls = 0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tcp = 1"
+msgstr "listen_tcp = 1"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "tcp_port = \"16059\""
+msgstr "tcp_port = \"16059\""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auth_tcp = \"none\""
+msgstr "auth_tcp = \"none\""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mdns_adv = 0"
+msgstr "mdns_adv = 0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Turning on \"listen_tcp\" in libvirtd.conf is not enough, we have to change "
+"the parameters as well:"
+msgstr "libvirtd.conf で \"listen_tcp\" を有効にするだけではなく、パラメータも変更しなければいけません:"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:"
+msgstr "RHEL や CentOS では <filename>/etc/sysconfig/libvirtd</filename> を修正します:"
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following line:"
+msgstr "次の行のコメントアウトをはずします:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#LIBVIRTD_ARGS=\"--listen\""
+msgstr "#LIBVIRTD_ARGS=\"--listen\""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename>"
+msgstr "Ubuntu では <filename>/etc/init/libvirt-bin.conf</filename> を修正します。"
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line (at the end of the file):"
+msgstr "次の行を変更します（ファイルの最後）:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d"
+msgstr "exec /usr/sbin/libvirtd -d"
+
+#. Tag: para
+#, no-c-format
+msgid "to (just add -l)"
+msgstr "(-l を追加)"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d -l"
+msgstr "exec /usr/sbin/libvirtd -d -l"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart libvirt"
+msgstr "libvirt の再起動"
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr "RHEL や CentOS では:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirtd restart</command>"
+msgstr "<command>$ service libvirtd restart</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu:"
+msgstr "Ubuntu では:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirt-bin restart</command>"
+msgstr "<command>$ service libvirt-bin restart</command>"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM configuration complete"
+msgstr "KVM 設定完了"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That concludes our installation and configuration of KVM, and we'll now move"
+" to using the CloudStack UI for the actual configuration of our cloud."
+msgstr "これで KVM のインストレーションと設定が終了です。ここで、CloudStackのUIに戻り、クラウド環境の実際の設定に入っていきます。"

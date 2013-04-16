@@ -1,0 +1,32 @@
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Hiroaki Kawai <kawai@stratosphere.co.jp>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-18T22:47:34\n"
+"PO-Revision-Date: 2013-03-29 15:26+0000\n"
+"Last-Translator: kawai <kawai@stratosphere.co.jp>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Revision History"
+msgstr "変更履歴"
+
+#. Tag: member
+#, no-c-format
+msgid "Updating for Apache CloudStack 4.0.1"
+msgstr "Apache CloudStack 4.0.1 へのアップデート"
+
+#. Tag: member
+#, no-c-format
+msgid "Initial creation of book by publican"
+msgstr "publican での初版"
