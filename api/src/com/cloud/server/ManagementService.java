@@ -407,6 +407,4 @@ public interface ManagementService {
      */
     List<? extends Capacity> listTopConsumedResources(ListCapacityCmd cmd);
 
-    List<String> listDeploymentPlanners();
-
 }

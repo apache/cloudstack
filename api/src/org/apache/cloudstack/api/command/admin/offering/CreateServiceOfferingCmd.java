@@ -84,9 +84,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
 
-    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "The deployment planner heuristics used to deploy a VM of this offering, default \"FirstFitPlanner\".")
-    private String deploymentPlanner;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -151,9 +148,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return networkRate;
     }
 
-    public String getDeploymentPlanner() {
-        return deploymentPlanner;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

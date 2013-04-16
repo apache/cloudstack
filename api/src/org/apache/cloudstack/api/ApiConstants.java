@@ -475,7 +475,6 @@ public class ApiConstants {
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
-    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
 
     public enum HostDetails {
