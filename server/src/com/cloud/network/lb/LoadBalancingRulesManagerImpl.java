@@ -2068,7 +2068,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return dstList;
     }
     
-    protected void isLbServiceSupportedInNetwork(long networkId, Scheme scheme) {
+    @Override
+    public void isLbServiceSupportedInNetwork(long networkId, Scheme scheme) {
         Network network = _networkDao.findById(networkId);
         
         //1) Check if the LB service is supported
@@ -2079,7 +2080,19 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw ex;
         }
         
-        //2) Check if the provider supports the scheme
+        //2) Check if the Scheme is supported\
+        NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        if (scheme == Scheme.Public) {
+            if (!off.getPublicLb()) {
+                throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);
+            }
+        } else {
+            if (!off.getInternalLb()) {
+                throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);    
+            }
+        }
+        
+        //3) Check if the provider supports the scheme
         LoadBalancingServiceProvider lbProvider = _networkMgr.getLoadBalancingProviderForNetwork(network, scheme);
         if (lbProvider == null) {
             throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by lb providers in network " + network);

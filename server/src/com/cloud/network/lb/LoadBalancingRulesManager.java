@@ -56,4 +56,6 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
     boolean validateLbRule(LoadBalancingRule lbRule);
 
     void removeLBRule(LoadBalancer rule);
+
+    void isLbServiceSupportedInNetwork(long networkId, Scheme scheme);
 }

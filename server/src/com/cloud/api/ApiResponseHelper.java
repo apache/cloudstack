@@ -229,6 +229,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Cluster;
@@ -2227,7 +2228,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setServices(serviceResponses);
         
         //set network offering details
-        response.setDetails(_ntwkModel.getNtwkOffDetails(offering.getId()));
+        Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
+        if (details != null && !details.isEmpty()) {
+            response.setDetails(details);
+        }
         
         response.setObjectName("networkoffering");
         return response;

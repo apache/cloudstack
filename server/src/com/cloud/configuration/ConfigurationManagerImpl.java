@@ -3371,18 +3371,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         
         Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>();
-        for (String detailStr : detailsStr.keySet()) {
-            NetworkOffering.Detail offDetail = null;
-            for (NetworkOffering.Detail supportedDetail: NetworkOffering.Detail.values()) {
-                if (detailStr.equalsIgnoreCase(supportedDetail.toString())) {
-                    offDetail = supportedDetail;
-                    break;
+        if (detailsStr != null) {
+            for (String detailStr : detailsStr.keySet()) {
+                NetworkOffering.Detail offDetail = null;
+                for (NetworkOffering.Detail supportedDetail: NetworkOffering.Detail.values()) {
+                    if (detailStr.equalsIgnoreCase(supportedDetail.toString())) {
+                        offDetail = supportedDetail;
+                        break;
+                    }
                 }
+                if (offDetail == null) {
+                    throw new InvalidParameterValueException("Unsupported detail " + detailStr);
+                }
+                details.put(offDetail, detailsStr.get(detailStr));
             }
-            if (offDetail == null) {
-                throw new InvalidParameterValueException("Unsupported detail " + detailStr);
-            }
-            details.put(offDetail, detailsStr.get(detailStr));
         }
 
         return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
@@ -3415,8 +3417,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.InlineMode.getName());
                     }
+                } else if (cap == Capability.LbSchemes) {
+                    boolean internalLb = value.contains("internal");
+                    boolean publicLb = value.contains("public");
+                    if (!internalLb && !publicLb) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.LbSchemes.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + 
+                            ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName()
+                            + ", " + Capability.LbSchemes.getName() + " capabilities can be sepcified for LB service");
                 }
             }
         }
@@ -3542,6 +3552,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean elasticIp = false;
         boolean associatePublicIp = false;
         boolean inline = false;
+        boolean publicLb = false;
+        boolean internalLb = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
             
@@ -3565,6 +3577,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     inline = inlineMode.contains("true");
                 } else {
                     inline = false;
+                }
+                
+                String publicLbStr = lbServiceCapabilityMap.get(Capability.LbSchemes);
+                if (serviceProviderMap.containsKey(Service.Lb)) {
+                    if (publicLbStr != null) {
+                        _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.LbSchemes, publicLbStr);
+                        internalLb = publicLbStr.contains("internal");
+                        publicLb = publicLbStr.contains("public");
+                    } else {
+                        //if not specified, default public lb to true
+                        publicLb = true;
+                    }
                 }
             }
 
@@ -3600,7 +3624,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb, internalLb);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

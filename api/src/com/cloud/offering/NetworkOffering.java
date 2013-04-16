@@ -124,6 +124,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean getIsPersistent();
     
-    Map getDetails();
+    boolean getInternalLb();
+
+    boolean getPublicLb();
 
 }

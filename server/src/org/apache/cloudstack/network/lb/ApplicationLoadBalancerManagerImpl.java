@@ -126,18 +126,23 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         //1) Validate LB rule's parameters
         validateLbRule(sourcePort, instancePort, algorithm, guestNtwk, scheme);
         
-        //2) Get source ip address
+        //2) verify that lb service is supported by the network
+        _lbMgr.isLbServiceSupportedInNetwork(guestNtwk.getId(), scheme);
+        
+        //3) Get source ip address
         sourceIp = getSourceIp(scheme, sourceIpNtwk, sourceIp);
                
         ApplicationLoadBalancerRuleVO newRule = new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(),
                 lbOwner.getId(), lbOwner.getDomainId(), new Ip(sourceIp), sourceIpNtwk.getId(), scheme);
         
-        //3) Validate Load Balancing rule on the providers
+        //4) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
                 new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), new Ip(sourceIp));
         if (!_lbMgr.validateLbRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
+        
+        
         
 
         //4) Persist Load Balancer rule
