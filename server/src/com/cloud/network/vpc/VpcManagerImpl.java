@@ -115,7 +115,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -179,7 +178,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm);
  
     int _cleanupInterval;
     int _maxNetworks;
@@ -1034,16 +1033,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        //4) Only one network in the VPC can support public LB inside the VPC. Internal LB can be supported on multiple VPC tiers
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
+                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                        throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
                 }
