@@ -34,6 +34,11 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -84,6 +89,7 @@ import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkACLListResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -230,10 +236,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -2547,7 +2549,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL) {
+    public NetworkACLResponse createNetworkACLItemResponse(FirewallRule networkACL) {
         NetworkACLResponse response = new NetworkACLResponse();
 
         response.setId(networkACL.getUuid());
@@ -3808,7 +3810,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
-    
     @Override
     public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
         if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
@@ -3826,12 +3827,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-    
     @Override
     public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {
         IsolationMethodResponse response = new IsolationMethodResponse();
         response.setIsolationMethodName(method.toString());
         response.setObjectName("isolationmethod");
+        return response;
+    }
+
+    public NetworkACLListResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLListResponse response = new NetworkACLListResponse();
+        response.setId(networkACL.getUuid());
+        response.setName(networkACL.getName());
+        response.setDescription(networkACL.getDescription());
+        Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
+        if(vpc != null){
+            response.setVpcId(vpc.getUuid());
+        }
+        response.setObjectName("networkacllist");
         return response;
     }
 }

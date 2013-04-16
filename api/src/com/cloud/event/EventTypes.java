@@ -344,6 +344,11 @@ public class EventTypes {
     public static final String EVENT_VPC_DELETE = "VPC.DELETE";
     public static final String EVENT_VPC_RESTART = "VPC.RESTART";
 
+    // Network ACL
+    public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";
+    public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
+
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";

@@ -16,41 +16,35 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NetworkACLResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
-@APICommand(name = "listNetworkACLs", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
-public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
+@APICommand(name = "listNetworkACLLists", description="Lists all network ACLs", responseObject=NetworkACLListResponse.class)
+public class ListNetworkACLListsCmd extends BaseListTaggedResourcesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 
-    private static final String s_name = "listnetworkaclsresponse";
+    private static final String s_name = "listnetworkacllistsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
             description="Lists network ACL with the specified ID.")
     private Long id;
 
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
             description="list network ACLs by network Id")
     private Long networkId;
-
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACLs by traffic type - Ingress or Egress")
-    private String trafficType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,10 +58,6 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
         return id;
     }
 
-    public String getTrafficType() {
-        return trafficType;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -79,13 +69,13 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends FirewallRule>,Integer> result = _networkACLService.listNetworkACLItems(this);
-        ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
-        List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
+        Pair<List<? extends NetworkACL>,Integer> result = _networkACLService.listNetworkACLs(this);
+        ListResponse<NetworkACLListResponse> response = new ListResponse<NetworkACLListResponse>();
+        List<NetworkACLListResponse> aclResponses = new ArrayList<NetworkACLListResponse>();
 
-        for (FirewallRule acl : result.first()) {
-            NetworkACLResponse ruleData = _responseGenerator.createNetworkACLItemResponse(acl);
-            aclResponses.add(ruleData);
+        for (NetworkACL acl : result.first()) {
+            NetworkACLListResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
+            aclResponses.add(aclResponse);
         }
         response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());

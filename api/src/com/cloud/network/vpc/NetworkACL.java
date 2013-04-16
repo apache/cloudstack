@@ -14,28 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.network.vpc;
 
-import java.util.List;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.firewall.NetworkACLService;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.Account;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
+public interface NetworkACL extends InternalIdentity{
+    String getDescription();
 
+    String getUuid();
 
-public interface NetworkACLManager extends NetworkACLService{
-    
-    /**
-     * @param networkId
-     * @param userId
-     * @param caller
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
-    
-    List<? extends FirewallRule> listNetworkACLs(long guestNtwkId);
+    Long getVpcId();
 
+    long getId();
+
+    String getName();
 }

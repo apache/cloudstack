@@ -14,28 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc;
+package com.cloud.network.vpc.dao;
 
-import java.util.List;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import org.springframework.stereotype.Component;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.firewall.NetworkACLService;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.Account;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
+import javax.ejb.Local;
 
+@Component
+@Local(value = NetworkACLDao.class)
+@DB(txn = false)
+public class NetworkACLDaoImpl extends GenericDaoBase<NetworkACLVO, Long> implements NetworkACLDao{
 
-public interface NetworkACLManager extends NetworkACLService{
-    
-    /**
-     * @param networkId
-     * @param userId
-     * @param caller
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
-    
-    List<? extends FirewallRule> listNetworkACLs(long guestNtwkId);
+    protected NetworkACLDaoImpl() {
+    }
 
 }

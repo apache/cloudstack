@@ -16,41 +16,34 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
-
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.UserContext;
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.NetworkACLListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
 
-@APICommand(name = "deleteNetworkACL", description="Deletes a Network ACL", responseObject=SuccessResponse.class)
-public class DeleteNetworkACLCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLCmd.class.getName());
-    private static final String s_name = "deletenetworkaclresponse";
+@APICommand(name = "deleteNetworkACLList", description="Deletes a Network ACL", responseObject=SuccessResponse.class)
+public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLListCmd.class.getName());
+    private static final String s_name = "deletenetworkacllistresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLListResponse.class,
             required=true, description="the ID of the network ACL")
     private Long id;
 
-    // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
-    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,7 +62,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_CLOSE;
+        return EventTypes.EVENT_NETWORK_ACL_DELETE;
     }
 
     @Override
@@ -79,21 +72,24 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        if (ownerId == null) {
-            FirewallRule rule = _networkACLService.getNetworkACLItem(id);
-            if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
+        NetworkACL acl = _networkACLService.getNetworkACL(id);
+        if (acl == null) {
+            throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
+        } else {
+            long vpcId = acl.getVpcId();
+            Vpc vpc = _vpcService.getVpc(vpcId);
+            if(vpc != null){
+                return vpc.getAccountId();
             } else {
-                ownerId = rule.getAccountId();
+                throw new InvalidParameterValueException("Unable to find VPC associated with network ACL by id=" + id);
             }
         }
-        return ownerId;
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _networkACLService.revokeNetworkACL(id, true);
+        boolean result = _networkACLService.deleteNetworkACL(id);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -101,22 +97,6 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network ACL");
         }
-    }
-
-
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
-    }
-
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
     }
 }
 
