@@ -26,7 +26,7 @@
     <bookinfo id="cloudstack_admin">
     <title>&PRODUCT; Administrator's Guide</title>
     <productname>Apache CloudStack</productname>
-    <productnumber>4.0.0-incubating</productnumber>
+    <productnumber>4.2.0</productnumber>
     <edition>1</edition>
     <pubsnumber></pubsnumber>
     <abstract>
