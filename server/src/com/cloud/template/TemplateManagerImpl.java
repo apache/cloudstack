@@ -1487,34 +1487,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
-    	/*
-        if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
-            _swiftMgr.deleteTemplate(cmd);
-        }
-        if (cmd.getZoneId() == null && _s3Mgr.isS3Enabled()) {
-            _s3Mgr.deleteTemplate(cmd.getId(), caller.getAccountId());
-        }
-        */
 
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
-    	boolean result = adapter.delete(profile);
-
-    	if (result){
-            if (cmd.getZoneId() == null
-                    && (_swiftMgr.isSwiftEnabled() || _s3Mgr.isS3Enabled())) {
-                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao
-                        .listByZoneTemplate(null, templateId);
-                if (templateZones != null) {
-                    for (VMTemplateZoneVO templateZone : templateZones) {
-                        _tmpltZoneDao.remove(templateZone.getId());
-                    }
-                }
-            }
-    		return true;
-    	}else{
-    		throw new CloudRuntimeException("Failed to delete template");
-    	}
+    	return adapter.delete(profile);
 	}
 
 	@Override
