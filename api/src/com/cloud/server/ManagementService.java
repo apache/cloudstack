@@ -123,7 +123,7 @@ public interface ManagementService {
     /**
      * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
      * "podId"
-     * 
+     *
      * @param cmd
      * @return List of Hosts
      */
@@ -406,5 +406,7 @@ public interface ManagementService {
      * @return List of capacities
      */
     List<? extends Capacity> listTopConsumedResources(ListCapacityCmd cmd);
+
+    List<String> listDeploymentPlanners();
 
 }

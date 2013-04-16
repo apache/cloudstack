@@ -226,6 +226,8 @@ public class EventTypes {
     // VLANs/IP ranges
     public static final String EVENT_VLAN_IP_RANGE_CREATE = "VLAN.IP.RANGE.CREATE";
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
+    public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
+    public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
@@ -348,7 +350,7 @@ public class EventTypes {
     // tag related events
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
-    
+
 	// vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";
     public static final String EVENT_VM_SNAPSHOT_DELETE = "VMSNAPSHOT.DELETE";
@@ -381,6 +383,12 @@ public class EventTypes {
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
     public static final String EVENT_BAREMETAL_PXE_SERVER_ADD = "PHYSICAL.PXE.ADD";
     public static final String EVENT_BAREMETAL_PXE_SERVER_DELETE = "PHYSICAL.PXE.DELETE";
+
+    public static final String EVENT_AFFINITY_GROUP_CREATE = "AG.CREATE";
+    public static final String EVENT_AFFINITY_GROUP_DELETE = "AG.DELETE";
+    public static final String EVENT_AFFINITY_GROUP_ASSIGN = "AG.ASSIGN";
+    public static final String EVENT_AFFINITY_GROUP_REMOVE = "AG.REMOVE";
+    public static final String EVENT_VM_AFFINITY_GROUP_UPDATE = "VM.AG.UPDATE";
 
     static {
 
@@ -539,6 +547,8 @@ public class EventTypes {
         // VLANs/IP ranges
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_CREATE, Vlan.class.getName());
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE,Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE,Vlan.class.getName());
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class.getName());
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class.getName());

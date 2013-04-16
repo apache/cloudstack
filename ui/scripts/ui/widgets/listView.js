@@ -863,16 +863,14 @@
     var uiCustom = listViewArgs.uiCustom;
     var subselect = uiCustom ? listViewArgs.listView.subselect : null;
 
-    if (!data || !data.length) {
+    if (!(data && data.length)) {
       if (!$tbody.find('tr').size()) {
         return [
-          $('<tr>').addClass('empty').append(
+          $('<tr>').addClass('empty last').append(
             $('<td>').html(_l('label.no.data'))
           ).appendTo($tbody)
         ];
       }
-
-      return $tbody.find('tr:last').addClass('last');
     }
 
     $tbody.find('tr.empty').remove();

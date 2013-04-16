@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +41,8 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -49,7 +52,9 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -84,6 +89,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject VmwareManager _vmwareMgr;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject NetworkModel _networkMgr;
+    @Inject ConfigurationDao _configDao;
 
     protected VMwareGuru() {
         super();
@@ -139,13 +145,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 		    details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
         }
-        
+
+        List<NicProfile> nicProfiles = vm.getNics();
+
+        for(NicProfile nicProfile : nicProfiles) {
+            if(nicProfile.getTrafficType() == TrafficType.Guest) {
+                if(_networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Service.Firewall, Provider.CiscoVnmc)) {
+                    details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
+                }
+                break;
+            }
+        }
+
         to.setDetails(details);
 
         if(vm.getVirtualMachine() instanceof DomainRouterVO) {
-            List<NicProfile> nicProfiles = vm.getNics();
-            NicProfile publicNicProfile = null;
 
+            NicProfile publicNicProfile = null;
             for(NicProfile nicProfile : nicProfiles) {
                 if(nicProfile.getTrafficType() == TrafficType.Public) {
                     publicNicProfile = nicProfile;
@@ -212,8 +228,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
             String bootArgs = to.getBootArgs();
             to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            
         }
-
+        
+        // Don't do this if the virtual machine is one of the special types
+        // Should only be done on user machines
+        if(!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
+                || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
+            String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
+            if (nestedVirt != null) {
+                s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
+                details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, nestedVirt);
+                to.setDetails(details);
+                
+            }
+        }
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());

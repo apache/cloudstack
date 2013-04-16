@@ -893,7 +893,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
+              if (isVPC || isAdvancedSGZone ) {
                  hiddenTabs.push('egressRules');
                }
               
@@ -1524,7 +1524,9 @@
                             data.queryasyncjobresultresponse.jobresult.nicsecondaryip,
                             {
                               zoneid: args.context.instances[0].zoneid,
-                              virtualmachinedisplayname: args.context.instances[0].displayname
+                              virtualmachinedisplayname: args.context.instances[0].displayname ?
+                                args.context.instances[0].displayname :
+                                args.context.instances[0].name
                             }
                           );
                         },
@@ -1557,7 +1559,9 @@
                   data: $(ips).map(function(index, ip) {
                     return $.extend(ip, {
                       zoneid: args.context.instances[0].zoneid,
-                      virtualmachinedisplayname: args.context.instances[0].displayname
+                      virtualmachinedisplayname: args.context.instances[0].displayname ?
+                        args.context.instances[0].displayname :
+                        args.context.instances[0].name
                     });
                   })
                 });

@@ -81,21 +81,21 @@ fi
 
 cd $sourcedir
 echo 'archiving'
-git archive --format=tar --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar
-bzip2 $outputdir/apache-cloudstack-$version-incubating-src.tar
+git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch > $outputdir/apache-cloudstack-$version-src.tar
+bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir
 echo 'armor'
-gpg -v $keyid --armor --output apache-cloudstack-$version-incubating-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.bz2
+gpg -v $keyid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
 
 echo 'md5'
-gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.bz2 > apache-cloudstack-$version-incubating-src.tar.bz2.md5
+gpg -v --print-md MD5 apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.md5
 
 echo 'sha'
-gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.tar.bz2 > apache-cloudstack-$version-incubating-src.tar.bz2.sha
+gpg -v --print-md SHA512 apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.sha
 
 echo 'verify'
-gpg -v --verify apache-cloudstack-$version-incubating-src.tar.bz2.asc apache-cloudstack-$version-incubating-src.tar.bz2
+gpg -v --verify apache-cloudstack-$version-src.tar.bz2.asc apache-cloudstack-$version-src.tar.bz2
 
 if [ $tag == 'yes' ]; then
   echo 'tag'

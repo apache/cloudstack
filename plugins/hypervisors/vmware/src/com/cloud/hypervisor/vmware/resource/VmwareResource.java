@@ -232,6 +232,7 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
@@ -1328,7 +1329,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             NicTO nicTo = cmd.getNic();
             VirtualDevice nic;
-            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false);
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 String dvSwitchUuid;
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -1570,7 +1571,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup);
+                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2147,6 +2148,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
+           
+            if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
+                s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
+                ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
+                ManagedObjectReference computeMor = context.getVimClient().getMoRefProp(hostMor, "parent");
+                ManagedObjectReference environmentBrowser = 
+                        context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
+                HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
+                if (hostCapability.isNestedHVSupported()) {
+                    s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
+                    vmConfigSpec.setNestedHVEnabled(true);                   
+                }
+                else {
+                	s_logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " +vmSpec.getName());
+                	vmConfigSpec.setNestedHVEnabled(false);
+                }
+            }
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;
@@ -2286,7 +2304,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
-                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
+                boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
+                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus);
                 if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                     String dvSwitchUuid;
                     ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -2486,7 +2505,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return defaultVlan;
     }
 
-    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo) throws Exception {
+    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus) throws Exception {
         Pair<String, String> switchName;
         TrafficType trafficType;
         VirtualSwitchType switchType;
@@ -2516,7 +2535,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         else {
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()),
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup);
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus);
         }
 
         return networkInfo;
@@ -3006,7 +3025,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO[] nics = vm.getNics();
             for (NicTO nic : nics) {
                 // prepare network on the host
-                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic);
+                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false);
             }
 
             String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));

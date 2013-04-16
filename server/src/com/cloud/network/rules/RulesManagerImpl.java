@@ -1215,11 +1215,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
-            return true;
-        } else {
-            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
+            if (offering.getAssociatePublicIP()) {
+                getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
+                return true;
+            }
         }
+
+        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     }
 
     @Override
@@ -1410,6 +1412,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
+                // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
+                if (!isSystemVM && !offering.getAssociatePublicIP()) {
+                    continue;
+                }
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
                     s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
@@ -1424,7 +1431,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
-                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId(), guestNetwork.getId(), isSystemVM, null);
                 } catch (NetworkRuleConflictException ex) {

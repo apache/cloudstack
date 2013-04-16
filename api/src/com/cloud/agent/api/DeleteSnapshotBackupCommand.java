@@ -19,6 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.StoragePool;
 
 /**
  * This command encapsulates a primitive operation which enables coalescing the backed up VHD snapshots on the secondary server
@@ -78,7 +79,8 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
      * @param backupUUID                  The VHD which has to be deleted
      * @param childUUID                   The child VHD file of the backup whose parent is reset to its grandparent.
      */
-    public DeleteSnapshotBackupCommand(SwiftTO swift,
+    public DeleteSnapshotBackupCommand(StoragePool pool,
+                                       SwiftTO swift,
                                        S3TO s3,
                                        String secondaryStoragePoolURL,
                                        Long   dcId,
@@ -86,7 +88,7 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
                                        Long   volumeId,
  String backupUUID, Boolean all)
     {
-        super(null, secondaryStoragePoolURL, backupUUID, null, dcId, accountId, volumeId);
+        super(pool, secondaryStoragePoolURL, backupUUID, null, dcId, accountId, volumeId);
         setSwift(swift);
         this.s3 = s3;
         setAll(all);

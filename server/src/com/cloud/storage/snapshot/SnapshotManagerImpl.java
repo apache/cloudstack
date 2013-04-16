@@ -181,9 +181,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private ResourceTagDao _resourceTagDao;
     @Inject
     private ConfigurationDao _configDao;
-
-    @Inject 
-    private VMSnapshotDao _vmSnapshotDao;
+    @Inject  
+    private PrimaryDataStoreDao _primaryDataStoreDao;
     String _name;
 
     @Inject TemplateManager templateMgr;
@@ -694,11 +693,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             S3TO s3 = _s3Mgr.getS3TO();
 
             checkObjectStorageConfiguration(swift, s3);
-
+            StoragePoolVO pool = _primaryDataStoreDao.findById(volume.getPoolId());
             if (swift == null && s3 == null) {
                 for (HostVO ssHost : ssHosts) {
                     DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                            null, null, ssHost.getStorageUrl(), dcId,
+                            pool,null, null, ssHost.getStorageUrl(), dcId,
                             accountId, volumeId, "", true);
                     Answer answer = null;
                     try {
@@ -717,7 +716,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 }
             } else {
                 DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                        swift, s3, "", dcId, accountId, volumeId, "", true);
+                        pool,swift, s3, "", dcId, accountId, volumeId, "", true);
                 Answer answer = null;
                 try {
                     answer = _agentMgr.sendToSSVM(dcId, cmd);

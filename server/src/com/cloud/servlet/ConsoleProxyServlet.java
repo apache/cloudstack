@@ -55,6 +55,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -74,6 +76,8 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject IdentityService _identityService; 
 
     static ManagementServer s_ms;
+
+    private Gson _gson = new GsonBuilder().create();
 
     public ConsoleProxyServlet() {
     }
@@ -327,6 +331,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         return new Ternary<String, String, String>(host, tunnelUrl, tunnelSession);
     }
 
+    private String getEncryptorPassword() {
+    	String key = _ms.getEncryptionKey();
+    	String iv = _ms.getEncryptionIV();
+    	
+    	ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
+		return _gson.toJson(keyIvPair);
+    }
+    
     private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
         StringBuffer sb = new StringBuffer(rootUrl);
 
@@ -340,7 +352,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         tag = _identityService.getIdentityUuid("vm_instance", tag);
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 
-        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(portInfo.second());
@@ -376,7 +388,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         String tag = String.valueOf(vm.getId());
         tag = _identityService.getIdentityUuid("vm_instance", tag);
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
-        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(portInfo.second());

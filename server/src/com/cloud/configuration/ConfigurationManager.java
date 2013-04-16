@@ -30,6 +30,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -78,10 +79,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      *            TODO
      * @param id
      * @param useVirtualNetwork
+     * @param deploymentPlanner
      * @return ID
      */
     ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate);
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner);
 
     /**
      * Creates a new disk offering
@@ -149,6 +151,8 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
+    boolean releasePublicIpRange(long userId, long vlanDbId, Account caller);
+
     /**
      * Converts a comma separated list of tags to a List
      * 
@@ -210,7 +214,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     ClusterVO getCluster(long id);
 
-    boolean deleteAccountSpecificVirtualRanges(long accountId);
+    boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

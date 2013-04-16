@@ -58,7 +58,7 @@ export JAVA_HOME
 
 SCP=""
 DCP=""
-UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/* | tr '\n' ':'`
+UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':'`
 JCP="/usr/share/java/commons-daemon.jar"
 
 # We need to append the JSVC daemon JAR to the classpath

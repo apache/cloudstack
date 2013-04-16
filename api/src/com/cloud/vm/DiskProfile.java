@@ -139,7 +139,7 @@ public class DiskProfile {
         this.hyperType = hyperType;
     }
 
-    public HypervisorType getHypersorType() {
+    public HypervisorType getHypervisorType() {
         return this.hyperType;
     }
     
