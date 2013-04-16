@@ -37,6 +37,11 @@
       <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+    	<groupId>commons-daemon</groupId>
+    	<artifactId>commons-daemon</artifactId>
+    	<version>1.0.10</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
