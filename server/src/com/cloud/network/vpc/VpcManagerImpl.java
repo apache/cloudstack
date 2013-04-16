@@ -260,7 +260,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         defaultProviders.add(Provider.VPCVirtualRouter);
-
+        // Just here for 4.1, replaced by commit 836ce6c1 in newer versions
+        Set<Network.Provider> sdnProviders = new HashSet<Network.Provider>();
+        sdnProviders.add(Provider.NiciraNvp);
+        
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
         // populate the services first
@@ -271,7 +274,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
                 throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
             }
 
-            svcProviderMap.put(service, defaultProviders);
+            if (service == Service.Connectivity) {
+                s_logger.debug("Applying Connectivity workaround, setting provider to NiciraNvp" );
+                svcProviderMap.put(service, sdnProviders);
+            }
+            else {
+                svcProviderMap.put(service, defaultProviders);
+            }
             if (service == Service.NetworkACL) {
                 firewallSvs = true;
             }
