@@ -35,6 +35,9 @@ from marvin.integration.lib.factory.TemplateFactory import *
 from marvin.integration.lib.factory.VirtualMachineFactory import *
 from marvin.integration.lib.base.VirtualMachine import VirtualMachine
 
+from marvin.integration.lib.factory.UserFactory import *
+from marvin.integration.lib.base.User import User
+
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
@@ -117,3 +120,19 @@ class VirtualMachineFactoryTest(unittest.TestCase):
         vmf = VirtualMachineFactory(serviceofferingid = sf.id, templateid = template.id, zoneid = zones[0].id)
 
         vm = VirtualMachine.create(apiclient=self.apiClient, VirtualMachineFactory=vmf)
+
+class UserFactorySubFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+
+    def tearDown(self):
+        pass
+
+    def test_userSubFactory(self):
+        uf = UserFactory()
+        account = AccountFactory.create(apiclient=self.apiClient, AccountFactory=uf.account)
+        self.assertTrue(account is not None, msg="no account was created")
+        users = User.list(apiclient=self.apiClient, account=account.name)
+        self.assertTrue(users is not None, msg="no users were found in the account")
+        self.assertTrue(len(users) > 0, msg="user list is empty")
+        self.assertEqual(users[0].username, uf.username, msg="usernames are not same")

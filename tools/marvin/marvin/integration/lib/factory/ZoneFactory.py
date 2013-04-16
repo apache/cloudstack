@@ -16,11 +16,22 @@
 # under the License.
 import factory
 from marvin.integration.lib.base import Zone
-class ZoneFactory(factory.Factory):
+from marvin.integration.lib.factory.CloudStackBaseFactory import CloudStackBaseFactory
+from marvin.integration.lib.utils import random_gen
+
+class ZoneFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = Zone
 
-    dns1 = None
-    internaldns1 = None
+    dns1 = "8.8.8.8"
+    internaldns1 = "8.8.8.8"
     name = None
     networktype = None
+
+class AdvancedZoneFactory(ZoneFactory):
+    name = factory.Sequence(lambda n: "advzone" + random_gen())
+    networktype = "Advanced"
+
+class BasicZoneFactory(ZoneFactory):
+    name = factory.Sequence(lambda n: "basiczone" + random_gen())
+    networktype = "Basic"

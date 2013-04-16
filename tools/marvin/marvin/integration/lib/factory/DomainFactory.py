@@ -21,4 +21,4 @@ class DomainFactory(factory.Factory):
 
     FACTORY_FOR = Domain
 
-    name = "Domain" + factory.Sequence(lambda n : random_gen())
+    name = factory.Sequence(lambda n : "Domain" + random_gen())

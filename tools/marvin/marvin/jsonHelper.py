@@ -16,7 +16,7 @@
 # under the License.
 
 import cloudstackException
-import json
+import simplejson as json
 import inspect
 from cloudstackAPI import *
 
@@ -117,12 +117,12 @@ def finalizeResultObj(result, responseName, responsecls):
         if not isinstance(value, jsonLoader):
             return result
 
-        findObj = False
-        for k, v in value.__dict__.iteritems():
-            if k in responsecls.__dict__:
-                findObj = True
+        mirrorObj = True
+        for k,v in value.__dict__.iteritems():
+            if k not in responsecls.__dict__:
+                mirrorObj = False
                 break
-        if findObj:
+        if mirrorObj:
             return value
         else:
             return result
@@ -274,8 +274,8 @@ due to missing parameter jobid"
     zone = getResultObj(result, res)
     print zone.id
 
-    result = '{ "attachvolumeresponse" : {"jobid":24} }'
-    res = attachVolume.attachVolumeResponse()
+    result = '{ "queryasyncjobresultresponse" : {"accountid":"4a8c3cd0-a696-11e2-b7a5-1aab0c3b0463","userid":"4a8c671e-a696-11e2-b7a5-1aab0c3b0463","cmd":"org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd","jobstatus":1,"jobprocstatus":0,"jobresultcode":0,"jobresulttype":"object","jobresult":{"physicalnetwork":{"id":"e0bc9017-9ba8-4551-a6f9-6b3b2ac1d59c","name":"Sandbox-pnet","broadcastdomainrange":"ZONE","zoneid":"88e796cd-953a-44b9-9445-a7c3ee205cc2","state":"Disabled"}},"created":"2013-04-16T18:37:01+0530","jobid":"8fc09350-f42a-4e04-9427-3d1b68f73dd0"} }'
+    res = createPhysicalNetwork.createPhysicalNetworkResponse()
     res = getResultObj(result, res)
     print res
 

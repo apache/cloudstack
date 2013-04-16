@@ -16,14 +16,19 @@
 # under the License.
 import factory
 from marvin.integration.lib.base import User
+from marvin.integration.lib.factory import CloudStackBaseFactory
+from marvin.integration.lib.factory.AccountFactory import AccountFactory
 
-class UserFactory(factory.Factory):
+class UserFactory(CloudStackBaseFactory):
 
-    FACTORY_FOR = User
+    FACTORY_FOR = User.User
 
-    account = None
-    email = None
-    firstname = None
-    lastname = None
-    password = None
-    username = None
+    account = factory.SubFactory(AccountFactory)
+    email = account.email
+    firstname = account.firstname
+    lastname = account.lastname
+    password = account.password
+    username = account.username
+
+class AdminUserFactory(UserFactory):
+    account = factory.SubFactory(AccountFactory, accounttype=1)

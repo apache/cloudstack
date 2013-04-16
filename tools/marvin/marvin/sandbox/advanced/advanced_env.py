@@ -50,9 +50,6 @@ def describeResources(config):
     
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
-
-    lbprovider = provider()
-    lbprovider.name = 'InternalLbVm'
     
     pn = physical_network()
     pn.name = "Sandbox-pnet"
@@ -63,16 +60,14 @@ def describeResources(config):
             traffictype("Public", {"simulator":"cloud-simulator-public"})]
     pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
-    pn.providers.append(lbprovider)
 
     pn2 = physical_network()
     pn2.name = "Sandbox-pnet2"
     pn2.vlan = config.get('cloudstack', 'pnet2.vlan')
     pn2.tags = ["cloud-simulator-guest"]
     pn2.traffictypes = [traffictype('Guest', {'simulator': 'cloud-simulator-guest'})]
-    pn2.isolationmethods = ["VLAN"]
+    pn.isolationmethods = ["VLAN"]
     pn2.providers.append(vpcprovider)
-    pn2.providers.append(lbprovider)
     
     z.physical_networks.append(pn)
     z.physical_networks.append(pn2)

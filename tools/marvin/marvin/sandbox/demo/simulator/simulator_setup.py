@@ -52,6 +52,7 @@ def describeResources(config):
     pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
     pn.vlan = config.get('cloudstack', 'zone.vlan')
+    pn.isolationmethods = ['VLAN']
     
     z.physical_networks.append(pn)
 
