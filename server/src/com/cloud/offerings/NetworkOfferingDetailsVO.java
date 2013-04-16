@@ -18,12 +18,17 @@ package com.cloud.offerings;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 
 @Entity
 @Table(name="network_offering_details")
@@ -36,17 +41,18 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
     @Column(name="network_offering_id")
     private long offeringId;
     
+    @Enumerated(value=EnumType.STRING)
     @Column(name="name")
-    private String name;
+    private NetworkOffering.Detail name;
     
     @Column(name="value", length=1024)
     private String value;
     
     public NetworkOfferingDetailsVO() {}
     
-    public NetworkOfferingDetailsVO(long offeringId, String name, String value) {
+    public NetworkOfferingDetailsVO(long offeringId, Detail detailName, String value) {
         this.offeringId = offeringId;
-        this.name = name;
+        this.name = detailName;
         this.value = value;
     }
 
@@ -58,7 +64,7 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
         return offeringId;
     }
 
-    public String getName() {
+    public NetworkOffering.Detail getName() {
         return name;
     }
 
@@ -74,7 +80,7 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
         this.offeringId = offeringId;
     }
 
-    public void setName(String name) {
+    public void setName(NetworkOffering.Detail name) {
         this.name = name;
     }
 

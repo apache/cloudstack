@@ -29,6 +29,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
@@ -172,18 +173,19 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     
     @Override
     @DB
-    public NetworkOfferingVO persist(NetworkOfferingVO off, Map<String, String> details) {
+    public NetworkOfferingVO persist(NetworkOfferingVO off, Map<Detail, String> details) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        //1) TODO - persist the details
+        //1) persist the offering
+        NetworkOfferingVO vo = super.persist(off);
+        
+        //2) persist the details
         if (details != null && !details.isEmpty()) {
-            for (String detail : details.keySet()) {
+            for (NetworkOffering.Detail detail : details.keySet()) {
                 _detailsDao.persist(new NetworkOfferingDetailsVO(off.getId(), detail, details.get(detail)));
             }
         }
-
-        //2) persist the offering
-        NetworkOfferingVO vo = super.persist(off);
+       
         txn.commit();
         return vo;
     }

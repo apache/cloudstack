@@ -41,9 +41,9 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         Enabled
     }
     
-    public enum Details {
-        internalLbProvider,
-        publicLbProvider
+    public enum Detail {
+        InternalLbProvider,
+        PublicLbProvider
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";

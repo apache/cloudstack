@@ -85,6 +85,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -606,7 +607,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             NetworkElement element = getElementImplementingProvider(instance.getProvider());
             if (element != null) {
                 Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
-                ;
                 if (elementCapabilities != null) {
                     networkCapabilities.put(service, elementCapabilities.get(service));
                 }
@@ -1467,10 +1467,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" + element.getName() + " implementing Provider="
                             + provider.getName());
                 }
-    
-                capValue = capValue.toLowerCase();
-    
-                if (!value.contains(capValue)) {
+        
+                if (!value.toLowerCase().contains(capValue.toLowerCase())) {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't support value " + capValue + " for capability " + cap.getName() + " for element=" + element.getName()
                             + " implementing Provider=" + provider.getName());
                 }
@@ -2079,7 +2077,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
     
     @Override
-    public Map<String, String> getNtwkOffDetails(long offId) {
+    public Map<Detail, String> getNtwkOffDetails(long offId) {
         return _ntwkOffDetailsDao.getNtwkOffDetails(offId);
     }
 }

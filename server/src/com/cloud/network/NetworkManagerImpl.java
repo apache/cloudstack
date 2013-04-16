@@ -151,6 +151,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.user.Account;
@@ -242,6 +243,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
+    @Inject
+    NetworkOfferingDetailsDao _ntwkOffDetailsDao;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -3732,35 +3735,62 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return null;
     }
 
-    protected NetworkElement getElementForServiceInNetwork(Network network, Service service) {
+    protected List<NetworkElement> getElementForServiceInNetwork(Network network, Service service) {
+        List<NetworkElement> elements = new ArrayList<NetworkElement>();
         List<Provider> providers = getProvidersForServiceInNetwork(network, service);
         //Only support one provider now
         if (providers == null)  {
             s_logger.error("Cannot find " + service.getName() + " provider for network " + network.getId());
             return null;
         }
-        if (providers.size() != 1) {
+        if (providers.size() != 1 && service != Service.Lb) {
+            //support more than one LB providers only
             s_logger.error("Found " + providers.size() + " " + service.getName() + " providers for network!" + network.getId());
             return null;
+        } 
+        
+        for (Provider provider : providers) {
+            NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
+            s_logger.info("Let " + element.getName() + " handle " + service.getName() + " in network " + network.getId());
+            elements.add(element);
         }
-        NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
-        s_logger.info("Let " + element.getName() + " handle " + service.getName() + " in network " + network.getId());
-        return element;
+        return elements;
     }
     
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
-        NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat);
+        //only one provider per Static nat service is supoprted
+        NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat).get(0);
         assert element instanceof StaticNatServiceProvider;
         return (StaticNatServiceProvider)element;
     }
 
     @Override
-    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
-        NetworkElement element = getElementForServiceInNetwork(network, Service.Lb);
-        assert element instanceof LoadBalancingServiceProvider; 
-        return (LoadBalancingServiceProvider)element;
+    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme) {
+        List<NetworkElement> lbElements = getElementForServiceInNetwork(network, Service.Lb);
+        NetworkElement lbElement = null;
+        if (lbElements.size() > 1) {
+            String providerName = null;
+            //get network offering details
+            NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+            if (lbScheme == Scheme.Public) {
+                providerName = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.PublicLbProvider);
+            } else {
+                providerName = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.InternalLbProvider);
+            }
+            if (providerName == null) {
+                throw new InvalidParameterValueException("Can't find Lb provider supporting scheme " + lbScheme.toString() + " in network " + network);
+            }
+            lbElement =  _networkModel.getElementImplementingProvider(providerName);
+        } else if (lbElements.size() == 1){
+            lbElement = lbElements.get(0);
+        }
+                
+        assert lbElement != null;
+        assert lbElement instanceof LoadBalancingServiceProvider; 
+        return (LoadBalancingServiceProvider)lbElement;        
     }
+    
     @Override
     public boolean isNetworkInlineMode(Network network) {
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());

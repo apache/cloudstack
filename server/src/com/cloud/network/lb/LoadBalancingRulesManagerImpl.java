@@ -1388,21 +1388,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw ex;
         }
         
-        NetworkVO network = _networkDao.findById(networkId);
         // verify that lb service is supported by the network
-        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "LB service is not supported in specified network id");
-            ex.addProxyObject(network, networkId, "networkId");
-            throw ex;
-        }
+        isLbServiceSupportedInNetwork(networkId, Scheme.Public);
 
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPort, srcPort, protocol,
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
                 sourceIpId, srcPort, srcPort, algorithm,
-                network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
+                networkId, ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
         Ip sourceIp = getSourceIp(newRule);
@@ -2072,6 +2066,24 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             dstList.put(ip, vm);
         }
         return dstList;
+    }
+    
+    protected void isLbServiceSupportedInNetwork(long networkId, Scheme scheme) {
+        Network network = _networkDao.findById(networkId);
+        
+        //1) Check if the LB service is supported
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "LB service is not supported in specified network id");
+            ex.addProxyObject(network, network.getId(), "networkId");
+            throw ex;
+        }
+        
+        //2) Check if the provider supports the scheme
+        LoadBalancingServiceProvider lbProvider = _networkMgr.getLoadBalancingProviderForNetwork(network, scheme);
+        if (lbProvider == null) {
+            throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by lb providers in network " + network);
+        }
     }
 
 }

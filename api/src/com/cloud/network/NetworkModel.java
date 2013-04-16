@@ -33,6 +33,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -268,6 +269,5 @@ public interface NetworkModel {
 
     List<String> getUsedIpsInNetwork(Network network);
 
-    Map<String, String> getNtwkOffDetails(long offId);
-
+    Map<Detail, String> getNtwkOffDetails(long offId);
 }

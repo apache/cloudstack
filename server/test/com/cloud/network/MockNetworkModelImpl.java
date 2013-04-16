@@ -39,6 +39,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
@@ -864,7 +865,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public Map<String, String> getNtwkOffDetails(long offId) {
+    public Map<Detail, String> getNtwkOffDetails(long offId) {
         // TODO Auto-generated method stub
         return null;
     }

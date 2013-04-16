@@ -95,4 +95,10 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public List<String> getProvidersForServiceInNetwork(long networkId, Service service) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
