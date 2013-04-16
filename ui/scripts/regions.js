@@ -382,7 +382,7 @@
 										
 					detailView: {
             name: 'GSLB details',
-            //viewAll: { path: 'storage.snapshots', label: 'label.snapshots' },
+            viewAll: { path: 'regions.lbUnderGSLB', label: 'load balancer rules' },
             actions: {              
 							remove: {
                 label: 'delete GSLB',
@@ -450,7 +450,112 @@
             }						
 					}					
         }
-      }
+      },
+			
+			//???
+			lbUnderGSLB: {
+        id: 'lbUnderGSLB',
+        type: 'select',
+        title: 'load balancer rules assigned to this GSLB',
+        listView: {
+          section: 'lbUnderGSLB',
+          id: 'lbUnderGSLB',
+          label: 'load balancer rules assigned to this GSLB',
+          fields: {
+            name: { label: 'label.name' },
+            publicport: { label: 'label.public.port' },
+						privateport: { label: 'label.private.port' },
+						algorithm: { label: 'label.algorithm' }
+          },					
+					dataProvider: function(args) {					
+						var data = {
+						  globalloadbalancerruleid: args.context.GSLB[0].id,
+						  listAll: true
+						};
+            $.ajax({
+              url: createURL('listLoadBalancerRules'),
+							data: data,
+              success: function(json) {
+                var items = json.listloadbalancerrulesresponse.loadbalancerrule;
+                args.response.success({								 
+                  data: items
+                });
+              }
+            });
+          },					
+					detailView: {
+            name: 'load balancer rule details',            
+            actions: {              
+              remove: {
+                label: 'remove load balancer rule from this GSLB',
+                messages: {
+                  notification: function() { 
+									  return 'remove load balancer rule from GSLB'; 
+									},
+                  confirm: function() { 
+									  return 'Please confirm you want to remove load balancer rule from GSLB'; 
+									}
+                },               
+                action: function(args) {								                
+                  $.ajax({
+                    url: createURL('removeFromGlobalLoadBalancerRule'),
+                    data: { 
+										  id: args.context.lbUnderGSLB[0].id 
+										},
+                    success: function(json) {                      							
+                      var jid = json.removefromloadbalancerruleresponse.jobid;
+                      args.response.success({
+											  _custom: {
+												  jobId: jid
+												}
+											});												
+                    }
+                  });
+                },		
+								notification: {
+                  poll: pollAsyncJobResult
+                }								
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {																
+										publicport: { label: 'label.public.port' },
+										privateport: { label: 'label.private.port' },
+										algorithm: { label: 'label.algorithm' },
+										publicip: { label: 'label.public.ip' },										
+										id: { label: 'label.id' },
+                    cidrlist: { label: 'label.cidr' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    state: { label: 'label.state' }										
+                  }
+                ],
+                dataProvider: function(args) {									
+									$.ajax({
+										url: createURL('listLoadBalancerRules'),
+										data: {
+										  id: args.context.lbUnderGSLB[0].id 
+										},
+										success: function(json) {
+											var item = json.listloadbalancerrulesresponse.loadbalancerrule[0];
+											args.response.success({								 
+												data: item
+											});
+										}
+									});		
+                }
+              }
+            }
+          }
+				}
+			}
+			//???
     }
   };
 		
