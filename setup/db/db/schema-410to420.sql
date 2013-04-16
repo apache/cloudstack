@@ -1178,3 +1178,37 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
+
+CREATE TABLE `cloud`.`network_acl` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of the network acl',
+  `uuid` varchar(40),
+  `vpc_id` bigint unsigned COMMENT 'vpc this network acl belongs to',
+  `description` varchar(1024),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_item` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `network_acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
+  `start_port` int(10) COMMENT 'starting port of a port range',
+  `end_port` int(10) COMMENT 'end port of a port range',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `xid` char(40) NOT NULL COMMENT 'external id',
+  `created` datetime COMMENT 'Date created',
+  `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
+  `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
+  `type` varchar(10) NOT NULL DEFAULT 'USER',
+  `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_network_acl_item__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_acl_item__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
