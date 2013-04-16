@@ -196,8 +196,6 @@ DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
 DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
-DROP TABLE IF EXISTS `cloud`.`network_acl`;
-DROP TABLE IF EXISTS `cloud`.`network_acl_item`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2476,38 +2474,6 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY(`nic`) REFERENCES `nics`(`uuid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`network_acl` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of the network acl',
-  `uuid` varchar(40),
-  `vpc_id` bigint unsigned COMMENT 'vpc this network acl belongs to',
-  `description` varchar(1024),
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`network_acl_item` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `uuid` varchar(40),
-  `network_acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
-  `start_port` int(10) COMMENT 'starting port of a port range',
-  `end_port` int(10) COMMENT 'end port of a port range',
-  `state` char(32) NOT NULL COMMENT 'current state of this rule',
-  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
-  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
-  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
-  `xid` char(40) NOT NULL COMMENT 'external id',
-  `created` datetime COMMENT 'Date created',
-  `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
-  `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
-  `type` varchar(10) NOT NULL DEFAULT 'USER',
-  `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_network_acl_item__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_network_acl_item__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
