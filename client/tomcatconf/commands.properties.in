@@ -435,6 +435,10 @@ deletePrivateGateway=1
 createNetworkACL=15
 deleteNetworkACL=15
 listNetworkACLs=15
+createNetworkACLList=15
+deleteNetworkACLList=15
+listNetworkACLLists=15
+
 
 #### Static route commands
 createStaticRoute=15

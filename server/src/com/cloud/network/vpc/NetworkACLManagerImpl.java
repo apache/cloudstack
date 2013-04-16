@@ -24,6 +24,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -85,6 +88,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     VpcManager _vpcMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    NetworkACLDao _networkACLDao;
 
     @Override
     public boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException {
@@ -93,7 +98,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException {
+    public FirewallRule createNetworkACLItem(FirewallRule acl) throws NetworkRuleConflictException {
         if (acl.getSourceCidrList() == null && (acl.getPurpose() == Purpose.Firewall || acl.getPurpose() == Purpose.NetworkACL)) {
             _firewallDao.loadSourceCidrs((FirewallRuleVO)acl);
         }
@@ -174,7 +179,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         txn.commit();
 
-        return getNetworkACL(newRule.getId());
+        return getNetworkACLItem(newRule.getId());
     }
     
     
@@ -320,7 +325,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     
     @Override
-    public FirewallRule getNetworkACL(long ACLId) {
+    public FirewallRule getNetworkACLItem(long ACLId) {
         FirewallRule rule = _firewallDao.findById(ACLId);
         if (rule != null && rule.getPurpose() == Purpose.NetworkACL) {
             return rule;
@@ -330,7 +335,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     
     @Override
-    public Pair<List<? extends FirewallRule>,Integer> listNetworkACLs(ListNetworkACLsCmd cmd) {
+    public Pair<List<? extends FirewallRule>,Integer> listNetworkACLItems(ListNetworkACLsCmd cmd) {
         Long networkId = cmd.getNetworkId();
         Long id = cmd.getId();
         String trafficType = cmd.getTrafficType();
@@ -438,5 +443,31 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         return success;
     }
-    
+
+    @Override
+    public NetworkACL createNetworkACL(CreateNetworkACLListCmd cmd){
+        NetworkACLVO acl = new NetworkACLVO(cmd.getName(), cmd.getDescription(), cmd.getVpcId());
+        _networkACLDao.persist(acl);
+        return acl;
+    }
+
+    @Override
+    public NetworkACL getNetworkACL(long id) {
+        return _networkACLDao.findById(id);
+    }
+
+    @Override
+    public boolean deleteNetworkACL(long id) {
+        return _networkACLDao.remove(id);
+    }
+
+    @Override
+    public Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(ListNetworkACLListsCmd listNetworkACLListsCmd) {
+        SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
+        SearchCriteria<NetworkACLVO> sc = sb.create();
+        Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
+        Pair<List<NetworkACLVO>, Integer> acls =  _networkACLDao.searchAndCount(sc, filter);
+        return new Pair<List<? extends NetworkACL>, Integer>(acls.first(), acls.second());
+    }
+
 }

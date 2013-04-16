@@ -19,6 +19,9 @@ package com.cloud.network.firewall;
 
 import java.util.List;
 
+import com.cloud.network.vpc.NetworkACL;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 
 import com.cloud.exception.NetworkRuleConflictException;
@@ -28,14 +31,14 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
-    FirewallRule getNetworkACL(long ruleId);
+    FirewallRule getNetworkACLItem(long ruleId);
     boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;
 
     /**
      * @param createNetworkACLCmd
      * @return
      */
-    FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException;
+    FirewallRule createNetworkACLItem(FirewallRule acl) throws NetworkRuleConflictException;
     /**
      * @param ruleId
      * @param apply
@@ -46,6 +49,13 @@ public interface NetworkACLService {
      * @param listNetworkACLsCmd
      * @return
      */
-    Pair<List<? extends FirewallRule>, Integer> listNetworkACLs(ListNetworkACLsCmd cmd);
+    Pair<List<? extends FirewallRule>, Integer> listNetworkACLItems(ListNetworkACLsCmd cmd);
 
+    NetworkACL createNetworkACL(CreateNetworkACLListCmd cmd);
+
+    NetworkACL getNetworkACL(long id);
+
+    boolean deleteNetworkACL(long id);
+
+    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(ListNetworkACLListsCmd listNetworkACLListsCmd);
 }

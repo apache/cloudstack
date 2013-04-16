@@ -149,7 +149,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
         boolean success = false;
-        FirewallRule rule = _networkACLService.getNetworkACL(getEntityId());
+        FirewallRule rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _networkACLService.applyNetworkACLs(rule.getNetworkId(), callerContext.getCaller());
@@ -157,7 +157,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
             // State is different after the rule is applied, so get new object here
             NetworkACLResponse aclResponse = new NetworkACLResponse();
             if (rule != null) {
-                aclResponse = _responseGenerator.createNetworkACLResponse(rule);
+                aclResponse = _responseGenerator.createNetworkACLItemResponse(rule);
                 setResponseObject(aclResponse);
             }
             aclResponse.setResponseName(getCommandName());
@@ -256,7 +256,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         }
 
         try {
-            FirewallRule result = _networkACLService.createNetworkACL(this);
+            FirewallRule result = _networkACLService.createNetworkACLItem(this);
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
