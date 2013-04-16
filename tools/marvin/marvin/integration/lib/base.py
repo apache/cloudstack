@@ -2444,7 +2444,6 @@ class VPC:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
 
-
 class AffinityGroup:
     def __init__(self, items):
         self.__dict__.update(items)
@@ -2467,9 +2466,71 @@ class AffinityGroup:
         cmd.id = self.id
         return apiclient.deleteVPC(cmd)
 
-
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listAffinityGroups.listAffinityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
+
+class VNMC:
+    """Manage VNMC lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    def create(cls, apiclient, hostname, username, password, physicalnetworkid):
+        """Registers VNMC appliance"""
+
+        cmd = addCiscoVnmcResource.addCiscoVnmcResourceCmd()
+        cmd.hostname = hostname
+        cmd.username = username
+        cmd.password = password
+        cmd.physicalnetworkid = physicalnetworkid
+        return VNMC(apiclient.addCiscoVnmcResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes VNMC appliance"""
+
+        cmd = deleteCiscoVnmcResource.deleteCiscoVnmcResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoVnmcResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List VNMC appliances"""
+
+        cmd = listCiscoVnmcResources.listCiscoVnmcResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoVnmcResources(cmd))
+
+class ASA1000V:
+    """Manage ASA 1000v lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, hostname, insideportprofile, clusterid, physicalnetworkid):
+        """Registers ASA 1000v appliance"""
+
+        cmd = addCiscoAsa1000vResource.addCiscoAsa1000vResourceCmd()
+        cmd.hostname = hostname
+        cmd.insideportprofile = insideportprofile
+        cmd.clusterid = clusterid
+        cmd.physicalnetworkid = physicalnetworkid
+        return ASA1000V(apiclient.addCiscoAsa1000vResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes ASA 1000v appliance"""
+
+        cmd = deleteCiscoAsa1000vResource.deleteCiscoAsa1000vResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoAsa1000vResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List ASA 1000v appliances"""
+
+        cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoAsa1000vResources(cmd))

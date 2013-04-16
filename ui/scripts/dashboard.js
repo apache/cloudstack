@@ -238,7 +238,7 @@
                     return {
                       zoneID: capacity.zoneid, // Temporary fix for dashboard
                       zoneName: capacity.zonename,
-                      type: cloudStack.converters.toAlertType(capacity.type),
+                      type: cloudStack.converters.toCapacityCountType(capacity.type),
                       percent: parseInt(capacity.percentused),
                       used: cloudStack.converters.convertByType(capacity.type, capacity.capacityused),
                       total: cloudStack.converters.convertByType(capacity.type, capacity.capacitytotal)

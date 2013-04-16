@@ -469,7 +469,40 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
+             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        if (networkId != null) {
+            Network network = _networksDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Invalid network id is given");
+            }
+            if (network.getGuestType() == Network.GuestType.Shared) {
+                DataCenter zone = _configMgr.getZone(zoneId);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("Invalid zone Id is given");
+                }
+
+                // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
+                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
+                    Account caller = UserContext.current().getCaller();
+                    long callerUserId = UserContext.current().getCallerUserId();
+                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                    }
+                    return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+                } else {
+                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                        " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
+                }
+            }
+        }
+
+        return allocateIP(ipOwner, false,  zoneId);
+    }
+
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         // check permissions

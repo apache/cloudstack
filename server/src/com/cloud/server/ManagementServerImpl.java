@@ -22,6 +22,8 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -697,26 +699,38 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
-
+    private String _encryptionKey = null;
+    private String _encryptionIV = null;
+    
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
-    @Inject
     protected List<AffinityGroupProcessor> _affinityProcessors;
+    public List<AffinityGroupProcessor> getAffinityGroupProcessors() {
+        return _affinityProcessors;
+    }
+    public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
+        this._affinityProcessors = affinityProcessors;
+    }
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
-    
+
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
     }
-    
+
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
@@ -3302,13 +3316,64 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public String getHashKey() {
-        // although we may have race conditioning here, database transaction
-        // serialization should
+        // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), 
+            	getBase64EncodedRandomKey(128));
         }
         return _hashKey;
+    }
+
+    @Override
+    public String getEncryptionKey() {
+        if (_encryptionKey == null) {
+            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), 
+            	Config.EncryptionKey.getCategory(), 
+            	getBase64EncodedRandomKey(128));
+        }
+        return _encryptionKey;
+    }
+    
+    @Override
+    public String getEncryptionIV() {
+        if (_encryptionIV == null) {
+            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), 
+            	Config.EncryptionIV.getCategory(), 
+            	getBase64EncodedRandomKey(128));
+        }
+        return _encryptionIV;
+    }
+    
+    @Override
+    @DB
+    public void resetEncryptionKeyIV() {
+    	
+    	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
+    	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
+    	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
+    	sb.done();
+    	
+    	SearchCriteria<ConfigurationVO> sc = sb.create();
+    	sc.setParameters("name1", Config.EncryptionKey.key());
+    	sc.setParameters("name2", Config.EncryptionIV.key());
+    	
+    	_configDao.expunge(sc);
+    	_encryptionKey = null;
+    	_encryptionIV = null;
+    }
+    
+    private static String getBase64EncodedRandomKey(int nBits) {
+		SecureRandom random;
+		try {
+			random = SecureRandom.getInstance("SHA1PRNG");
+	        byte[] keyBytes = new byte[nBits/8];
+	        random.nextBytes(keyBytes);
+	        return Base64.encodeBase64URLSafeString(keyBytes);
+		} catch (NoSuchAlgorithmException e) {
+			s_logger.error("Unhandled exception: ", e);
+		}
+		return null;
     }
 
     @Override

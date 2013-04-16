@@ -70,12 +70,12 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         CommandResult result = new CommandResult();
        
         if (!answer.getResult()) {
-            result.setSucess(answer.getResult());
+            result.setSuccess(answer.getResult());
             result.setResult(answer.getDetails());
         } else {
             TemplateOnPrimaryDataStoreInfo templateStore = context.getTemplate();
             templateStore.setPath(answer.getPath());
-            result.setSucess(true);
+            result.setSuccess(true);
         }
 
         parentCall.complete(result);

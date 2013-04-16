@@ -34,7 +34,7 @@ build: build-indep
 build-indep: build-indep-stamp
 
 build-indep-stamp: configure
-	mvn package -DskipTests -Dsystemvm \
+	mvn -Pawsapi package -DskipTests -Dsystemvm \
         -Dcs.replace.properties=replace.properties.tmp
 	touch $@
 
@@ -147,7 +147,25 @@ install:
 	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 
 	# cloudstack-awsapi
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/awsapi
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/awsapi
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
+	cp -r awsapi/target/cloud-awsapi-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
+	install -D awsapi-setup/setup/cloud-setup-bridge $(DESTDIR)/usr/bin/cloudstack-setup-bridge
+	install -D awsapi-setup/setup/cloudstack-aws-api-register $(DESTDIR)/usr/bin/cloudstack-aws-api-register
+	cp -r awsapi-setup/db/mysql/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
+	for i in applicationContext.xml cloud-bridge.properties commons-logging.properties crypto.properties xes.keystore ec2-service.properties; do \
+		mv $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/$$i $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/; \
+	done
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/log4j-vmops.xml
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/log4j.properties
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/db.properties
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/LICENSE.txt
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
+	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/services.xml
+	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/META-INF
 
 	dh_installdirs
 	dh_install

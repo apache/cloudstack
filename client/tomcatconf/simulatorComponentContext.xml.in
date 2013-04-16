@@ -218,12 +218,19 @@
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>
 
   <!--
-  AffinityGroup Processors
+   AffinityGroup Processors
   -->
   <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
     <property name="name" value="HostAntiAffinityProcessor"/>
     <property name="type" value="host anti-affinity"/>
   </bean>
 
+  <bean id="affinityProcessors" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="HostAntiAffinityProcessor" />
+      </list>
+    </property>
+  </bean>
 
 </beans>

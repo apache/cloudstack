@@ -29,9 +29,9 @@ import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-public class MockHypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
+public class MockHypervisorHostEndPointRpcServer implements HostEndpointRpcServer {
     private ScheduledExecutorService executor;
-    public MockHypervsiorHostEndPointRpcServer() {
+    public MockHypervisorHostEndPointRpcServer() {
         executor = Executors.newScheduledThreadPool(10);
     }
     

@@ -20,6 +20,7 @@ sourcedir=~/incubator-cloudstack/
 common_content_dir=/usr/share/publican/Common_Content
 publican_path=/usr/bin/publican
 output_format="html,pdf"
+config="publican-adminguide.cfg"
 
 usage(){
     echo "usage: $0 [-s source dir] [-c publican common content] [-p path to publican]"
@@ -27,10 +28,11 @@ usage(){
     echo "  -c sets the public common content directory (defaults to $common_content_dir)"
     echo "  -p sets the path to the publican binary (defaults to $publican_path)"
     echo "  -f sets the output format (defaults to $output_format)"
-    echo "  -h"
+    echo "  -g sets the publican config file (defaults to $config)"
+    echo "  -h show this help"
 }
 
-while getopts v:s:c:p:f:h opt
+while getopts v:s:c:p:f:g:h opt
 do
     case "$opt" in
       v)  version="$OPTARG";;
@@ -38,6 +40,7 @@ do
       c)  common_content_dir="$OPTARG";;
       p)  publican_path="$OPTARG";;
       f)  output_format="$OPTARG";;
+      g)  config="$OPTARG";;
       h)  usage
           exit 0;;
       \?)
@@ -59,5 +62,5 @@ fi
 cd $sourcedir/docs
 cp -R /usr/share/publican/Common_Content .
 ln -s $sourcedir/docs/publican-cloudstack Common_Content/cloudstack
-publican build --config=publican-installation.cfg --formats $output_format --langs en-US --common_content=$sourcedir/docs/Common_Content
+publican build --config=$config --formats $output_format --langs en-US --common_content=$sourcedir/docs/Common_Content
 rm -r Common_Content

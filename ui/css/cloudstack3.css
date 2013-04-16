@@ -1697,7 +1697,7 @@ div.list-view td.state.off span {
 }
 
 .detail-view .main-groups {
-  max-height: 455px;
+  max-height: 407px;
   overflow: auto;
   overflow-x: hidden;
   margin-right: 12px;
@@ -1752,6 +1752,10 @@ div.list-view td.state.off span {
   top: 9px;
   float: left;
   width: 245px;
+}
+
+.detail-group .main-groups table td.value > span select {
+  width: 100% !important;
 }
 
 .detail-group .main-groups table td.value .view-all {

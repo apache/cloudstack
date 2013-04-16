@@ -923,7 +923,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
+              if (isVPC || isAdvancedSGZone ) {
                  hiddenTabs.push('egressRules');
                }
               

@@ -52,7 +52,9 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -143,13 +145,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 		    details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
         }
-        
+
+        List<NicProfile> nicProfiles = vm.getNics();
+
+        for(NicProfile nicProfile : nicProfiles) {
+            if(nicProfile.getTrafficType() == TrafficType.Guest) {
+                if(_networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Service.Firewall, Provider.CiscoVnmc)) {
+                    details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
+                }
+                break;
+            }
+        }
+
         to.setDetails(details);
 
         if(vm.getVirtualMachine() instanceof DomainRouterVO) {
-            List<NicProfile> nicProfiles = vm.getNics();
-            NicProfile publicNicProfile = null;
 
+            NicProfile publicNicProfile = null;
             for(NicProfile nicProfile : nicProfiles) {
                 if(nicProfile.getTrafficType() == TrafficType.Public) {
                     publicNicProfile = nicProfile;
