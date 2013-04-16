@@ -111,14 +111,14 @@ public class UpdateClusterCmd extends BaseCmd {
         if(cpuovercommitratio != null){
             return Float.parseFloat(cpuovercommitratio);
         }
-        return 1.0f;
+        return null;
     }
 
     public Float getMemoryOvercommitRaito (){
         if (memoryovercommitratio != null){
             return Float.parseFloat(memoryovercommitratio);
         }
-        return 1.0f;
+        return null;
     }
 
     @Override
@@ -127,9 +127,16 @@ public class UpdateClusterCmd extends BaseCmd {
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
+        if (getMemoryOvercommitRaito() !=null){
+            if ((getMemoryOvercommitRaito().compareTo(1f) < 0)) {
+                throw new InvalidParameterValueException("Memory overcommit ratio  should be greater than or equal to one");
+            }
+        }
 
-        if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
-            throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should be greater than one");
+        if (getCpuOvercommitRatio() !=null){
+            if (getCpuOvercommitRatio().compareTo(1f) < 0) {
+                throw new InvalidParameterValueException("Cpu overcommit ratio  should be greater than or equal to one");
+            }
         }
 
         Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate(), getMemoryOvercommitRaito(), getCpuOvercommitRatio());

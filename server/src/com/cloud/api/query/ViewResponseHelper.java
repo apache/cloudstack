@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -45,6 +46,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -123,7 +125,7 @@ public class ViewResponseHelper {
                 // first time encountering this vm
                 userVmData = ApiDBUtils.newUserVmResponse(objectName, userVm, details, caller);
             } else{
-                // update nics, securitygroups, tags for 1 to many mapping fields
+                // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(userVmData, userVm);
             }
             vmDataList.put(userVm.getId(), userVmData);
@@ -302,5 +304,21 @@ public class ViewResponseHelper {
             respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
         }
         return respList;
+    }
+
+    public static List<AffinityGroupResponse> createAffinityGroupResponses(List<AffinityGroupJoinVO> groups) {
+        Hashtable<Long, AffinityGroupResponse> vrDataList = new Hashtable<Long, AffinityGroupResponse>();
+        for (AffinityGroupJoinVO vr : groups) {
+            AffinityGroupResponse vrData = vrDataList.get(vr.getId());
+            if (vrData == null) {
+                // first time encountering this AffinityGroup
+                vrData = ApiDBUtils.newAffinityGroupResponse(vr);
+            } else {
+                // update vms
+                vrData = ApiDBUtils.fillAffinityGroupDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<AffinityGroupResponse>(vrDataList.values());
     }
 }

@@ -41,6 +41,7 @@ import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
@@ -135,7 +136,6 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         DiskOfferingDaoImpl.class,
         DataCenterDaoImpl.class,
         DataCenterIpAddressDaoImpl.class,
-        DataCenterLinkLocalIpAddressDaoImpl.class,
         DataCenterVnetDaoImpl.class,
         PodVlanDaoImpl.class,
         DcDetailsDaoImpl.class,
@@ -317,6 +317,11 @@ public class ChildTestConfiguration {
     @Bean
     public NetworkOfferingServiceMapDao networkOfferingServiceMapDao() {
         return Mockito.mock(NetworkOfferingServiceMapDao.class);
+    }
+    
+    @Bean
+    public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
+    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
     
     public static class Library implements TypeFilter {

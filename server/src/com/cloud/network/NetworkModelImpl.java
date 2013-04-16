@@ -88,7 +88,9 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
@@ -178,7 +180,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;;
-
+    @Inject
+    private ProjectAccountDao _projectAccountDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     static Long _privateOfferingId = null;
@@ -1010,7 +1013,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Set<Provider> supportedProviders = new HashSet<Provider>();
     
         if (service != null) {
-            supportedProviders.addAll(s_serviceToImplementedProvidersMap.get(service));
+            List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
+            if (providers != null && !providers.isEmpty()) {
+                supportedProviders.addAll(providers);
+            }
         } else {
             for (List<Provider> pList : s_serviceToImplementedProvidersMap.values()) {
                 supportedProviders.addAll(pList);
@@ -1472,10 +1478,20 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public void checkNetworkPermissions(Account owner, Network network) {
         // Perform account permission check
         if (network.getGuestType() != Network.GuestType.Shared) {
-            List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
-            if (networkMap == null || networkMap.isEmpty()) {
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getUuid() + ", permission denied");
+            AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+            if(networkOwner == null)
+                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", network does not have an owner");
+            if(owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT){
+                if(!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())){
+                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                }
+            }else{
+                List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
+                if (networkMap == null || networkMap.isEmpty()) {
+                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                }
             }
+
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
                 throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());

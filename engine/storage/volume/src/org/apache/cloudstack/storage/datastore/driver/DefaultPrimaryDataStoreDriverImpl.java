@@ -144,12 +144,12 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
         CommandResult result = new CommandResult();
         if (answer == null || answer.getDetails() != null) {
-            result.setSucess(false);
+            result.setSuccess(false);
             if (answer != null) {
                 result.setResult(answer.getDetails());
             }
         } else {
-            result.setSucess(true);
+            result.setSuccess(true);
             VolumeObject volume = context.getVolume();
             volume.setPath(answer.getVolumeUuid());
         }

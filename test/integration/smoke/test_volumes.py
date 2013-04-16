@@ -78,13 +78,12 @@ class Services:
                         "password": "password",
                         "ssh_port": 22,
                         "diskname": "TestDiskServ",
-                        "hypervisor": 'XenServer',
+                        "hypervisor": 'KVM',
                         "privateport": 22,
                         "publicport": 22,
                         "protocol": 'TCP',
                         "diskdevice": "/dev/xvdb",
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        "mode": 'basic',
+                        "ostype": 'CentOS 5.5 (64-bit)',
                         "sleep": 10,
                         "timeout": 600,
                     }
@@ -100,6 +99,7 @@ class TestCreateVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -358,6 +358,12 @@ class TestVolumes(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        #Clean up, terminate the created volumes
+        cleanup_resources(self.apiClient, self.cleanup)
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_02_attach_volume(self):
@@ -535,9 +541,13 @@ class TestVolumes(cloudstackTestCase):
         try:
             response = self.apiClient.resizeVolume(cmd)
         except Exception as ex:
-            if str(ex) == "HTTP Error 431: 431":
+            #print str(ex)
+            if "HTTP Error 431:" in str(ex):
                 success = True
-        self.assertEqual(success, True, "ResizeVolume - verify invalid id is handled appropriately")
+        self.assertEqual(
+                success,
+                True,
+                "ResizeVolume - verify invalid id is handled appropriately")
 
         # Next, we'll try an invalid disk offering id
         cmd.id             = self.volume.id
@@ -546,15 +556,28 @@ class TestVolumes(cloudstackTestCase):
         try:
             response = self.apiClient.resizeVolume(cmd)
         except Exception as ex:
-            if "need to specify a disk offering" in str(ex):
+            if "HTTP Error 431:" in str(ex):
                 success = True
-        self.assertEqual(success, True, "ResizeVolume - verify disk offering is handled appropriately")
-
+        self.assertEqual(
+                success,
+                True,
+                "ResizeVolume - verify disk offering is handled appropriately")
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
         cmd.diskofferingid = self.services['diskofferingid']
         cmd.size           = 4
         currentSize        = self.volume.size
+
+        self.debug(
+                "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                                                    self.volume.id,
+                                                    self.virtual_machine.id)
+                 )
+        #attach the volume
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        #stop the vm if it is on xenserver
+        if self.services['hypervisor'].lower() == "xenserver":
+            self.virtual_machine.stop(self.apiClient)
 
         self.apiClient.resizeVolume(cmd)
         count = 0
@@ -566,7 +589,7 @@ class TestVolumes(cloudstackTestCase):
                                                 type='DATADISK'
                                                 )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size != currentSize:
+                if vol.id == self.volume.id and vol.size != currentSize and vol.state != "Resizing":
                     success = False
             if success:
                 break
@@ -579,12 +602,21 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Verify the volume did not resize"
                          )
-
+        self.virtual_machine.detach_volume(self.apiClient, self.volume)
+        self.cleanup.append(self.volume)
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_08_resize_volume(self):
         """Resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
+        self.debug(
+                "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                                                    self.volume.id,
+                                                    self.virtual_machine.id
+                                                    ))
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        if self.services['hypervisor'].lower() == "xenserver":
+            self.virtual_machine.stop(self.apiClient)
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
         cmd                = resizeVolume.resizeVolumeCmd()
@@ -615,6 +647,9 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Check if the volume resized appropriately"
                          )
+
+        self.virtual_machine.detach_volume(self.apiClient, self.volume)
+        self.cleanup.append(self.volume)
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_09_delete_detached_volume(self):

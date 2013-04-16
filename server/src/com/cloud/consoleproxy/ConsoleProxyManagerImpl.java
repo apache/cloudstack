@@ -95,8 +95,10 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateHostVO;
@@ -220,6 +222,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     TemplateManager templateMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    ManagementServer _ms;
 
     private ConsoleProxyListener _listener;
 
@@ -254,7 +258,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
 
-    private String _hashKey;
     private String _staticPublicIp;
     private int _staticPort;
 
@@ -448,8 +451,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public class VmBasedAgentHook extends AgentHookBase {
 
         public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
-                KeystoreManager ksMgr, AgentManager agentMgr) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr);
+                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
         }
 
         @Override
@@ -1439,7 +1442,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         _listener =
                 new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr,
-                        _agentMgr));
+                        _agentMgr, _ms));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1884,15 +1887,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return sc.find();
     }
 
-    public String getHashKey() {
-        // although we may have race conditioning here, database transaction serialization should
-        // give us the same key
-        if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
-        }
-        return _hashKey;
-    }
-
     @Override
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
@@ -1912,4 +1906,5 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
+    
 }

@@ -368,6 +368,18 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
+    @Column(name = "affinity_group_id")
+    private long affinityGroupId;
+
+    @Column(name = "affinity_group_uuid")
+    private String affinityGroupUuid;
+
+    @Column(name = "affinity_group_name")
+    private String affinityGroupName;
+
+    @Column(name = "affinity_group_description")
+    private String affinityGroupDescription;
+
     transient String password;
 
     @Transient
@@ -1671,4 +1683,29 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+
+    public long getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+
+
+    public String getAffinityGroupUuid() {
+        return affinityGroupUuid;
+    }
+
+
+
+    public String getAffinityGroupName() {
+        return affinityGroupName;
+    }
+
+
+
+    public String getAffinityGroupDescription() {
+        return affinityGroupDescription;
+    }
+
+
 }
