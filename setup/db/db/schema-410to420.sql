@@ -720,3 +720,9 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
 
+
+-- Add "default" field to account/user tables
+ALTER TABLE `cloud`.`account` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if account is default';
+ALTER TABLE `cloud`.`user` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if user is default';
+UPDATE `cloud`.`account` SET `cloud`.`account`.`default`=1 WHERE id IN (1,2);
+UPDATE `cloud`.`user` SET `cloud`.`user`.`default`=1 WHERE id IN (1,2);
