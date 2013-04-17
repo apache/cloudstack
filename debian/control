@@ -63,7 +63,7 @@ Description: CloudStack core library
 
 Package: cloud-client
 Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso, libmysql-java (>= 5.1)
+Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, sysvinit-utils, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso, libmysql-java (>= 5.1)
 Description: CloudStack client
  The CloudStack management server is the central point of coordination,
  management, and intelligence in the CloudStack Cloud Stack.  This package
@@ -90,7 +90,7 @@ Description: CloudStack agent libraries
 
 Package: cloud-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-scripts (= ${source:Version}), cloud-system-iso (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-scripts (= ${source:Version}), cloud-system-iso (= ${source:Version}), libvirt0, sysvinit-utils, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack powered cloud.  Install this package if this computer
