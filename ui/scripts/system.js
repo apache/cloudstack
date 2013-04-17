@@ -2410,15 +2410,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2986,15 +2984,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -5272,15 +5268,13 @@
                                   select: function(args) {
                                     $.ajax({
                                       url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                                      //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                       dataType: "json",
                                       async: true,
                                       success: function(json) {
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																					items.push({id: this.id, description: this.name});
+                                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                         });
                                         args.response.success({data: items});
                                       }
@@ -6011,15 +6005,13 @@
                       select: function(args) {
                         $.ajax({
                           url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                             });
                             args.response.success({data: items});
                           }
@@ -6473,15 +6465,13 @@
                       select: function(args) {
                         $.ajax({
                           url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                             });
                             args.response.success({data: items});
                           }
