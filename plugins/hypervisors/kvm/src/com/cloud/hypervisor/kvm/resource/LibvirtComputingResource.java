@@ -1270,7 +1270,7 @@ ServerResource {
                 secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(
                         secondaryStorageUrl);
                 secondaryStoragePool.createFolder(volumeDestPath);
-                secondaryStoragePool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
                 secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(
                         secondaryStorageUrl
                         + volumeDestPath);
@@ -1292,7 +1292,7 @@ ServerResource {
             return new CopyVolumeAnswer(cmd, false, e.toString(), null, null);
         } finally {
             if (secondaryStoragePool != null) {
-                secondaryStoragePool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
             }
         }
     }
@@ -1415,7 +1415,7 @@ ServerResource {
             return null;
         } finally {
             if (secondaryPool != null) {
-                secondaryPool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryPool.getType(),secondaryPool.getUuid());
             }
         }
     }
@@ -2008,7 +2008,7 @@ ServerResource {
                     true);
         } finally {
             if (secondaryStoragePool != null) {
-                secondaryStoragePool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
             }
         }
         return new BackupSnapshotAnswer(cmd, true, null, snapshotRelPath
@@ -2040,7 +2040,7 @@ ServerResource {
             return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
         } finally {
             if (secondaryStoragePool != null) {
-                secondaryStoragePool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
             }
         }
         return new DeleteSnapshotBackupAnswer(cmd, true, null);
@@ -2069,7 +2069,7 @@ ServerResource {
             return new Answer(cmd, false, e.toString());
         } finally {
             if (secondaryStoragePool != null) {
-                secondaryStoragePool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
             }
 
         }
@@ -2167,10 +2167,10 @@ ServerResource {
             return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
         } finally {
             if (secondaryPool != null) {
-                secondaryPool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
             }
             if (snapshotPool != null) {
-                snapshotPool.delete();
+                _storagePoolMgr.deleteStoragePool(snapshotPool.getType(), snapshotPool.getUuid());
             }
         }
     }
@@ -2304,7 +2304,7 @@ ServerResource {
             return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
         } finally {
             if (secondaryStorage != null) {
-                secondaryStorage.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
             }
         }
     }
@@ -2362,7 +2362,7 @@ ServerResource {
             return new PrimaryStorageDownloadAnswer(e.toString());
         } finally {
             if (secondaryPool != null) {
-                secondaryPool.delete();
+                _storagePoolMgr.deleteStoragePool(secondaryPool.getType(),secondaryPool.getUuid());
             }
         }
     }
@@ -3454,7 +3454,7 @@ ServerResource {
             KVMStoragePool pool = _storagePoolMgr.getStoragePool(
                                       StoragePoolType.Filesystem, poolUuid);
             if (pool != null) {
-                pool.delete();
+                _storagePoolMgr.deleteStoragePool(pool.getType(),pool.getUuid());
             }
             return true;
         } catch (CloudRuntimeException e) {
