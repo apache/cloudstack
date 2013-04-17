@@ -208,4 +208,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         return volatileVm;
     }
 
+    @Override
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
+    }
+
 }

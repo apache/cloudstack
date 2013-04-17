@@ -17,6 +17,7 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
@@ -66,9 +67,10 @@ public class Upgrade410to420 implements DbUpgrade {
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
+        updateServiceOfferingDeploymentPlanner(conn);
     }
-	
-	private void updateSystemVmTemplates(Connection conn) {
+
+    private void updateSystemVmTemplates(Connection conn) {
 	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -84,7 +86,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
 	}
-	
+
 	private void updatePrimaryStore(Connection conn) {
 	    PreparedStatement sql = null;
 	    PreparedStatement sql2 = null;
@@ -93,7 +95,7 @@ public class Upgrade410to420 implements DbUpgrade {
             sql.setString(1, "ancient primary data store provider");
             sql.setString(2, "HOST");
             sql.executeUpdate();
-            
+
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
             sql2.setString(1, "ancient primary data store provider");
             sql2.setString(2, "CLUSTER");
@@ -107,7 +109,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 } catch (SQLException e) {
                 }
             }
-            
+
             if (sql2 != null) {
                 try {
                     sql2.close();
@@ -235,7 +237,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void createPlaceHolderNics(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -256,7 +258,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(4, networkId);
                     pstmt.executeUpdate();
                     s_logger.debug("Created placeholder nic for the ipAddress " + ip);
-                
+
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
@@ -272,8 +274,8 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
+
     private void updateRemoteAccessVpn(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -387,6 +389,53 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateServiceOfferingDeploymentPlanner(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn
+                    .prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String globalValue = rs.getString(1);
+                String plannerName = "FirstFitPlanner";
+
+                if (globalValue != null) {
+                    if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.random.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
+                        plannerName = "UserDispersingPlanner";
+                    }
+                }
+                // update service offering with the planner name
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` set deployment_planner=?");
+                pstmt.setString(1, plannerName);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set deployment_planner for service offerings", e);
         } finally {
             try {
                 if (rs != null) {

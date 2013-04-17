@@ -859,9 +859,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     @Override
     public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
-        if(vm.getHypervisorType() != HypervisorType.BareMetal){
-            //check the allocation strategy
-            if (_allocationAlgorithm != null && (_allocationAlgorithm.equals(AllocationAlgorithm.random.toString()) || _allocationAlgorithm.equals(AllocationAlgorithm.firstfit.toString()))) {
+        // check what the ServiceOffering says
+        ServiceOffering offering = vm.getServiceOffering();
+        if (offering != null && offering.getDeploymentPlanner() != null) {
+            if (offering.getDeploymentPlanner().equals(this.getName())) {
                 return true;
             }
         }

@@ -3067,16 +3067,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
 
-        String plannerName = null;
-        for (DeployPlannerSelector dps : plannerSelectors) {
-            plannerName = dps.selectPlanner(vm);
-            if (plannerName != null) {
-                break;
-            }
-        }
-        if (plannerName == null) {
-            throw new CloudRuntimeException(String.format("cannot find DeployPlannerSelector for vm[uuid:%s, hypervisorType:%s]", vm.getUuid(), vm.getHypervisorType()));
-        }
+        // Get serviceOffering for Virtual Machine
+        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        String plannerName = offering.getDeploymentPlanner();
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
         vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString(), params);
