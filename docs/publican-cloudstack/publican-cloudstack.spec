@@ -18,7 +18,7 @@
 
 Name:		publican-cloudstack
 Summary:	Common documentation files for Apache %{brand}
-Version:	0.5
+Version:	0.6
 Release:	1%{?dist}
 License:	ASLv2
 Group:		Applications/Text
@@ -54,6 +54,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/publican/Common_Content/%{brand}
 
 %changelog
+* Mon Apr 15 2013 David Nalley <david@gnsa.us> 0.6-1 
+- updating for graduation
+
 * Tue Feb 29 2013 David Nalley <david@gnsa.us> 0.5-1
 - adding trademark information
 
