@@ -5267,7 +5267,13 @@ under the License.
             </orderedlist>
         </section>
     </chapter>
-    <!-- <chapter id="api-changes-4.1">
+    <chapter id="api-changes-4.1">
         <title>API Changes in 4.1.0</title>
-    </chapter> -->
+        <section id="api-changes-new-4.1">
+          <title>New API commands in 4.1</title>
+        </section>
+        <section id="api-changes-changed-4.1">
+          <title>Changed API commands in 4.1</title>
+        </section>
+    </chapter>
 </book>
