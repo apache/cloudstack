@@ -56,6 +56,7 @@ dirname_to_dirname = {
 
 
 known_categories = {
+    'Cisco' : 'External Device',
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
     'VM': 'Virtual Machine',

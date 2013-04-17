@@ -343,7 +343,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
-            String newVnetRangeString, String state) {
+                                                 String newVnetRangeString, String state, String removeVlan) {
         // TODO Auto-generated method stub
         return null;
     }

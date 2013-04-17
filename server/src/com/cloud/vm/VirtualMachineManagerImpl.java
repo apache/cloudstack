@@ -866,6 +866,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
 
+        if (startedVm == null) {
+            throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName()
+                            + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+
         return startedVm;
     }
 

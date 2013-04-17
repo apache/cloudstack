@@ -34,11 +34,9 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
-import com.cloud.network.PhysicalNetwork.State;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkConfigurationVO contains information about a specific physical network.
@@ -205,7 +203,21 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     }
 
     @Override
-    public String getVnet() {
+    public List<Pair<Integer, Integer>> getVnet() {
+        List <Pair<Integer,Integer>>  vnetList = new ArrayList<Pair<Integer, Integer>>();
+        if (vnet != null) {
+           String [] Temp = vnet.split(";");
+           String [] vnetSplit = null;
+           for (String vnetRange : Temp){
+               vnetSplit = vnetRange.split("-");
+               vnetList.add(new Pair<Integer,Integer>(Integer.parseInt(vnetSplit[0]),Integer.parseInt(vnetSplit[1])));
+           }
+        }
+        return vnetList;
+    }
+
+    @Override
+    public String getVnetString() {
         return vnet;
     }
 
