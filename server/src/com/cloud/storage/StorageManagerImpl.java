@@ -963,9 +963,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = dataStoreMgr.getDataStore(
                 sPool.getId(), DataStoreRole.Primary);
-        lifeCycle.deleteDataStore(store);
-
-        return false;
+        return lifeCycle.deleteDataStore(store);
     }
 
     @Override
