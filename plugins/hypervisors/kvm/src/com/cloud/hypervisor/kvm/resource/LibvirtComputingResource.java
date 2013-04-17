@@ -985,8 +985,7 @@ ServerResource {
             */
             dm = conn.domainCreateXML(domainXML, 0);
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to start domain " + vmName + ": "
-                    + e.getMessage());
+            throw e;
         }
 
         return null;
@@ -4234,9 +4233,11 @@ ServerResource {
     }
 
     private void cleanupVMNetworks(Connect conn, List<InterfaceDef> nics) {
-        for (InterfaceDef nic : nics) {
-            if (nic.getHostNetType() == hostNicType.VNET) {
-                cleanupVnet(conn, getVnetIdFromBrName(nic.getBrName()));
+        if (nics != null) {
+            for (InterfaceDef nic : nics) {
+                if (nic.getHostNetType() == hostNicType.VNET) {
+                    cleanupVnet(conn, getVnetIdFromBrName(nic.getBrName()));
+                }
             }
         }
     }
