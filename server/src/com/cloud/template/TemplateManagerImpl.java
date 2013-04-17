@@ -56,7 +56,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissions
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -248,7 +248,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     VolumeDataFactory volFactory;
     @Inject
-    ImageDataFactory tmplFactory;
+    TemplateDataFactory tmplFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject

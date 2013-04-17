@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.volume;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -39,7 +39,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
     @Inject
     DataMotionService motionSrv;
     @Inject
-    ImageDataFactory imageFactory;
+    TemplateDataFactory imageFactory;
     protected long waitingTime = 1800; // half an hour
     protected long waitingRetries = 10;
 /*

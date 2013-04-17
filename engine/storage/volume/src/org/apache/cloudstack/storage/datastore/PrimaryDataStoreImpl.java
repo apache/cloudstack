@@ -29,7 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
@@ -72,7 +72,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
     @Inject
-    ImageDataFactory imageDataFactory;
+    TemplateDataFactory imageDataFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
     protected DataStoreProvider provider;

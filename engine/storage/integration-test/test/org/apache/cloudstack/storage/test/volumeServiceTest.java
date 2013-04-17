@@ -38,7 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -110,7 +110,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	@Inject
 	EndPointSelector selector;
 	@Inject
-	ImageDataFactory imageDataFactory;
+	TemplateDataFactory imageDataFactory;
 	@Inject
 	VolumeDataFactory volumeFactory;
 	Long dcId;

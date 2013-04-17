@@ -55,7 +55,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -313,7 +313,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     VolumeDataFactory volFactory;
     @Inject
-    ImageDataFactory tmplFactory;
+    TemplateDataFactory tmplFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject

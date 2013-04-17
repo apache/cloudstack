@@ -23,7 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -58,7 +58,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     private static final Logger s_logger = Logger
             .getLogger(ObjectInDataStoreManagerImpl.class);
     @Inject
-    ImageDataFactory imageFactory;
+    TemplateDataFactory imageFactory;
     @Inject
     DataStoreManager storeMgr;
     @Inject

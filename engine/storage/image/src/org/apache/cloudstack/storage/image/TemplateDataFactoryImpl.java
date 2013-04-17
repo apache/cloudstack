@@ -23,7 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -38,9 +38,9 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 
 @Component
-public class ImageDataFactoryImpl implements ImageDataFactory {
+public class TemplateDataFactoryImpl implements TemplateDataFactory {
     private static final Logger s_logger = Logger
-            .getLogger(ImageDataFactoryImpl.class);
+            .getLogger(TemplateDataFactoryImpl.class);
     @Inject
     VMTemplateDao imageDataDao;
     @Inject
