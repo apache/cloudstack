@@ -135,7 +135,7 @@ binlog-format = 'ROW'</programlisting>
             server node IP. If not specified, the local IP address will be used.</para>
         </listitem>
       </itemizedlist>
-      <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \
+      <programlisting language="Bash">cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost \
 --deploy-as=root:&lt;password&gt; \
 -e &lt;encryption_type&gt; \
 -m &lt;management_server_key&gt; \
@@ -152,7 +152,7 @@ binlog-format = 'ROW'</programlisting>
     <listitem>
       <para>Now that the database is set up, you can finish configuring the OS for the Management
         Server. This command will set up iptables, sudoers, and start the Management Server.</para>
-      <programlisting><prompt>#</prompt> cloud-setup-management</programlisting>
+      <programlisting><prompt>#</prompt> cloudstack-setup-management</programlisting>
       <para>You should see the message “&PRODUCT; Management Server setup is done.”</para>
     </listitem>
   </orderedlist>

@@ -45,7 +45,7 @@
                     the additional command-line flag <code>-r &lt;region_id&gt;</code> to set a
                     region ID for the new region. The default region is automatically assigned a
                     region ID of 1, so your first additional region might be region 2.</para>
-      <programlisting>cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting>
+      <programlisting>cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting>
       </listitem>
       <listitem><para>By the end of the installation procedure, the Management Server should have been started. Be sure that the Management Server installation was successful and complete.</para></listitem>
       <listitem><para>Add region 2 to region 1. Use the API command addRegion. (For information about how to make an API call, see the Developer's Guide.)</para>
@@ -82,7 +82,7 @@
             However, you must repeat certain steps additional times for each additional region:</para>
         <orderedlist>
             <listitem><para>Install &PRODUCT; in each additional region. Set the region ID for each region during the database setup step.</para>
-                <programlisting>cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting></listitem>
+                <programlisting>cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting></listitem>
             <listitem><para>Once the Management Server is running, add your new region to all existing regions by
                     repeatedly calling the API command addRegion. For example, if you were adding
                     region 3:</para>
