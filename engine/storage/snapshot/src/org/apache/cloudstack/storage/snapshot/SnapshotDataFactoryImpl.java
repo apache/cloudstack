@@ -21,15 +21,14 @@ package org.apache.cloudstack.storage.snapshot;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
@@ -43,7 +42,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Inject
     SnapshotDao snapshotDao;
     @Inject
-    ObjectInDataStoreManager objMap;
+    SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     DataStoreManager storeMgr;
     @Inject
@@ -51,19 +50,20 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
-        DataObjectInStore obj = objMap.findObject(snapshot.getId(), DataObjectType.SNAPSHOT, store.getId(), store.getRole());
-        if (obj == null) {
-            return null;
-        }
         SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
+
     @Override
     public SnapshotInfo getSnapshot(long snapshotId) {
     	SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
     	SnapshotObject so = null;
     	if (snapshot.getState() == Snapshot.State.BackedUp) {
-    		DataStore store = objMap.findStore(snapshot.getId(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
+    	    DataStore store = null;
+    	    SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId);
+    	    if ( snapshotStore != null ){
+    	        store = this.storeMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
+    	    }
     		so =  SnapshotObject.getSnapshotObject(snapshot, store);
     	} else {
     		VolumeInfo volume = this.volumeFactory.getVolume(snapshot.getVolumeId());

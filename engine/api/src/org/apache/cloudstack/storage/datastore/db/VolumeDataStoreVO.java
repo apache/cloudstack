@@ -117,6 +117,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		return installPath;
 	}
 
+    @Override
 	public long getDataStoreId() {
 		return dataStoreId;
 	}
@@ -344,5 +345,11 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         // TODO Auto-generated method stub
         return this.state;
     }
+
+    @Override
+    public long getObjectId() {
+        return this.getVolumeId();
+    }
+
 
 }

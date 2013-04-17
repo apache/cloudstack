@@ -21,12 +21,12 @@ package org.apache.cloudstack.storage.volume;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
@@ -38,24 +38,28 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
     @Inject
     VolumeDao volumeDao;
     @Inject
-    ObjectInDataStoreManager objMap;
+    VolumeDataStoreDao volumeStoreDao;
     @Inject
     DataStoreManager storeMgr;
     @Override
     public VolumeInfo getVolume(long volumeId, DataStore store) {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
-       
+
         VolumeObject vol = VolumeObject.getVolumeObject(store, volumeVO);
-     
+
         return vol;
     }
-    
+
     @Override
     public VolumeInfo getVolume(long volumeId) {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
         VolumeObject vol = null;
         if (volumeVO.getPoolId() == null) {
-            DataStore store = objMap.findStore(volumeVO.getId(), DataObjectType.VOLUME, DataStoreRole.Image);
+            DataStore store = null;
+            VolumeDataStoreVO volumeStore = volumeStoreDao.findByVolume(volumeId);
+            if ( volumeStore != null ){
+                store = this.storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+            }
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         } else {
             DataStore store = this.storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);

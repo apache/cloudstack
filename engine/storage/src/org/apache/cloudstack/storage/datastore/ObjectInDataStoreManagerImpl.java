@@ -218,20 +218,11 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         if (role == DataStoreRole.Image) {
             switch (type){
             case TEMPLATE:
-                SearchCriteria<TemplateDataStoreVO> ts =  templateDataStoreDao.createSearchCriteria();
-                ts.addAnd("templateId", SearchCriteria.Op.EQ, objId);
-                ts.addAnd("dataStoreId", SearchCriteria.Op.EQ, dataStoreId);
-                vo =  templateDataStoreDao.findOneBy(ts);
+                vo = templateDataStoreDao.findByStoreTemplate(dataStoreId, objId);
             case SNAPSHOT:
-                SearchCriteria<SnapshotDataStoreVO> ss =  snapshotDataStoreDao.createSearchCriteria();
-                ss.addAnd("snapshotId", SearchCriteria.Op.EQ, objId);
-                ss.addAnd("dataStoreId", SearchCriteria.Op.EQ, objId);
-                vo =  snapshotDataStoreDao.findOneBy(ss);
+                vo = snapshotDataStoreDao.findByStoreSnapshot(dataStoreId, objId);
             case VOLUME:
-                SearchCriteria<VolumeDataStoreVO> vs =  volumeDataStoreDao.createSearchCriteria();
-                vs.addAnd("volumeId", SearchCriteria.Op.EQ, objId);
-                vs.addAnd("dataStoreId", SearchCriteria.Op.EQ, objId);
-                vo =  volumeDataStoreDao.findOneBy(vs);
+                vo = volumeDataStoreDao.findByStoreVolume(dataStoreId, objId);
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
@@ -255,13 +246,17 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     public DataStore findStore(long objId, DataObjectType type,  DataStoreRole role) {
         DataStore store = null;
         if (role == DataStoreRole.Image) {
-            SearchCriteriaService<ObjectInDataStoreVO, ObjectInDataStoreVO> sc = SearchCriteria2.create(ObjectInDataStoreVO.class);
-            sc.addAnd(sc.getEntity().getDataStoreRole(), Op.EQ, role);
-            sc.addAnd(sc.getEntity().getObjectId(), Op.EQ, objId);
-            sc.addAnd(sc.getEntity().getObjectType(), Op.EQ, type);
-            ObjectInDataStoreVO vo = sc.find();
+            DataObjectInStore vo = null;
+            switch (type){
+            case TEMPLATE:
+                vo = templateDataStoreDao.findByTemplate(objId);
+            case SNAPSHOT:
+                vo = snapshotDataStoreDao.findBySnapshot(objId);
+            case VOLUME:
+                vo = volumeDataStoreDao.findByVolume(objId);
+            }
             if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreId(), vo.getDataStoreRole());
+                store = this.storeMgr.getDataStore(vo.getDataStoreId(), DataStoreRole.Image);
             }
         }
         return store;

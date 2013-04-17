@@ -95,6 +95,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		return installPath;
 	}
 
+    @Override
 	public long getDataStoreId() {
 		return dataStoreId;
 	}
@@ -238,5 +239,11 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         // TODO Auto-generated method stub
         return this.state;
     }
+
+    @Override
+    public long getObjectId() {
+        return this.getSnapshotId();
+    }
+
 
 }

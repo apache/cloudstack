@@ -113,6 +113,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	}
 
 
+	@Override
 	public long getDataStoreId() {
 		return dataStoreId;
 	}
@@ -312,5 +313,12 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public Date getUpdated() {
         return updated;
     }
+
+
+    @Override
+    public long getObjectId() {
+        return this.getTemplateId();
+    }
+
 
 }

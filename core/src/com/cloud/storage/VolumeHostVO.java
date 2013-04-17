@@ -47,71 +47,71 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;
-	
+
 	@Column(name="host_id")
 	private long hostId;
-	
+
 	@Column(name="volume_id")
 	private long volumeId;
-	
+
 	@Column(name="zone_id")
 	private long zoneId;
-	
+
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
-	
+
 	@Column(name="last_updated")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date lastUpdated = null;
-	
+
 	@Column (name="download_pct")
 	private int downloadPercent;
-	
+
 	@Column (name="size")
 	private long size;
-	
+
 	@Column (name="physical_size")
 	private long physicalSize;
-	
+
 	@Column (name="download_state")
 	@Enumerated(EnumType.STRING)
 	private Status downloadState;
-	
+
     @Column(name="checksum")
     private String checksum;
-	
+
 	@Column (name="local_path")
 	private String localDownloadPath;
-	
+
 	@Column (name="error_str")
 	private String errorString;
-	
+
 	@Column (name="job_id")
-	private String jobId;	
-	
+	private String jobId;
+
 	@Column (name="install_path")
     private String installPath;
-	
+
 	@Column (name="url")
 	private String downloadUrl;
-	
+
 	@Column(name="format")
     private Storage.ImageFormat format;
-    
+
     @Column(name="destroyed")
     boolean destroyed = false;
-    
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
-	
+
     public String getInstallPath() {
 		return installPath;
 	}
@@ -124,17 +124,17 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 		this.hostId = hostId;
 	}
 
-	
+
     public long getVolumeId() {
 		return volumeId;
 	}
 
-	
+
     public void setVolumeId(long volumeId) {
 		this.volumeId = volumeId;
 	}
 
-	
+
     public long getZoneId() {
 		return zoneId;
 	}
@@ -147,42 +147,42 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 		return downloadPercent;
 	}
 
-	
+
     public void setDownloadPercent(int downloadPercent) {
 		this.downloadPercent = downloadPercent;
 	}
 
-	
+
     public void setDownloadState(Status downloadState) {
 		this.downloadState = downloadState;
 	}
 
-	
+
     public long getId() {
 		return id;
 	}
 
-	
+
     public Date getCreated() {
 		return created;
 	}
 
-	
+
     public Date getLastUpdated() {
 		return lastUpdated;
 	}
-	
-	
+
+
     public void setLastUpdated(Date date) {
 	    lastUpdated = date;
 	}
-	
-	
+
+
     public void setInstallPath(String installPath) {
 	    this.installPath = installPath;
 	}
 
-	
+
     public Status getDownloadState() {
 		return downloadState;
 	}
@@ -223,49 +223,49 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 	}
 
 	protected VolumeHostVO() {
-		
+
 	}
 
-	
+
     public void setLocalDownloadPath(String localPath) {
 		this.localDownloadPath = localPath;
 	}
 
-	
+
     public String getLocalDownloadPath() {
 		return localDownloadPath;
 	}
 
-	
+
     public void setErrorString(String errorString) {
 		this.errorString = errorString;
 	}
 
-	
+
     public String getErrorString() {
 		return errorString;
 	}
 
-	
+
     public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
 
-	
+
     public String getJobId() {
 		return jobId;
 	}
 
-	
+
 	public boolean equals(Object obj) {
 		if (obj instanceof VolumeHostVO) {
 			VolumeHostVO other = (VolumeHostVO)obj;
-			return (this.volumeId==other.getVolumeId() && this.hostId==other.getHostId());		   
+			return (this.volumeId==other.getVolumeId() && this.hostId==other.getHostId());
 		}
 		return false;
 	}
 
-	
+
 	public int hashCode() {
 		Long tid = new Long(volumeId);
 		Long hid = new Long(hostId);
@@ -279,8 +279,8 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     public long getSize() {
         return size;
     }
-	
-    
+
+
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
     }
@@ -303,8 +303,8 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 
 	public String getDownloadUrl() {
 		return downloadUrl;
-	}	
-	
+	}
+
     public Storage.ImageFormat getFormat() {
 		return format;
 	}
@@ -316,16 +316,16 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 	public long getVolumeSize() {
 	    return -1;
 	}
-	
-	
+
+
     public String toString() {
 	    return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(hostId).append(installPath).append("]").toString();
 	}
-    
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }
-    
+
     public void incrUpdatedCount() {
         this.updatedCount++;
     }
@@ -333,7 +333,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     public void decrUpdatedCount() {
         this.updatedCount--;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
@@ -343,5 +343,16 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         // TODO Auto-generated method stub
         return this.state;
     }
+
+    @Override
+    public long getObjectId() {
+        return this.getVolumeId();
+    }
+
+    @Override
+    public long getDataStoreId() {
+        return this.getHostId();
+    }
+
 
 }

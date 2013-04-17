@@ -774,7 +774,7 @@ public class VolumeServiceImpl implements VolumeService {
 
                     if (volInfo.getSize() > 0) {
                         try {
-                            String url = _volumeStoreDao.findByVolumeId(volume.getId()).getDownloadUrl();
+                            String url = _volumeStoreDao.findByVolume(volume.getId()).getDownloadUrl();
                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
                                     com.cloud.configuration.Resource.ResourceType.secondary_storage,
                                     volInfo.getSize() - UriUtils.getRemoteSize(url));

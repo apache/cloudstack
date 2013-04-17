@@ -133,12 +133,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
 
 
     @Override
-    public VolumeDataStoreVO findByVolumeId(long volumeId) {
+    public VolumeDataStoreVO findByVolume(long volumeId) {
         SearchCriteria<VolumeDataStoreVO> sc = volumeSearch.create();
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
         return findOneBy(sc);
     }
+
     @Override
     public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId) {
         SearchCriteria<VolumeDataStoreVO> sc = storeVolumeSearch.create();
@@ -148,5 +149,23 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         return findOneBy(sc);
     }
 
+    @Override
+    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId, boolean lock) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeVolumeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("destroyed", false);
+        if (!lock)
+            return findOneIncludingRemovedBy(sc);
+        else
+            return lockOneRandomRow(sc, true);
+    }
 
+    @Override
+    public List<VolumeDataStoreVO> listDestroyed(long id) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", true);
+        return listIncludingRemovedBy(sc);
+    }
 }

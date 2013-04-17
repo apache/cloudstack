@@ -44,66 +44,66 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;
-	
+
 	@Column(name="host_id")
 	private long hostId;
-	
+
 	@Column(name="template_id")
 	private long templateId;
-	
+
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
-	
+
 	@Column(name="last_updated")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date lastUpdated = null;
-	
+
 	@Column (name="download_pct")
 	private int downloadPercent;
-	
+
 	@Column (name="size")
 	private long size;
-	
+
 	@Column (name="physical_size")
 	private long physicalSize;
-	
+
 	@Column (name="download_state")
 	@Enumerated(EnumType.STRING)
 	private Status downloadState;
-	
+
 	@Column (name="local_path")
 	private String localDownloadPath;
-	
+
 	@Column (name="error_str")
 	private String errorString;
-	
+
 	@Column (name="job_id")
-	private String jobId;	
-	
+	private String jobId;
+
 	@Column (name="install_path")
     private String installPath;
-	
+
 	@Column (name="url")
 	private String downloadUrl;
 
 	@Column(name="is_copy")
 	private boolean isCopy = false;
-    
+
     @Column(name="destroyed")
     boolean destroyed = false;
-    
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
-    
-    
+
+
 	@Override
     public String getInstallPath() {
 		return installPath;
@@ -156,12 +156,12 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     public Date getLastUpdated() {
 		return lastUpdated;
 	}
-	
+
 	@Override
     public void setLastUpdated(Date date) {
 	    lastUpdated = date;
 	}
-	
+
 	@Override
     public void setInstallPath(String installPath) {
 	    this.installPath = installPath;
@@ -197,7 +197,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
 	}
 
 	protected VMTemplateHostVO() {
-		
+
 	}
 
 	@Override
@@ -234,7 +234,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
 	public boolean equals(Object obj) {
 		if (obj instanceof VMTemplateHostVO) {
 			VMTemplateHostVO other = (VMTemplateHostVO)obj;
-			return (this.templateId==other.getTemplateId() && this.hostId==other.getHostId());		   
+			return (this.templateId==other.getTemplateId() && this.hostId==other.getHostId());
 		}
 		return false;
 	}
@@ -253,8 +253,8 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     public long getSize() {
         return size;
     }
-	
-    
+
+
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
     }
@@ -286,12 +286,12 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
 	public boolean isCopy() {
 		return isCopy;
 	}
-	
+
 	@Override
     public long getTemplateSize() {
 	    return -1;
 	}
-	
+
 	@Override
     public String toString() {
 	    return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(hostId).append(installPath).append("]").toString();
@@ -302,11 +302,11 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
         // TODO Auto-generated method stub
         return this.state;
     }
-    
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }
-    
+
     public void incrUpdatedCount() {
         this.updatedCount++;
     }
@@ -314,9 +314,20 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     public void decrUpdatedCount() {
         this.updatedCount--;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
+
+    @Override
+    public long getObjectId() {
+        return this.getTemplateId();
+    }
+
+    @Override
+    public long getDataStoreId() {
+        return this.getHostId();
+    }
+
 
 }

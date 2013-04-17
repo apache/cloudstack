@@ -32,7 +32,11 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
 
     public void deletePrimaryRecordsForStore(long id);
 
-    public VolumeDataStoreVO findByVolumeId(long volumeId);
+    public VolumeDataStoreVO findByVolume(long volumeId);
 
     public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId);
+
+    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId, boolean lock);
+
+    public List<VolumeDataStoreVO> listDestroyed(long storeId);
 }

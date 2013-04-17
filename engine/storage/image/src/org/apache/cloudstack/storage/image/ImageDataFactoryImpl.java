@@ -21,13 +21,10 @@ package org.apache.cloudstack.storage.image;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -47,8 +44,6 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
     @Inject
     VMTemplateDao imageDataDao;
     @Inject
-    ObjectInDataStoreManager objMap;
-    @Inject
     DataStoreManager storeMgr;
     @Inject
     VMTemplatePoolDao templatePoolDao;
@@ -61,6 +56,7 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
             TemplateObject tmpl =  TemplateObject.getTemplate(templ, null);
             return tmpl;
         }
+        // verify if the given input parameters are consistent with our db data.
         boolean found = false;
         if (store.getRole() == DataStoreRole.Primary) {
             VMTemplateStoragePoolVO templatePoolVO = templatePoolDao.findByPoolTemplate(store.getId(), templateId);
@@ -68,8 +64,8 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
                 found = true;
             }
         } else {
-            DataObjectInStore obj = objMap.findObject(templ.getId(), DataObjectType.TEMPLATE, store.getId(), store.getRole());
-            if (obj != null) {
+            TemplateDataStoreVO templateStoreVO = templateStoreDao.findByStoreTemplate(store.getId(), templateId);
+            if (templateStoreVO != null) {
                 found = true;
             }
         }
@@ -82,8 +78,9 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
         return tmpl;
     }
 
+    // NOTE that this method can only be used for get template information stored in secondary storage
     //TODO: this method is problematic, since one template can be stored in multiple image stores.
-    // need to see if we can get rid of this method or change to plural format.
+    // need to see if we can get rid of this method or change to plural format, or restrict to 1:1 mapping
     @Override
     public TemplateInfo getTemplate(long templateId) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
@@ -94,6 +91,7 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
         }
         return this.getTemplate(templateId, store);
     }
+
     @Override
     public TemplateInfo getTemplate(DataObject obj, DataStore store) {
         return this.getTemplate(obj.getId(), store);

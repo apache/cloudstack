@@ -48,14 +48,14 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Column(name = "datastore_id")
     private long dataStoreId;
-    
+
     @Column(name = "datastore_role")
     @Enumerated(EnumType.STRING)
     private DataStoreRole dataStoreRole;
 
     @Column(name = "object_id")
     long objectId;
-    
+
     @Column(name = "object_type")
     @Enumerated(EnumType.STRING)
     DataObjectType objectType;
@@ -76,13 +76,13 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Column(name = "local_path")
     String localDownloadPath;
-    
+
     @Column (name="url")
     private String downloadUrl;
-    
+
     @Column(name="format")
     private Storage.ImageFormat format;
-    
+
     @Column(name="checksum")
     private String checksum;
 
@@ -97,46 +97,47 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Column(name = "size")
     Long size;
-    
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
+
     public ObjectInDataStoreVO() {
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
     }
-    
+
     public long getId() {
         return this.id;
     }
-    
+
     public DataStoreRole getDataStoreRole() {
         return this.dataStoreRole;
     }
-    
+
     public void setDataStoreRole(DataStoreRole role) {
         this.dataStoreRole = role;
     }
-    
+
+    @Override
     public long getObjectId() {
         return this.objectId;
     }
-    
+
     public void setObjectId(long id) {
         this.objectId = id;
     }
-    
+
     public DataObjectType getObjectType() {
         return this.objectType;
     }
-    
+
     public void setObjectType(DataObjectType type) {
         this.objectType = type;
     }
@@ -145,27 +146,27 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public ObjectInDataStoreStateMachine.State getState() {
         return this.state;
     }
-    
+
     public void setInstallPath(String path) {
         this.installPath = path;
     }
-    
+
     public String getInstallPath() {
         return this.installPath;
     }
-    
+
     public void setSize(Long size) {
         this.size = size;
     }
-    
+
     public Long getSize() {
         return this.size;
     }
-    
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }
-    
+
     public void incrUpdatedCount() {
         this.updatedCount++;
     }
@@ -173,15 +174,16 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public void decrUpdatedCount() {
         this.updatedCount--;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
-    
+
     public void setUpdated(Date updated) {
         this.updated = updated;
     }
 
+    @Override
 	public long getDataStoreId() {
 		return dataStoreId;
 	}

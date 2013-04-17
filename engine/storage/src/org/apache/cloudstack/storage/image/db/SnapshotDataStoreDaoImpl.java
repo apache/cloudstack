@@ -26,6 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -57,6 +60,18 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        snapshotSearch = createSearchBuilder();
+        snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("destroyed", snapshotSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        snapshotSearch.done();
+
+        storeSnapshotSearch = createSearchBuilder();
+        storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("destroyed", storeSnapshotSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.done();
+
         return true;
     }
 
@@ -116,6 +131,41 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         txn.commit();
     }
 
+    @Override
+    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("destroyed", false);
+        return findOneIncludingRemovedBy(sc);
+    }
 
 
+    @Override
+    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("destroyed", false);
+        if (!lock)
+            return findOneIncludingRemovedBy(sc);
+        else
+            return lockOneRandomRow(sc, true);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findBySnapshot(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("destroyed", false);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listDestroyed(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", true);
+        return listIncludingRemovedBy(sc);
+    }
 }
