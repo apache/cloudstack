@@ -2297,6 +2297,7 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 csMon.set_interval(hcp.getHealthcheckInterval());
+                csMon.set_retries(Math.max(hcp.getHealthcheckThresshold(), hcp.getUnhealthThresshold()) + 1);
                 csMon.set_resptimeout(hcp.getResponseTime());
                 csMon.set_failureretries(hcp.getUnhealthThresshold());
                 csMon.set_successretries(hcp.getHealthcheckThresshold());
