@@ -128,7 +128,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor on which to deploy the virtual machine")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding.", length=2048)
+    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length=32768)
     private String userData;
 
     @Parameter(name=ApiConstants.SSH_KEYPAIR, type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
@@ -312,8 +312,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                         throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + ips.get("networkid"));
                     }
                 }
-                String requestedIp = (String) ips.get("ip");
-                String requestedIpv6 = (String) ips.get("ipv6");
+                String requestedIp = ips.get("ip");
+                String requestedIpv6 = ips.get("ipv6");
                 if (requestedIpv6 != null) {
                 	requestedIpv6 = requestedIpv6.toLowerCase();
                 }
@@ -481,18 +481,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
                     vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
+                            displayName, diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
+                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                         throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
+                            diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 }
             }
 
