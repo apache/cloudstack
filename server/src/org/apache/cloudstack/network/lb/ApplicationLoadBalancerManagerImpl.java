@@ -129,13 +129,16 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         //2) verify that lb service is supported by the network
         _lbMgr.isLbServiceSupportedInNetwork(guestNtwk.getId(), scheme);
         
-        //3) Get source ip address
+        //3) Validate source network
+        validateSourceIpNtwkForLbRule(sourceIpNtwk, scheme);
+        
+        //4) Get source ip address
         sourceIp = getSourceIp(scheme, sourceIpNtwk, sourceIp);
                
         ApplicationLoadBalancerRuleVO newRule = new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(),
                 lbOwner.getId(), lbOwner.getDomainId(), new Ip(sourceIp), sourceIpNtwk.getId(), scheme);
         
-        //4) Validate Load Balancing rule on the providers
+        //5) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
                 new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), new Ip(sourceIp));
         if (!_lbMgr.validateLbRule(loadBalancing)) {
@@ -303,7 +306,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param requestedSourceIp
      */
     private void validateRequestedSourceIpForInternalLbRule(Network sourceIpNtwk, Ip requestedSourceIp) {
-        //Check if the IP address used by the load balancer or other nics
+        //1) FIXME - Check if the IP is within the network cidr
+        
+        
+        //2) Check if the IP address used by the load balancer or other nics
         if (_lbDao.countBySourceIp(requestedSourceIp, sourceIpNtwk.getId()) > 0)  {
             s_logger.debug("IP address " + requestedSourceIp.addr() + " is already used by existing LB rule, skipping the validation");
             return;
