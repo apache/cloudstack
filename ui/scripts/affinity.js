@@ -21,25 +21,22 @@
       id: 'affinityGroups',
       fields: {
         name: { label: 'label.name' },
-        type: { label: 'label.type' }
+        description: { label: 'label.description' }
       },
       dataProvider: function(args) {
-        args.response.success({
-          data: [
-            { id: 1, name: 'Affinity Group 1', type: 'Affinity' },
-            { id: 2, name: 'Affinity Group 2', type: 'Anti-affinity' },
-            { id: 3, name: 'Anti-affinity Group', type: 'Anti-affinity' }
-          ]
-        });
+        $.ajax({
+				  url: createURL('listAffinityGroups'),
+					success: function(json) {					 
+					  var items = json.listaffinitygroupsresponse.affinitygroup;
+						args.response.success({data: items});
+					}
+				});				
       },
       actions: {
         add: {
           label: 'label.add.affinity.group',
 
-          messages: {
-            confirm: function(args) {
-              return 'message.add.volume';
-            },
+          messages: {            
             notification: function(args) {
               return 'label.add.affinity.group';
             }
@@ -52,40 +49,108 @@
                 label: 'label.name',
                 validation: { required: true }
               },
-              type: {
-                label: 'label.availability.zone',
-                select: function(args) {
-                  args.response.success({
-                    data: [
-                      { id: 'Affinity', description: 'Affinity' },
-                      { id: 'AntiAffinity', description: 'Anti-Affinity' }
-                    ]
-                  });
-                }
-              },              
-              availabilityZone: {
-                label: 'label.availability.zone',
-                select: function(args) {
-                  $.ajax({
-                    url: createURL("listZones&available=true"),
-                    dataType: "json",
-                    async: true,
-                    success: function(json) {
-                      var items = json.listzonesresponse.zone;
-                      args.response.success({descriptionField: 'name', data: items});
-                    }
-                  });
-                }
+							description: {
+                label: 'label.description'                
               },
+              type: {
+                label: 'label.type',
+                select: function(args) {
+								  $.ajax({
+									  url: createURL('listAffinityGroupTypes'),
+										success: function(json) {
+										  var types = [];											
+											var items = json.listaffinitygrouptypesresponse.affinityGroupType;
+											if(items != null) {
+											  for(var i = 0; i < items.length; i++) {
+												  types.push({id: items[i].type, description: items[i].type});
+												}												
+											}
+											args.response.success({data: types})
+										}
+									});								
+                }
+              },             
+						  domainid: {					
+								label: 'Domain',					
+								select: function(args) {
+									if(isAdmin() || isDomainAdmin()) {
+										$.ajax({
+											url: createURL('listDomains'),
+											data: { 
+												listAll: true,
+												details: 'min'
+											},
+											success: function(json) {
+												var array1 = [{id: '', description: ''}];
+												var domains = json.listdomainsresponse.domain;
+												if(domains != null && domains.length > 0) {
+													for(var i = 0; i < domains.length; i++) {
+														array1.push({id: domains[i].id, description: domains[i].path});
+													}
+												}
+												args.response.success({
+													data: array1
+												});
+											}
+										});
+									}
+									else {
+										args.response.success({
+											data: null
+										});
+									}
+								},
+								isHidden: function(args) {
+									if(isAdmin() || isDomainAdmin())
+										return false;
+									else
+										return true;
+								}
+							},	
+							account: { 
+								label: 'Account',
+								isHidden: function(args) {
+									if(isAdmin() || isDomainAdmin())
+										return false;
+									else
+										return true;
+								}			
+							}						 
             }
           },
 
-          action: function(args) {
-            args.response.success();
+          action: function(args) {					 
+						var data = {
+						  name: args.data.name,
+							type: args.data.type							
+						};						
+						if(args.data.description != null && args.data.description.length > 0)
+						  $.extend(data, {description: args.data.description});
+						if(args.data.domainid != null && args.data.domainid.length > 0)
+							$.extend(data, { domainid: args.data.domainid });  								  		
+						if(args.data.account != null && args.data.account.length > 0)
+							$.extend(data, { account: args.data.account });   
+					
+					  $.ajax({
+						  url: createURL('createAffinityGroup'),
+							data: data,
+							success: function(json) {							 							
+								var jid = json.createaffinitygroupresponse.jobid;
+								args.response.success(
+									{_custom:
+									 {jobId: jid,
+										getUpdatedItem: function(json) {												  
+											return json.queryasyncjobresultresponse.jobresult.affinitygroup;
+										}
+									 }
+									}
+								);								
+							}						
+						});            
           },
 
           notification: {
-            poll: function(args) { args.complete(); }
+            poll: pollAsyncJobResult
           }
         }
       },
