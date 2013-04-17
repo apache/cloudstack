@@ -4112,7 +4112,7 @@ under the License.
         <para>If you run into any issues during upgrades, please feel free to ask questions on users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
         <section id="upgrade-from-4.0-to-4.1">
             <title>Upgrade from 4.0.x to 4.1.0</title>
-            <para>This section will guide you from Apache CloudStack 4.0.x versions to &PRODUCT; 4.1.0.</para>
+            <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.1.0.</para>
             <para>Any steps that are hypervisor-specific will be called out with a note.</para>
             <warning><title>Package Structure Changes</title>
                 <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x releases. If you've compiled your own packages, you'll notice that the package names and the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
@@ -4124,92 +4124,6 @@ under the License.
                     <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
                     <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.0 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
                     <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
-                </listitem>
-                <listitem>
-                    <note><title>For VMware Only</title>
-                        <para>This step is only required if you are using VMware. You can safely skip this step if you are using KVM and/or Xen only.</para>
-                    </note>
-                    <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
-                    <orderedlist numeration="loweralpha">
-                        <listitem>
-                            <para>While running the existing 3.0.2 system, log in to the UI as root administrator.</para>
-                        </listitem>
-                        <listitem>
-                            <para>In the left navigation bar, click Templates.</para>
-                        </listitem>
-                        <listitem>
-                            <para>In Select view, click Templates.</para>
-                        </listitem>
-                        <listitem>
-                            <para>Click Register template.</para>
-                            <para>The Register template dialog box is displayed.</para>
-                        </listitem>
-                        <listitem>
-                            <para>In the Register template dialog box, specify the following values (do not change these):</para>
-                            <informaltable>
-                                <tgroup cols="2" align="left" colsep="1" rowsep="1">
-                                    <colspec colwidth="1*" colname="1" colnum="1"/>
-                                    <colspec colwidth="2*" colname="2" colnum="2"/>
-                                    <thead>
-                                        <row>
-                                            <entry><para>Field</para></entry>
-                                            <entry><para>Value</para></entry>
-                                        </row>
-                                    </thead>
-                                    <tbody>
-                                        <row>
-                                            <entry><para>Name</para></entry>
-                                            <entry><para>systemvm-vmware-4.1</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Description</para></entry>
-                                            <entry><para>systemvm-vmware-4.1</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>URL</para></entry>
-                                            <entry><para>http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Zone</para></entry>
-                                            <entry><para>Choose the zone where this hypervisor is used</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Hypervisor</para></entry>
-                                            <entry><para>VMware</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Format</para></entry>
-                                            <entry><para>OVA</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>OS Type</para></entry>
-                                            <entry><para>Debian GNU/Linux 5.0 (32-bit)</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Extractable</para></entry>
-                                            <entry><para>no</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Password Enabled</para></entry>
-                                            <entry><para>no</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Public</para></entry>
-                                            <entry><para>no</para></entry>
-                                        </row>
-                                        <row>
-                                            <entry><para>Featured</para></entry>
-                                            <entry><para>no</para></entry>
-                                        </row>
-                                    </tbody>
-                                </tgroup>
-                            </informaltable>
-                        </listitem>
-                        <listitem>
-                            <para>Watch the screen to be sure that the template downloads successfully and enters
-                                the READY state. Do not proceed until this is successful.</para>
-                        </listitem>
-                    </orderedlist>
                 </listitem>
                 <listitem>
                     <para>Stop your management server or servers. Run this on all management server hosts:</para>
