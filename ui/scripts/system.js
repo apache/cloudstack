@@ -3264,6 +3264,19 @@
                       label: 'label.private.interface',
                       docID: 'helpNetScalerPrivateInterface'
                     },
+										
+										gslbprovider: {
+											label: 'GSLB service',
+											isBoolean: true,
+											isChecked: true
+										},
+										gslbproviderpublicip: {
+											label: 'GSLB service Public IP'
+										},
+										gslbproviderprivateip: {
+											label: 'GSLB service Private IP'
+										},
+										
                     numretries: {
                       label: 'label.numretries',
                       defaultValue: '2',
@@ -6644,6 +6657,19 @@
                   privateinterface: {
                     label: 'label.private.interface'
                   },
+									
+									gslbprovider: {
+										label: 'GSLB service',
+										isBoolean: true,
+										isChecked: true
+									},
+									gslbproviderpublicip: {
+										label: 'GSLB service Public IP'
+									},
+									gslbproviderprivateip: {
+										label: 'GSLB service Private IP'
+									},
+									
                   numretries: {
                     label: 'label.numretries',
                     defaultValue: '2'
@@ -10708,6 +10734,12 @@
     array1.push("&username=" + todb(args.data.username));
     array1.push("&password=" + todb(args.data.password));
     array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+		
+		if(apiCmd == "addNetscalerLoadBalancer") {
+		  array1.push("&gslbprovider=" + (args.data.gslbprovider == "on"));
+			array1.push("&gslbproviderpublicip=" + todb(args.data.gslbproviderpublicip));
+			array1.push("&gslbproviderprivateip=" + todb(args.data.gslbproviderprivateip));
+		}
 
     //construct URL starts here
     var url = [];
