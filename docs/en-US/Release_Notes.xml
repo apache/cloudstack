@@ -5407,11 +5407,160 @@ under the License.
         </section>
         <section id="api-changes-changed-4.1">
           <title>Changed API commands in 4.1</title>
-          <itemizedlist>
-            <listitem>
-              <para>foo</para>
-            </listitem>
-          </itemizedlist>
+          <section id="api-changes-changed-4.1-type">
+            <title>Changes in command type (sync versus async)</title>
+            <itemizedlist>
+              <listitem>
+                <para>deleteNiciraNvpDevice became Async</para>
+              </listitem>
+              <listitem>
+                <para>addNiciraNvpDevice became Async</para>
+              </listitem>
+            </itemizedlist>
+          </section>
+          <section id="api-changes-achanged-4.1-argument">
+            <title>Changes in command arguments</title>
+            <itemizedlist>
+              <listitem>
+                <para>copyTemplate  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>listRouters  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>listNiciraNvpDeviceNetworks  Response:  New parameters: ip6cidr, ip6gateway, ispersistent</para>
+              </listitem>
+              <listitem>
+                <para>createVlanIpRange  Request:  New parameters: endipv6 (optional), ip6cidr (optional), ip6gateway (optional), startipv6 (optional)  Changed parameters: startip (old version - required, new version - optional)   Response:  New parameters: endipv6, ip6cidr, ip6gateway, startipv6</para>
+              </listitem>
+              <listitem>
+                <para>listNetworkOfferings  Response:  New parameters: ispersistent   registerTemplate  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>addTrafficMonitor  Request:  New parameters: excludezones (optional), includezones (optional)   Response:  Removed parameters: privateinterface, privatezone, publicinterface, publiczone, usageinterface, username</para>
+              </listitem>
+              <listitem>
+                <para>createAccount  Request:  New parameters: accountid (optional), userid (optional)   Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>listTrafficMonitors  Response:  Removed parameters: privateinterface, privatezone, publicinterface, publiczone, usageinterface, username</para>
+              </listitem>
+              <listitem>
+                <para>registerSSHKeyPair  Response:  New parameters: privatekey</para>
+              </listitem>
+              <listitem>
+                <para>createNetwork  Request:  New parameters: endipv6 (optional), ip6cidr (optional), ip6gateway (optional), startipv6 (optional)   Response:  New parameters: ip6cidr, ip6gateway, ispersistent   getUser  Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>stopRouter  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>listTemplates  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>listNetworks  Response:  New parameters: ip6cidr, ip6gateway, ispersistent   prepareTemplate  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>changeServiceForRouter  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>updateZone  Request:  New parameters: ip6dns1 (optional), ip6dns2 (optional)   Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>createSSHKeyPair  Response:  New parameters: privatekey</para>
+              </listitem>
+              <listitem>
+                <para>listFirewallRules  Response:  New parameters: networkid</para>
+              </listitem>
+              <listitem>
+                <para>updateUser  Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>createZone  Request:  New parameters: ip6dns1 (optional), ip6dns2 (optional)   Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>createStoragePool  Request:  Changed parameters: podid (old version - optional, new version - required), clusterid (old version - optional, new version - required)</para>
+              </listitem>
+              <listitem>
+                <para>updateTemplate  Response:  New parameters: sshkeyenabled   disableUser  Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>listSSHKeyPairs  Response:  New parameters: privatekey</para>
+              </listitem>
+              <listitem>
+                <para>listNiciraNvpDevices  Response:  New parameters: hostname, l3gatewayserviceuuid, transportzoneuuid</para>
+              </listitem>
+              <listitem>
+                <para>registerIso  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>listZones  Request:  New parameters: name (optional)   Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>startRouter  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>listCapabilities  Response:  New parameters: apilimitinterval, apilimitmax</para>
+              </listitem>
+              <listitem>
+                <para>deployVirtualMachine  Request:  New parameters: ip6address (optional</para>
+              </listitem>
+              <listitem>
+                <para>addVpnUser  Response:  New parameters: state</para>
+              </listitem>
+              <listitem>
+                <para>destroyRouter  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>enableUser  Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>addNiciraNvpDevice  Request:  New parameters: l3gatewayserviceuuid (optional)   Response:  New parameters: hostname, l3gatewayserviceuuid, transportzoneuuid</para>
+              </listitem>
+              <listitem>
+                <para>createNetworkOffering  Request:  New parameters: ispersistent (optional)   Response:  New parameters: ispersistent</para>
+              </listitem>
+              <listitem>
+                <para>copyIso  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>createDomain  Request:  New parameters: domainid (optional)</para>
+              </listitem>
+              <listitem>
+                <para>updateIso  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+              <listitem>
+                <para>updateNetwork  Response:  New parameters: ip6cidr, ip6gateway, ispersistent</para>
+              </listitem>
+              <listitem>
+                <para>rebootRouter  Response:  New parameters: ip6dns1, ip6dns2</para>
+              </listitem>
+              <listitem>
+                <para>createFirewallRule  Response:  New parameters: networkid</para>
+              </listitem>
+              <listitem>
+                <para>createUser  Request:  New parameters: userid (optional)   Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>deleteUser  Response:  New parameters: displaytext, success   Removed parameters: id, account, accountid, accounttype, apikey, created, domain, domainid, email, firstname, lastname, secretkey, state, timezone, username</para>
+              </listitem>
+              <listitem>
+                <para>listVlanIpRanges  Response:  New parameters: endipv6, ip6cidr, ip6gateway, startipv6</para>
+              </listitem>
+              <listitem>
+                <para>updateNetworkOffering  Response:  New parameters: ispersistent</para>
+              </listitem>
+              <listitem>
+                <para>listVpnUsers  Response:  New parameters: state</para>
+              </listitem>
+              <listitem>
+                <para>listUsers  Response:  New parameters: iscallerchilddomain</para>
+              </listitem>
+              <listitem>
+                <para>listIsos  Response:  New parameters: sshkeyenabled</para>
+              </listitem>
+            </itemizedlist>
+          </section>
         </section>
     </chapter>
 </book>
