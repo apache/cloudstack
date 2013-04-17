@@ -339,8 +339,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            s_logger.warn("Failed to system account due to ", ex);
-
         }
         // insert system user
         insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, user.default)" +
@@ -350,7 +348,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            s_logger.warn("Failed to create system user due to ", ex);
         }
 
         // insert admin user, but leave the account disabled until we set a
@@ -367,7 +364,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            s_logger.warn("Failed to create admin account due to ", ex);
         }
 
         // now insert the user
@@ -379,7 +375,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            s_logger.warn("Failed to create admin user due to ", ex);
         }
 
         try {

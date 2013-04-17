@@ -184,6 +184,9 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name="job_status")
     private int jobStatus;
+    
+    @Column(name = "default")
+    boolean isDefault;
 
     public AccountJoinVO() {
     }
@@ -672,6 +675,13 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
 
+    public boolean isDefault() {
+        return isDefault;
+    }
 
 
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+ 
 }
