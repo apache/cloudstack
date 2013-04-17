@@ -246,8 +246,30 @@
                   },									
                   description: {
                     label: 'label.description'  
-                  }, 
-									/*
+                  }, 	
+                  gslbdomainname: {
+                    label: 'GSLB Domain Name',
+                    validation: { required: true }										
+                  },			
+									gslblbmethod: {					
+										label: 'Algorithm',					
+										select: function(args) {
+											var array1 = [{id: 'roundrobin', description: 'roundrobin'}, {id: 'leastconn', description: 'leastconn'}, {id: 'proximity', description: 'proximity'}];
+											args.response.success({
+												data: array1
+											});														
+										}
+									},															
+									gslbservicetype: {					
+										label: 'Service Type',					
+										select: function(args) {
+											var array1 = [{id: 'tcp', description: 'tcp'}, {id: 'udp', description: 'udp'}];
+											args.response.success({
+												data: array1
+											});														
+										},
+										validation: { required: true }				
+									},		
 									domainid: {					
 										label: 'Domain',					
 										select: function(args) {
@@ -293,31 +315,7 @@
 											else
 												return true;
 										}			
-									},
-									*/
-									gslblbmethod: {					
-										label: 'Algorithm',					
-										select: function(args) {
-											var array1 = [{id: 'roundrobin', description: 'roundrobin'}, {id: 'leastconn', description: 'leastconn'}, {id: 'proximity', description: 'proximity'}];
-											args.response.success({
-												data: array1
-											});														
-										}
-									},
-									gslbdomainname: {
-                    label: 'GSLB Domain Name',
-                    validation: { required: true }										
-                  }, 								
-									gslbservicetype: {					
-										label: 'Service Type',					
-										select: function(args) {
-											var array1 = [{id: 'tcp', description: 'tcp'}, {id: 'udp', description: 'udp'}];
-											args.response.success({
-												data: array1
-											});														
-										},
-										validation: { required: true }				
-									}
+									}		
                 }
               },
               action: function(args) {                
@@ -330,23 +328,22 @@
 									gslbservicetype: args.data.gslbservicetype
 								};	
                 if(args.data.description != null && args.data.description.length > 0)
-								  $.extend(data, { description: args.data.description });  
-                /*									
+								  $.extend(data, { description: args.data.description }); 
                 if(args.data.domainid != null && args.data.domainid.length > 0)
 								  $.extend(data, { domainid: args.data.domainid });  								  		
                 if(args.data.account != null && args.data.account.length > 0)
 								  $.extend(data, { account: args.data.account });   
-								*/	
+								
                 $.ajax({
                   url: createURL('createGlobalLoadBalancerRule'),
                   data: data,                 
                   success: function(json) {		
-										var jid = json.creategloballoadbalancerruleresponse.jobid;
+										var jid = json.creategloballoadbalancerruleresponse.jobid;										              
 										args.response.success(
 											{_custom:
 											 {jobId: jid,
-												getUpdatedItem: function(json) {												  
-													return json.queryasyncjobresultresponse.jobresult.globalloadbalancerrule;
+												getUpdatedItem: function(json) {	                          									  
+													return json.queryasyncjobresultresponse.jobresult.globalloadbalancer;
 												}
 											 }
 											}
@@ -355,9 +352,7 @@
                 });
               },
               notification: {
-                poll: function(args) {
-                  poll: pollAsyncJobResult
-                }
+                poll: pollAsyncJobResult
               }
             }
           },
@@ -383,9 +378,246 @@
                 data: null
               });
             }
-          }
+          },
+										
+					detailView: {
+            name: 'GSLB details',
+            viewAll: { path: 'regions.lbUnderGSLB', label: 'load balancer rules' },
+            actions: {              
+							remove: {
+                label: 'delete GSLB',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm you want to delete this GSLB';
+                  },
+                  notification: function(args) {
+                    return 'delete GSLB';
+                  }
+                },
+                action: function(args) {								  
+									var data = {
+									  id: args.context.GSLB[0].id
+									};
+                  $.ajax({
+                    url: createURL("deleteGlobalLoadBalancerRule"),
+                    data: data,                    
+                    success: function(json) {                      
+											var jid = json.deletegloballoadbalancerruleresponse.jobid;
+                      args.response.success({
+											  _custom: {
+												  jobId: jid
+												}
+											});											
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+						},												
+						tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+								 {
+								   name: { label: 'label.name' }
+								 },
+                 {									  
+                    description: { label: 'label.description' },
+						        gslbdomainname: { label: 'GSLB Domain Name' },
+						        gslblbmethod: { label: 'Algorithm' },
+                    gslbservicetype: { label: 'Service Type' },										
+                    id: { label: 'ID' }										
+                  }
+                ],
+                dataProvider: function(args) {									  
+									var data = {
+										id: args.context.GSLB[0].id
+									};
+									$.ajax({
+										url: createURL('listGlobalLoadBalancerRules'),
+										data: data,
+										success: function(json) {                  
+											var item = json.listgloballoadbalancerrulesresponse.globalloadbalancerrule[0];
+											args.response.success({
+												data: item
+											});
+										}
+									});									
+                }
+              }
+            }						
+					}					
         }
-      }
+      },
+						
+			lbUnderGSLB: {
+        id: 'lbUnderGSLB',
+        type: 'select',
+        title: 'assigned load balancer rules',
+        listView: {
+          section: 'lbUnderGSLB',
+          id: 'lbUnderGSLB',
+          label: 'assigned load balancer rules',
+          fields: {
+            name: { label: 'label.name' },
+            publicport: { label: 'label.public.port' },
+						privateport: { label: 'label.private.port' },
+						algorithm: { label: 'label.algorithm' }
+          },					
+					dataProvider: function(args) {					
+						var data = {
+						  globalloadbalancerruleid: args.context.GSLB[0].id,
+						  listAll: true
+						};
+            $.ajax({
+              url: createURL('listLoadBalancerRules'),
+							data: data,
+              success: function(json) {
+                var items = json.listloadbalancerrulesresponse.loadbalancerrule;
+                args.response.success({								 
+                  data: items
+                });
+              }
+            });
+          },	        
+					actions: {            
+            add: {
+              label: 'assign load balancer rule to GSLB',
+              messages: {
+                confirm: function(args) {
+                  return 'Please confirm you want to assign load balancer rule to GSLB';
+                },
+                notification: function(args) {
+                  return 'assign load balancer rule to GSLB';
+                }
+              },
+              createForm: {
+                title: 'assign load balancer rule to GSLB',              
+                fields: {                  
+                  loadbalancerrule: {
+                    label: 'load balancer rule',                    
+                    select: function(args) {		
+											var data = {
+												globalloadbalancerruleid: args.context.GSLB[0].id,
+												listAll: true
+											};
+											$.ajax({
+												url: createURL('listLoadBalancerRules'),
+												data: data,
+												success: function(json) {
+													var items = json.listloadbalancerrulesresponse.loadbalancerrule;
+													args.response.success({								 
+														data: items,
+														descriptionField: 'name'
+													});													
+												}
+											});																						
+                    }
+                  }  
+                }
+              },
+              action: function(args) {							  
+								var data = {
+								  id: args.context.GSLB[0].id,
+									loadbalancerrulelist: args.data.loadbalancerrule
+								};			
+                $.ajax({
+                  url: createURL('assignToGlobalLoadBalancerRule'),
+                  data: data,                 
+                  success: function(json) {
+                    var jid = json.assigntogloballoadbalancerruleresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                        }
+                       }
+                      }
+                    );
+                  }
+                });
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+					},						
+									
+					detailView: {
+            name: 'load balancer rule details',            
+            actions: {              
+              remove: {
+                label: 'remove load balancer rule from this GSLB',
+                messages: {
+                  notification: function() { 
+									  return 'remove load balancer rule from GSLB'; 
+									},
+                  confirm: function() { 
+									  return 'Please confirm you want to remove load balancer rule from GSLB'; 
+									}
+                },               
+                action: function(args) {								                
+                  $.ajax({
+                    url: createURL('removeFromGlobalLoadBalancerRule'),
+                    data: { 
+										  id: args.context.lbUnderGSLB[0].id 
+										},
+                    success: function(json) {                      							
+                      var jid = json.removefromloadbalancerruleresponse.jobid;
+                      args.response.success({
+											  _custom: {
+												  jobId: jid
+												}
+											});												
+                    }
+                  });
+                },		
+								notification: {
+                  poll: pollAsyncJobResult
+                }								
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {																
+										publicport: { label: 'label.public.port' },
+										privateport: { label: 'label.private.port' },
+										algorithm: { label: 'label.algorithm' },
+										publicip: { label: 'label.public.ip' },	
+                    state: { label: 'label.state' },												
+										id: { label: 'label.id' },
+                    cidrlist: { label: 'label.cidr' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' }                    								
+                  }
+                ],
+                dataProvider: function(args) {									
+									$.ajax({
+										url: createURL('listLoadBalancerRules'),
+										data: {
+										  id: args.context.lbUnderGSLB[0].id 
+										},
+										success: function(json) {
+											var item = json.listloadbalancerrulesresponse.loadbalancerrule[0];
+											args.response.success({								 
+												data: item
+											});
+										}
+									});		
+                }
+              }
+            }
+          }
+				}
+			}			
     }
   };
 		

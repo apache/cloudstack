@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -274,8 +275,17 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         if (pNetwork.getVnet() == null) {
             throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
         }
-        String vlanRange[] = pNetwork.getVnet().split("-");
-        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
+        Integer lowestVlanTag = null;
+        List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
+        //finding the vlanrange in which the vlanTag lies.
+        for (Pair <Integer,Integer> vnet : vnetList){
+            if (vlanTag >= vnet.first() && vlanTag <= vnet.second()){
+                lowestVlanTag = vnet.first();
+            }
+        }
+        if (lowestVlanTag == null) {
+            throw new InvalidParameterValueException ("The vlan tag dose not belong to any of the existing vlan ranges");
+        }
         return vlanTag - lowestVlanTag;
     }
 

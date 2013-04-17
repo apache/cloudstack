@@ -20,9 +20,11 @@ import java.util.List;
 
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.Transaction;
 
 public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
     public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
+    public List<DataCenterVnetVO> listAllocatedVnetsInRange(long dcId, long physicalNetworkId, Integer start, Integer end);
     public List<DataCenterVnetVO> findVnet(long dcId, String vnet);   
     public int countZoneVlans(long dcId, boolean onlyCountAllocated);    
     public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet);
@@ -30,6 +32,10 @@ public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
     public void add(long dcId, long physicalNetworkId, int start, int end);
     
     public void delete(long physicalNetworkId);
+
+    public void deleteRange(Transaction txn, long dcId, long physicalNetworkId, int start, int end);
+
+    public void lockRange(long dcId, long physicalNetworkId, Integer start, Integer end);
 
     public DataCenterVnetVO take(long physicalNetworkId, long accountId, String reservationId);
 

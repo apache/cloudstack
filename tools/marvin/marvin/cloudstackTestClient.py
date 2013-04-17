@@ -111,7 +111,8 @@ class cloudstackTestClient(object):
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
         
-        newUserConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port, apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
+        newUserConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port,
+            apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
         self.userApiClient = cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
         self.userApiClient.connection = newUserConnection
         return self.userApiClient

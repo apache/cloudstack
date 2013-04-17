@@ -1823,16 +1823,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner());
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner) {
+            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
-                domainId, hostTag, deploymentPlanner);
+                domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -2154,6 +2154,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
             if (vlanOwner == null) {
                 throw new InvalidParameterValueException("Please specify a valid account.");
+            } else if (vlanOwner.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                // by default vlan is dedicated to system account
+                vlanOwner = null;
             }
         }
 
@@ -2630,7 +2633,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (vlan == null) {
                         throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
                     }
-                    
+
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                     }
@@ -2705,14 +2708,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if ((accountName != null) && (domainId != null)) {
             vlanOwner = _accountDao.findActiveAccount(accountName, domainId);
             if (vlanOwner == null) {
-                throw new InvalidParameterValueException("Please specify a valid account");
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName);
+            } else if (vlanOwner.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException("Please specify a valid account. Cannot dedicate IP range to system account");
             }
         }
 
         // Check if range is valid
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if (vlan == null) {
-            throw new InvalidParameterValueException("Please specify a valid Public IP range id");
+            throw new InvalidParameterValueException("Unable to find vlan by id " + vlanDbId);
         }
 
         // Check if range has already been dedicated
@@ -2742,7 +2747,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (allocatedToAccountId != null) {
                 Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
                 if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName))
-                    throw new InvalidParameterValueException("Public IP address in range is already allocated to another account");
+                    throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is allocated to another account ");
             }
         }
 

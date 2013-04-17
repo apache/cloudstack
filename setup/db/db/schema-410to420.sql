@@ -167,7 +167,6 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) NOT NULL DEFAULT 'FirstFitPlanner'  COMMENT 'Planner heuristics used to deploy a VM of this offering';
 
 CREATE TABLE nic_secondary_ips (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,

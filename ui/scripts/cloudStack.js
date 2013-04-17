@@ -25,13 +25,13 @@
         sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions"];
       }
       else if(isDomainAdmin()) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects", "regions"];
       }
       else if (g_userProjectsEnabled) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects", "regions"];
       }
       else { //normal user
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions"];
       }
 
       if (cloudStack.plugins.length) {

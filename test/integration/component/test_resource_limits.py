@@ -105,7 +105,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',
                     }
 
 
@@ -118,6 +117,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -881,6 +881,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -1338,6 +1339,7 @@ class TestMaxAccountNetworks(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

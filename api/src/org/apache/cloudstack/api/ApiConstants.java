@@ -221,6 +221,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
+    public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
@@ -475,7 +476,6 @@ public class ApiConstants {
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
-    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
 
     public enum HostDetails {

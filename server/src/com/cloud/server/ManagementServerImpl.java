@@ -392,14 +392,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
-    protected List<DeploymentPlanner> _planners;
-    public List<DeploymentPlanner> getPlanners() {
-        return _planners;
-    }
-    public void setPlanners(List<DeploymentPlanner> _planners) {
-        this._planners = _planners;
-    }
-
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
     private String _encryptionKey = null;
@@ -3386,15 +3378,4 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
-
-    @Override
-    public List<String> listDeploymentPlanners() {
-        List<String> plannersAvailable = new ArrayList<String>();
-        for (DeploymentPlanner planner : _planners) {
-            plannersAvailable.add(planner.getName());
-        }
-
-        return plannersAvailable;
-    }
-
 }
