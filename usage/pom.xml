@@ -111,8 +111,6 @@
                     </filterreader>
                   </filterchain>
                 </copy>
-              </target>
-              <target>
                 <copy overwrite="true"
                   todir="${basedir}/target/transformed">
                   <fileset dir="${basedir}/conf">
