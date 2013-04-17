@@ -5271,9 +5271,147 @@ under the License.
         <title>API Changes in 4.1.0</title>
         <section id="api-changes-new-4.1">
           <title>New API commands in 4.1</title>
+          <itemizedlist>
+            <listitem>
+              <para>lockAccount (Locks an account)</para>
+            </listitem>
+            <listitem>
+              <para>lockUser (Locks a user account)</para>
+            </listitem>
+            <listitem>
+              <para>resetSSHKeyForVirtualMachine (Resets the SSH Key for virtual machine. The virtual machine must be in a "Stopped" state. [async])</para>
+            </listitem>
+            <listitem>
+              <para>updatePortForwardingRule (Updates a port forwarding rule. Only the private port and the virtual machine can be updated.)</para>
+            </listitem>
+            <listitem>
+              <para>createCounter (Adds metric counter)</para>
+            </listitem>
+            <listitem>
+              <para>createCondition (Creates a condition)</para>
+            </listitem>
+            <listitem>
+              <para>createAutoScalePolicy</para> 
+              <para>(Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.)</para>
+            </listitem>
+            <listitem>
+              <para>createAutoScaleVmProfile</para>
+              <para>(Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.)</para>
+            </listitem>
+            <listitem>
+              <para>createAutoScaleVmGroup (Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.)</para>
+            </listitem>
+            <listitem>
+              <para>deleteCounter (Deletes a counter)</para>
+            </listitem>
+            <listitem>
+              <para>deleteCondition (Removes a condition)</para>
+            </listitem>
+            <listitem>
+              <para>deleteAutoScalePolicy (Deletes a autoscale policy.)</para>
+            </listitem>
+            <listitem>
+              <para>deleteAutoScaleVmProfile (Deletes a autoscale vm profile.)</para>
+            </listitem>
+            <listitem>
+              <para>deleteAutoScaleVmGroup (Deletes a autoscale vm group.)</para>
+            </listitem>
+            <listitem>
+              <para>listCounters (List the counters)</para>
+            </listitem>
+            <listitem>
+              <para>listConditions (List Conditions for the specific user)</para>
+            </listitem>
+            <listitem>
+              <para>listAutoScalePolicies (Lists autoscale policies.)</para>
+            </listitem>
+            <listitem>
+              <para>listAutoScaleVmProfiles (Lists autoscale vm profiles.)</para>
+            </listitem>
+            <listitem>
+              <para>listAutoScaleVmGroups (Lists autoscale vm groups.)</para>
+            </listitem>
+            <listitem>
+              <para>enableAutoScaleVmGroup (Enables an AutoScale Vm Group)</para>
+            </listitem>
+            <listitem>
+              <para>disableAutoScaleVmGroup (Disables an AutoScale Vm Group)</para>
+            </listitem>
+            <listitem>
+              <para>updateAutoScalePolicy (Updates an existing autoscale policy.)</para>
+            </listitem>
+            <listitem>
+              <para>updateAutoScaleVmProfile (Updates an existing autoscale vm profile.)</para>
+            </listitem>
+            <listitem>
+              <para>updateAutoScaleVmGroup (Updates an existing autoscale vm group.)</para>
+            </listitem>
+            <listitem>
+              <para>addS3 (Adds S3)</para>
+            </listitem>
+            <listitem>
+              <para>listS3s (Lists S3s)</para>
+            </listitem>
+            <listitem>
+              <para>resizeVolume (Resizes a volume)</para>
+            </listitem>
+            <listitem>
+              <para>addNicToVirtualMachine (Adds VM to specified network by creating a NIC)</para>
+            </listitem>
+            <listitem>
+              <para>removeNicFromVirtualMachine (Removes VM from specified network by deleting a NIC)</para>
+            </listitem>
+            <listitem>
+              <para>updateDefaultNicForVirtualMachine (Changes the default NIC on a VM)</para>
+            </listitem>
+            <listitem>
+              <para>createEgressFirewallRule (Creates a egress firewall rule for a given network )</para>
+            </listitem>
+            <listitem>
+              <para>deleteEgressFirewallRule (Deletes an ggress firewall rule)</para>
+            </listitem>
+            <listitem>
+              <para>listEgressFirewallRules (Lists all egress firewall rules for network id.)</para>
+            </listitem>
+            <listitem>
+              <para>addBigSwitchVnsDevice (Adds a BigSwitch VNS device)</para>
+            </listitem>
+            <listitem>
+              <para>deleteBigSwitchVnsDevice ( delete a bigswitch vns device)</para>
+            </listitem>
+            <listitem>
+              <para>listBigSwitchVnsDevices (Lists BigSwitch Vns devices)</para>
+            </listitem>
+            <listitem>
+              <para>listApis (lists all available apis on the server, provided by the Api Discovery plugin)</para>
+            </listitem>
+            <listitem>
+              <para>getApiLimit (Get API limit count for the caller)</para>
+            </listitem>
+            <listitem>
+              <para>resetApiLimit (Reset api count)</para>
+            </listitem>
+            <listitem>
+              <para>addRegion (Adds a Region)</para>
+            </listitem>
+            <listitem>
+              <para>updateRegion (Updates a region)</para>
+            </listitem>
+            <listitem>
+              <para>removeRegion (Removes specified region)</para>
+            </listitem>
+            <listitem>
+              <para>listRegions (Lists Regions)</para>
+            </listitem>
+          </itemizedlist>            
         </section>
         <section id="api-changes-changed-4.1">
           <title>Changed API commands in 4.1</title>
+          <itemizedlist>
+            <listitem>
+              <para>foo</para>
+            </listitem>
+          </itemizedlist>
         </section>
     </chapter>
 </book>
