@@ -121,7 +121,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',     # Networking mode: Advanced, Basic
                     }
 
 
@@ -134,6 +133,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -356,6 +356,7 @@ class TestSnapshots(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -1190,6 +1191,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -1485,6 +1487,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -1833,6 +1836,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -2120,6 +2124,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -2378,6 +2383,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = zone.networktype
 
         template = get_template(
                             cls.api_client,
