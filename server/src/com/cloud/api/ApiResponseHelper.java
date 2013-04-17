@@ -774,6 +774,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDescription(globalLoadBalancerRule.getDescription());
         response.setRegionIdId(globalLoadBalancerRule.getRegion());
         response.setId(globalLoadBalancerRule.getUuid());
+        populateOwner(response, globalLoadBalancerRule);
         response.setObjectName("globalloadbalancer");
         return response;
     }
