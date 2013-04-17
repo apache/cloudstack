@@ -622,7 +622,7 @@
     <property name="Discoverers" value="#{resourceDiscoverers.Adapters}" />
   </bean>
 
-  <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" >
+  <bean id="highAvailabilityManagerImpl" class="com.cloud.ha.HighAvailabilityManagerImpl" >
     <property name="Investigators" value="#{haInvestigators.Adapters}" />
     <property name="FenceBuilders" value="#{haFenceBuilders.Adapters}" />
   </bean>
@@ -698,6 +698,7 @@
   <bean id="virtualNetworkApplianceManagerImpl" class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
   <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" />
   <bean id="vpcVirtualNetworkApplianceManagerImpl" class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
+  <bean id="usageServerMonitor" class="com.cloud.usage.UsageServerMonitor" />
 
   <!--
     Misc components

@@ -14,36 +14,47 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.ha;
+package com.cloud.usage;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.usage.dao.UsageJobDao;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Transaction;
 
-@Local(value={HighAvailabilityManager.class})
-public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
+/**
+ * This class is detached from HighAvailabilityManagerImpl, I see no reason for it to inherit from
+ * HighAvailabilityManagerImpl.
+ *
+ */
+public class UsageServerMonitor extends ManagerBase {
+    protected static final Logger s_logger = Logger.getLogger(UsageServerMonitor.class);
 	
-    @Inject
-	UsageJobDao _usageJobDao;
+    @Inject UsageJobDao _usageJobDao;
     
     @Inject ConfigurationDao configDao;
+    @Inject AlertManager _alertMgr;
+    
+    ScheduledExecutorService _executor;
     
 	@Override
 	public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
 		super.configure(name, xmlParams);
-        return true;
+        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UsageServer-Monitor"));
+
+		return true;
 	}
 
 	@Override
