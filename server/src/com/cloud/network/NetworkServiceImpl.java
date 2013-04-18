@@ -2445,16 +2445,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 network.setVnet(vnetString);
             }
 
-
-
-            _physicalNetworkDao.update(id, network);
-
             for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
                 s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
                     + " as a part of updatePhysicalNetwork call");
                 _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
             }
         }
+
+        _physicalNetworkDao.update(id, network);
 
         return network;
     }
