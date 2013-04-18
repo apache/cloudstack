@@ -201,8 +201,7 @@
 											  for(var k = 0; k < firstPageVms.length; k++) {
 												  if(firstPageVms[k].id == vmIds[i]) {
 													  matchFound = true;
-													  item.displayname = firstPageVms[k].displayname;
-														item.state = firstPageVms[k].state;
+													  item = firstPageVms[k];
 														break; //break for looup
 													}
 												}
@@ -213,9 +212,7 @@
 													async: false,
 													data: {id: vmIds[i]},
 								          success: function(json) {	
-													  var vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
-														item.displayname = vmObj.displayname;
-														item.state = vmObj.state;
+													  item = json.listvirtualmachinesresponse.virtualmachine[0];														
 													}
 												});
                       }											
