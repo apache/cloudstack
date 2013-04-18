@@ -34,7 +34,7 @@ import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.TrafficMonitorResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="List traffic monitor Hosts.", responseObject = ExternalFirewallResponse.class)
+@Implementation(description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
 public class ListTrafficMonitorsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listtrafficmonitorsresponse";

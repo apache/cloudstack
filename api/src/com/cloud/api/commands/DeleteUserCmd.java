@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a user for an account", responseObject=UserResponse.class)
+@Implementation(description="Deletes a user for an account", responseObject=SuccessResponse.class)
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 
