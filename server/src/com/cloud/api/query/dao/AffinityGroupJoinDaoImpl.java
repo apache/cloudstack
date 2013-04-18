@@ -63,6 +63,7 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
         agResponse.setId(vag.getUuid());
         agResponse.setName(vag.getName());
         agResponse.setDescription(vag.getDescription());
+        agResponse.setType(vag.getType());
 
         ApiResponseHelper.populateOwner(agResponse, vag);
 

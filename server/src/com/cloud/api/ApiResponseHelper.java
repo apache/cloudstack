@@ -379,7 +379,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
         resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().getOrdinal()).toString());
-        if(limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) {
+        if((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
             resourceLimitResponse.setMax((long) Math.ceil(limit.getMax()/ResourceType.bytesToGiB));
         } else {
             resourceLimitResponse.setMax(limit.getMax());
@@ -3664,8 +3664,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(group.getName());
         response.setType(group.getType());
         response.setDescription(group.getDescription());
-        // response.setDomainId(account.)
+        Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
 
+        response.setObjectName("affinitygroup");
         return response;
     }
 
