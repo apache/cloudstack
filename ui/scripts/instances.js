@@ -1432,6 +1432,24 @@
             }
           },
 
+					/**
+           * Affinity Groups tab
+           */
+          affinityGroups: {
+            title: 'label.affinity.groups',
+            multiple: true,
+            fields: [
+              {
+                id: { label: 'ID' },
+                name: { label: 'label.name' },
+                description: { label: 'label.description' }
+              }
+            ],
+            dataProvider: function(args) {
+              args.response.success({data: args.context.instances[0].affinitygroup});
+            }
+          },
+					
           /**
            * Statistics tab
            */
