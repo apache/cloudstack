@@ -126,29 +126,23 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         //1) Validate LB rule's parameters
         validateLbRule(sourcePort, instancePort, algorithm, guestNtwk, scheme);
         
-        //2) verify that lb service is supported by the network
-        _lbMgr.isLbServiceSupportedInNetwork(guestNtwk.getId(), scheme);
-        
-        //3) Validate source network
+        //2) Validate source network
         validateSourceIpNtwkForLbRule(sourceIpNtwk, scheme);
         
-        //4) Get source ip address
+        //3) Get source ip address
         sourceIp = getSourceIp(scheme, sourceIpNtwk, sourceIp);
                
         ApplicationLoadBalancerRuleVO newRule = new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(),
                 lbOwner.getId(), lbOwner.getDomainId(), new Ip(sourceIp), sourceIpNtwk.getId(), scheme);
         
-        //5) Validate Load Balancing rule on the providers
+        //4) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
                 new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), new Ip(sourceIp));
         if (!_lbMgr.validateLbRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
-        
-        
-        
 
-        //4) Persist Load Balancer rule
+        //5) Persist Load Balancer rule
         return persistLbRule(newRule, sourceIp, guestNtwk);
     }
 
@@ -201,7 +195,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param networkId
      */
     protected void validateLbRule(int sourcePort, int instancePort, String algorithm, Network network, Scheme scheme) {
-        // verify that lb service is supported by the network
+        //1) verify that lb service is supported by the network
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "LB service is not supported in specified network id");
@@ -209,7 +203,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw ex;
         }
         
-        //FIXME - check if the schema is supported by the network
+        //2) verify that lb service is supported by the network
+        _lbMgr.isLbServiceSupportedInNetwork(network.getId(), scheme);
         
         Map<Network.Capability, String> caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
         String supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
@@ -217,7 +212,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Protocol " + NetUtils.TCP_PROTO.toLowerCase() + " is not supported in zone " + network.getDataCenterId());
         }
         
-        //Validate rule parameters
+        //3) Validate rule parameters
         if (!NetUtils.isValidPort(instancePort)) {
             throw new InvalidParameterValueException("Invalid value for instance port: " + instancePort);
         }
@@ -306,8 +301,11 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param requestedSourceIp
      */
     private void validateRequestedSourceIpForInternalLbRule(Network sourceIpNtwk, Ip requestedSourceIp) {
-        //1) FIXME - Check if the IP is within the network cidr
-        
+        //1) Check if the IP is within the network cidr
+        Pair<String, Integer> cidr = NetUtils.getCidr(sourceIpNtwk.getCidr());
+        if (!NetUtils.getCidrSubNet(requestedSourceIp.addr(), cidr.second()).equalsIgnoreCase(NetUtils.getCidrSubNet(cidr.first(), cidr.second()))) {
+            throw new InvalidParameterValueException("The requested IP is not in the network's CIDR subnet.");
+        }
         
         //2) Check if the IP address used by the load balancer or other nics
         if (_lbDao.countBySourceIp(requestedSourceIp, sourceIpNtwk.getId()) > 0)  {
