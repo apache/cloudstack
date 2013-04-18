@@ -4273,15 +4273,6 @@ Done restarting router(s).
             <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.1.0. Sections that are hypervisor-specific will be called out with a note.</para>
             <orderedlist>
                 <listitem>
-                    <para>Ensure that you query your IP address usage records and process them or make a
-                        backup. During the upgrade you will lose the old IP address usage records.</para>
-                    <para>Starting in 3.0.2, the usage record format for IP addresses is the same as the rest
-                        of the usage types. Instead of a single record with the assignment and release dates,
-                        separate records are generated per aggregation period with start and end dates. After
-                        upgrading, any existing IP address usage records in the old format will no longer be
-                        available.</para>
-                </listitem>
-                <listitem>
                     <note>
                         <para>The following upgrade instructions apply only if you're using VMware hosts. If
                             you're not using VMware hosts, skip this step and move on to <xref linkend="stopping-usage-servers" />.</para>
