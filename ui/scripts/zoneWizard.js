@@ -3053,7 +3053,7 @@
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
                 
 								//when hypervisor is BareMetal (begin)   						
-								if(args.data.cluster.hypervisor == "BareMetal") {
+								if(args.data.zone.hypervisor == "BareMetal") {
 								  alert('Zone creation is completed. Please refresh this page.');
 								}								
 								else {
