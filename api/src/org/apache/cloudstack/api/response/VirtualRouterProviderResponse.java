@@ -50,9 +50,6 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the provider")
     private String domainName;
-    
-    @SerializedName(ApiConstants.TYPE) @Param(description="Type of the service provider")
-    private String type;
 
     @Override
     public void setAccountName(String accountName) {
@@ -89,9 +86,5 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 }

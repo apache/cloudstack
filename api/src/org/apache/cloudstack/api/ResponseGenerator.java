@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
@@ -415,4 +416,6 @@ public interface ResponseGenerator {
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
     Long getAffinityGroupId(String name, long entityOwnerId);
+
+    InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
 }

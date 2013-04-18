@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
@@ -2777,6 +2778,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
+        //generate only response of the VR/VPCVR provider type
+        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter) 
+                || (result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
+            return null;
+        }
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
         response.setId(result.getUuid());
         PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
@@ -2784,7 +2790,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNspId(nsp.getUuid());
         }
         response.setEnabled(result.isEnabled());
-        response.setType(result.getType().toString());
 
         response.setObjectName("virtualrouterelement");
         return response;
@@ -3733,5 +3738,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return ag.getId();
         }
+    }
+    
+    @Override
+    public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
+        if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
+            return null;
+        }
+        InternalLoadBalancerElementResponse response = new InternalLoadBalancerElementResponse();
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
+        response.setEnabled(result.isEnabled());
+
+        response.setObjectName("internalloadbalancerelement");
+        return response;
     }
 }

@@ -26,9 +26,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
@@ -39,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 
 @APICommand(name = "listInternalLoadBalancerElements", description="Lists all available Internal Load Balancer elements.",
-            responseObject=VirtualRouterProviderResponse.class, since="4.2.0")
+            responseObject=InternalLoadBalancerElementResponse.class, since="4.2.0")
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLoadBalancerElementsCmd.class.getName());
     private static final String _name = "listinternalloadbalancerelementsresponse";
@@ -50,7 +50,7 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VirtualRouterProviderResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = InternalLoadBalancerElementResponse.class,
             description="list internal load balancer elements by id")
     private Long id;
 
@@ -85,10 +85,10 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         List<? extends VirtualRouterProvider> providers = _service.searchForInternalLoadBalancerElements(getId(), getNspId(), getEnabled());
-        ListResponse<VirtualRouterProviderResponse> response = new ListResponse<VirtualRouterProviderResponse>();
-        List<VirtualRouterProviderResponse> providerResponses = new ArrayList<VirtualRouterProviderResponse>();
+        ListResponse<InternalLoadBalancerElementResponse> response = new ListResponse<InternalLoadBalancerElementResponse>();
+        List<InternalLoadBalancerElementResponse> providerResponses = new ArrayList<InternalLoadBalancerElementResponse>();
         for (VirtualRouterProvider provider : providers) {
-            VirtualRouterProviderResponse providerResponse = _responseGenerator.createVirtualRouterProviderResponse(provider);
+            InternalLoadBalancerElementResponse providerResponse = _responseGenerator.createInternalLbElementResponse(provider);
             providerResponses.add(providerResponse);
         }
         response.setResponses(providerResponses);

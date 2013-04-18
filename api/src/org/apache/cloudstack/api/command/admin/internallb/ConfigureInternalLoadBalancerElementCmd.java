@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
@@ -39,7 +39,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "configureInternalLoadBalancerElement", responseObject=VirtualRouterProviderResponse.class,
+@APICommand(name = "configureInternalLoadBalancerElement", responseObject=InternalLoadBalancerElementResponse.class,
             description="Configures an Internal Load Balancer element.", since="4.2.0")
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
@@ -52,7 +52,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VirtualRouterProviderResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = InternalLoadBalancerElementResponse.class,
             required=true, description="the ID of the internal lb provider")
     private Long id;
 
@@ -104,7 +104,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
         VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
         s_logger.debug("hello alena");
         if (result != null){
-            VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
+            InternalLoadBalancerElementResponse routerResponse = _responseGenerator.createInternalLbElementResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {

@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
@@ -37,7 +37,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "createInternalLoadBalancerElement", responseObject=VirtualRouterProviderResponse.class, description="Create an Internal Load Balancer element.",since="4.2.0")
+@APICommand(name = "createInternalLoadBalancerElement", responseObject=InternalLoadBalancerElementResponse.class, description="Create an Internal Load Balancer element.",since="4.2.0")
 public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateInternalLoadBalancerElementCmd.class.getName());
     private static final String s_name = "createinternalloadbalancerelementresponse";
@@ -85,7 +85,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
         UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
         VirtualRouterProvider result = _service.get(0).getInternalLoadBalancerElement(getEntityId());
         if (result != null) {
-            VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
+            InternalLoadBalancerElementResponse response = _responseGenerator.createInternalLbElementResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
