@@ -15,14 +15,10 @@ Issues fixed in this release:
 * CLOUDSTACK-398: Install Guide: Section 11.17.3 (Using VPN with Mac OSX): Not complete?
 * CLOUDSTACK-462: A few corrections to make to the 4.0.0 installation guide
 * CLOUDSTACK-524: http proxy used by ssvm (secstorage.proxy) NOT working
-* CLOUDSTACK-528: Failed to create secondary storage
 * CLOUDSTACK-587: MEMORY_CONSTRAINT_VIOLATIONMemory limits must satisfy:
-* CLOUDSTACK-643: KVM snapshots deleted on UI/API do not physically delete from secondary storage
 * CLOUDSTACK-803: HA gets triggered even when the host investigator is unable to determine the state of the host
 * CLOUDSTACK-810: Make DirectAgent thread pool size configurable
-* CLOUDSTACK-974: listServiceOfferings doesn't sort by sortKey for non-root users
 * CLOUDSTACK-976: unable to start cloudstack (error: "java.lang.NoSuchMethodError: org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString([B)Ljava/lang/String;")
-* CLOUDSTACK-986: Add Ubuntu instructions to 'Using the Management Server As the NFS Server'
 * CLOUDSTACK-988: HV version must be updated in hypervisor_version column of host table
 * CLOUDSTACK-990: Documentation issue with libvirtd.conf tcp_port configuration
 * CLOUDSTACK-1088: EnableStaticNat error will clear the data in database
@@ -43,7 +39,6 @@ Issues fixed in this release:
 * CLOUDSTACK-1420: Ensure trademarks are properly attributed in publican brand.
 * CLOUDSTACK-1589: Ubuntu 4.0 packages depend on non-existent chkconfig
 * CLOUDSTACK-1629: Need to move location or conflict with antlr
-* CLOUDSTACK-1638: Network plugins won't be notified VM migration.
 * CLOUDSTACK-1642: Add support CentOS 6.4
 * CLOUDSTACK-1648: Unable to add KVM host
 * CLOUDSTACK-1652: /etc/hosts error in virtual router when deploy instance with the name same to previous instances
@@ -53,7 +48,8 @@ Issues fixed in this release:
 * CLOUDSTACK-1845: KVM - storage migration often fails
 * CLOUDSTACK-1846: KVM - storage pools can silently fail to be unregistered, leading to failure to register later
 * CLOUDSTACK-2003: Deleting domain while deleted account is cleaning up leaves VMs expunging forever due to 'Failed to update resource count'
-
+* CLOUDSTACK-2090: Upgrade from version 4.0.1 to version 4.0.2 triggers the 4.0.0 to 4.0.1. 
+* CLOUDSTACK-2091: Error in API documentation for 4.0.x.
 
 Version 4.0.1-incubating
 ------------------------
