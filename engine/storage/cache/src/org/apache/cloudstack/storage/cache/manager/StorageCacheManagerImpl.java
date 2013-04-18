@@ -135,7 +135,6 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 		AsyncCallbackDispatcher<StorageCacheManagerImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this); 
 		caller.setContext(context);
 		
-		
 		CommandResult result = null;
 		try {
 		    objOnCacheStore.processEvent(Event.CreateOnlyRequested);

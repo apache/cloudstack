@@ -44,7 +44,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -75,6 +78,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     SnapshotDataFactory snapshotFactory;
     @Inject
     ObjectInDataStoreDao objInStoreDao;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    SnapshotDao snapshotDao;
+    @Inject
+    VolumeDao volumeDao;
     protected StateMachine2<State, Event, DataObjectInStore> stateMachines;
 
     public ObjectInDataStoreManagerImpl() {
@@ -116,13 +125,6 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());
                 vo = templatePoolDao.persist(vo);
             }
-        } else if (dataStore.getRole() == DataStoreRole.ImageCache) {
-        	ObjectInDataStoreVO vo = new ObjectInDataStoreVO();
-        	vo.setDataStoreRole(dataStore.getRole());
-        	vo.setDataStoreId(dataStore.getId());
-        	vo.setObjectType(obj.getType());
-        	vo.setObjectId(obj.getId());
-        	vo = objInStoreDao.persist(vo);
         } else {
             // Image store
             switch ( obj.getType()){
@@ -130,18 +132,27 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(obj.getId());
                 ts.setDataStoreId(dataStore.getId());
+                if (dataStore.getRole() == DataStoreRole.ImageCache) {
+                	ts.setInstallPath("/templates/" + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                }
                 ts = templateDataStoreDao.persist(ts);
                 break;
             case SNAPSHOT:
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
+                if (dataStore.getRole() == DataStoreRole.ImageCache) {
+                	ss.setInstallPath("/snapshots/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                }
                 ss = snapshotDataStoreDao.persist(ss);
                 break;
             case VOLUME:
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
                 vs.setVolumeId(obj.getId());
                 vs.setDataStoreId(dataStore.getId());
+                if (dataStore.getRole() == DataStoreRole.ImageCache) {
+                	vs.setInstallPath("/volumes/" + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                }
                 vs = volumeDataStoreDao.persist(vs);
                 break;
             }

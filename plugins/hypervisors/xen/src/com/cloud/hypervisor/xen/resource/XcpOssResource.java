@@ -20,7 +20,6 @@ package com.cloud.hypervisor.xen.resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -46,10 +45,10 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.Types.XenAPIException;
 
 @Local(value=ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {

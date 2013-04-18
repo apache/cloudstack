@@ -49,6 +49,7 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -219,9 +220,15 @@ SecondaryStorageResource {
             return execute((DeleteTemplateFromS3Command) cmd);
         } else if (cmd instanceof CleanupSnapshotBackupCommand){
             return execute((CleanupSnapshotBackupCommand)cmd);
+        } else if (cmd instanceof CopyCmd) {
+        	return execute((CopyCmd)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+    
+    protected Answer execute(CopyCmd cmd) {
+    	return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @SuppressWarnings("unchecked")

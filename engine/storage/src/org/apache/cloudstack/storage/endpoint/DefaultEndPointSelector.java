@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -69,6 +70,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else {
             return false;
         }
+    }
+    
+    protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
+    	  DataStoreRole srcRole = srcStore.getRole();
+          DataStoreRole destRole = destStore.getRole();
+          if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache) {
+        	  return true;
+          } else {
+        	  return false;
+          }
     }
 
     @DB
@@ -146,12 +157,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataObject srcData, DataObject destData) {
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
-        if (srcData.getFormat() == DiskFormat.VMDK
-                || destData.getFormat() == DiskFormat.VMDK) {
-            // If any of data is for vmware, data moving should go to ssvm
-
-        } else if (moveBetweenPrimaryImage(srcStore, destStore)) {
+        if (moveBetweenPrimaryImage(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
+        } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
+        	EndPoint ep = findEndPointForImageMove(srcStore, destStore);
+        	if (ep == null) {
+        		//if there is no ssvm agent running, use mgt server 
+        		ep = new LocalHostEndpoint();
+        	}
+        	return ep;
         }
         // TODO Auto-generated method stub
         return null;

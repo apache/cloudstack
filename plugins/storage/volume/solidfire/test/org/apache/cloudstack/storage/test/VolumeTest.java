@@ -23,12 +23,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,15 +111,6 @@ public class VolumeTest {
 		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
 		CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
 
-		try {
-			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);
-		} catch (AgentUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (OperationTimedoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 
 		//Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);

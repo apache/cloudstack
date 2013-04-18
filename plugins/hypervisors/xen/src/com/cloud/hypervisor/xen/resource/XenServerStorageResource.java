@@ -39,10 +39,8 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -59,7 +57,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
@@ -93,8 +90,6 @@ public class XenServerStorageResource {
             return this.execute((AttachPrimaryDataStoreCmd)command);
         } else if (command instanceof CreatePrimaryDataStoreCmd) {
             return execute((CreatePrimaryDataStoreCmd) command);
-        } else if (command instanceof CreateVolumeFromBaseImageCommand) {
-            return execute((CreateVolumeFromBaseImageCommand)command);
         } else if (command instanceof CreateObjectCommand) {
             return execute((CreateObjectCommand) command);
         } else if (command instanceof DeleteVolumeCommand) {
@@ -215,7 +210,7 @@ public class XenServerStorageResource {
         return new Answer(cmd, false, errorMsg);
     }
     
-    protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
+   /* protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
         VolumeObjectTO volume = cmd.getVolume();
         ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
         Connection conn = hypervisorResource.getConnection();
@@ -232,7 +227,7 @@ public class XenServerStorageResource {
         } catch (XmlRpcException e) {
             return new Answer(cmd, false, e.toString());
         }
-    }
+    }*/
     
     protected SR getNfsSR(Connection conn, DecodedDataStore store) {
 

@@ -23,7 +23,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.to.ImageStoreTO;
-import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.mockito.Mockito;
@@ -126,10 +125,10 @@ public class DirectAgentTest extends CloudStackTestNGBase {
     
     @Test
     public void testDownloadTemplate() {
-        ImageOnPrimayDataStoreTO image = Mockito.mock(ImageOnPrimayDataStoreTO.class);
+        ImageStoreTO image = Mockito.mock(ImageStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
         Mockito.when(primaryStore.getUuid()).thenReturn(this.getLocalStorageUuid());
-        Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);
+        //Mockito.when(image.get).thenReturn(primaryStore);
         
         ImageStoreTO imageStore = Mockito.mock(ImageStoreTO.class);
         Mockito.when(imageStore.getType()).thenReturn("http");
@@ -138,7 +137,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
         Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
         
-        Mockito.when(image.getTemplate()).thenReturn(template);
+        //Mockito.when(image.getTemplate()).thenReturn(template);
         //CopyTemplateToPrimaryStorageCmd cmd = new CopyTemplateToPrimaryStorageCmd(image);
         Command cmd = null;
         try {
