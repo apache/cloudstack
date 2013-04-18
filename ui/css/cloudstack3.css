@@ -4372,6 +4372,17 @@ Dialogs*/
   display: block;
   clear: both;
   font-size: 11px;
+  float: left;
+  height: 10px;
+  max-width: 287px;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard.admin .dashboard-container.sub.alerts ul li p br {
+  display: none;
 }
 
 /*** User*/
