@@ -21,6 +21,15 @@
         var name = args.name;
         var id = args.id;
         var state = args.state;
+        var detailView = args.detailView;
+        var listView = args.listView;
+
+        cloudStack.sections.system.naas.networkProviders.types[id] = detailView;
+        cloudStack.sections.system.subsections[listView.id] = {
+          id: listView.id,
+          title: name,
+          listView: listView
+        };
 
         $(window).bind('cloudStack.system.serviceProviders.makeHarcodedArray', function(event, data) {
           var nspHardcodingArray = data.nspHardcodingArray;

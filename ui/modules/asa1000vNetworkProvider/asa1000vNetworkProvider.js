@@ -19,7 +19,53 @@
     module.infrastructure.networkServiceProvider({
       id: 'ciscoAsa1000v',
       name: 'Cisco ASA 1000v',
-      state: 'Disabled'
+      state: 'Disabled',
+      listView: {
+        id: 'asa1000vDevices',
+        fields: {
+          name: { label: 'label.name' },
+          ipaddress: { label: 'label.ip.address' },
+          state: { label: 'label.state', indicator: {
+            'Enabled': 'on',
+            'Disabled': 'off'
+          }}
+        },
+        dataProvider: function(args) {
+          args.response.success({
+            data: [
+              { name: 'device1', ipaddress: '192.168.1.12', state: 'Enabled' },
+              { name: 'device2', ipaddress: '192.168.1.13', state: 'Disabled' },
+              { name: 'device3', ipaddress: '192.168.1.14', state: 'Enabled' }
+            ]
+          });
+        }
+      },
+      detailView: {
+        id: 'asa1000vProvider',
+        label: 'label.netScaler',
+        viewAll: { label: 'label.devices', path: '_zone.asa100vDevices' },
+        tabs: {
+          details: {
+            title: 'label.details',
+            fields: [
+              {
+                name: { label: 'label.name' }
+              },
+              {
+                state: { label: 'label.state' }
+              }
+            ],
+            dataProvider: function(args) {
+              args.response.success({
+                data: {
+                  name: 'Cisco ASA 1000v',
+                  state: 'Disabled'
+                }
+              });
+            }
+          }
+        }
+      }
     });
   };
 }(jQuery, cloudStack));
