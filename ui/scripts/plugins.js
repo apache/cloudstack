@@ -51,7 +51,7 @@
   
   cloudStack.sections.plugins = {
     title: 'label.plugins',
-    show: cloudStack.uiCustom.plugins
+    show: cloudStack.uiCustom.pluginListing
   };
 
   // Load plugins
@@ -70,7 +70,5 @@
         ui: pluginAPI
       });
     });
-
-    // Load CSS
   });
 }(jQuery, cloudStack, require));
