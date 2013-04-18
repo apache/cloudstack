@@ -36,6 +36,9 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name="name")
     private String name;
 
+    @Column(name = "type")
+    private String type;
+
     @Column(name = "description")
     private String description;
 
@@ -112,6 +115,14 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     @Override

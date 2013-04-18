@@ -512,6 +512,7 @@ CREATE VIEW `cloud`.`affinity_group_view` AS
     select 
         affinity_group.id id,
         affinity_group.name name,
+        affinity_group.type type,
         affinity_group.description description,
         affinity_group.uuid uuid,
         account.id account_id,

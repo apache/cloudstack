@@ -3664,8 +3664,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(group.getName());
         response.setType(group.getType());
         response.setDescription(group.getDescription());
-        // response.setDomainId(account.)
+        Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
 
+        response.setObjectName("affinitygroup");
         return response;
     }
 
