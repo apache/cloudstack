@@ -30,7 +30,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerService;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
@@ -142,7 +142,7 @@ public abstract class BaseCmd {
     @Inject public ApplicationLoadBalancerService _appLbService;
     @Inject public AffinityGroupService _affinityGroupService;
     @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
-    @Inject public InternalLoadBalancerService _internalLbSvc;
+    @Inject public InternalLoadBalancerVMService _internalLbSvc;
     
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

@@ -30,7 +30,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerManager;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 
@@ -95,7 +95,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Inject DomainRouterDao _routerDao;
     @Inject VirtualRouterProviderDao _vrProviderDao;
     @Inject PhysicalNetworkServiceProviderDao _pNtwkSvcProviderDao;
-    @Inject InternalLoadBalancerManager _internalLbMgr;
+    @Inject InternalLoadBalancerVMManager _internalLbMgr;
     @Inject ConfigurationManager _configMgr;
     @Inject AccountManager _accountMgr;
     @Inject ApplicationLoadBalancerRuleDao _appLbDao;

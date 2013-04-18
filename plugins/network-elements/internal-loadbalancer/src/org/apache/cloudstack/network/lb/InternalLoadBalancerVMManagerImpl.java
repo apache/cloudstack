@@ -117,11 +117,11 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = { InternalLoadBalancerManager.class, InternalLoadBalancerService.class})
-public class InternalLoadBalancerManagerImpl extends ManagerBase implements
-InternalLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
+@Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
+public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
+InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
-            .getLogger(InternalLoadBalancerManagerImpl.class);
+            .getLogger(InternalLoadBalancerVMManagerImpl.class);
     private String _instance;
     private String _mgmtHost;
     private String _mgmtCidr;

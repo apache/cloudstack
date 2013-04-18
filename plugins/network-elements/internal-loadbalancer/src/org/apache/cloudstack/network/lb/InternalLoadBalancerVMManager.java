@@ -31,7 +31,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-public interface InternalLoadBalancerManager extends Manager, InternalLoadBalancerService{
+public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBalancerVMService{
     /**
      * Destroys Internal LB vm instance
      * @param vmId
