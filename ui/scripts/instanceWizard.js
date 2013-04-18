@@ -18,7 +18,7 @@
 (function($, cloudStack) {
   var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community, networkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
-  var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
+  var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
   cloudStack.instanceWizard = {
     maxDiskOfferingSize: function() {
@@ -339,26 +339,26 @@
 				  var $networkStepContainer = $('.step.network:visible');
 
 				  if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
-				    step5ContainerType = 'nothing-to-select'; 					
+				    step6ContainerType = 'nothing-to-select'; 					
 					  $networkStep.find("#from_instance_page_1").hide();		
             $networkStep.find("#from_instance_page_2").hide();					
 					  $networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);					
 					  $networkStep.find("#from_vpc_tier").show();					
 				  } else { //from Instance page
 				    if(selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
-						  step5ContainerType = 'select-network';
+						  step6ContainerType = 'select-network';
 						  $networkStep.find("#from_instance_page_1").show();		
 						  $networkStep.find("#from_instance_page_2").show();
 						  $networkStep.find("#from_vpc_tier").text("");			
 						  $networkStep.find("#from_vpc_tier").hide();
               $networkStepContainer.removeClass('next-use-security-groups');
 					  } else { // Advanced SG-enabled zone
-					    step5ContainerType = 'select-advanced-sg';
+					    step6ContainerType = 'select-advanced-sg';
 					  }
 
             if ($networkStepContainer.hasClass('next-use-security-groups')) {
               $networkStepContainer.removeClass('repeat next-use-security-groups loaded');
-              step5ContainerType = 'select-security-group';
+              step6ContainerType = 'select-security-group';
             }
 				  }
         }
@@ -385,15 +385,15 @@
           });
 
           if(includingSecurityGroupService == false || selectedHypervisor == "VMware") {
-            step5ContainerType = 'nothing-to-select';
+            step6ContainerType = 'nothing-to-select';
           }
           else {
-            step5ContainerType = 'select-security-group';
+            step6ContainerType = 'select-security-group';
           }
         }
 
-        //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
-        if(step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
+        //step6ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
+        if(step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
           var defaultNetworkArray = [], optionalNetworkArray = [];
           var networkData = {
             zoneId: args.currentData.zoneid,
@@ -478,7 +478,7 @@
 
           $networkStepContainer.removeClass('repeat next-use-security-groups');
 
-          if (step5ContainerType == 'select-advanced-sg') {
+          if (step6ContainerType == 'select-advanced-sg') {
             $networkStepContainer.addClass('repeat next-use-security-groups');
 
             // Add guest network is disabled
@@ -498,7 +498,7 @@
           });
         }
 
-        else if(step5ContainerType == 'select-security-group') {
+        else if(step6ContainerType == 'select-security-group') {
           var securityGroupArray = [];
           var data = {
             domainid: g_domainid,
@@ -530,7 +530,7 @@
           });
         }
 
-        else if(step5ContainerType == 'nothing-to-select') {
+        else if(step6ContainerType == 'nothing-to-select') {
           args.response.success({
             type: 'nothing-to-select',
             data: {            
@@ -544,7 +544,7 @@
 
       },
 
-      // Step 6: Review
+      // Step 7: Review
       function(args) {
         return false;
       }
@@ -569,9 +569,25 @@
         if(selectedDiskOfferingObj.iscustomized == true)
           array1.push("&size=" + args.data.size);
       }
+			
+			//step 5: select an affinity group		
+			var checkedAffinityGroupIdArray;
+			if(typeof(args.data["affinity-groups"]) == "object" && args.data["affinity-groups"].length != null) { //args.data["affinity-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
+				checkedAffinityGroupIdArray = args.data["affinity-groups"];
+			}
+			else if(typeof(args.data["affinity-groups"]) == "string" && args.data["affinity-groups"].length > 0) { //args.data["affinity-groups"] is a string, e.g. "2375f8cc-8a73-4b8d-9b26-50885a25ffe0"
+				checkedAffinityGroupIdArray = [];
+				checkedAffinityGroupIdArray.push(args.data["affinity-groups"]);
+			}
+			else { // typeof(args.data["affinity-groups"]) == null
+				checkedAffinityGroupIdArray = [];
+			}
 
-      //step 5: select network
-      if (step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
+			if(checkedAffinityGroupIdArray.length > 0)
+				array1.push("&affinitygroupids=" + checkedAffinityGroupIdArray.join(","));
+						
+      //step 6: select network
+      if (step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
         var array2 = [];
         var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
 
@@ -634,7 +650,7 @@
 
         array1.push("&networkIds=" + array2.join(","));
       }
-      else if (step5ContainerType == 'select-security-group') {
+      else if (step6ContainerType == 'select-security-group') {
         var checkedSecurityGroupIdArray;
         if(typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
           checkedSecurityGroupIdArray = args.data["security-groups"];
@@ -682,7 +698,7 @@
 					array1.push("&networkIds=" + array2.join(","));					
 				}				
       }
-      else if (step5ContainerType == 'nothing-to-select') {	  
+      else if (step6ContainerType == 'nothing-to-select') {	  
 				if(args.context.networks != null) { //from VPC tier
 				  array1.push("&networkIds=" + args.context.networks[0].id);
 					array1.push("&domainid=" + args.context.vpc[0].domainid);
