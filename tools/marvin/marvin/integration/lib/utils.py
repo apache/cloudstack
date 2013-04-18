@@ -176,7 +176,6 @@ def get_host_credentials(config, hostip):
                         raise Exception("Unresolvable host %s error is %s" % (hostip, e))
     raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
-
 def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
     """Double hop and returns a process status"""
 

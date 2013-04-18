@@ -16,6 +16,7 @@
 # under the License.
 
 import unittest
+import logging
 from marvin.cloudstackTestClient import cloudstackTestClient
 from marvin.integration.lib.common import get_template
 
@@ -40,7 +41,7 @@ from marvin.integration.lib.base.User import User
 
 class AccountFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
 
     def test_userAccountFactory(self):
         af = AccountFactory()
@@ -74,7 +75,7 @@ class AccountFactoryTest(unittest.TestCase):
 
 class ServiceOfferingFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
 
     def test_serviceOfferingFactory(self):
         sf = ServiceOfferingFactory()
@@ -89,7 +90,7 @@ class ServiceOfferingFactoryTest(unittest.TestCase):
 
 class NetworkOfferingFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
 
     def test_defaultSourceNatOfferingFactory(self):
         snatOfferingFactory = DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory()
@@ -107,7 +108,7 @@ class NetworkOfferingFactoryTest(unittest.TestCase):
 
 class VirtualMachineFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
 
     def tearDown(self):
         pass
@@ -123,7 +124,7 @@ class VirtualMachineFactoryTest(unittest.TestCase):
 
 class UserFactorySubFactoryTest(unittest.TestCase):
     def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost').getApiClient()
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
 
     def tearDown(self):
         pass

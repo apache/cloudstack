@@ -22,17 +22,16 @@ import hmac
 import hashlib
 import logging
 import time
-import cloudstackException
-from cloudstackAPI import *
-import jsonHelper
+import marvin.cloudstackException
+from marvin.cloudstackAPI import *
+import marvin.jsonHelper
 from requests import ConnectionError
 from requests import HTTPError
 from requests import Timeout
 from requests import RequestException
 
 
-class cloudConnection(object):
-
+class CloudConnection(object):
     """ Connections to make API calls to the cloudstack management server
     """
     def __init__(self, mgmtDet, asyncTimeout=3600, logging=None,
@@ -61,7 +60,7 @@ class cloudConnection(object):
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
     def __copy__(self):
-        return cloudConnection(self.mgtSvr, self.port, self.user,
+        return CloudConnection(self.mgtSvr, self.port, self.user,
                                self.passwd, self.apiKey,
                                self.securityKey,
                                self.asyncTimeout, self.logging,
