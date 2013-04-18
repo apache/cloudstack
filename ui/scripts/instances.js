@@ -692,14 +692,32 @@
                       name: { label: 'label.name' },
                       type: { label: 'label.type' }
                     },
-                    dataProvider: function(args) {
-                      args.response.success({
-                        data: [
-                          { id: 1, name: 'Affinity Group 1', type: 'Affinity', _isSelected: true },
-                          { id: 2, name: 'Affinity Group 2', type: 'Anti-affinity' },
-                          { id: 3, name: 'Anti-affinity Group', type: 'Anti-affinity', _isSelected: true }
-                        ]
-                      });
+                    dataProvider: function(args) {										  
+											$.ajax({
+												url: createURL('listAffinityGroups'),
+												success: function(json) {	
+                          var items = [];												
+													var allAffinityGroups = json.listaffinitygroupsresponse.affinitygroup;
+													var previouslySelectedAffinityGroups = args.context.instances[0].affinitygroup;
+													if(allAffinityGroups != null) {		
+													  for(var i = 0; i < allAffinityGroups.length; i++) {														  
+														  var isPreviouslySelected = false;														  
+															if(previouslySelectedAffinityGroups != null) {
+															  for(var k = 0; k < previouslySelectedAffinityGroups.length; k++) {
+																  if(previouslySelectedAffinityGroups[k].id == allAffinityGroups[i].id) {
+																	  isPreviouslySelected = true;
+																	  break; //break for loop
+																	}
+																}																
+															}												
+															items.push($.extend(allAffinityGroups[i], {
+															  _isSelected: isPreviouslySelected
+															}));	                             													
+														}
+													}											
+													args.response.success({data: items});
+												}
+											});													
                     }
                   }
                 },
