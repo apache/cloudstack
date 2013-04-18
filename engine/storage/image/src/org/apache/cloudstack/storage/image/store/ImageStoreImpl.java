@@ -178,5 +178,8 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return getDriver().getStoreTO(this);
     }
 
+    public ImageStoreVO getImageStoreVO(){
+        return this.imageDataStoreVO;
+    }
 
 }

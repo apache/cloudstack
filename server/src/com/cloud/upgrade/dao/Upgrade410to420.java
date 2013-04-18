@@ -66,8 +66,9 @@ public class Upgrade410to420 implements DbUpgrade {
         updateCluster_details(conn);
         updatePrimaryStore(conn);
     }
-	
+
 	private void updateSystemVmTemplates(Connection conn) {
+	    /* TODO: where should be system vm templates located?
 	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -82,8 +83,9 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
+        */
 	}
-	
+
 	private void updatePrimaryStore(Connection conn) {
 	    PreparedStatement sql = null;
 	    PreparedStatement sql2 = null;
@@ -92,7 +94,7 @@ public class Upgrade410to420 implements DbUpgrade {
             sql.setString(1, "ancient primary data store provider");
             sql.setString(2, "HOST");
             sql.executeUpdate();
-            
+
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
             sql2.setString(1, "ancient primary data store provider");
             sql2.setString(2, "CLUSTER");
@@ -106,7 +108,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 } catch (SQLException e) {
                 }
             }
-            
+
             if (sql2 != null) {
                 try {
                     sql2.close();
@@ -234,7 +236,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void createPlaceHolderNics(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -255,7 +257,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(4, networkId);
                     pstmt.executeUpdate();
                     s_logger.debug("Created placeholder nic for the ipAddress " + ip);
-                
+
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
@@ -271,8 +273,8 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
+
     private void updateRemoteAccessVpn(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;

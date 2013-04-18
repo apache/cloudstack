@@ -17,8 +17,10 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.to.DataStoreTO;
 
 public class SecStorageSetupCommand extends Command {
+    private DataStoreTO store;
 	private String secUrl;
 	private Certificates certs;
 
@@ -57,10 +59,11 @@ public class SecStorageSetupCommand extends Command {
 		super();
 	}
 
-	public SecStorageSetupCommand(String secUrl, Certificates certs) {
+	public SecStorageSetupCommand(DataStoreTO store, String secUrl, Certificates certs) {
 		super();
 		this.secUrl = secUrl;
 		this.certs = certs;
+		this.store = store;
 	}
 
 	@Override
@@ -80,4 +83,14 @@ public class SecStorageSetupCommand extends Command {
         this.secUrl = secUrl;
 
     }
+
+    public DataStoreTO getDataStore() {
+        return store;
+    }
+
+    public void setDataStore(DataStoreTO store) {
+        this.store = store;
+    }
+
+
 }

@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -125,6 +127,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    ImageStoreDao _imageStoreDao;
     @Inject
     VolumeDao _volumeDao;
     @Inject
@@ -344,9 +348,9 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 s_logger.warn("A running secondary storage vm has a null public ip?");
                 return null;
             }
-            //TODO: how to handle parent field from hostVO in image_store? and how we can populate that column?
-          //  return generateCopyUrl(ssVm.getPublicIpAddress(), sourceServer.getParent(), srcTmpltStore.getInstallPath());
-            return generateCopyUrl(ssVm.getPublicIpAddress(), null, srcTmpltStore.getInstallPath());
+            // get parent path of nfs secondary storage
+            ImageStoreVO svo = this._imageStoreDao.findById(sourceServer.getId());
+            return generateCopyUrl(ssVm.getPublicIpAddress(), svo.getParent(), srcTmpltStore.getInstallPath());
         }
 
         VMTemplateVO tmplt = _templateDao.findById(srcTmpltStore.getTemplateId());

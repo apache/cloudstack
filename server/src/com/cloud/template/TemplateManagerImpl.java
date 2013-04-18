@@ -252,7 +252,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
-    TemplateService imageSvr;
+    TemplateService tmpltSvr;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
@@ -1768,11 +1768,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             AsyncCallFuture<CommandResult> future = null;
             if (snapshotId != null) {
                 SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
-                future = this.imageSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
+                future = this.tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
                volume = _volumeDao.findById(volumeId);
                VolumeInfo volInfo = this.volFactory.getVolume(volumeId);
-               future = this.imageSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
+               future = this.tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
                 throw new CloudRuntimeException(
                         "Creating private Template need to specify snapshotId or volumeId");

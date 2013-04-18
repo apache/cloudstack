@@ -71,10 +71,15 @@ public class ImageStoreVO implements ImageStore {
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     @Column(name = "role")
     @Enumerated(value = EnumType.STRING)
     private DataStoreRole role;
+
+    @Column(name="parent")
+    private String parent;
+
+
 
     public DataStoreRole getRole() {
         return role;
@@ -158,6 +163,14 @@ public class ImageStoreVO implements ImageStore {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 
 

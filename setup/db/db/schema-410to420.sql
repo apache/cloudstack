@@ -77,6 +77,7 @@ CREATE TABLE `cloud`.`image_store` (
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
+  `parent` varchar(255) COMMENT 'parent path for the storage server',
   `created` datetime COMMENT 'date the image store first signed on',
   `removed` datetime COMMENT 'date removed if not null',  
   PRIMARY KEY(`id`)

@@ -968,29 +968,36 @@ SecondaryStorageResource {
         if (!_inSystemVM){
             return new Answer(cmd, true, null);
         }
-        String secUrl = cmd.getSecUrl();
-        try {
-            URI uri = new URI(secUrl);
-            String nfsHost = uri.getHost();
+        DataStoreTO dStore = cmd.getDataStore();
+        if (dStore instanceof NfsTO ){
+            String secUrl = cmd.getSecUrl();
+            try {
+                URI uri = new URI(secUrl);
+                String nfsHost = uri.getHost();
 
-            InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
-            String nfsHostIp = nfsHostAddr.getHostAddress();
+                InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
+                String nfsHostIp = nfsHostAddr.getHostAddress();
 
-            addRouteToInternalIpOrCidr(_storageGateway, _storageIp, _storageNetmask, nfsHostIp);
-            String nfsPath = nfsHostIp + ":" + uri.getPath();
-            String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
-            String root = _parent + "/" + dir;
-            mount(root, nfsPath);
+                addRouteToInternalIpOrCidr(_storageGateway, _storageIp, _storageNetmask, nfsHostIp);
+                String nfsPath = nfsHostIp + ":" + uri.getPath();
+                String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
+                String root = _parent + "/" + dir;
+                mount(root, nfsPath);
 
-            configCerts(cmd.getCerts());
+                configCerts(cmd.getCerts());
 
-            nfsIps.add(nfsHostIp);
-            return new SecStorageSetupAnswer(dir);
-        } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
-            s_logger.error(msg);
-            return new Answer(cmd, false, msg);
+                nfsIps.add(nfsHostIp);
+                return new SecStorageSetupAnswer(dir);
+            } catch (Exception e) {
+                String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+                s_logger.error(msg);
+                return new Answer(cmd, false, msg);
 
+            }
+        }
+        else{
+            // TODO: what do we need to setup for S3/Swift, maybe need to mount to some cache storage
+            return new Answer(cmd, true, null);
         }
     }
 

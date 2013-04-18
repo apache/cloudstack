@@ -30,7 +30,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -240,6 +244,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Inject
     KeystoreManager _keystoreMgr;
+    @Inject
+    DataStoreManager _dataStoreMgr;
+    @Inject
+    ImageStoreDao _imageStoreDao;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -300,33 +308,39 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 return false;
             }
 
-            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
-            for( HostVO ssHost : ssHosts ) {
-                String secUrl = ssHost.getStorageUrl();
+            List<DataStore> ssStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+             for( DataStore ssStore : ssStores ) {
+                String secUrl = ssStore.getUri();
                 SecStorageSetupCommand setupCmd = null;
                 if (!_useSSlCopy) {
-                	setupCmd = new SecStorageSetupCommand(secUrl, null);
+                	setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, null);
                 } else {
                 	Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
-                	setupCmd = new SecStorageSetupCommand(secUrl, certs);
+                	setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
                 if (answer != null && answer.getResult()) {
                     SecStorageSetupAnswer an = (SecStorageSetupAnswer) answer;
-                    ssHost.setParent(an.get_dir());
-                    _hostDao.update(ssHost.getId(), ssHost);
+                    if (an.get_dir() != null){
+                        // update the parent path in image_store table for this image store
+                        ImageStoreVO svo = this._imageStoreDao.findById(ssStore.getId());
+                        svo.setParent(an.get_dir());
+                        _imageStoreDao.update(ssStore.getId(), svo);
+                    }
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully programmed secondary storage " + ssHost.getName() + " in secondary storage VM " + secStorageVm.getInstanceName());
+                        s_logger.debug("Successfully programmed secondary storage " + ssStore.getName() + " in secondary storage VM " + secStorageVm.getInstanceName());
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully programmed secondary storage " + ssHost.getName() + " in secondary storage VM " + secStorageVm.getInstanceName());
+                        s_logger.debug("Successfully programmed secondary storage " + ssStore.getName() + " in secondary storage VM " + secStorageVm.getInstanceName());
                     }
                     return false;
                 }
             }
-        } else if( cssHost.getType() == Host.Type.SecondaryStorage ) {
+        }
+        /* After removing SecondaryStorage entries from host table, control should never come here!!
+        else if( cssHost.getType() == Host.Type.SecondaryStorage ) {
             List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, zoneId, State.Running);
             String secUrl = cssHost.getStorageUrl();
             SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl, null);
@@ -345,6 +359,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 }
             }
         }
+        */
         return true;
     }
 
