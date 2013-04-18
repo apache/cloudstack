@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack, require) {
+  if (!cloudStack.pluginAPI) cloudStack.pluginAPI = {};
+
   var loadCSS = function(path) {
     var $link = $('<link>');
 
@@ -27,27 +29,29 @@
     $('head').append($link);
   };
 
-  var pluginAPI = {
-    pollAsyncJob: pollAsyncJobResult,
-    apiCall: function(command, args) {
-      $.ajax({
-        url: createURL(command),
-        data: args.data,
-        success: args.success,
-        error: function(json) {
-          args.error(parseXMLHttpResponse(json));
-        }
-      })
-    },
-    addSection: function(section) {
-      cloudStack.sections[section.id] = $.extend(section, {
-        customIcon: 'plugins/' + section.id + '/icon.png'
-      });
-    },
-    extend: function(obj) {
-      $.extend(true, cloudStack, obj);
+  $.extend(cloudStack.pluginAPI, {
+    ui: {
+      pollAsyncJob: pollAsyncJobResult,
+      apiCall: function(command, args) {
+        $.ajax({
+          url: createURL(command),
+          data: args.data,
+          success: args.success,
+          error: function(json) {
+            args.error(parseXMLHttpResponse(json));
+          }
+        })
+      },
+      addSection: function(section) {
+        cloudStack.sections[section.id] = $.extend(section, {
+          customIcon: 'plugins/' + section.id + '/icon.png'
+        });
+      },
+      extend: function(obj) {
+        $.extend(true, cloudStack, obj);
+      }
     }
-  };
+  });
   
   cloudStack.sections.plugins = {
     title: 'label.plugins',
@@ -66,9 +70,37 @@
       loadCSS(pluginCSS);
 
       // Execute plugin
-      cloudStack.plugins[pluginID]({
-        ui: pluginAPI
-      });
+      cloudStack.plugins[pluginID](
+        $.extend(true, {}, cloudStack.pluginAPI, {
+          pluginAPI: {
+            extend: function(api) {
+              cloudStack.pluginAPI[pluginID] = api;
+            }
+          }
+        })
+      );
+    });
+  });
+
+  // Load modules
+  $(cloudStack.modules).map(function(index, moduleID) {
+    var basePath = 'modules/' + moduleID + '/';
+    var moduleJS = basePath + moduleID + '.js';
+    var moduleCSS = basePath + moduleID + '.css';
+
+    require([moduleJS], function() {
+      loadCSS(moduleCSS);
+
+      // Execute module
+      cloudStack.modules[moduleID](
+        $.extend(true, {}, cloudStack.pluginAPI, {
+          pluginAPI: {
+            extend: function(api) {
+              cloudStack.pluginAPI[moduleID] = api;
+            }
+          }
+        })
+      );
     });
   });
 }(jQuery, cloudStack, require));
