@@ -4201,10 +4201,51 @@ under the License.
                     </orderedlist>
                 </listitem>
                 <listitem id="upgrade-rpm-packages">
-                    <para>The package names have changed between 4.0 and 4.1, so upgrading the packages won't happen automatically with a <command>yum update</command></para> 
+                    <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="restart-system-vms" />.</para> 
+                    <note><title>Community Packages</title>
+                        <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and yum repository, substitute your own URL for the ones used in these examples.</para>
+                    </note>
+                    <orderedlist id="rpmsteps">
+                        <listitem>
+                            <para>The first order of business will be to change the yum repository for each system with &PRODUCT; packages. This means all management servers, and any hosts that have the KVM agent. (No changes should be necessary for hosts that are running VMware or Xen.)</para>
+                            <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that have &PRODUCT; packages installed.</para>
+                            <para>This file should have content similar to the following:</para>
+                            <programlisting language="Bash">
+[apache-cloudstack]
+name=Apache CloudStack
+baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+enabled=1
+gpgcheck=0
+                            </programlisting>
+                            <para>If you are using the community provided package repository, change the baseurl to http://cloudstack.apt-get.eu/rhel/4.1/</para>
+                            <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
+                        </listitem>
+                        <listitem id="rpm-master">
+                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package. This will pull in any other dependencies you need.</para>
+                            <programlisting language="Bash">$ sudo yum install cloudstack-management</programlisting>
+                        </listitem>
+                        <listitem id="kvm-agent-rpm">
+                            <para>For KVM hosts, you will need to upgrade the <filename>cloudstack-agent</filename> package:</para>
+                            <programlisting language="Bash">$ sudo yum install cloudstack-agent</programlisting>
+                            <para>During the installation of <filename>cloudstack-agent</filename>, the RPM will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
+                            <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
+                            <para>If not, add the line.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Restart the agent:</para>
+                            <programlisting language="Bash">
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
                 </listitem>
                 <listitem id="restart-system-vms">
-                    <para>Once you've upgraded the packages on your management servers, you'll need to restart the system VMs. Make sure port 8096 is open <!-- [FIXME, where?] --> to do this.</para>
+                    <para>Once you've upgraded the packages on your management servers, you'll need to restart the system VMs. Make sure port 8096 is open in your local host firewall to do this.</para>
                     <para>There is a script that will do this for you, all you need to do is run the script and supply the IP address for your MySQL instance and your MySQL credentials:</para>
                     <programlisting language="Bash"><prompt>#</prompt> nohup cloudstack-sysvmadm -d <replaceable>IP address</replaceable> -u cloud -p -a &gt; sysvm.log 2&gt;&amp;1 &amp;</programlisting>
                     <para>You can monitor the log for progress. The process of restarting the system VMs can take an hour or more.</para>
