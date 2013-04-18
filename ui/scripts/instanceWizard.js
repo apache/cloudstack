@@ -313,15 +313,14 @@
       },
 
       // Step 5: Affinity
-      function(args) {
-        args.response.success({
-          data: {
-            affinityGroups: [
-              { id: 1, name: 'affinity1', description: 'Dummy Affinity Group 1' },
-              { id: 2, name: 'affinity2', description: 'Dummy Affinity Group 2' },
-            ]
-          }
-        });
+      function(args) {			  
+				$.ajax({
+				  url: createURL('listAffinityGroups'),
+					success: function(json) {					 
+					  var items = json.listaffinitygroupsresponse.affinitygroup;
+						args.response.success({data: {affinityGroups: items}});
+					}
+				});		
       },
 
       // Step 6: Network
