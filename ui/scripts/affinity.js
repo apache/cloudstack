@@ -21,7 +21,7 @@
       id: 'affinityGroups',
       fields: {
         name: { label: 'label.name' },
-        description: { label: 'label.description' }
+        type: { label: 'label.type' }
       },
       dataProvider: function(args) {
         $.ajax({
@@ -69,53 +69,7 @@
 										}
 									});								
                 }
-              },             
-						  domainid: {					
-								label: 'Domain',					
-								select: function(args) {
-									if(isAdmin() || isDomainAdmin()) {
-										$.ajax({
-											url: createURL('listDomains'),
-											data: { 
-												listAll: true,
-												details: 'min'
-											},
-											success: function(json) {
-												var array1 = [{id: '', description: ''}];
-												var domains = json.listdomainsresponse.domain;
-												if(domains != null && domains.length > 0) {
-													for(var i = 0; i < domains.length; i++) {
-														array1.push({id: domains[i].id, description: domains[i].path});
-													}
-												}
-												args.response.success({
-													data: array1
-												});
-											}
-										});
-									}
-									else {
-										args.response.success({
-											data: null
-										});
-									}
-								},
-								isHidden: function(args) {
-									if(isAdmin() || isDomainAdmin())
-										return false;
-									else
-										return true;
-								}
-							},	
-							account: { 
-								label: 'Account',
-								isHidden: function(args) {
-									if(isAdmin() || isDomainAdmin())
-										return false;
-									else
-										return true;
-								}			
-							}						 
+              }     
             }
           },
 
@@ -125,11 +79,7 @@
 							type: args.data.type							
 						};						
 						if(args.data.description != null && args.data.description.length > 0)
-						  $.extend(data, {description: args.data.description});
-						if(args.data.domainid != null && args.data.domainid.length > 0)
-							$.extend(data, { domainid: args.data.domainid });  								  		
-						if(args.data.account != null && args.data.account.length > 0)
-							$.extend(data, { account: args.data.account });   
+						  $.extend(data, {description: args.data.description});						
 					
 					  $.ajax({
 						  url: createURL('createAffinityGroup'),
@@ -155,21 +105,9 @@
         }
       },
       detailView: {
-        actions: {
-          edit: {
-            label: 'label.edit',
-            action: function(args) {
-              args.response.success();
-            },
-            messages: {
-              notification: function(args) { return 'label.edit.affinity.group'; }
-            }
-          },
+        actions: {          
           remove: {
-            label: 'label.delete.affinity.group',
-            action: function(args) {
-              args.response.success();
-            },
+            label: 'label.delete.affinity.group',            
             messages: {
               confirm: function(args) {
                 return 'message.delete.affinity.group';
@@ -178,9 +116,24 @@
                 return 'label.delete.affinity.group';
               }
             },
+						action: function(args) {						  
+							$.ajax({
+							  url: createURL('deleteAffinityGroup'),
+								data: {
+								  id: args.context.affinityGroups[0].id
+								},
+								success: function(json) {			
+									var jid = json.deleteaffinitygroupresponse.jobid;
+									args.response.success({
+									  _custom:{
+										  jobId: jid
+										}									  
+									});			  
+								}
+							});
+            },
             notification: {
-              // poll: pollAsyncJobResult,
-              poll: function(args) { args.complete(); }
+              poll: pollAsyncJobResult              
             }
           }
         },
@@ -192,17 +145,26 @@
             title: 'label.details',
             fields: [
               {
-                name: { label: 'label.name', isEditable: true }
+                name: { label: 'label.name' }
               },
-              {
-                type: { label: 'label.type', isCompact: true }
+              {                
+								description: { label: 'label.description' },
+								type: { label: 'label.type' },
+								id: { label: 'label.id' }								
               }
             ],
 
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({ data: args.context.affinityGroups[0] });
-              }, 20);
+            dataProvider: function(args) {						  
+							$.ajax({
+								url: createURL('listAffinityGroups'),
+								data: {
+								  id: args.context.affinityGroups[0].id
+								},
+								success: function(json) {					 
+									var item = json.listaffinitygroupsresponse.affinitygroup[0];
+									args.response.success({data: item});
+								}
+							});	              
             }
           }
         }
