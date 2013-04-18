@@ -11666,6 +11666,10 @@
                         }
 		];
 
+    $(window).trigger('cloudStack.system.serviceProviders.makeHarcodedArray', {
+      nspHardcodingArray: nspHardcodingArray
+    });
+
 		if(selectedZoneObj.networktype == "Basic") {
 			nspHardcodingArray.push(
 				{

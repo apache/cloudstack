@@ -15,8 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  cloudStack.modules = [
-    'infrastructure',
-    'asa1000vNetworkProvider'
-  ];
+  cloudStack.modules.infrastructure = function(module) {
+    module.pluginAPI.extend({
+      networkServiceProvider: function(args) {
+        var name = args.name;
+        var id = args.id;
+        var state = args.state;
+
+        $(window).bind('cloudStack.system.serviceProviders.makeHarcodedArray', function(event, data) {
+          var nspHardcodingArray = data.nspHardcodingArray;
+
+          nspHardcodingArray.push({
+            id: id,
+            name: name,
+            state: state
+          });
+        });
+      }
+    });
+  };
 }(jQuery, cloudStack));

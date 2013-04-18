@@ -15,8 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  cloudStack.modules = [
-    'infrastructure',
-    'asa1000vNetworkProvider'
-  ];
+  cloudStack.modules.asa1000vNetworkProvider = function(module) {
+    module.infrastructure.networkServiceProvider({
+      id: 'ciscoAsa1000v',
+      name: 'Cisco ASA 1000v',
+      state: 'Disabled'
+    });
+  };
 }(jQuery, cloudStack));
