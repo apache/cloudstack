@@ -28,9 +28,9 @@ class AutoScaleVmProfile(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, AutoScaleVmProfileFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createAutoScaleVmProfile.createAutoScaleVmProfileCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScaleVmProfileFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         autoscalevmprofile = apiclient.createAutoScaleVmProfile(cmd)
         return AutoScaleVmProfile(autoscalevmprofile.__dict__)

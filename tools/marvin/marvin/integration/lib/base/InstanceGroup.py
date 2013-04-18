@@ -28,9 +28,9 @@ class InstanceGroup(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, InstanceGroupFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createInstanceGroup.createInstanceGroupCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in InstanceGroupFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         instancegroup = apiclient.createInstanceGroup(cmd)
         return InstanceGroup(instancegroup.__dict__)

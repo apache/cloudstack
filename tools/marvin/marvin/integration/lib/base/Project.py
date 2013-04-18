@@ -41,9 +41,9 @@ class Project(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, ProjectFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createProject.createProjectCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ProjectFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         project = apiclient.createProject(cmd)
         return Project(project.__dict__)

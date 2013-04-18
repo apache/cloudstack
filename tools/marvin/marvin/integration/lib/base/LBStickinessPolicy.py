@@ -27,9 +27,9 @@ class LBStickinessPolicy(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBStickinessPolicyFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbstickinesspolicy = apiclient.createLBStickinessPolicy(cmd)
         return LBStickinessPolicy(lbstickinesspolicy.__dict__)

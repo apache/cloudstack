@@ -28,9 +28,9 @@ class Domain(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, DomainFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createDomain.createDomainCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in DomainFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         domain = apiclient.createDomain(cmd)
         return Domain(domain.__dict__)

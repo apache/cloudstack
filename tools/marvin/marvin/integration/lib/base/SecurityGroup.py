@@ -31,9 +31,9 @@ class SecurityGroup(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, SecurityGroupFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createSecurityGroup.createSecurityGroupCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SecurityGroupFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         securitygroup = apiclient.createSecurityGroup(cmd)
         return SecurityGroup(securitygroup.__dict__)

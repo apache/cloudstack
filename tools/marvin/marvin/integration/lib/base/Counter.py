@@ -27,9 +27,9 @@ class Counter(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, CounterFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createCounter.createCounterCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in CounterFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         counter = apiclient.createCounter(cmd)
         return Counter(counter.__dict__)

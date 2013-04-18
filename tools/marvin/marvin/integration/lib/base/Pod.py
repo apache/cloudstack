@@ -28,9 +28,9 @@ class Pod(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, PodFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createPod.createPodCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PodFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         pod = apiclient.createPod(cmd)
         return Pod(pod.__dict__)

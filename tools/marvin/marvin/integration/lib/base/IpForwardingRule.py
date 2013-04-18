@@ -27,9 +27,9 @@ class IpForwardingRule(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, IpForwardingRuleFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createIpForwardingRule.createIpForwardingRuleCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in IpForwardingRuleFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipforwardingrule = apiclient.createIpForwardingRule(cmd)
         return IpForwardingRule(ipforwardingrule.__dict__)

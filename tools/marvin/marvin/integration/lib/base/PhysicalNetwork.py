@@ -28,9 +28,9 @@ class PhysicalNetwork(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, PhysicalNetworkFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createPhysicalNetwork.createPhysicalNetworkCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PhysicalNetworkFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         physicalnetwork = apiclient.createPhysicalNetwork(cmd)
         return PhysicalNetwork(physicalnetwork.__dict__)

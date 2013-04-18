@@ -58,9 +58,9 @@ class User(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, UserFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createUser.createUserCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in UserFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         user = apiclient.createUser(cmd)
         return User(user.__dict__)

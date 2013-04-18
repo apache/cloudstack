@@ -27,9 +27,9 @@ class VpnGateway(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, VpnGatewayFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createVpnGateway.createVpnGatewayCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VpnGatewayFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vpngateway = apiclient.createVpnGateway(cmd)
         return VpnGateway(vpngateway.__dict__)

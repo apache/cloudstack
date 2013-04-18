@@ -27,9 +27,9 @@ class LBHealthCheckPolicy(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, LBHealthCheckPolicyFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createLBHealthCheckPolicy.createLBHealthCheckPolicyCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBHealthCheckPolicyFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         lbhealthcheckpolicy = apiclient.createLBHealthCheckPolicy(cmd)
         return LBHealthCheckPolicy(lbhealthcheckpolicy.__dict__)

@@ -27,9 +27,9 @@ class Snapshot(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, SnapshotFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createSnapshot.createSnapshotCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SnapshotFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         snapshot = apiclient.createSnapshot(cmd)
         return Snapshot(snapshot.__dict__)

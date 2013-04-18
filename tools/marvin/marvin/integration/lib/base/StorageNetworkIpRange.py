@@ -28,9 +28,9 @@ class StorageNetworkIpRange(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, StorageNetworkIpRangeFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createStorageNetworkIpRange.createStorageNetworkIpRangeCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StorageNetworkIpRangeFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         storagenetworkiprange = apiclient.createStorageNetworkIpRange(cmd)
         return StorageNetworkIpRange(storagenetworkiprange.__dict__)

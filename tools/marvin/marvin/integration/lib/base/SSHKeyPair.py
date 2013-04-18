@@ -28,9 +28,9 @@ class SSHKeyPair(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, SSHKeyPairFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createSSHKeyPair.createSSHKeyPairCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SSHKeyPairFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         sshkeypair = apiclient.createSSHKeyPair(cmd)
         return SSHKeyPair(sshkeypair.__dict__)

@@ -27,9 +27,9 @@ class FirewallRule(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, FirewallRuleFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createFirewallRule.createFirewallRuleCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in FirewallRuleFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         firewallrule = apiclient.createFirewallRule(cmd)
         return FirewallRule(firewallrule.__dict__)

@@ -27,9 +27,9 @@ class VMSnapshot(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, VMSnapshotFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createVMSnapshot.createVMSnapshotCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VMSnapshotFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         vmsnapshot = apiclient.createVMSnapshot(cmd)
         return VMSnapshot(vmsnapshot.__dict__)

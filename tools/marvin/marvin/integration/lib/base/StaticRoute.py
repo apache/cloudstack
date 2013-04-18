@@ -27,9 +27,9 @@ class StaticRoute(CloudStackEntity.CloudStackEntity):
 
 
     @classmethod
-    def create(cls, apiclient, StaticRouteFactory, **kwargs):
+    def create(cls, apiclient, factory, **kwargs):
         cmd = createStaticRoute.createStaticRouteCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StaticRouteFactory.__dict__.iteritems()]
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         staticroute = apiclient.createStaticRoute(cmd)
         return StaticRoute(staticroute.__dict__)
