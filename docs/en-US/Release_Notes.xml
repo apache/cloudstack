@@ -4221,12 +4221,12 @@ gpgcheck=0
                             <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
                         </listitem>
                         <listitem id="rpm-master">
-                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package. This will pull in any other dependencies you need.</para>
-                            <programlisting language="Bash">$ sudo yum install cloudstack-management</programlisting>
+                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package by upgrading the older <filename>cloud-client</filename> package.</para>
+                            <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
                         </listitem>
                         <listitem id="kvm-agent-rpm">
-                            <para>For KVM hosts, you will need to upgrade the <filename>cloudstack-agent</filename> package:</para>
-                            <programlisting language="Bash">$ sudo yum install cloudstack-agent</programlisting>
+                            <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename> package, similarly installing the new version as <filename>cloudstack-agent</filename>.</para>
+                            <programlisting language="Bash">$ sudo yum upgrade cloud-agent</programlisting>
                             <para>During the installation of <filename>cloudstack-agent</filename>, the RPM will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
                         </listitem>
                         <listitem>
@@ -4459,12 +4459,12 @@ gpgcheck=0
                             <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
                         </listitem>
                         <listitem id="rpm-master-302">
-                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package. This will pull in any other dependencies you need.</para>
-                            <programlisting language="Bash">$ sudo yum install cloudstack-management</programlisting>
+                            <para>Now that you have the repository configured, it's time to install the <filename>cloudstack-management</filename> package by upgrading the older <filename>cloud-client</filename> package.</para>
+                            <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
                         </listitem>
                         <listitem id="kvm-agent-rpm-302">
-                            <para>For KVM hosts, you will need to upgrade the <filename>cloudstack-agent</filename> package:</para>
-                            <programlisting language="Bash">$ sudo yum install cloudstack-agent</programlisting>
+                            <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename> package, similarly installing the new version as <filename>cloudstack-agent</filename>.</para>
+                            <programlisting language="Bash">$ sudo yum upgrade cloud-agent</programlisting>
                             <para>During the installation of <filename>cloudstack-agent</filename>, the RPM will copy your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>, and <filename>environment.properties</filename> from <filename>/etc/cloud/agent</filename> to <filename>/etc/cloudstack/agent</filename>.</para>
                         </listitem>
                         <listitem>
