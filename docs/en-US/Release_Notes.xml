@@ -4181,17 +4181,17 @@ under the License.
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-                                service cloud-agent stop
-                                killall jsvc
-                                service cloudstack-agent start
+service cloud-agent stop
+killall jsvc
+service cloudstack-agent start
                             </programlisting>
                         </listitem>
                         <listitem>
                             <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over, so the logs will continue to be added to <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can change this by copying over the sample configuration file:</para>
                             <programlisting language="Bash">
-                                cd /etc/cloudstack/agent
-                                mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
-                                service cloudstack-agent restart
+cd /etc/cloudstack/agent
+mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
+service cloudstack-agent restart
                             </programlisting>
                         </listitem>
                         <listitem>
@@ -4237,9 +4237,9 @@ gpgcheck=0
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-                                service cloud-agent stop
-                                killall jsvc
-                                service cloudstack-agent start
+service cloud-agent stop
+killall jsvc
+service cloudstack-agent start
                             </programlisting>
                         </listitem>
                     </orderedlist>
@@ -4252,12 +4252,12 @@ gpgcheck=0
                     <programlisting language="Bash"><prompt>#</prompt> tail -f sysvm.log</programlisting>
                     <para>The output to <filename>sysvm.log</filename> will look something like this:</para>
                     <programlisting language="Bash">
-                        Stopping and starting 1 secondary storage vm(s)...
-                        Done stopping and starting secondary storage vm(s)
-                        Stopping and starting 1 console proxy vm(s)...
-                        Done stopping and starting console proxy vm(s).
-                        Stopping and starting 4 running routing vm(s)...
-                        Done restarting router(s).
+Stopping and starting 1 secondary storage vm(s)...
+Done stopping and starting secondary storage vm(s)
+Stopping and starting 1 console proxy vm(s)...
+Done stopping and starting console proxy vm(s).
+Stopping and starting 4 running routing vm(s)...
+Done restarting router(s).
                     </programlisting>
                 </listitem>
                 <listitem>
