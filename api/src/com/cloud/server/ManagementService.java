@@ -123,21 +123,12 @@ public interface ManagementService {
     /**
      * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
      * "podId"
-     * 
+     *
      * @param cmd
      * @return List of Hosts
      */
     Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd);
 
-    /**
-     * Creates a new template
-     *
-     * @param cmd
-     * @return updated template
-     */
-    VirtualMachineTemplate updateTemplate(UpdateIsoCmd cmd);
-
-    VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
 
 
 

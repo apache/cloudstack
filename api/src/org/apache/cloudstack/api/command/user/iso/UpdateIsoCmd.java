@@ -66,7 +66,7 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
 
     @Override
     public void execute(){
-        VirtualMachineTemplate result = _mgr.updateTemplate(this);
+        VirtualMachineTemplate result = _templateService.updateTemplate(this);
         if (result != null) {
             TemplateResponse response = _responseGenerator.createIsoResponse(result);
             response.setResponseName(getCommandName());

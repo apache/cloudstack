@@ -40,11 +40,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
@@ -52,6 +54,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -177,6 +180,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -2225,5 +2229,97 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return stores;
     }
 
+    @Override
+    public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
+        return updateTemplateOrIso(cmd);
+    }
 
+    @Override
+    public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) {
+        return updateTemplateOrIso(cmd);
+    }
+
+    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
+        Long id = cmd.getId();
+        String name = cmd.getTemplateName();
+        String displayText = cmd.getDisplayText();
+        String format = cmd.getFormat();
+        Long guestOSId = cmd.getOsTypeId();
+        Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean bootable = cmd.isBootable();
+        Integer sortKey = cmd.getSortKey();
+        Account account = UserContext.current().getCaller();
+
+        // verify that template exists
+        VMTemplateVO template = _tmpltDao.findById(id);
+        if (template == null || template.getRemoved() != null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
+            ex.addProxyObject(template, id, "templateId");
+            throw ex;
+        }
+
+        // Don't allow to modify system template
+        if (id == Long.valueOf(1)) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
+            ex.addProxyObject(template, id, "templateId");
+            throw ex;
+        }
+
+        // do a permission check
+        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
+
+        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
+                && bootable == null && sortKey == null);
+        if (!updateNeeded) {
+            return template;
+        }
+
+        template = _tmpltDao.createForUpdate(id);
+
+        if (name != null) {
+            template.setName(name);
+        }
+
+        if (displayText != null) {
+            template.setDisplayText(displayText);
+        }
+
+        if (sortKey != null) {
+            template.setSortKey(sortKey);
+        }
+
+        ImageFormat imageFormat = null;
+        if (format != null) {
+            try {
+                imageFormat = ImageFormat.valueOf(format.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are "
+                        + EnumUtils.listValues(ImageFormat.values()));
+            }
+
+            template.setFormat(imageFormat);
+        }
+
+        if (guestOSId != null) {
+            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+
+            if (guestOS == null) {
+                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
+            } else {
+                template.setGuestOSId(guestOSId);
+            }
+        }
+
+        if (passwordEnabled != null) {
+            template.setEnablePassword(passwordEnabled);
+        }
+
+        if (bootable != null) {
+            template.setBootable(bootable);
+        }
+
+        _tmpltDao.update(id, template);
+
+        return _tmpltDao.findById(id);
+    }
 }

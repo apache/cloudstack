@@ -18,6 +18,8 @@ package com.cloud.template;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -124,5 +126,8 @@ public interface TemplateManager extends TemplateApiService{
     String getChecksum(DataStore store, String templatePath);
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
+
+
+
 
 }

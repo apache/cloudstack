@@ -24,11 +24,13 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
@@ -90,11 +92,14 @@ public interface TemplateApiService {
     List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd);
 
     boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd);
-    
+
     VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd,
             Account templateOwner) throws ResourceAllocationException;
 
     VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd command)
             throws CloudRuntimeException;
 
+    VirtualMachineTemplate updateTemplate(UpdateIsoCmd cmd);
+
+    VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
 }
