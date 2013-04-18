@@ -1077,8 +1077,7 @@ ServerResource {
             */
             conn.domainCreateXML(domainXML, 0);
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to start domain " + vmName + ": "
-                    + e.getMessage(), e);
+            throw e;
         }
         return null;
     }

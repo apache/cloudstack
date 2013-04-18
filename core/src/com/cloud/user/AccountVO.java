@@ -65,6 +65,9 @@ public class AccountVO implements Account {
 
     @Column(name="default_zone_id")
     private Long defaultZoneId = null;
+    
+    @Column(name = "default")
+    boolean isDefault;
 
     public AccountVO() {
     	this.uuid = UUID.randomUUID().toString();
@@ -179,4 +182,8 @@ public class AccountVO implements Account {
     	this.uuid = uuid;
     }
 
+    @Override
+    public boolean isDefault() {
+        return isDefault;
+    }
 }

@@ -14,20 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.dc.Vlan;
-
-/**
- */
-public interface PublicIpAddress extends ControlledEntity, IpAddress, Vlan, InternalIdentity {
-
-    String getMacAddress();
-
-    public String getNetmask();
-
-    public String getGateway();
-}
+(function($, cloudStack) {
+  cloudStack.modules = [
+  ];
+}(jQuery, cloudStack));

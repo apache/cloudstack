@@ -64,7 +64,6 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     private List<String> vmIdList;
 
     public AffinityGroupResponse() {
-        this.vmIdList = new ArrayList<String>();
     }
 
     @Override
@@ -149,6 +148,10 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     }
 
     public void addVMId(String vmId) {
+        if (this.vmIdList == null) {
+            this.vmIdList = new ArrayList<String>();
+        }
+
         this.vmIdList.add(vmId);
     }
 

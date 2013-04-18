@@ -49,7 +49,7 @@ class Services:
                         "endip": "10.102.197.73",
                         "zoneid": "1",
                         "podid": "",
-                        "vlan": "101",
+                        "vlan": "4444",
                     }
 
 class TesDedicatePublicIPRange(cloudstackTestCase):

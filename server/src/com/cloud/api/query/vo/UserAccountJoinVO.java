@@ -23,11 +23,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="user_view")
@@ -116,6 +116,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
+    
+    @Column(name = "default")
+    boolean isDefault;
 
     public UserAccountJoinVO() {
     }
@@ -345,6 +348,13 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
         this.jobStatus = jobStatus;
     }
 
+    public boolean isDefault() {
+        return isDefault;
+    }
 
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
 
+    
 }

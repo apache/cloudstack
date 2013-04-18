@@ -29,10 +29,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * A bean representing a user
@@ -92,6 +93,9 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Column(name="uuid")
     private String uuid;
+    
+    @Column(name = "default")
+    boolean isDefault;
 
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -260,6 +264,11 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+    
+    @Override
+    public boolean isDefault() {
+        return isDefault;
     }
     
 }

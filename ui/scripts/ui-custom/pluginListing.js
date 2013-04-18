@@ -95,7 +95,7 @@
     }
   };
 
-  cloudStack.uiCustom.plugins = function() {
+  cloudStack.uiCustom.pluginListing = function() {
     var plugins = cloudStack.plugins;
 
     return elems.pluginListing({

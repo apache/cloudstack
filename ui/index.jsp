@@ -1682,9 +1682,10 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/projectSelect.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneFilter.js?t=<%=now%>"></script>
 
-    <!-- Plugins -->
-    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
+    <!-- Plugin/module API -->
+    <script type="text/javascript" src="scripts/ui-custom/pluginListing.js?t=<%=now%>"></script>
     <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
   </body>
 </html>
