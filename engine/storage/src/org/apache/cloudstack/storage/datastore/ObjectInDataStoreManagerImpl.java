@@ -133,7 +133,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ts.setTemplateId(obj.getId());
                 ts.setDataStoreId(dataStore.getId());
                 if (dataStore.getRole() == DataStoreRole.ImageCache) {
-                	ts.setInstallPath("/templates/" + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                	ts.setInstallPath("template/tmpl/" + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 }
                 ts = templateDataStoreDao.persist(ts);
                 break;

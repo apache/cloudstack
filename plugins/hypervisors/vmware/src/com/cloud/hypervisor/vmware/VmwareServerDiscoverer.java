@@ -312,7 +312,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 						.decode(uriFromCluster.getPath()));
 
 				if (morCluster == null
-						|| !morCluster.getType().equalsIgnoreCase(
+						|| !morCluster.getProtocol().equalsIgnoreCase(
 								"ClusterComputeResource")) {
 					s_logger.warn("Cluster url does not point to a valid vSphere cluster, url: "
 							+ clusterDetails.get("url"));
@@ -345,7 +345,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				details.put("url", hostMo.getHostName());
 				details.put("username", username);
 				details.put("password", password);
-				String guid = morHost.getType() + ":" + morHost.getValue()
+				String guid = morHost.getProtocol() + ":" + morHost.getValue()
 						+ "@" + url.getHost();
 				details.put("guid", guid);
 
@@ -402,7 +402,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
 						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (morParent.getType().equalsIgnoreCase(
+				if (morParent.getProtocol().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
 			}
@@ -410,7 +410,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
 						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (!morParent.getType().equalsIgnoreCase(
+				if (!morParent.getProtocol().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
 

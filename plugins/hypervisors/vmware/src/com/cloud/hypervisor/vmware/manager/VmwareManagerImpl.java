@@ -336,7 +336,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if(mor != null) {
             List<ManagedObjectReference> returnedHostList = new ArrayList<ManagedObjectReference>();
 
-            if(mor.getType().equals("ComputeResource")) {
+            if(mor.getProtocol().equals("ComputeResource")) {
                 List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert(hosts != null && hosts.size() > 0);
 
@@ -346,7 +346,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 prepareHost(hostMo, privateTrafficLabel);
                 returnedHostList.add(hosts.get(0));
                 return returnedHostList;
-            } else if(mor.getType().equals("ClusterComputeResource")) {
+            } else if(mor.getProtocol().equals("ClusterComputeResource")) {
                 List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert(hosts != null);
 
@@ -368,14 +368,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     returnedHostList.add(morHost);
                 }
                 return returnedHostList;
-            } else if(mor.getType().equals("HostSystem")) {
+            } else if(mor.getProtocol().equals("HostSystem")) {
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
-                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
+                s_logger.error("Unsupport host type " + mor.getProtocol() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
                 return null;
             }
         }

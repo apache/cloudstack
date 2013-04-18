@@ -18,7 +18,6 @@ package com.cloud.storage.resource;
 
 import static com.cloud.utils.S3Utils.deleteDirectory;
 import static com.cloud.utils.S3Utils.getDirectory;
-import static com.cloud.utils.S3Utils.putDirectory;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
 import static java.lang.String.format;
@@ -29,7 +28,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -49,6 +47,7 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.log4j.Logger;
 
@@ -63,7 +62,6 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
-import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
@@ -102,20 +100,19 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
-import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
-import com.cloud.utils.S3Utils.ObjectNamingStrategy;
-import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -208,8 +205,6 @@ SecondaryStorageResource {
             return execute((DeleteSnapshotsDirCommand)cmd);
         } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
             return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
-        } else if (cmd instanceof DownloadTemplateFromS3ToSecondaryStorageCommand) {
-            return execute((DownloadTemplateFromS3ToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
             return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof UploadTemplateToS3FromSecondaryStorageCommand) {
@@ -227,7 +222,80 @@ SecondaryStorageResource {
         }
     }
     
+    protected Answer downloadFromS3ToNfs(CopyCmd cmd, DataTO srcData, S3TO s3,
+    		DataTO destData, NfsTO destImageStore) {
+          final String storagePath = destImageStore.getUrl();
+          final String destPath = destData.getPath();
+
+          try {
+
+              final File downloadDirectory = _storage
+                      .getFile(determineStorageTemplatePath(storagePath,
+                              destPath));
+              downloadDirectory.mkdirs();
+
+              if (!downloadDirectory.exists()) {
+                  final String errMsg = format(
+                          "Unable to create directory "
+                                  + "download directory %1$s for download from S3.", downloadDirectory.getName()
+                                 );
+                  s_logger.error(errMsg);
+                  return new Answer(cmd, false, errMsg);
+              }
+
+              getDirectory(s3, s3.getBucketName(),
+                      destPath,
+                      downloadDirectory, new FileNamingStrategy() {
+                  @Override
+                  public String determineFileName(final String key) {
+                      return substringAfterLast(key, S3Utils.SEPARATOR);
+                  }
+              });
+
+              return new Answer(cmd, true, format("Successfully downloaded "
+                      + "from S3 to directory %2$s",
+                      downloadDirectory.getName()));
+
+          } catch (Exception e) {
+
+              final String errMsg = format("Failed to download"
+                      + "due to $2%s", e.getMessage());
+              s_logger.error(errMsg, e);
+              return new Answer(cmd, false, errMsg);
+          }
+    }
+    
+    protected Answer downloadFromSwiftToNfs(CopyCmd cmd, DataTO srcData, SwiftTO srcImageStore,
+    		DataTO destData, NfsTO destImageStore) {
+    	return Answer.createUnsupportedCommandAnswer(cmd);
+    } 
+    
     protected Answer execute(CopyCmd cmd) {
+    	DataTO srcData = cmd.getSrcTO();
+    	DataTO destData = cmd.getDestTO();
+    	DataStoreTO srcDataStore = srcData.getDataStore();
+    	DataStoreTO destDataStore = destData.getDataStore();
+    	
+    	if (srcDataStore.getRole() == DataStoreRole.Image 
+    			&& destDataStore.getRole() == DataStoreRole.ImageCache
+    			) {
+    		
+    		if (!(destDataStore instanceof NfsTO)) {
+    			s_logger.debug("only support nfs as cache storage");
+    			return Answer.createUnsupportedCommandAnswer(cmd); 
+    		}
+    		
+    		if (srcDataStore instanceof S3TO) {
+    			return downloadFromS3ToNfs(cmd, srcData, (S3TO)srcDataStore,
+    					destData, (NfsTO)destDataStore);
+    		} else if (srcDataStore instanceof SwiftTO) {
+    			return downloadFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore,
+    					destData, (NfsTO)destDataStore);
+    		} else {
+    			return Answer.createUnsupportedCommandAnswer(cmd); 
+    		}
+    		
+    	}
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -240,59 +308,9 @@ SecondaryStorageResource {
 
     @SuppressWarnings("unchecked")
     private String determineStorageTemplatePath(final String storagePath,
-            final Long accountId, final Long templateId) {
+            String dataPath) {
         return join(
-                asList(getRootDir(storagePath), TEMPLATE_ROOT_DIR, accountId,
-                        templateId), File.separator);
-    }
-
-    private Answer execute(
-            final DownloadTemplateFromS3ToSecondaryStorageCommand cmd) {
-
-        final S3TO s3 = cmd.getS3();
-        final String storagePath = cmd.getStoragePath();
-        final Long accountId = cmd.getAccountId();
-        final Long templateId = cmd.getTemplateId();
-
-        try {
-
-            final File downloadDirectory = _storage
-                    .getFile(determineStorageTemplatePath(storagePath,
-                            accountId, templateId));
-            downloadDirectory.mkdirs();
-
-            if (!downloadDirectory.exists()) {
-                final String errMsg = format(
-                        "Unable to create directory "
-                                + "download directory %1$s for download of template id "
-                                + "%2$s from S3.", downloadDirectory.getName(),
-                                templateId);
-                s_logger.error(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-
-            getDirectory(s3, s3.getBucketName(),
-                    determineS3TemplateDirectory(accountId, templateId),
-                    downloadDirectory, new FileNamingStrategy() {
-                @Override
-                public String determineFileName(final String key) {
-                    return substringAfterLast(key, S3Utils.SEPARATOR);
-                }
-            });
-
-            return new Answer(cmd, true, format("Successfully downloaded "
-                    + "template id %1$s from S3 to directory %2$s", templateId,
-                    downloadDirectory.getName()));
-
-        } catch (Exception e) {
-
-            final String errMsg = format("Failed to upload template id %1$s "
-                    + "due to $2%s", templateId, e.getMessage());
-            s_logger.error(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-
-        }
-
+                asList(getRootDir(storagePath), dataPath), File.separator);
     }
 
     private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
@@ -411,7 +429,7 @@ SecondaryStorageResource {
     }
 
     private Answer execute(UploadTemplateToS3FromSecondaryStorageCommand cmd) {
-
+/*
         final S3TO s3 = cmd.getS3();
         final Long accountId = cmd.getAccountId();
         final Long templateId = cmd.getTemplateId();
@@ -485,7 +503,8 @@ SecondaryStorageResource {
             return new Answer(cmd, false, errMsg);
 
         }
-
+*/
+    	return new Answer(cmd, false, "not supported ");
     }
 
     private Answer execute(DeleteObjectFromSwiftCommand cmd) {

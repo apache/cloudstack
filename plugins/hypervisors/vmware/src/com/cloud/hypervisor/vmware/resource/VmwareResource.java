@@ -4470,7 +4470,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             ManagedObjectReference morParent = vmOwnerHost.getParentMor();
             HashMap<String, Integer> portInfo;
-            if(morParent.getType().equalsIgnoreCase("ClusterComputeResource")) {
+            if(morParent.getProtocol().equalsIgnoreCase("ClusterComputeResource")) {
                 ClusterMO clusterMo = new ClusterMO(vmOwnerHost.getContext(), morParent);
                 portInfo = clusterMo.getVmVncPortsOnCluster();
             } else {
@@ -5067,7 +5067,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
-        if (_morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
+        if (_morHyperHost.getProtocol().equalsIgnoreCase("HostSystem")) {
             return new HostMO(context, _morHyperHost);
         }
         return new ClusterMO(context, _morHyperHost);

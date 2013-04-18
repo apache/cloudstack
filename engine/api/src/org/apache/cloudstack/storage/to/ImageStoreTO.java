@@ -38,7 +38,7 @@ public class ImageStoreTO implements DataStoreTO {
         this.role = dataStore.getRole();
     }
 
-    public String getType() {
+    public String getProtocol() {
         return this.type;
     }
 

@@ -131,7 +131,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         //Mockito.when(image.get).thenReturn(primaryStore);
         
         ImageStoreTO imageStore = Mockito.mock(ImageStoreTO.class);
-        Mockito.when(imageStore.getType()).thenReturn("http");
+        Mockito.when(imageStore.getProtocol()).thenReturn("http");
         
         TemplateObjectTO template = Mockito.mock(TemplateObjectTO.class);
         Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
