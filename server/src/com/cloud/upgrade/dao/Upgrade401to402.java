@@ -22,7 +22,7 @@ import java.sql.Connection;
 import org.apache.log4j.Logger;
 
 public class Upgrade401to402 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade40to401.class);
+    final static Logger s_logger = Logger.getLogger(Upgrade401to402.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
