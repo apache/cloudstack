@@ -50,6 +50,7 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -81,6 +82,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;
 	protected @Inject UserVmDao _userVmDao;
+	protected @Inject GuestOSHypervisorDao _osHyperDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
@@ -232,9 +234,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 	    _accountMgr.checkAccess(caller, null, true, owner);
 
+	    HypervisorType hyperType = HypervisorType.None;
+	    if ( cmd.getOsTypeId() != null ){
+	        hyperType = _osHyperDao.findHypervisorTypeByGuestOsId(cmd.getOsTypeId());
+	    }
+
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false);
+					cmd.getZoneId(), hyperType, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false);
 	}
 
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {
