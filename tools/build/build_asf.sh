@@ -17,7 +17,7 @@
 # under the License.
 
 version='TESTBUILD'
-sourcedir=~/incubator-cloudstack/
+sourcedir=~/cloudstack/
 outputdir=~/cs-asf-build/
 branch='master'
 tag='no'
