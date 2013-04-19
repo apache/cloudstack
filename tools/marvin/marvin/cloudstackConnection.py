@@ -22,9 +22,9 @@ import hmac
 import hashlib
 import logging
 import time
-import marvin.cloudstackException
+from marvin import cloudstackException
 from marvin.cloudstackAPI import *
-import marvin.jsonHelper
+from marvin import jsonHelper
 from requests import ConnectionError
 from requests import HTTPError
 from requests import Timeout
