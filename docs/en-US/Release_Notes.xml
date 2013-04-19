@@ -27,6 +27,57 @@ under the License.
         <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
         <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
     </chapter>
+    <chapter id="compatibility">
+        <title>Compatibility Matrix for 4.1.0</title>
+            <para>&PRODUCT; is tested against certain operating systems, hypervisors, and other components to ensure that it works on specific platforms. It may work well on other platforms, but the platforms listed below are the ones we specifically test against and are more likely to be able to help troubleshoot if you run into any issues.</para>
+            <section id="supported-oses">
+                <title>Supported Operating Systems</title>
+                <para>This section lists the operating systems that are supported for running &PRODUCT;'s Management Server.</para>
+                <para>Note that we test against specific versions of the OSes, so compatibility with CentOS 6.3 may not indicate compatibility with CentOS 6.2, etc.</para>
+                <itemizedlist>
+                    <listitem><para>CentOS 6.3</para></listitem>
+                    <listitem><para>Red Hat Enterprise Linux 6.3</para></listitem>
+                    <listitem><para>Ubuntu 12.04 LTS</para></listitem>
+                </itemizedlist>
+            </section>
+            <section id="supported-hypervisors">
+                <title>Supported Hypervisors</title>
+                <para>&PRODUCT; supports three hypervisor families, Xen with XAPI, KVM, and VMware with vSphere.</para>
+                <itemizedlist>
+                    <listitem><para>CentOS 6.2 with KVM</para></listitem>
+                    <listitem><para>Red Hat Enterprise Linux 6.2 with KVM</para></listitem>
+                    <listitem><para>XenServer 6.0.2 (with Hotfix)</para></listitem>
+                    <listitem><para>XenServer 6.1</para></listitem>
+                    <listitem><para>VMware vSphere/Vcenter 5.1</para></listitem>
+                </itemizedlist>
+                <note>
+                    <title>Bare Metal Support</title>
+                    <para>Bare metal support is not present in this release.</para>
+                </note>
+            </section>
+            <section id="supported-browsers">
+                <title>Supported Browsers</title>
+                <para>The &PRODUCT; Web-based UI should be compatible with any modern browser, but it's possible that some browsers will not render portions of the UI reliably, depending on their support of Web standards. For best results, we recommend one of the following browsers.</para>
+                <itemizedlist>
+                    <listitem><para>Internet Explorer 8</para></listitem>
+                    <listitem><para>Firefox 10+</para></listitem>
+                    <listitem><para>Chrome</para></listitem>
+                    <listitem><para>Safari</para></listitem>
+                </itemizedlist>
+                <para>Note that it's difficult to confirm specific browser versions for Firefox and Google Chrome, given the speed of their update cycle.</para>
+            </section>
+            <section id="supported-devices">
+                <title>External Devices</title>
+                <para>The following external devices are supported in &PRODUCT; 4.1.0.</para>
+                <itemizedlist>
+                    <listitem><para>F5: 10.1.10 (Build 3341.1084)</para></listitem>
+                    <listitem><para>SRX model srx100b: Must be 10.3 or higher -10.4R7.5</para></listitem>
+                    <listitem><para>Netscaler VPX 9.3, 10.0(Build 54.7.nc and 54.161)</para></listitem>
+                    <listitem><para>Netscaler MPX 10</para></listitem>
+                    <listitem><para>Netscaler SDX 10</para></listitem>
+                </itemizedlist>
+            </section>
+    </chapter>
     <chapter id="version-4.1">
         <title>Version 4.1.0</title>
         <section id="what-new-in-4.1">
