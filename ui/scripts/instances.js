@@ -199,53 +199,9 @@
 				}
 				
 				if("affinityGroups" in args.context) {				  
-					var vmIds = args.context.affinityGroups[0].virtualmachineIds;
-					if(vmIds == null || vmIds.length == 0) {
-						args.response.success({data: null});		
-						return;
-					}				
-					$.ajax({
-						url: createURL('listVirtualMachines'),
-						data: data,
-						success: function(json) {								  
-							var firstPageVms = json.listvirtualmachinesresponse.virtualmachine;									
-							var items = [];									
-							if(vmIds != null) {
-								for(var i = 0; i < vmIds.length; i++) {										  
-									var item = null;
-									var matchFound = false;											
-									if(firstPageVms != null) {
-										for(var k = 0; k < firstPageVms.length; k++) {
-											if(firstPageVms[k].id == vmIds[i]) {
-												matchFound = true;
-												item = firstPageVms[k];
-												break; //break for looup
-											}
-										}
-									}		
-									/*
-									if(matchFound == false) { //Either the VM is not in API response of "listVirtualMachines&page=1&pagesize=500" OR its state doesn't match value in state filter on top in instance listView
-										$.ajax({
-											url: createURL('listVirtualMachines'),
-											async: false,
-											data: {id: vmIds[i]},
-											success: function(json) {	
-												item = json.listvirtualmachinesresponse.virtualmachine[0];												
-											}
-										});
-									}		
-									*/
-                  if(item != null)									
-									  items.push(item);								  
-								}
-							}		
-							args.response.success({
-                actionFilter: vmActionfilter,
-                data: items
-              });							
-						}
-					});	
-          return;					
+					$.extend(data, {
+					  affinitygroupid: args.context.affinityGroups[0].id
+					});		
 				}
 								
         $.ajax({
