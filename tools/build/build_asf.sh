@@ -80,6 +80,24 @@ else
 fi
 
 cd $sourcedir
+
+echo 'checking out correct branch and pulling in any changes that may be staged'
+git checkout $branch
+git pull origin $branch
+
+echo 'setting version numbers'
+mvn versions:set -DnewVersion=$version
+mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
+git clean -f
+
+######## TODO: figure out vmware-base/pom.xml, developer/pom.xml, plugins/network-elements/midokura-midonet/pom.xml
+
+echo 'commit changes'
+git commit -a -s -m "Updating pom.xml version numbers for release $version"
+COMMITSH=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
+
+echo 'committed as $COMMITSH'
+
 echo 'archiving'
 git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch > $outputdir/apache-cloudstack-$version-src.tar
 bzip2 $outputdir/apache-cloudstack-$version-src.tar
@@ -106,3 +124,5 @@ if [ $tag == 'yes' ]; then
       git tag -u $certid -s $version -m "Tagging release $version on branch $branch."
   fi
 fi
+
+echo 'completed.  use commit-sh of $COMMITSH when starting the VOTE thread'
