@@ -11603,6 +11603,17 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -707px;
 }
 
+.migrate .icon,
+.migrateVolume .icon {
+  background-position: 0px -125px;
+}
+
+.migrate:hover .icon,
+.migrateVolume:hover .icon {
+  background-position: 0px -707px;
+}
+
+
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon {
