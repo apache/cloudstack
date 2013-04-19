@@ -175,64 +175,7 @@
 								}
 							});	              
             }
-          },
-										
-					/**
-           * VMs tab
-           */
-          vms: {
-            title: 'label.instances',
-            multiple: true,
-            fields: [
-              {
-                id: { label: 'ID' },
-                displayname: { label: 'label.display.name' },
-                state: { label: 'label.state' }							
-              }
-            ],
-            dataProvider: function(args) {		
-						  var vmIds = args.context.affinityGroups[0].virtualmachineIds;
-							if(vmIds == null || vmIds.length == 0) {
-							  args.response.success({data: null});		
-							  return;
-							}
-						
-              $.ajax({
-							  url: createURL('listVirtualMachines'),
-								success: function(json) {								  
-									var firstPageVms = json.listvirtualmachinesresponse.virtualmachine;									
-									var items = [];									
-									if(vmIds != null) {
-										for(var i = 0; i < vmIds.length; i++) {										  
-											var item = {id: vmIds[i]};	
-                      var matchFound = false;											
-											if(firstPageVms != null) {
-											  for(var k = 0; k < firstPageVms.length; k++) {
-												  if(firstPageVms[k].id == vmIds[i]) {
-													  matchFound = true;
-													  item = firstPageVms[k];
-														break; //break for looup
-													}
-												}
-											}		
-                      if(matchFound == false) { //the VM is not in API response of "listVirtualMachines&page=1&pagesize=500"
-                        $.ajax({
-												  url: createURL('listVirtualMachines'),
-													async: false,
-													data: {id: vmIds[i]},
-								          success: function(json) {	
-													  item = json.listvirtualmachinesresponse.virtualmachine[0];														
-													}
-												});
-                      }											
-											items.push(item);								  
-										}
-									}			                  							
-									args.response.success({data: items});																	
-								}
-							});					  
-            }
-          }					
+          }		
         }
       }
     }
