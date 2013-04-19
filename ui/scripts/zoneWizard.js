@@ -3052,16 +3052,16 @@
               success: function(json) {
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
                 
-								//when hypervisor is BareMetal (begin)   						
-								if(args.data.zone.hypervisor == "BareMetal") {
-								  alert('Zone creation is completed. Please refresh this page.');
+								if(args.data.zone.hypervisor == "BareMetal") { //if hypervisor is BareMetal, zone creation is completed at this point.										  
+									complete({
+										data: args.data
+									});									
 								}								
 								else {
 									stepFns.addCluster({
 										data: args.data
 									});
-								}
-								//when hypervisor is BareMetal (end)   
+								}								
               },
               error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
