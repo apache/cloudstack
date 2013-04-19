@@ -4120,6 +4120,502 @@ under the License.
                                 <para>console proxy does not support any keymaps besides us, jp</para>
                             </entry>
                         </row> 
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-77">CLOUDSTACK-77</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>console proxy display issues</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-79">CLOUDSTACK-79</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack 3.0.4: firewall rules not restored on KVM host</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-105">CLOUDSTACK-105</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>/tmp/stream-unix.####.###### stale sockets causing inodes to run out on Xenserver</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-107">CLOUDSTACK-107</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Network domain guest suffix is not getting programmed as part of hostnames on Guest VMs that are part of Isolated and Shared Guest Networks</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-133">CLOUDSTACK-133</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Multiple DHCP Servers are being created on the shared network on using multiple Network Ranges from the same shared network.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-155">CLOUDSTACK-155</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>HA checks lead to unnecessary Compute Node reboot when Primary Storage is in Maintenance Mode</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-187">CLOUDSTACK-187</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack reports incorrect CPU &amp; RAM usage values for hosts in Basic zone</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-207">CLOUDSTACK-207</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"listCapacity API is not able to list clusterwide capacities when used with "sortby=Usage" parameter"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-234">CLOUDSTACK-234</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>create/delete firewa/lb/pf rule: send ip assoc command just for the IP for which you are creating the rule</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-236">CLOUDSTACK-236</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Network Offering IDs are being exposed to the Regular User Account in the UpdateNetworkCmd Error message</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-237">CLOUDSTACK-237</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>StopVMCommand reported success in spite of failing to stop a VM which got stuck during installation from an ISO</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-238">CLOUDSTACK-238</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>vpn:fail to connect to vpnserver using non-sourceNAT IP</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-242">CLOUDSTACK-242</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>haproxy listens on all interfaces on VR</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-243">CLOUDSTACK-243</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"On management server, security for remote JMX connections is disabled"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-244">CLOUDSTACK-244</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>RPC port on SSVM is open on all interfaces</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-252">CLOUDSTACK-252</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"UpdateNetwork Operation on a guest network that is currently using Virtual Router for Lb services to a network offering that uses "F5" for Lb services Fails due to MySQLIntegrityConstraintViolationException."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-255">CLOUDSTACK-255</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Null pointer exception while creating portforwarding rule after performing UpdateNetworkCmd</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-272">CLOUDSTACK-272</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Delete failure message for network with a VM is not informative</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-280">CLOUDSTACK-280</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Exception thrown on going to Step 5 of Add VM Instance - CloudRuntimeException: Tags are not defined for physical network in the zone id=1</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-281">CLOUDSTACK-281</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"On Updating the VMWare Traffic Labels of existing Physical Networks to Invalid Values; Triggering a ReconnectHost Command, successfully reconnected the ESXi host instead of reporting an Alert"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-298">CLOUDSTACK-298</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>putting host in maintenance mode while creating snapshot ,host resorce state stuck in "ErrorInMaintenance mode" and snapshot creation fail Unable to migrate due to Requested operation is not valid: cannot migrate domain with 1 snapshots</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-305">CLOUDSTACK-305</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS APi - "Rolling back the transaction" seen in management server logs , everytime a soap call is made.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-308">CLOUDSTACK-308</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>ec2-describe-instances - Instance type is always retuned as "m1.small"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-310">CLOUDSTACK-310</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Failed to add host - Plugin error</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-324">CLOUDSTACK-324</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"Cannot edit default security group rules, default security group blocks all inbound traffic."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-338">CLOUDSTACK-338</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unique Names of Disk and Service Offerings in the database are prefixed with "Cloud.com" String</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-425">CLOUDSTACK-425</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Check image type is qcow2 before actually installing</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-440">CLOUDSTACK-440</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>create networks in advanced zone with out VLAN isolation</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-568">CLOUDSTACK-568</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Source template id is recorded incorrectly.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-643">CLOUDSTACK-643</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>KVM snapshots deleted on UI/API do not physically delete from secondary storage</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-797">CLOUDSTACK-797</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Remove or fix unknown classes in cloud-api</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-970">CLOUDSTACK-970</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>when a template is deleted and then copied over again , it is still marked as "Removed" in template_zone_ref table.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-989">CLOUDSTACK-989</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>marvin: jsonHelper deserialization results in unfilled attributes</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1007">CLOUDSTACK-1007</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Not able to delete Shared network because of not being able to stop the router.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1187">CLOUDSTACK-1187</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Handle network creation failures when persistent is set to true</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1199">CLOUDSTACK-1199</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>External DNS not being added to reslov.conf</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1209">CLOUDSTACK-1209</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VPC VR starts despite NPE</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1304">CLOUDSTACK-1304</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"mvn -pl :cloud-client-ui jetty:run" strips permission of files in script/</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1352">CLOUDSTACK-1352</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"KVM 6.3 snapshot - when snapshot of ROOT volume is being created, snapshot of data volume remains in Creating state"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1393">CLOUDSTACK-1393</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Install scripts shows wrong path to copy vhd-util</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1413">CLOUDSTACK-1413</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Need something to concretely identify the version of the code in a particular build</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1424">CLOUDSTACK-1424</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Failed with NPE while deleting account when there are snapshots created for this account instances</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1439">CLOUDSTACK-1439</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Baremetal - UI/API security group unable to set egress rule > UI displays args.context.networks is undefined</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1581">CLOUDSTACK-1581</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>IPV6 - UI - IPV6 DNS entries should not be exposed for Basic Zone.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1638">CLOUDSTACK-1638</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Network plugins won't be notified VM migration.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1673">CLOUDSTACK-1673</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS Regions - Events - User disable / Domain Delete event does not include the UUID of the user/domain that was disabled.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1717">CLOUDSTACK-1717</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS Regions - Local region entry that gets added by default should not include "/api" for its end_point.Also the endpoint should have the actual hostname instead of localhost."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1752">CLOUDSTACK-1752</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>IPV6 - Router of a ipv6 network has external ipv4 dns entries programmed in /etc/resolv.conf</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1758">CLOUDSTACK-1758</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudPlatform CS-17541 SSVM test cases failing in VMware with 4.1 builds</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1771">CLOUDSTACK-1771</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"IPv6 - Network restart for a dual network , results in the ipv4 address of the router to be changed. After netwpork restart , name resolution of the Vms fail."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1775">CLOUDSTACK-1775</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"AWS Regions - Events Framework - Events relating to User/Domain/Account are not being published to the RabbitMQ server expect for USER-DISABLE,DOMAIN-DELETE and ACCOUNT.DISABLE event."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1794">CLOUDSTACK-1794</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>We are allowed to create Egress rules for Shared networks.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1819">CLOUDSTACK-1819</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS Regions - Issues seen when trying to move a zone from 1 region to another.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1868">CLOUDSTACK-1868</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>GetVmStatsCommand throws NullPointerException with VMWare</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1885">CLOUDSTACK-1885</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Broken testcases in 4.1</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1899">CLOUDSTACK-1899</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>SRX firewall external devices - static NAT does not function</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1948">CLOUDSTACK-1948</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>users can no longer set global limits to -1 (e.g. pagesize)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1965">CLOUDSTACK-1965</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>15.8. External Firewalls and Load Balancers Section is Incomplete</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1969">CLOUDSTACK-1969</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ubuntu fresh Install- SystemIntegrityChecker looking for "schema-40to410.sql" wrong location and failed to start MS</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1970">CLOUDSTACK-1970</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ubuntu - "cloudstack-setup-management" not available in "/usr/bin"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2024">CLOUDSTACK-2024</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>cloudstack-setup-management with https not works (incorrect path and missing keystore file)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2053">CLOUDSTACK-2053</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[BUG] userdata.sh on router VM fixes for if else logic and missing meta-data</para>
+                            </entry>
+                        </row>
                     </tbody>
                 </tgroup>
             </informaltable>
@@ -4200,17 +4696,17 @@ under the License.
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                         <listitem>
                             <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over, so the logs will continue to be added to <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can change this by copying over the sample configuration file:</para>
                             <programlisting language="Bash">
-cd /etc/cloudstack/agent
-mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
-service cloudstack-agent restart
+                                cd /etc/cloudstack/agent
+                                mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
+                                service cloudstack-agent restart
                             </programlisting>
                         </listitem>
                         <listitem>
@@ -4230,11 +4726,11 @@ service cloudstack-agent restart
                             <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that have &PRODUCT; packages installed.</para>
                             <para>This file should have content similar to the following:</para>
                             <programlisting language="Bash">
-[apache-cloudstack]
-name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
-enabled=1
-gpgcheck=0
+                                [apache-cloudstack]
+                                name=Apache CloudStack
+                                baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+                                enabled=1
+                                gpgcheck=0
                             </programlisting>
                             <para>If you are using the community provided package repository, change the baseurl to http://cloudstack.apt-get.eu/rhel/4.1/</para>
                             <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
@@ -4256,9 +4752,9 @@ gpgcheck=0
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                     </orderedlist>
@@ -4271,12 +4767,12 @@ service cloudstack-agent start
                     <programlisting language="Bash"><prompt>#</prompt> tail -f sysvm.log</programlisting>
                     <para>The output to <filename>sysvm.log</filename> will look something like this:</para>
                     <programlisting language="Bash">
-Stopping and starting 1 secondary storage vm(s)...
-Done stopping and starting secondary storage vm(s)
-Stopping and starting 1 console proxy vm(s)...
-Done stopping and starting console proxy vm(s).
-Stopping and starting 4 running routing vm(s)...
-Done restarting router(s).
+                        Stopping and starting 1 secondary storage vm(s)...
+                        Done stopping and starting secondary storage vm(s)
+                        Stopping and starting 1 console proxy vm(s)...
+                        Done stopping and starting console proxy vm(s).
+                        Stopping and starting 4 running routing vm(s)...
+                        Done restarting router(s).
                     </programlisting>
                 </listitem>
                 <listitem>
@@ -4438,17 +4934,17 @@ Done restarting router(s).
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                         <listitem>
                             <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over, so the logs will continue to be added to <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can change this by copying over the sample configuration file:</para>
                             <programlisting language="Bash">
-cd /etc/cloudstack/agent
-mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
-service cloudstack-agent restart
+                                cd /etc/cloudstack/agent
+                                mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
+                                service cloudstack-agent restart
                             </programlisting>
                         </listitem>
                         <listitem>
@@ -4468,11 +4964,11 @@ service cloudstack-agent restart
                             <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that have &PRODUCT; packages installed.</para>
                             <para>This file should have content similar to the following:</para>
                             <programlisting language="Bash">
-[apache-cloudstack]
-name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
-enabled=1
-gpgcheck=0
+                                [apache-cloudstack]
+                                name=Apache CloudStack
+                                baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+                                enabled=1
+                                gpgcheck=0
                             </programlisting>
                             <para>If you are using the community provided package repository, change the baseurl to http://cloudstack.apt-get.eu/rhel/4.1/</para>
                             <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
@@ -4494,9 +4990,9 @@ gpgcheck=0
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                     </orderedlist>
@@ -4968,17 +5464,17 @@ service cloudstack-agent start
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                         <listitem>
                             <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over, so the logs will continue to be added to <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can change this by copying over the sample configuration file:</para>
                             <programlisting language="Bash">
-cd /etc/cloudstack/agent
-mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
-service cloudstack-agent restart
+                                cd /etc/cloudstack/agent
+                                mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
+                                service cloudstack-agent restart
                             </programlisting>
                         </listitem>
                         <listitem>
@@ -4998,11 +5494,11 @@ service cloudstack-agent restart
                             <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that have &PRODUCT; packages installed.</para>
                             <para>This file should have content similar to the following:</para>
                             <programlisting language="Bash">
-[apache-cloudstack]
-name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
-enabled=1
-gpgcheck=0
+                                [apache-cloudstack]
+                                name=Apache CloudStack
+                                baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+                                enabled=1
+                                gpgcheck=0
                             </programlisting>
                             <para>If you are using the community provided package repository, change the baseurl to http://cloudstack.apt-get.eu/rhel/4.1/</para>
                             <para>If you're using your own package repository, change this line to read as appropriate for your 4.1.0 repository.</para>
@@ -5024,9 +5520,9 @@ gpgcheck=0
                         <listitem>
                             <para>Restart the agent:</para>
                             <programlisting language="Bash">
-service cloud-agent stop
-killall jsvc
-service cloudstack-agent start
+                                service cloud-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
                             </programlisting>
                         </listitem>
                     </orderedlist>
@@ -5747,31 +6243,31 @@ service cloudstack-agent start
                             <row>
                                 <entry><para><command>deleteUser</command></para></entry>
                                 <entry><para>New response parameters: <command>displaytext</command>, <command>success</command></para></entry>
-                                </row>
-                                <row>
-                                    <entry><para><command>listVlanIpRanges</command></para></entry>
-                                    <entry><para>New response parameters: <command>endipv6</command>, <command>ip6cidr</command>, <command>ip6gateway</command>, <command>startipv6</command></para></entry>
-                                </row>
-                                <row>
-                                    <entry><para><command>updateNetworkOffering</command></para></entry>
-                                    <entry><para>New response parameters: <command>ispersistent</command></para></entry>
-                                </row>
-                                <row>
-                                    <entry><para><command>listVpnUsers</command></para></entry>
-                                    <entry><para>New response parameters: <command>state</command></para></entry>
-                                </row>
-                                <row>
-                                    <entry><para><command>listUsers</command></para></entry>
-                                    <entry><para>New response parameters: <command>iscallerchilddomain</command></para></entry>
-                                </row>
-                                <row>
-                                    <entry><para><command>listIsos</command></para></entry>
-                                    <entry><para>New response parameters: <command>sshkeyenabled</command></para></entry>
-                                </row>
-                            </tbody>
-                        </tgroup>
-                    </informaltable>
-                </section>
+                            </row>
+                            <row>
+                                <entry><para><command>listVlanIpRanges</command></para></entry>
+                                <entry><para>New response parameters: <command>endipv6</command>, <command>ip6cidr</command>, <command>ip6gateway</command>, <command>startipv6</command></para></entry>
+                            </row>
+                            <row>
+                                <entry><para><command>updateNetworkOffering</command></para></entry>
+                                <entry><para>New response parameters: <command>ispersistent</command></para></entry>
+                            </row>
+                            <row>
+                                <entry><para><command>listVpnUsers</command></para></entry>
+                                <entry><para>New response parameters: <command>state</command></para></entry>
+                            </row>
+                            <row>
+                                <entry><para><command>listUsers</command></para></entry>
+                                <entry><para>New response parameters: <command>iscallerchilddomain</command></para></entry>
+                            </row>
+                            <row>
+                                <entry><para><command>listIsos</command></para></entry>
+                                <entry><para>New response parameters: <command>sshkeyenabled</command></para></entry>
+                            </row>
+                        </tbody>
+                    </tgroup>
+                </informaltable>
             </section>
-        </chapter>
-    </book>
+        </section>
+    </chapter>
+</book>
