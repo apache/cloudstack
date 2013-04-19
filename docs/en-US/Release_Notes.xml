@@ -5586,7 +5586,6 @@ service cloudstack-agent start
                             <row>
                                 <entry><para><command>addTrafficMonitor</command></para></entry>
                                 <entry><para>New request parameters: <command>excludezones</command> (optional), <command>includezones</command> (optional)</para>
-                                    <para>Removed response parameters: <command>privateinterface</command>, <command>privatezone</command>, <command>publicinterface</command>, <command>publiczone</command>, <command>usageinterface</command>, <command>username</command></para>
                                 </entry>
                             </row>
                             <row>
@@ -5597,7 +5596,6 @@ service cloudstack-agent start
                             </row>
                             <row>
                                 <entry><para><command>listTrafficMonitors</command></para></entry>
-                                <entry><para>Removed response parameters: <command>privateinterface</command>, <command>privatezone</command>, <command>publicinterface</command>, <command>publiczone</command>, <command>usageinterface</command>, <command>username</command></para></entry>
                             </row>
                             <row>
                                 <entry><para><command>registerSSHKeyPair</command></para></entry>
@@ -5748,8 +5746,7 @@ service cloudstack-agent start
                             </row>
                             <row>
                                 <entry><para><command>deleteUser</command></para></entry>
-                                <entry><para>New response parameters: <command>displaytext</command>, <command>success</command></para>
-                                    <para>Removed parameters: <command>id</command>, <command>account</command>, <command>accountid</command>, <command>accounttype</command>, <command>apikey</command>, <command>created</command>, <command>domain</command>, <command>domainid</command>, <command>email</command>, <command>firstname</command>, <command>lastname</command>, <command>secretkey</command>, <command>state</command>, <command>timezone</command>, <command>username</command></para></entry>
+                                <entry><para>New response parameters: <command>displaytext</command>, <command>success</command></para></entry>
                                 </row>
                                 <row>
                                     <entry><para><command>listVlanIpRanges</command></para></entry>
