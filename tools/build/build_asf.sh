@@ -81,20 +81,24 @@ fi
 
 cd $sourcedir
 
-echo 'checking out correct branch and pulling in any changes that may be staged'
+echo 'checking out correct branch'
 git checkout $branch
-git pull origin $branch
+
+echo 'determining current mvn version'
+export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
+echo "found $currentversion"
 
 echo 'setting version numbers'
 mvn versions:set -DnewVersion=$version -P vmware -P developer
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
+perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
 git clean -f
 
 echo 'commit changes'
 git commit -a -s -m "Updating pom.xml version numbers for release $version"
-COMMITSH=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
+export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
 
-echo 'committed as $COMMITSH'
+echo "committed as $commitsh"
 
 echo 'archiving'
 git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch > $outputdir/apache-cloudstack-$version-src.tar
@@ -123,4 +127,4 @@ if [ $tag == 'yes' ]; then
   fi
 fi
 
-echo 'completed.  use commit-sh of $COMMITSH when starting the VOTE thread'
+echo "completed.  use commit-sh of $commitsh when starting the VOTE thread"
