@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.*;
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -106,10 +107,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -380,6 +377,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     S3Manager _s3Mgr;
+
+    @Inject
+    ConfigurationServer _configServer;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -1038,6 +1038,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object name = cmd.getConfigName();
         Object category = cmd.getCategory();
         Object keyword = cmd.getKeyword();
+        Long id = cmd.getId();
+        String scope = cmd.getScope();
+
+        if (scope!= null && !scope.isEmpty()) {
+            // getting the list of parameters at requested scope
+            try {
+                Config.ConfigurationParameterScope.valueOf(scope.toLowerCase());
+            } catch (Exception e ) {
+                throw new InvalidParameterValueException("Invalid scope " + scope + " while listing configuration parameters");
+            }
+            if (id == null) {
+                throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
+            }
+            List<ConfigurationVO> configList = _configServer.getConfigListByScope(scope, id);
+            return new Pair<List<? extends Configuration>, Integer>(configList, configList.size());
+        }
 
         if (keyword != null) {
             SearchCriteria<ConfigurationVO> ssc = _configDao.createSearchCriteria();
