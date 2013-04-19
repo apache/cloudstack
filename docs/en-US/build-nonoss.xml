@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<section id="sect-source-nonoss">
+    <title>Building Non-OSS</title>
+    <para>If you need support for the VMware, NetApp, F5, NetScaler, SRX, or any other non-Open Source Software (nonoss) plugins, you'll need to download a few components on your own and follow a slightly different procedure to build from source.</para>
+    <note><title>Why Non-OSS?</title>
+        <para>Some of the plugins supported by &PRODUCT; cannot be distributed with &PRODUCT; for licensing reasons. In some cases, some of the required libraries/JARs are under a proprietary license. In other cases, the required libraries may be under a license that's not compatible with <ulink url="http://www.apache.org/legal/resolved.html#category-x">Apache's licensing guidelines for third-party products</ulink>.</para>
+    </note>
+    <orderedlist>
+        <listitem>
+            <para>To build the Non-OSS plugins, you'll need to have the requisite JARs installed under the <filename>deps</filename> directory.</para>
+            <para>Because these modules require dependencies that can't be distributed with &PRODUCT; you'll need to download them yourself. Links to the most recent dependencies are listed on the <ulink url="https://cwiki.apache.org/CLOUDSTACK/how-to-build-on-master-branch.html"><emphasis>How to build on master branch</emphasis></ulink> page on the wiki.</para></listitem>
+        <listitem>
+            <para>You may also need to download <ulink url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>, which was removed due to licensing issues. You'll copy vhd-util to the <filename>scripts/vm/hypervisor/xenserver/</filename> directory.</para>
+        </listitem>
+        <listitem>
+            <para>Once you have all the dependencies copied over, you'll be able to build &PRODUCT; with the <command>nonoss</command> option:</para>
+            <programlisting language="Bash">
+                <prompt>$</prompt> mvn clean
+                <prompt>$</prompt> mvn install -Dnonoss
+            </programlisting>
+        </listitem>
+        <listitem>
+            <para>Once you've built &PRODUCT; with the <command>nonoss</command> profile, you can package it using the <xref linkend="sect-source-buildrpm" /> or <xref linkend="sect-source-builddebs" /> instructions.</para>
+        </listitem>
+    </orderedlist>
+</section>
