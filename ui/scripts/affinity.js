@@ -24,8 +24,17 @@
         type: { label: 'label.type' }
       },
       dataProvider: function(args) {
+			  var data = {};				
+				if (args.context != null) {
+          if ("instances" in args.context) {
+					  $.extend(data, {
+						  virtualmachineid: args.context.instances[0].id
+						});           
+          }
+        }			
         $.ajax({
 				  url: createURL('listAffinityGroups'),
+					data: data,
 					success: function(json) {					 
 					  var items = json.listaffinitygroupsresponse.affinitygroup;
 						args.response.success({data: items});

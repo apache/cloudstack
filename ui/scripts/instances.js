@@ -284,6 +284,7 @@
         viewAll: [
           { path: 'storage.volumes', label: 'label.volumes' },
           { path: 'vmsnapshots', label: 'label.snapshots' },
+					{ path: 'affinityGroups', label: 'label.affinity.groups' },
           {
             path: '_zone.hosts',
             label: 'label.hosts',
