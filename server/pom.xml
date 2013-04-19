@@ -157,6 +157,7 @@
             <exclude>com/cloud/network/vpn/RemoteAccessVpnTest.java</exclude>
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
+            <exclude>com/cloud/vpc/*</exclude>
           </excludes>
         </configuration>
       </plugin>
