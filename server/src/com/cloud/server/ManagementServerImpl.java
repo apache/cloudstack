@@ -2732,7 +2732,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long volumeId = cmd.getId();
         String url = cmd.getUrl();
         Long zoneId = cmd.getZoneId();
-        AsyncJobVO job = null; // FIXME: cmd.getJob();
+        AsyncJob job = null; // FIXME: cmd.getJob();
         String mode = cmd.getMode();
         Account account = UserContext.current().getCaller();
 

@@ -59,6 +59,8 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -114,17 +116,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public long submitAsyncJob(AsyncJobVO job) {
+    public long submitAsyncJob(AsyncJob job) {
         return submitAsyncJob(job, false);
     }
 
-    @Override @DB
-    public long submitAsyncJob(AsyncJobVO job, boolean scheduleJobExecutionInContext) {
+    @SuppressWarnings("unchecked")
+	@Override @DB
+    public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
         Transaction txt = Transaction.currentTxn();
         try {
+        	@SuppressWarnings("rawtypes")
+			GenericDao dao = GenericDaoBase.getDao(job.getClass());
+        	
             txt.start();
             job.setInitMsid(getMsid());
-            _jobDao.persist(job);
+            dao.persist(job);
             txt.commit();
 
             // no sync source originally
@@ -353,7 +359,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         scheduleExecution(job, false);
     }
 
-    private void scheduleExecution(final AsyncJobVO job, boolean executeInContext) {
+    private void scheduleExecution(final AsyncJob job, boolean executeInContext) {
         Runnable runnable = getExecutorRunnable(this, job);
         if (executeInContext) {
             runnable.run();
@@ -375,7 +381,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	return null;
     }
     
-    private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJobVO job) {
+    private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJob job) {
         return new Runnable() {
             @Override
             public void run() {

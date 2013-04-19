@@ -68,6 +68,7 @@ public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
         this.id = id;
     }
 
+    @Override
     public Long getQueueId() {
         return queueId;
     }

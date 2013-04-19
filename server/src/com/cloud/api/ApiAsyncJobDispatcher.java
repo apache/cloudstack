@@ -27,10 +27,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.log4j.Logger;
 
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.async.SyncQueueManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -53,7 +53,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
     }
     
 	@Override
-	public void RunJob(AsyncJobVO job) {
+	public void RunJob(AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());

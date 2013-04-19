@@ -51,7 +51,13 @@ public interface AsyncJob extends Identity, InternalIdentity {
         AutoScaleVmGroup,
         GlobalLoadBalancerRule
     }
-
+    
+    Long getParentId();
+    
+    String getType();
+    
+    String getDispatcher();
+    
     long getUserId();
 
     long getAccountId();
@@ -62,12 +68,6 @@ public interface AsyncJob extends Identity, InternalIdentity {
 
     String getCmdInfo();
     
-    String getDispatcher();
-
-    int getCallbackType();
-
-    String getCallbackAddress();
-
     int getStatus();
 
     int getProcessStatus();
@@ -77,8 +77,12 @@ public interface AsyncJob extends Identity, InternalIdentity {
     String getResult();
 
     Long getInitMsid();
+    void setInitMsid(Long msid);
 
+    Long getExecutingMsid();
+    
     Long getCompleteMsid();
+    void setCompleteMsid(Long msid);
 
     Date getCreated();
 
@@ -95,4 +99,5 @@ public interface AsyncJob extends Identity, InternalIdentity {
     boolean isFromPreviousSession();
 
     SyncQueueItem getSyncSource();
+    void setSyncSource(SyncQueueItem item);
 }

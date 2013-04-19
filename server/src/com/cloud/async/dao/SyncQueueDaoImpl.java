@@ -22,10 +22,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.DateUtil;
@@ -34,12 +31,18 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Component
-@Local(value = { SyncQueueDao.class })
 public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implements SyncQueueDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueDaoImpl.class.getName());
     
     SearchBuilder<SyncQueueVO> TypeIdSearch = createSearchBuilder();
+
+    public SyncQueueDaoImpl() {
+	    super();
+	    TypeIdSearch = createSearchBuilder();
+        TypeIdSearch.and("syncObjType", TypeIdSearch.entity().getSyncObjType(), SearchCriteria.Op.EQ);
+        TypeIdSearch.and("syncObjId", TypeIdSearch.entity().getSyncObjId(), SearchCriteria.Op.EQ);
+        TypeIdSearch.done();
+	}
 	
 	@Override
 	public void ensureQueue(String syncObjType, long syncObjId) {
@@ -71,11 +74,4 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
         return findOneBy(sc);
 	}
 
-	protected SyncQueueDaoImpl() {
-	    super();
-	    TypeIdSearch = createSearchBuilder();
-        TypeIdSearch.and("syncObjType", TypeIdSearch.entity().getSyncObjType(), SearchCriteria.Op.EQ);
-        TypeIdSearch.and("syncObjId", TypeIdSearch.entity().getSyncObjId(), SearchCriteria.Op.EQ);
-        TypeIdSearch.done();
-	}
 }

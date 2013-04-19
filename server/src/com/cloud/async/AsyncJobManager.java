@@ -28,8 +28,8 @@ public interface AsyncJobManager extends Manager {
 	
 	public List<? extends AsyncJob> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId);
 	
-	public long submitAsyncJob(AsyncJobVO job);
-	public long submitAsyncJob(AsyncJobVO job, boolean scheduleJobExecutionInContext);
+	public long submitAsyncJob(AsyncJob job);
+	public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
 	public AsyncJobResult queryAsyncJobResult(long jobId);    
 	
     public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);

@@ -26,4 +26,17 @@ public class EnumUtils {
         b.append("]");
         return b.toString();
     }
+    
+    public static <T extends Enum<T>> T fromString(Class<T> clz, String value, T defaultVal) {
+    	assert(clz != null);
+    	
+        if(value != null) {
+            try {
+                return Enum.valueOf(clz, value.trim());
+            } catch(IllegalArgumentException ex) {
+            	assert(false);
+            }
+        }
+        return defaultVal;
+    }
 }

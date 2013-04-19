@@ -24,32 +24,32 @@ import javax.management.StandardMBean;
 import com.cloud.utils.DateUtil;
 
 public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
-	private AsyncJobVO _jobVo;
+	private AsyncJob _job;
 	
-	public AsyncJobMBeanImpl(AsyncJobVO jobVo) {
+	public AsyncJobMBeanImpl(AsyncJob job) {
 		super(AsyncJobMBean.class, false);
 		
-		_jobVo = jobVo;
+		_job = job;
 	}
 	
 	public long getAccountId() {
-		return _jobVo.getAccountId();
+		return _job.getAccountId();
 	}
 	
 	public long getUserId() {
-		return _jobVo.getUserId();
+		return _job.getUserId();
 	}
 	
 	public String getCmd() {
-		return _jobVo.getCmd();
+		return _job.getCmd();
 	}
 	
 	public String getCmdInfo() {
-		return _jobVo.getCmdInfo();
+		return _job.getCmdInfo();
 	}
 	
 	public String getStatus() {
-		int jobStatus = _jobVo.getStatus();
+		int jobStatus = _job.getStatus();
 		switch(jobStatus) {
 		case AsyncJobResult.STATUS_SUCCEEDED :
 			return "Completed";
@@ -65,52 +65,52 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 	}
 	
 	public int getProcessStatus() {
-		return _jobVo.getProcessStatus();
+		return _job.getProcessStatus();
 	}
 	
 	public int getResultCode() {
-		return _jobVo.getResultCode();
+		return _job.getResultCode();
 	}
 	
 	public String getResult() {
-		return _jobVo.getResult();
+		return _job.getResult();
 	}
 	
 	public String getInstanceType() {
-		if(_jobVo.getInstanceType() != null)
-			return _jobVo.getInstanceType().toString();
+		if(_job.getInstanceType() != null)
+			return _job.getInstanceType().toString();
 		return "N/A";
 	}
 	
 	public String getInstanceId() {
-		if(_jobVo.getInstanceId() != null)
-			return String.valueOf(_jobVo.getInstanceId());
+		if(_job.getInstanceId() != null)
+			return String.valueOf(_job.getInstanceId());
 		return "N/A";
 	}
 	
 	public String getInitMsid() {
-		if(_jobVo.getInitMsid() != null) {
-			return String.valueOf(_jobVo.getInitMsid());
+		if(_job.getInitMsid() != null) {
+			return String.valueOf(_job.getInitMsid());
 		}
 		return "N/A";
 	}
 	
 	public String getCreateTime() {
-		Date time = _jobVo.getCreated();
+		Date time = _job.getCreated();
 		if(time != null)
 			return DateUtil.getDateDisplayString(TimeZone.getDefault(), time);
 		return "N/A";
 	}
 	
 	public String getLastUpdateTime() {
-		Date time = _jobVo.getLastUpdated();
+		Date time = _job.getLastUpdated();
 		if(time != null)
 			return DateUtil.getDateDisplayString(TimeZone.getDefault(), time);
 		return "N/A";
 	}
 	
 	public String getLastPollTime() {
-		Date time = _jobVo.getLastPolled();
+		Date time = _job.getLastPolled();
 	
 		if(time != null)
 			return DateUtil.getDateDisplayString(TimeZone.getDefault(), time);
@@ -118,7 +118,7 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 	}
 	
 	public String getSyncQueueId() {
-		SyncQueueItemVO item = _jobVo.getSyncSource();
+		SyncQueueItem item = _job.getSyncSource();
 		if(item != null && item.getQueueId() != null) {
 			return String.valueOf(item.getQueueId());
 		}
@@ -126,7 +126,7 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 	}
 	
 	public String getSyncQueueContentType() {
-		SyncQueueItemVO item = _jobVo.getSyncSource();
+		SyncQueueItem item = _job.getSyncSource();
 		if(item != null) {
 			return item.getContentType();
 		}
@@ -134,11 +134,10 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 	}
 	
 	public String getSyncQueueContentId() {
-		SyncQueueItemVO item = _jobVo.getSyncSource();
+		SyncQueueItem item = _job.getSyncSource();
 		if(item != null && item.getContentId() != null) {
 			return String.valueOf(item.getContentId());
 		}
 		return "N/A";
 	}
-	
 }

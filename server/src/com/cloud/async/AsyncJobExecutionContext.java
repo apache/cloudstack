@@ -17,26 +17,26 @@
 package com.cloud.async;
 
 public class AsyncJobExecutionContext  {
-	private AsyncJobVO _job;
+	private AsyncJob _job;
 	
 	private static ThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ThreadLocal<AsyncJobExecutionContext>();
 
 	public AsyncJobExecutionContext() {
 	}
 	
-	public AsyncJobExecutionContext(AsyncJobVO job) {
+	public AsyncJobExecutionContext(AsyncJob job) {
 		_job = job;
 	}
 	
-	public SyncQueueItemVO getSyncSource() {
+	public SyncQueueItem getSyncSource() {
 		return _job.getSyncSource();
 	}
 	
-	public AsyncJobVO getJob() {
+	public AsyncJob getJob() {
 		return _job;
 	}
 	
-	public void setJob(AsyncJobVO job) {
+	public void setJob(AsyncJob job) {
 		_job = job;
 	}
 	

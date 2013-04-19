@@ -20,11 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueItemDao;
@@ -34,8 +31,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
-@Local(value={SyncQueueManager.class})
 public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManager {
     public static final Logger s_logger = Logger.getLogger(SyncQueueManagerImpl.class.getName());
 
@@ -185,10 +180,10 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
 
                 _syncQueueItemDao.expunge(itemVO.getId());
 
-                //if item is active, reset queue information
+                // if item is active, reset queue information
                 if (itemVO.getLastProcessMsid() != null) {
                     queueVO.setLastUpdated(DateUtil.currentGMTTime());
-                    //decrement the count
+                    // decrement the count
                     assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
                     queueVO.setQueueSize(queueVO.getQueueSize() - 1);
                     _syncQueueDao.update(queueVO.getId(), queueVO);

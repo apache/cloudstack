@@ -25,11 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.async.SyncQueueItemVO;
 import com.cloud.utils.DateUtil;
@@ -42,8 +38,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-@Component
-@Local(value = { SyncQueueItemDao.class })
 @DB
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
@@ -57,7 +51,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueIdSearch.selectField(queueIdSearch.entity().getId());
         queueIdSearch.done();
     }
-    
 
 	@Override
 	public SyncQueueItemVO getNextQueueItem(long queueId) {
@@ -128,7 +121,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     		return lockRows(sc, filter, true);
         return listBy(sc, filter);
 	}
-	
 
     @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
@@ -149,7 +141,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
             return lockRows(sc, null, true);
         return listBy(sc, null);
     }
-
 
     @Override
     public Long getQueueItemIdByContentIdAndType(long contentId, String contentType) {

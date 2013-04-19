@@ -408,7 +408,13 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
 
 ALTER TABLE `cloud`.`async_job` DROP COLUMN `session_key`;
 ALTER TABLE `cloud`.`async_job` DROP COLUMN `job_cmd_originator`;
+ALTER TABLE `cloud`.`async_job` DROP COLUMN `callback_type`;
+ALTER TABLE `cloud`.`async_job` DROP COLUMN `callback_address`;
+
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `parent_id` bigint;
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_type` VARCHAR(32);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_dispatcher` VARCHAR(64);
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_executing_msid` bigint;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `last_event` VARCHAR(64) DEFAULT 'OperationNop';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `last_event_args` VARCHAR(256);

@@ -20,12 +20,16 @@ import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -35,15 +39,24 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job")
+@Inheritance(strategy=InheritanceType.JOINED)
+@DiscriminatorColumn(name="job_type", discriminatorType=DiscriminatorType.STRING, length=32)
 public class AsyncJobVO implements AsyncJob {
-	public static final int CALLBACK_POLLING = 0;
-	public static final int CALLBACK_EMAIL = 1;
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private Long id = null;
+	
+    @Column(name="parent_id")
+    private Long parentId;
 
+    @Column(name="job_type", length=32)
+    protected String type;
+    
+    @Column(name="job_dispatcher", length=64)
+    protected String dispatcher;
+    
     @Column(name="user_id")
     private long userId;
     
@@ -56,18 +69,9 @@ public class AsyncJobVO implements AsyncJob {
 	@Column(name="job_cmd_ver")
     private int cmdVersion;
 	
-	@Column(name="job_dispatcher")
-	private String jobDispatcher;
-	
     @Column(name="job_cmd_info", length=65535)
     private String cmdInfo;
   
-    @Column(name="callback_type")
-    private int callbackType;
-    
-    @Column(name="callback_address")
-    private String callbackAddress;
-    
     @Column(name="job_status")
     private int status;
     
@@ -93,6 +97,9 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="job_complete_msid")
     private Long completeMsid;
     
+    @Column(name="job_executing_msid")
+    private Long executingMsid;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
@@ -111,7 +118,7 @@ public class AsyncJobVO implements AsyncJob {
     private String uuid;
 
     @Transient
-    private SyncQueueItemVO syncSource = null;
+    private SyncQueueItem syncSource = null;
 
     @Transient
     private boolean fromPreviousSession = false;
@@ -125,20 +132,12 @@ public class AsyncJobVO implements AsyncJob {
 		this.accountId = accountId;
 		this.cmd = cmd;
 		this.cmdInfo = cmdInfo;
-	    this.callbackType = CALLBACK_POLLING;
 	    this.uuid = UUID.randomUUID().toString();
 	    this.instanceId = instanceId;
+	    this.instanceType = instanceType;
+	    
+	    this.type ="AsyncJobVO";
     }
-
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-		int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
-	
-		this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
-		this.callbackType = callbackType;
-		this.callbackAddress = callbackAddress;
-	    this.uuid = UUID.randomUUID().toString();
-    }
-
 
     @Override
     public long getId() {
@@ -147,6 +146,33 @@ public class AsyncJobVO implements AsyncJob {
 
 	public void setId(Long id) {
 		this.id = id;
+	}
+	
+	@Override
+	public Long getParentId() {
+		return this.parentId;
+	}
+	
+	public void setParentId(Long parentId) {
+		this.parentId = parentId;
+	}
+	
+	@Override
+	public String getType() {
+		return this.type;
+	}
+	
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+	@Override
+	public String getDispatcher() {
+		return this.dispatcher;
+	}
+	
+	public void setDispatcher(String dispatcher) {
+		this.dispatcher = dispatcher;
 	}
 
 	@Override
@@ -195,33 +221,6 @@ public class AsyncJobVO implements AsyncJob {
 	}
 	
 	@Override
-	public String getDispatcher() {
-		return this.jobDispatcher;
-	}
-	
-	public void setDispatcher(String dispatcher) {
-		this.jobDispatcher = dispatcher;
-	}
-
-	@Override
-    public int getCallbackType() {
-		return callbackType;
-	}
-
-	public void setCallbackType(int callbackType) {
-		this.callbackType = callbackType;
-	}
-
-	@Override
-    public String getCallbackAddress() {
-		return callbackAddress;
-	}
-
-	public void setCallbackAddress(String callbackAddress) {
-		this.callbackAddress = callbackAddress;
-	}
-
-	@Override
     public int getStatus() {
 		return status;
 	}
@@ -262,8 +261,18 @@ public class AsyncJobVO implements AsyncJob {
 		return initMsid;
 	}
 
+	@Override
 	public void setInitMsid(Long initMsid) {
 		this.initMsid = initMsid;
+	}
+	
+	@Override
+	public Long getExecutingMsid() {
+		return this.executingMsid;
+	}
+	
+	public void setExecutingMsid(Long executingMsid) {
+		this.executingMsid = executingMsid;
 	}
 
 	@Override
@@ -271,6 +280,7 @@ public class AsyncJobVO implements AsyncJob {
 		return completeMsid;
 	}
 
+	@Override
 	public void setCompleteMsid(Long completeMsid) {
 		this.completeMsid = completeMsid;
 	}
@@ -330,11 +340,12 @@ public class AsyncJobVO implements AsyncJob {
 	}
 	
 	@Override
-    public SyncQueueItemVO getSyncSource() {
+    public SyncQueueItem getSyncSource() {
         return syncSource;
     }
     
-    public void setSyncSource(SyncQueueItemVO syncSource) {
+	@Override
+    public void setSyncSource(SyncQueueItem syncSource) {
         this.syncSource = syncSource;
     }
     
@@ -367,8 +378,6 @@ public class AsyncJobVO implements AsyncJob {
 		sb.append(", cmd: ").append(getCmd());
 		sb.append(", cmdInfo: ").append(getCmdInfo());
 		sb.append(", cmdVersion: ").append(getCmdVersion());
-		sb.append(", callbackType: ").append(getCallbackType());
-		sb.append(", callbackAddress: ").append(getCallbackAddress());
 		sb.append(", status: ").append(getStatus());
 		sb.append(", processStatus: ").append(getProcessStatus());
 		sb.append(", resultCode: ").append(getResultCode());

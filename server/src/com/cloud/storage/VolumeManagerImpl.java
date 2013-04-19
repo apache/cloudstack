@@ -71,8 +71,8 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -1756,7 +1756,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
                
         if (asyncExecutionContext != null) {
-            AsyncJobVO job = asyncExecutionContext.getJob();
+            AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
@@ -1838,7 +1838,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (asyncExecutionContext != null) {
-            AsyncJobVO job = asyncExecutionContext.getJob();
+            AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
