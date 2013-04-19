@@ -2537,13 +2537,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
 
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
-            if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
-                s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
-                return nic;
-            } else {
-                s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
-                return null;
-            }
+            
+            boolean result = false;
+            try{
+                result = vmGuru.plugNic(network, nicTO, vmTO, context, dest);
+                if (result) {
+                    s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
+                    return nic;
+                } else {
+                    s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
+                    return null;
+                }                
+            }finally{
+                if(!result){
+                    _networkMgr.removeNic(vmProfile, _nicsDao.findById(nic.getId()));
+                }
+            }            
         } else if (vm.getState() == State.Stopped) {
             //1) allocate nic
             return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
