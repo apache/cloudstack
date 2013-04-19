@@ -2673,9 +2673,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                     " as ip " + ip + " belonging to the range is used for static nat purposes. Cleanup the rules first");
                         }
                         
-                        if (ip.isSourceNat() && _networkModel.getNetwork(ip.getAssociatedWithNetworkId()) != null) {
-                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
-                                    " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() + 
+                        if (ip.isSourceNat()) {
+                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId +
+                                    " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() +
                                     ". IP range with the source nat ip address can be removed either as a part of Network, or account removal");
                         }
                         
@@ -2829,8 +2829,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
                 for (IPAddressVO ip : ips) {
                     // Disassociate allocated IP's that are not in use
-                    if ( !ip.isOneToOneNat() && !(ip.isSourceNat() && _networkModel.getNetwork(ip.getAssociatedWithNetworkId()) != null) &&
-                            !(_firewallDao.countRulesByIpId(ip.getId()) > 0) ) {
+                    if ( !ip.isOneToOneNat() && !ip.isSourceNat()  && !(_firewallDao.countRulesByIpId(ip.getId()) > 0) ) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Releasing Public IP addresses" + ip  +" of vlan " + vlanDbId + " as part of Public IP" +
                                     " range release to the system pool");
