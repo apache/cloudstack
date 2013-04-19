@@ -521,8 +521,8 @@ public class VolumeServiceImpl implements VolumeService {
 
             VolumeVO destVol = duplicateVolumeOnAnotherStorage(srcVolume, (StoragePool)destStore);
             VolumeInfo destVolume = this.volFactory.getVolume(destVol.getId(), destStore);
-            destVolume.processEvent(Event.CreateOnlyRequested);
-            srcVolume.processEvent(Event.CopyingRequested);
+            destVolume.processEvent(Event.MigrationRequested);
+            srcVolume.processEvent(Event.MigrationRequested);
 
             CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume, 
                     destVolume,
@@ -550,6 +550,8 @@ public class VolumeServiceImpl implements VolumeService {
                 res.setResult(result.getResult());
                 destVolume.processEvent(Event.OperationFailed);
                 srcVolume.processEvent(Event.OperationFailed);
+                destroyVolume(destVolume.getId());
+                destVolume = this.volFactory.getVolume(destVolume.getId());
                 AsyncCallFuture<VolumeApiResult> destroyFuture = this.expungeVolumeAsync(destVolume);
                 destroyFuture.get();
                 future.complete(res);
@@ -557,6 +559,8 @@ public class VolumeServiceImpl implements VolumeService {
             }
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed);
+            destroyVolume(srcVolume.getId());
+            srcVolume = this.volFactory.getVolume(srcVolume.getId());
             AsyncCallFuture<VolumeApiResult> destroyFuture = this.expungeVolumeAsync(srcVolume);
             destroyFuture.get();
             future.complete(res);
