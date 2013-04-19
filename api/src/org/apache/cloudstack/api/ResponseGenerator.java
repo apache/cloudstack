@@ -241,7 +241,7 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
 
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
@@ -267,7 +267,9 @@ public interface ResponseGenerator {
 
     //List<EventResponse> createEventResponse(EventJoinVO... events);
 
-    TemplateResponse createIsoResponse(VirtualMachineTemplate result);
+    TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result);
+
+    List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
@@ -287,12 +289,12 @@ public interface ResponseGenerator {
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
+
+   // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
-
-
-    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
 

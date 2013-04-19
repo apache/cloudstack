@@ -16,25 +16,17 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.db.DbUtil.closeResources;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
@@ -42,25 +34,19 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -92,6 +78,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     DomainDao _domainDao;
     @Inject
     DataCenterDao _dcDao;
+
+    /* TODO: these direct sql should go away with recent QueryService refactoring to handle listTemplatesCmd. Keep here just for
+     * potential bug reference.
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
     								"t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
 
@@ -103,6 +92,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     private final String SELECT_TEMPLATE_S3_REF = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
+    */
 
     private static final String SELECT_S3_CANDIDATE_TEMPLATES = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, " +
         "t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, t.checksum, t.display_text, " +
@@ -397,6 +387,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		return routerTmpltName;
 	}
 
+	/*
     @Override
     public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
             Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags) {
@@ -538,7 +529,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	    Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        /* Use LinkedHashSet here to guarantee iteration order */
+        // Use LinkedHashSet here to guarantee iteration order
         Set<Pair<Long, Long>> templateZonePairList = new LinkedHashSet<Pair<Long, Long>>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -751,7 +742,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         return templateZonePairList;
 	}
+    */
 
+	/*
 	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType, Long zoneId, boolean onlyReady, boolean showDomr) {
 	    String sql = "";
         if (keyword != null) {
@@ -811,6 +804,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
         return sql;
 	}
+    */
 
 	@Override
 	@DB
@@ -873,7 +867,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		}
 	}
 
-	public VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType) {
+	@Override
+    public VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType) {
 	    SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch.create();
 	    sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
 	    sc.setJoinParameters("tmplHyper",  "type", Host.Type.Routing);
@@ -938,18 +933,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return result;
     }
 
-    private boolean isAdmin(short accountType) {
-	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-	    	    (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-	}
+
 
     @Override
     public List<VMTemplateVO> findTemplatesToSyncToS3() {
         return executeList(SELECT_S3_CANDIDATE_TEMPLATES, new Object[] {});
     }
 
+    /*
     @Override
     public Set<Pair<Long, Long>> searchS3Templates(final String name,
             final String keyword, final TemplateFilter templateFilter,
@@ -1083,6 +1074,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         return templateZonePairList;
     }
+*/
 
     @Override
     public boolean updateState(TemplateState currentState, TemplateEvent event,

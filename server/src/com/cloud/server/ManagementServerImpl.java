@@ -1112,70 +1112,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
-        TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
-        Account caller = UserContext.current().getCaller();
-        Map<String, String> tags = cmd.getTags();
 
-        boolean listAll = false;
-        if (isoFilter != null && isoFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
-            }
-            listAll = true;
-        }
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
-                domainIdRecursiveListProject, listAll, false);
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        List<Account> permittedAccounts = new ArrayList<Account>();
-        for (Long accountId : permittedAccountIds) {
-            permittedAccounts.add(_accountMgr.getAccount(accountId));
-        }
-
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(),
-                cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller,
-                listProjectResourcesCriteria, tags);
-    }
-
-    @Override
-    public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
-        TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
-        Long id = cmd.getId();
-        Map<String, String> tags = cmd.getTags();
-        Account caller = UserContext.current().getCaller();
-
-        boolean listAll = false;
-        if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
-            }
-            listAll = true;
-        }
-
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject,
-                listAll, false);
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        List<Account> permittedAccounts = new ArrayList<Account>();
-        for (Long accountId : permittedAccountIds) {
-            permittedAccounts.add(_accountMgr.getAccount(accountId));
-        }
-
-        boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-
-        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
-                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
-    }
-
+    /* TODO: this method should go away. Keep here just in case that our latest refactoring using template_store_ref missed anything
+     * in handling Swift or S3.
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
             Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
@@ -1274,7 +1214,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return templateZonePairSet;
     }
-
+*/
 
 
     @Override

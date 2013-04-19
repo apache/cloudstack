@@ -219,28 +219,6 @@ public interface ManagementService {
      */
     List<? extends Capacity> listCapacities(ListCapacityCmd cmd);
 
-    /**
-     * List ISOs that match the specified criteria.
-     *
-     * @param cmd
-     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
-     *            and zoneId
-     *            parameters.
-     * @return list of ISOs
-     */
-    Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd);
-
-    /**
-     * List templates that match the specified criteria.
-     *
-     * @param cmd
-     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
-     *            and zoneId
-     *            parameters.
-     * @return list of ISOs
-     */
-    Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd);
-
 
     /**
      * List system VMs by the given search criteria

@@ -2118,6 +2118,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
             boolean readyOnly) {
+        // readyOnly flag is not used at all
         List<HostVO> hosts = _ssvmMgr
                 .listSecondaryStorageHostsInOneZone(zoneId);
         if (hosts == null || hosts.size() == 0) {

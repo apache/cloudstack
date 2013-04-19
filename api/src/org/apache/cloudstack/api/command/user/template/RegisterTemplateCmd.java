@@ -230,7 +230,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template, zoneId, false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);

@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -61,6 +62,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -322,5 +324,56 @@ public class ViewResponseHelper {
             respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
         }
         return respList;
+    }
+
+    public static List<TemplateResponse> createTemplateResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newTemplateResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
+    }
+
+    public static List<TemplateResponse> createTemplateUpdateResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newTemplateUpdateResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
+    }
+
+    public static List<TemplateResponse> createIsoResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newIsoResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 }

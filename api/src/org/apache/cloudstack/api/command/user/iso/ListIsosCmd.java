@@ -148,16 +148,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> iso : isoZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listIsos(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

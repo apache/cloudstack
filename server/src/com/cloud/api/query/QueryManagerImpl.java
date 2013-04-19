@@ -16,9 +16,13 @@
 // under the License.
 package com.cloud.api.query;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
@@ -35,6 +40,7 @@ import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -42,6 +48,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
@@ -62,6 +69,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -85,6 +93,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -104,6 +113,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -127,12 +137,20 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -146,6 +164,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.DomainRouterVO;
@@ -254,6 +273,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    private VMTemplateDao _templateDao;
+
+    @Inject
+    private TemplateJoinDao _templateJoinDao;
+
+    @Inject
+    ResourceManager _resourceMgr;
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
@@ -2419,5 +2447,298 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return false;
     }
 
+    @Override
+    public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd) {
+        Pair<List<TemplateJoinVO>, Integer> result = searchForTemplatesInternal(cmd);
+        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+
+        List<TemplateResponse> templateResponses = ViewResponseHelper.createTemplateResponse(result.first().toArray(new TemplateJoinVO[result.first().size()]));
+        response.setResponses(templateResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(ListTemplatesCmd cmd) {
+        TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
+        Long id = cmd.getId();
+        Map<String, String> tags = cmd.getTags();
+        Account caller = UserContext.current().getCaller();
+
+        boolean listAll = false;
+        if (templateFilter != null && templateFilter == TemplateFilter.all) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
+            }
+            listAll = true;
+        }
+
+        List<Long> permittedAccountIds = new ArrayList<Long>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject,
+                listAll, false);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        List<Account> permittedAccounts = new ArrayList<Account>();
+        for (Long accountId : permittedAccountIds) {
+            permittedAccounts.add(_accountMgr.getAccount(accountId));
+        }
+
+        boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+
+        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
+                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
+            Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
+            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+        VMTemplateVO template = null;
+
+        // verify templateId parameter
+        if (templateId != null) {
+            template = _templateDao.findById(templateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("Please specify a valid template ID.");
+            }// If ISO requested then it should be ISO.
+            if (isIso && template.getFormat() != ImageFormat.ISO) {
+                s_logger.error("Template Id " + templateId + " is not an ISO");
+                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
+                ex.addProxyObject(template, templateId, "templateId");
+                throw ex;
+            }// If ISO not requested then it shouldn't be an ISO.
+            if (!isIso && template.getFormat() == ImageFormat.ISO) {
+                s_logger.error("Incorrect format of the template id " + templateId);
+                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
+                        + " of the specified template id");
+                ex.addProxyObject(template, templateId, "templateId");
+                throw ex;
+            }
+
+            // if template is not public, perform permission check here
+            if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                Account owner = _accountMgr.getAccount(template.getAccountId());
+                _accountMgr.checkAccess(caller, null, true, owner);
+            }
+        }
+
+        DomainVO domain = null;
+        if (!permittedAccounts.isEmpty()) {
+            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
+        } else {
+            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
+        }
+
+        List<HypervisorType> hypers = null;
+        if (!isIso) {
+            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+        }
+
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sort_key", isAscending, startIndex, pageSize);
+        SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
+
+        // add criteria for project or not
+        if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+            sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
+        } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly){
+            sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        // add criteria for domain path in case of domain admin
+         if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) &&
+                 (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+             sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
+         }
+
+         List<Long> relatedDomainIds = new ArrayList<Long>();
+         List<Long> permittedAccountIds = new ArrayList<Long>();
+            if (!permittedAccounts.isEmpty()) {
+                for (Account account : permittedAccounts) {
+                    permittedAccountIds.add(account.getId());
+                    DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+
+                    // get all parent domain ID's all the way till root domain
+                    DomainVO domainTreeNode = accountDomain;
+                    relatedDomainIds.add(domainTreeNode.getId());
+                    while (domainTreeNode.getParent() != null ){
+                        domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                        relatedDomainIds.add(domainTreeNode.getId());
+                    }
+
+                    // get all child domain ID's
+                    if (_accountMgr.isAdmin(account.getType()) ) {
+                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
+                        for (DomainVO childDomain : allChildDomains) {
+                            relatedDomainIds.add(childDomain.getId());
+                        }
+                    }
+                }
+            }
+
+            // add hypervisor criteria
+            if ( !hypers.isEmpty()){
+                String[] relatedHypers = new String[hypers.size()];
+                for (int i = 0; i < hypers.size(); i++){
+                    relatedHypers[i] = hypers.get(i).toString();
+                }
+                sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
+            }
+
+            // control different template filters
+            if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
+                sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
+                if ( templateFilter == TemplateFilter.featured){
+                sc.addAnd("featured", SearchCriteria.Op.EQ, true);
+                }
+                else{
+                    sc.addAnd("featured", SearchCriteria.Op.EQ, false);
+                }
+                if (!permittedAccounts.isEmpty()) {
+                    SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                    scc.addOr("domainId", SearchCriteria.Op.IN, relatedDomainIds.toArray());
+                    scc.addOr("domainId", SearchCriteria.Op.NULL);
+                    sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+
+                    if (!_accountMgr.isAdmin(caller.getType())){
+                        // for non-root users, we should only show featured and community templates that they can see
+                        sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                    }
+                }
+            } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable ) {
+                if ( !permittedAccounts.isEmpty()){
+                    sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                }
+            } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared ) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                sc.addAnd("accountId", SearchCriteria.Op.SC, scc);
+            } else if (templateFilter == TemplateFilter.executable ) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
+                if ( !permittedAccounts.isEmpty()){
+                    scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                }
+                sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
+            }
+
+            // add tags criteria
+            if (tags != null && !tags.isEmpty()) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                int count = 0;
+                for (String key : tags.keySet()) {
+                    SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
+                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
+                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                    if ( isIso){
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.ISO);
+                    } else {
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.Template);
+                    }
+                    scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
+                    count++;
+                }
+                sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+            }
+
+            // other criteria
+            if (keyword != null) {
+                sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            } else if (name != null) {
+                sc.addAnd("name", SearchCriteria.Op.EQ, name);
+            }
+
+            if (isIso) {
+                sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
+
+            } else {
+                sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
+            }
+
+            if (!hyperType.equals(HypervisorType.None)) {
+                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
+            }
+
+            if (bootable != null) {
+                sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
+            }
+
+            if (onlyReady){
+                sc.addAnd("downlaadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
+                sc.addAnd("destroyed",  SearchCriteria.Op.EQ, false);
+            }
+
+            if (zoneId != null){
+                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            }
+
+            if (!showDomr){
+                // excluding system template
+                sc.addAnd("type", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
+            }
+
+            // search unique templates and find details by Ids
+            Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
+            Integer count = uniqueTmplPair.second();
+            if (count.intValue() == 0) {
+                // empty result
+                return uniqueTmplPair;
+            }
+            List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
+            Long[] vrIds = new Long[uniqueTmpls.size()];
+            int i = 0;
+            for (TemplateJoinVO v : uniqueTmpls) {
+                vrIds[i++] = v.getId();
+            }
+            List<TemplateJoinVO> vrs = _templateJoinDao.searchByIds(vrIds);
+            return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
+
+            //TODO: revisit the special logic for iso search in VMTemplateDaoImpl.searchForTemplates and understand why we need to
+            //specially handle ISO. The original logic is very twisted and no idea about what the code was doing.
+
+    }
+
+    @Override
+    public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd) {
+        Pair<List<TemplateJoinVO>, Integer> result = searchForIsosInternal(cmd);
+        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+
+        List<TemplateResponse> templateResponses = ViewResponseHelper.createIsoResponse(result.first().toArray(new TemplateJoinVO[result.first().size()]));
+        response.setResponses(templateResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> searchForIsosInternal(ListIsosCmd cmd) {
+        TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
+        Long id = cmd.getId();
+        Map<String, String> tags = cmd.getTags();
+        Account caller = UserContext.current().getCaller();
+
+        boolean listAll = false;
+        if (isoFilter != null && isoFilter == TemplateFilter.all) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
+            }
+            listAll = true;
+        }
+
+        List<Long> permittedAccountIds = new ArrayList<Long>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject,
+                listAll, false);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        List<Account> permittedAccounts = new ArrayList<Account>();
+        for (Long accountId : permittedAccountIds) {
+            permittedAccounts.add(_accountMgr.getAccount(accountId));
+        }
+
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+
+        return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(),
+                cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller,
+                listProjectResourcesCriteria, tags);
+    }
 
 }

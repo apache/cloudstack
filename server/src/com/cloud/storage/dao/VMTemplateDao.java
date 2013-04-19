@@ -37,11 +37,11 @@ import com.cloud.utils.fsm.StateDao;
  * Data Access Object for vm_templates table
  */
 public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<TemplateState, TemplateEvent, VMTemplateVO> {
-	
-	
+
+
 	public List<VMTemplateVO> listByPublic();
 	public VMTemplateVO findByName(String templateName);
-	public VMTemplateVO findByTemplateName(String templateName);	
+	public VMTemplateVO findByTemplateName(String templateName);
 
 	//public void update(VMTemplateVO template);
 
@@ -53,11 +53,13 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
 	public List<VMTemplateVO> listReadyTemplates();
 	public List<VMTemplateVO> listByAccountId(long accountId);
+
+	/* TODO: these routines should go away, the logic has been consolidated and refactored in QueryService
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso,
 	        List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId,
 	        HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller,
 	        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
-	
+
     public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter,
             boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
             Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
@@ -65,10 +67,11 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     public Set<Pair<Long, Long>> searchS3Templates(String name, String keyword, TemplateFilter templateFilter,
             boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
             Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
+    */
 
 	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
-	public List<VMTemplateVO> listAllInZone(long dataCenterId);	
-	
+	public List<VMTemplateVO> listAllInZone(long dataCenterId);
+
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes);
 	public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
 	public List<VMTemplateVO> userIsoSearch(boolean listRemoved);
@@ -78,7 +81,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     VMTemplateVO findRoutingTemplate(HypervisorType type);
     List<Long> listPrivateTemplatesByHost(Long hostId);
     public Long countTemplatesForAccount(long accountId);
-	
+
     List<VMTemplateVO> findTemplatesToSyncToS3();
 
 }

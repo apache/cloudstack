@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -65,6 +66,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -84,6 +86,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -240,6 +243,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -369,6 +373,7 @@ public class ApiDBUtils {
     static ImageStoreJoinDao _imageStoreJoinDao;
     static AccountJoinDao _accountJoinDao;
     static AsyncJobJoinDao _jobJoinDao;
+    static TemplateJoinDao _templateJoinDao;
 
     static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -474,6 +479,7 @@ public class ApiDBUtils {
     @Inject private ImageStoreJoinDao imageStoreJoinDao;
     @Inject private AccountJoinDao accountJoinDao;
     @Inject private AsyncJobJoinDao jobJoinDao;
+    @Inject private TemplateJoinDao templateJoinDao;
 
     @Inject private PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
     @Inject private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
@@ -575,6 +581,7 @@ public class ApiDBUtils {
         _imageStoreJoinDao = imageStoreJoinDao;
         _accountJoinDao = accountJoinDao;
         _jobJoinDao = jobJoinDao;
+        _templateJoinDao = templateJoinDao;
 
         _physicalNetworkTrafficTypeDao = physicalNetworkTrafficTypeDao;
         _physicalNetworkServiceProviderDao = physicalNetworkServiceProviderDao;
@@ -1606,4 +1613,33 @@ public class ApiDBUtils {
    public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
        return _nicSecondaryIpDao.listByNicId(nicId);
    }
+
+
+   public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newUpdateResponse(vr);
+   }
+
+
+   public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newTemplateResponse(vr);
+   }
+
+
+   public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newIsoResponse(vr);
+  }
+
+   public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr){
+       return _templateJoinDao.setTemplateResponse(vrData, vr);
+   }
+
+   public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr){
+       return _templateJoinDao.newTemplateView(vr);
+   }
+
+
+   public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr, long zoneId, boolean readyOnly){
+       return _templateJoinDao.newTemplateView(vr, zoneId, readyOnly);
+   }
+
 }
