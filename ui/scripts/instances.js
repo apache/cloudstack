@@ -695,6 +695,7 @@
                     dataProvider: function(args) {										  
 											$.ajax({
 												url: createURL('listAffinityGroups'),
+												async: false, //make it sync to avoid dataProvider() being called twice which produces duplicate data
 												success: function(json) {	
                           var items = [];												
 													var allAffinityGroups = json.listaffinitygroupsresponse.affinitygroup;
