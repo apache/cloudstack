@@ -837,6 +837,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (created == null) {
+            try {
+                stateTransitTo(volume, Volume.Event.OperationFailed);
+            } catch (NoTransitionException e) {
+                s_logger.debug("Unable to update volume state: " + e.toString());
+            }
             return null;
         } else {
             volume.setFolder(pool.getPath());
