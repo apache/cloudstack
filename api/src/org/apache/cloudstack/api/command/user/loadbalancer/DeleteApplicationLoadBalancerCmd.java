@@ -102,7 +102,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        ApplicationLoadBalancerRule lb = _appLbService.findById(id);
+        ApplicationLoadBalancerRule lb = _appLbService.getApplicationLoadBalancer(id);
         if(lb == null){
             throw new InvalidParameterValueException("Unable to find load balancer by id ");
         }

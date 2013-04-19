@@ -37,6 +37,6 @@ public interface ApplicationLoadBalancerService {
     
     Pair<List<? extends ApplicationLoadBalancerRule>, Integer> listApplicationLoadBalancers(ListApplicationLoadBalancersCmd cmd);
     
-    ApplicationLoadBalancerRule findById(long ruleId);
+    ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId);
 
 }

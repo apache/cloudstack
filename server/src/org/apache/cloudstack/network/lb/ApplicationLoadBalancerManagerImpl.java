@@ -143,12 +143,12 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
 
         //5) Persist Load Balancer rule
-        return persistLbRule(newRule, sourceIp, guestNtwk);
+        return persistLbRule(newRule);
     }
 
     
     @DB
-    protected ApplicationLoadBalancerRule persistLbRule(ApplicationLoadBalancerRuleVO newRule, String sourceIp, Network guestNtwk) throws NetworkRuleConflictException {
+    protected ApplicationLoadBalancerRule persistLbRule(ApplicationLoadBalancerRuleVO newRule) throws NetworkRuleConflictException {
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -163,11 +163,12 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule + ", source port "
+            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port "
                     + newRule.getSourcePortStart() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
             UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+            Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(),
-                    guestNtwk.getDataCenterId(), newRule.getId(), null, LoadBalancingRule.class.getName(),
+                    ntwk.getDataCenterId(), newRule.getId(), null, LoadBalancingRule.class.getName(),
                     newRule.getUuid());
             txn.commit();
 
@@ -284,7 +285,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param requestedSourceIp
      * @param scheme
      */
-    private void validateRequestedSourceIpForLbRule(Network sourceIpNtwk, Ip requestedSourceIp, Scheme scheme) {
+    void validateRequestedSourceIpForLbRule(Network sourceIpNtwk, Ip requestedSourceIp, Scheme scheme) {
         //only Internal scheme is supported in this release
         if (scheme != Scheme.Internal) {
             throw new UnsupportedServiceException("Only scheme of type " + Scheme.Internal + " is supported");
@@ -300,7 +301,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param sourceIpNtwk
      * @param requestedSourceIp
      */
-    private void validateRequestedSourceIpForInternalLbRule(Network sourceIpNtwk, Ip requestedSourceIp) {
+    protected void validateRequestedSourceIpForInternalLbRule(Network sourceIpNtwk, Ip requestedSourceIp) {
         //1) Check if the IP is within the network cidr
         Pair<String, Integer> cidr = NetUtils.getCidr(sourceIpNtwk.getCidr());
         if (!NetUtils.getCidrSubNet(requestedSourceIp.addr(), cidr.second()).equalsIgnoreCase(NetUtils.getCidrSubNet(cidr.first(), cidr.second()))) {
@@ -463,8 +464,12 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     }
 
     @Override
-    public ApplicationLoadBalancerRule findById(long ruleId) {
-        return _lbDao.findById(ruleId);
+    public ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId) {
+        ApplicationLoadBalancerRule lbRule = _lbDao.findById(ruleId);
+        if (lbRule == null) {
+            throw new InvalidParameterValueException("Can't find the load balancer by id");
+        }
+        return lbRule;
     }
    
     
