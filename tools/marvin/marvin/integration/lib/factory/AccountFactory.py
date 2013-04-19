@@ -20,6 +20,7 @@ from marvin.integration.lib.factory.CloudStackBaseFactory import *
 from marvin.integration.lib.base import Account
 from marvin.integration.lib.utils import random_gen
 
+@factory.use_strategy(new_strategy=factory.BUILD_STRATEGY)
 class AccountFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = Account.Account
