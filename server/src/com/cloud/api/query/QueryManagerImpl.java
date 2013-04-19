@@ -638,6 +638,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
         c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
         c.addCriteria(Criteria.VPC_ID, cmd.getVpcId());
+        c.addCriteria(Criteria.AFFINITY_GROUP_ID, cmd.getAffinityGroupId());
 
         if (domainId != null) {
             c.addCriteria(Criteria.DOMAINID, domainId);
@@ -693,6 +694,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
         Object isoId = c.getCriteria(Criteria.ISO_ID);
         Object vpcId = c.getCriteria(Criteria.VPC_ID);
+        Object affinityGroupId = c.getCriteria(Criteria.AFFINITY_GROUP_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -731,6 +733,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+        }
+
+        if (affinityGroupId != null) {
+            sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -828,6 +834,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sc.setParameters("poolId", storageId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.setParameters("affinityGroupId", affinityGroupId);
         }
 
         // search vm details by ids
@@ -1976,14 +1986,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            
+
             SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
 
             spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
             spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
             sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
-            
+
         }
 
          if (keyword != null) {
@@ -2001,7 +2011,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-        
+
         // FIXME: disk offerings should search back up the hierarchy for
         // available disk offerings...
         /*
@@ -2081,7 +2091,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
        // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // For non-root users. 
+            // For non-root users.
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }

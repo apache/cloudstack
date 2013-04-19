@@ -479,6 +479,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
+    public static final String AFFINITY_GROUP_ID = "affinitygroupid";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

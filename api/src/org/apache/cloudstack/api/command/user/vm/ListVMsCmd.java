@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -110,6 +111,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
             description="list vms by vpc")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
+    private Long affinityGroupId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -172,6 +177,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getVpcId(){
         return vpcId;
+    }
+
+    public Long getAffinityGroupId() {
+        return affinityGroupId;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
