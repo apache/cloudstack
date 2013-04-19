@@ -2281,6 +2281,34 @@ div.detail-group.actions td {
   top: 13px;
 }
 
+/** Zone filter (mixed zone management)*/
+#header .zone-filter {
+  float: left;
+  width: 111px;
+  margin: 9px 20px 0 2px;
+}
+
+#header .zone-filter label {
+  position: absolute;
+  top: -3px;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
+#header .zone-filter select {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #000000;
+  border-bottom: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #ECECEC;
+  margin-top: 2px;
+}
+
 /*Navigation*/
 #navigation,
 #browser {
@@ -8854,6 +8882,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   left: 0px;
   top: -10px;
   margin-right: 9px;
+  display: none;
 }
 
 #header div.view-switcher.alt {
@@ -8918,6 +8947,34 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   max-width: 120px;
   margin: 6px 3px 0 -21px;
   padding: 3px 0 4px;
+}
+
+/*** View switcher (drop-down)*/
+.project-switcher {
+  float: left;
+  width: 141px;
+  padding: 9px 17px 0 0;
+}
+
+.project-switcher label {
+  position: absolute;
+  top: -2px;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
+.project-switcher select {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #000000;
+  border-bottom: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #ECECEC;
+  margin-top: 2px;
 }
 
 /*** Select project*/
@@ -11385,7 +11442,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   border-bottom: 1px solid #FFFFFF;
   height: 28px;
   float: left;
-  margin: 4px 13px 0 0;
+  margin: 5px 13px 0 0;
   cursor: pointer;
   /*+box-shadow:inset 0px 1px 1px #000000;*/
   -moz-box-shadow: inset 0px 1px 1px #000000;
