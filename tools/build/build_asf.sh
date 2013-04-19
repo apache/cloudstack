@@ -86,11 +86,9 @@ git checkout $branch
 git pull origin $branch
 
 echo 'setting version numbers'
-mvn versions:set -DnewVersion=$version
+mvn versions:set -DnewVersion=$version -P vmware -P developer
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 git clean -f
-
-######## TODO: figure out vmware-base/pom.xml, developer/pom.xml, plugins/network-elements/midokura-midonet/pom.xml
 
 echo 'commit changes'
 git commit -a -s -m "Updating pom.xml version numbers for release $version"
