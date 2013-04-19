@@ -97,8 +97,15 @@
                   tierID: $dataList.find('.tier-select select').val(),
                   _subselect: $dataList.find('tr.multi-edit-selected .subselect select').val(),
                   context: $.extend(true, {}, context, {
-                    affinityGroups: $dataList.find('tr.multi-edit-selected').map(function(index, elem) {
-                      return $(elem).data('json-obj');
+                    affinityGroups: $dataList.find('tbody tr').map(function(index, elem) {
+                      var itemData = $(elem).data('json-obj');
+                      itemData._isSelected = false;
+
+                      if ($(elem).hasClass('multi-edit-selected')) {
+                        itemData._isSelected = true;
+                      }
+
+                      return itemData;
                     })
                   }),
                   response: {
