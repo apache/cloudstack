@@ -39,6 +39,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import com.cloud.dc.dao.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -78,20 +79,13 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.AccountVlanMapDao;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDao;
-import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.PodVlanMapDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -187,6 +181,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     PodVlanMapDao _podVlanMapDao;
     @Inject
     DataCenterDao _zoneDao;
+    @Inject
+    DcDetailsDao _zoneDetailsDao;
     @Inject
     DomainDao _domainDao;
     @Inject
@@ -327,13 +323,35 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public void updateConfiguration(long userId, String name, String category, String value) {
+    public void updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
 
-        String validationMsg = validateConfigurationValue(name, value);
+        String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
             s_logger.error("Invalid configuration option, name: " + name + ", value:" + value);
             throw new InvalidParameterValueException(validationMsg);
+        }
+
+        // If scope of the parameter is given then it needs to be updated in the corresponding details table,
+        // if scope is mentioned as global or not mentioned then it is normal global parameter updation
+        if (scope != null && !scope.isEmpty() && !Config.ConfigurationParameterScope.global.toString().equalsIgnoreCase(scope)) {
+            if (Config.ConfigurationParameterScope.zone.toString().equalsIgnoreCase(scope)) {
+                DataCenterVO zone = _zoneDao.findById(resourceId);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
+                }
+                DcDetailVO dcDetailVO = _zoneDetailsDao.findDetail(resourceId, name.toLowerCase());
+                if (dcDetailVO == null) {
+                    dcDetailVO = new DcDetailVO(dcDetailVO.getId(), name, value);
+                    _zoneDetailsDao.persist(dcDetailVO);
+                } else {
+                    dcDetailVO.setValue(value);
+                    _zoneDetailsDao.update(resourceId, dcDetailVO);
+                }
+            } else {
+                s_logger.error("TO Do for the remaining levels (cluster/pool/account)");
+                throw new InvalidParameterValueException("The scope "+ scope +" yet to be implemented");
+            }
         }
 
         // Execute all updates in a single transaction
@@ -440,6 +458,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
+        String scope = cmd.getScope();
+        Long id = cmd.getId();
         UserContext.current().setEventDetails(" Name: " + name + " New Value: " + (((name.toLowerCase()).contains("password")) ? "*****" :
                 (((value == null) ? "" : value))));
         // check if config value exists
@@ -456,7 +476,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             value = null;
         }
 
-        updateConfiguration(userId, name, config.getCategory(), value);
+        updateConfiguration(userId, name, config.getCategory(), value, scope, id);
         String updatedValue = _configDao.getValue(name);
         if ((value == null && updatedValue == null) || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
@@ -466,12 +486,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private String validateConfigurationValue(String name, String value) {
+    private String validateConfigurationValue(String name, String value, String scope) {
 
         Config c = Config.getConfig(name);
         if (c == null) {
             s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
+        }
+        String configScope = c.getScope();
+        if (scope != null && !scope.isEmpty()) {
+            if (!configScope.contains(scope)) {
+                s_logger.error("Invalid scope " + scope + " for the parameter " + name);
+                return "Invalid scope for the parameter.";
+            }
         }
 
         Class<?> type = c.getType();

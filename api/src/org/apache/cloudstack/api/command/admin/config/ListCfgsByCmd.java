@@ -23,8 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Configuration;
@@ -46,6 +45,13 @@ public class ListCfgsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists configuration by name")
     private String configName;
 
+    @Parameter(name=ApiConstants.SCOPE, type = CommandType.STRING, description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
+    private String scope;
+
+    @Parameter(name=ApiConstants.ID, type = CommandType.UUID, entityType = {ZoneResponse.class, ClusterResponse.class, StoragePoolResponse.class, AccountResponse.class}, description = "corresponding ID of the scope")
+    private Long id;
+
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -57,6 +63,15 @@ public class ListCfgsByCmd extends BaseListCmd {
     public String getConfigName() {
         return configName;
     }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
 
     @Override
     public Long getPageSizeVal() {
@@ -85,6 +100,11 @@ public class ListCfgsByCmd extends BaseListCmd {
         for (Configuration cfg : result.first()) {
             ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
             cfgResponse.setObjectName("configuration");
+            if (scope != null) {
+                cfgResponse.setScope(scope);
+            } else {
+                cfgResponse.setScope("global");
+            }
             configResponses.add(cfgResponse);
         }
 

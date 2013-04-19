@@ -405,6 +405,33 @@ public interface UserVmService {
      */
     VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
+    /**
+     * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
+     * Only root admin can migrate a VM.
+     *
+     * @param destinationStorage
+     *            TODO
+     * @param Long
+     *            vmId of The VM to migrate
+     * @param Host
+     *            destinationHost to migrate the VM
+     * @param Map
+     *            A map of volume to which pool it should be migrated
+     *
+     * @return VirtualMachine migrated VM
+     * @throws ManagementServerException
+     *             in case we get error finding the VM or host or access errors or other internal errors.
+     * @throws ConcurrentOperationException
+     *             if there are multiple users working on the same VM.
+     * @throws ResourceUnavailableException
+     *             if the destination host to migrate the VM is not currently available.
+     * @throws VirtualMachineMigrationException
+     *             if the VM to be migrated is not in Running state
+     */
+    VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+            VirtualMachineMigrationException;
+
     UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);

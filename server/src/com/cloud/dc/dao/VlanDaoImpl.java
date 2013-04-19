@@ -58,6 +58,9 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> ZoneVlanSearch;
     protected SearchBuilder<VlanVO> NetworkVlanSearch;
     protected SearchBuilder<VlanVO> PhysicalNetworkVlanSearch;
+    protected SearchBuilder<VlanVO> ZoneWideNonDedicatedVlanSearch;
+
+    protected SearchBuilder<AccountVlanMapVO> AccountVlanMapSearch;
 
     @Inject protected PodVlanMapDao _podVlanMapDao;
     @Inject protected AccountVlanMapDao _accountVlanMapDao;
@@ -198,6 +201,14 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         PodVlanSearch2.done();
         ZoneTypePodSearch.done();
 
+        ZoneWideNonDedicatedVlanSearch = createSearchBuilder();
+        ZoneWideNonDedicatedVlanSearch.and("zoneId", ZoneWideNonDedicatedVlanSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AccountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
+        AccountVlanMapSearch.and("accountId", AccountVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.NULL);
+        ZoneWideNonDedicatedVlanSearch.join("AccountVlanMapSearch", AccountVlanMapSearch, ZoneWideNonDedicatedVlanSearch.entity().getId(), AccountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.LEFTOUTER);
+        ZoneWideNonDedicatedVlanSearch.done();
+        AccountVlanMapSearch.done();
+
         return result;
     }
 
@@ -312,4 +323,12 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
     }	
+
+    @Override
+    public List<VlanVO> listZoneWideNonDedicatedVlans(long zoneId) {
+        SearchCriteria<VlanVO> sc = ZoneWideNonDedicatedVlanSearch.create();
+        sc.setParameters("ZoneWideNonDedicatedVlanSearch", "zoneId", zoneId);
+        return listBy(sc);
+    }
+
 }

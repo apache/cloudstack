@@ -72,4 +72,13 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
     	
     	return detailsMap;
     }
+
+    @Override
+    public StoragePoolDetailVO findDetail(long poolId, String name) {
+        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
+        sc.setParameters("pool", poolId);
+        sc.setParameters("name", name);
+
+        return findOneIncludingRemovedBy(sc);
+    }
 }

@@ -25,4 +25,5 @@ public interface StoragePoolDetailsDao extends GenericDao<StoragePoolDetailVO, L
     
     void update(long poolId, Map<String, String> details);
     Map<String, String> getDetails(long poolId);
+    StoragePoolDetailVO findDetail(long poolId, String name);
 }

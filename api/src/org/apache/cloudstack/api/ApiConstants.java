@@ -365,6 +365,8 @@ public class ApiConstants {
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
     public static final String DEFAULT_ZONE_ID = "defaultzoneid";
+    public static final String LIVE_MIGRATE = "livemigrate";
+    public static final String MIGRATE_TO = "migrateto";
     public static final String GUID = "guid";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";

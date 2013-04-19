@@ -539,6 +539,13 @@ class Volume:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.resizeVolume(cmd))
 
+    @classmethod
+    def migrate(cls, apiclient, **kwargs):
+        """Migrate a volume"""
+        cmd = migrateVolume.migrateVolumeCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.migrateVolume(cmd))
+
 class Snapshot:
     """Manage Snapshot Lifecycle
     """
@@ -1493,6 +1500,14 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listHosts(cmd))
 
+    @classmethod
+    def listForMigration(cls, apiclient, **kwargs):
+        """List all Hosts for migration matching criteria"""
+
+        cmd = findHostsForMigration.findHostsForMigrationCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.findHostsForMigration(cmd))
+
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
@@ -1554,6 +1569,13 @@ class StoragePool:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStoragePools(cmd))
 
+    @classmethod
+    def listForMigration(cls, apiclient, **kwargs):
+        """List all storage pools for migration matching criteria"""
+
+        cmd = findStoragePoolsForMigration.findStoragePoolsForMigrationCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.findStoragePoolsForMigration(cmd))
 
 class Network:
     """Manage Network pools"""
