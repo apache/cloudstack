@@ -24,6 +24,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public interface HostEndpointRpcServer {
-    void sendCommandAsync(HypervisorHostEndPoint ep, final Command command, final AsyncCompletionCallback<Answer> callback);
-    Answer sendCommand(HypervisorHostEndPoint ep, final Command command);
+    void sendCommandAsync(RemoteHostEndPoint ep, final Command command, final AsyncCompletionCallback<Answer> callback);
+    Answer sendCommand(RemoteHostEndPoint ep, final Command command);
 }

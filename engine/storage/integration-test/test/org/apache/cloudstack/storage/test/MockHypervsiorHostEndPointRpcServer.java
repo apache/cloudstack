@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
-import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -60,12 +60,12 @@ public class MockHypervsiorHostEndPointRpcServer implements HostEndpointRpcServe
         
     }
     
-    public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
+    public void sendCommandAsync(RemoteHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
         executor.schedule(new MockRpcCallBack(command, callback), 10, TimeUnit.SECONDS);
     }
     
     @Override
-    public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
+    public Answer sendCommand(RemoteHostEndPoint host, Command command) {
         // TODO Auto-generated method stub
         return null;
     }

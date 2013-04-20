@@ -31,8 +31,8 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.utils.component.ComponentContext;
 
-public class HypervisorHostEndPoint implements EndPoint {
-    private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
+public class RemoteHostEndPoint implements EndPoint {
+    private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
     private  long hostId;
     private  String hostAddress;
     @Inject
@@ -40,7 +40,7 @@ public class HypervisorHostEndPoint implements EndPoint {
     @Inject
     HostEndpointRpcServer rpcServer;
 
-    protected HypervisorHostEndPoint() {
+    protected RemoteHostEndPoint() {
       
     }
     
@@ -49,8 +49,8 @@ public class HypervisorHostEndPoint implements EndPoint {
         this.hostAddress = hostAddress;
     }
     
-    public static HypervisorHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress) {
-        HypervisorHostEndPoint ep = ComponentContext.inject(HypervisorHostEndPoint.class);
+    public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress) {
+        RemoteHostEndPoint ep = ComponentContext.inject(RemoteHostEndPoint.class);
         ep.configure(hostId, hostAddress);
         return ep;
     }

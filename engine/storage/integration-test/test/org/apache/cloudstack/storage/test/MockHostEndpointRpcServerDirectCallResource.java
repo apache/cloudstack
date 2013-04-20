@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
-import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -46,7 +46,7 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
         executor = Executors.newScheduledThreadPool(10);
     }
     
-    public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
+    public void sendCommandAsync(RemoteHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
        // new MockRpcCallBack(host.getHostId(), command, callback);
         MockRpcCallBack run = ComponentContext.inject(MockRpcCallBack.class);
         run.setCallback(callback);
@@ -56,7 +56,7 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
     }
 
     @Override
-    public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
+    public Answer sendCommand(RemoteHostEndPoint host, Command command) {
         Answer answer;
         try {
             answer = agentMgr.send(host.getId(), command);

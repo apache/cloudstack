@@ -32,7 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -130,7 +130,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                 host.getPrivateIpAddress());
     }
 
@@ -195,7 +195,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                     host.getPrivateIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
@@ -203,7 +203,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.find();
             for (HostVO host : hosts) {
-                endPoints.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
+                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                         host.getPrivateIpAddress()));
             }
            

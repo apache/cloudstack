@@ -56,7 +56,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     }
     
     @Override
-    public void sendCommandAsync(HypervisorHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
+    public void sendCommandAsync(RemoteHostEndPoint host, final Command command, final AsyncCompletionCallback<Answer> callback) {
         rpcProvider.newCall(host.getHostAddr()).addCallbackListener(new RpcCallbackListener<Answer>() {
             @Override
             public void onSuccess(Answer result) {
@@ -89,7 +89,7 @@ public class HypervsiorHostEndPointRpcServer implements HostEndpointRpcServer {
     }
 
     @Override
-    public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
+    public Answer sendCommand(RemoteHostEndPoint host, Command command) {
         SendCommandContext<Answer> context = new SendCommandContext<Answer>(null);
         AsyncCallbackDispatcher<HypervsiorHostEndPointRpcServer, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().sendCommandCallback(null, null))

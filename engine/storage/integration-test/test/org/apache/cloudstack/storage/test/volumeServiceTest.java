@@ -47,7 +47,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
@@ -200,7 +200,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(host);
         Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
         List<EndPoint> eps = new ArrayList<EndPoint>();
-        eps.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
+        eps.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                 host.getPrivateIpAddress()));
         Mockito.when(selector.selectAll(Mockito.any(DataStore.class))).thenReturn(eps);
         Mockito.when(selector.select(Mockito.any(DataObject.class))).thenReturn(eps.get(0));
