@@ -668,9 +668,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         String checkSum = this.templateMgr
                 .getChecksum(hostId, answer.getPath());
 
-        Transaction txn = Transaction.currentTxn();
 
-        txn.start();
 
         privateTemplate.setChecksum(checkSum);
         templateDao.update(privateTemplate.getId(), privateTemplate);
@@ -685,8 +683,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         templateHostVO.setLastUpdated(new Date());
         templateHostVO.setSize(answer.getVirtualSize());
         templateHostVO.setPhysicalSize(answer.getphysicalSize());
+       
         templateHostDao.persist(templateHostVO);
-        txn.close();
+  
         return answer;
     }
 

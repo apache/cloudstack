@@ -1716,8 +1716,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         try {
             TemplateInfo tmplInfo = this.tmplFactory.getTemplate(templateId);
-            snapshot = _snapshotDao.findById(snapshotId);
-            ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
+            ZoneScope scope = null;
+            Long zoneId = null;
+            if (snapshotId != null) {
+                snapshot = _snapshotDao.findById(snapshotId);
+                zoneId = snapshot.getDataCenterId();
+                
+            } else if (volumeId != null) {
+                volume = _volumeDao.findById(volumeId);
+                zoneId = volume.getDataCenterId();
+            }
+            scope = new ZoneScope(zoneId);
             List<DataStore> store = this.dataStoreMgr.getImageStores(scope);
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
@@ -1727,7 +1736,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
                 future = this.imageSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
-               volume = _volumeDao.findById(volumeId);
                VolumeInfo volInfo = this.volFactory.getVolume(volumeId);
                future = this.imageSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
@@ -1748,7 +1756,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 UsageEventVO usageEvent = new UsageEventVO(
                         EventTypes.EVENT_TEMPLATE_CREATE,
                         privateTemplate.getAccountId(),
-                        snapshot.getDataCenterId(),
+                        zoneId,
                         privateTemplate.getId(), privateTemplate.getName(),
                         null, privateTemplate.getSourceTemplateId(),
                         privateTemplate.getSize());
@@ -1971,6 +1979,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         privateTemplate.setSourceTemplateId(sourceTemplateId);
+        privateTemplate.setImageDataStoreId(1);
 
         VMTemplateVO template = this._tmpltDao.persist(privateTemplate);
         // Increment the number of templates
