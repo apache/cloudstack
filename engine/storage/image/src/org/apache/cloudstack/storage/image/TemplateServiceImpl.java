@@ -28,15 +28,20 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+
 import com.cloud.storage.template.TemplateProp;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -68,8 +73,11 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -92,6 +100,8 @@ public class TemplateServiceImpl implements TemplateService {
     DataObjectManager _dataObjectMgr;
     @Inject
     DataStoreManager _storeMgr;
+    @Inject
+    DataMotionService _motionSrv;
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
@@ -120,33 +130,18 @@ public class TemplateServiceImpl implements TemplateService {
     UserVmDao _userVmDao;
     @Inject
     VolumeDao _volumeDao;
+    @Inject
+    TemplateDataFactory _templateFactory;
 
 
-    class CreateTemplateContext<T> extends AsyncRpcConext<T> {
-        final TemplateInfo srcTemplate;
-        final DataStore store;
-        final AsyncCallFuture<CommandResult> future;
-        final DataObject templateOnStore;
 
-        public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo srcTemplate,
-                AsyncCallFuture<CommandResult> future,
-                DataStore store,
-                DataObject templateOnStore
-             ) {
-            super(callback);
-            this.srcTemplate = srcTemplate;
-            this.future = future;
-            this.store = store;
-            this.templateOnStore = templateOnStore;
-        }
-    }
 
-    class DeleteTemplateContext<T> extends AsyncRpcConext<T> {
+    class TemplateOpContext<T> extends AsyncRpcConext<T> {
         final TemplateObject template;
-        final AsyncCallFuture<CommandResult> future;
+        final AsyncCallFuture<TemplateApiResult> future;
 
-        public DeleteTemplateContext(AsyncCompletionCallback<T> callback, TemplateObject template,
-                AsyncCallFuture<CommandResult> future) {
+        public TemplateOpContext(AsyncCompletionCallback<T> callback, TemplateObject template,
+                AsyncCallFuture<TemplateApiResult> future) {
             super(callback);
             this.template = template;
             this.future = future;
@@ -156,7 +151,7 @@ public class TemplateServiceImpl implements TemplateService {
             return template;
         }
 
-        public AsyncCallFuture<CommandResult> getFuture() {
+        public AsyncCallFuture<TemplateApiResult> getFuture() {
             return future;
         }
 
@@ -164,21 +159,17 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public AsyncCallFuture<CommandResult> createTemplateAsync(
+    public AsyncCallFuture<TemplateApiResult> createTemplateAsync(
             TemplateInfo template, DataStore store) {
-        TemplateObject to = (TemplateObject) template;
-        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         // persist template_store_ref entry
         DataObject templateOnStore = store.create(template);
         // update template_store_ref state
         templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
 
-        CreateTemplateContext<CommandResult> context = new CreateTemplateContext<CommandResult>(null,
-                template,
-                future,
-                store,
-                templateOnStore
-               );
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
+                (TemplateObject)templateOnStore, future);
+
         AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
         store.getDriver().createAsync(templateOnStore, caller);
@@ -470,15 +461,14 @@ public class TemplateServiceImpl implements TemplateService {
 
 
     protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
-            CreateTemplateContext<CreateCmdResult> context) {
-        TemplateObject template = (TemplateObject)context.srcTemplate;
-        AsyncCallFuture<CommandResult> future = context.future;
-        CommandResult result = new CommandResult();
-        DataObject templateOnStore = context.templateOnStore;
+            TemplateOpContext<CreateCmdResult> context) {
+        TemplateObject template = (TemplateObject)context.getTemplate();
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        TemplateApiResult result = new TemplateApiResult(template);
         CreateCmdResult callbackResult = callback.getResult();
         if (callbackResult.isFailed()) {
             try {
-                templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 template.stateTransit(TemplateEvent.OperationFailed);
             } catch (NoTransitionException e) {
                s_logger.debug("Failed to update template state", e);
@@ -489,7 +479,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         try {
-            templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
             template.stateTransit(TemplateEvent.OperationSucceeded);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to transit state", e);
@@ -503,22 +493,22 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public AsyncCallFuture<CommandResult> deleteTemplateAsync(
+    public AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(
             TemplateInfo template) {
         TemplateObject to = (TemplateObject) template;
         // update template_store_ref status
         to.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
-        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 
-        DeleteTemplateContext<CommandResult> context = new DeleteTemplateContext<CommandResult>(null, to, future);
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, to, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteTemplateCallback(null, null)).setContext(context);
         to.getDataStore().getDriver().deleteAsync(to, caller);
         return future;
     }
 
-    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, DeleteTemplateContext<CommandResult> context) {
-        CommandResult result = callback.getResult();
+    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, TemplateApiResult> callback, TemplateOpContext<TemplateApiResult> context) {
+        TemplateApiResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         // we can only update state in template_store_ref table
          if (result.isSuccess()) {
@@ -531,19 +521,114 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public AsyncCallFuture<CommandResult> createTemplateFromSnapshotAsync(
+    public AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(
             SnapshotInfo snapshot, TemplateInfo template, DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public AsyncCallFuture<CommandResult> createTemplateFromVolumeAsync(
+    public AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(
             VolumeInfo volume, TemplateInfo template, DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
+    @Override
+    public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate,
+            DataStore destStore) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        TemplateApiResult res = new TemplateApiResult(srcTemplate);
+        try{
+        // create one entry in template_store_ref
+            TemplateDataStoreVO destTmpltStore = _vmTemplateStoreDao.findByStoreTemplate(destStore.getId(), srcTemplate.getId());
+            if (destTmpltStore == null) {
+                destTmpltStore = new TemplateDataStoreVO(destStore.getId(), srcTemplate.getId());
+                destTmpltStore.setCopy(true);
+                _vmTemplateStoreDao.persist(destTmpltStore);
+            }
+            TemplateInfo destTemplate = this._templateFactory.getTemplate(destTmpltStore.getTemplateId(), destStore);
+            destTemplate.processEvent(Event.CreateOnlyRequested);
+            srcTemplate.processEvent(Event.CopyingRequested);
 
+            CopyTemplateContext<TemplateApiResult> context = new CopyTemplateContext<TemplateApiResult>(null, future, srcTemplate,
+                    destTemplate,
+                    destStore);
+            AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null))
+            .setContext(context);
+            this._motionSrv.copyAsync(srcTemplate, destTemplate, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to copy volume", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+        return future;
+    }
 
+    protected Void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
+            CopyTemplateContext<TemplateApiResult> context) {
+        TemplateInfo srcTemplate = context.getSrcTemplate();
+        TemplateInfo destTemplate = context.getDestTemplate();
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        TemplateApiResult res = new TemplateApiResult(destTemplate);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                destTemplate.processEvent(Event.OperationFailed);
+                srcTemplate.processEvent(Event.OperationFailed);
+                // remove entry from template_store_ref
+                TemplateDataStoreVO destTmpltStore = _vmTemplateStoreDao.findByStoreTemplate(context.getDestStore().getId(), destTemplate.getId());
+                _vmTemplateStoreDao.remove(destTmpltStore.getId());
+                future.complete(res);
+                return null;
+            }
+            srcTemplate.processEvent(Event.OperationSuccessed);
+            destTemplate.processEvent(Event.OperationSuccessed);
+            future.complete(res);
+            return null;
+        } catch (Exception e) {
+            s_logger.debug("Failed to process copy template callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
+
+    class CopyTemplateContext<T> extends AsyncRpcConext<T> {
+        final TemplateInfo srcTemplate;
+        final TemplateInfo destTemplate;
+        final DataStore destStore;
+        final AsyncCallFuture<TemplateApiResult> future;
+
+        /**
+         * @param callback
+         */
+        public CopyTemplateContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<TemplateApiResult> future, TemplateInfo srcTemplate,
+                TemplateInfo destTemplate, DataStore destStore) {
+            super(callback);
+            this.srcTemplate = srcTemplate;
+            this.destTemplate = destTemplate;
+            this.destStore = destStore;
+            this.future = future;
+        }
+
+        public TemplateInfo getSrcTemplate() {
+            return srcTemplate;
+        }
+
+        public TemplateInfo getDestTemplate() {
+            return destTemplate;
+        }
+
+        public DataStore getDestStore() {
+            return destStore;
+        }
+
+        public AsyncCallFuture<TemplateApiResult> getFuture() {
+            return future;
+        }
+    }
 }

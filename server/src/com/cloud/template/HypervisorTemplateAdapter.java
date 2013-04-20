@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -180,7 +181,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		    throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
 		}
         for (DataStore imageStore : imageStores) {
-            AsyncCallFuture<CommandResult> future = this.imageService
+            AsyncCallFuture<TemplateApiResult> future = this.imageService
                     .createTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore), imageStore);
             try {
                 future.get();
@@ -226,10 +227,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 
         for (DataStore imageStore : imageStores) {
             s_logger.info("Delete template from image store: " + imageStore.getName());
-            AsyncCallFuture<CommandResult> future = this.imageService
+            AsyncCallFuture<TemplateApiResult> future = this.imageService
                     .deleteTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore));
             try {
-                CommandResult result = future.get();
+                TemplateApiResult result = future.get();
                 success = result.isSuccess();
                 if ( !success )
                     break;

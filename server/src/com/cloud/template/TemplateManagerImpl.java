@@ -64,6 +64,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -945,49 +947,63 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        //Copy will just find one eligible image store for the destination zone and copy template there, not propagate to all image stores
+        TemplateInfo srcTemplate = this.tmplFactory.getTemplate(template.getId(), srcSecStore);
+        // Copy will just find one eligible image store for the destination zone
+        // and copy template there, not propagate to all image stores
         // for that zone
-        for ( DataStore dstSecStore : dstSecStores ) {
+        for (DataStore dstSecStore : dstSecStores) {
             TemplateDataStoreVO dstTmpltStore = null;
             try {
-            	dstTmpltStore = this._tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId, true);
-            	if (dstTmpltStore != null) {
-            		dstTmpltStore = _tmplStoreDao.lockRow(dstTmpltStore.getId(), true);
-            		if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
-            			if (dstTmpltStore.getDestroyed() == false)  {
-            				return true; // already downloaded on this image store
-            			} else {
-            				dstTmpltStore.setDestroyed(false);
-            				_tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
-            				return true;
-            			}
-            		} else if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOAD_ERROR){
-            			if (dstTmpltStore.getDestroyed() == true)  {
-            				dstTmpltStore.setDestroyed(false);
-            				dstTmpltStore.setDownloadState(Status.NOT_DOWNLOADED);
-            				dstTmpltStore.setDownloadPercent(0);
-            				dstTmpltStore.setCopy(true);
-            				dstTmpltStore.setErrorString("");
-            				dstTmpltStore.setJobId(null);
-            				_tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
-            			}
-            		}
-            	}
+                dstTmpltStore = this._tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId, true);
+                if (dstTmpltStore != null) {
+                    dstTmpltStore = _tmplStoreDao.lockRow(dstTmpltStore.getId(), true);
+                    if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
+                        if (dstTmpltStore.getDestroyed() == false) {
+                            return true; // already downloaded on this image
+                                         // store
+                        } else {
+                            dstTmpltStore.setDestroyed(false);
+                            _tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
+                            return true;
+                        }
+                    } else if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOAD_ERROR) {
+                        if (dstTmpltStore.getDestroyed() == true) {
+                            dstTmpltStore.setDestroyed(false);
+                            dstTmpltStore.setDownloadState(Status.NOT_DOWNLOADED);
+                            dstTmpltStore.setDownloadPercent(0);
+                            dstTmpltStore.setCopy(true);
+                            dstTmpltStore.setErrorString("");
+                            dstTmpltStore.setJobId(null);
+                            _tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
+                        }
+                    }
+                }
             } finally {
-            	txn.commit();
+                txn.commit();
             }
 
-            if(_downloadMonitor.copyTemplate(template, srcSecStore, dstSecStore) ) {
+            AsyncCallFuture<TemplateApiResult> future = this.tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
+            try {
+                TemplateApiResult result = future.get();
+                if (result.isFailed()) {
+                    s_logger.debug("copy template failed:" + result.getResult());
+                    return false;
+                }
+                // if(_downloadMonitor.copyTemplate(template, srcSecStore,
+                // dstSecStore) ) {
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
-            	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
+                if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
                     UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getSize(),
                             template.getClass().getName(), template.getUuid());
-            	}
-            	return true;
+                }
+                return true;
+            } catch (Exception ex) {
+                s_logger.debug("failed to copy template to image store:" + dstSecStore.getName() + " ,will try next one");
             }
         }
         return false;
+
     }
 
 
@@ -1001,17 +1017,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
     	Account caller = UserContext.current().getCaller();
-
-    	/*
-        if (_swiftMgr.isSwiftEnabled()) {
-            throw new CloudRuntimeException("copytemplate API is disabled in Swift setup, templates in Swift can be accessed by all Zones");
-        }
-
-        if (_s3Mgr.isS3Enabled()) {
-            throw new CloudRuntimeException(
-                    "copytemplate API is disabled in S3 setup -- S3 templates are accessible in all zones.");
-        }
-        */
 
         //Verify parameters
         if (sourceZoneId == destZoneId) {
@@ -1769,7 +1774,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
             }
-            AsyncCallFuture<CommandResult> future = null;
+            AsyncCallFuture<TemplateApiResult> future = null;
             if (snapshotId != null) {
                 SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
                 future = this.tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));

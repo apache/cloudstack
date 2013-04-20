@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 
 
@@ -25,10 +26,25 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public interface TemplateService {
-    AsyncCallFuture<CommandResult> createTemplateAsync(TemplateInfo template, DataStore store);
-    AsyncCallFuture<CommandResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
-    AsyncCallFuture<CommandResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
-    AsyncCallFuture<CommandResult> deleteTemplateAsync(TemplateInfo template);
+
+    public class TemplateApiResult extends CommandResult {
+        private final TemplateInfo template;
+        public TemplateApiResult(TemplateInfo template) {
+            this.template = template;
+        }
+
+        public TemplateInfo getTemplate() {
+            return this.template;
+        }
+    }
+
+
+    AsyncCallFuture<TemplateApiResult> createTemplateAsync(TemplateInfo template, DataStore store);
+    AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
+    AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
+    AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);
+    AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate,
+            DataStore destStore);
 
     void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
     void handleTemplateSync(DataStore store);
