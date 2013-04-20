@@ -679,20 +679,48 @@
                     }
                   }
                 },
-                action: function(args) {
-                  args.response.success();
+                action: function(args) {                  
+									var affinityGroupIdArray = [];
+									if(args.context.affinityGroups != null) {
+									  for(var i = 0; i < args.context.affinityGroups.length; i++) {										  
+											if(args.context.affinityGroups[i]._isSelected == true) {
+											  affinityGroupIdArray.push(args.context.affinityGroups[i].id);
+											}
+										}
+									}									
+									var data = {
+									  id: args.context.instances[0].id,
+										affinitygroupids: affinityGroupIdArray.join(",")
+									};									
+									$.ajax({
+									  url: createURL('updateVMAffinityGroup'),
+										data: data,
+										success: function(json) {										  
+											var jid = json.updatevirtualmachineresponse.jobid;											
+											args.response.success(
+												{_custom:
+												 {jobId: jid,
+													getUpdatedItem: function(json) {													  
+														return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+													},
+													getActionFilter: function() {
+														return vmActionfilter;
+													}
+												 }
+												}
+											);												
+										}
+									});			
                 }
               })
             },
             messages: {
               notification: function(args) {
-                return 'label.action.enable.static.NAT';
+                return 'Change affinity';
               }
             },
             notification: {
-              poll: function(args) {
-                args.complete();
-              }
+              poll: pollAsyncJobResult
             }
           },
 
