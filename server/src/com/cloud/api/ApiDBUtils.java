@@ -86,7 +86,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -659,10 +658,6 @@ public class ApiDBUtils {
 
     public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
         return _resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
-    }
-
-    public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-        return _asyncMgr.findInstancePendingAsyncJob(instanceType, instanceId);
     }
 
     public static long getResourceCount(ResourceType type, long accountId) {

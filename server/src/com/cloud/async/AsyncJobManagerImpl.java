@@ -52,7 +52,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
@@ -79,7 +78,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private SyncQueueManager _queueMgr;
     @Inject private ClusterManager _clusterMgr;
     @Inject private AccountManager _accountMgr;
-    @Inject private AccountDao _accountDao;
     @Inject private AsyncJobDao _jobDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
@@ -103,11 +101,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
         return _jobDao.findById(jobId);
-    }
-
-    @Override
-    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-        return _jobDao.findInstancePendingAsyncJob(instanceType, instanceId);
     }
 
     @Override

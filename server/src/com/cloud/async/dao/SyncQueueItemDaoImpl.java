@@ -43,7 +43,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
     
-    protected SyncQueueItemDaoImpl() {
+    public SyncQueueItemDaoImpl() {
         super();
         queueIdSearch = createSearchBuilder(Long.class);
         queueIdSearch.and("contentId", queueIdSearch.entity().getContentId(), Op.EQ);

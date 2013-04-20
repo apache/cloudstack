@@ -23,18 +23,40 @@ import javax.inject.Inject;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Transaction;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/SyncQueueTestContext.xml")
 public class TestSyncQueueManager extends TestCase {
     public static final Logger s_logger = Logger.getLogger(TestSyncQueueManager.class.getName());
 
     private volatile int count = 0;
     private volatile long expectingCurrent = 1;
+    
     @Inject SyncQueueManager mgr;
 
+    @Before
+    public void setUp() {
+    	ComponentContext.initComponentsLifeCycle();
+    	Transaction.open("dummy");
+    }
+    
+    @After
+    public void tearDown() {
+    	Transaction.currentTxn().close();
+    }
+    
+    
     public void leftOverItems() {
-
         List<SyncQueueItemVO> l = mgr.getActiveQueueItems(1L, false);
         if(l != null && l.size() > 0) {
             for(SyncQueueItemVO item : l) {
@@ -72,8 +94,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
                 }
             }
-        }
-                );
+        });
 
         Thread thread2 = new Thread(new Runnable() {
             @Override
@@ -95,8 +116,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
                 }
             }
-        }
-                );
+        });
 
         thread1.start();
         thread2.start();
@@ -143,8 +163,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
                 }
             }
-        }
-                );
+        });
 
         Thread thread2 = new Thread(new Runnable() {
             @Override
@@ -167,8 +186,7 @@ public class TestSyncQueueManager extends TestCase {
                     }
                 }
             }
-        }
-                );
+        });
 
         thread1.start();
         thread2.start();
@@ -192,6 +210,7 @@ public class TestSyncQueueManager extends TestCase {
                 mgr.queue("vm_instance", q, "Async-job", i+1, 1);
     }
 
+    @Test
     public void testSyncQueue() {
 
         mgr.queue("vm_instance", 1, "Async-job", 1, 1);
