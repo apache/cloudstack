@@ -119,9 +119,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	public VmwareServerDiscoverer() {
 		s_logger.info("VmwareServerDiscoverer is constructed");
 	}
-	
+
 	@Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url,
     	String username, String password, List<String> hostTags) throws DiscoveryException {
 
     	if(s_logger.isInfoEnabled())
@@ -312,7 +312,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 						.decode(uriFromCluster.getPath()));
 
 				if (morCluster == null
-						|| !morCluster.getProtocol().equalsIgnoreCase(
+						|| !morCluster.getType().equalsIgnoreCase(
 								"ClusterComputeResource")) {
 					s_logger.warn("Cluster url does not point to a valid vSphere cluster, url: "
 							+ clusterDetails.get("url"));
@@ -345,7 +345,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				details.put("url", hostMo.getHostName());
 				details.put("username", username);
 				details.put("password", password);
-				String guid = morHost.getProtocol() + ":" + morHost.getValue()
+				String guid = morHost.getType() + ":" + morHost.getValue()
 						+ "@" + url.getHost();
 				details.put("guid", guid);
 
@@ -402,7 +402,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
 						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (morParent.getProtocol().equalsIgnoreCase(
+				if (morParent.getType().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
 			}
@@ -410,7 +410,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			for (ManagedObjectReference morHost : morHosts) {
 				ManagedObjectReference morParent = (ManagedObjectReference) context
 						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (!morParent.getProtocol().equalsIgnoreCase(
+				if (!morParent.getType().equalsIgnoreCase(
 						"ClusterComputeResource"))
 					return false;
 
@@ -637,7 +637,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             return VirtualSwitchType.NexusDistributedVirtualSwitch;
         else if(useDVS)
             return VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        else 
+        else
             return VirtualSwitchType.StandardVirtualSwitch;
     }
 
