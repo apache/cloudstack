@@ -32,4 +32,5 @@ public interface TemplateService {
 
     void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
     void handleTemplateSync(DataStore store);
+    void downloadBootstrapSysTemplate(DataStore store);
 }

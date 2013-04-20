@@ -60,6 +60,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
@@ -325,6 +326,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     DataStoreManager _dataStoreMgr;
     @Inject
     DataStoreProviderManager _dataStoreProviderMgr;
+    @Inject
+    private TemplateService _imageSrv;
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -1985,6 +1988,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             s_logger.debug("Failed to add data store", e);
             throw new CloudRuntimeException("Failed to add data store", e);
         }
+
+        // trigger system vm template download
+        this._imageSrv.downloadBootstrapSysTemplate(store);
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }

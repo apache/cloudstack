@@ -185,6 +185,30 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
+    @Override
+    public void downloadBootstrapSysTemplate(DataStore store) {
+        Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+
+        List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+        List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
+
+        for (VMTemplateVO rtngTmplt : rtngTmplts) {
+            toBeDownloaded.add(rtngTmplt);
+        }
+
+        for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+            toBeDownloaded.add(builtinTmplt);
+        }
+
+        for (VMTemplateVO template : toBeDownloaded) {
+            TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+            if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                _dlMonitor.downloadBootstrapSysTemplateToStorage(template, store, null);
+            }
+        }
+    }
+
+
 
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {

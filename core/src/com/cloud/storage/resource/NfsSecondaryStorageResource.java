@@ -221,7 +221,7 @@ SecondaryStorageResource {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-    
+
     protected Answer downloadFromS3ToNfs(CopyCmd cmd, DataTO srcData, S3TO s3,
     		DataTO destData, NfsTO destImageStore) {
           final String storagePath = destImageStore.getUrl();
@@ -264,27 +264,27 @@ SecondaryStorageResource {
               return new Answer(cmd, false, errMsg);
           }
     }
-    
+
     protected Answer downloadFromSwiftToNfs(CopyCmd cmd, DataTO srcData, SwiftTO srcImageStore,
     		DataTO destData, NfsTO destImageStore) {
     	return Answer.createUnsupportedCommandAnswer(cmd);
-    } 
-    
+    }
+
     protected Answer execute(CopyCmd cmd) {
     	DataTO srcData = cmd.getSrcTO();
     	DataTO destData = cmd.getDestTO();
     	DataStoreTO srcDataStore = srcData.getDataStore();
     	DataStoreTO destDataStore = destData.getDataStore();
-    	
-    	if (srcDataStore.getRole() == DataStoreRole.Image 
+
+    	if (srcDataStore.getRole() == DataStoreRole.Image
     			&& destDataStore.getRole() == DataStoreRole.ImageCache
     			) {
-    		
+
     		if (!(destDataStore instanceof NfsTO)) {
     			s_logger.debug("only support nfs as cache storage");
-    			return Answer.createUnsupportedCommandAnswer(cmd); 
+    			return Answer.createUnsupportedCommandAnswer(cmd);
     		}
-    		
+
     		if (srcDataStore instanceof S3TO) {
     			return downloadFromS3ToNfs(cmd, srcData, (S3TO)srcDataStore,
     					destData, (NfsTO)destDataStore);
@@ -292,15 +292,15 @@ SecondaryStorageResource {
     			return downloadFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore,
     					destData, (NfsTO)destDataStore);
     		} else {
-    			return Answer.createUnsupportedCommandAnswer(cmd); 
+    			return Answer.createUnsupportedCommandAnswer(cmd);
     		}
-    		
+
     	}
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @SuppressWarnings("unchecked")
-    private String determineS3TemplateDirectory(final Long accountId,
+    protected String determineS3TemplateDirectory(final Long accountId,
             final Long templateId) {
         return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId),
                 S3Utils.SEPARATOR);

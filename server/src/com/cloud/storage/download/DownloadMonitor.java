@@ -33,7 +33,10 @@ import com.cloud.utils.component.Manager;
  */
 public interface DownloadMonitor extends Manager{
 
-	public void downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
+    // when ssvm is not available yet
+    public void downloadBootstrapSysTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
+
+    public void downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
 
 	public void cancelAllDownloads(Long templateId);
 
