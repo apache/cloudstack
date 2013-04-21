@@ -374,6 +374,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
+        data_center.networktype data_center_type,
         data_center.is_security_group_enabled security_group_enabled,
         host.id host_id,
         host.uuid host_uuid,
