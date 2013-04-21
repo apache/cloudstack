@@ -142,10 +142,10 @@ if [ "$committosvn" == "yes" ]; then
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.asc .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.md5 .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.sha .
-  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2
-  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.asc
-  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.md5
-  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.sha
+  svn add apache-cloudstack-$version-src.tar.bz2
+  svn add apache-cloudstack-$version-src.tar.bz2.asc
+  svn add apache-cloudstack-$version-src.tar.bz2.md5
+  svn add apache-cloudstack-$version-src.tar.bz2.sha
   svn commit -m "Committing release candidate artifacts for $version to dist/dev/cloudstack in preparation for release vote"
 fi
 
