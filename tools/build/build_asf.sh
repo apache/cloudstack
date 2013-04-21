@@ -18,7 +18,7 @@
 
 version='TESTBUILD'
 sourcedir=~/cloudstack/
-outputdir=~/cs-asf-build/
+outputdir=/tmp/cloudstack-build/
 branch='master'
 tag='no'
 certid='X'
