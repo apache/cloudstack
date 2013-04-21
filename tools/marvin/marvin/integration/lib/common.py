@@ -134,6 +134,8 @@ def get_template(apiclient, zoneid, ostype, services=None):
         for template in list_templates:
             if template.ostypeid == ostypeid:
                 return template
+            elif template.isready:
+                return template
 
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
                                                                     ostypeid)
