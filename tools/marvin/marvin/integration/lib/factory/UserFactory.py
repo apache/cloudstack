@@ -23,7 +23,7 @@ class UserFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = User.User
 
-    account = factory.RelatedFactory(AccountFactory).factory()
+    account = factory.SubFactory(AccountFactory).factory()
     email = account.email
     firstname = account.firstname
     lastname = account.lastname
@@ -31,4 +31,4 @@ class UserFactory(CloudStackBaseFactory):
     username = account.username
 
 class AdminUserFactory(UserFactory):
-    account = factory.RelatedFactory(AccountFactory, accounttype=1).factory()
+    account = factory.SubFactory(AccountFactory, accounttype=1).factory()

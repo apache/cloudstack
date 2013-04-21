@@ -18,23 +18,20 @@
 import unittest
 import logging
 from marvin.cloudstackTestClient import cloudstackTestClient
-from marvin.integration.lib.common import get_template
 
 from marvin.integration.lib.factory.AccountFactory import *
 from marvin.integration.lib.base.Account import Account
 
 from marvin.integration.lib.factory.ServiceOfferingFactory import *
-from marvin.integration.lib.base.ServiceOffering import ServiceOffering
 
 from marvin.integration.lib.factory.NetworkOfferingFactory import *
-from marvin.integration.lib.base.NetworkOffering import NetworkOffering
 
 from marvin.integration.lib.base.Zone import Zone
 
 from marvin.integration.lib.factory.TemplateFactory import *
+from marvin.integration.lib.base.Template import Template
 
 from marvin.integration.lib.factory.VirtualMachineFactory import *
-from marvin.integration.lib.base.VirtualMachine import VirtualMachine
 
 from marvin.integration.lib.factory.UserFactory import *
 from marvin.integration.lib.base.User import User
@@ -73,12 +70,10 @@ class AccountFactoryTest(unittest.TestCase):
         self.assert_(accnt is not None, msg="no account created by factory")
         self.assert_(accnt.account.name is not None)
 
-    @unittest.skip("Job Queue gets stuck on this")
+    @unittest.skip("Account doesn't deserialize correctly")
     def test_disableAccountPostFactoryGeneration(self):
-        af = DomainAdminFactory()
-        domadmin = DomainAdminFactory.create(apiclient=self.apiClient, factory=af)
+        domadmin = DomainAdminFactory.create(apiclient=self.apiClient)
         self.assert_(domadmin is not None, msg="no account was created")
-        self.assert_(domadmin.account.name, af.username, msg = "account names don't match")
         domadmin.disable(self.apiClient, lock=True)
 
     def tearDown(self):
@@ -124,13 +119,22 @@ class VirtualMachineFactoryTest(unittest.TestCase):
         pass
 
     def test_virtualMachineDeploy(self):
-        sf = SmallServiceOfferingFactory()
-        tf = DefaultBuiltInTemplateFactory()
-        service = ServiceOffering.create(apiclient=self.apiClient, factory=sf)
+        accnt = AccountFactory.create(apiclient=self.apiClient)
+        service = SmallServiceOfferingFactory.create(apiclient=self.apiClient)
+        tf = DefaultBuiltInTemplateFactory.build() #FIXME: Using build() strategy is confusing
         zones = Zone.list(apiclient=self.apiClient)
-        template = get_template(apiclient=self.apiClient, zoneid = zones[0].id, ostype=tf.ostype)
-        vmf = VirtualMachineFactory(serviceofferingid = service.id, templateid = template.id, zoneid = zones[0].id)
-        vm = VirtualMachine.deploy(apiclient=self.apiClient, factory=vmf)
+        template = Template.list(apiclient=self.apiClient,
+                                 templatefilter="featured",
+                                 ostype = tf.ostype,
+                                 zoneid = zones[0].id)
+        vm = VirtualMachineFactory.create(apiclient=self.apiClient,
+                                          serviceofferingid = service.id,
+                                          templateid = template[0].id,
+                                          zoneid = zones[0].id,
+                                          account = accnt.account.name,
+                                          domainid = accnt.account.domainid)
+        vm.destroy(apiclient=self.apiClient)
+
 
 
 class UserFactorySubFactoryTest(unittest.TestCase):
