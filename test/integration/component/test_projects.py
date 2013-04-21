@@ -110,7 +110,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
         cls.domain = get_domain(
@@ -323,7 +323,7 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.domain = get_domain(
                                    cls.api_client,
                                    cls.services
@@ -457,7 +457,7 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.domain = get_domain(
                                    cls.api_client,
                                    cls.services
@@ -571,7 +571,7 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -716,7 +716,7 @@ class TestProjectOwners(cloudstackTestCase):
                                    cls.services
                                    )
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -1140,7 +1140,7 @@ class TestProjectResources(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.domain = get_domain(
                                    cls.api_client,
                                    cls.services
@@ -1449,7 +1449,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, domain, template etc
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.domain = get_domain(
                                    cls.api_client,
                                    cls.services

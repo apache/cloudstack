@@ -109,7 +109,7 @@ class TestAccounts(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -239,7 +239,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -507,7 +507,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         # Create an account, domain etc
         cls.domain = Domain.create(
                                    cls.api_client,
@@ -853,7 +853,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.services["template"]["zoneid"] = cls.zone.id
 
         # Create domains, accounts and template
@@ -1002,7 +1002,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                cls.api_client,
                                cls.services,
                                )
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.sub_domain = Domain.create(
                                    cls.api_client,
                                    cls.services["domain"],
@@ -1148,7 +1148,7 @@ class TestUserDetails(cloudstackTestCase):
         # Get Zone, Domain etc
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
 
@@ -1455,7 +1455,7 @@ class TestUserLogin(cloudstackTestCase):
         # Get Zone, Domain etc
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
 
@@ -1620,7 +1620,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                                cls.api_client,
                                cls.services,
                                )
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
