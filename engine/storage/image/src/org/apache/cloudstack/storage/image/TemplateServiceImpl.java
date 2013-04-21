@@ -74,12 +74,14 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -87,6 +89,7 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -132,6 +135,7 @@ public class TemplateServiceImpl implements TemplateService {
     VolumeDao _volumeDao;
     @Inject
     TemplateDataFactory _templateFactory;
+    @Inject VMTemplatePoolDao _tmpltPoolDao;
 
 
 
@@ -559,7 +563,7 @@ public class TemplateServiceImpl implements TemplateService {
             .setContext(context);
             this._motionSrv.copyAsync(srcTemplate, destTemplate, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to copy volume", e);
+            s_logger.debug("Failed to copy template", e);
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -596,6 +600,74 @@ public class TemplateServiceImpl implements TemplateService {
 
         return null;
     }
+
+    protected Void prepareTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
+            CopyTemplateContext<TemplateApiResult> context) {
+        TemplateInfo srcTemplate = context.getSrcTemplate();
+        TemplateInfo destTemplate = context.getDestTemplate();
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        TemplateApiResult res = new TemplateApiResult(destTemplate);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                destTemplate.processEvent(Event.OperationFailed);
+                srcTemplate.processEvent(Event.OperationFailed);
+                // remove entry from template_spool_ref
+                VMTemplateStoragePoolVO destTmpltPool =  _tmpltPoolDao.findByPoolTemplate(context.getDestStore().getId(), destTemplate.getId());
+                _vmTemplateStoreDao.remove(destTmpltPool.getId());
+                future.complete(res);
+                return null;
+            }
+            srcTemplate.processEvent(Event.OperationSuccessed);
+            // update other information in template_spool_ref through templateObject event processing.
+            destTemplate.processEvent(Event.OperationSuccessed);
+            future.complete(res);
+            return null;
+        } catch (Exception e) {
+            s_logger.debug("Failed to process prepare template callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
+
+    @Override
+    public AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        TemplateApiResult res = new TemplateApiResult(srcTemplate);
+        long poolId = pool.getId();
+        long templateId = srcTemplate.getId();
+        try{
+            // create one entry in template_spool_ref
+            VMTemplateStoragePoolVO templateStoragePoolRef = _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
+            if (templateStoragePoolRef == null) {
+                templateStoragePoolRef = new VMTemplateStoragePoolVO(poolId, templateId);
+                templateStoragePoolRef = _tmpltPoolDao.persist(templateStoragePoolRef);
+            }
+            DataStore destStore = (DataStore)pool;
+            TemplateInfo destTemplate = this._templateFactory.getTemplate(templateStoragePoolRef.getTemplateId(), destStore);
+            destTemplate.processEvent(Event.CreateOnlyRequested);
+            srcTemplate.processEvent(Event.CopyingRequested);
+
+            CopyTemplateContext<TemplateApiResult> context = new CopyTemplateContext<TemplateApiResult>(null, future, srcTemplate,
+                    destTemplate,
+                    destStore
+                    );
+            AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().prepareTemplateCallBack(null, null))
+            .setContext(context);
+            this._motionSrv.copyAsync(srcTemplate, destTemplate, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to prepare template on storage pool", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+        return future;
+    }
+
+
 
     class CopyTemplateContext<T> extends AsyncRpcConext<T> {
         final TemplateInfo srcTemplate;

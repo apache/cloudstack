@@ -666,7 +666,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         long templateId = template.getId();
         long dcId = pool.getDataCenterId();
         VMTemplateStoragePoolVO templateStoragePoolRef = null;
-        VMTemplateHostVO templateHostRef = null;
+        TemplateDataStoreVO templateStoreRef = null;
         long templateStoragePoolRefId;
         String origUrl = null;
 
@@ -684,113 +684,71 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 	        }
         }
 
-        templateHostRef = findVmTemplateHost(templateId, pool);
+        templateStoreRef = findVmTemplateImageStore(templateId, pool);
 
-        if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-            String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
-            if (result != null) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
-            result = _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(dcId,
-                    templateId, _primaryStorageDownloadWait);
-            if (result != null) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
-            templateHostRef = findVmTemplateHost(templateId, pool);
-            if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
+        if (templateStoreRef == null) {
+            s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+            return null;
         }
 
-        HostVO sh = _hostDao.findById(templateHostRef.getHostId());
+        List<StoragePoolHostVO> vos = _poolHostDao.listByHostStatus(poolId, com.cloud.host.Status.Up);
+        if (vos == null || vos.isEmpty()){
+             throw new CloudRuntimeException("Cannot download " + templateId + " to poolId " + poolId + " since there is no host in the Up state connected to this pool");
+        }
+
+        /*
+        HostVO sh = _hostDao.findById(templateStoreRef.getHostId());
         origUrl = sh.getStorageUrl();
         if (origUrl == null) {
             throw new CloudRuntimeException("Unable to find the orig.url from host " + sh.toString());
         }
+        */
 
         if (templateStoragePoolRef == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Downloading template " + templateId + " to pool " + poolId);
             }
-            templateStoragePoolRef = new VMTemplateStoragePoolVO(poolId, templateId);
+            DataStore srcSecStore = this.dataStoreMgr.getDataStore(templateStoreRef.getDataStoreId(), DataStoreRole.Image);
+            TemplateInfo srcTemplate = this.tmplFactory.getTemplate(templateId, srcSecStore);
+
+            AsyncCallFuture<TemplateApiResult> future = this.tmpltSvr.prepareTemplateOnPrimary(srcTemplate, pool);
             try {
-                templateStoragePoolRef = _tmpltPoolDao.persist(templateStoragePoolRef);
-                templateStoragePoolRefId =  templateStoragePoolRef.getId();
-
-            } catch (Exception e) {
-                s_logger.debug("Assuming we're in a race condition: " + e.getMessage());
-                templateStoragePoolRef = _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
-                if (templateStoragePoolRef == null) {
-                    throw new CloudRuntimeException("Unable to persist a reference for pool " + poolId + " and template " + templateId);
+                TemplateApiResult result = future.get();
+                if (result.isFailed()) {
+                    s_logger.debug("prepare template failed:" + result.getResult());
+                    return null;
                 }
-                templateStoragePoolRefId = templateStoragePoolRef.getId();
+
+                return _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
             }
-        } else {
-            templateStoragePoolRefId = templateStoragePoolRef.getId();
-        }
-
-        List<StoragePoolHostVO> vos = _poolHostDao.listByHostStatus(poolId, com.cloud.host.Status.Up);
-        if (vos == null || vos.isEmpty()){
-        	 throw new CloudRuntimeException("Cannot download " + templateId + " to poolId " + poolId + " since there is no host in the Up state connected to this pool");
-        }
-
-        templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, _storagePoolMaxWaitSeconds);
-        if (templateStoragePoolRef == null) {
-            throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templateStoragePoolRefId);
-        }
-
-        try {
-            if (templateStoragePoolRef.getDownloadState() == Status.DOWNLOADED) {
-                return templateStoragePoolRef;
+            catch (Exception ex) {
+                s_logger.debug("failed to copy template from image store:" + srcSecStore.getName() + " to primary storage");
             }
-            String url = origUrl + "/" + templateHostRef.getInstallPath();
-            PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(),
-                   template.getAccountId(), pool, _primaryStorageDownloadWait);
-            HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
-            assert(secondaryStorageHost != null);
-            dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
-
-
-            for (int retry = 0; retry < 2; retry ++){
-            	Collections.shuffle(vos); // Shuffling to pick a random host in the vm deployment retries
-            	StoragePoolHostVO vo = vos.get(0);
-	            if (s_logger.isDebugEnabled()) {
-	                s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
-	            }
-	        	dcmd.setLocalPath(vo.getLocalPath());
-	        	// set 120 min timeout for this command
-
-	        	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(
-	                   _hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd);
-	            if (answer != null && answer.getResult() ) {
-	        		templateStoragePoolRef.setDownloadPercent(100);
-	        		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);
-	        		templateStoragePoolRef.setLocalDownloadPath(answer.getInstallPath());
-	        		templateStoragePoolRef.setInstallPath(answer.getInstallPath());
-	        		templateStoragePoolRef.setTemplateSize(answer.getTemplateSize());
-	        		_tmpltPoolDao.update(templateStoragePoolRef.getId(), templateStoragePoolRef);
-	        		if (s_logger.isDebugEnabled()) {
-	        			s_logger.debug("Template " + templateId + " is downloaded via " + vo.getHostId());
-	        		}
-	        		return templateStoragePoolRef;
-	            } else {
-	                if (s_logger.isDebugEnabled()) {
-	                    s_logger.debug("Template " + templateId + " download to pool " + vo.getPoolId() + " failed due to " + (answer!=null?answer.getDetails():"return null"));                }
-	            }
-            }
-        } finally {
-            _tmpltPoolDao.releaseFromLockTable(templateStoragePoolRefId);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Template " + templateId + " is not found on and can not be downloaded to pool " + poolId);
-        }
+
         return null;
     }
 
+    private TemplateDataStoreVO findVmTemplateImageStore(long templateId,
+            StoragePool pool) {
+        long dcId = pool.getDataCenterId();
 
+        List<DataStore> secStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dcId));
+
+        if ( secStores == null ){
+            s_logger.error("No image store found to download template " + templateId + " primary storage!");
+            return null;
+        }
+        for (DataStore store : secStores ){
+            List<TemplateDataStoreVO> templStores =  this._tmplStoreDao.listByTemplateStoreDownloadStatus(templateId, store.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            if (templStores != null && !templStores.isEmpty()) {
+                Collections.shuffle(templStores);
+                return templStores.get(0);
+            }
+        }
+
+        return null;
+    }
 
 
     @Override

@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
 
 public interface TemplateService {
 
@@ -43,8 +44,8 @@ public interface TemplateService {
     AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
     AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
     AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);
-    AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate,
-            DataStore destStore);
+    AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore);
+    AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool );
 
     void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
     void handleTemplateSync(DataStore store);
