@@ -27,6 +27,8 @@ public interface MessageBus {
 	
 	void subscribe(String subject, MessageSubscriber subscriber);
 	void unsubscribe(String subject, MessageSubscriber subscriber);
+	void clearAll();
+	void prune();
 	
 	void publish(String senderAddress, String subject, PublishScope scope, Object args);
 }

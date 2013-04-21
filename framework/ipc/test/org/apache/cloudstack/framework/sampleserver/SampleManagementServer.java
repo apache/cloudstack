@@ -18,9 +18,6 @@
  */
 package org.apache.cloudstack.framework.sampleserver;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class SampleManagementServer {
 
 	public void mainLoop() {

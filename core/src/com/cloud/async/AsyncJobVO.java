@@ -120,9 +120,6 @@ public class AsyncJobVO implements AsyncJob {
     @Transient
     private SyncQueueItem syncSource = null;
 
-    @Transient
-    private boolean fromPreviousSession = false;
-
     public AsyncJobVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -347,15 +344,6 @@ public class AsyncJobVO implements AsyncJob {
 	@Override
     public void setSyncSource(SyncQueueItem syncSource) {
         this.syncSource = syncSource;
-    }
-    
-    @Override
-    public boolean isFromPreviousSession() {
-        return fromPreviousSession;
-    }
-    
-    public void setFromPreviousSession(boolean fromPreviousSession) {
-        this.fromPreviousSession = fromPreviousSession;
     }
     
     @Override

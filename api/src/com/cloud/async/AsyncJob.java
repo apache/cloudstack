@@ -96,8 +96,6 @@ public interface AsyncJob extends Identity, InternalIdentity {
 
     Long getInstanceId();
 
-    boolean isFromPreviousSession();
-
     SyncQueueItem getSyncSource();
     void setSyncSource(SyncQueueItem item);
 }
