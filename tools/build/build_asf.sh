@@ -22,15 +22,17 @@ outputdir=/tmp/cloudstack-build/
 branch='master'
 tag='no'
 certid='X'
+committosvn='X'
 
 usage(){
-    echo "usage: $0 -v version [-b branch] [-s source dir] [-o output dir] [-t [-u]] [-h]"
+    echo "usage: $0 -v version [-b branch] [-s source dir] [-o output dir] [-t [-u]] [-c] [-h]"
     echo "  -v sets the version"
     echo "  -b sets the branch (defaults to 'master')"
     echo "  -s sets the source directory (defaults to $sourcedir)"
     echo "  -o sets the output directory (defaults to $outputdir)"
     echo "  -t tags the git repo with the version"
     echo "  -u sets the certificate ID to sign the tag with (if not provided, the default key is attempted)"
+    echo "  -c commits build artifacts to cloudstack dev dist dir in svn"
     echo "  -h"
 }
 
@@ -43,6 +45,7 @@ do
       b)  branch="$OPTARG";;
       t)  tag='yes';;
       u)  certid="$OPTARG";;
+      c)  committosvn='yes';;
       h)  usage
           exit 0;;
       /?)       # unknown flag
@@ -127,6 +130,23 @@ if [ $tag == 'yes' ]; then
   else
       git tag -u $certid -s $version -m "Tagging release $version on branch $branch."
   fi
+fi
+
+if [$committosvn == 'yes' ]; then
+  echo 'committing artifacts to svn'
+  rm -Rf /tmp/cloudstack-dev-dist
+  cd /tmp
+  svn co https://dist.apache.org/repos/dist/dev/cloudstack/ cloudstack-dev-dist
+  cd cloudstack-dev-dist
+  cp $outputdir/apache-cloudstack-$version-src.tar.bz2 .
+  cp $outputdir/apache-cloudstack-$version-src.tar.bz2.asc .
+  cp $outputdir/apache-cloudstack-$version-src.tar.bz2.md5 .
+  cp $outputdir/apache-cloudstack-$version-src.tar.bz2.sha .
+  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2
+  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.asc
+  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.md5
+  svn add $outputdir/apache-cloudstack-$version-src.tar.bz2.sha
+  svn commit -m "Committing release candidate artifacts for $version to dist/dev/cloudstack in preparation for release vote"
 fi
 
 echo "completed.  use commit-sh of $commitsh when starting the VOTE thread"
