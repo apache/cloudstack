@@ -41,25 +41,21 @@ class Template(CloudStackEntity.CloudStackEntity):
         return template
 
 
-    @classmethod
-    def create(cls, apiclient, factory, **kwargs):
+    def template_of_vm(self, apiclient, name, displaytext, ostypeid, **kwargs):
         cmd = createTemplate.createTemplateCmd()
-        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
+        cmd.id = self.id
+        cmd.name = name
+        cmd.displaytext = displaytext
+        cmd.ostypeid = ostypeid
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.createTemplate(cmd)
         return Template(template.__dict__)
 
 
-    def register(self, apiclient, name, format, url, hypervisor, zoneid, displaytext, ostypeid, **kwargs):
+    @classmethod
+    def create(self, apiclient, factory, **kwargs):
         cmd = registerTemplate.registerTemplateCmd()
-        cmd.id = self.id
-        cmd.displaytext = displaytext
-        cmd.format = format
-        cmd.hypervisor = hypervisor
-        cmd.name = name
-        cmd.ostypeid = ostypeid
-        cmd.url = url
-        cmd.zoneid = zoneid
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         template = apiclient.registerTemplate(cmd)
         return template

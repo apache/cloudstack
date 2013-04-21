@@ -22,11 +22,17 @@ class TemplateFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = Template.Template
 
-    displaytext = None
     name = None
+    displaytext = None
+    format = None
+    url = None
+    hypervisor = None
+    zoneid = None
     ostypeid = None
 
 class DefaultBuiltInTemplateFactory(TemplateFactory):
     ostype = 'CentOS 5.3 (64-bit)'
     displaytext = 'CentOS 5.3 (64-bit)'
     name = 'CentOS 5.3 (64-bit)'
+    format = 'VHD'
+    hypervisor = 'XenServer'
