@@ -31,7 +31,6 @@ usage(){
     echo "  -o sets the output directory (defaults to $outputdir)"
     echo "  -t tags the git repo with the version"
     echo "  -u sets the certificate ID to sign the tag with (if not provided, the default key is attempted)"
-    echo "  -k sets the key to sign the tarball with"
     echo "  -h"
 }
 
@@ -44,7 +43,6 @@ do
       b)  branch="$OPTARG";;
       t)  tag='yes';;
       u)  certid="$OPTARG";;
-      k)  keyid="--default-key $OPTARG";;
       h)  usage
           exit 0;;
       /?)       # unknown flag
@@ -106,7 +104,11 @@ bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir
 echo 'armor'
-gpg -v $keyid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
+if [$certid == 'X' ]; then
+  gpg -v --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
+else
+  gpg -v --default-key $certid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
+fi
 
 echo 'md5'
 gpg -v --print-md MD5 apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.md5
