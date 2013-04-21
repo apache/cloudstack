@@ -36,16 +36,16 @@ usage(){
     echo "  -h"
 }
 
-while getopts v:s:o:b:t:u:c:h opt
+while getopts v:s:o:b:u:tch opt
 do
     case "$opt" in
       v)  version="$OPTARG";;
       s)  sourcedir="$OPTARG";;
       o)  outputdir="$OPTARG";;
       b)  branch="$OPTARG";;
-      t)  tag='yes';;
+      t)  tag="yes";;
       u)  certid="$OPTARG";;
-      c)  committosvn='yes';;
+      c)  committosvn="yes";;
       h)  usage
           exit 0;;
       /?)       # unknown flag
