@@ -36,7 +36,7 @@ usage(){
     echo "  -h"
 }
 
-while getopts v:s:o:b:tu:k:h opt
+while getopts v:s:o:b:t:u:c:h opt
 do
     case "$opt" in
       v)  version="$OPTARG";;
