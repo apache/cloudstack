@@ -119,6 +119,8 @@ def finalizeResultObj(result, responseName, responsecls):
 
         mirrorObj = True
         for k,v in value.__dict__.iteritems():
+            if k == 'jobstatus':
+                continue
             if k not in responsecls.__dict__:
                 mirrorObj = False
                 break
