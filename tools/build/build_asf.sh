@@ -138,6 +138,14 @@ if [ "$committosvn" == "yes" ]; then
   cd /tmp
   svn co https://dist.apache.org/repos/dist/dev/cloudstack/ cloudstack-dev-dist
   cd cloudstack-dev-dist
+  if [ -d "$version" ]; then
+    cd $version
+    svn rm *
+  else
+    mkdir $version
+    svn add $version
+    cd $version
+  fi
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2 .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.asc .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.md5 .
