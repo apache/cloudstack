@@ -15,12 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.base import VirtualMachine
-from marvin.factory import CloudStackBaseFactory
+from marvin.base.VirtualMachine import VirtualMachine
+from marvin.factory.CloudStackBaseFactory import CloudStackBaseFactory
 
 class VirtualMachineFactory(CloudStackBaseFactory):
 
-    FACTORY_FOR = VirtualMachine.VirtualMachine
+    FACTORY_FOR = VirtualMachine
 
     serviceofferingid = None
     templateid = None

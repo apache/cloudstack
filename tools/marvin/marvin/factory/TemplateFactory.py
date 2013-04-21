@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from marvin.base import Template
-from marvin.factory import CloudStackBaseFactory
+from marvin.factory.CloudStackBaseFactory import CloudStackBaseFactory
 
 class TemplateFactory(CloudStackBaseFactory):
 

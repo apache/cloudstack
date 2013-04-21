@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import hashlib
-from marvin.factory.CloudStackBaseFactory import *
+import factory
+from marvin.factory.CloudStackBaseFactory import CloudStackBaseFactory
 from marvin.base import Account
 from marvin.utils import random_gen
 
@@ -30,11 +30,7 @@ class AccountFactory(CloudStackBaseFactory):
     lastname = factory.Sequence(lambda n: random_gen())
     email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname).lower())
     username = factory.Sequence(lambda n: random_gen())
-
-    # Password Encoding
-    mdf = hashlib.md5()
-    mdf.update('password')
-    password = mdf.hexdigest()
+    password = 'password'
 
 
 class AdminAccountFactory(AccountFactory):

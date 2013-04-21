@@ -21,7 +21,7 @@ from marvin.utils import random_gen
 
 class ZoneFactory(CloudStackBaseFactory):
 
-    FACTORY_FOR = Zone
+    FACTORY_FOR = Zone.Zone
 
     dns1 = "8.8.8.8"
     internaldns1 = "8.8.8.8"

@@ -17,20 +17,22 @@
 
 import unittest
 import logging
+
 from marvin.cloudstackTestClient import cloudstackTestClient
-from marvin.base import Account, Zone, Template, User
 
 from marvin.factory.AccountFactory import *
-
 from marvin.factory.ServiceOfferingFactory import *
-
 from marvin.factory.NetworkOfferingFactory import *
-
 from marvin.factory.TemplateFactory import *
-
 from marvin.factory.VirtualMachineFactory import *
-
 from marvin.factory.UserFactory import *
+
+
+from marvin.base.Zone import *
+from marvin.base.Account import Account
+from marvin.base.Template import Template
+
+
 
 
 class BuildVsCreateStrategyTest(unittest.TestCase):
