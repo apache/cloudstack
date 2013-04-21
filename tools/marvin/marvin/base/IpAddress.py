@@ -36,7 +36,7 @@ class IpAddress(CloudStackEntity.CloudStackEntity):
 
     def associate(self, apiclient, **kwargs):
         cmd = associateIpAddress.associateIpAddressCmd()
-        cmd.id = self.id
+#        cmd.id = self.id
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         ipaddress = apiclient.associateIpAddress(cmd)
         return ipaddress

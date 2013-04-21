@@ -28,9 +28,12 @@ from marvin.factory.VirtualMachineFactory import *
 from marvin.factory.UserFactory import *
 
 
-from marvin.base.Zone import *
+from marvin.base.ServiceOffering import ServiceOffering
+from marvin.base.Zone import Zone
 from marvin.base.Account import Account
 from marvin.base.Template import Template
+from marvin.base.IpAddress import IpAddress
+from marvin.base.Network import Network
 
 
 
@@ -146,3 +149,43 @@ class UserFactorySubFactoryTest(unittest.TestCase):
         uf = UserFactory.create(apiclient=self.apiClient)
         user = User.list(apiclient=self.apiClient, username=uf.username)
         self.assert_(uf.username == user[0].username, msg="Usernames don't match")
+
+
+class IpAddressFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factories.cloudstack')).getApiClient()
+
+    def tearDown(self):
+        pass
+
+    def test_associateIpAddress(self):
+        all_ips = IpAddress.list(apiclient=self.apiClient)
+        self.assert_(len(all_ips) > 0, msg="No free public IPs")
+        firstip = all_ips[0]
+        firstip.associate(apiclient=self.apiClient, zoneid=firstip.zoneid)
+
+    def test_vpcAssociateIpAddress(self):
+        #FIXME: To be written
+        self.assert_(1 == 1)
+
+    def test_associateIpAddressToNetwork(self):
+        accnt = AccountFactory.create(apiclient=self.apiClient)
+        self.assert_(accnt is not None)
+        self.assert_(isinstance(accnt, Account))
+        service = ServiceOffering.list(apiclient=self.apiClient, displaytext='Small')
+        self.assert_(len(service) > 0)
+        template = Template.list(apiclient=self.apiClient, templatefilter="featured")
+        self.assert_(len(template) > 0)
+        zones = Zone.list(apiclient=self.apiClient)
+        vm = VirtualMachineFactory.create(
+            apiclient=self.apiClient,
+            serviceofferingid = service[0].id,
+            templateid = template[0].id,
+            zoneid = zones[0].id,
+            account=accnt.account.name,
+            domainid=accnt.account.domainid)
+        all_ips = IpAddress.list(apiclient=self.apiClient)
+        firstip = all_ips[0]
+        networks = Network.list(apiclient=self.apiClient, account = accnt.account.name, domainid = accnt.account.domainid)
+        firstip.associate(apiclient=self.apiClient, networkid = networks[0].id)
+        vm.destroy(apiclient=self.apiClient)
