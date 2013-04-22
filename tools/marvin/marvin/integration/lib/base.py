@@ -1994,7 +1994,7 @@ class PhysicalNetwork:
 
         cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listPhysicalNetworks(cmd))
+        return map(lambda pn : PhysicalNetwork(pn.__dict__), apiclient.listPhysicalNetworks(cmd))
 
 class SecurityGroup:
     """Manage Security Groups"""

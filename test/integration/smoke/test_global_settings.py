@@ -17,40 +17,25 @@
 """ P1 tests for updating the granular Configuration parameter with scope and resource id provided.
 """
 #Import Local Modules
-import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from nose.plugins.attrib import attr
 #Import System modules
-import unittest
-import hashlib
-import random
 
 class TestUpdateConfigWithScope(cloudstackTestCase):
     """
-    This test updates the value of a configuration parameter
-    which is at zone level(scope)
+    Test to update a configuration (global setting) at various scopes
     """
     def setUp(self):
-        """
-        CloudStack internally saves its passwords in md5 form and that is how we
-        specify it in the API. Python's hashlib library helps us to quickly hash
-        strings as follows
-        """
-        mdf = hashlib.md5()
-        mdf.update('password')
-        mdf_pass = mdf.hexdigest()
-
-        self.apiClient = self.testClient.getApiClient() #Get ourselves an API client
-
-
+        self.apiClient = self.testClient.getApiClient()
 
     def test_UpdateConfigParamWithScope(self):
-
+        """
+        test update configuration setting at zone level scope
+        @return:
+        """
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "use.external.dns"
         updateConfigurationCmd.value = "true"
@@ -70,13 +55,15 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
                             returns a non-empty response")
 
         configParam = listConfigurationsResponse[0]
-
         self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned \
                          is the same as the one we got in the list API")
 
 
     def tearDown(self):
-
+        """
+        Reset the configuration back to false
+        @return:
+        """
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "use.external.dns"
         updateConfigurationCmd.value = "false"
