@@ -34,19 +34,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
-
-import com.cloud.storage.template.TemplateProp;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -71,25 +67,22 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -137,15 +130,11 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateDataFactory _templateFactory;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
 
-
-
-
     class TemplateOpContext<T> extends AsyncRpcConext<T> {
         final TemplateObject template;
         final AsyncCallFuture<TemplateApiResult> future;
-
         public TemplateOpContext(AsyncCompletionCallback<T> callback, TemplateObject template,
-                AsyncCallFuture<TemplateApiResult> future) {
+        		AsyncCallFuture<TemplateApiResult> future) {
             super(callback);
             this.template = template;
             this.future = future;
@@ -154,30 +143,22 @@ public class TemplateServiceImpl implements TemplateService {
         public TemplateObject getTemplate() {
             return template;
         }
-
-        public AsyncCallFuture<TemplateApiResult> getFuture() {
-            return future;
-        }
-
-
     }
 
     @Override
-    public AsyncCallFuture<TemplateApiResult> createTemplateAsync(
-            TemplateInfo template, DataStore store) {
-        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+    public void createTemplateAsync(
+            TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback) {
         // persist template_store_ref entry
         DataObject templateOnStore = store.create(template);
         // update template_store_ref state
         templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
 
-        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
-                (TemplateObject)templateOnStore, future);
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(callback,
+                (TemplateObject)templateOnStore, null);
 
         AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
         store.getDriver().createAsync(templateOnStore, caller);
-        return future;
     }
 
     @Override
@@ -185,26 +166,20 @@ public class TemplateServiceImpl implements TemplateService {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-        List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
         for (VMTemplateVO rtngTmplt : rtngTmplts) {
             toBeDownloaded.add(rtngTmplt);
         }
 
-        for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-            toBeDownloaded.add(builtinTmplt);
-        }
-
         for (VMTemplateVO template : toBeDownloaded) {
             TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
             if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                _dlMonitor.downloadBootstrapSysTemplateToStorage(template, store, null);
+            	TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId());
+                this.createTemplateAsync(tmplt, store, null);
             }
         }
     }
-
-
-
+    
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
@@ -234,15 +209,12 @@ public class TemplateServiceImpl implements TemplateService {
             for (VMTemplateVO template: toBeDownloaded) {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(ssHost.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    _dlMonitor.downloadTemplateToStorage(template, ssHost, null);
+                	DataObject tmpl = this._templateFactory.getTemplate(template.getId(), ssHost);
+                    _dlMonitor.downloadTemplateToStorage(tmpl, ssHost, null);
                 }
             }
         }
     }
-
-
-
-
 
     @Override
     public void handleTemplateSync(DataStore store) {
@@ -394,7 +366,8 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
                     //TODO: we should pass a callback here
-                    _dlMonitor.downloadTemplateToStorage(tmplt, store, null);
+                    DataObject tmpl = this._templateFactory.getTemplate(tmplt.getId(), store);
+                    _dlMonitor.downloadTemplateToStorage(tmpl, store, null);
                 }
             }
         }
@@ -465,9 +438,9 @@ public class TemplateServiceImpl implements TemplateService {
 
 
     protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
-            TemplateOpContext<CreateCmdResult> context) {
+            TemplateOpContext<TemplateApiResult> context) {
         TemplateObject template = (TemplateObject)context.getTemplate();
-        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        AsyncCompletionCallback<TemplateApiResult> parentCallback = context.getParentCallback();
         TemplateApiResult result = new TemplateApiResult(template);
         CreateCmdResult callbackResult = callback.getResult();
         if (callbackResult.isFailed()) {
@@ -478,7 +451,7 @@ public class TemplateServiceImpl implements TemplateService {
                s_logger.debug("Failed to update template state", e);
             }
             result.setResult(callbackResult.getResult());
-            future.complete(result);
+            parentCallback.complete(result);
             return null;
         }
 
@@ -488,11 +461,11 @@ public class TemplateServiceImpl implements TemplateService {
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to transit state", e);
             result.setResult(e.toString());
-            future.complete(result);
+            parentCallback.complete(result);
             return null;
         }
 
-        future.complete(result);
+        parentCallback.complete(result);
         return null;
     }
 
@@ -520,7 +493,7 @@ public class TemplateServiceImpl implements TemplateService {
         } else {
             vo.processEvent(Event.OperationFailed);
          }
-        context.getFuture().complete(result);
+        context.future.complete(result);
         return null;
     }
 

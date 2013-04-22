@@ -32,7 +32,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.db.DB;
@@ -67,7 +67,7 @@ public class LocalStoragePoolListener implements Listener {
     
     @Override
     @DB
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupStorageCommand)) {
             return;
         }

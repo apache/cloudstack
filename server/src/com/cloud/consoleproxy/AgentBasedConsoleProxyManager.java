@@ -43,6 +43,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -229,7 +230,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public void onAgentConnect(HostVO host, StartupCommand cmd) {
+    public void onAgentConnect(Host host, StartupCommand cmd) {
     }
 
     @Override
@@ -356,4 +357,5 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
+
 }

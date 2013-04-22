@@ -99,7 +99,7 @@ Listener, ResourceStateAdapter {
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
     }
 
     @Override

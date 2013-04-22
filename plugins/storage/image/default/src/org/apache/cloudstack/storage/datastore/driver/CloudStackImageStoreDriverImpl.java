@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -32,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -48,6 +50,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
@@ -155,21 +158,73 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
+    private class createObjectContext<T> extends AsyncRpcConext<T> {
+    	final DataObject data;
+		public createObjectContext(AsyncCompletionCallback<T> callback, DataObject data) {
+			super(callback);
+			this.data = data;
+		}
+    	
+    }
     @Override
     public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
+    	createObjectContext<CreateCmdResult> context = new createObjectContext<CreateCmdResult>(callback, data);
+        AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller = 
+        		AsyncCallbackDispatcher.create(this);
+        caller.setContext(context);
+        caller.setCallback(callback);
+        
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;
-            _downloadMonitor.downloadTemplateToStorage(tData.getImage(), tData.getDataStore(), callback);
+            _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             VolumeObject volInfo = (VolumeObject)data;
             RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
-            _downloadMonitor.downloadVolumeToStorage(volInfo.getVolume(), volInfo.getDataStore(), payload.getUrl(),
-                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), callback);
+            _downloadMonitor.downloadVolumeToStorage(volInfo, volInfo.getDataStore(), payload.getUrl(),
+                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), caller);
         }
+    }
+    
+    protected Void createAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback, 
+    		createObjectContext<CreateCmdResult> context) {
+    	DownloadAnswer answer = callback.getResult();
+    	DataObject obj = context.data;
+    	DataStore store = obj.getDataStore();
 
-        CreateCmdResult result = new CreateCmdResult(null, null);
-        callback.complete(result);
+    	TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
+    	updateBuilder.setDownloadPercent(answer.getDownloadPct());
+    	updateBuilder.setDownloadState(answer.getDownloadStatus());
+    	updateBuilder.setLastUpdated(new Date());
+    	updateBuilder.setErrorString(answer.getErrorString());
+    	updateBuilder.setJobId(answer.getJobId());
+    	updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+    	updateBuilder.setInstallPath(answer.getInstallPath());
+    	updateBuilder.setSize(answer.getTemplateSize());
+    	updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+    	_templateStoreDao.update(store.getId(), updateBuilder);
+    	
+    	AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+    	
+    	if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
+    			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
+    			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+    		CreateCmdResult result = new CreateCmdResult(null, null);
+    		result.setSucess(false);
+    		result.setResult(answer.getErrorString());
+    		caller.complete(result);
+    	} else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+    		if (answer.getCheckSum() != null) {
+    			VMTemplateVO templateDaoBuilder = templateDao.createForUpdate();
+    			templateDaoBuilder.setChecksum(answer.getCheckSum());
+    			templateDao.update(obj.getId(), templateDaoBuilder);
+    		}
+    		
+    		
+    		CreateCmdResult result = new CreateCmdResult(null, null);
+    		caller.complete(result);
+    	}
+    	return null;
     }
 
     private void deleteVolume(DataObject data, AsyncCompletionCallback<CommandResult> callback) {

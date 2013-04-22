@@ -54,6 +54,7 @@ import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.exception.DiscoveredWithErrorException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -757,7 +758,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if(cmd instanceof StartupCommand) {
             if(host.getHypervisorType() == HypervisorType.VMware) {
                 updateClusterNativeHAState(host, cmd);

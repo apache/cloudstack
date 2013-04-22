@@ -32,7 +32,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.OCFS2Manager;
@@ -71,7 +71,7 @@ public class StoragePoolMonitor implements Listener {
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
             StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
             if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||

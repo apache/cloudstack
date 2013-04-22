@@ -64,7 +64,7 @@ public abstract class DownloadActiveState extends DownloadState {
 		}
 		
 		if (event==DownloadEvent.DOWNLOAD_ANSWER) {
-			getDownloadListener().updateDatabase((DownloadAnswer)evtObj);
+			getDownloadListener().callback((DownloadAnswer)evtObj);
 			getDownloadListener().setLastUpdated();
 		}
 		

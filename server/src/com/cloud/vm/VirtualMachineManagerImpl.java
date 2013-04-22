@@ -2285,7 +2285,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }

@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 
 
@@ -40,7 +41,7 @@ public interface TemplateService {
     }
 
 
-    AsyncCallFuture<TemplateApiResult> createTemplateAsync(TemplateInfo template, DataStore store);
+    void createTemplateAsync(TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback);
     AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
     AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
     AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);

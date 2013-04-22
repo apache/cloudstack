@@ -120,6 +120,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -3539,7 +3540,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         UserContext context = UserContext.current();
         context.setAccountId(1);
         List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());

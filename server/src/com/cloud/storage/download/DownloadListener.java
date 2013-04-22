@@ -25,17 +25,15 @@ import java.util.TimerTask;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -47,35 +45,19 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -125,25 +107,11 @@ public class DownloadListener implements Listener {
 	public static final String DOWNLOAD_IN_PROGRESS=Status.DOWNLOAD_IN_PROGRESS.toString();
 	public static final String DOWNLOAD_ABANDONED=Status.ABANDONED.toString();
 
+	private EndPoint _ssAgent;
 
-	private HostVO _sserver;
-	private HostVO _ssAgent;
+	private DataObject object;
 
-	private VMTemplateVO _template;
-	private VolumeVO _volume;
 	private boolean _downloadActive = true;
-
-	private VolumeHostDao _volumeHostDao;
-	private VolumeDataStoreDao _volumeStoreDao;
-	private VolumeDao _volumeDao;
-	private StorageManager _storageMgr;
-	private VMTemplateHostDao _vmTemplateHostDao;
-	private TemplateDataStoreDao _vmTemplateStoreDao;
-	private VMTemplateDao _vmTemplateDao;
-	private ResourceLimitService _resourceLimitMgr;
-	private AccountManager _accountMgr;
-	private AlertManager _alertMgr;
-
 	private final DownloadMonitorImpl _downloadMonitor;
 
 	private DownloadState _currState;
@@ -158,13 +126,7 @@ public class DownloadListener implements Listener {
 	private String _jobId;
 
 	private final Map<String,  DownloadState> _stateMap = new HashMap<String, DownloadState>();
-	private Long _templateHostId;
-	private Long _volumeHostId;
-
-    private DataStore _sstore;
-    private Long _templateStoreId;
-    private Long _volumeStoreId;
-	private AsyncCompletionCallback<CreateCmdResult> _callback;
+	private AsyncCompletionCallback<DownloadAnswer> _callback;
 
     @Inject
     private ResourceManager _resourceMgr;
@@ -175,71 +137,25 @@ public class DownloadListener implements Listener {
     @Inject
     private VolumeService _volumeSrv;
 
-	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr) {
-	    this._ssAgent = ssAgent;
-        this._sserver = host;
-		this._template = template;
-		this._vmTemplateHostDao = dao;
-		this._downloadMonitor = downloadMonitor;
-		this._cmd = cmd;
-		this._templateHostId = templHostId;
-		initStateMachine();
-		this._currState=getState(Status.NOT_DOWNLOADED.toString());
-		this._timer = _timer;
-		this._timeoutTask = new TimeoutTask(this);
-		this._timer.schedule(_timeoutTask, 3*STATUS_POLL_INTERVAL);
-		this._vmTemplateDao = templateDao;
-		this._resourceLimitMgr = _resourceLimitMgr;
-		this._accountMgr = _accountMgr;
-		this._alertMgr = _alertMgr;
-		updateDatabase(Status.NOT_DOWNLOADED, "");
-	}
-
 	// TODO: this constructor should be the one used for template only, remove other template constructor later
-    public DownloadListener(HostVO ssAgent, DataStore store, VMTemplateVO template, Timer _timer, TemplateDataStoreDao dao, Long templStoreId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr, AsyncCompletionCallback<CreateCmdResult> callback) {
+    public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer _timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, AsyncCompletionCallback<DownloadAnswer> callback) {
         this._ssAgent = ssAgent;
-        this._sstore = store;
-        this._template = template;
-        this._vmTemplateStoreDao = dao;
+        this.object = object;
         this._downloadMonitor = downloadMonitor;
         this._cmd = cmd;
-        this._templateStoreId = templStoreId;
         initStateMachine();
         this._currState=getState(Status.NOT_DOWNLOADED.toString());
         this._timer = _timer;
         this._timeoutTask = new TimeoutTask(this);
         this._timer.schedule(_timeoutTask, 3*STATUS_POLL_INTERVAL);
-        this._vmTemplateDao = templateDao;
-        this._resourceLimitMgr = _resourceLimitMgr;
-        this._accountMgr = _accountMgr;
-        this._alertMgr = _alertMgr;
         this._callback = callback;
-        updateDatabase(Status.NOT_DOWNLOADED, "");
+        DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
+        callback(answer);
     }
-
-
-	public DownloadListener(HostVO ssAgent, DataStore store, VolumeVO volume, Timer _timer, VolumeDataStoreDao dao, Long volStoreId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StorageManager storageMgr, ResourceLimitService _resourceLimitMgr, AlertManager _alertMgr, AccountManager _accountMgr, AsyncCompletionCallback<CreateCmdResult> callback) {
-	    this._ssAgent = ssAgent;
-        this._sstore = store;
-		this._volume = volume;
-		this._volumeStoreDao = dao;
-		this._downloadMonitor = downloadMonitor;
-		this._cmd = cmd;
-		this._volumeStoreId = volStoreId;
-		initStateMachine();
-		this._currState=getState(Status.NOT_DOWNLOADED.toString());
-		this._timer = _timer;
-		this._timeoutTask = new TimeoutTask(this);
-		this._timer.schedule(_timeoutTask, 3*STATUS_POLL_INTERVAL);
-		this._volumeDao = volumeDao;
-		this._storageMgr = storageMgr;
-		this._resourceLimitMgr = _resourceLimitMgr;
-		this._accountMgr = _accountMgr;
-		this._alertMgr = _alertMgr;
-		this._callback = callback;
-		updateDatabase(Status.NOT_DOWNLOADED, "");
-	}
-
+    
+    public AsyncCompletionCallback<DownloadAnswer> getCallback() {
+    	return this._callback;
+    }
 
 	public void setCurrState(VMTemplateHostVO.Status currState) {
 		this._currState = getState(currState.toString());
@@ -264,7 +180,7 @@ public class DownloadListener implements Listener {
 			}
 			try {
 				DownloadProgressCommand dcmd = new DownloadProgressCommand(getCommand(), getJobId(), reqType);
-				if (_template == null){
+				if (this.object.getType() == DataObjectType.VOLUME) {
 					dcmd.setResourceType(ResourceType.VOLUME);
 				}
 	            _downloadMonitor.send(_ssAgent.getId(), dcmd, this);
@@ -285,59 +201,12 @@ public class DownloadListener implements Listener {
 	}
 
 	public void logDisconnect() {
-		if (_template != null){
-			s_logger.warn("Unable to monitor download progress of " + _template.getName() + " at host " + _sserver.getName());
-		}else {
-			s_logger.warn("Unable to monitor download progress of " + _volume.getName() + " at host " + _sserver.getName());
-		}
-	}
-
-	public synchronized void updateDatabase(Status state, String errorString) {
-		if (_template != null){
-		    VMTemplateHostVO vo = _vmTemplateHostDao.createForUpdate();
-			vo.setDownloadState(state);
-			vo.setLastUpdated(new Date());
-			vo.setErrorString(errorString);
-			_vmTemplateHostDao.update(getTemplateHostId(), vo);
-		}else {
-		    VolumeHostVO vo = _volumeHostDao.createForUpdate();
-			vo.setDownloadState(state);
-			vo.setLastUpdated(new Date());
-			vo.setErrorString(errorString);
-			_volumeHostDao.update(getVolumeHostId(), vo);
-		}
+			s_logger.warn("Unable to monitor download progress of " + this.object.getType() + ": " + 
+					this.object.getId() + " at host " + _ssAgent.getId());
 	}
 
 	public void log(String message, Level level) {
-		if (_template != null){
-			s_logger.log(level, message + ", template=" + _template.getName() + " at host " + _sserver.getName());
-		}else {
-			s_logger.log(level, message + ", volume=" + _volume.getName() + " at host " + _sserver.getName());
-		}
-	}
-
-	private Long getTemplateHostId() {
-		if (_templateHostId == null){
-			VMTemplateHostVO templHost = _vmTemplateHostDao.findByHostTemplate(_sserver.getId(), _template.getId());
-			_templateHostId = templHost.getId();
-		}
-		return _templateHostId;
-	}
-
-    private Long getTemplateStoreId() {
-        if (_templateStoreId == null){
-            TemplateDataStoreVO templStore = _vmTemplateStoreDao.findByStoreTemplate(_sstore.getId(), _template.getId());
-            _templateStoreId = templStore.getId();
-        }
-        return _templateStoreId;
-    }
-
-	private Long getVolumeHostId() {
-		if (_volumeHostId == null){
-			VolumeHostVO volHost = _volumeHostDao.findByHostVolume(_sserver.getId(), _volume.getId());
-			_volumeHostId = volHost.getId();
-		}
-		return _volumeHostId;
+		s_logger.log(level, message + ", " + this.object.getType() + ": " + this.object.getId() + " at host " + _ssAgent.getId());
 	}
 
 	public DownloadListener(DownloadMonitorImpl monitor) {
@@ -388,112 +257,10 @@ public class DownloadListener implements Listener {
 		}
 	}
 
-	public synchronized void updateDatabase(DownloadAnswer answer) {
-		if (_template != null){
-	        TemplateDataStoreVO updateBuilder = _vmTemplateStoreDao.createForUpdate();
-			updateBuilder.setDownloadPercent(answer.getDownloadPct());
-			updateBuilder.setDownloadState(answer.getDownloadStatus());
-			updateBuilder.setLastUpdated(new Date());
-			updateBuilder.setErrorString(answer.getErrorString());
-			updateBuilder.setJobId(answer.getJobId());
-			updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
-			updateBuilder.setInstallPath(answer.getInstallPath());
-			updateBuilder.setSize(answer.getTemplateSize());
-			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-
-            // only invoke callback when Download is completed or errored so that callback will update template_store_ref state column
-            Status dndStatus = answer.getDownloadStatus();
-           // if (dndStatus == Status.DOWNLOAD_ERROR || dndStatus == Status.DOWNLOADED ){
-                if ( _callback != null ){
-                    if (dndStatus == Status.DOWNLOAD_ERROR){
-                        CreateCmdResult result = new CreateCmdResult(null, null);
-                        result.setSucess(false);
-                        result.setResult("Download template failed");
-                        _callback.complete(result);
-                    } else if (dndStatus == Status.DOWNLOADED){
-                        CreateCmdResult result = new CreateCmdResult(null, null);
-                        _callback.complete(result);
-                    }
-                }
-                else{
-                    // no callback specified, just update state here
-                    if (dndStatus == Status.DOWNLOAD_ERROR){
-                        updateBuilder.setState(ObjectInDataStoreStateMachine.State.Failed);
-                    } else if (dndStatus == Status.DOWNLOAD_IN_PROGRESS){
-                        updateBuilder.setState(ObjectInDataStoreStateMachine.State.Creating2);
-                    } else if (dndStatus == Status.DOWNLOADED){
-                        updateBuilder.setState(ObjectInDataStoreStateMachine.State.Ready);
-                    }
-                }
-           // }
-			_vmTemplateStoreDao.update(getTemplateStoreId(), updateBuilder);
-
-			if (answer.getCheckSum() != null) {
-				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
-				templateDaoBuilder.setChecksum(answer.getCheckSum());
-				_vmTemplateDao.update(_template.getId(), templateDaoBuilder);
-			}
-
-            if (answer.getTemplateSize() > 0) {
-                //long hostId = vmTemplateHostDao.findByTemplateId(template.getId()).getHostId();
-                long accountId = _template.getAccountId();
-                try {
-                    _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
-                            com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                            answer.getTemplateSize() - UriUtils.getRemoteSize(_template.getUrl()));
-                } catch (ResourceAllocationException e) {
-                    s_logger.warn(e.getMessage());
-                    _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, _sserver.getDataCenterId(),
-                            null, e.getMessage(), e.getMessage());
-                } finally {
-                    _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
-                            com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
-                }
-            }
-
-		} else {
-	        VolumeHostVO updateBuilder = _volumeHostDao.createForUpdate();
-			updateBuilder.setDownloadPercent(answer.getDownloadPct());
-			updateBuilder.setDownloadState(answer.getDownloadStatus());
-			updateBuilder.setLastUpdated(new Date());
-			updateBuilder.setErrorString(answer.getErrorString());
-			updateBuilder.setJobId(answer.getJobId());
-			updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
-			updateBuilder.setInstallPath(answer.getInstallPath());
-			updateBuilder.setSize(answer.getTemplateSize());
-			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-
-			_volumeHostDao.update(getVolumeHostId(), updateBuilder);
-
-			// Update volume size in Volume table.
-			VolumeVO updateVolume = _volumeDao.createForUpdate();
-			updateVolume.setSize(answer.getTemplateSize());
-			_volumeDao.update(_volume.getId(), updateVolume);
-
-            if (answer.getTemplateSize() > 0) {
-                try {
-                    String url = _volumeHostDao.findByVolumeId(_volume.getId()).getDownloadUrl();
-                    _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(_volume.getAccountId()),
-                            com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                            answer.getTemplateSize() - UriUtils.getRemoteSize(url));
-                } catch (ResourceAllocationException e) {
-                    s_logger.warn(e.getMessage());
-                    _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, _volume.getDataCenterId(),
-                            _volume.getPodId(), e.getMessage(), e.getMessage());
-                } finally {
-                    _resourceLimitMgr.recalculateResourceCount(_volume.getAccountId(), _volume.getDomainId(),
-                            com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
-                }
-            }
-
-			/*if (answer.getCheckSum() != null) {
-				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
-				templateDaoBuilder.setChecksum(answer.getCheckSum());
-				_vmTemplateDao.update(template.getId(), templateDaoBuilder);
-			}*/
-		}
- 	}
-
+	public void callback(DownloadAnswer answer) {
+		this._callback.complete(answer);
+	}
+	
 	@Override
 	public boolean processCommands(long agentId, long seq, Command[] req) {
 		return false;
@@ -511,7 +278,7 @@ public class DownloadListener implements Listener {
 	}
 
 	@Override
-	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+	public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    if (cmd instanceof StartupRoutingCommand) {
 	        List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getId(), agent.getDataCenterId());
 	        HypervisorType hostHyper = agent.getHypervisorType();
@@ -601,11 +368,6 @@ public class DownloadListener implements Listener {
 
 	public void setDownloadInactive(Status reason) {
 		_downloadActive=false;
-		if (_template != null){
-			_downloadMonitor.handleDownloadEvent(_sserver, _template, reason);
-		}else {
-			_downloadMonitor.handleDownloadEvent(_sserver, _volume, reason);
-		}
 	}
 
 	public void cancelTimeoutTask() {

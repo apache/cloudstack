@@ -47,6 +47,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Upload.Status;
@@ -248,7 +249,7 @@ public class UploadListener implements Listener {
 	}
 
 	@Override
-	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+	public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
 		if (!(cmd instanceof StartupStorageCommand)) {
 	        return;
 	    }

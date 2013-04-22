@@ -24,7 +24,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 
 public class StorageSyncListener implements Listener {
@@ -51,7 +51,7 @@ public class StorageSyncListener implements Listener {
     }
     
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
     }
     
     @Override

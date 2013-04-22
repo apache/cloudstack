@@ -37,6 +37,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.Manager;
@@ -115,11 +116,11 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     
     private class CreateCacheObjectContext<T> extends AsyncRpcConext<T> {
-        final AsyncCallFuture<CommandResult> future;
+        final AsyncCallFuture<CopyCmdAnswer> future;
         /**
          * @param callback
          */
-        public CreateCacheObjectContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future) {
+        public CreateCacheObjectContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CopyCmdAnswer> future) {
             super(callback);
             this.future = future;
         }
@@ -130,22 +131,22 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 	public DataObject createCacheObject(DataObject data, Scope scope) {
 		DataStore cacheStore = this.getCacheStorage(scope);
 		DataObject objOnCacheStore = cacheStore.create(data);
-		AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
-		CreateCacheObjectContext<CommandResult> context = new CreateCacheObjectContext<CommandResult>(null, future);
-		AsyncCallbackDispatcher<StorageCacheManagerImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this); 
+		AsyncCallFuture<CopyCmdAnswer> future = new AsyncCallFuture<CopyCmdAnswer>();
+		CreateCacheObjectContext<CopyCmdAnswer> context = new CreateCacheObjectContext<CopyCmdAnswer>(null, future);
+		AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCmdAnswer> caller = AsyncCallbackDispatcher.create(this); 
 		caller.setContext(context);
 		
-		CommandResult result = null;
+		CopyCmdAnswer result = null;
 		try {
 		    objOnCacheStore.processEvent(Event.CreateOnlyRequested);
 		    
 		    dataMotionSvr.copyAsync(data, objOnCacheStore, caller);
 		    result = future.get();
 		    
-		    if (result.isFailed()) {
+		    if (!result.getResult()) {
 		        cacheStore.delete(data);
 		    } else {
-		        objOnCacheStore.processEvent(Event.OperationSuccessed);
+		        objOnCacheStore.processEvent(Event.OperationSuccessed, result);
 		    }
         } catch (InterruptedException e) {
             s_logger.debug("create cache storage failed: " + e.toString());
@@ -162,9 +163,9 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 		return null;
 	}
 	
-	protected Void createCacheObjectCallBack(AsyncCallbackDispatcher<StorageCacheManagerImpl, CommandResult> callback, 
-	        CreateCacheObjectContext<CommandResult> context) {
-	    AsyncCallFuture<CommandResult> future = context.future;
+	protected Void createCacheObjectCallBack(AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCmdAnswer> callback, 
+	        CreateCacheObjectContext<CopyCmdAnswer> context) {
+	    AsyncCallFuture<CopyCmdAnswer> future = context.future;
 	    future.complete(callback.getResult());
 	    return null;
 	}

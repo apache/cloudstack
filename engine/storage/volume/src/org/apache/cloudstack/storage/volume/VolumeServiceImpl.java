@@ -58,14 +58,14 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -659,6 +659,9 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             vo.stateTransit(Volume.Event.OperationSucceeded);
         }*/
+        
+    	_resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage,
+              	vo.getSize());
         VolumeApiResult res = new VolumeApiResult(vo);
         context.future.complete(res);
         return null;
@@ -805,7 +808,7 @@ public class VolumeServiceImpl implements VolumeService {
                 }
                 s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
                 //TODO: pass a callback later
-                _dlMonitor.downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), store,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat(), null);
+                _dlMonitor.downloadVolumeToStorage(this.volFactory.getVolume(volumeHost.getVolumeId()), store,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat(), null);
             }
         }
 

@@ -38,7 +38,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer.FailureReason;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
@@ -157,7 +157,7 @@ public class SecurityGroupListener implements Listener {
 
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if(s_logger.isInfoEnabled())
             s_logger.info("Received a host startup notification");
 

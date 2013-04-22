@@ -238,8 +238,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		    DataStore store = createImageStore();
 		    VMTemplateVO image = createImageData();
 		    TemplateInfo template = imageDataFactory.getTemplate(image.getId(), store);
-		    AsyncCallFuture<TemplateApiResult> future = imageService.createTemplateAsync(template, store);
-		    future.get();
+		    //AsyncCallFuture<TemplateApiResult> future = imageService.createTemplateAsync(template, store);
+		    //future.get();
 		    template = imageDataFactory.getTemplate(image.getId(), store);
 			/*imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
 			VMTemplateVO image = createImageData();

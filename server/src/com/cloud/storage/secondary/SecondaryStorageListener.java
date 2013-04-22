@@ -27,7 +27,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 
@@ -68,7 +68,7 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
         if ((cmd instanceof StartupStorageCommand) ) {
             StartupStorageCommand scmd = (StartupStorageCommand)cmd;
             if (scmd.getResourceType() ==  Storage.StorageResourceType.SECONDARY_STORAGE ) {

@@ -157,12 +157,12 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
             AsyncCompletionCallback<CreateCmdResult> callback) {
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;
-            _downloadMonitor.downloadTemplateToStorage(tData.getImage(), tData.getDataStore(), callback);
+            _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), null);
         } else if (data.getType() == DataObjectType.VOLUME) {
             VolumeObject volInfo = (VolumeObject)data;
             RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
-            _downloadMonitor.downloadVolumeToStorage(volInfo.getVolume(), volInfo.getDataStore(), payload.getUrl(),
-                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), callback);
+            _downloadMonitor.downloadVolumeToStorage(volInfo, volInfo.getDataStore(), payload.getUrl(),
+                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), null);
         }
 
         CreateCmdResult result = new CreateCmdResult(null, null);

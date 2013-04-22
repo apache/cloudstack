@@ -29,13 +29,19 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ComponentContext;
@@ -54,6 +60,7 @@ public class TemplateObject implements TemplateInfo {
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
     @Inject VMTemplatePoolDao templatePoolDao;
+    @Inject TemplateDataStoreDao templateStoreDao;
 
     public TemplateObject() {
     }
@@ -163,7 +170,7 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(Event event) {
         try {
-            ojbectInStoreMgr.update(this, event, null);
+            ojbectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
@@ -173,7 +180,27 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            ojbectInStoreMgr.update(this, event, answer);
+        	if (this.getDataStore().getRole() == DataStoreRole.Primary) {
+        		if (answer != null && answer instanceof CopyCmdAnswer) {
+        			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+        			VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(this.getDataStore().getId(), this.getId());
+        			templatePoolRef.setDownloadPercent(100);
+        			templatePoolRef.setDownloadState(Status.DOWNLOADED);
+        			templatePoolRef.setLocalDownloadPath(cpyAnswer.getPath());
+        			templatePoolRef.setInstallPath(cpyAnswer.getPath());
+        			templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        		}
+        	} else if (this.getDataStore().getRole() == DataStoreRole.Image || 
+        			this.getDataStore().getRole() == DataStoreRole.ImageCache) {
+        		if (answer != null && answer instanceof CopyCmdAnswer) {
+        			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+        			TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this.getDataStore().getId(),
+        					this.getId());
+        			templateStoreRef.setInstallPath(cpyAnswer.getPath());
+        			templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
+        		}
+        	}
+            ojbectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());

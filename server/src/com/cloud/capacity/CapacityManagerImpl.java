@@ -28,12 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.resource.ResourceState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +44,10 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -521,7 +518,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     
     @DB
     @Override
-	public void updateCapacityForHost(HostVO host){
+	public void updateCapacityForHost(Host host){
     	// prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
@@ -784,7 +781,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         // TODO Auto-generated method stub
 
     }

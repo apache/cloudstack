@@ -35,16 +35,21 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
@@ -80,6 +85,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
     @Inject TemplateService imageService;
     @Inject TemplateDataFactory imageFactory;
     @Inject TemplateManager templateMgr;
+    @Inject AlertManager alertMgr;
 
     @Override
     public String getName() {
@@ -181,23 +187,37 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		    throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
 		}
         for (DataStore imageStore : imageStores) {
-            AsyncCallFuture<TemplateApiResult> future = this.imageService
-                    .createTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore), imageStore);
-            try {
-                future.get();
-            } catch (InterruptedException e) {
-                s_logger.debug("create template Failed", e);
-                throw new CloudRuntimeException("create template Failed", e);
-            } catch (ExecutionException e) {
-                s_logger.debug("create template Failed", e);
-                throw new CloudRuntimeException("create template Failed", e);
-            }
+        	TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
+        	CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
+        	AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
+        	caller.setCallback(this.createTemplateAsyncCallBack(null, null));
+        	caller.setContext(context);
+           this.imageService
+                    .createTemplateAsync(tmpl, imageStore, caller);
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage,
-                UriUtils.getRemoteSize(profile.getUrl()));
+       
         return template;
     }
+	
+	private class CreateTemplateContext<T> extends AsyncRpcConext<T> {
+		final TemplateInfo template;
+		public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo template) {
+			super(callback);
+			this.template = template;
+		}
+	}
+	
+	protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, 
+			TemplateApiResult> callback, CreateTemplateContext<TemplateApiResult> context) {
+		TemplateInfo template = context.template;
+		VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
+		long accountId = tmplt.getAccountId();
+		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage,
+		              	template.getSize());
+		
+		return null;
+	}
 
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {

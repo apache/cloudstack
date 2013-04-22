@@ -994,7 +994,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void onAgentConnect(HostVO host, StartupCommand cmd) {
+    public void onAgentConnect(Host host, StartupCommand cmd) {
         // if (host.getType() == Type.ConsoleProxy) {
         // // TODO we can use this event to mark the proxy is up and
         // // functioning instead of

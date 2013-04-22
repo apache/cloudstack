@@ -76,10 +76,12 @@ public class DownloadErrorState extends DownloadInactiveState {
 			getDownloadListener().logDisconnect();
 			getDownloadListener().cancelStatusTask();
 			getDownloadListener().cancelTimeoutTask();
-			getDownloadListener().updateDatabase(Status.DOWNLOAD_ERROR, "Storage agent or storage VM disconnected");  
+			DownloadAnswer answer = new DownloadAnswer("Storage agent or storage VM disconnected", Status.DOWNLOAD_ERROR);
+			getDownloadListener().callback(answer);  
 			getDownloadListener().log("Entering download error state because the storage host disconnected", Level.WARN);
 		} else if (event==DownloadEvent.TIMEOUT_CHECK){
-			getDownloadListener().updateDatabase(Status.DOWNLOAD_ERROR, "Timeout waiting for response from storage host");
+			DownloadAnswer answer = new DownloadAnswer("Timeout waiting for response from storage host", Status.DOWNLOAD_ERROR);
+			getDownloadListener().callback(answer);
 			getDownloadListener().log("Entering download error state: timeout waiting for response from storage host", Level.WARN);
 		}
 		getDownloadListener().setDownloadInactive(Status.DOWNLOAD_ERROR);

@@ -25,12 +25,14 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
+@Component
 public class StorageCacheRandomAllocator implements StorageCacheAllocator {
     @Inject
     DataStoreManager dataStoreMgr;

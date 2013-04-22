@@ -481,7 +481,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         }
 
         @Override
-        public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+        public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
             if (cmd instanceof StartupTrafficMonitorCommand) {
                 long agentId = agent.getId();
                 s_logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);

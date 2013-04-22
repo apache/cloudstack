@@ -44,6 +44,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -255,7 +256,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 
         /*if(forRebalance)
 		return;

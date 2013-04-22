@@ -22,7 +22,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 
 /**
@@ -72,7 +72,7 @@ public interface Listener {
      * @param agentId id of the agent
      * @throws ConnectionException if host has problems and needs to put into maintenance state.
      */
-    void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException;
+    void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException;
     
     /**
      * This method is called by AgentManager when an agent disconnects

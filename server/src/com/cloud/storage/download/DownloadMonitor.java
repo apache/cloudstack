@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.storage.download;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
-
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -34,19 +34,15 @@ import com.cloud.utils.component.Manager;
 public interface DownloadMonitor extends Manager{
 
     // when ssvm is not available yet
-    public void downloadBootstrapSysTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
+    public void downloadBootstrapSysTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback);
 
-    public void downloadTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback);
+    public void downloadTemplateToStorage(DataObject template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback);
 
-	public void cancelAllDownloads(Long templateId);
+	//public void cancelAllDownloads(Long templateId);
 
-	public boolean copyTemplate(VMTemplateVO template, DataStore sourceStore, DataStore Store)
-			throws StorageUnavailableException;
+	//public boolean copyTemplate(VMTemplateVO template, DataStore sourceStore, DataStore Store)
+	//		throws StorageUnavailableException;
 
-    //void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateProp> templateInfos);
-
-	//public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format);
-
-	public void downloadVolumeToStorage(VolumeVO volume, DataStore store, String url, String checkSum, ImageFormat format, AsyncCompletionCallback<CreateCmdResult> callback);
+	public void downloadVolumeToStorage(DataObject volume, DataStore store, String url, String checkSum, ImageFormat format, AsyncCompletionCallback<DownloadAnswer> callback);
 
 }

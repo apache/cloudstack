@@ -18,6 +18,10 @@
  */
 package org.apache.cloudstack.storage;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -25,11 +29,14 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class RemoteHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
@@ -39,9 +46,10 @@ public class RemoteHostEndPoint implements EndPoint {
     AgentManager agentMgr;
     @Inject
     HostEndpointRpcServer rpcServer;
+    private ScheduledExecutorService executor;
 
     protected RemoteHostEndPoint() {
-      
+    	executor = Executors.newScheduledThreadPool(10);
     }
     
     private void configure(long hostId, String hostAddress) {
@@ -65,11 +73,46 @@ public class RemoteHostEndPoint implements EndPoint {
 
     @Override
     public Answer sendMessage(Command cmd) {
-        return rpcServer.sendCommand(this, cmd);
+    	String errMsg = null;
+    	try {
+			return agentMgr.send(getId(), cmd);
+		} catch (AgentUnavailableException e) {
+			errMsg = e.toString();
+			s_logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
+		} catch (OperationTimedoutException e) {
+			errMsg = e.toString();
+			s_logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
+		}
+    	throw new CloudRuntimeException("Failed to send command, due to Agent:" + getId() + ", " + errMsg);
     }
+    
+    private class CmdRunner implements Runnable {
+		final Command cmd;
+		final AsyncCompletionCallback<Answer> callback;
+		public CmdRunner(Command cmd, AsyncCompletionCallback<Answer> callback) {
+			this.cmd = cmd;
+			this.callback = callback;
+		}
+		@Override
+		public void run() {
+			Answer answer = sendMessage(cmd);
+			callback.complete(answer);
+		}
+		
+	}
     
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
-        rpcServer.sendCommandAsync(this, cmd, callback);
+    	executor.schedule(new CmdRunner(cmd, callback), 10, TimeUnit.SECONDS);
+    }
+    
+    @Override
+    public void sendMessageAsyncWithListener(Command cmd, Listener listener) {
+    	try {
+    		this.agentMgr.send(getId(), new Commands(cmd), listener);
+    	} catch (AgentUnavailableException e) {
+    		s_logger.debug("Failed to send command: " + e.toString());
+    		throw new CloudRuntimeException("Failed to send command: " + e.toString());
+    	}
     }
 }

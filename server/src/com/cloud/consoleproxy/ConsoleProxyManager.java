@@ -20,7 +20,7 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.info.ConsoleProxyInfo;
@@ -55,6 +55,6 @@ public interface ConsoleProxyManager extends Manager {
 	public void onLoadReport(ConsoleProxyLoadReportCommand cmd);
 	public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd);
 	
-    public void onAgentConnect(HostVO host, StartupCommand cmd);
+    public void onAgentConnect(Host host, StartupCommand cmd);
 	public void onAgentDisconnect(long agentId, Status state);
 }

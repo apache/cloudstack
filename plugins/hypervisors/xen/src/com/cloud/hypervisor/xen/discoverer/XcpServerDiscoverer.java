@@ -555,7 +555,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(com.cloud.host.Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand )) {
             return;
         }       

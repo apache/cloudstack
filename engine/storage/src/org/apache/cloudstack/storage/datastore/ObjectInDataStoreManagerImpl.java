@@ -23,12 +23,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -40,15 +39,12 @@ import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -162,7 +158,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public boolean update(DataObject data, Event event, Answer answer)
+    public boolean update(DataObject data, Event event)
             throws NoTransitionException {
         DataObjectInStore obj = this.findObject(data, data.getDataStore());
         if (obj == null) {
@@ -171,7 +167,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                             + data);
         }
 
-        if ( data.getDataStore().getRole() == DataStoreRole.Image){
+        if ( data.getDataStore().getRole() == DataStoreRole.Image || data.getDataStore().getRole() == DataStoreRole.ImageCache){
             switch (data.getType()){
             case TEMPLATE:
                 this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
@@ -181,22 +177,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
-            if (answer != null && answer instanceof CopyCmdAnswer) {
-                CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-                VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(data.getDataStore().getId(), data.getId());
-                templatePoolRef.setDownloadPercent(100);
-                templatePoolRef.setDownloadState(Status.DOWNLOADED);
-                templatePoolRef.setLocalDownloadPath(cpyAnswer.getPath());
-                templatePoolRef.setInstallPath(cpyAnswer.getPath());
-                templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
-            }
-            try {
-                obj = this.findObject(data, data.getDataStore());
-                this.stateMachines.transitTo(obj, event, null,
-                        templatePoolDao);
-            } catch (NoTransitionException e) {
-                throw e;
-            }
+
+        	this.stateMachines.transitTo(obj, event, null,
+        			templatePoolDao);
+
         } else {
             throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " " + data.getDataStore().getRole());
         }
@@ -271,11 +255,6 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             }
         }
         return store;
-    }
-
-    @Override
-    public boolean update(DataObject vo, Event event) throws NoTransitionException {
-       return this.update(vo, event, null);
     }
 
 }
