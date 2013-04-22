@@ -137,7 +137,7 @@ class cloudConnection(object):
             else:
                 response = requests.get(self.baseurl, params=payload)
         except ConnectionError, c:
-            self.logging.debug("Connection refused. Reason: %s" %
+            self.logging.debug("Connection refused. Reason: %s : %s" %
                                (self.baseurl, c))
             raise c
         except HTTPError, h:
