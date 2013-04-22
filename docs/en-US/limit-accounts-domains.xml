@@ -176,7 +176,7 @@
         <para>If any operation needs to pass through two of more resource limit check, then the
           lower of 2 limits will be enforced, For e.g. if an account has VM limit of 10 and CPU
           limit of 20 and user under that account requests 5 VMs of 4 CPUs each, after this user can
-          deploy 5 more VMs(because VM limit is 10) but user has exausted his CPU limit and cannot
+          deploy 5 more VMs(because VM limit is 10) but user has exhausted his CPU limit and cannot
           deploy any more instance.</para>
       </listitem>
     </itemizedlist>
