@@ -91,7 +91,7 @@ under the License.
             <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
             <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
             <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
-            <li class="last"><span class="number">6</span><span><fmt:message key="label.review"/></span></li>
+            <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
           </ul>
         </div>
         <form>
@@ -329,7 +329,7 @@ under the License.
                 </div>
               </div>
             </div>
-            <!-- Step 6: Review -->
+            <!-- Step 7: Review -->
             <div class="step review" wizard-step-id="review">
               <div class="main-desc">
                 <fmt:message key="message.vm.review.launch"/>
