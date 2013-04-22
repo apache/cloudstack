@@ -710,7 +710,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @DB
-    private void updateClusterNativeHAState(HostVO host, StartupCommand cmd) {
+    private void updateClusterNativeHAState(Host host, StartupCommand cmd) {
         ClusterVO cluster = _clusterDao.findById(host.getClusterId());
         if(cluster.getClusterType() == ClusterType.ExternalManaged) {
             if(cmd instanceof StartupRoutingCommand) {

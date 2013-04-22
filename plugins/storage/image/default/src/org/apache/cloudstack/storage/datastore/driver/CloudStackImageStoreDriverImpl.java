@@ -164,17 +164,17 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
 			super(callback);
 			this.data = data;
 		}
-    	
+
     }
     @Override
     public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
     	createObjectContext<CreateCmdResult> context = new createObjectContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller = 
+        AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller =
         		AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         caller.setCallback(this.createAsyncCallback(null, null));
-        
+
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;
             _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), caller);
@@ -185,8 +185,8 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                     payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), caller);
         }
     }
-    
-    protected Void createAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback, 
+
+    protected Void createAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
     		createObjectContext<CreateCmdResult> context) {
     	DownloadAnswer answer = callback.getResult();
     	DataObject obj = context.data;
@@ -203,9 +203,9 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     	updateBuilder.setSize(answer.getTemplateSize());
     	updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
     	_templateStoreDao.update(store.getId(), updateBuilder);
-    	
+
     	AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
-    	
+
     	if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
     			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
     			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
@@ -219,8 +219,8 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     			templateDaoBuilder.setChecksum(answer.getCheckSum());
     			templateDao.update(obj.getId(), templateDaoBuilder);
     		}
-    		
-    		
+
+
     		CreateCmdResult result = new CreateCmdResult(null, null);
     		caller.complete(result);
     	}

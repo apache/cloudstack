@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 

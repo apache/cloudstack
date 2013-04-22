@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -37,6 +38,7 @@ import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -71,7 +73,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return false;
         }
     }
-    
+
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
     	  DataStoreRole srcRole = srcStore.getRole();
           DataStoreRole destRole = destStore.getRole();
@@ -162,7 +164,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
         	EndPoint ep = findEndPointForImageMove(srcStore, destStore);
         	if (ep == null) {
-        		//if there is no ssvm agent running, use mgt server 
+        		//if there is no ssvm agent running, use mgt server
         		ep = new LocalHostEndpoint();
         	}
         	return ep;
@@ -170,11 +172,41 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage);
     }
-    
+
+
+    protected EndPoint findEndpointForImageStorage(DataStore store) {
+        Long dcId = null;
+        Scope storeScope = store.getScope();
+        if (storeScope.getScopeType() == ScopeType.ZONE) {
+            dcId = storeScope.getScopeId();
+        }
+        // find ssvm that can be used to download data to store. For zone-wide
+        // image store, use SSVM for that zone. For region-wide store,
+        // we can arbitrarily pick one ssvm to do that task
+        List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
+        if (ssAHosts == null || ssAHosts.isEmpty()) {
+            return new LocalHostEndpoint(); // use local host as endpoint in
+                                            // case of no ssvm existing
+        }
+        Collections.shuffle(ssAHosts);
+        HostVO host = ssAHosts.get(0);
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress());
+    }
+
+    private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
+        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        if (dcId != null) {
+            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+        }
+        sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
+        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        return sc.list();
+    }
+
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
@@ -182,14 +214,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return findEndpointForPrimaryStorage(store);
         } else if (store.getRole() == DataStoreRole.Image) {
             //in case there is no ssvm, directly send down command hypervisor host
-            //TODO: add code to handle in case ssvm is there
-            return findEndpointForPrimaryStorage(store);
+            // otherwise, send to localhost for bootstrap system vm template download
+            return findEndpointForImageStorage(store);
         }else {
             throw new CloudRuntimeException("not implemented yet");
         }
-        
+
     }
-    
+
     @Override
     public List<EndPoint> selectAll(DataStore store) {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
@@ -206,7 +238,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                         host.getPrivateIpAddress()));
             }
-           
+
         } else {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
