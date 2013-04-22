@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -108,6 +109,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
@@ -2264,9 +2266,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
+        long size = _templateHostDao.findByTemplateId(template.getId()).getSize();
+        if (diskOfferingId != null) {
+            size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
+        }
         resourceLimitCheck(owner, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso
                 || diskOfferingId == null ? 1 : 2));
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long (size));
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -2770,7 +2777,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(),
-                    vm.getDataCenterId(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(),
+                    vm.getDataCenterId(), vm.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(),
                     null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIp4Address();
@@ -2890,6 +2897,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
+                long networkId = ip.getAssociatedWithNetworkId();
+                Network guestNetwork = _networkDao.findById(networkId);
+                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn(
@@ -3490,6 +3501,127 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
+        return migratedVm;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
+    public VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost,
+            Map<String, String> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException,
+            ManagementServerException, VirtualMachineMigrationException {
+        // Access check - only root administrator can migrate VM.
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
+            }
+            throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+        }
+
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find the vm by id " + vmId);
+        }
+
+        if (vm.getState() != State.Running) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+            }
+            CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" +
+                    " specified id");
+            ex.addProxyObject(vm, vmId, "vmId");
+            throw ex;
+        }
+
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) &&
+                !vm.getHypervisorType().equals(HypervisorType.VMware) &&
+                !vm.getHypervisorType().equals(HypervisorType.KVM) &&
+                !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
+            throw new InvalidParameterValueException("Unsupported hypervisor type for vm migration, we support" +
+                    " XenServer/VMware/KVM only");
+        }
+
+        long srcHostId = vm.getHostId();
+        Host srcHost = _resourceMgr.getHost(srcHostId);
+        // Check if src and destination hosts are valid and migrating to same host
+        if (destinationHost.getId() == srcHostId) {
+            throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please" +
+                    " specify valid destination host to migrate the VM");
+        }
+
+        // Check if the source and destination hosts are of the same type and support storage motion.
+        if (!(srcHost.getHypervisorType().equals(destinationHost.getHypervisorType()) &&
+            srcHost.getHypervisorVersion().equals(destinationHost.getHypervisorVersion()))) {
+            throw new CloudRuntimeException("The source and destination hosts are not of the same type and version. " +
+                "Source hypervisor type and version: " + srcHost.getHypervisorType().toString() + " " +
+                srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: " +
+                destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
+        }
+
+        HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(
+                srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
+        if (!capabilities.isStorageMotionSupported()) {
+            throw new CloudRuntimeException("Migration with storage isn't supported on hypervisor " +
+                    srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
+        }
+
+        // Check if destination host is up.
+        if (destinationHost.getStatus() != com.cloud.host.Status.Up ||
+                destinationHost.getResourceState() != ResourceState.Enabled){
+            throw new CloudRuntimeException("Cannot migrate VM, destination host is not in correct state, has " +
+                    "status: " + destinationHost.getStatus() + ", state: " + destinationHost.getResourceState());
+        }
+
+        List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
+        Map<VolumeVO, StoragePoolVO> volToPoolObjectMap = new HashMap<VolumeVO, StoragePoolVO>();
+        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId() == srcHost.getClusterId()) {
+            if (volumeToPool.isEmpty()) {
+                // If the destination host is in the same cluster and volumes do not have to be migrated across pools
+                // then fail the call. migrateVirtualMachine api should have been used.
+                throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost +
+                        " to destination host " + destinationHost + " doesn't involve migrating the volumes.");
+            }
+        }
+
+        if (!volumeToPool.isEmpty()) {
+            // Check if all the volumes and pools passed as parameters are valid.
+            for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
+                VolumeVO volume = _volsDao.findByUuid(entry.getKey());
+                StoragePoolVO pool = _storagePoolDao.findByUuid(entry.getValue());
+                if (volume == null) {
+                    throw new InvalidParameterValueException("There is no volume present with the given id " +
+                            entry.getKey());
+                } else if (pool == null) {
+                    throw new InvalidParameterValueException("There is no storage pool present with the given id " +
+                            entry.getValue());
+                } else {
+                    // Verify the volume given belongs to the vm.
+                    if (!vmVolumes.contains(volume)) {
+                        throw new InvalidParameterValueException("There volume " + volume + " doesn't belong to " +
+                                "the virtual machine "+ vm + " that has to be migrated");
+                    }
+                    volToPoolObjectMap.put(volume, pool);
+                }
+            }
+        }
+
+        // Check if all the volumes are in the correct state.
+        for (VolumeVO volume : vmVolumes) {
+            if (volume.getState() != Volume.State.Ready) {
+                throw new CloudRuntimeException("Volume " + volume + " of the VM is not in Ready state. Cannot " +
+                        "migrate the vm with its volumes.");
+            }
+        }
+
+        // Check max guest vm limit for the destinationHost.
+        HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
+        if(_capacityMgr.checkIfHostReachMaxGuestLimit(destinationHostVO)){
+            throw new VirtualMachineMigrationException("Host name: " + destinationHost.getName() + ", hostId: " +
+                    destinationHost.getId() + " already has max running vms (count includes system VMs). Cannot" +
+                    " migrate to this host");
+        }
+
+        VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
         return migratedVm;
     }
 

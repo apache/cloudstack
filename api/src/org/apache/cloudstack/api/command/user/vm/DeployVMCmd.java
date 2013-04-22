@@ -230,7 +230,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             for (String groupName : securityGroupNameList) {
                 Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId());
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName);
                 } else {
                     securityGroupIds.add(groupId);
                 }
@@ -344,8 +344,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             for (String groupName : affinityGroupNameList) {
                 Long groupId = _responseGenerator.getAffinityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName
-                            + " for account " + getEntityOwnerId());
+                    throw new InvalidParameterValueException("Unable to find affinity group by name " + groupName);
                 } else {
                     affinityGroupIds.add(groupId);
                 }

@@ -54,7 +54,7 @@ class workThread(threading.Thread):
         
         try:
             self.lock.acquire()
-            result = self.connection.pollAsyncJob(job.jobId, job.responsecls).jobresult
+            result = self.connection.poll(job.jobId, job.responsecls).jobresult
         except cloudstackException.cloudstackAPIException, e:
             result = str(e)
         finally:

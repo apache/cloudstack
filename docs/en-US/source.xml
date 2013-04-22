@@ -34,4 +34,5 @@
     <xi:include href="extracting-source.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="build-deb.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="build-rpm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
+    <xi:include href="build-nonoss.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
 </chapter>

@@ -447,13 +447,6 @@ if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
 fi
 
-if [ -f "%{_sysconfdir}/%{name}/management/log4j-cloud.xml" ]; then
-    echo Replacing log4j-cloud.xml with management server log4j-cloud.xml
-    rm -f %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
-    ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
-fi
-
-
 #%post awsapi
 #if [ -d "%{_datadir}/%{name}-management" ] ; then
 #   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
@@ -548,7 +541,7 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
-%dir /var/log/%{name}/usage
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE

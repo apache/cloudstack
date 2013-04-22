@@ -94,8 +94,6 @@ class Services:
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
-            "mode": 'basic',
-            # Networking mode: Basic or Advanced
         }
 
 
@@ -125,6 +123,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -397,6 +396,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -532,6 +532,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -690,6 +691,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -826,6 +828,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -985,6 +988,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             self.apiclient,
@@ -1230,6 +1234,7 @@ class TestIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             self.apiclient,

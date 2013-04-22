@@ -42,10 +42,14 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.keystore.KeystoreManager;
+import com.cloud.server.ManagementServer;
+import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Utility class to manage interactions with agent-based console access
@@ -60,28 +64,19 @@ public abstract class AgentHookBase implements AgentHook {
     ConfigurationDao _configDao;
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
+    ManagementServer _ms;
     final Random _random = new Random(System.currentTimeMillis());
     private String _hashKey;
 
 
     public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
-            AgentManager agentMgr) {
+            AgentManager agentMgr, ManagementServer ms) {
         this._instanceDao = instanceDao;
         this._hostDao = hostDao;
         this._agentMgr = agentMgr;
         this._configDao = cfgDao;
         this._ksMgr = ksMgr;
-    }
-
-    public String getHashKey() {
-        // although we may have race condition here, database transaction
-        // serialization should give us the same key
-        if (_hashKey == null) {
-            _hashKey =
-                    _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID
-                            .randomUUID().toString());
-        }
-        return _hashKey;
+        this._ms = ms;
     }
 
     public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
@@ -212,10 +207,10 @@ public abstract class AgentHookBase implements AgentHook {
                 s_logger.error("Could not find and construct a valid SSL certificate");
             }
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-            cmd.setEncryptorPassword(getHashKey());
+            cmd.setEncryptorPassword(getEncryptorPassword());
         } else {
             cmd = new StartConsoleProxyAgentHttpHandlerCommand();
-            cmd.setEncryptorPassword(getHashKey());
+            cmd.setEncryptorPassword(getEncryptorPassword());
         }
 
         try {
@@ -246,6 +241,33 @@ public abstract class AgentHookBase implements AgentHook {
                             + startupCmd.getProxyVmId(), e);
         }
     }
+    
+    private String getEncryptorPassword() {
+    	String key;
+    	String iv;
+    	ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = null;
+    	
+    	// if we failed after reset, something is definitely wrong
+    	for(int i = 0; i < 2; i++) {
+	    	key = _ms.getEncryptionKey();
+	    	iv = _ms.getEncryptionIV();
+	    	
+	    	keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
+	    	
+	    	if(keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 ||
+	    		keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
+	    		
+	    		s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
+	    		_ms.resetEncryptionKeyIV();
+	    	} else {
+	    		break;
+	    	}
+    	}
+    	
+		Gson gson = new GsonBuilder().create();
+		return gson.toJson(keyIvPair);
+    }
+     
 
     protected abstract HostVO findConsoleProxyHost(StartupProxyCommand cmd);
 

@@ -597,7 +597,7 @@
                           });
                         }
                       },											
-											/*
+											
 											releaseFromAccount: {
                         label: 'Release from Account',
                         action: function(args) {
@@ -622,6 +622,7 @@
                           });
                         }
                       },
+											
 											addAccount: {
 											  label: 'Add Account',												
 												createForm: {
@@ -675,7 +676,7 @@
                           });
                         }
 											}	
-                      */											
+                      										
                     },
                     dataProvider: function(args) {
                       $.ajax({
@@ -2409,15 +2410,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2985,15 +2984,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -3263,6 +3260,19 @@
                       label: 'label.private.interface',
                       docID: 'helpNetScalerPrivateInterface'
                     },
+										
+										gslbprovider: {
+											label: 'GSLB service',
+											isBoolean: true,
+											isChecked: true
+										},
+										gslbproviderpublicip: {
+											label: 'GSLB service Public IP'
+										},
+										gslbproviderprivateip: {
+											label: 'GSLB service Private IP'
+										},
+										
                     numretries: {
                       label: 'label.numretries',
                       defaultValue: '2',
@@ -5257,16 +5267,16 @@
                                   validation: { required: true },
                                   select: function(args) {
                                     $.ajax({
-                                      url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                                      //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                                       dataType: "json",
                                       async: true,
                                       success: function(json) {
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																					items.push({id: this.id, description: this.name});
+                                          if(this.requiresStorageMotion == false){
+                                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                           }
                                         });
                                         args.response.success({data: items});
                                       }
@@ -5997,15 +6007,13 @@
                       select: function(args) {
                         $.ajax({
                           url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                             });
                             args.response.success({data: items});
                           }
@@ -6458,16 +6466,16 @@
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
-                          url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                          url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              if(this.requiresStorageMotion == false){
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                              }
                             });
                             args.response.success({data: items});
                           }
@@ -6643,6 +6651,19 @@
                   privateinterface: {
                     label: 'label.private.interface'
                   },
+									
+									gslbprovider: {
+										label: 'GSLB service',
+										isBoolean: true,
+										isChecked: true
+									},
+									gslbproviderpublicip: {
+										label: 'GSLB service Public IP'
+									},
+									gslbproviderprivateip: {
+										label: 'GSLB service Private IP'
+									},
+									
                   numretries: {
                     label: 'label.numretries',
                     defaultValue: '2'
@@ -10707,6 +10728,12 @@
     array1.push("&username=" + todb(args.data.username));
     array1.push("&password=" + todb(args.data.password));
     array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+		
+		if(apiCmd == "addNetscalerLoadBalancer") {
+		  array1.push("&gslbprovider=" + (args.data.gslbprovider == "on"));
+			array1.push("&gslbproviderpublicip=" + todb(args.data.gslbproviderpublicip));
+			array1.push("&gslbproviderprivateip=" + todb(args.data.gslbproviderprivateip));
+		}
 
     //construct URL starts here
     var url = [];

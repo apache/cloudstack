@@ -532,8 +532,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements
             throw new CloudRuntimeException("Failed to delete storage pool on host");
         }
         
-        this.dataStoreHelper.deletePrimaryDataStore(store);
-        return false;
+        return this.dataStoreHelper.deletePrimaryDataStore(store);
     }
 
     @Override

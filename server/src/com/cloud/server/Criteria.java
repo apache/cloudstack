@@ -19,7 +19,7 @@ package com.cloud.server;
 import java.util.HashMap;
 
 public class Criteria {
-	
+
 	private Long offset;
 	private Long limit;
 	private String orderBy;
@@ -82,6 +82,7 @@ public class Criteria {
     public static final String TEMPLATE_ID = "templateid";
     public static final String ISO_ID = "isoid";
     public static final String VPC_ID = "vpcId";
+    public static final String AFFINITY_GROUP_ID = "affinitygroupid";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;
@@ -90,7 +91,7 @@ public class Criteria {
 		this.ascending = ascending;
 		criteria = new HashMap<String, Object>();
 	}
-	
+
 	public Criteria() {
 		criteria = new HashMap<String, Object>();
 		this.ascending = false;
@@ -99,11 +100,11 @@ public class Criteria {
 	public Long getOffset() {
 		return offset;
 	}
-	
+
 	public void addCriteria(String name, Object val) {
 		criteria.put(name, val);
 	}
-	
+
 	public Object getCriteria(String name) {
 		return criteria.get(name);
 	}
@@ -135,5 +136,5 @@ public class Criteria {
 	public void setAscending(Boolean ascending) {
 		this.ascending = ascending;
 	}
-	
+
 }

@@ -581,6 +581,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
         boolean allocateFromDedicatedRange = false;
+        List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // zone is of type DataCenter. See DataCenterVO.java.
@@ -615,18 +617,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             txn.start();
 
             // If account has dedicated Public IP ranges, allocate IP from the dedicated range
-            List<Long> vlanDbIds = new ArrayList<Long>();
             List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ipOwner.getId());
             for (AccountVlanMapVO map : maps) {
-                vlanDbIds.add(map.getVlanDbId());
+                dedicatedVlanDbIds.add(map.getVlanDbId());
             }
-            if (vlanDbIds != null && !vlanDbIds.isEmpty()) {
+            if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
                 allocateFromDedicatedRange = true;
             }
 
             try {
                 if (allocateFromDedicatedRange) {
-                    ip = fetchNewPublicIp(zone.getId(), null, vlanDbIds, ipOwner, vlanType, null,
+                    ip = fetchNewPublicIp(zone.getId(), null, dedicatedVlanDbIds, ipOwner, vlanType, null,
                             false, assign, null, isSystem, null);
                 }
             } catch(InsufficientAddressCapacityException e) {
@@ -637,12 +638,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             if (!allocateFromDedicatedRange) {
-                ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, null,
+                List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(zone.getId());
+                for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
+                    nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
+                }
+                ip = fetchNewPublicIp(zone.getId(), null, nonDedicatedVlanDbIds, ipOwner, vlanType, null, false, assign, null,
                        isSystem, null);
             }
 
             if (ip == null) {
-
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException
                         ("Unable to find available public IP addresses", DataCenter.class, zone.getId());
                 ex.addProxyObject(ApiDBUtils.findZoneById(zone.getId()).getUuid());
@@ -3632,8 +3636,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 
                 //2) prepare nic
                 if (prepare) {
-                    NetworkVO networkVO = _networksDao.findById(network.getId());
-                    nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+                    Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+                    nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
                     s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
                 }
                 

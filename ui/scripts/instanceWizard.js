@@ -68,7 +68,6 @@
 
     // Data providers for each wizard step
     steps: [
-      
 		  // Step 1: Setup
       function(args) {
 		    if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart			  

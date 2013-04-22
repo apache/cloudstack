@@ -72,21 +72,26 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
 
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
-                    vo.getTemplateId(), vo.getHypervisorType().toString());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+                    vo.getHostName(), vo.getServiceOfferingId(),vo.getTemplateId(), vo.getHypervisorType().toString(), 
+                    vo.getClass().getName(), vo.getUuid());
         } else if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
-                    vo.getTemplateId(), vo.getHypervisorType().toString());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+                    vo.getHostName(), vo.getServiceOfferingId(),vo.getTemplateId(), vo.getHypervisorType().toString(), 
+                    vo.getClass().getName(), vo.getUuid());            
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(),
+                    vo.getClass().getName(), vo.getUuid());
             List<NicVO> nics = _nicDao.listByVmId(vo.getId());
             for (NicVO nic : nics) {
                 NetworkVO network = _networkDao.findById(nic.getNetworkId());
-                UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(),
+                        vo.getId(), Long.toString(nic.getId()),network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid());
             }
         } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
-                    vo.getTemplateId(), vo.getHypervisorType().toString());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+                    vo.getHostName(), vo.getServiceOfferingId(),vo.getTemplateId(), vo.getHypervisorType().toString(),
+                    vo.getClass().getName(), vo.getUuid());
         } 
         return true;
     }

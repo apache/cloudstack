@@ -330,7 +330,6 @@ public class HostResponse extends BaseResponse {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
 
-
     public void setSuitableForMigration(Boolean suitableForMigration) {
         this.suitableForMigration = suitableForMigration;
     }

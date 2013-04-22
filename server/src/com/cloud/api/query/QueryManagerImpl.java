@@ -25,12 +25,9 @@ import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
-import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
@@ -111,7 +108,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -124,9 +120,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
-import com.cloud.projects.ProjectInvitation;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
@@ -142,10 +138,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -644,6 +638,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
         c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
         c.addCriteria(Criteria.VPC_ID, cmd.getVpcId());
+        c.addCriteria(Criteria.AFFINITY_GROUP_ID, cmd.getAffinityGroupId());
 
         if (domainId != null) {
             c.addCriteria(Criteria.DOMAINID, domainId);
@@ -699,6 +694,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
         Object isoId = c.getCriteria(Criteria.ISO_ID);
         Object vpcId = c.getCriteria(Criteria.VPC_ID);
+        Object affinityGroupId = c.getCriteria(Criteria.AFFINITY_GROUP_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -737,6 +733,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+        }
+
+        if (affinityGroupId != null) {
+            sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -834,6 +834,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sc.setParameters("poolId", storageId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.setParameters("affinityGroupId", affinityGroupId);
         }
 
         // search vm details by ids
@@ -1699,6 +1703,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
 
+
         if (listForDomain && isRecursive) {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
         }
@@ -1981,14 +1986,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            
+
             SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
 
             spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
             spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
             sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
-            
+
         }
 
          if (keyword != null) {
@@ -2006,7 +2011,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-        
+
         // FIXME: disk offerings should search back up the hierarchy for
         // available disk offerings...
         /*
@@ -2086,7 +2091,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
        // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // For non-root users. 
+            // For non-root users.
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }

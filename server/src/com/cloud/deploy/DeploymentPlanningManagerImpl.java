@@ -50,11 +50,21 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
 
-    @Inject
     protected List<AffinityGroupProcessor> _affinityProcessors;
+    public List<AffinityGroupProcessor> getAffinityGroupProcessors() {
+        return _affinityProcessors;
+    }
+    public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
+        this._affinityProcessors = affinityProcessors;
+    }
 
     @Override
     public DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
