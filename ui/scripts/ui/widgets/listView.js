@@ -780,6 +780,10 @@
             .data('list-view-action-id', actionName)
         );
 
+        if ($td.find('input[type=checkbox]').is(':checked')) {
+          $tr.addClass('multi-edit-selected');
+        }
+
         return true;
       }
 
