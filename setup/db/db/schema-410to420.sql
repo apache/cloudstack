@@ -918,6 +918,28 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
+
+CREATE TABLE `cloud`.`op_host_planner_reservation` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `data_center_id` bigint unsigned NOT NULL,
+  `pod_id` bigint unsigned,
+  `cluster_id` bigint unsigned,
+  `host_id` bigint unsigned,
+  `account_id` bigint unsigned,
+  `domain_id` bigint unsigned,
+  `deployment_planner` varchar(255) COMMENT 'Name of the Planner',
+  `resource_type` int(1) unsigned NOT NULL COMMENT 'shared(0) Vs dedicated(1)',
+  PRIMARY KEY  (`id`),
+  INDEX `i_op_host_planner_reservation__host_type`(`host_id`, `resource_type`),
+  CONSTRAINT `fk_planner_reservation__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__account_id` FOREIGN KEY `fk_resource_count__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__domain_id` FOREIGN KEY `fk_resource_count__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
 
