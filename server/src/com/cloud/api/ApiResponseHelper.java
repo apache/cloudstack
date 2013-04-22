@@ -34,6 +34,7 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -264,13 +265,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.InstanceGroup;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -288,7 +282,6 @@ import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmData.NicData;
 import com.cloud.vm.dao.UserVmData.SecurityGroupData;
@@ -3646,11 +3639,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-    public NicSecondaryIpResponse createSecondaryIPToNicResponse(String ipAddr, Long nicId, Long networkId) {
+    public NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-        NicVO nic = _entityMgr.findById(NicVO.class, nicId);
-        NetworkVO network = _entityMgr.findById(NetworkVO.class, networkId);
-        response.setIpAddr(ipAddr);
+        NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
+        response.setId(result.getUuid());
+        response.setIpAddr(result.getIp4Address());
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");

@@ -483,7 +483,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
 
-    public String allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
 
         Long accountId = null;
         Long domainId = null;
@@ -565,6 +565,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return null;
         }
 
+        NicSecondaryIpVO secondaryIpVO;
         if (ipaddr != null) {
             // we got the ip addr so up the nics table and secodary ip
             Transaction txn = Transaction.currentTxn();
@@ -580,11 +581,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
             s_logger.debug("Setting nic_secondary_ip table ...");
             vmId = nicVO.getInstanceId();
-            NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
+            secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
             _nicSecondaryIpDao.persist(secondaryIpVO);
             txn.commit();
+           return  getNicSecondaryIp(secondaryIpVO.getId());
+        } else {
+            return null;
         }
-        return ipaddr;
     }
 
     @DB
@@ -674,6 +677,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _nicSecondaryIpDao.remove(ipVO.getId());
         txn.commit();
         return true;
+    }
+
+    NicSecondaryIp getNicSecondaryIp (long id) {
+        NicSecondaryIp nicSecIp = _nicSecondaryIpDao.findById(id);
+        if (nicSecIp == null) {
+            return null;
+        }
+        return nicSecIp;
     }
 
     @Override
