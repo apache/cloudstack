@@ -39,11 +39,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
@@ -92,6 +95,7 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -115,7 +119,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -175,11 +178,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     ResourceLimitService _resourceLimitMgr;
     @Inject
     VpcServiceMapDao _vpcSrvcDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
+    
+    private Map<Long, Set<String>> zoneBlackListedRoutes;
  
     int _cleanupInterval;
     int _maxNetworks;
@@ -230,6 +239,26 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
+        
+        //populate blacklisted routes
+        List<DataCenterVO> zones = _dcDao.listAllZones();
+        zoneBlackListedRoutes = new HashMap<Long, Set<String>>();
+        for (DataCenterVO zone : zones) {
+            List<ConfigurationVO> confs = _configServer.getConfigListByScope(Config.ConfigurationParameterScope.zone.toString(), zone.getId());
+            for (ConfigurationVO conf : confs) {
+                String routeStr = conf.getValue();
+                if (conf.getName().equalsIgnoreCase(Config.BlacklistedRoutes.key()) && routeStr != null && !routeStr.isEmpty()) {
+                    String[] routes = routeStr.split(",");
+                    Set<String> cidrs = new HashSet<String>();
+                    for (String route : routes) {
+                        cidrs.add(route);
+                    }
+                    
+                    zoneBlackListedRoutes.put(zone.getId(), cidrs);
+                    break;
+                }
+            }
+        }
         
         return true;
     }
@@ -1652,6 +1681,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //2) CIDR should be outside of link-local cidr
         if (NetUtils.isNetworksOverlap(vpc.getCidr(), NetUtils.getLinkLocalCIDR())) {
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
+        }
+        
+        //3) Verify against blacklisted routes
+        Set<String> cidrBlackList = zoneBlackListedRoutes.get(vpc.getZoneId());
+        
+        if (cidrBlackList != null && !cidrBlackList.isEmpty()) {
+            for (String blackListedRoute : cidrBlackList) {
+                if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
+                    throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the VPC zone");
+                }
+            }
         }
 
         Transaction txn = Transaction.currentTxn();

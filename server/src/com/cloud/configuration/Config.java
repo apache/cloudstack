@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 
@@ -26,6 +29,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -33,10 +37,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public enum Config {
 
@@ -400,7 +400,10 @@ public enum Config {
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
-    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null);
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null),
+	
+    BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
+	           "routes", ConfigurationParameterScope.zone.toString());
     
 	
 	private final String _category;
@@ -532,6 +535,8 @@ public enum Config {
             return "StorageManager";
         } else if (_componentClass == TemplateManager.class) {
             return "TemplateManager";
+        } else if (_componentClass == VpcManager.class) {
+            return "VpcManager";
         }else {
             return "none";
         }
