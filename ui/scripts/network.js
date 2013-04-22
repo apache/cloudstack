@@ -1031,6 +1031,11 @@
 
                     networkcidr:{label:'Network CIDR'},
 
+                    ip6gateway: { label: 'IPv6 Gateway' }, 
+
+                    ip6cidr: { label: 'IPv6 CIDR' }, 
+
+
                     reservediprange:{label:'Reserved IP Range'},
 
 
