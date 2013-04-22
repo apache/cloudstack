@@ -21,15 +21,12 @@
 -->
 <section id="limit-accounts-domains">
   <title>Limiting Resource Usage</title>
-  <para>In addition to VMs, volumes, and snapshots, &PRODUCT; allows you limit resource types, such
-    as CPU, RAM, Primary storage, Secondary storage, and Network Rate.</para>
-  <para>Previously in &PRODUCT;, resource usage limit was imposed based on the resource count, that
-    is, restrict a user or domain on the basis of the number of VMs, volumes, or snapshots used. A
-    new set of resource types has been added to the existing pool of resources (VMs, Volumes, and
-    Snapshots) to support the customization model&mdash;need-basis usage, such as large VM or small
-    VM. The new resource types are now broadly classified as CPU, RAM, Primary storage, Secondary
-    storage, and Network Rate. &PRODUCT; now allows the root administrator to impose resource usage
-    limit by the following resource types for Domain, Project and Accounts. </para>
+  <para>&PRODUCT; allows you to control resource usage based on the types of resources, such as CPU,
+    RAM, Primary storage, and Secondary storage.  A new set of resource types has been added to the
+    existing pool of resources to support the new customization model&mdash;need-basis usage, such
+    as large VM or small VM. The new resource types are now broadly classified as CPU, RAM, Primary
+    storage, and Secondary storage. The root administrator is able to impose resource usage limit by
+    the following resource types for Domain, Project, and Accounts. </para>
   <itemizedlist>
     <listitem>
       <para>CPUs</para>
@@ -42,9 +39,6 @@
     </listitem>
     <listitem>
       <para>Secondary Storage (Snapshots, Templates, ISOs)</para>
-    </listitem>
-    <listitem>
-      <para>Network Rate (Mbps)</para>
     </listitem>
   </itemizedlist>
   <para>To control the behaviour of this feature, the following configuration parameters have been
@@ -71,18 +65,13 @@
         <row>
           <entry><para>max.account.primary.storage (GB)</para></entry>
           <entry><para>Maximum primary storage space that can be used for an account. </para>
-            <para>Default is 20*10.</para>
+            <para>Default is 200.</para>
           </entry>
         </row>
         <row>
           <entry><para>max.account.secondary.storage (GB)</para></entry>
           <entry><para>Maximum secondary storage space that can be used for an account. </para>
-            <para>Default is 20*20.</para></entry>
-        </row>
-        <row>
-          <entry><para>max.account.network.rate (Mbps)</para></entry>
-          <entry><para>Maximum network rate that can be used for an account. </para>
-            <para>Default is 200.</para></entry>
+            <para>Default is 400.</para></entry>
         </row>
         <row>
           <entry><para>max.project.cpus</para></entry>
@@ -102,21 +91,14 @@
           <entry><para>max.project.primary.storage (GB)</para></entry>
           <entry>
             <para>Maximum primary storage space that can be used for an account. </para>
-            <para>Default is 20*10.</para>
+            <para>Default is 200.</para>
           </entry>
         </row>
         <row>
           <entry><para>max.project.secondary.storage (GB)</para></entry>
           <entry>
             <para>Maximum secondary storage space that can be used for an account. </para>
-            <para>Default is 20*20.</para>
-          </entry>
-        </row>
-        <row>
-          <entry><para>max.project.network.rate (Mbps)</para></entry>
-          <entry>
-            <para>Maximum network rate that can be used for an account. </para>
-            <para>Default is 200.</para>
+            <para>Default is 400.</para>
           </entry>
         </row>
       </tbody>
@@ -136,24 +118,24 @@
           for the sub-domains and accounts under their own domain or the sub-domains. </para>
       </listitem>
       <listitem>
-        <para>Normal users would have privilege to list resource limits. Use the listResourceLimits
+        <para>The end users will the privilege to list resource limits. Use the listResourceLimits
           API.</para>
       </listitem>
     </itemizedlist>
   </section>
   <section id="consideration-rn">
-    <title>Use Cases and Considerations</title>
+    <title>Limit Usage Considerations</title>
     <itemizedlist>
       <listitem>
-        <para>When you refer to Primary or Seconday storage space, it implies that the stated size
-          of the volume and not the physical size&mdash; the actual consumed size on disk in case of
-          thin provisioning.</para>
+        <para>Primary or Secondary storage space refers to the stated size of the volume and not the
+          physical size&mdash; the actual consumed size on disk in case of thin provisioning.</para>
       </listitem>
       <listitem>
-        <para>If admin reduces the resource limit for an account and set it to less than the
-          resources currently consumed by that account, the existing VMs/templates/volumes are
-          destroyed. Using those resources, limits are imposed if the user under that account tries
-          to execute a new operation. For example, the existing behavior in the case of a VM are: </para>
+        <para>If the admin reduces the resource limit for an account and set it to less than the
+          resources that are currently being consumed, the existing VMs/templates/volumes are not
+          destroyed. Limits are imposed only if the user under that account tries to execute a new
+          operation using any of these resources. For example, the existing behavior in the case of
+          a VM are: </para>
         <itemizedlist>
           <listitem>
             <para>migrateVirtualMachine: The users under that account will be able to migrate the
@@ -165,19 +147,19 @@
         </itemizedlist>
       </listitem>
       <listitem>
-        <para>For any resource type, if a domain has limit X, sub-domain or accounts under that
-          domain can have there own limits, but at any point of time the sum of resource allocated
-          to sub-domain or accounts under the domain should never exceed the value X.</para>
-        <para>For example, if a domain has the CPU limit of 40 and sub-domain D1 and account A1 can
-          have limits of 30 each, but at any point of time the resource allocated to D1 and A1
-          should not exceed the limit 40.</para>
+        <para>For any resource type, if a domain has limit X, sub-domains or accounts under that
+          domain can have there own limits. However, the sum of resource allocated to a sub-domain
+          or accounts under the domain at any point of time should not exceed the value X.</para>
+        <para>For example, if a domain has the CPU limit of 40 and the sub-domain D1 and account A1
+          can have limits of 30 each, but at any point of time the resource allocated to D1 and A1
+          should not exceed the limit of 40.</para>
       </listitem>
       <listitem>
         <para>If any operation needs to pass through two of more resource limit check, then the
-          lower of 2 limits will be enforced, For e.g. if an account has VM limit of 10 and CPU
-          limit of 20 and user under that account requests 5 VMs of 4 CPUs each, after this user can
-          deploy 5 more VMs(because VM limit is 10) but user has exhausted his CPU limit and cannot
-          deploy any more instance.</para>
+          lower of 2 limits will be enforced, For example: if an account has the VM limit of 10 and
+          CPU limit of 20, and a user under that account requests 5 VMs of 4 CPUs each.  The user
+          can deploy 5 more VMs because VM limit is 10. However, the user cannot deploy any more
+          instances because the CPU limit has been exhausted.</para>
       </listitem>
     </itemizedlist>
   </section>
@@ -186,9 +168,9 @@
     <para>&PRODUCT; allows the configuration of limits on a domain basis. With a domain limit in
       place, all users still have their account limits. They are additionally limited, as a group,
       to not exceed the resource limits set on their domain. Domain limits aggregate the usage of
-      all accounts in the domain as well as all accounts in all sub-domains of that domain. Limits
-      set at the root domain level apply to the sum of resource usage by the accounts in all domains
-      and sub-domains below that root domain.</para>
+      all accounts in the domain as well as all the accounts in all the sub-domains of that domain.
+      Limits set at the root domain level apply to the sum of resource usage by the accounts in all
+      the domains and sub-domains below that root domain.</para>
     <para>To set a domain limit:</para>
     <orderedlist>
       <listitem>
@@ -278,12 +260,14 @@
           </tgroup>
         </informaltable>
       </listitem>
-      <listitem><para>Click Apply.</para></listitem>
+      <listitem>
+        <para>Click Apply.</para>
+      </listitem>
     </orderedlist>
   </section>
   <section id="default-account-resource-limit">
     <title>Default Account Resource Limits</title>
-    <para>You can limit resource use by accounts. The default limits are set by using global
+    <para>You can limit resource use by accounts. The default limits are set by using Global
       configuration parameters, and they affect all accounts within a cloud. The relevant parameters
       are those beginning with max.account, for example: max.account.snapshots.</para>
     <para>To override a default limit for a particular account, set a per-account resource
@@ -328,8 +312,7 @@
               <row>
                 <entry><para>Public IP Limits</para></entry>
                 <entry>
-                  <para>The number of public IP addresses that can be used in an
-                  account.</para>
+                  <para>The number of public IP addresses that can be used in an account.</para>
                   <para>The default is 20.</para></entry>
               </row>
               <row>
@@ -344,8 +327,7 @@
               </row>
               <row>
                 <entry><para>Template Limits</para></entry>
-                <entry><para>The number of templates that can be registered in an
-                account.</para>
+                <entry><para>The number of templates that can be registered in an account.</para>
                   <para>The default is 20.</para></entry>
               </row>
               <row>
@@ -381,7 +363,9 @@
           </tgroup>
         </informaltable>
       </listitem>
-      <listitem><para>Click Apply.</para></listitem>
+      <listitem>
+        <para>Click Apply.</para>
+      </listitem>
     </orderedlist>
   </section>
 </section>
