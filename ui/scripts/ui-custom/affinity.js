@@ -103,6 +103,7 @@
                   response: {
                     success: function(args) {
                       complete({
+                        _custom: args._custom,
                         $item: $instanceRow
                       });
                     },
