@@ -49,18 +49,12 @@ import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -68,8 +62,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.template.TemplateManager;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -79,7 +71,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	@Inject DiskOfferingDao diskOfferingDao;
 	@Inject VMTemplateDao templateDao;
 	@Inject VolumeDao volumeDao;
-	@Inject TemplateManager templateMgr;
 	@Inject HostDao hostDao;
 	@Inject StorageManager storageMgr;
 	@Inject VolumeManager volumeMgr;
@@ -127,11 +118,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		DiskProfile diskProfile = new DiskProfile(volume, offering,
 				null);
 
-		VMTemplateVO template = null;
-		if (volume.getTemplateId() != null) {
-			template = templateDao.findById(volume.getTemplateId());
-		}
-
 		StoragePool pool = (StoragePool)volume.getDataStore();
 		VolumeVO vol = volumeDao.findById(volume.getId());
 		if (pool != null) {
@@ -140,89 +126,22 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 			}
 			vol.setPoolId(pool.getId());
 
-			CreateCommand cmd = null;
-			VMTemplateStoragePoolVO tmpltStoredOn = null;
+			CreateCommand cmd = new CreateCommand(diskProfile, new StorageFilerTO(
+					pool));
 
-			for (int i = 0; i < 2; i++) {
-				if (template != null
-						&& template.getFormat() != Storage.ImageFormat.ISO) {
-					if (pool.getPoolType() == StoragePoolType.CLVM) {
-						// prepareISOForCreate does what we need, which is to
-						// tell us where the template is
-						VMTemplateHostVO tmpltHostOn = templateMgr
-								.prepareISOForCreate(template, pool);
-						if (tmpltHostOn == null) {
-							s_logger.debug("cannot find template "
-									+ template.getId() + " "
-									+ template.getName());
-							throw new CloudRuntimeException("cannot find template"
-									+ template.getId()
-									+ template.getName());
-						}
-						HostVO secondaryStorageHost = hostDao
-								.findById(tmpltHostOn.getHostId());
-						String tmpltHostUrl = secondaryStorageHost
-								.getStorageUrl();
-						String fullTmpltUrl = tmpltHostUrl + "/"
-								+ tmpltHostOn.getInstallPath();
-						cmd = new CreateCommand(diskProfile, fullTmpltUrl,
-								new StorageFilerTO(pool));
-					} else {
-						tmpltStoredOn = templateMgr.prepareTemplateForCreate(
-								template, pool);
-						if (tmpltStoredOn == null) {
-							s_logger.debug("Cannot use this pool " + pool
-									+ " because we can't propagate template "
-									+ template);
-							throw new CloudRuntimeException("Cannot use this pool " + pool
-									+ " because we can't propagate template "
-									+ template);
-						}
-						cmd = new CreateCommand(diskProfile,
-								tmpltStoredOn.getLocalDownloadPath(),
-								new StorageFilerTO(pool));
-					}
-				} else {
-					if (template != null
-							&& Storage.ImageFormat.ISO == template.getFormat()) {
-						VMTemplateHostVO tmpltHostOn = templateMgr
-								.prepareISOForCreate(template, pool);
-						if (tmpltHostOn == null) {
-							throw new CloudRuntimeException(
-									"Did not find ISO in secondry storage in zone "
-											+ pool.getDataCenterId());
-						}
-					}
-					cmd = new CreateCommand(diskProfile, new StorageFilerTO(
-							pool));
-				}
+			Answer answer = storageMgr.sendToPool(pool, null, cmd);
+			if (answer.getResult()) {
+				CreateAnswer createAnswer = (CreateAnswer) answer;
+				vol.setFolder(pool.getPath());
+				vol.setPath(createAnswer.getVolume().getPath());
+				vol.setSize(createAnswer.getVolume().getSize());
+				vol.setPoolType(pool.getPoolType());
+				vol.setPoolId(pool.getId());
+				vol.setPodId(pool.getPodId());
+				this.volumeDao.update(vol.getId(), vol);
+				return true;
+			} 
 
-				Answer answer = storageMgr.sendToPool(pool, null, cmd);
-				if (answer.getResult()) {
-					CreateAnswer createAnswer = (CreateAnswer) answer;
-					vol.setFolder(pool.getPath());
-					vol.setPath(createAnswer.getVolume().getPath());
-					vol.setSize(createAnswer.getVolume().getSize());
-					vol.setPoolType(pool.getPoolType());
-					vol.setPoolId(pool.getId());
-					vol.setPodId(pool.getPodId());
-					this.volumeDao.update(vol.getId(), vol);
-					return true;
-				} else {
-					if (tmpltStoredOn != null
-							&& (answer instanceof CreateAnswer)
-							&& ((CreateAnswer) answer)
-							.templateReloadRequested()) {
-						if (!templateMgr
-								.resetTemplateDownloadStateOnPool(tmpltStoredOn
-										.getId())) {
-							break; // break out of template-redeploy retry loop
-						}
-					} else {
-						break;
-					}
-				}
-			}
 		}
 
 		if (s_logger.isDebugEnabled()) {
