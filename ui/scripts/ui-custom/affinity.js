@@ -80,14 +80,6 @@
                 return false;
               } 
 
-              if (!$dataList.find(
-                'input[type=radio]:checked, input[type=checkbox]:checked'
-              ).size()) {
-                cloudStack.dialog.notice({ message: _l('message.select.instance')});
-
-                return false;
-              }
-
               var complete = args.complete;
               var start = args.start;
 
