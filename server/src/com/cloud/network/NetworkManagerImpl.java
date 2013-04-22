@@ -3648,7 +3648,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
 
     protected boolean stateTransitTo(NetworkVO network, Network.Event e) throws NoTransitionException {
-        return _stateMachine.transitTo(network, e, null, null, _networksDao);
+        return _stateMachine.transitTo(network, e, null, _networksDao);
     }
 
     private void setStateMachine() {

@@ -1217,12 +1217,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, String eventArgs, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, String eventArgs, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
         if (!status) {
             return false;
         }

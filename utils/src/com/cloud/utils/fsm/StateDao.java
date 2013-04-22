@@ -18,6 +18,6 @@ package com.cloud.utils.fsm;
 
 
 public interface StateDao <S,E,V> {
-	boolean updateState(S currentState, E event, S nextState, V vo, String eventArgs, Object data);
+	boolean updateState(S currentState, E event, S nextState, V vo, Object data);
 
 }

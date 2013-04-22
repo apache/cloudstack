@@ -127,7 +127,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
 
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore vo, String eventArgs, Object data) {
+            State nextState, DataObjectInStore vo, Object data) {
         VolumeHostVO volHost = (VolumeHostVO) vo;
         Long oldUpdated = volHost.getUpdatedCount();
         Date oldUpdatedTime = volHost.getUpdated();

@@ -358,7 +358,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updateState(State oldState, Event event,	State newState, VirtualMachine vm, String eventArgs, Object opaque) {
+    public boolean updateState(State oldState, Event event,	State newState, VirtualMachine vm, Object opaque) {
     	if (newState == null) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
@@ -389,7 +389,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	ub.set(vmi, "podIdToDeployIn", vmi.getPodIdToDeployIn());
     	ub.set(vmi, _updateTimeAttr, new Date());
     	ub.set(vmi,  "lastEvent", event);
-    	ub.set(vmi,  "lastEventArgs", eventArgs);
 
     	int result = update(vmi, sc);
     	if (result == 0 && s_logger.isDebugEnabled()) {

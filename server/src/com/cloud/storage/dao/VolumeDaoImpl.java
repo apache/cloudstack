@@ -377,7 +377,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	@Override
 	public boolean updateState(com.cloud.storage.Volume.State currentState,
 			Event event, com.cloud.storage.Volume.State nextState, Volume vo,
-			String eventArgs, Object data) {
+			Object data) {
 		
 	        Long oldUpdated = vo.getUpdatedCount();
 	        Date oldUpdatedTime = vo.getUpdated();

@@ -60,7 +60,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -1134,7 +1133,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) throws NoTransitionException {
         vm.setReservationId(reservationId);
-        return _stateMachine.transitTo(vm, e, null, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -1155,7 +1154,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vm.setLastHostId(vm.getHostId());
             }
         }
-        return _stateMachine.transitTo(vm, e, null, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override

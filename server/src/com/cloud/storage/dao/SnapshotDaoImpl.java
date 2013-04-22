@@ -333,7 +333,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
 
     @Override
-    public boolean updateState(State currentState, Event event, State nextState, SnapshotVO snapshot, String eventArgs, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, SnapshotVO snapshot, Object data) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SnapshotVO snapshotVO = (SnapshotVO)snapshot;

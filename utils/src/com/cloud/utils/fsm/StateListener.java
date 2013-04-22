@@ -28,7 +28,7 @@ public interface StateListener <S,E,V> {
 	 * @param vmDao VM dao
 	 * @return
 	 */
-	public boolean preStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, String eventArgs, Object opaque);
+	public boolean preStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Object opaque);
 	
 	/**
 	 * Event is triggered after state machine transition finished
@@ -39,5 +39,5 @@ public interface StateListener <S,E,V> {
      * @param status the state transition is allowed or not
 	 * @return
 	 */
-	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, String eventArgs, Object opaque);
+	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Object opaque);
 }

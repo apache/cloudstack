@@ -267,7 +267,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore vo, String eventArgs, Object data) {
+            State nextState, DataObjectInStore vo, Object data) {
         VMTemplateStoragePoolVO templatePool = (VMTemplateStoragePoolVO)vo;
         Long oldUpdated = templatePool.getUpdatedCount();
         Date oldUpdatedTime = templatePool.getUpdated();

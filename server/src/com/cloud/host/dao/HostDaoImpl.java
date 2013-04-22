@@ -781,7 +781,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
 
 	@Override
-	public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, String eventArgs, Object data) {
+	public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, Object data) {
 		HostVO host = findById(vo.getId());
 		long oldPingTime = host.getLastPinged();
 

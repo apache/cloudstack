@@ -453,7 +453,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 s_logger.debug("Schedule queued job-" + job.getId());
             }
 
-            job.setFromPreviousSession(fromPreviousSession);
             job.setSyncSource(item);
 
             job.setCompleteMsid(getMsid());

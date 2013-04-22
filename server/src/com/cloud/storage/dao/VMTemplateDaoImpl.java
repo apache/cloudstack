@@ -1086,7 +1086,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public boolean updateState(TemplateState currentState, TemplateEvent event,
-            TemplateState nextState, VMTemplateVO vo, String eventArgs, Object data) {
+            TemplateState nextState, VMTemplateVO vo, Object data) {
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();
 

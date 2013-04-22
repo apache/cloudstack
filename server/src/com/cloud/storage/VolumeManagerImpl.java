@@ -2364,7 +2364,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
  
     private boolean stateTransitTo(Volume vol, Volume.Event event)
             throws NoTransitionException {
-        return _volStateMachine.transitTo(vol, event, null, null, _volsDao);
+        return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
 
     
