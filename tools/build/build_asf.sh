@@ -90,7 +90,7 @@ export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:eval
 echo "found $currentversion"
 
 echo 'setting version numbers'
-mvn versions:set -DnewVersion=$version -P vmware -P developer
+mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -P baremetal -P ucs -Dnonoss
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
 git clean -f
