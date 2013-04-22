@@ -48,7 +48,7 @@ import java.util.concurrent.Callable;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
-import org.apache.cloudstack.storage.command.CopyCmd;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -215,14 +215,14 @@ SecondaryStorageResource {
             return execute((DeleteTemplateFromS3Command) cmd);
         } else if (cmd instanceof CleanupSnapshotBackupCommand){
             return execute((CleanupSnapshotBackupCommand)cmd);
-        } else if (cmd instanceof CopyCmd) {
-        	return execute((CopyCmd)cmd);
+        } else if (cmd instanceof CopyCommand) {
+        	return execute((CopyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
-    protected Answer downloadFromS3ToNfs(CopyCmd cmd, DataTO srcData, S3TO s3,
+    protected Answer downloadFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3,
     		DataTO destData, NfsTO destImageStore) {
           final String storagePath = destImageStore.getUrl();
           final String destPath = destData.getPath();
@@ -265,12 +265,12 @@ SecondaryStorageResource {
           }
     }
 
-    protected Answer downloadFromSwiftToNfs(CopyCmd cmd, DataTO srcData, SwiftTO srcImageStore,
+    protected Answer downloadFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO srcImageStore,
     		DataTO destData, NfsTO destImageStore) {
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
-    protected Answer execute(CopyCmd cmd) {
+    protected Answer execute(CopyCommand cmd) {
     	DataTO srcData = cmd.getSrcTO();
     	DataTO destData = cmd.getDestTO();
     	DataStoreTO srcDataStore = srcData.getDataStore();

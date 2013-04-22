@@ -35,7 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CopyCmd;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -194,13 +194,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
             //need to copy it to image cache store
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
-            CopyCmd cmd = new CopyCmd(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
             return answer;
         } else {
             //handle copy it to cache store
-            CopyCmd cmd = new CopyCmd(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
             EndPoint ep = selector.select(srcData, destData);
             Answer answer = ep.sendMessage(cmd);
             return answer;

@@ -64,7 +64,7 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.snapshot.SnapshotService;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.template.TemplateApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -108,7 +108,7 @@ public abstract class BaseCmd {
     @Inject public NetworkService _networkService;
     @Inject public TemplateApiService _templateService;
     @Inject public SecurityGroupService _securityGroupService;
-    @Inject public SnapshotService _snapshotService;
+    @Inject public SnapshotApiService _snapshotService;
     @Inject public ConsoleProxyService _consoleProxyService;
     @Inject public VpcVirtualNetworkApplianceService _routerService;
     @Inject public ResponseGenerator _responseGenerator;

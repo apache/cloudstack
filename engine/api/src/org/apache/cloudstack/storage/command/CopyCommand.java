@@ -20,7 +20,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 
 import com.cloud.agent.api.Command;
 
-public class CopyCmd extends Command implements StorageSubSystemCommand {
+public class CopyCommand extends Command implements StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private int timeout;
@@ -39,7 +39,7 @@ public class CopyCmd extends Command implements StorageSubSystemCommand {
         this.timeout = timeout;
     }
 
-    public CopyCmd(DataTO srcUri, DataTO destUri, int timeout) {
+    public CopyCommand(DataTO srcUri, DataTO destUri, int timeout) {
         super();
         this.srcTO = srcUri;
         this.destTO = destUri;

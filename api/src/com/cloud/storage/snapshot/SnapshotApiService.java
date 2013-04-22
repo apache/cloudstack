@@ -31,7 +31,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public interface SnapshotService {
+public interface SnapshotApiService {
 
     /**
      * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval

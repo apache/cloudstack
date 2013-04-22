@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CopyCmd;
+import org.apache.cloudstack.storage.command.CopyCommand;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -32,7 +32,7 @@ public class LocalHostEndpoint implements EndPoint {
 
 	@Override
 	public Answer sendMessage(Command cmd) {
-		if (cmd instanceof CopyCmd) {
+		if (cmd instanceof CopyCommand) {
 			return resource.executeRequest(cmd);
 		}
 		// TODO Auto-generated method stub

@@ -34,7 +34,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyCmd;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
@@ -84,8 +84,8 @@ public class XenServerStorageResource {
     }
     
     public Answer handleStorageCommands(StorageSubSystemCommand command) {
-        if (command instanceof CopyCmd) {
-            return this.execute((CopyCmd)command);
+        if (command instanceof CopyCommand) {
+            return this.execute((CopyCommand)command);
         } else if (command instanceof AttachPrimaryDataStoreCmd) {
             return this.execute((AttachPrimaryDataStoreCmd)command);
         } else if (command instanceof CreatePrimaryDataStoreCmd) {
@@ -505,7 +505,7 @@ public class XenServerStorageResource {
        
     }
     
-    protected Answer directDownloadHttpTemplate(CopyCmd cmd, DecodedDataObject srcObj, DecodedDataObject destObj) {
+    protected Answer directDownloadHttpTemplate(CopyCommand cmd, DecodedDataObject srcObj, DecodedDataObject destObj) {
         Connection conn = hypervisorResource.getConnection();
         SR poolsr = null;
         VDI vdi = null;
@@ -724,7 +724,7 @@ public class XenServerStorageResource {
     }
  
     
-    protected Answer execute(CopyCmd cmd) {
+    protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
         
