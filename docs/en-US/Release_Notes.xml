@@ -25,7 +25,7 @@ under the License.
         <title>Welcome to &PRODUCT; 4.1</title>
         <para>Welcome to the 4.1.0 release of &PRODUCT;, the first major release from the Apache CloudStack project since its graduation from the Apache Incubator.</para>
         <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
-        <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
+        <para>If you find any errors or problems in this guide, please see <xref linkend="feedback"/>. We hope you enjoy working with &PRODUCT;!</para>
     </chapter>
     <chapter id="version-4.1">
         <title>Version 4.1.0</title>
