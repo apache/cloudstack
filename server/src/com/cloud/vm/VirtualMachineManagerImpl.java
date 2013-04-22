@@ -78,6 +78,8 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -2751,6 +2753,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 result = vmGuru.plugNic(network, nicTO, vmTO, context, dest);
                 if (result) {
                     s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
+                    long isDefault = (nic.isDefaultNic()) ? 1 : 0;
+                    // insert nic's Id into DB as resource_name
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(),
+                            vmVO.getDataCenterId(), vmVO.getId(), Long.toString(nic.getId()), nic.getNetworkId(),
+                            null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid());                     
                     return nic;
                 } else {
                     s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
@@ -2814,6 +2821,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
             if (result) {
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+                long isDefault = (nic.isDefaultNic()) ? 1 : 0;
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(),
+                        vm.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 
+                        isDefault, VirtualMachine.class.getName(), vm.getUuid());
             } else {
                 s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
                 return false;

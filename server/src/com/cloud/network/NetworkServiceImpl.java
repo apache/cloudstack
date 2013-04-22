@@ -1988,8 +1988,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         continue;
                     }
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-                    UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, oldNetworkOfferingId, null, 0L);
-                    UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
+                    String nicIdString = Long.toString(nic.getId());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(),
+                            vm.getId(), nicIdString, oldNetworkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(),
+                            vm.getId(), nicIdString, networkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
                 }
                 txn.commit();
             }   else {

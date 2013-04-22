@@ -775,3 +775,5 @@ CREATE VIEW `cloud`.`account_view` AS
         `cloud`.`async_job` ON async_job.instance_id = account.id
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
+
+alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;             
