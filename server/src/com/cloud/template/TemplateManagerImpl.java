@@ -59,6 +59,8 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissions
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -266,6 +268,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject VolumeManager volumeMgr;
     @Inject VMTemplateHostDao templateHostDao;
     @Inject ImageStoreDao _imageStoreDao;
+    @Inject EndPointSelector _epSelector;
 
 
     int _primaryStorageDownloadWait;
@@ -807,9 +810,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public String getChecksum(DataStore store, String templatePath) {
 
         String secUrl = store.getUri();
-        Answer answer;
-        answer = _agentMgr.sendToSecStorage(store, new ComputeChecksumCommand(
-                secUrl, templatePath));
+        EndPoint ep = _epSelector.select(store);
+        ComputeChecksumCommand cmd = new ComputeChecksumCommand(
+                secUrl, templatePath);
+        Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {
             return answer.getDetails();
         }

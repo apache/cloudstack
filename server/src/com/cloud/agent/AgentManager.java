@@ -141,9 +141,6 @@ public interface AgentManager extends Manager {
 
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
 
-    void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException;
-
-    Answer sendToSecStorage(DataStore ssStore, Command cmd);
 
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);

@@ -1474,26 +1474,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
 
     @Override
-    public HostVO pickSsvmHost(DataStore store) {
-        if ( store.getRole() == DataStoreRole.Image){
-            Long dcId = null;
-            Scope storeScope = store.getScope();
-            if ( storeScope.getScopeType() == ScopeType.ZONE ){
-                dcId = storeScope.getScopeId();
-            }
-            // find ssvm that can be used to download data to store. For zone-wide image store, use SSVM for that zone. For region-wide store,
-            // we can arbitrarily pick one ssvm to do that task
-            List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
-            if (ssAHosts == null || ssAHosts.isEmpty() ) {
-                return null;
-            }
-            Collections.shuffle(ssAHosts);
-            return ssAHosts.get(0);
-        }
-        return null;
-    }
-
-    @Override
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {

@@ -143,18 +143,6 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
 
 
     @Override
-    public void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public Answer sendToSecStorage(DataStore ssStore, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         // TODO Auto-generated method stub
         return false;

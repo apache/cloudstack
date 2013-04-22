@@ -29,6 +29,9 @@ public interface EndPointSelector {
      * @return
      */
     EndPoint select(DataObject object);
+
+    EndPoint select(DataStore store);
+
     /**
      * @param store
      * @return

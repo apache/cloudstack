@@ -210,6 +210,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
+        return select(store);
+    }
+
+
+    @Override
+    public EndPoint select(DataStore store) {
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
         } else if (store.getRole() == DataStoreRole.Image) {
@@ -219,7 +225,6 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }else {
             throw new CloudRuntimeException("not implemented yet");
         }
-
     }
 
     @Override

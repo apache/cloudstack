@@ -53,6 +53,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -328,6 +330,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     DataStoreProviderManager _dataStoreProviderMgr;
     @Inject
     private TemplateService _imageSrv;
+    @Inject EndPointSelector _epSelector;
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -1270,17 +1273,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 .getInstallPath();
 
                         if (installPath != null) {
-
-                            Answer answer = _agentMgr.sendToSecStorage(store,
-                                    new DeleteTemplateCommand(
-                                            store.getTO(),
-                                            store.getUri(),
-                                            destroyedTemplateStoreVO
-                                                    .getInstallPath(),
-                                            destroyedTemplate.getId(),
-                                            destroyedTemplate.getAccountId()
-
-                                            ));
+                            EndPoint ep = _epSelector.select(store);
+                            Command cmd = new DeleteTemplateCommand(
+                                    store.getTO(),
+                                    store.getUri(),
+                                    destroyedTemplateStoreVO
+                                            .getInstallPath(),
+                                    destroyedTemplate.getId(),
+                                    destroyedTemplate.getAccountId()
+                                    );
+                            Answer answer = ep.sendMessage(cmd);
 
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete "

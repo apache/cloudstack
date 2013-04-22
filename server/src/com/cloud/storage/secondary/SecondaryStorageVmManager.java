@@ -55,5 +55,4 @@ public interface SecondaryStorageVmManager extends Manager {
     public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId);
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId);
     public HostVO pickSsvmHost(HostVO ssHost);
-    public HostVO pickSsvmHost(DataStore store);
 }

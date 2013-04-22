@@ -32,6 +32,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -53,14 +55,12 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.StoragePool;
@@ -119,6 +119,8 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     VolumeDao _volumeDao;
+    @Inject
+    EndPointSelector _epSelector;
 
     public VolumeServiceImpl() {
     }
@@ -659,7 +661,7 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             vo.stateTransit(Volume.Event.OperationSucceeded);
         }*/
-        
+
     	_resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage,
               	vo.getSize());
         VolumeApiResult res = new VolumeApiResult(vo);
@@ -815,16 +817,9 @@ public class VolumeServiceImpl implements VolumeService {
         //Delete volumes which are not present on DB.
         for (Long uniqueName : volumeInfos.keySet()) {
             TemplateProp vInfo = volumeInfos.get(uniqueName);
-            DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(store.getUri(), vInfo.getInstallPath());
-            try {
-                _agentMgr.sendToSecStorage(store, dtCommand, null);
-            } catch (AgentUnavailableException e) {
-                String err = "Failed to delete " + vInfo.getTemplateName() + " on image store " + storeId + " which isn't in the database";
-                s_logger.error(err);
-                return;
-            }
+            this.expungeVolumeAsync(this.volFactory.getVolume(vInfo.getId(), store));
 
-            String description = "Deleted volume " + vInfo.getTemplateName() + " on image store " + storeId + " since it isn't in the database";
+            String description = "Deleted volume " + vInfo.getTemplateName() + " on image store " + storeId;
             s_logger.info(description);
         }
 
@@ -832,7 +827,8 @@ public class VolumeServiceImpl implements VolumeService {
 
     private Map<Long, TemplateProp> listVolume(DataStore store) {
         ListVolumeCommand cmd = new ListVolumeCommand(store.getUri());
-        Answer answer = _agentMgr.sendToSecStorage(store, cmd);
+        EndPoint ep = _epSelector.select(store);
+        Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {
             ListVolumeAnswer tanswer = (ListVolumeAnswer)answer;
             return tanswer.getTemplateInfo();

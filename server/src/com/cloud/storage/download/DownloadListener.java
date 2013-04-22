@@ -152,7 +152,7 @@ public class DownloadListener implements Listener {
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
     }
-    
+
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
     	return this._callback;
     }
@@ -201,7 +201,7 @@ public class DownloadListener implements Listener {
 	}
 
 	public void logDisconnect() {
-			s_logger.warn("Unable to monitor download progress of " + this.object.getType() + ": " + 
+			s_logger.warn("Unable to monitor download progress of " + this.object.getType() + ": " +
 					this.object.getId() + " at host " + _ssAgent.getId());
 	}
 
@@ -260,7 +260,7 @@ public class DownloadListener implements Listener {
 	public void callback(DownloadAnswer answer) {
 		this._callback.complete(answer);
 	}
-	
+
 	@Override
 	public boolean processCommands(long agentId, long seq, Command[] req) {
 		return false;
@@ -287,7 +287,7 @@ public class DownloadListener implements Listener {
 	        }
 	        _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
 	    }
-	    /* This can be removed since
+	    /* This can be removed
 	    else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
             if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||

@@ -39,11 +39,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.StartupCommandProcessor;
@@ -99,7 +96,6 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -110,7 +106,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -381,17 +376,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    @Override
-    public Answer sendToSecStorage(DataStore ssStore, Command cmd) {
-        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssStore);
-        return easySend(ssAhost.getId(), cmd);
-    }
-
-    @Override
-    public void sendToSecStorage(DataStore ssStore, Command cmd, Listener listener) throws AgentUnavailableException {
-        HostVO ssAhost = _ssvmMgr.pickSsvmHost(ssStore);
-        send(ssAhost.getId(), new Commands(cmd), listener);
-    }
 
     @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
@@ -1496,6 +1480,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    @Override
     public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, true);
     }

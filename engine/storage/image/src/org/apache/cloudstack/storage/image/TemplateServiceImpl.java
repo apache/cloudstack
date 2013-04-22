@@ -34,6 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -58,14 +60,12 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
@@ -129,6 +129,8 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     TemplateDataFactory _templateFactory;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
+    @Inject
+    EndPointSelector _epSelector;
 
     class TemplateOpContext<T> extends AsyncRpcConext<T> {
         final TemplateObject template;
@@ -179,7 +181,7 @@ public class TemplateServiceImpl implements TemplateService {
             }
         }
     }
-    
+
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
@@ -377,17 +379,8 @@ public class TemplateServiceImpl implements TemplateService {
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                VMTemplateVO template = _templateDao.findById(tInfo.getId());
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), store.getUri(), tInfo.getInstallPath(), template.getId(), template.getAccountId());
-                try {
-                    _agentMgr.sendToSecStorage(store, dtCommand, null);
-                } catch (AgentUnavailableException e) {
-                    String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + storeId + " which isn't in the database";
-                    s_logger.error(err);
-                    return;
-                }
-
-                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId + " since it isn't in the database";
+                deleteTemplateAsync(_templateFactory.getTemplate(tInfo.getId(), store));
+                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId;
                 s_logger.info(description);
             }
         }
@@ -423,7 +416,8 @@ public class TemplateServiceImpl implements TemplateService {
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getUri());
-        Answer answer = _agentMgr.sendToSecStorage(ssStore, cmd);
+        EndPoint ep = _epSelector.select(ssStore);
+        Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {
             ListTemplateAnswer tanswer = (ListTemplateAnswer)answer;
             return tanswer.getTemplateInfo();

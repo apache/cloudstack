@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -115,6 +116,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     private AgentManager _agentMgr;
     @Inject TemplateDataStoreDao _templateStoreDao;
+    @Inject EndPointSelector _epSelector;
 
 
     @Override
@@ -295,7 +297,9 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
             TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
             String installPath = tmplStore.getInstallPath();
             if (installPath != null) {
-                Answer answer = _agentMgr.sendToSecStorage(store, new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId()));
+                DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId());
+                EndPoint ep = _epSelector.select(templateObj);
+                Answer answer = ep.sendMessage(cmd);
 
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to deleted template at store: " + store.getName());
