@@ -22,12 +22,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ObjectInDataStoreManager {
-    public DataObject create(DataObject template, DataStore dataStore);
+    public DataObject create(DataObject dataObj, DataStore dataStore);
+    public boolean delete(DataObject dataObj);
     public DataObject get(DataObject dataObj, DataStore store);
     public boolean update(DataObject vo, Event event) throws NoTransitionException;
     DataObjectInStore findObject(long objId, DataObjectType type,
