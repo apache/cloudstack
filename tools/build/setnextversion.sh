@@ -65,6 +65,7 @@ echo 'setting version numbers'
 mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -P baremetal -P ucs -Dnonoss
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
+perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' tools/apidoc/pom.xml
 git clean -f
 
 echo 'commit changes'
