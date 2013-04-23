@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -287,6 +288,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     AccountManager _accountMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ConfigurationServer _configServer;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
@@ -2096,7 +2099,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
+            String use_external_dns = _configServer.getConfigValue(Config.UseExternalDnsServers.key(), Config.ConfigurationParameterScope.zone.toString(), dc.getId());
             if (use_external_dns != null && use_external_dns.equals("true")) {
                 useExtDns = true;
             }

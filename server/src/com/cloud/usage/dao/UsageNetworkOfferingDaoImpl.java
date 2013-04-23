@@ -39,15 +39,15 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
 	public static final Logger s_logger = Logger.getLogger(UsageNetworkOfferingDaoImpl.class.getName());
 
 	protected static final String UPDATE_DELETED = "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, is_default, created, deleted " +
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
                                                                  "FROM usage_network_offering " +
                                                                  "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
                                                                  "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, is_default, created, deleted " +
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
                                                                 "FROM usage_network_offering " +
                                                                 "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
                                                                 "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, is_default, created, deleted " +
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
                                                           "FROM usage_network_offering " +
                                                           "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
                                                           "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
@@ -124,6 +124,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
                 Long dId = Long.valueOf(rs.getLong(3));
                 long vmId = Long.valueOf(rs.getLong(4));
                 long noId = Long.valueOf(rs.getLong(5));
+                long nicId = Long.valueOf(rs.getLong(6));
                 boolean isDefault = Boolean.valueOf(rs.getBoolean(6));
                 Date createdDate = null;
                 Date deletedDate = null;
@@ -138,7 +139,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
                 	deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
                 }
 
-                usageRecords.add(new UsageNetworkOfferingVO(zoneId, acctId, dId, vmId, noId, isDefault, createdDate, deletedDate));
+                usageRecords.add(new UsageNetworkOfferingVO(zoneId, acctId, dId, vmId, noId, nicId, isDefault, createdDate, deletedDate));
             }
         } catch (Exception e) {
             txn.rollback();

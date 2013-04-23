@@ -15,6 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack, require) {
+  if (!cloudStack.pluginAPI) {
+    cloudStack.pluginAPI = {};
+  }
+
   var loadCSS = function(path) {
     var $link = $('<link>');
 
@@ -27,50 +31,69 @@
     $('head').append($link);
   };
 
-  var pluginAPI = {
-    pollAsyncJob: pollAsyncJobResult,
-    apiCall: function(command, args) {
-      $.ajax({
-        url: createURL(command),
-        data: args.data,
-        success: args.success,
-        error: function(json) {
-          args.error(parseXMLHttpResponse(json));
-        }
-      })
-    },
-    addSection: function(section) {
-      cloudStack.sections[section.id] = $.extend(section, {
-        customIcon: 'plugins/' + section.id + '/icon.png'
-      });
-    },
-    extend: function(obj) {
-      $.extend(true, cloudStack, obj);
+  $.extend(cloudStack.pluginAPI, {
+    ui: {
+      pollAsyncJob: pollAsyncJobResult,
+      apiCall: function(command, args) {
+        $.ajax({
+          url: createURL(command),
+          data: args.data,
+          success: args.success,
+          error: function(json) {
+            args.error(parseXMLHttpResponse(json));
+          }
+        });
+      },
+      addSection: function(section) {
+        cloudStack.sections[section.id] = $.extend(section, {
+          customIcon: 'plugins/' + section.id + '/icon.png'
+        });
+      },
+      extend: function(obj) {
+        $.extend(true, cloudStack, obj);
+      }
     }
-  };
+  });
   
   cloudStack.sections.plugins = {
     title: 'label.plugins',
-    show: cloudStack.uiCustom.plugins
+    show: cloudStack.uiCustom.pluginListing
   };
 
-  // Load plugins
-  $(cloudStack.plugins).map(function(index, pluginID) {
-    var basePath = 'plugins/' + pluginID + '/';
-    var pluginJS = basePath + pluginID + '.js';
-    var configJS = basePath + 'config.js';
-    var pluginCSS = basePath + pluginID + '.css';
+  // Load
+  $(['modules', 'plugins']).each(function() {
+    var type = this;
+    var paths = $(cloudStack[type]).map(function(index, id) {
+      return type + '/' + id + '/' + id;
+    }).toArray();
 
-    require([pluginJS], function() {
-      require([configJS]);
-      loadCSS(pluginCSS);
+    // Load modules
+    require(
+      paths,
+      function() {
+        $(cloudStack[type]).map(function(index, id) {
+          var basePath = type + '/' + id + '/';
+          var css = basePath + id + '.css';
+          var configJS = type == 'plugins' ? basePath + 'config' : null;
 
-      // Execute plugin
-      cloudStack.plugins[pluginID]({
-        ui: pluginAPI
-      });
-    });
+          if (configJS) {
+            // Load config metadata
+            require([configJS]);
+          }
 
-    // Load CSS
+          // Execute module
+          cloudStack[type][id](
+            $.extend(true, {}, cloudStack.pluginAPI, {
+              pluginAPI: {
+                extend: function(api) {
+                  cloudStack.pluginAPI[id] = api;
+                }
+              }
+            })
+          );
+          loadCSS(css);
+        });
+      }
+    );
   });
 }(jQuery, cloudStack, require));

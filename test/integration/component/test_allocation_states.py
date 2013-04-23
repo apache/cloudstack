@@ -93,7 +93,7 @@ class TestAllocationState(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
 

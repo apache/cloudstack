@@ -28,7 +28,11 @@ import com.cloud.utils.component.Adapter;
 
 public interface IpDeployer extends Adapter{
     /**
-     * Apply ip addresses to this network
+     * Modify ip addresses on this network
+     * Depending on the State of the ip addresses the element should take
+     * appropriate action. 
+     * If state is Releasing the ip address should be de-allocated
+     * If state is Allocating or Allocated the ip address should be provisioned
      * @param network
      * @param ipAddress
      * @return

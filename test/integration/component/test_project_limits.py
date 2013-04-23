@@ -130,7 +130,7 @@ class TestProjectLimits(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
         cls.domain = Domain.create(
@@ -481,7 +481,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -922,7 +922,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

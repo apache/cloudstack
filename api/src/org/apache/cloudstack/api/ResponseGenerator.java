@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -86,6 +87,7 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
@@ -213,6 +215,10 @@ public interface ResponseGenerator {
 
     HostResponse createHostResponse(Host host);
 
+    HostForMigrationResponse createHostForMigrationResponse(Host host);
+
+    HostForMigrationResponse createHostForMigrationResponse(Host host, EnumSet<HostDetails> details);
+
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
@@ -239,6 +245,8 @@ public interface ResponseGenerator {
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
+
+    StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
