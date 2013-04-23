@@ -75,4 +75,14 @@ public class NetworkACLVO implements NetworkACL{
     public String getName() {
         return name;
     }
+
+    @Override
+    public long getAccountId() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public long getDomainId() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

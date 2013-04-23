@@ -24,12 +24,12 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.NetworkACLListResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
 @APICommand(name = "createNetworkACLList", description = "Creates a Network ACL for the given VPC",
-responseObject = NetworkACLListResponse.class)
+responseObject = NetworkACLResponse.class)
 public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLListCmd.class.getName());
 
@@ -86,7 +86,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACL acl = _networkACLService.getNetworkACL(getEntityId());
         if(acl != null){
-            NetworkACLListResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
+            NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
             setResponseObject(aclResponse);
             aclResponse.setResponseName(getCommandName());
         } else {

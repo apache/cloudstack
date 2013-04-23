@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import com.cloud.network.vpc.NetworkACLItem;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -80,11 +81,11 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            FirewallRule rule = _networkACLService.getNetworkACLItem(id);
+            NetworkACLItem rule = _networkACLService.getNetworkACLItem(id);
             if (rule == null) {
                 throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
             } else {
-                ownerId = rule.getAccountId();
+                //ownerId = rule.getAccountId();
             }
         }
         return ownerId;
@@ -93,7 +94,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _networkACLService.revokeNetworkACL(id, true);
+        boolean result = _networkACLService.revokeNetworkACLItem(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

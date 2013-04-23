@@ -17,6 +17,9 @@
 
 package com.cloud.agent.api.routing;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,11 +45,17 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
     public String[][] generateFwRules() {
         String [][] result = new String [2][];
         Set<String> toAdd = new HashSet<String>();
+        List<NetworkACLTO> aclList = Arrays.asList(rules);
+        Collections.sort(aclList, new Comparator<NetworkACLTO>() {
+            @Override
+            public int compare(NetworkACLTO acl1, NetworkACLTO acl2) {
+                return acl1.getNumber() > acl2.getNumber() ? 1 : -1;
+            }
+        });
 
-
-        for (NetworkACLTO aclTO: rules) {
-        /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:,Egress:tcp:220:220:0.0.0.0/0:,
-         *  each entry format      Ingress/Egress:protocol:start port: end port:scidrs:
+        for (NetworkACLTO aclTO: aclList) {
+        /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:ACCEPT:,Egress:tcp:220:220:0.0.0.0/0:DROP:,
+         *  each entry format      Ingress/Egress:protocol:start port: end port:scidrs:action:
          *  reverted entry format  Ingress/Egress:reverted:0:0:0:
          */
             if (aclTO.revoked() == true)
@@ -80,7 +89,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
                    firstEntry = false;
                 }
             }
-            sb.append(":");
+            sb.append(":").append(aclTO.getAction()).append(":");
             String aclRuleEntry = sb.toString();
 
             toAdd.add(aclRuleEntry);

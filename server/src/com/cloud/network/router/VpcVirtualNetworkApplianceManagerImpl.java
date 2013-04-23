@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -93,16 +94,6 @@ import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.PrivateIpAddress;
-import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -704,7 +695,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     @Override
-    public boolean applyNetworkACLs(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers)
+    public boolean applyNetworkACLs(Network network, final List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
@@ -719,14 +710,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     
-    protected boolean sendNetworkACLs(VirtualRouter router, List<? extends FirewallRule> rules, long guestNetworkId) 
+    protected boolean sendNetworkACLs(VirtualRouter router, List<? extends NetworkACLItem> rules, long guestNetworkId)
             throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createNetworkACLsCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }
     
-    private void createNetworkACLsCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds, 
+    private void createNetworkACLsCommands(List<? extends NetworkACLItem> rules, VirtualRouter router, Commands cmds,
             long guestNetworkId) {
         List<NetworkACLTO> rulesTO = null;
         String guestVlan = null;
@@ -739,11 +730,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (rules != null) {
             rulesTO = new ArrayList<NetworkACLTO>();
             
-            for (FirewallRule rule : rules) {
-                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
-                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
-                }
-                NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
+            for (NetworkACLItem rule : rules) {
+//                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+//                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
+//                }
+                NetworkACLTO ruleTO = new NetworkACLTO((NetworkACLItemVO)rule, guestVlan, rule.getTrafficType());
                 rulesTO.add(ruleTO);
             }
         }
@@ -929,7 +920,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (router.getVpcId() != null) {
             if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
-                List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
+                List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
                 s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
                         + " start for guest network id=" + guestNetworkId);
                 if (!networkACLs.isEmpty()) {

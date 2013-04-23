@@ -20,17 +20,15 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 
-<<<<<<< HEAD
-import com.cloud.vm.NicSecondaryIp;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-=======
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
->>>>>>> CLOUDSTACK-763: Added APIs to create, delete and list NetworkACLlist.
+import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -361,13 +359,13 @@ public interface ResponseGenerator {
      * @param networkACLItem
      * @return
      */
-    NetworkACLResponse createNetworkACLItemResponse(FirewallRule networkACLItem);
+    NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem networkACLItem);
 
     /**
      * @param networkACL
      * @return
      */
-    NetworkACLListResponse createNetworkACLResponse(NetworkACL networkACL);
+    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
 
     /**
      * @param result

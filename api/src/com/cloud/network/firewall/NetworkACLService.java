@@ -20,36 +20,37 @@ package com.cloud.network.firewall;
 import java.util.List;
 
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
-    FirewallRule getNetworkACLItem(long ruleId);
-    boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;
+    NetworkACLItem getNetworkACLItem(long ruleId);
+    boolean applyNetworkACLtoNetworks(long aclId, Account caller) throws ResourceUnavailableException;
 
     /**
      * @param createNetworkACLCmd
      * @return
      */
-    FirewallRule createNetworkACLItem(FirewallRule acl) throws NetworkRuleConflictException;
+    NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd) throws NetworkRuleConflictException;
     /**
      * @param ruleId
      * @param apply
      * @return
      */
-    boolean revokeNetworkACL(long ruleId, boolean apply);
+    boolean revokeNetworkACLItem(long ruleId, boolean apply);
     /**
      * @param listNetworkACLsCmd
      * @return
      */
-    Pair<List<? extends FirewallRule>, Integer> listNetworkACLItems(ListNetworkACLsCmd cmd);
+    Pair<List<? extends NetworkACLItem>, Integer> listNetworkACLItems(ListNetworkACLsCmd cmd);
 
     NetworkACL createNetworkACL(CreateNetworkACLListCmd cmd);
 
@@ -58,4 +59,6 @@ public interface NetworkACLService {
     boolean deleteNetworkACL(long id);
 
     Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(ListNetworkACLListsCmd listNetworkACLListsCmd);
+
+    boolean replaceNetworkACL(long aclId, long networkId);
 }

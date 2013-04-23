@@ -574,7 +574,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     break;
             }
             break;
-        case NetworkACL:
+/*        case NetworkACL:
             for (NetworkACLServiceProvider element: _networkAclElements) {
                 Network.Provider provider = element.getProvider();
                 boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
@@ -585,7 +585,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (handled)
                     break;
             }
-            break;
+            break;*/
         default:
             assert(false): "Unexpected fall through in applying rules to the network elements";
             s_logger.error("FirewallManager cannot process rules of type " + purpose);

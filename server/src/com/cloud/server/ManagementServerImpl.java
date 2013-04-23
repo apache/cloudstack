@@ -2552,6 +2552,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateNetworkACLListCmd.class);
         cmdList.add(DeleteNetworkACLListCmd.class);
         cmdList.add(ListNetworkACLListsCmd.class);
+        cmdList.add(ReplaceNetworkACLListCmd.class);
         return cmdList;
     }
 

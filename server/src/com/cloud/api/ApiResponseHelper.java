@@ -35,6 +35,13 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.vm.*;
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
@@ -85,7 +92,7 @@ import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
-import org.apache.cloudstack.api.response.NetworkACLListResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -2532,8 +2539,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkACLResponse createNetworkACLItemResponse(FirewallRule networkACL) {
-        NetworkACLResponse response = new NetworkACLResponse();
+    public NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem networkACL) {
+        NetworkACLItemResponse response = new NetworkACLItemResponse();
 
         response.setId(networkACL.getUuid());
         response.setProtocol(networkACL.getProtocol());
@@ -2550,9 +2557,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setTrafficType(networkACL.getTrafficType().toString());
 
-        FirewallRule.State state = networkACL.getState();
+        NetworkACLItem.State state = networkACL.getState();
         String stateToSet = state.toString();
-        if (state.equals(FirewallRule.State.Revoke)) {
+        if (state.equals(NetworkACLItem.State.Revoke)) {
             stateToSet = "Deleting";
         }
 
@@ -2560,6 +2567,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIcmpType(networkACL.getIcmpType());
 
         response.setState(stateToSet);
+
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(networkACL.getACLId());
+        if(acl != null){
+            response.setAclId(acl.getUuid());
+        }
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
@@ -3729,8 +3741,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-    public NetworkACLListResponse createNetworkACLResponse(NetworkACL networkACL) {
-        NetworkACLListResponse response = new NetworkACLListResponse();
+    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLResponse response = new NetworkACLResponse();
         response.setId(networkACL.getUuid());
         response.setName(networkACL.getName());
         response.setDescription(networkACL.getDescription());

@@ -16,40 +16,45 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "deleteNetworkACLList", description="Deletes a Network ACL", responseObject=SuccessResponse.class)
-public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLListCmd.class.getName());
-    private static final String s_name = "deletenetworkacllistresponse";
+@APICommand(name = "replaceNetworkACLList", description="Replaces ACL associated with a Network", responseObject=SuccessResponse.class)
+public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
+    private static final String s_name = "replacenetworkacllistresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
+    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
             required=true, description="the ID of the network ACL")
-    private Long id;
+    private long aclId;
+
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
+            required=true, description="the ID of the network")
+    private long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public long getAclId() {
+        return aclId;
+    }
+
+    public long getNetworkId(){
+        return networkId;
     }
 
     /////////////////////////////////////////////////////
@@ -62,40 +67,40 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_ACL_DELETE;
+        return EventTypes.EVENT_NETWORK_ACL_REPLACE;
     }
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting Network ACL id=" + id);
+        return  ("Associating Network ACL id=" + aclId+ " with Network id="+ networkId);
     }
 
     @Override
     public long getEntityOwnerId() {
-        NetworkACL acl = _networkACLService.getNetworkACL(id);
+        NetworkACL acl = _networkACLService.getNetworkACL(aclId);
         if (acl == null) {
-            throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
+            throw new InvalidParameterValueException("Unable to find network ACL by id=" + aclId);
         } else {
             long vpcId = acl.getVpcId();
             Vpc vpc = _vpcService.getVpc(vpcId);
             if(vpc != null){
                 return vpc.getAccountId();
             } else {
-                throw new InvalidParameterValueException("Unable to find VPC associated with network ACL by id=" + id);
+                throw new InvalidParameterValueException("Unable to find VPC associated with network ACL by id=" + aclId);
             }
         }
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _networkACLService.deleteNetworkACL(id);
+        UserContext.current().setEventDetails("Network ACL Id: " + aclId);
+        boolean result = _networkACLService.replaceNetworkACL(aclId, networkId);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network ACL");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to replace network ACL");
         }
     }
 }
