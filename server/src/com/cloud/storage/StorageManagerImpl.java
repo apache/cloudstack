@@ -84,18 +84,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -106,7 +102,6 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -134,12 +129,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.NetworkModel;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -152,25 +144,20 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -191,17 +178,13 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -237,8 +220,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected StoragePoolHostDao _storagePoolHostDao;
     @Inject
     protected AlertManager _alertMgr;
-    @Inject
-    protected VMTemplateHostDao _vmTemplateHostDao = null;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
     @Inject
@@ -285,8 +266,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected HostPodDao _podDao = null;
     @Inject
     protected VMTemplateDao _templateDao;
-    @Inject
-    protected VMTemplateHostDao _templateHostDao;
     @Inject
     protected ServiceOfferingDao _offeringDao;
     @Inject
@@ -1291,14 +1270,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         + ((answer == null) ? "answer is null"
                                                 : answer.getDetails()));
                             } else {
-                                _vmTemplateHostDao
+                                _templateStoreDao
                                         .remove(destroyedTemplateStoreVO.getId());
                                 s_logger.debug("Deleted template at: "
                                         + destroyedTemplateStoreVO
                                                 .getInstallPath());
                             }
                         } else {
-                            _vmTemplateHostDao.remove(destroyedTemplateStoreVO
+                            _templateStoreDao.remove(destroyedTemplateStoreVO
                                     .getId());
                         }
                     }

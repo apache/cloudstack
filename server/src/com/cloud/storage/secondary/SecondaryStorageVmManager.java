@@ -47,7 +47,7 @@ public interface SecondaryStorageVmManager extends Manager {
 
 	public Pair<HostVO, SecondaryStorageVmVO> assignSecStorageVm(long zoneId, Command cmd);
     boolean generateSetupCommand(Long hostId);
-    boolean deleteHost(Long hostId);
+    //boolean deleteHost(Long hostId);
     public HostVO findSecondaryStorageHost(long dcId);
     public List<HostVO> listSecondaryStorageHostsInAllZones();
     public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId);

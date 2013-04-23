@@ -31,14 +31,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -101,19 +97,12 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -194,21 +183,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private HostDao _hostDao;
     @Inject
     private StoragePoolHostDao _storagePoolHostDao;
-
-    @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
-
     @Inject
     private AgentManager _agentMgr;
-    @Inject
-    protected SwiftManager _swiftMgr;
     @Inject
     protected NetworkManager _networkMgr;
     @Inject
     protected NetworkModel _networkModel;
     @Inject
     protected SnapshotDao _snapshotDao;
-
     @Inject
     private ClusterManager _clusterMgr;
 
@@ -242,7 +224,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected RulesManager _rulesMgr;
-    @Inject 
+    @Inject
     TemplateManager templateMgr;
 
     @Inject
@@ -367,6 +349,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
 
+    /*
     @Override
     public boolean deleteHost(Long hostId) {
         List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
@@ -387,6 +370,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         return true;
     }
+    */
 
     @Override
     public boolean generateVMSetupCommand(Long ssAHostId) {
@@ -746,13 +730,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 s_logger.debug("No hypervisor host added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 return false;
             }
-            
+
             List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
             if (stores.size() < 1) {
                 s_logger.debug("No image store added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 return false;
             }
-            
+
             DataStore store = templateMgr.getImageStore(dataCenterId, template.getId());
             if (store == null) {
                 if (s_logger.isDebugEnabled()) {
@@ -1390,10 +1374,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        if (host.getType() == Host.Type.SecondaryStorage) {
-            deleteHost(host.getId());
-            return new DeleteHostAnswer(false);
-        }
+	    // Since secondary storage is moved out of host table, this class should not handle delete secondary storage anymore.
+        //if (host.getType() == Host.Type.SecondaryStorage) {
+        //    deleteHost(host.getId());
+        //    return new DeleteHostAnswer(false);
+        //}
         return null;
     }
 

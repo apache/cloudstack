@@ -15,21 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.image.db;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.VMTemplateHostVO;
+
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -37,6 +42,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
@@ -48,6 +55,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
 
+
+    @Inject private DataStoreManager _storeMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -195,6 +204,41 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("downloadState", (Object[])status);
         sc.setParameters("destroyed", false);
         return search(sc, null);
+    }
+
+
+    @Override
+    public List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
+        // get all elgible image stores
+        List<DataStore> imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if ( imgStores != null ){
+            List<TemplateDataStoreVO> result = new ArrayList<TemplateDataStoreVO>();
+            for (DataStore store : imgStores){
+                List<TemplateDataStoreVO> sRes = this.listByTemplateStoreDownloadStatus(templateId, store.getId(), status);
+                if ( sRes != null && sRes.size() > 0){
+                    result.addAll(sRes);
+                }
+            }
+            return result;
+        }
+        return null;
+    }
+
+
+    @Override
+    public TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
+        // get all elgible image stores
+        List<DataStore> imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if ( imgStores != null ){
+            for (DataStore store : imgStores){
+                List<TemplateDataStoreVO> sRes = this.listByTemplateStoreDownloadStatus(templateId, store.getId(), status);
+                if ( sRes != null && sRes.size() > 0){
+                    Collections.shuffle(sRes);
+                    return sRes.get(0);
+                }
+            }
+        }
+        return null;
     }
 
     @Override
