@@ -95,7 +95,7 @@ mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' tools/apidoc/pom.xml
 
-case "$version" in 
+case "$currentversion" in 
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
     ;;
