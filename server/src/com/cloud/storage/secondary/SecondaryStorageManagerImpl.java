@@ -46,7 +46,6 @@ import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -97,12 +96,10 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -349,28 +346,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
 
-    /*
-    @Override
-    public boolean deleteHost(Long hostId) {
-        List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
-        if( snapshots != null && !snapshots.isEmpty()) {
-            throw new CloudRuntimeException("Can not delete this secondary storage since it contains atleast one or more snapshots ");
-        }
-        if (!_swiftMgr.isSwiftEnabled()) {
-            List<Long> list = _templateDao.listPrivateTemplatesByHost(hostId);
-            if (list != null && !list.isEmpty()) {
-                throw new CloudRuntimeException("Can not delete this secondary storage since it contains private templates ");
-            }
-        }
-        _vmTemplateHostDao.deleteByHost(hostId);
-        HostVO host = _hostDao.findById(hostId);
-        host.setGuid(null);
-        _hostDao.update(hostId, host);
-        _hostDao.remove(hostId);
 
-        return true;
-    }
-    */
 
     @Override
     public boolean generateVMSetupCommand(Long ssAHostId) {
@@ -1328,7 +1304,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 	@Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
             List<String> hostTags) {
-		/* Called when add secondary storage on UI */
+		// Used to be Called when add secondary storage on UI through DummySecondaryStorageResource to update that host entry for Secondary Storage.
+	    // Now since we move secondary storage from host table, this code is not needed to be invoked anymore.
+	    /*
 		StartupCommand firstCmd = startup[0];
 		if (!(firstCmd instanceof StartupStorageCommand)) {
 			return null;
@@ -1368,17 +1346,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 				host.setStorageUrl(ssCmd.getNfsShare());
 			}
 		}
-
+        */
 		return host;
     }
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
 	    // Since secondary storage is moved out of host table, this class should not handle delete secondary storage anymore.
-        //if (host.getType() == Host.Type.SecondaryStorage) {
-        //    deleteHost(host.getId());
-        //    return new DeleteHostAnswer(false);
-        //}
         return null;
     }
 

@@ -868,21 +868,6 @@ public class ApiDBUtils {
         return template;
     }
 
-    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-        return findTemplateHostRef(templateId, zoneId, false);
-    }
-
-    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId, boolean readyOnly) {
-        VMTemplateVO vmTemplate = findTemplateById(templateId);
-        if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-            List<VMTemplateHostVO> res = _templateHostDao.listByTemplateId(templateId);
-            return res.size() == 0 ? null : res.get(0);
-        } else {
-            return _templateMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
-        }
-    }
-
-
     public static VolumeHostVO findVolumeHostRef(long volumeId, long zoneId) {
         return _volumeHostDao.findVolumeByZone(volumeId, zoneId);
     }

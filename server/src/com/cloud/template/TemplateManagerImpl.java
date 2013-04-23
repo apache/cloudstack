@@ -22,7 +22,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -85,7 +81,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
 import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.SwiftTO;
@@ -141,7 +136,6 @@ import com.cloud.storage.Upload.Type;
 
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -158,7 +152,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
@@ -202,7 +195,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
     @Inject VMTemplateDao _tmpltDao;
-    @Inject VMTemplateHostDao _tmpltHostDao;
     @Inject TemplateDataStoreDao _tmplStoreDao;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
     @Inject VMTemplateZoneDao _tmpltZoneDao;
@@ -252,32 +244,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject LaunchPermissionDao _launchPermissionDao;
     @Inject ProjectManager _projectMgr;
     @Inject
-    VolumeDataFactory volFactory;
+    VolumeDataFactory _volFactory;
     @Inject
-    TemplateDataFactory tmplFactory;
+    TemplateDataFactory _tmplFactory;
     @Inject
-    SnapshotDataFactory snapshotFactory;
+    SnapshotDataFactory _snapshotFactory;
     @Inject
-    TemplateService tmpltSvr;
+    TemplateService _tmpltSvr;
     @Inject
-    DataStoreManager dataStoreMgr;
+    DataStoreManager _dataStoreMgr;
     @Inject
     protected ResourceManager _resourceMgr;
-    @Inject VolumeManager volumeMgr;
-    @Inject VMTemplateHostDao templateHostDao;
+    @Inject VolumeManager _volumeMgr;
     @Inject ImageStoreDao _imageStoreDao;
     @Inject EndPointSelector _epSelector;
 
 
     int _primaryStorageDownloadWait;
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
-
     int _storagePoolMaxWaitSeconds = 3600;
     boolean _disableExtraction = false;
     ExecutorService _preloadExecutor;
-    ScheduledExecutorService _swiftTemplateSyncExecutor;
-
-    private ScheduledExecutorService _s3TemplateSyncExecutor = null;
 
     @Inject
     protected List<TemplateAdapter> _adapters;
@@ -337,9 +323,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public DataStore getImageStore(String storeUuid, Long zoneId) {
         DataStore imageStore = null;
         if (storeUuid != null) {
-            imageStore = this.dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
+            imageStore = this._dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+            List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
             if (stores.size() > 1) {
                 throw new CloudRuntimeException("multiple image stores, don't know which one to use");
             }
@@ -443,7 +429,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
 
-        List<DataStore> ssStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> ssStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
 
         TemplateDataStoreVO tmpltStoreRef = null;
         ImageStoreEntity tmpltStore = null;
@@ -533,7 +519,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
 	    			private void reallyRun() {
 	        			s_logger.info("Start to preload template " + template.getId() + " into primary storage " + pool.getId());
-	        			StoragePool pol = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
+	        			StoragePool pol = (StoragePool)_dataStoreMgr.getPrimaryDataStore(pool.getId());
 	        			prepareTemplateForCreate(template, pol);
 	        			s_logger.info("End of preloading template " + template.getId() + " into primary storage " + pool.getId());
 	    			}
@@ -544,54 +530,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	}
     }
 
-    String downloadTemplateFromSwiftToSecondaryStorage(long dcId, long templateId){
-        VMTemplateVO template = _tmpltDao.findById(templateId);
-        if ( template == null ) {
-            String errMsg = " Can not find template " + templateId;
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        VMTemplateSwiftVO tmpltSwift = _swiftMgr.findByTmpltId(templateId);
-        if ( tmpltSwift == null ) {
-            String errMsg = " Template " + templateId + " doesn't exist in swift";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        SwiftTO swift = _swiftMgr.getSwiftTO(tmpltSwift.getSwiftId());
-        if ( swift == null ) {
-            String errMsg = " Swift " + tmpltSwift.getSwiftId() + " doesn't exit ?";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
 
-        HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dcId);
-        if ( secHost == null ) {
-            String errMsg = "Can not find secondary storage in data center " + dcId;
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-
-        downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
-                tmpltSwift.getPath(), _primaryStorageDownloadWait);
-        try {
-            Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
-            if (answer == null || !answer.getResult()) {
-                String errMsg = "Failed to download template from Swift to secondary storage due to " + (answer == null ? "answer is null" : answer.getDetails());
-                s_logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-            String installPath = "template/tmpl/" + template.getAccountId() + "/" + template.getId() + "/" + tmpltSwift.getPath();
-            VMTemplateHostVO tmpltHost = new VMTemplateHostVO(secHost.getId(), templateId, new Date(), 100, Status.DOWNLOADED, null, null, null, installPath, template.getUrl());
-            tmpltHost.setSize(tmpltSwift.getSize());
-            tmpltHost.setPhysicalSize(tmpltSwift.getPhysicalSize());
-            _tmpltHostDao.persist(tmpltHost);
-        } catch (Exception e) {
-            String errMsg = "Failed to download template from Swift to secondary storage due to " + e.toString();
-            s_logger.warn(errMsg);
-            throw new CloudRuntimeException(errMsg);
-        }
-        return null;
-    }
 
     String uploadTemplateToSwiftFromSecondaryStorage(VMTemplateHostVO templateHostRef) {
         Long templateId = templateHostRef.getTemplateId();
@@ -653,11 +592,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         long poolId = pool.getId();
         long templateId = template.getId();
-        long dcId = pool.getDataCenterId();
         VMTemplateStoragePoolVO templateStoragePoolRef = null;
         TemplateDataStoreVO templateStoreRef = null;
-        long templateStoragePoolRefId;
-        String origUrl = null;
 
         templateStoragePoolRef = _tmpltPoolDao.findByPoolTemplate(poolId, templateId);
         if (templateStoragePoolRef != null) {
@@ -673,8 +609,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 	        }
         }
 
-        templateStoreRef = findVmTemplateImageStore(templateId, pool);
-
+        templateStoreRef = this._tmplStoreDao.findByTemplateZoneDownloadStatus(templateId, pool.getDataCenterId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         if (templateStoreRef == null) {
             s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
             return null;
@@ -685,22 +620,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              throw new CloudRuntimeException("Cannot download " + templateId + " to poolId " + poolId + " since there is no host in the Up state connected to this pool");
         }
 
-        /*
-        HostVO sh = _hostDao.findById(templateStoreRef.getHostId());
-        origUrl = sh.getStorageUrl();
-        if (origUrl == null) {
-            throw new CloudRuntimeException("Unable to find the orig.url from host " + sh.toString());
-        }
-        */
 
         if (templateStoragePoolRef == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Downloading template " + templateId + " to pool " + poolId);
             }
-            DataStore srcSecStore = this.dataStoreMgr.getDataStore(templateStoreRef.getDataStoreId(), DataStoreRole.Image);
-            TemplateInfo srcTemplate = this.tmplFactory.getTemplate(templateId, srcSecStore);
+            DataStore srcSecStore = this._dataStoreMgr.getDataStore(templateStoreRef.getDataStoreId(), DataStoreRole.Image);
+            TemplateInfo srcTemplate = this._tmplFactory.getTemplate(templateId, srcSecStore);
 
-            AsyncCallFuture<TemplateApiResult> future = this.tmpltSvr.prepareTemplateOnPrimary(srcTemplate, pool);
+            AsyncCallFuture<TemplateApiResult> future = this._tmpltSvr.prepareTemplateOnPrimary(srcTemplate, pool);
             try {
                 TemplateApiResult result = future.get();
                 if (result.isFailed()) {
@@ -718,61 +646,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return null;
     }
 
-    private TemplateDataStoreVO findVmTemplateImageStore(long templateId,
-            StoragePool pool) {
-        long dcId = pool.getDataCenterId();
-
-        List<DataStore> secStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dcId));
-
-        if ( secStores == null ){
-            s_logger.error("No image store found to download template " + templateId + " primary storage!");
-            return null;
-        }
-        for (DataStore store : secStores ){
-            List<TemplateDataStoreVO> templStores =  this._tmplStoreDao.listByTemplateStoreDownloadStatus(templateId, store.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-            if (templStores != null && !templStores.isEmpty()) {
-                Collections.shuffle(templStores);
-                return templStores.get(0);
-            }
-        }
-
-        return null;
-    }
-
-
-    @Override
-    public VMTemplateHostVO findVmTemplateHost(long templateId,
-            StoragePool pool) {
-        long dcId = pool.getDataCenterId();
-        Long podId = pool.getPodId();
-
-        List<HostVO> secHosts = _ssvmMgr
-                .listSecondaryStorageHostsInOneZone(dcId);
-
-
-        if (secHosts.size() == 1) {
-            VMTemplateHostVO templateHostVO = this._tmpltHostDao
-                    .findByHostTemplate(secHosts.get(0).getId(), templateId);
-            return templateHostVO;
-        }
-        if (podId != null) {
-            List<VMTemplateHostVO> templHosts = this._tmpltHostDao
-                    .listByTemplateStatus(templateId, dcId, podId,
-                            VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-            if (templHosts != null && !templHosts.isEmpty()) {
-                Collections.shuffle(templHosts);
-                return templHosts.get(0);
-            }
-        }
-        List<VMTemplateHostVO> templHosts = this._tmpltHostDao
-                .listByTemplateStatus(templateId, dcId,
-                        VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        if (templHosts != null && !templHosts.isEmpty()) {
-            Collections.shuffle(templHosts);
-            return templHosts.get(0);
-        }
-        return null;
-    }
 
     @Override
     public String getChecksum(Long hostId, String templatePath) {
@@ -807,41 +680,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
 
-    @Override
-    @DB
-    public VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool) {
-        template = _tmpltDao.findById(template.getId(), true);
-
-        long poolId = pool.getId();
-        long templateId = template.getId();
-        long dcId = pool.getDataCenterId();
-        VMTemplateStoragePoolVO templateStoragePoolRef = null;
-        VMTemplateHostVO templateHostRef = null;
-        long templateStoragePoolRefId;
-        String origUrl = null;
-
-        templateHostRef = findVmTemplateHost(templateId, pool);
-
-        if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-            String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
-            if (result != null) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
-            result = _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(dcId,
-                    templateId, _primaryStorageDownloadWait);
-            if (result != null) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
-            templateHostRef = findVmTemplateHost(templateId, pool);
-            if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
-                return null;
-            }
-        }
-        return templateHostRef;
-    }
 
     @Override
     @DB
@@ -870,7 +708,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         long tmpltId = template.getId();
         long dstZoneId = dstZone.getId();
         // find all eligible image stores for the destination zone
-        List<DataStore> dstSecStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dstZoneId));
+        List<DataStore> dstSecStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(dstZoneId));
         if (dstSecStores == null || dstSecStores.isEmpty() ) {
             throw new StorageUnavailableException("Destination zone is not ready, no image store associated", DataCenter.class, dstZone.getId());
         }
@@ -895,7 +733,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        TemplateInfo srcTemplate = this.tmplFactory.getTemplate(template.getId(), srcSecStore);
+        TemplateInfo srcTemplate = this._tmplFactory.getTemplate(template.getId(), srcSecStore);
         // Copy will just find one eligible image store for the destination zone
         // and copy template there, not propagate to all image stores
         // for that zone
@@ -930,7 +768,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 txn.commit();
             }
 
-            AsyncCallFuture<TemplateApiResult> future = this.tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
+            AsyncCallFuture<TemplateApiResult> future = this._tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
             try {
                 TemplateApiResult result = future.get();
                 if (result.isFailed()) {
@@ -1051,7 +889,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
-        StoragePool pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
+        StoragePool pool = (StoragePool)this._dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
 		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 
 
@@ -1077,100 +915,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
 	}
 
-    void swiftTemplateSync() {
-        GlobalLock swiftTemplateSyncLock = GlobalLock.getInternLock("templatemgr.swiftTemplateSync");
-        try {
-            if (!_swiftMgr.isSwiftEnabled()) {
-                return;
-            }
-            List<HypervisorType> hypers = _clusterDao.getAvailableHypervisorInZone(null);
-            List<VMTemplateVO> templates = _tmpltDao.listByHypervisorType(hypers);
-            List<Long> templateIds = new ArrayList<Long>();
-            for (VMTemplateVO template : templates) {
-                if (template.getTemplateType() != TemplateType.PERHOST) {
-                    templateIds.add(template.getId());
-                }
-            }
-            List<VMTemplateSwiftVO> templtSwiftRefs = _tmpltSwiftDao.listAll();
-            for (VMTemplateSwiftVO templtSwiftRef : templtSwiftRefs) {
-                templateIds.remove((Long) templtSwiftRef.getTemplateId());
-            }
-            if (templateIds.size() < 1) {
-                return;
-            }
-            if (swiftTemplateSyncLock.lock(3)) {
-                try {
-                    List<VMTemplateHostVO> templtHostRefs = _tmpltHostDao.listByState(VMTemplateHostVO.Status.DOWNLOADED);
-                    for (VMTemplateHostVO templtHostRef : templtHostRefs) {
-                        if (templtHostRef.getDestroyed()) {
-                            continue;
-                        }
-                        if (!templateIds.contains(templtHostRef.getTemplateId())) {
-                            continue;
-                        }
-                        try {
-                            uploadTemplateToSwiftFromSecondaryStorage(templtHostRef);
-                        } catch (Exception e) {
-                            s_logger.debug("failed to upload template " + templtHostRef.getTemplateId() + " to Swift due to " + e.toString());
-                        }
-                    }
-                } catch (Throwable e) {
-                    s_logger.error("Problem with sync swift template due to " + e.toString(), e);
-                } finally {
-                    swiftTemplateSyncLock.unlock();
-                }
-            }
-        } catch (Throwable e) {
-            s_logger.error("Problem with sync swift template due to " + e.toString(), e);
-        } finally {
-            swiftTemplateSyncLock.releaseRef();
-        }
-    }
-
-    private Runnable getSwiftTemplateSyncTask() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.trace("Start Swift Template sync at" + (new Date()));
-                }
-                swiftTemplateSync();
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Finish Swift Template sync at" + (new Date()));
-                }
-            }
-        };
-    }
 
     @Override
     public boolean start() {
-        _swiftTemplateSyncExecutor.scheduleAtFixedRate(getSwiftTemplateSyncTask(), 60, 60, TimeUnit.SECONDS);
-
-        if (_s3TemplateSyncExecutor != null) {
-
-            final int initialDelay = 60;
-            final int period = 60;
-
-            _s3TemplateSyncExecutor.scheduleAtFixedRate(new S3SyncTask(
-                    this._tmpltDao, this._s3Mgr), initialDelay, period,
-                    TimeUnit.SECONDS);
-            s_logger.info(String.format("Started S3 sync task to execute "
-                    + "execute every %1$s after an initial delay of %2$s.",
-                    period, initialDelay));
-
-        }
-
         return true;
     }
 
     @Override
     public boolean stop() {
-        _swiftTemplateSyncExecutor.shutdownNow();
-
-        if (_s3TemplateSyncExecutor != null) {
-            _s3TemplateSyncExecutor.shutdownNow();
-        }
-
         return true;
     }
 
@@ -1186,28 +938,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String disableExtraction =  _configDao.getValue(Config.DisableExtraction.toString());
         _disableExtraction  = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
 
-        HostTemplateStatesSearch = _tmpltHostDao.createSearchBuilder();
-        HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        HostTemplateStatesSearch.and("state", HostTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
-
-        SearchBuilder<HostVO> HostSearch = _hostDao.createSearchBuilder();
-        HostSearch.and("dcId", HostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-
-        HostTemplateStatesSearch.join("host", HostSearch, HostSearch.entity().getId(), HostTemplateStatesSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
-        HostSearch.done();
-        HostTemplateStatesSearch.done();
 
         _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
-        _swiftTemplateSyncExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("swift-template-sync-Executor"));
 
-        if (_s3Mgr.isS3Enabled()) {
-            _s3TemplateSyncExecutor = Executors
-                    .newSingleThreadScheduledExecutor(new NamedThreadFactory(
-                            "s3-template-sync"));
-        } else {
-            s_logger.info("S3 secondary storage synchronization is disabled.");
-        }
 
         return true;
     }
@@ -1715,21 +1449,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VolumeVO volume = null;
 
         try {
-            TemplateInfo tmplInfo = this.tmplFactory.getTemplate(templateId);
+            TemplateInfo tmplInfo = this._tmplFactory.getTemplate(templateId);
             snapshot = _snapshotDao.findById(snapshotId);
             ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
-            List<DataStore> store = this.dataStoreMgr.getImageStoresByScope(scope);
+            List<DataStore> store = this._dataStoreMgr.getImageStoresByScope(scope);
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
             }
             AsyncCallFuture<TemplateApiResult> future = null;
             if (snapshotId != null) {
-                SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
-                future = this.tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
+                SnapshotInfo snapInfo = this._snapshotFactory.getSnapshot(snapshotId);
+                future = this._tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
                volume = _volumeDao.findById(volumeId);
-               VolumeInfo volInfo = this.volFactory.getVolume(volumeId);
-               future = this.tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
+               VolumeInfo volInfo = this._volFactory.getVolume(volumeId);
+               future = this._tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
                 throw new CloudRuntimeException(
                         "Creating private Template need to specify snapshotId or volumeId");
@@ -1873,7 +1607,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // If private template is created from Volume, check that the volume
             // will not be active when the private template is
             // created
-            if (!this.volumeMgr.volumeInactive(volume)) {
+            if (!this._volumeMgr.volumeInactive(volume)) {
                 String msg = "Unable to create private template for volume: "
                         + volume.getName()
                         + "; volume is attached to a non-stopped VM, please stop the VM first";
@@ -1995,29 +1729,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public Pair<String, String> getAbsoluteIsoPath(long templateId,
             long dataCenterId) {
-        String isoPath = null;
-
-        List<HostVO> storageHosts = _resourceMgr.listAllHostsInOneZoneByType(
-                Host.Type.SecondaryStorage, dataCenterId);
-        if (storageHosts != null) {
-            for (HostVO storageHost : storageHosts) {
-                List<VMTemplateHostVO> templateHostVOs = this._tmpltHostDao
-                        .listByTemplateHostStatus(
-                                templateId,
-                                storageHost.getId(),
-                                VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-                if (templateHostVOs != null && !templateHostVOs.isEmpty()) {
-                    VMTemplateHostVO tmpHostVO = templateHostVOs.get(0);
-                    isoPath = storageHost.getStorageUrl() + "/"
-                            + tmpHostVO.getInstallPath();
-                    return new Pair<String, String>(isoPath,
-                            storageHost.getStorageUrl());
-                }
-            }
+         TemplateDataStoreVO templateStoreRef = this._tmplStoreDao.findByTemplateZoneDownloadStatus(templateId, dataCenterId,
+                VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        if (templateStoreRef == null) {
+            throw new CloudRuntimeException("Template " + templateId + " has not been completely downloaded to zone " + dataCenterId);
         }
-        s_logger.warn("Unable to find secondary storage in zone id="
-                + dataCenterId);
-        return null;
+        DataStore store = this._dataStoreMgr.getDataStore(templateStoreRef.getDataStoreId(), DataStoreRole.Image);
+        String isoPath = store.getUri() + "/" + templateStoreRef.getInstallPath();
+        return new Pair<String, String>(isoPath, store.getUri());
     }
 
     @Override
@@ -2035,7 +1754,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     // get the image store where a template in a given zone is downloaded to, just pick one is enough.
     @Override
     public DataStore getImageStore(long zoneId, long tmpltId) {
-        List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
@@ -2049,54 +1768,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return null;
     }
 
-    @Override
-    public HostVO getSecondaryStorageHost(long zoneId, long tmpltId) {
-        List<HostVO> hosts = _ssvmMgr
-                .listSecondaryStorageHostsInOneZone(zoneId);
-        if (hosts == null || hosts.size() == 0) {
-            return null;
-        }
-        for (HostVO host : hosts) {
-            VMTemplateHostVO tmpltHost = this._tmpltHostDao.findByHostTemplate(
-                    host.getId(), tmpltId);
-            if (tmpltHost != null
-                    && !tmpltHost.getDestroyed()
-                    && tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                return host;
-            }
-        }
-        return null;
-    }
 
-    @Override
-    public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
-            boolean readyOnly) {
-        // readyOnly flag is not used at all
-        List<HostVO> hosts = _ssvmMgr
-                .listSecondaryStorageHostsInOneZone(zoneId);
-        if (hosts == null || hosts.size() == 0) {
-            return null;
-        }
-        VMTemplateHostVO inProgress = null;
-        VMTemplateHostVO other = null;
-        for (HostVO host : hosts) {
-            VMTemplateHostVO tmpltHost = this._tmpltHostDao.findByHostTemplate(
-                    host.getId(), tmpltId);
-            if (tmpltHost != null && !tmpltHost.getDestroyed()) {
-                if (tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                    return tmpltHost;
-                } else if (tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                    inProgress = tmpltHost;
-                } else {
-                    other = tmpltHost;
-                }
-            }
-        }
-        if (inProgress != null) {
-            return inProgress;
-        }
-        return other;
-    }
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
@@ -2130,45 +1802,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public Long getTemplateSize(long templateId, long zoneId) {
-        SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
-        sc.setParameters("id", templateId);
-        sc.setParameters(
-                "state",
-                com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        sc.setJoinParameters("host", "dcId", zoneId);
-        List<VMTemplateSwiftVO> tsvs = _tmpltSwiftDao
-                .listByTemplateId(templateId);
-        Long size = null;
-        if (tsvs != null && tsvs.size() > 0) {
-            size = tsvs.get(0).getSize();
+        TemplateDataStoreVO templateStoreRef = this._tmplStoreDao.findByTemplateZoneDownloadStatus(templateId, zoneId,
+                VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        if (templateStoreRef == null) {
+            throw new CloudRuntimeException("Template " + templateId + " has not been completely downloaded to zone " + zoneId);
         }
+        return templateStoreRef.getSize();
 
-        if (size == null && _s3Mgr.isS3Enabled()) {
-            VMTemplateS3VO vmTemplateS3VO = _vmS3TemplateDao
-                    .findOneByTemplateId(templateId);
-            if (vmTemplateS3VO != null) {
-                size = vmTemplateS3VO.getSize();
-            }
-        }
-
-        if (size == null) {
-            List<VMTemplateHostVO> sss = this.templateHostDao.search(sc, null);
-            if (sss == null || sss.size() == 0) {
-                throw new CloudRuntimeException("Template "
-                        + templateId
-                        + " has not been completely downloaded to zone "
-                        + zoneId);
-            }
-            size = sss.get(0).getSize();
-        }
-        return size;
     }
 
     // find image store where this template is located
     @Override
     public List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> imageStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if ( imageStores == null || imageStores.size() == 0 ){
             return null;
         }

@@ -96,22 +96,16 @@ public interface TemplateManager extends TemplateApiService{
 
     boolean templateIsDeleteable(TemplateDataStoreVO templateStoreRef);
 
-    VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
-
-
-    VMTemplateHostVO findVmTemplateHost(long templateId,
-            StoragePool pool);
-
     Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
 
     String getSecondaryStorageURL(long zoneId);
 
-    HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
+    //HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
 
     DataStore getImageStore(long zoneId, long tmpltId);
 
-    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
-            boolean readyOnly);
+   // VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
+   //         boolean readyOnly);
 
     HostVO getSecondaryStorageHost(long zoneId);
 

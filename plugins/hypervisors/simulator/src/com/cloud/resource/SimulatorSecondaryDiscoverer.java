@@ -115,16 +115,8 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
             boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        long hostId = host.getId();
-        List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
-        if (snapshots != null && !snapshots.isEmpty()) {
-            throw new CloudRuntimeException("Cannot delete this secondary storage because there are still snapshots on it ");
-        }
-        _vmTemplateHostDao.deleteByHost(hostId);
-        host.setGuid(null);
-        _hostDao.update(hostId, host);
-        _hostDao.remove(hostId);
-        return new DeleteHostAnswer(true);
+        // no need to handle, since secondary storage is no longer a host anymore.
+        return null;
     }
 
     @Override
