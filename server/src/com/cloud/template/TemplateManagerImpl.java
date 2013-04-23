@@ -67,7 +67,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -78,6 +77,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -88,8 +88,6 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
 import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.SwiftTO;
 
 import com.cloud.api.ApiDBUtils;
@@ -353,7 +351,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_EXTRACT, eventDescription = "extracting ISO", async = true)
-    public Long extract(ExtractIsoCmd cmd) {
+    public Pair<Long, String> extract(ExtractIsoCmd cmd) {
         Account account = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -362,9 +360,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long eventId = cmd.getStartEventId();
 
         // FIXME: async job needs fixing
-        Long uploadId = extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
-        if (uploadId != null){
-        	return uploadId;
+        Pair<Long, String> uploadPair = extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
+        if (uploadPair != null){
+        	return uploadPair;
         }else {
         	throw new CloudRuntimeException("Failed to extract the iso");
         }
@@ -372,7 +370,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_EXTRACT, eventDescription = "extracting template", async = true)
-    public Long extract(ExtractTemplateCmd cmd) {
+    public Pair<Long, String> extract(ExtractTemplateCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -381,9 +379,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long eventId = cmd.getStartEventId();
 
         // FIXME: async job needs fixing
-        Long uploadId = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
-        if (uploadId != null){
-        	return uploadId;
+        Pair<Long, String> uploadPair = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
+        if (uploadPair != null){
+        	return uploadPair;
         }else {
         	throw new CloudRuntimeException("Failed to extract the teamplate");
         }
@@ -402,7 +400,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	return vmTemplate;
     }
 
-    private Long extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
+    private Pair<Long, String> extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
         String desc = Upload.Type.TEMPLATE.toString();
         if (isISO) {
             desc = Upload.Type.ISO.toString();
@@ -434,15 +432,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-		if (zoneId == null && _swiftMgr.isSwiftEnabled()) {
-            zoneId = _swiftMgr.chooseZoneForTmpltExtract(templateId);
-        }
 
-        if (zoneId == null && _s3Mgr.isS3Enabled()) {
-            zoneId = _s3Mgr.chooseZoneForTemplateExtract(template);
-        }
-
-        if (_dcDao.findById(zoneId) == null) {
+        if (zoneId != null && _dcDao.findById(zoneId) == null) {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
 
@@ -452,39 +443,33 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
 
-        List<HostVO> sservers = getSecondaryStorageHosts(zoneId);
+        List<DataStore> ssStores = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
 
-        VMTemplateHostVO tmpltHostRef = null;
-        if (sservers != null) {
-            for(HostVO secondaryStorageHost: sservers){
-                tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-                if (tmpltHostRef != null){
-                    if (tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                        tmpltHostRef = null;
-                    }
-                    else {
+        TemplateDataStoreVO tmpltStoreRef = null;
+        ImageStoreEntity tmpltStore = null;
+        if (ssStores != null) {
+            for(DataStore store: ssStores){
+                tmpltStoreRef = this._tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
+                if (tmpltStoreRef != null){
+                    if (tmpltStoreRef.getDownloadState() == com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                        tmpltStore = (ImageStoreEntity)store;
                         break;
                     }
                 }
             }
         }
 
-        if (tmpltHostRef == null && _swiftMgr.isSwiftEnabled()) {
-            SwiftTO swift = _swiftMgr.getSwiftTO(templateId);
-            if (swift != null && sservers != null) {
-                downloadTemplateFromSwiftToSecondaryStorage(zoneId, templateId);
-            }
-        } else if (tmpltHostRef == null && _s3Mgr.isS3Enabled()) {
-            if (sservers != null) {
-                _s3Mgr.downloadTemplateFromS3ToSecondaryStorage(zoneId,
-                        templateId, _primaryStorageDownloadWait);
-            }
-        }
-
-        if (tmpltHostRef == null) {
+        if (tmpltStoreRef == null) {
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
+        if ( tmpltStore.getProviderName().equalsIgnoreCase("S3") || tmpltStore.getProviderName().equalsIgnoreCase("Swift")){
+            // for S3 and Swift, no need to do anything, just return template url for extract template, here we use "-1" to indicate these case
+            return new Pair<Long, String>(null, tmpltStoreRef.getInstallPath());
+        }
+
+
+        // for NFS image store case, control will come here
         Upload.Mode extractMode;
         if (mode == null || (!mode.equalsIgnoreCase(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equalsIgnoreCase(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
             throw new InvalidParameterValueException("Please specify a valid extract Mode. Supported modes: "+ Upload.Mode.FTP_UPLOAD + ", " + Upload.Mode.HTTP_DOWNLOAD);
@@ -520,12 +505,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
             }
 
-            return _uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);
+            return new Pair<Long, String>(_uploadMonitor.extractTemplate(template, url, tmpltStoreRef, zoneId, eventId, job.getId(), mgr), null);
         }
 
-        UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltHostRef, zoneId, eventId);
+        UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltStoreRef, zoneId, eventId);
         if (vo != null){
-            return vo.getId();
+            return new Pair<Long, String>(vo.getId(), null);
         }else{
             return null;
         }
@@ -537,7 +522,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     		if(pool.getDataCenterId() == zoneId) {
     			s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
 	    		this._preloadExecutor.execute(new Runnable() {
-	    			public void run() {
+	    			@Override
+                    public void run() {
 	    				try {
 	    					reallyRun();
 	    				} catch(Throwable e) {

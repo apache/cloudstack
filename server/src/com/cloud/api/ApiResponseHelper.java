@@ -242,6 +242,7 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
@@ -1525,8 +1526,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode) {
-        UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+    public ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url) {
+
         ExtractResponse response = new ExtractResponse();
         response.setObjectName("template");
         VMTemplateVO template = ApiDBUtils.findTemplateById(id);
@@ -1538,11 +1539,19 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setZoneName(zone.getName());
         }
         response.setMode(mode);
-        response.setUploadId(uploadInfo.getUuid());
-        response.setState(uploadInfo.getUploadState().toString());
+        if (uploadId == null) {
+            // region-wide image store
+            response.setUrl(url);
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        } else {
+            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+            response.setUploadId(uploadInfo.getUuid());
+            response.setState(uploadInfo.getUploadState().toString());
+            response.setUrl(uploadInfo.getUploadUrl());
+        }
         Account account = ApiDBUtils.findAccountById(accountId);
         response.setAccountId(account.getUuid());
-        response.setUrl(uploadInfo.getUploadUrl());
+
         return response;
 
     }

@@ -17,6 +17,8 @@
 package com.cloud.storage.upload;
 
 
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+
 import com.cloud.async.AsyncJobManager;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Upload.Mode;
@@ -32,12 +34,12 @@ import com.cloud.utils.component.Manager;
  * Monitor upload progress of all entities.
  *
  */
-public interface UploadMonitor extends Manager{		
-	
+public interface UploadMonitor extends Manager{
+
 	public void cancelAllUploads(Long templateId);
 
 	public Long extractTemplate(VMTemplateVO template, String url,
-			VMTemplateHostVO tmpltHostRef,Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
+			TemplateDataStoreVO tmpltStoreRef,Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
 
     boolean isTypeUploadInProgress(Long typeId, Type type);
 
@@ -51,7 +53,7 @@ public interface UploadMonitor extends Manager{
             long asyncJobId, AsyncJobManager asyncMgr);
 
     UploadVO createEntityDownloadURL(VMTemplateVO template,
-            VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
+            TemplateDataStoreVO vmTemplateStore, Long dataCenterId, long eventId);
 
     void createVolumeDownloadURL(Long entityId, String path, Type type,
             Long dataCenterId, Long uploadId);

@@ -36,6 +36,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface TemplateApiService {
@@ -76,7 +77,7 @@ public interface TemplateApiService {
      *            - the command specifying the mode and id of the ISO
      * @return extractId.
      */
-    Long extract(ExtractIsoCmd cmd) throws InternalErrorException;
+    Pair<Long, String> extract(ExtractIsoCmd cmd) throws InternalErrorException;
 
     /**
      * Extracts a Template
@@ -85,7 +86,7 @@ public interface TemplateApiService {
      *            - the command specifying the mode and id of the template
      * @return extractId
      */
-    Long extract(ExtractTemplateCmd cmd) throws InternalErrorException;
+    Pair<Long, String> extract(ExtractTemplateCmd cmd) throws InternalErrorException;
 
     VirtualMachineTemplate getTemplate(long templateId);
 

@@ -24,6 +24,7 @@ import com.cloud.agent.api.Command;
 
 public interface EndPoint {
     public long getId();
+    public String getHostAddr();
 	public Answer sendMessage(Command cmd);
 	public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback);
 	void sendMessageAsyncWithListener(Command cmd, Listener listner);

@@ -51,22 +51,23 @@ public class RemoteHostEndPoint implements EndPoint {
     protected RemoteHostEndPoint() {
     	executor = Executors.newScheduledThreadPool(10);
     }
-    
+
     private void configure(long hostId, String hostAddress) {
         this.hostId = hostId;
         this.hostAddress = hostAddress;
     }
-    
+
     public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress) {
         RemoteHostEndPoint ep = ComponentContext.inject(RemoteHostEndPoint.class);
         ep.configure(hostId, hostAddress);
         return ep;
     }
-    
+
+    @Override
     public String getHostAddr() {
         return this.hostAddress;
     }
-    
+
     public long getId() {
         return this.hostId;
     }
@@ -85,7 +86,7 @@ public class RemoteHostEndPoint implements EndPoint {
 		}
     	throw new CloudRuntimeException("Failed to send command, due to Agent:" + getId() + ", " + errMsg);
     }
-    
+
     private class CmdRunner implements Runnable {
 		final Command cmd;
 		final AsyncCompletionCallback<Answer> callback;
@@ -98,14 +99,14 @@ public class RemoteHostEndPoint implements EndPoint {
 			Answer answer = sendMessage(cmd);
 			callback.complete(answer);
 		}
-		
+
 	}
-    
+
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
     	executor.schedule(new CmdRunner(cmd, callback), 10, TimeUnit.SECONDS);
     }
-    
+
     @Override
     public void sendMessageAsyncWithListener(Command cmd, Listener listener) {
     	try {

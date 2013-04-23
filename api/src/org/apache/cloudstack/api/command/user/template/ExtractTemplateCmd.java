@@ -34,6 +34,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "extractTemplate", description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
@@ -125,9 +126,16 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             UserContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            Pair<Long, String> uploadPair = _templateService.extract(this);
+            if (uploadPair != null){
+                ExtractResponse response = null;
+                if (uploadPair.second() != null ) {
+                    // region-wide image store
+                    response = _responseGenerator.createExtractResponse(null, id, zoneId, getEntityOwnerId(), mode, uploadPair.second());
+                } else {
+                    // nfs image store
+                    response = _responseGenerator.createExtractResponse(uploadPair.first(), id, zoneId, getEntityOwnerId(), mode, null);
+                }
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

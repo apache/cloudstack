@@ -30,7 +30,13 @@ public class LocalHostEndpoint implements EndPoint {
 		return 0;
 	}
 
+
 	@Override
+    public String getHostAddr() {
+        return "127.0.0.0";
+    }
+
+    @Override
 	public Answer sendMessage(Command cmd) {
 		if (cmd instanceof CopyCommand) {
 			return resource.executeRequest(cmd);
@@ -52,7 +58,7 @@ public class LocalHostEndpoint implements EndPoint {
 			callback.complete(answer);
 		}
 	}
-	
+
 	private class CmdRunner2 implements Runnable {
 		final Command cmd;
 		final AsyncCompletionCallback<DownloadAnswer> callback;
@@ -71,7 +77,7 @@ public class LocalHostEndpoint implements EndPoint {
 			AsyncCompletionCallback<Answer> callback) {
 		 executor.schedule(new CmdRunner(cmd, callback), 10, TimeUnit.SECONDS);
 	}
-	
+
 	@Override
 	public void sendMessageAsyncWithListener(Command cmd, Listener listner) {
 		if (listner instanceof DownloadListener) {
