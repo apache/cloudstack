@@ -40,6 +40,16 @@
             state: state
           });
         });
+      },
+
+      resource: function(args) {
+        var type = args.type;
+
+        if (type) {
+          return cloudStack.sections.system.subsections[type];
+        } else {
+          return false;
+        }
       }
     });
   };
