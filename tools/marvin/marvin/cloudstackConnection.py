@@ -132,7 +132,7 @@ class cloudConnection(object):
 
         try:
             if data:
-                response = requests.get(self.baseurl, params=payload,
+                response = requests.post(self.baseurl, params=payload,
                                         data=data)
             else:
                 response = requests.get(self.baseurl, params=payload)

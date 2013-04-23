@@ -220,7 +220,7 @@ class VirtualMachine:
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
-                    diskofferingid=None, affinitygroupnames=None, hostid=None, mode='basic'):
+                    diskofferingid=None, affinitygroupnames=None, hostid=None, mode='basic', method='GET'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -262,8 +262,6 @@ class VirtualMachine:
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
 
-        if "userdata" in services:
-            cmd.userdata = base64.b64encode(services["userdata"])
 
         if "affinitygroupnames" in services:
             cmd.affinitygroupnames  = services["affinitygroupnames"]
@@ -279,6 +277,12 @@ class VirtualMachine:
         if hostid:
             cmd.hostid = hostid
 
+        if "userdata" in services:
+            if method == 'POST':
+                postdata = base64.b64encode(services["userdata"])
+                virtual_machine = apiclient.deployVirtualMachine(cmd, postdata = {'userdata' : postdata})
+            else:
+                cmd.userdata = base64.b64encode(services["userdata"])
         virtual_machine = apiclient.deployVirtualMachine(cmd)
 
         # VM should be in Running state after deploy
