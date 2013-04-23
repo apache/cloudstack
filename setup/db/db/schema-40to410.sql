@@ -263,14 +263,6 @@ CREATE TABLE  `cloud`.`region` (
 
 INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MB) that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.cpus', '40', 'The default maximum number of cpu cores that can be used for a project');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.memory', '40960', 'The default maximum memory (in MB) that can be used for a project');
-
 CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
@@ -1262,10 +1254,6 @@ CREATE VIEW `cloud`.`account_view` AS
         projectcount.count projectTotal,
         networklimit.max networkLimit,
         networkcount.count networkTotal,
-        cpulimit.max cpuLimit,
-        cpucount.count cpuTotal,
-        memorylimit.max memoryLimit,
-        memorycount.count memoryTotal,
         async_job.id job_id,
         async_job.uuid job_uuid,
         async_job.job_status job_status,
@@ -1333,18 +1321,6 @@ CREATE VIEW `cloud`.`account_view` AS
             left join
         `cloud`.`resource_count` networkcount ON account.id = networkcount.account_id
             and networkcount.type = 'network'
-            left join
-        `cloud`.`resource_limit` cpulimit ON account.id = cpulimit.account_id
-            and cpulimit.type = 'cpu'
-            left join
-        `cloud`.`resource_count` cpucount ON account.id = cpucount.account_id
-            and cpucount.type = 'cpu'
-            left join
-        `cloud`.`resource_limit` memorylimit ON account.id = memorylimit.account_id
-            and memorylimit.type = 'memory'
-            left join
-        `cloud`.`resource_count` memorycount ON account.id = memorycount.account_id
-            and memorycount.type = 'memory'
             left join
         `cloud`.`async_job` ON async_job.instance_id = account.id
             and async_job.instance_type = 'Account'
