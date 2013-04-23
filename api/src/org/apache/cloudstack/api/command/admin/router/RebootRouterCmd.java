@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -84,8 +85,8 @@ public class RebootRouterCmd extends BaseAsyncCmd {
         return  "rebooting router: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.DomainRouter;
     }
 
     public Long getInstanceId() {

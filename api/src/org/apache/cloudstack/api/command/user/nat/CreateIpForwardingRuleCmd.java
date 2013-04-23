@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.nat;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -304,8 +305,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.FirewallRule;
     }
 
     @Override

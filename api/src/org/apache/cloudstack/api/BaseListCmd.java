@@ -109,7 +109,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return startIndex;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 }

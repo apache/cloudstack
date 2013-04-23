@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -323,8 +324,8 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.FirewallRule;
     }
 
     @Override

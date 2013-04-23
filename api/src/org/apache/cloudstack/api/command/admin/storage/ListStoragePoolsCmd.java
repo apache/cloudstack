@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -105,8 +106,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.StoragePool;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.StoragePool;
     }
 
     @Override

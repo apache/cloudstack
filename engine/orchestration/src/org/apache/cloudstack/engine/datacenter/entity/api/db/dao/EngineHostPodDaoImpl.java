@@ -148,7 +148,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
 
 
 	@Override
-	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity podEntity, String eventArgs, Object data) {
+	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity podEntity, Object data) {
 		
 		EngineHostPodVO vo = findById(podEntity.getId());
 		

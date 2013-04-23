@@ -645,7 +645,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
 
     @Override
-    public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, String eventArgs, Object data) {
+    public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, Object data) {
         EngineHostVO vo = findById(hostEntity.getId());
         Date oldUpdatedTime = vo.getLastUpdated();
 

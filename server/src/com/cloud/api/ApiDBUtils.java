@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -249,6 +250,7 @@ import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
@@ -1257,113 +1259,115 @@ public class ApiDBUtils {
         if ( job == null )
             return null;
         String jobInstanceId = null;
-        if (job.getInstanceType() == AsyncJob.Type.Volume) {
+        ApiCommandJobType jobInstanceType = EnumUtils.fromString(ApiCommandJobType.class, job.getInstanceType(), ApiCommandJobType.None);
+        
+        if (jobInstanceType == ApiCommandJobType.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
             if (volume != null) {
                 jobInstanceId = volume.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Template || job.getInstanceType() == AsyncJob.Type.Iso) {
+        } else if (jobInstanceType == jobInstanceType.Template || jobInstanceType == jobInstanceType.Iso) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(job.getInstanceId());
             if (template != null) {
                 jobInstanceId = template.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.VirtualMachine || job.getInstanceType() == AsyncJob.Type.ConsoleProxy
-                || job.getInstanceType() == AsyncJob.Type.SystemVm || job.getInstanceType() == AsyncJob.Type.DomainRouter) {
+        } else if (jobInstanceType == jobInstanceType.VirtualMachine || jobInstanceType == jobInstanceType.ConsoleProxy
+                || jobInstanceType == jobInstanceType.SystemVm || jobInstanceType == jobInstanceType.DomainRouter) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
             if (vm != null) {
                 jobInstanceId = vm.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Snapshot) {
+        } else if (jobInstanceType == jobInstanceType.Snapshot) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(job.getInstanceId());
             if (snapshot != null) {
                 jobInstanceId = snapshot.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Host) {
+        } else if (jobInstanceType == jobInstanceType.Host) {
             Host host = ApiDBUtils.findHostById(job.getInstanceId());
             if (host != null) {
                 jobInstanceId = host.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.StoragePool) {
+        } else if (jobInstanceType == jobInstanceType.StoragePool) {
             StoragePoolVO spool = ApiDBUtils.findStoragePoolById(job.getInstanceId());
             if (spool != null) {
                 jobInstanceId = spool.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.IpAddress) {
+        } else if (jobInstanceType == jobInstanceType.IpAddress) {
             IPAddressVO ip = ApiDBUtils.findIpAddressById(job.getInstanceId());
             if (ip != null) {
                 jobInstanceId = ip.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.SecurityGroup) {
+        } else if (jobInstanceType == jobInstanceType.SecurityGroup) {
             SecurityGroup sg = ApiDBUtils.findSecurityGroupById(job.getInstanceId());
             if (sg != null) {
                 jobInstanceId = sg.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetwork) {
+        } else if (jobInstanceType == jobInstanceType.PhysicalNetwork) {
             PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(job.getInstanceId());
             if (pnet != null) {
                 jobInstanceId = pnet.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.TrafficType) {
+        } else if (jobInstanceType == jobInstanceType.TrafficType) {
             PhysicalNetworkTrafficTypeVO trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeById(job.getInstanceId());
             if (trafficType != null) {
                 jobInstanceId = trafficType.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.PhysicalNetworkServiceProvider) {
+        } else if (jobInstanceType == jobInstanceType.PhysicalNetworkServiceProvider) {
             PhysicalNetworkServiceProvider sp = ApiDBUtils.findPhysicalNetworkServiceProviderById(job.getInstanceId());
             if (sp != null) {
                 jobInstanceId = sp.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.FirewallRule) {
+        } else if (jobInstanceType == jobInstanceType.FirewallRule) {
             FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(job.getInstanceId());
             if (fw != null) {
                 jobInstanceId = fw.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Account) {
+        } else if (jobInstanceType == jobInstanceType.Account) {
             Account acct = ApiDBUtils.findAccountById(job.getInstanceId());
             if (acct != null) {
                 jobInstanceId = acct.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.User) {
+        } else if (jobInstanceType == jobInstanceType.User) {
             User usr = ApiDBUtils.findUserById(job.getInstanceId());
             if (usr != null) {
                 jobInstanceId = usr.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.StaticRoute) {
+        } else if (jobInstanceType == jobInstanceType.StaticRoute) {
             StaticRouteVO route = ApiDBUtils.findStaticRouteById(job.getInstanceId());
             if (route != null) {
                 jobInstanceId = route.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.PrivateGateway) {
+        } else if (jobInstanceType == jobInstanceType.PrivateGateway) {
             VpcGatewayVO gateway = ApiDBUtils.findVpcGatewayById(job.getInstanceId());
             if (gateway != null) {
                 jobInstanceId = gateway.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Counter) {
+        } else if (jobInstanceType == jobInstanceType.Counter) {
             CounterVO counter = ApiDBUtils.getCounter(job.getInstanceId());
             if (counter != null) {
                 jobInstanceId = counter.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.Condition) {
+        } else if (jobInstanceType == jobInstanceType.Condition) {
             ConditionVO condition = ApiDBUtils.findConditionById(job.getInstanceId());
             if (condition != null) {
                 jobInstanceId = condition.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.AutoScalePolicy) {
+        } else if (jobInstanceType == jobInstanceType.AutoScalePolicy) {
             AutoScalePolicyVO policy = ApiDBUtils.findAutoScalePolicyById(job.getInstanceId());
             if (policy != null) {
                 jobInstanceId = policy.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmProfile) {
+        } else if (jobInstanceType == jobInstanceType.AutoScaleVmProfile) {
             AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(job.getInstanceId());
             if (profile != null) {
                 jobInstanceId = profile.getUuid();
             }
-        } else if (job.getInstanceType() == AsyncJob.Type.AutoScaleVmGroup) {
+        } else if (jobInstanceType == jobInstanceType.AutoScaleVmGroup) {
             AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
             if (group != null) {
                 jobInstanceId = group.getUuid();
             }
-        } else if (job.getInstanceType() != AsyncJob.Type.None) {
+        } else if (jobInstanceType != jobInstanceType.None) {
             // TODO : when we hit here, we need to add instanceType -> UUID
             // entity table mapping
             assert (false);

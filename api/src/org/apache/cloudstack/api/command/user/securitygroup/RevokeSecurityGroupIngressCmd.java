@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -97,8 +98,8 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SecurityGroup;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SecurityGroup;
     }
 
     @Override

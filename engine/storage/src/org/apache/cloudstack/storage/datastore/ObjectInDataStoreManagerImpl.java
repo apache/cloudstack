@@ -135,7 +135,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         
         if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
             try {
-            this.stateMachines.transitTo(obj, event, null, null,
+            this.stateMachines.transitTo(obj, event, null,
                     templatePoolDao);
             } catch (NoTransitionException e) {
                 if (event == Event.CreateOnlyRequested || event == Event.OperationSuccessed) {
@@ -145,7 +145,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 }
             }
         } else {
-            this.stateMachines.transitTo(obj, event, null, null, objectDataStoreDao);
+            this.stateMachines.transitTo(obj, event, null, objectDataStoreDao);
         }
         return true;
     }

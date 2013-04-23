@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -119,8 +120,8 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SystemVm;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SystemVm;
     }
 
     @Override

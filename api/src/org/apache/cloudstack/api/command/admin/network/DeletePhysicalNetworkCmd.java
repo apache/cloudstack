@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -90,7 +91,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PhysicalNetwork;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.PhysicalNetwork;
     }
 }

@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.admin.zone;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -95,8 +96,8 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Account;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Account;
     }
 
     @Override

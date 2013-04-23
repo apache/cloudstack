@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.iso;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -111,8 +112,8 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Iso;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Iso;
     }
 
     public Long getInstanceId() {

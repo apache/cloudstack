@@ -77,12 +77,12 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
 	}
 
 	@Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, String eventArgs, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
 	    return false;
     }
 
 	@Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, String eventArgs, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
 		if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
 			return true;
 		}

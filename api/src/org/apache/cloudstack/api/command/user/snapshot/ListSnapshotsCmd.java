@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -92,8 +93,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Snapshot;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Snapshot;
     }
 
     @Override

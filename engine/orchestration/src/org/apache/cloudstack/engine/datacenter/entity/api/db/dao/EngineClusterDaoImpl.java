@@ -253,7 +253,7 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
     }
 
 	@Override
-	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity clusterEntity, String eventArgs, Object data) {
+	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity clusterEntity, Object data) {
 		
 		EngineClusterVO vo = findById(clusterEntity.getId());
 		

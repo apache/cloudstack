@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -203,8 +204,8 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.VirtualMachine;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.VirtualMachine;
     }
 
     @Override

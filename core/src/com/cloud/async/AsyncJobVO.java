@@ -84,9 +84,8 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="job_result", length=65535)
     private String result;
     
-    @Enumerated(value=EnumType.STRING)
     @Column(name="instance_type", length=64)
-    private Type instanceType;
+    private String instanceType;
     
 	@Column(name="instance_id", length=64)
     private Long instanceId;
@@ -124,7 +123,7 @@ public class AsyncJobVO implements AsyncJob {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
+    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
 		this.userId = userId;
 		this.accountId = accountId;
 		this.cmd = cmd;
@@ -319,11 +318,11 @@ public class AsyncJobVO implements AsyncJob {
 	}
 	
     @Override
-    public Type getInstanceType() {
+    public String getInstanceType() {
 		return instanceType;
 	}
 
-	public void setInstanceType(Type instanceType) {
+	public void setInstanceType(String instanceType) {
 		this.instanceType = instanceType;
 	}
 

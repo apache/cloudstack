@@ -428,7 +428,8 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
             AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
-                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
+                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId, 
+                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
 
             long jobId = _asyncMgr.submitAsyncJob(job);
 
@@ -483,9 +484,9 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
 
             // list all jobs for ROOT admin
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), null);
+                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), null);
             } else {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
+                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), account.getId());
             }
 
             if (jobs.size() == 0) {

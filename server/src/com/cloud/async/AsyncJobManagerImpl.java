@@ -104,7 +104,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
+    public List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId) {
         return _jobDao.findInstancePendingAsyncJobs(instanceType, accountId);
     }
 

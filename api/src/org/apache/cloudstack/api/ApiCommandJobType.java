@@ -14,17 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async.dao;
 
-import java.util.Date;
-import java.util.List;
+package org.apache.cloudstack.api;
 
-import com.cloud.async.AsyncJobVO;
-import com.cloud.utils.db.GenericDao;
-
-public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
-	AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
-	List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
-	List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit);
-	void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);
+public enum ApiCommandJobType {
+    None,
+    VirtualMachine,
+    DomainRouter,
+    Volume,
+    ConsoleProxy,
+    Snapshot,
+    Template,
+    Iso,
+    SystemVm,
+    Host,
+    StoragePool,
+    IpAddress,
+    SecurityGroup,
+    PhysicalNetwork,
+    TrafficType,
+    PhysicalNetworkServiceProvider,
+    FirewallRule,
+    Account,
+    User,
+    PrivateGateway,
+    StaticRoute,
+    Counter,
+    Condition,
+    AutoScalePolicy,
+    AutoScaleVmProfile,
+    AutoScaleVmGroup,
+    GlobalLoadBalancerRule
 }

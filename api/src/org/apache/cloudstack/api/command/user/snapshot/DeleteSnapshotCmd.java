@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.snapshot;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -82,8 +83,8 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
         return  "deleting snapshot: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Snapshot;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Snapshot;
     }
 
     public Long getInstanceId() {

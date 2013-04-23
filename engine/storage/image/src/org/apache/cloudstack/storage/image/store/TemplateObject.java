@@ -165,7 +165,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
-        boolean result= imageMgr.getStateMachine().transitTo(this.imageVO, e, null, null,
+        boolean result= imageMgr.getStateMachine().transitTo(this.imageVO, e, null,
                 imageDao);
         this.imageVO = imageDao.findById(this.imageVO.getId());
         return result;

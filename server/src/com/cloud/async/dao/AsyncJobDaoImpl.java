@@ -82,7 +82,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         return null;
 	}
 	
-	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
+	public List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId) {
 		SearchCriteria<AsyncJobVO> sc = pendingAsyncJobsSearch.create();
         sc.setParameters("instanceType", instanceType);
         

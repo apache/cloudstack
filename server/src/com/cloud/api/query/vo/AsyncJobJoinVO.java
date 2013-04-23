@@ -19,12 +19,9 @@ package com.cloud.api.query.vo;
 import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.async.AsyncJob.Type;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -52,7 +49,6 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     @Column(name="account_type")
     private short accountType;
 
-
     @Column(name="domain_id")
     private long domainId;
 
@@ -64,7 +60,6 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
 
     @Column(name="domain_path")
     private String domainPath = null;
-
 
     @Column(name="user_id")
     private long userId;
@@ -93,9 +88,8 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Enumerated(value=EnumType.STRING)
     @Column(name="instance_type", length=64)
-    private Type instanceType;
+    private String instanceType;
 
     @Column(name="instance_id", length=64)
     private Long instanceId;
@@ -301,12 +295,12 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     }
 
 
-    public Type getInstanceType() {
+    public String getInstanceType() {
         return instanceType;
     }
 
 
-    public void setInstanceType(Type instanceType) {
+    public void setInstanceType(String instanceType) {
         this.instanceType = instanceType;
     }
 

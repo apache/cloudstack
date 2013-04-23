@@ -102,7 +102,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.GlobalLoadBalancerRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.GlobalLoadBalancerRule;
     }
 }

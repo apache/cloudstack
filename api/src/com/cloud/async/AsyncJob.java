@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface AsyncJob extends Identity, InternalIdentity {
+/*	
     public enum Type {
         None,
         VirtualMachine,
@@ -51,7 +52,7 @@ public interface AsyncJob extends Identity, InternalIdentity {
         AutoScaleVmGroup,
         GlobalLoadBalancerRule
     }
-    
+ */   
     Long getParentId();
     
     String getType();
@@ -92,7 +93,7 @@ public interface AsyncJob extends Identity, InternalIdentity {
 
     Date getRemoved();
 
-    Type getInstanceType();
+    String getInstanceType();
 
     Long getInstanceId();
 

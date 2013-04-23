@@ -99,7 +99,7 @@ public class VolumeObject implements VolumeInfo {
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         try {
-            result = _volStateMachine.transitTo(volumeVO, event, null, null, volumeDao);
+            result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
             volumeVO = volumeDao.findById(volumeVO.getId());
         } catch (NoTransitionException e) {
             String errorMessage = "Failed to transit volume: " + this.getVolumeId() + ", due to: " + e.toString();

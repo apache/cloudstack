@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.template;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -109,8 +110,8 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Template;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Template;
     }
 
     public Long getInstanceId() {

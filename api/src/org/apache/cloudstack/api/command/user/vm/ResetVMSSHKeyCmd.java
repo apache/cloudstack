@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -107,8 +108,8 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return "resetting SSHKey for vm: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.VirtualMachine;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.VirtualMachine;
     }
 
 
