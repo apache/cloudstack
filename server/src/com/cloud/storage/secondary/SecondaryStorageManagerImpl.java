@@ -115,6 +115,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -241,6 +242,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected RulesManager _rulesMgr;
+    @Inject 
+    TemplateManager templateMgr;
 
     @Inject
     KeystoreManager _keystoreMgr;
@@ -739,41 +742,35 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dataCenterId);
-            if (secHost == null) {
+            if (template == null) {
+                s_logger.debug("No hypervisor host added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
+                return false;
+            }
+            
+            List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
+            if (stores.size() < 1) {
+                s_logger.debug("No image store added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
+                return false;
+            }
+            
+            DataStore store = templateMgr.getImageStore(dataCenterId, template.getId());
+            if (store == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 }
                 return false;
             }
 
-            boolean templateReady = false;
-            if (template != null) {
-                VMTemplateHostVO templateHostRef = _vmTemplateHostDao.findByHostTemplate(secHost.getId(), template.getId());
-                templateReady = (templateHostRef != null) && (templateHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            if (templateReady) {
-
-                List<Pair<Long, Integer>> l = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !_useLocalStorage);
-                if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
-
-                    return true;
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId + " system.vm.use.local.storage: " + _useLocalStorage +
-                        		"If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
-                    }
-                }
+            List<Pair<Long, Integer>> l = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !_useLocalStorage);
+            if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
+                return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    if (template == null) {
-                        s_logger.debug("Zone host is ready, but secondary storage vm template does not exist");
-                    } else {
-                        s_logger.debug("Zone host is ready, but secondary storage vm template: " + template.getId() + " is not ready on secondary storage: " + secHost.getId());
-                    }
+                    s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId + " system.vm.use.local.storage: " + _useLocalStorage +
+                            "If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
                 }
             }
+
         }
         return false;
     }
