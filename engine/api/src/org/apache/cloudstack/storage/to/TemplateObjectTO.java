@@ -25,12 +25,15 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 import com.cloud.agent.api.to.DataStoreTO;
 
 public class TemplateObjectTO implements DataTO {
-    private final String path;
-    private final String uuid;
+    private  String path;
+    private  String uuid;
     private  DiskFormat diskType;
-    private final ImageStoreTO imageDataStore;
-    private final String name;
+    private  ImageStoreTO imageDataStore;
+    private  String name;
 
+    public TemplateObjectTO() {
+        
+    }
     public TemplateObjectTO(TemplateInfo template) {
         this.path = template.getUri();
         this.uuid = template.getUuid();
@@ -71,5 +74,14 @@ public class TemplateObjectTO implements DataTO {
      */
     public String getName() {
         return name;
+    }
+    public void setPath(String path) {
+        this.path = path;
+    }
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    public void setName(String name) {
+        this.name = name;
     }
 }

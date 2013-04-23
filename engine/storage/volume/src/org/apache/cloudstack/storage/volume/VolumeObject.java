@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
@@ -102,6 +103,7 @@ public class VolumeObject implements VolumeInfo {
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         try {
+            volumeVO = volumeDao.findById(volumeVO.getId());
             result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
             volumeVO = volumeDao.findById(volumeVO.getId());
         } catch (NoTransitionException e) {
@@ -345,8 +347,18 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public void processEvent(org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event event, Answer answer) {
-        // TODO Auto-generated method stub
-        
+    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
+       if (this.dataStore.getRole() == DataStoreRole.Primary) {
+           if (answer instanceof CopyCmdAnswer) {
+               CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+               VolumeVO vol = this.volumeDao.findById(this.getId());
+               VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
+               vol.setPath(newVol.getPath());
+               vol.setSize(newVol.getSize());
+               volumeDao.update(vol.getId(), vol);
+           }
+       }
+       
+       this.processEvent(event);
     }
 }

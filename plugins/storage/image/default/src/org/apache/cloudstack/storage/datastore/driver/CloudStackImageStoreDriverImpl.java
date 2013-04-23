@@ -175,7 +175,8 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller =
         		AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
-        caller.setCallback(this.createAsyncCallback(null, null));
+        caller.setCallback(caller.getTarget().createAsyncCallback(null, null));
+        
 
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;

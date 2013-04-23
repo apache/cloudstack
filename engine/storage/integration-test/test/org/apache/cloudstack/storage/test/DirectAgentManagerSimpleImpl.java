@@ -187,6 +187,7 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         return null;
     }
 
+
     @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         // TODO Auto-generated method stub

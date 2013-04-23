@@ -16,18 +16,23 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 
 public class CopyCmdAnswer extends Answer {
-    private final String path;
+    private DataTO newData;
     
-    public CopyCmdAnswer(Command cmd, String path) {
-        super(cmd);
-        this.path = path;
+    public CopyCmdAnswer(DataTO newData) {
+        super(null);
+        this.newData = newData;
     }
     
-    public String getPath() {
-        return this.path;
+    public DataTO getNewData() {
+        return this.newData;
+    }
+    
+    public CopyCmdAnswer(String errMsg) {
+        super(null, false, errMsg);
     }
 }

@@ -23,27 +23,13 @@ import com.cloud.agent.api.Command;
 public class CopyCommand extends Command implements StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
-    private int timeout;
 
-    /**
-     * @return the timeout
-     */
-    public int getTimeout() {
-        return timeout;
-    }
-
-    /**
-     * @param timeout the timeout to set
-     */
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
-    }
 
     public CopyCommand(DataTO srcUri, DataTO destUri, int timeout) {
         super();
         this.srcTO = srcUri;
         this.destTO = destUri;
-        this.timeout = timeout;
+        this.setWait(timeout);
     }
     
     public DataTO getDestTO() {

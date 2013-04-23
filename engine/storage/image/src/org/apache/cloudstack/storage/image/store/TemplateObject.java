@@ -181,22 +181,24 @@ public class TemplateObject implements TemplateInfo {
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
         	if (this.getDataStore().getRole() == DataStoreRole.Primary) {
-        		if (answer != null && answer instanceof CopyCmdAnswer) {
+        		if (answer instanceof CopyCmdAnswer) {
         			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+        			TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
         			VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(this.getDataStore().getId(), this.getId());
         			templatePoolRef.setDownloadPercent(100);
         			templatePoolRef.setDownloadState(Status.DOWNLOADED);
-        			templatePoolRef.setLocalDownloadPath(cpyAnswer.getPath());
-        			templatePoolRef.setInstallPath(cpyAnswer.getPath());
+        			templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
+        			templatePoolRef.setInstallPath(newTemplate.getPath());
         			templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
         		}
         	} else if (this.getDataStore().getRole() == DataStoreRole.Image || 
         			this.getDataStore().getRole() == DataStoreRole.ImageCache) {
-        		if (answer != null && answer instanceof CopyCmdAnswer) {
+        		if (answer instanceof CopyCmdAnswer) {
         			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+        			TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
         			TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this.getDataStore().getId(),
         					this.getId());
-        			templateStoreRef.setInstallPath(cpyAnswer.getPath());
+        			templateStoreRef.setInstallPath(newTemplate.getPath());
         			templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
         		}
         	}

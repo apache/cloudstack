@@ -47,8 +47,11 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -222,7 +225,9 @@ SecondaryStorageResource {
         }
     }
 
-    protected Answer downloadFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3,
+
+    protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3,
+
     		DataTO destData, NfsTO destImageStore) {
           final String storagePath = destImageStore.getUrl();
           final String destPath = destData.getPath();
@@ -240,10 +245,10 @@ SecondaryStorageResource {
                                   + "download directory %1$s for download from S3.", downloadDirectory.getName()
                                  );
                   s_logger.error(errMsg);
-                  return new Answer(cmd, false, errMsg);
+                  return new CopyCmdAnswer(errMsg);
               }
 
-              getDirectory(s3, s3.getBucketName(),
+              List<File> files = getDirectory(s3, s3.getBucketName(),
                       destPath,
                       downloadDirectory, new FileNamingStrategy() {
                   @Override
@@ -252,20 +257,42 @@ SecondaryStorageResource {
                   }
               });
 
-              return new Answer(cmd, true, format("Successfully downloaded "
-                      + "from S3 to directory %2$s",
-                      downloadDirectory.getName()));
-
+              //find out template name
+              File destFile = null;
+              for (File f : files) {
+                  if (!f.getName().endsWith(".properties")) {
+                      destFile = f;
+                      break;
+                  }
+              }
+              
+              if (destFile == null) {
+                  return new CopyCmdAnswer("Can't find template"); 
+              }
+              
+              DataTO newDestTO = null;
+              
+              if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                  TemplateObjectTO newTemplTO = new TemplateObjectTO();
+                  newTemplTO.setPath(destPath + File.separator + destFile.getName());
+                  newTemplTO.setName(destFile.getName());
+                  newDestTO = newTemplTO;
+              } else {
+                  return new CopyCmdAnswer("not implemented yet"); 
+              }
+              
+              return new CopyCmdAnswer(newDestTO);
           } catch (Exception e) {
 
               final String errMsg = format("Failed to download"
                       + "due to $2%s", e.getMessage());
               s_logger.error(errMsg, e);
-              return new Answer(cmd, false, errMsg);
+              return new CopyCmdAnswer(errMsg);
           }
     }
 
-    protected Answer downloadFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO srcImageStore,
+    protected Answer copyFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO srcImageStore,
+
     		DataTO destData, NfsTO destImageStore) {
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
@@ -286,10 +313,10 @@ SecondaryStorageResource {
     		}
 
     		if (srcDataStore instanceof S3TO) {
-    			return downloadFromS3ToNfs(cmd, srcData, (S3TO)srcDataStore,
+    			return copyFromS3ToNfs(cmd, srcData, (S3TO)srcDataStore,
     					destData, (NfsTO)destDataStore);
     		} else if (srcDataStore instanceof SwiftTO) {
-    			return downloadFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore,
+    			return copyFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore,
     					destData, (NfsTO)destDataStore);
     		} else {
     			return Answer.createUnsupportedCommandAnswer(cmd);

@@ -24,13 +24,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 public class VolumeObjectTO implements DataTO {
-    private final String uuid;
-    private final String path;
-    private  VolumeType volumeType;
-    private  DiskFormat diskType;
+    private String uuid;
+    private VolumeType volumeType;
+    private DiskFormat diskType;
     private PrimaryDataStoreTO dataStore;
-    private  String name;
-    private final long size;
+    private String name;
+    private long size;
+    private String path;
+    
+    public VolumeObjectTO() {
+
+    }
+    
     public VolumeObjectTO(VolumeInfo volume) {
         this.uuid = volume.getUuid();
         this.path = volume.getUri();
@@ -80,4 +85,21 @@ public class VolumeObjectTO implements DataTO {
     public DataObjectType getObjectType() {
         return DataObjectType.VOLUME;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
 }

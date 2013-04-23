@@ -398,7 +398,7 @@ public class VolumeServiceImpl implements VolumeService {
             return null;
         }
 
-        templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed);
+        templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
         createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
         return null;
     }
@@ -447,10 +447,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult volResult = new VolumeApiResult(vo);
 
         if (result.isSuccess()) {
-            if (result.getPath() != null) {
-                vo.setPath(result.getPath());
-            }
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());

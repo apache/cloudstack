@@ -55,15 +55,19 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
+import com.cloud.vm.DiskProfile;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
@@ -548,7 +552,7 @@ public class XenServerStorageResource {
             //downloadHttpToLocalFile(vdiPath, template.getPath());
             hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", srcObj.getPath());
             result = true;
-            return new CopyCmdAnswer(cmd, vdi.getUuid(conn));
+            //return new CopyCmdAnswer(cmd, vdi.getUuid(conn));
         } catch (BadServerResponse e) {
             s_logger.debug("Failed to download template", e);
         } catch (XenAPIException e) {
@@ -673,7 +677,7 @@ public class XenServerStorageResource {
         return parentUuid;
     }
     
-    protected PrimaryStorageDownloadAnswer copyTemplateToPrimaryStorage(DataTO srcData, DataTO destData, int wait) {
+    protected CopyCmdAnswer copyTemplateToPrimaryStorage(DataTO srcData, DataTO destData, int wait) {
         DataStoreTO srcStore = srcData.getDataStore();
         try {
             if (srcStore.getRole() == DataStoreRole.ImageCache && srcData.getObjectType() == DataObjectType.TEMPLATE) {
@@ -681,7 +685,7 @@ public class XenServerStorageResource {
                 TemplateObjectTO srcTemplate = (TemplateObjectTO)srcData;
                 String storeUrl = srcImageStore.getUri();
                 if (!storeUrl.startsWith("nfs")) {
-                    return new PrimaryStorageDownloadAnswer("only nfs image cache store supported");
+                    return new CopyCmdAnswer("only nfs image cache store supported");
                 }
                 String tmplpath = storeUrl + ":" + srcData.getPath();
                 PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
@@ -693,7 +697,7 @@ public class XenServerStorageResource {
                 if (srs.size() != 1) {
                     String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
                     s_logger.warn(msg);
-                    return new PrimaryStorageDownloadAnswer(msg);
+                    return new CopyCmdAnswer(msg);
                 } else {
                     poolsr = srs.iterator().next();
                 }
@@ -713,66 +717,79 @@ public class XenServerStorageResource {
                     Thread.sleep(5000);
                 } catch (Exception e) {
                 }
-                return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
+                
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setUuid(snapshotvdi.getUuid(conn));
+                newVol.setSize(phySize);
+                newVol.setPath(newVol.getUuid());
+                return new CopyCmdAnswer(newVol);
             } 
         }catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + " for template + " + " due to " + e.toString();
             s_logger.warn(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
+            return new CopyCmdAnswer(msg);
         }
-        return new PrimaryStorageDownloadAnswer("not implemented yet");
+        return new CopyCmdAnswer("not implemented yet");
+    }
+    
+    protected CreateObjectAnswer createVolume(DataTO data) {
+        /*
+        VDI.Record vdir = new VDI.Record();
+        vdir.nameLabel = dskch.getName();
+        vdir.SR = poolSr;
+        vdir.type = Types.VdiType.USER;
+
+        vdir.virtualSize = dskch.getSize();
+        vdi = VDI.create(conn, vdir);
+        VDI.Record vdir;
+        vdir = vdi.getRecord(conn);
+        s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);*/
+        return null;
+    }
+    protected CopyCmdAnswer cloneVolumeFromBaseTemplate(DataTO srcData, DataTO destData) {
+        Connection conn = hypervisorResource.getConnection();
+        PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+        VolumeObjectTO volume = (VolumeObjectTO)destData;
+        VDI vdi = null;
+        try {
+            VDI tmpltvdi = null;
+
+            tmpltvdi = getVDIbyUuid(conn, srcData.getPath());
+            vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
+            vdi.setNameLabel(conn, volume.getName());
+
+
+            VDI.Record vdir;
+            vdir = vdi.getRecord(conn);
+            s_logger.debug("Succesfully created VDI: Uuid = " + vdir.uuid);
+
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setName(vdir.nameLabel);
+            newVol.setSize(vdir.virtualSize);
+            newVol.setPath(vdir.uuid);
+           
+            return new CopyCmdAnswer(newVol);
+        } catch (Exception e) {
+            s_logger.warn("Unable to create volume; Pool=" + pool + "; Disk: ", e);
+            return new CopyCmdAnswer(e.toString());
+        }
     }
  
     
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        
-        if (srcData.getObjectType() == DataObjectType.TEMPLATE && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
+
+        if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcData.getDataStore().getRole() == DataStoreRole.ImageCache && destData.getDataStore().getRole() == DataStoreRole.Primary) {
             //copy template to primary storage
-            return copyTemplateToPrimaryStorage(srcData, destData, cmd.getTimeout());
+            return copyTemplateToPrimaryStorage(srcData, destData, cmd.getWait());
+        } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
+            //clone template to a volume
+            return cloneVolumeFromBaseTemplate(srcData, destData);
         }
-        
+
         return new Answer(cmd, false, "not implemented yet");
-            /*
-        String tmplturl = cmd.getUrl();
-        String poolName = cmd.getPoolUuid();
-        int wait = cmd.getWait();
-        try {
-            URI uri = new URI(tmplturl);
-            String tmplpath = uri.getHost() + ":" + uri.getPath();
-            Connection conn = hypervisorResource.getConnection();
-            SR poolsr = null;
-            Set<SR> srs = SR.getByNameLabel(conn, poolName);
-            if (srs.size() != 1) {
-                String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
-                s_logger.warn(msg);
-                return new PrimaryStorageDownloadAnswer(msg);
-            } else {
-                poolsr = srs.iterator().next();
-            }
-            String pUuid = poolsr.getUuid(conn);
-            boolean isISCSI = IsISCSI(poolsr.getType(conn));
-            String uuid = copy_vhd_from_secondarystorage(conn, tmplpath, pUuid, wait);
-            VDI tmpl = getVDIbyUuid(conn, uuid);
-            VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
-            String snapshotUuid = snapshotvdi.getUuid(conn);
-            snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
-            String parentuuid = getVhdParent(conn, pUuid, snapshotUuid, isISCSI);
-            VDI parent = getVDIbyUuid(conn, parentuuid);
-            Long phySize = parent.getPhysicalUtilisation(conn);
-            tmpl.destroy(conn);
-            poolsr.scan(conn);
-            try{
-                Thread.sleep(5000);
-            } catch (Exception e) {
-            }
-            return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
-        } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " on host:" + _host.uuid + " for template: "
-                    + tmplturl + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
-        }*/
-        }
+    }
 }

@@ -317,51 +317,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
-        VolumeInfo volInfo = (VolumeInfo)volume;
-        DiskOfferingVO offering = diskOfferingDao.findById(volInfo.getDiskOfferingId());
-        VMTemplateStoragePoolVO  tmpltStoredOn =  templatePoolDao.findByPoolTemplate(template.getDataStore().getId(), template.getId());
-
-        DiskProfile diskProfile = new DiskProfile(volInfo, offering,
-                null);
-        CreateCommand cmd = new CreateCommand(diskProfile,
-                tmpltStoredOn.getLocalDownloadPath(),
-                new StorageFilerTO((StoragePool)template.getDataStore()));
-        Answer answer = null;
+        CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0);
         StoragePool pool = (StoragePool)volume.getDataStore();
-        String errMsg = null;
+        
         try {
-            answer = storageMgr.sendToPool(pool, null, cmd);
+            Answer answer = storageMgr.sendToPool(pool, null, cmd);
+            return answer;
         } catch (StorageUnavailableException e) {
             s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
-
-        if (answer.getResult()) {
-            VolumeVO vol = this.volDao.findById(volume.getId());
-            CreateAnswer createAnswer = (CreateAnswer) answer;
-            vol.setFolder(pool.getPath());
-            vol.setPath(createAnswer.getVolume().getPath());
-            vol.setSize(createAnswer.getVolume().getSize());
-            vol.setPoolType(pool.getPoolType());
-            vol.setPoolId(pool.getId());
-            vol.setPodId(pool.getPodId());
-            this.volDao.update(vol.getId(), vol);
-
-        } else {
-            if (tmpltStoredOn != null
-                    && (answer instanceof CreateAnswer)
-                    && ((CreateAnswer) answer)
-                            .templateReloadRequested()) {
-                if (!templateMgr
-                        .resetTemplateDownloadStateOnPool(tmpltStoredOn
-                                .getId())) {
-
-                }
-            }
-            errMsg = answer.getDetails();
-        }
-
-        return answer;
     }
 
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
