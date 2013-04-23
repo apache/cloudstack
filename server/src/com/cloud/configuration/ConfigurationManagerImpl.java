@@ -590,7 +590,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (route != null) {
                         String routeToVerify = route.trim();
                         if (!NetUtils.isValidCIDR(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route);
+                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list" +
+                            		" of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
                         }
                     }
                 }

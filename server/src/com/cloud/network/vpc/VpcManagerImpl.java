@@ -39,11 +39,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -187,9 +185,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
-    
-    private Map<Long, Set<String>> zoneBlackListedRoutes;
- 
+     
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -239,26 +235,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
-        
-        //populate blacklisted routes
-        List<DataCenterVO> zones = _dcDao.listAllZones();
-        zoneBlackListedRoutes = new HashMap<Long, Set<String>>();
-        for (DataCenterVO zone : zones) {
-            List<ConfigurationVO> confs = _configServer.getConfigListByScope(Config.ConfigurationParameterScope.zone.toString(), zone.getId());
-            for (ConfigurationVO conf : confs) {
-                String routeStr = conf.getValue();
-                if (conf.getName().equalsIgnoreCase(Config.BlacklistedRoutes.key()) && routeStr != null && !routeStr.isEmpty()) {
-                    String[] routes = routeStr.split(",");
-                    Set<String> cidrs = new HashSet<String>();
-                    for (String route : routes) {
-                        cidrs.add(route);
-                    }
-                    
-                    zoneBlackListedRoutes.put(zone.getId(), cidrs);
-                    break;
-                }
-            }
-        }
         
         return true;
     }
@@ -1684,14 +1660,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         //3) Verify against blacklisted routes
-        Set<String> cidrBlackList = zoneBlackListedRoutes.get(vpc.getZoneId());
-        
-        if (cidrBlackList != null && !cidrBlackList.isEmpty()) {
-            for (String blackListedRoute : cidrBlackList) {
-                if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
-                    throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the VPC zone");
-                }
-            }
+        if (isCidrBlacklisted(cidr, vpc.getZoneId())) {
+            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the zone the VPC belongs to");
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -1711,6 +1681,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         txn.commit();
 
         return newRoute;
+    }
+
+    protected boolean isCidrBlacklisted(String cidr, long zoneId) {
+        String routesStr = _configServer.getConfigValue(Config.BlacklistedRoutes.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
+        if (routesStr != null && !routesStr.isEmpty()) {
+            String[] cidrBlackList = routesStr.split(",");
+            
+            if (cidrBlackList != null && cidrBlackList.length > 0) {
+                for (String blackListedRoute : cidrBlackList) {
+                    if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
+                        return true;
+                    }
+                }
+            }
+        }
+       
+        return false;
     }
 
     @Override
