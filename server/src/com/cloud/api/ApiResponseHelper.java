@@ -1449,6 +1449,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             // Add the zone ID
             templateResponse.setZoneId(datacenter.getUuid());
             templateResponse.setZoneName(datacenter.getName());
+            templateResponse.setZoneType(datacenter.getNetworkType().toString());
         }
 
         boolean isAdmin = false;
