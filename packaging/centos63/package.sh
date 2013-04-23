@@ -79,7 +79,7 @@ else
   REALVER=`echo $VERSION`
   DEFVER="-D_ver $REALVER"
   DEFPRE=
-  DEFREL=
+  DEFREL="-D_rel 0"
 fi
 
 mkdir -p $RPMDIR/SPECS
