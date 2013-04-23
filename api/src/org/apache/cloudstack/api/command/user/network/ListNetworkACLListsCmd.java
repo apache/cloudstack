@@ -23,13 +23,15 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listNetworkACLLists", description="Lists all network ACLs", responseObject=NetworkACLListResponse.class)
+@APICommand(name = "listNetworkACLLists", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
 public class ListNetworkACLListsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 
@@ -70,11 +72,11 @@ public class ListNetworkACLListsCmd extends BaseListTaggedResourcesCmd {
     @Override
     public void execute(){
         Pair<List<? extends NetworkACL>,Integer> result = _networkACLService.listNetworkACLs(this);
-        ListResponse<NetworkACLListResponse> response = new ListResponse<NetworkACLListResponse>();
-        List<NetworkACLListResponse> aclResponses = new ArrayList<NetworkACLListResponse>();
+        ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
+        List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
 
         for (NetworkACL acl : result.first()) {
-            NetworkACLListResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
+            NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
             aclResponses.add(aclResponse);
         }
         response.setResponses(aclResponses, result.second());

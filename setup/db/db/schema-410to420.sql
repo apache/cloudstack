@@ -1191,23 +1191,18 @@ CREATE TABLE `cloud`.`network_acl` (
 CREATE TABLE `cloud`.`network_acl_item` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
-  `network_acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
+  `acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
   `start_port` int(10) COMMENT 'starting port of a port range',
   `end_port` int(10) COMMENT 'end port of a port range',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
   `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
-  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
-  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
-  `xid` char(40) NOT NULL COMMENT 'external id',
   `created` datetime COMMENT 'Date created',
   `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
   `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
   `type` varchar(10) NOT NULL DEFAULT 'USER',
   `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_network_acl_item__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_network_acl_item__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

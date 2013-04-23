@@ -348,6 +348,9 @@ public class EventTypes {
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
     public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
+    public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
+    public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
+    public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
 
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";

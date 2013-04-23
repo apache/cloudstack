@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -14,20 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.db.GenericDao;
 
-public interface NetworkACL extends InternalIdentity, ControlledEntity{
-    String getDescription();
+import java.util.List;
 
-    String getUuid();
+/*
+ * Data Access Object for network_acl_item table
+ */
+public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
 
-    Long getVpcId();
+    List<NetworkACLItemVO> listByACLAndNotRevoked(long aclId);
 
-    long getId();
+    boolean setStateToAdd(NetworkACLItemVO rule);
 
-    String getName();
+    boolean revoke(NetworkACLItemVO rule);
+
+    boolean releasePorts(long ipAddressId, String protocol, int[] ports);
+
+    List<NetworkACLItemVO> listByACL(long aclId);
+
+    List<NetworkACLItemVO> listSystemRules();
+
+    List<NetworkACLItemVO> listByACLTrafficTypeAndNotRevoked(long aclId, NetworkACLItemVO.TrafficType trafficType);
+    List<NetworkACLItemVO> listByACLTrafficType(long aclId, NetworkACLItemVO.TrafficType trafficType);
+    
+    void loadSourceCidrs(NetworkACLItemVO rule);
 }

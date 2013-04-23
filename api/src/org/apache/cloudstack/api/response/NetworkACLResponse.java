@@ -16,84 +16,42 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.List;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
-@SuppressWarnings("unused")
+import java.util.List;
+
+@EntityReference(value = NetworkACL.class)
 public class NetworkACLResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the ACL")
     private String id;
 
-    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the ACL")
-    private String protocol;
+    @SerializedName(ApiConstants.NAME) @Param(description="the Name of the ACL")
+    private String name;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting port of ACL's port range")
-    private String startPort;
+    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="Description of the ACL")
+    private String description;
 
-    @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of ACL's port range")
-    private String endPort;
-
-    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type for the ACL")
-    private String trafficType;
-
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
-    private String state;
-
-    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
-    private String cidrList;
-
-    @SerializedName(ApiConstants.ICMP_TYPE) @Param(description= "type of the icmp message being sent")
-    private Integer icmpType;
-
-    @SerializedName(ApiConstants.ICMP_CODE) @Param(description = "error code for this icmp message")
-    private Integer icmpCode;
-
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the network ACLs",
-            responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="Id of the VPC this ACL is associated with")
+    private String vpcId;
 
     public void setId(String id) {
         this.id = id;
     }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setStartPort(String startPort) {
-        this.startPort = startPort;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public void setEndPort(String endPort) {
-        this.endPort = endPort;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public void setCidrList(String cidrList) {
-        this.cidrList = cidrList;
-    }
-
-    public void setIcmpType(Integer icmpType) {
-        this.icmpType = icmpType;
-    }
-
-    public void setIcmpCode(Integer icmpCode) {
-        this.icmpCode = icmpCode;
-    }
-
-    public void setTrafficType(String trafficType) {
-        this.trafficType = trafficType;
-    }
-
-    public void setTags(List<ResourceTagResponse> tags) {
-        this.tags = tags;
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 }

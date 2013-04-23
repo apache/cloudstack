@@ -20,10 +20,10 @@ package com.cloud.agent.api.to;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.utils.net.NetUtils;
 
 
@@ -37,15 +37,16 @@ public class NetworkACLTO implements InternalIdentity {
     private List<String> cidrList;
     private Integer icmpType;
     private Integer icmpCode;
-    private FirewallRule.TrafficType trafficType;
-
+    private TrafficType trafficType;
+    String action;
+    int number;
 
     protected NetworkACLTO() {
     }
 
 
     public NetworkACLTO(long id,String vlanTag, String protocol, Integer portStart, Integer portEnd, boolean revoked,
-            boolean alreadyAdded, List<String> cidrList, Integer icmpType,Integer icmpCode,TrafficType trafficType) {
+            boolean alreadyAdded, List<String> cidrList, Integer icmpType,Integer icmpCode,TrafficType trafficType, boolean allow, int number) {
         this.vlanTag = vlanTag;
         this.protocol = protocol;
 
@@ -70,12 +71,20 @@ public class NetworkACLTO implements InternalIdentity {
         this.icmpType = icmpType;
         this.icmpCode = icmpCode;
         this.trafficType = trafficType;
+
+        if(allow){
+            this.action = "ACCEPT";
+        } else {
+            this.action = "DROP";
+        }
+
+        this.number = number;
     }
 
-    public NetworkACLTO(FirewallRule rule, String vlanTag, FirewallRule.TrafficType  trafficType ) {
+    public NetworkACLTO(NetworkACLItem rule, String vlanTag, NetworkACLItem.TrafficType trafficType ) {
         this(rule.getId(), vlanTag, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),
-                rule.getState() == FirewallRule.State.Revoke, rule.getState() == FirewallRule.State.Active,
-                rule.getSourceCidrList() ,rule.getIcmpType(), rule.getIcmpCode(),trafficType);
+                rule.getState() == NetworkACLItem.State.Revoke, rule.getState() == NetworkACLItem.State.Active,
+                rule.getSourceCidrList() ,rule.getIcmpType(), rule.getIcmpCode(),trafficType, rule.getAction() == NetworkACLItem.Action.Allow, rule.getNumber());
     }
 
     public long getId() {
@@ -121,7 +130,15 @@ public class NetworkACLTO implements InternalIdentity {
         return alreadyAdded;
     }
 
-    public FirewallRule.TrafficType getTrafficType() {
+    public TrafficType getTrafficType() {
         return trafficType;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public int getNumber(){
+        return number;
     }
 }

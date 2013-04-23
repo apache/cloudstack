@@ -25,6 +25,7 @@ import com.cloud.vm.NicSecondaryIp;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
@@ -305,13 +306,13 @@ public interface ResponseGenerator {
      * @param networkACLItem
      * @return
      */
-    NetworkACLResponse createNetworkACLItemResponse(FirewallRule networkACLItem);
+    NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem networkACLItem);
 
     /**
      * @param networkACL
      * @return
      */
-    NetworkACLListResponse createNetworkACLResponse(NetworkACL networkACL);
+    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
 
     /**
      * @param result

@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
+import com.cloud.utils.db.DB;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 
 
@@ -34,8 +35,12 @@ public interface NetworkACLManager extends NetworkACLService{
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeACLItemsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
     
-    List<? extends FirewallRule> listNetworkACLs(long guestNtwkId);
+    List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId);
 
+    boolean applyNetworkACL(long networkId, Account caller) throws ResourceUnavailableException;
+
+    @DB
+    void revokeRule(NetworkACLItemVO rule, Account caller, long userId, boolean needUsageEvent);
 }

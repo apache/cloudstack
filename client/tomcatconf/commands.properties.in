@@ -437,6 +437,7 @@ deleteNetworkACL=15
 listNetworkACLs=15
 createNetworkACLList=15
 deleteNetworkACLList=15
+replaceNetworkACLList=15
 listNetworkACLLists=15
 
 

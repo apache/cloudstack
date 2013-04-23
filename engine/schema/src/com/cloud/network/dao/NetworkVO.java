@@ -160,6 +160,9 @@ public class NetworkVO implements Network {
     @Column(name="ip6_cidr")
     String ip6Cidr;
 
+    @Column(name="network_acl_id")
+    Long networkACLId;
+
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -537,4 +540,13 @@ public class NetworkVO implements Network {
 	public void setIp6Gateway(String ip6Gateway) {
 		this.ip6Gateway = ip6Gateway;
 	}
+
+    public void setNetworkACLId(Long networkACLId) {
+        this.networkACLId = networkACLId;
+    }
+
+    @Override
+    public Long getNetworkACLId() {
+        return networkACLId;
+    }
 }

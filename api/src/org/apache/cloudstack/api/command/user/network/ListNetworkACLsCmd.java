@@ -19,20 +19,21 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.network.vpc.NetworkACLItem;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkACLs", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
+@APICommand(name = "listNetworkACLs", description="Lists all network ACL items", responseObject=NetworkACLItemResponse.class)
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 
@@ -79,12 +80,12 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends FirewallRule>,Integer> result = _networkACLService.listNetworkACLItems(this);
-        ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
-        List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
+        Pair<List<? extends NetworkACLItem>,Integer> result = _networkACLService.listNetworkACLItems(this);
+        ListResponse<NetworkACLItemResponse> response = new ListResponse<NetworkACLItemResponse>();
+        List<NetworkACLItemResponse> aclResponses = new ArrayList<NetworkACLItemResponse>();
 
-        for (FirewallRule acl : result.first()) {
-            NetworkACLResponse ruleData = _responseGenerator.createNetworkACLItemResponse(acl);
+        for (NetworkACLItem acl : result.first()) {
+            NetworkACLItemResponse ruleData = _responseGenerator.createNetworkACLItemResponse(acl);
             aclResponses.add(ruleData);
         }
         response.setResponses(aclResponses, result.second());
