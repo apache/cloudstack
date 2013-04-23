@@ -1738,6 +1738,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (datacenter != null) {
             isoResponse.setZoneId(datacenter.getUuid());
             isoResponse.setZoneName(datacenter.getName());
+            isoResponse.setZoneType(datacenter.getNetworkType().toString());
         }
 
         // If the user is an admin, add the template download status
