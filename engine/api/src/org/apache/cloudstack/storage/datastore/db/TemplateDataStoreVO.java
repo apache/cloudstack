@@ -49,7 +49,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	Long id;
 
 	@Column(name="store_id")
-	private long dataStoreId;
+	private Long dataStoreId; // this can be null for baremetal templates
 
 	@Column(name="template_id")
 	private long templateId;
@@ -167,14 +167,14 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		return downloadState;
 	}
 
-	public TemplateDataStoreVO(long hostId, long templateId) {
+	public TemplateDataStoreVO(Long hostId, long templateId) {
 		super();
 		this.dataStoreId = hostId;
 		this.templateId = templateId;
 		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 	}
 
-	public TemplateDataStoreVO(long hostId, long templateId, Date lastUpdated,
+	public TemplateDataStoreVO(Long hostId, long templateId, Date lastUpdated,
 			int downloadPercent, Status downloadState,
 			String localDownloadPath, String errorString, String jobId,
 			String installPath, String downloadUrl) {

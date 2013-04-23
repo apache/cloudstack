@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.log4j.Logger;
@@ -47,12 +46,10 @@ import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -76,7 +73,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject AccountManager _accountMgr;
 	protected @Inject DataCenterDao _dcDao;
 	protected @Inject VMTemplateDao _tmpltDao;
-	protected @Inject VMTemplateHostDao _tmpltHostDao;
 	protected @Inject TemplateDataStoreDao _tmpltStoreDao;
 	protected @Inject VMTemplateZoneDao _tmpltZoneDao;
 	protected @Inject UsageEventDao _usageEventDao;
@@ -99,7 +95,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
-	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
+	@Override
+    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
             String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
@@ -107,7 +104,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	            chksum, bootable, null, null, details, false);
 	}
 
-	public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
+	@Override
+    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
 			String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled) throws ResourceAllocationException {
@@ -228,7 +226,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 				cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled());
 	}
 
-	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
+	@Override
+    public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 	    //check if the caller can operate with the template owner
 	    Account caller = UserContext.current().getCaller();
 	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
@@ -304,7 +303,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		return userId;
 	}
 
-	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
+	@Override
+    public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		Long templateId = cmd.getId();
 		Long userId = UserContext.current().getCallerUserId();
 		Account account = UserContext.current().getCaller();
@@ -329,7 +329,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		return new TemplateProfile(userId, template, zoneId);
 	}
 
-	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
+	@Override
+    public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		Long templateId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
         Account account = UserContext.current().getCaller();
@@ -354,6 +355,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     	return new TemplateProfile(userId, template, zoneId);
 	}
 
-	abstract public VMTemplateVO create(TemplateProfile profile);
-	abstract public boolean delete(TemplateProfile profile);
+	@Override
+    abstract public VMTemplateVO create(TemplateProfile profile);
+	@Override
+    abstract public boolean delete(TemplateProfile profile);
 }

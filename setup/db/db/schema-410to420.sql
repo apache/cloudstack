@@ -115,10 +115,11 @@ CREATE VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
             
-            
+-- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
+-- FK also commented out due to this            
 CREATE TABLE  `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `store_id` bigint unsigned NOT NULL,
+  `store_id` bigint unsigned,
   `template_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
@@ -135,7 +136,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+--  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
   INDEX `i_template_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_template_store_ref__template_id` FOREIGN KEY `fk_template_store_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_template_store_ref__template_id`(`template_id`)
