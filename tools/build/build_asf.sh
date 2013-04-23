@@ -94,7 +94,6 @@ mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P sim
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
 perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' tools/apidoc/pom.xml
-
 case "$currentversion" in 
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
@@ -166,6 +165,7 @@ if [ "$committosvn" == "yes" ]; then
 fi
 
 echo 'revert version changes'
+cd $sourcedir
 git revert --no-edit $commitsh
 
 echo "completed.  use commit-sh of $commitsh when starting the VOTE thread"
