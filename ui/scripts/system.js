@@ -7634,6 +7634,7 @@
 
               action: function(args) {
                 var array1 = [];
+                var appendData = args.data.append ? args.data.append : {};
                 
                 array1.push("&zoneId=" + args.data.zoneid);
                 array1.push("&name=" + todb(args.data.podname));
@@ -7647,6 +7648,7 @@
 
                 $.ajax({
                   url: createURL("createPod" + array1.join("")),
+                  data: appendData,
                   dataType: "json",
                   success: function(json) {
                     var item = json.createpodresponse.pod;
