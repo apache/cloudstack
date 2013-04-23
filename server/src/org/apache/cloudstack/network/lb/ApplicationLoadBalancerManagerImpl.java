@@ -94,8 +94,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         
         //Validate LB rule guest network
         Network guestNtwk = _networkModel.getNetwork(networkId);
-        if (guestNtwk == null) {
-            throw new InvalidParameterValueException("Can't find network by id");
+        if (guestNtwk == null || guestNtwk.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Can't find guest network by id");
         }
         
         Account caller = UserContext.current().getCaller();
@@ -130,10 +130,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         validateSourceIpNtwkForLbRule(sourceIpNtwk, scheme);
         
         //3) Get source ip address
-        sourceIp = getSourceIp(scheme, sourceIpNtwk, sourceIp);
+        Ip sourceIpAddr = getSourceIp(scheme, sourceIpNtwk, sourceIp);
                
         ApplicationLoadBalancerRuleVO newRule = new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(),
-                lbOwner.getId(), lbOwner.getDomainId(), new Ip(sourceIp), sourceIpNtwk.getId(), scheme);
+                lbOwner.getId(), lbOwner.getDomainId(), sourceIpAddr, sourceIpNtwk.getId(), scheme);
         
         //4) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
@@ -218,7 +218,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Invalid value for instance port: " + instancePort);
         }
         
-        if (!NetUtils.isValidPort(instancePort)) {
+        if (!NetUtils.isValidPort(sourcePort)) {
             throw new InvalidParameterValueException("Invalid value for source port: " + sourcePort);
         }
        
@@ -236,34 +236,40 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @return
      * @throws InsufficientVirtualNetworkCapcityException
      */
-    protected String getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapcityException {
+    protected Ip getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapcityException {
         //Get source IP address
+        if (_lbDao.countBySourceIp(new Ip(requestedIp), sourceIpNtwk.getId()) > 0)  {
+            s_logger.debug("IP address " + requestedIp + " is already used by existing LB rule, returning it");
+            return new Ip(requestedIp);
+        }
+        
         if (requestedIp != null) {
             validateRequestedSourceIpForLbRule(sourceIpNtwk, new Ip(requestedIp), scheme);
-        } else {
-            requestedIp = allocateSourceIpForLbRule(scheme, sourceIpNtwk);
         }
+        
+        requestedIp = allocateSourceIpForLbRule(scheme, sourceIpNtwk, requestedIp);
         
         if (requestedIp == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to acquire IP address for network " + sourceIpNtwk, Network.class, sourceIpNtwk.getId());
         }
-        return requestedIp;
+        return new Ip(requestedIp);
     }
 
 
     /**
      * Allocates new Source IP address for the Load Balancer rule based on LB rule scheme/sourceNetwork
      * @param scheme
-     * @param sourceIp
      * @param sourceIpNtwk
+     * @param requestedIp TODO
+     * @param sourceIp
      * @return
      */
-    protected String allocateSourceIpForLbRule(Scheme scheme, Network sourceIpNtwk) {
+    protected String allocateSourceIpForLbRule(Scheme scheme, Network sourceIpNtwk, String requestedIp) {
         String sourceIp = null;
         if (scheme != Scheme.Internal) {
             throw new InvalidParameterValueException("Only scheme " + Scheme.Internal + " is supported");
         } else {
-            sourceIp = allocateSourceIpForInternalLbRule(sourceIpNtwk);
+            sourceIp = allocateSourceIpForInternalLbRule(sourceIpNtwk, requestedIp);
         }
         return sourceIp;
     }
@@ -272,10 +278,11 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     /**
      * Allocates sourceIp for the Internal LB rule
      * @param sourceIpNtwk
+     * @param requestedIp TODO
      * @return
      */
-    protected String allocateSourceIpForInternalLbRule(Network sourceIpNtwk) {
-        return _ntwkMgr.acquireGuestIpAddress(sourceIpNtwk, null);
+    protected String allocateSourceIpForInternalLbRule(Network sourceIpNtwk, String requestedIp) {
+        return _ntwkMgr.acquireGuestIpAddress(sourceIpNtwk, requestedIp);
     }
 
     
@@ -302,21 +309,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @param requestedSourceIp
      */
     protected void validateRequestedSourceIpForInternalLbRule(Network sourceIpNtwk, Ip requestedSourceIp) {
-        //1) Check if the IP is within the network cidr
+        //Check if the IP is within the network cidr
         Pair<String, Integer> cidr = NetUtils.getCidr(sourceIpNtwk.getCidr());
         if (!NetUtils.getCidrSubNet(requestedSourceIp.addr(), cidr.second()).equalsIgnoreCase(NetUtils.getCidrSubNet(cidr.first(), cidr.second()))) {
             throw new InvalidParameterValueException("The requested IP is not in the network's CIDR subnet.");
-        }
-        
-        //2) Check if the IP address used by the load balancer or other nics
-        if (_lbDao.countBySourceIp(requestedSourceIp, sourceIpNtwk.getId()) > 0)  {
-            s_logger.debug("IP address " + requestedSourceIp.addr() + " is already used by existing LB rule, skipping the validation");
-            return;
-        } else {
-            List<String> usedIps = _networkModel.getUsedIpsInNetwork(sourceIpNtwk);
-            if (usedIps.contains(requestedSourceIp.toString())) {
-                throw new InvalidParameterValueException("Ip address " + requestedSourceIp.addr() + " is already in use");
-            }
         }
     }
 

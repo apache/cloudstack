@@ -2779,8 +2779,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
         //generate only response of the VR/VPCVR provider type
-        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter) 
-                || (result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
+        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter
+                || result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
             return null;
         }
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
