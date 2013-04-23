@@ -2354,6 +2354,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
+            response.setZoneType(zone.getNetworkType().toString());
         }
         if (network.getPhysicalNetworkId() != null) {
             PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(network.getPhysicalNetworkId());
