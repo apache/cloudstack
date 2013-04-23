@@ -76,6 +76,7 @@ if echo $VERSION | grep SNAPSHOT ; then
   DEFPRE="-D_prerelease 1"
   DEFREL="-D_rel SNAPSHOT"
 else
+  REALVER=`echo $VERSION`
   DEFVER="-D_ver $REALVER"
   DEFPRE=
   DEFREL=
