@@ -1159,7 +1159,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            return stateTransitTo(vm, Event.OperationSucceeded, null, null);
+            return stateTransitTo(vm, Event.OperationSucceeded, null);
         } catch (NoTransitionException e) {
             s_logger.warn(e.getMessage());
             return false;
