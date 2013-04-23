@@ -817,6 +817,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (zone != null) {
             podResponse.setZoneId(zone.getUuid());
             podResponse.setZoneName(zone.getName());
+            podResponse.setZoneType(zone.getNetworkType().toString());
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
         podResponse.setStartIp(ipRange[0]);
@@ -961,6 +962,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (dc != null) {
             clusterResponse.setZoneId(dc.getUuid());
             clusterResponse.setZoneName(dc.getName());
+            clusterResponse.setZoneType(dc.getNetworkType().toString());
         }
         clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
@@ -1165,6 +1167,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (zone != null) {
                 vmResponse.setZoneId(zone.getUuid());
                 vmResponse.setZoneName(zone.getName());
+                vmResponse.setZoneType(zone.getNetworkType().toString());
                 vmResponse.setDns1(zone.getDns1());
                 vmResponse.setDns2(zone.getDns2());
             }

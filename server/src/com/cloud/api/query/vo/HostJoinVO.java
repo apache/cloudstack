@@ -130,6 +130,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name="data_center_name")
     private String zoneName;
 
+    @Column(name="data_center_type")
+    private String zoneType;
+    
     @Column(name="pod_id")
     private long podId;
 
@@ -231,7 +234,15 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
+    
+    public String getZoneType() {
+        return zoneType;
+    }
 
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }   
+    
     public String getName() {
         return name;
     }
