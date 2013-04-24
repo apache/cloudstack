@@ -21,4 +21,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface PlannerHostReservationDao extends GenericDao<PlannerHostReservationVO, Long> {
 
+    PlannerHostReservationVO findByHostId(long hostId);
+
 }

@@ -19,11 +19,15 @@ package com.cloud.deploy;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 
 @Entity
 @Table(name = "op_host_planner_reservation")
@@ -45,29 +49,27 @@ public class PlannerHostReservationVO implements InternalIdentity {
     @Column(name="cluster_id")
     private Long clusterId;
 
-    @Column(name = "resource_type")
-    private short resourceType;
-
-    @Column(name = "domain_id")
-    private long domainId;
-
-    @Column(name = "account_id")
-    private long accountId;
-
-    @Column(name = "deployment_planner")
-    private String deploymentPlanner;
+    @Column(name = "resource_usage")
+    @Enumerated(EnumType.STRING)
+    private PlannerResourceUsage resourceUsage;
 
     public PlannerHostReservationVO() {
     }
 
-    public PlannerHostReservationVO(Long hostId, Long dataCenterId, Long podId, Long clusterId, short resourceType,
-            String planner) {
+    public PlannerHostReservationVO(Long hostId, Long dataCenterId, Long podId, Long clusterId) {
         this.hostId = hostId;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.clusterId = clusterId;
-        this.resourceType = resourceType;
-        this.deploymentPlanner = planner;
+    }
+
+    public PlannerHostReservationVO(Long hostId, Long dataCenterId, Long podId, Long clusterId,
+            PlannerResourceUsage resourceUsage) {
+        this.hostId = hostId;
+        this.dataCenterId = dataCenterId;
+        this.podId = podId;
+        this.clusterId = clusterId;
+        this.resourceUsage = resourceUsage;
     }
 
     @Override
@@ -104,32 +106,12 @@ public class PlannerHostReservationVO implements InternalIdentity {
         this.clusterId = new Long(clusterId);
     }
 
-    public short getResourceType() {
-        return resourceType;
+    public PlannerResourceUsage getResourceUsage() {
+        return resourceUsage;
     }
 
-    public void setResourceType(short resourceType) {
-        this.resourceType = resourceType;
-    }
-
-    public String getDeploymentPlanner() {
-        return deploymentPlanner;
-    }
-
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
-    public long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
+    public void setResourceUsage(PlannerResourceUsage resourceType) {
+        this.resourceUsage = resourceType;
     }
 
 }
