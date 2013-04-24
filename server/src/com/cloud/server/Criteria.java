@@ -32,6 +32,7 @@ public class Criteria {
 	public static final String NOTSTATE = "notState";
 	public static final String STATE = "state";
 	public static final String DATACENTERID = "dataCenterId";
+	public static final String DATACENTERTYPE = "dataCenterType";
 	public static final String DESCRIPTION = "description";
 	public static final String PODID = "podId";
 	public static final String CLUSTERID = "clusterId";

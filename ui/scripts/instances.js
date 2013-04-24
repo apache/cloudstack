@@ -204,34 +204,22 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
-								
+
+        if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+          $.extend(data, {
+            zonetype: args.context.zoneType
+          });
+	      }
+        
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,
           success: function(json) {
-            var items = json.listvirtualmachinesresponse.virtualmachine;
-           // Code for hiding "Expunged VMs"
-           /* if(items != null) {
-            var i=0;
-            for( i=0;i< items.length;i++){
-              if(items[i].state == 'Expunging')
-                args.response.success ({
-
-              });
-            else {
+            var items = json.listvirtualmachinesresponse.virtualmachine;           
             args.response.success({
               actionFilter: vmActionfilter,
-              data: items[i]
-             });
-            }
-           }
-          }
-          else {*/
-             args.response.success({
-              actionFilter: vmActionfilter,
               data: items
-             });
-
+            });
           }
         });
       },
@@ -1450,10 +1438,15 @@
               {
                 name: { label: 'label.name', header: true },
                 networkname: {label: 'Network Name' },
-                ipaddress: { label: 'label.ip.address' },
                 type: { label: 'label.type' },
+                ipaddress: { label: 'label.ip.address' },                
                 gateway: { label: 'label.gateway' },
                 netmask: { label: 'label.netmask' },
+
+                ip6address: { label: 'IPv6 IP Address' },
+                ip6gateway: { label: 'IPv6 Gateway' },
+                ip6cidr: { label: 'IPv6 CIDR' },
+
                 isdefault: {
                   label: 'label.is.default',
                   converter: function(data) {

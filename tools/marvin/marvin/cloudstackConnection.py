@@ -110,16 +110,15 @@ class cloudConnection(object):
         self.logging.info("Computed Signature by Marvin: %s" % signature)
         return signature
 
-    def request(self, command, auth=True, payload={}, data={}):
+    def request(self, command, auth=True, payload={}, method='GET'):
         """
         Makes requests using auth or over integration port
         @param command: cloudstack API command name
                     eg: deployVirtualMachineCommand
         @param auth: Authentication (apikey,secretKey) => True
                      else False for integration.api.port
-        @param payload: GET param data composed as a dictionary
-                        of key,value pairs
-        @param data: POST data as a dictionary
+        @param payload: request data composed as a dictionary
+        @param method: GET/POST via HTTP
         @return:
         """
         payload["command"] = command
@@ -131,9 +130,8 @@ class cloudConnection(object):
             payload["signature"] = signature
 
         try:
-            if data:
-                response = requests.get(self.baseurl, params=payload,
-                                        data=data)
+            if method == 'POST':
+                response = requests.post(self.baseurl, params=payload)
             else:
                 response = requests.get(self.baseurl, params=payload)
         except ConnectionError, c:
@@ -161,7 +159,7 @@ class cloudConnection(object):
         requests = {}
         required = []
         for attribute in dir(cmd):
-            if attribute != "__doc__" and attribute != "__init__" and \
+            if attribute != "__doc__" and attribute != "__init__" and\
                attribute != "__module__":
                 if attribute == "isAsync":
                     isAsync = getattr(cmd, attribute)
@@ -193,26 +191,20 @@ class cloudConnection(object):
                             i = i + 1
         return cmdname, isAsync, requests
 
-    def marvin_request(self, cmd, data={}, response_type=None):
+    def marvin_request(self, cmd, response_type=None, method='GET'):
         """
         Requester for marvin command objects
         @param cmd: marvin's command from cloudstackAPI
-        @param data: any data to be sent in as POST
         @param response_type: response type of the command in cmd
-        @param raw:
+        @param method: HTTP GET/POST, defaults to GET
         @return:
         """
         cmdname, isAsync, payload = self.sanitize_command(cmd)
-        self.logging.info("sending command: %s %s" % (cmdname, str(payload)))
-        if self.auth:
-            response = self.request(
-                cmdname, auth=True, payload=payload, data=data)
-        else:
-            response = self.request(
-                cmdname, auth=False, payload=payload, data=data)
-
-        self.logging.info("Request: %s Response: %s" %
-                          (response.url, response.text))
+        self.logging.debug("sending %s request: %s %s" % (method, cmdname, str(payload)))
+        response = self.request(
+            cmdname, self.auth, payload=payload, method=method)
+        self.logging.debug("Request: %s Response: %s" %
+                           (response.url, response.text))
         response = jsonHelper.getResultObj(response.json(), response_type)
 
         if isAsync == "false":

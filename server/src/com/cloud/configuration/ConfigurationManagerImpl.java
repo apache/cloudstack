@@ -342,7 +342,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 DcDetailVO dcDetailVO = _zoneDetailsDao.findDetail(resourceId, name.toLowerCase());
                 if (dcDetailVO == null) {
-                    dcDetailVO = new DcDetailVO(dcDetailVO.getId(), name, value);
+                    dcDetailVO = new DcDetailVO(zone.getId(), name, value);
                     _zoneDetailsDao.persist(dcDetailVO);
                 } else {
                     dcDetailVO.setValue(value);
@@ -583,6 +583,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else if (range.equalsIgnoreCase("instanceName")) {
                 if (!NetUtils.verifyInstanceName(value)) {
                     return "Instance name can not contain hyphen, spaces and plus sign";
+                }
+            } else if (range.equals("routes")) {
+                String[] routes = value.split(",");
+                for (String route : routes) {
+                    if (route != null) {
+                        String routeToVerify = route.trim();
+                        if (!NetUtils.isValidCIDR(routeToVerify)) {
+                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list" +
+                            		" of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
+                        }
+                    }
                 }
             } else {
                 String[] options = range.split(",");

@@ -284,7 +284,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             }
         }
         if (lowestVlanTag == null) {
-            throw new InvalidParameterValueException ("The vlan tag dose not belong to any of the existing vlan ranges");
+            throw new InvalidParameterValueException ("The vlan tag does not belong to any of the existing vlan ranges");
         }
         return vlanTag - lowestVlanTag;
     }

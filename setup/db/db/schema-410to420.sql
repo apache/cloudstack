@@ -296,6 +296,8 @@ UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC' WHERE na
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
      VALUES (10, 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
 
+ALTER TABLE `cloud`.`user_vm` MODIFY user_data TEXT(32768);
+
 -- END: support for LXC
 
 CREATE TABLE `cloud`.`vm_snapshots` (
@@ -544,6 +546,336 @@ CREATE VIEW `cloud`.`affinity_group_view` AS
             left join
         `cloud`.`user_vm` ON user_vm.id = vm_instance.id;
 
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW `cloud`.`host_view` AS
+    select 
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        host_tags.tag,
+        guest_os_category.id guest_os_category_id,
+        guest_os_category.uuid guest_os_category_uuid,
+        guest_os_category.name guest_os_category_name,
+        mem_caps.used_capacity memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`host`
+            left join
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            left join
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            left join
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`host_details` ON host.id = host_details.id
+            and host_details.name = 'guest.os.category.id'
+            left join
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT( host_details.value , UNSIGNED)
+            left join
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            left join
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            and mem_caps.capacity_type = 0
+            left join
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            and cpu_caps.capacity_type = 1
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            and async_job.instance_type = 'Host'
+            and async_job.job_status = 0;
+        
+DROP VIEW IF EXISTS `cloud`.`volume_view`;
+CREATE VIEW `cloud`.`volume_view` AS
+    select 
+        volumes.id,
+        volumes.uuid,
+        volumes.name,
+        volumes.device_id,
+        volumes.volume_type,
+        volumes.size,
+        volumes.created,
+        volumes.state,
+        volumes.attached,
+        volumes.removed,
+        volumes.pod_id,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        vm_instance.id vm_id,
+        vm_instance.uuid vm_uuid,
+        vm_instance.name vm_name,
+        vm_instance.state vm_state,
+        vm_instance.vm_type,
+        user_vm.display_name vm_display_name,
+        volume_host_ref.size volume_host_size,
+        volume_host_ref.created volume_host_created,
+        volume_host_ref.format,
+        volume_host_ref.download_pct,
+        volume_host_ref.download_state,
+        volume_host_ref.error_str,
+        disk_offering.id disk_offering_id,
+        disk_offering.uuid disk_offering_uuid,
+        disk_offering.name disk_offering_name,
+        disk_offering.display_text disk_offering_display_text,
+        disk_offering.use_local_storage,
+        disk_offering.system_use,
+        storage_pool.id pool_id,
+        storage_pool.uuid pool_uuid,
+        storage_pool.name pool_name,
+        cluster.hypervisor_type,
+        vm_template.id template_id,
+        vm_template.uuid template_uuid,
+        vm_template.extractable,
+        vm_template.type template_type,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`volumes`
+            inner join
+        `cloud`.`account` ON volumes.account_id = account.id
+            inner join
+        `cloud`.`domain` ON volumes.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`data_center` ON volumes.data_center_id = data_center.id
+            left join
+        `cloud`.`vm_instance` ON volumes.instance_id = vm_instance.id
+            left join
+        `cloud`.`user_vm` ON user_vm.id = vm_instance.id
+            left join
+        `cloud`.`volume_host_ref` ON volumes.id = volume_host_ref.volume_id
+            and volumes.data_center_id = volume_host_ref.zone_id
+            left join
+        `cloud`.`disk_offering` ON volumes.disk_offering_id = disk_offering.id
+            left join
+        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
+            left join
+        `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
+            left join
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
+            and resource_tags.resource_type = 'Volume'
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = volumes.id
+            and async_job.instance_type = 'Volume'
+            and async_job.job_status = 0;                       
+ 
+DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
+CREATE VIEW `cloud`.`storage_pool_view` AS
+    select 
+        storage_pool.id,
+        storage_pool.uuid,
+        storage_pool.name,
+        storage_pool.status,
+        storage_pool.path,
+        storage_pool.pool_type,
+        storage_pool.host_address,
+        storage_pool.created,
+        storage_pool.removed,
+        storage_pool.capacity_bytes,
+        storage_pool.scope,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,      
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        storage_pool_details.name tag,
+        op_host_capacity.used_capacity disk_used_capacity,
+        op_host_capacity.reserved_capacity disk_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`storage_pool`
+            left join
+        `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
+            left join
+        `cloud`.`data_center` ON storage_pool.data_center_id = data_center.id
+            left join
+        `cloud`.`host_pod_ref` ON storage_pool.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`storage_pool_details` ON storage_pool_details.pool_id = storage_pool.id
+            and storage_pool_details.value = 'true'
+            left join
+        `cloud`.`op_host_capacity` ON storage_pool.id = op_host_capacity.host_id
+            and op_host_capacity.capacity_type = 3
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
+            and async_job.instance_type = 'StoragePool'
+            and async_job.job_status = 0;
+            
+
+DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
+CREATE VIEW `cloud`.`domain_router_view` AS
+    select 
+        vm_instance.id id,
+        vm_instance.name name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        vm_instance.uuid uuid,
+        vm_instance.created created,
+        vm_instance.state state,
+        vm_instance.removed removed,
+        vm_instance.pod_id pod_id,
+        vm_instance.instance_name instance_name,
+        host_pod_ref.uuid pod_uuid,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        data_center.dns1 dns1,
+        data_center.dns2 dns2,
+        data_center.ip6_dns1 ip6_dns1,
+        data_center.ip6_dns2 ip6_dns2,
+        host.id host_id,
+        host.uuid host_uuid,
+        host.name host_name,
+        vm_template.id template_id,
+        vm_template.uuid template_uuid,
+        service_offering.id service_offering_id,
+        disk_offering.uuid service_offering_uuid,
+        disk_offering.name service_offering_name,
+        nics.id nic_id,
+        nics.uuid nic_uuid,
+        nics.network_id network_id,
+        nics.ip4_address ip_address,
+        nics.ip6_address ip6_address,
+        nics.ip6_gateway ip6_gateway,
+        nics.ip6_cidr ip6_cidr,
+        nics.default_nic is_default_nic,
+        nics.gateway gateway,
+        nics.netmask netmask,
+        nics.mac_address mac_address,
+        nics.broadcast_uri broadcast_uri,
+        nics.isolation_uri isolation_uri,
+        vpc.id vpc_id,
+        vpc.uuid vpc_uuid,
+        networks.uuid network_uuid,
+        networks.name network_name,
+        networks.network_domain network_domain,
+        networks.traffic_type traffic_type,
+        networks.guest_type guest_type,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        domain_router.template_version template_version,
+        domain_router.scripts_version scripts_version,
+        domain_router.is_redundant_router is_redundant_router,
+        domain_router.redundant_state redundant_state,
+        domain_router.stop_pending stop_pending
+    from
+        `cloud`.`domain_router`
+            inner join
+        `cloud`.`vm_instance` ON vm_instance.id = domain_router.id
+            inner join
+        `cloud`.`account` ON vm_instance.account_id = account.id
+            inner join
+        `cloud`.`domain` ON vm_instance.domain_id = domain.id
+            left join
+        `cloud`.`host_pod_ref` ON vm_instance.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`data_center` ON vm_instance.data_center_id = data_center.id
+            left join
+        `cloud`.`host` ON vm_instance.host_id = host.id
+            left join
+        `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
+            left join
+        `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
+            left join
+        `cloud`.`disk_offering` ON vm_instance.service_offering_id = disk_offering.id
+            left join
+        `cloud`.`volumes` ON vm_instance.id = volumes.instance_id
+            left join
+        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
+            left join
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id
+            left join
+        `cloud`.`networks` ON nics.network_id = networks.id
+            left join
+        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
+            and async_job.instance_type = 'DomainRouter'
+            and async_job.job_status = 0;
+            
 CREATE TABLE `cloud`.`external_cisco_vnmc_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
@@ -777,4 +1109,4 @@ CREATE VIEW `cloud`.`account_view` AS
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
 
-alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;             
+alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;

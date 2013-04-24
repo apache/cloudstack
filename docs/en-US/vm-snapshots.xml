@@ -24,8 +24,8 @@
 <section id="vm-snapshots">
   <title>Virtual Machine Snapshots for VMware</title>
   <para>(VMware hosts only)
-    In addition to the existing &PRODUCT; ability to snapshot VM volumes,
-    you can now take a VM snapshot to preserve all of the VM's state and data.
+    In addition to the existing &PRODUCT; ability to snapshot individual VM volumes,
+    you can now take a VM snapshot to preserve all the VM's data volumes as well as (optionally) its CPU/memory state.
     This is useful for quick restore of a VM.
     For example, you can snapshot a VM, then make changes such as software upgrades.
     If anything goes wrong, simply restore the VM to its previous state using the previously saved VM snapshot.
@@ -51,7 +51,9 @@
       <listitem><para>If a VM has some stored snapshots, you can't attach new volume to the VM
         or delete any existing volumes.
         If you change the volumes on the VM, it would become impossible to restore the VM snapshot
-        which was created with the previous volume structure.</para></listitem>
+        which was created with the previous volume structure.
+        If you want to attach a volume to such a VM, first delete its snapshots.
+      </para></listitem>
       <listitem><para>VM snapshots which include both data volumes and memory can't be kept if you change the VM's
         service offering. Any existing VM snapshots of this type will be discarded.</para></listitem>
       <listitem>
@@ -72,7 +74,7 @@
   <section id="vm-snapshot-configure">
     <title>Configuring VM Snapshots</title>
     <para>The cloud administrator can use global configuration variables to control the behavior of VM snapshots.
-      To set these variables, go through the Global Settings are of the UI.</para>
+      To set these variables, go through the Global Settings area of the &PRODUCT; UI.</para>
     <informaltable>
       <tgroup cols="2" align="left" colsep="1" rowsep="1">
         <thead>

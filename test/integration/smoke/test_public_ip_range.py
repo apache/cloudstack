@@ -139,8 +139,8 @@ class TesDedicatePublicIPRange(cloudstackTestCase):
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
                                                 self.apiclient,
                                                 self.public_ip_range.vlan.id,
-                                                account=self.account.account.name,
-                                                domainid=self.account.account.domainid
+                                                account=self.account.name,
+                                                domainid=self.account.domainid
                                             )
         list_public_ip_range_response = PublicIpRange.list(
                                             self.apiclient,
@@ -149,7 +149,7 @@ class TesDedicatePublicIPRange(cloudstackTestCase):
         public_ip_response = list_public_ip_range_response[0]
         self.assertEqual(
                             public_ip_response.account,
-                            self.account.account.name,
+                            self.account.name,
                             "Check account name is in listVlanIpRanges as the account public ip range is dedicated to"
                         )
 

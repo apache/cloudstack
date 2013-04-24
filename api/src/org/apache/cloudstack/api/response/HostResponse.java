@@ -59,7 +59,10 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the host")
     private String zoneName;
-
+    
+    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description = "network type of the availability zone")
+    private String zoneType;
+    
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the host")
     private String podId;
 
@@ -209,6 +212,10 @@ public class HostResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public void setPodId(String podId) {
         this.podId = podId;
     }

@@ -23,9 +23,22 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.springframework.stereotype.Component;
@@ -40,13 +53,13 @@ import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
@@ -59,10 +72,9 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExecutionException;
 
 @Component
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -329,10 +341,10 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
 
     @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
-            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
- IpAddresses defaultIp,
-            String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
+            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
+            IpAddresses defaultIp, String keyboard, List<Long> affinityGroupIdList)
+	    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
             ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -340,21 +352,21 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
 
     @Override
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
-            List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData,
- String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-            IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
-            StorageUnavailableException, ResourceAllocationException {
+            List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize,
+	    String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
+            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps,
+	    String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
+	    ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps,
-            String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
-            ResourceAllocationException {
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
+	    IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
+	    ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }

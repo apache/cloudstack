@@ -1028,7 +1028,13 @@
                       updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
                       });
+                   },
+
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
                    }
+
                   });
 
 
@@ -1036,8 +1042,56 @@
                  notification:{poll:pollAsyncJobResult}
 
 
-               }
+               },
 
+                removeVlanRange:{
+                  label:'Remove VLAN Range',
+                   messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to remove an existing VLAN Range from this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range removed';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Remove VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&removevlan=" + args.data.startvlan + "-" +  args.data.endvlan);
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
+                   },
+
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                   }
+
+                  });
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+               }
  
             },
 
@@ -1056,23 +1110,24 @@
                 preFilter: function(args) {
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
-                    hiddenFields.push("startVlan");
-                    hiddenFields.push("endVlan");
+                    hiddenFields.push("vlan");
+                   // hiddenFields.push("endVlan");
                   }
                   return hiddenFields;
                 },
                 fields: [
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
-                    startVlan: {
-                      label: 'label.start.vlan',
+                    vlan: {
+                      label: 'VLAN Range(s)',
                       isEditable: true
                     },
-                    endVlan: {
+                  /*  endVlan: {
                       label: 'label.end.vlan',
                       isEditable: true
-                    },
-										tags: { label: 'Tags', isEditable: true },
+                    },*/
+
+		    tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
                   },
                   { //updateTrafficType API
@@ -1094,9 +1149,9 @@
 										success: function(json) {										  
 											selectedPhysicalNetworkObj = json.listphysicalnetworksresponse.physicalnetwork[0];			
 											
-											var startVlan, endVlan;
+										//	var startVlan, endVlan;
 											var vlan = selectedPhysicalNetworkObj.vlan;
-											if(vlan != null && vlan.length > 0) {
+									 	/*	if(vlan != null && vlan.length > 0) {
 												if(vlan.indexOf("-") != -1) {
 													var vlanArray = vlan.split("-");
 													startVlan = vlanArray[0];
@@ -1107,7 +1162,7 @@
 												}
 												selectedPhysicalNetworkObj["startVlan"] = startVlan;
 												selectedPhysicalNetworkObj["endVlan"] = endVlan;
-											}
+											}*/
 
 											//traffic type
 											var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
@@ -1120,7 +1175,7 @@
 
 											args.response.success({
 												actionFilter: function() {
-													var allowedActions = ['edit' , 'addVlanRange'];
+													var allowedActions = ['edit' , 'addVlanRange','removeVlanRange'];
 													return allowedActions;
 												},
 												data: selectedPhysicalNetworkObj
@@ -4893,14 +4948,16 @@
                       var array1 = [];
                       array1.push("&name="  +todb(args.data.name));
                       array1.push("&dns1=" + todb(args.data.dns1));
-                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
+                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
+                      array1.push("&ip6dns1=" + todb(args.data.ip6dns1));  //p6dns1 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.                      
+                      array1.push("&ip6dns2=" + todb(args.data.ip6dns2));  //ip6dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       
                       if (selectedZoneObj.networktype == "Advanced" && args.data.guestcidraddress) {
                         array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
                       }
                       
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
-                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
+                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       array1.push("&domain=" + todb(args.data.domain));
                       array1.push("&localstorageenabled=" + (args.data.localstorageenabled == 'on'));
                       $.ajax({
@@ -4938,6 +4995,8 @@
                         allocationstate: { label: 'label.allocation.state' },
                         dns1: { label: 'label.dns.1', isEditable: true, validation: { required: true } },
                         dns2: { label: 'label.dns.2', isEditable: true },
+                        ip6dns1: { label: 'IPv6 DNS1', isEditable: true },
+                        ip6dns2: { label: 'IPv6 DNS2', isEditable: true },
                         internaldns1: { label: 'label.internal.dns.1', isEditable: true, validation: { required: true } },
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
@@ -4950,8 +5009,8 @@
                         localstorageenabled: {
                           label: 'label.local.storage.enabled',
                           isBoolean: true,
-													isEditable: true,
-													converter:cloudStack.converters.toBooleanText
+			  isEditable: true,
+			  converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],

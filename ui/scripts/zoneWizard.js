@@ -323,23 +323,30 @@
         preFilter: function(args) {
           var $form = args.$form;
 
-          if (args.data['network-model'] == 'Basic') {
+          if (args.data['network-model'] == 'Basic') { //Basic zone
             args.$form.find('[rel=networkOfferingId]').show();
             args.$form.find('[rel=guestcidraddress]').hide();						
-						args.$form.find('[rel=ip6dns1]').hide();
-						args.$form.find('[rel=ip6dns2]').hide();
+	    
+            args.$form.find('[rel=ip6dns1]').hide();
+	    args.$form.find('[rel=ip6dns2]').hide();
           }
-          else { //args.data['network-model'] == 'Advanced'
+          else { //Advanced zone
             args.$form.find('[rel=networkOfferingId]').hide();
 						
-						if(args.data["zone-advanced-sg-enabled"] !=	"on")
+	    if(args.data["zone-advanced-sg-enabled"] !=	"on") { //Advanced SG-disabled zone
               args.$form.find('[rel=guestcidraddress]').show();
-						else //args.data["zone-advanced-sg-enabled"] ==	"on
-						  args.$form.find('[rel=guestcidraddress]').hide();
-          					  
-						args.$form.find('[rel=ip6dns1]').show();
-						args.$form.find('[rel=ip6dns2]').show();
-					}													
+              					  
+	      args.$form.find('[rel=ip6dns1]').show();
+	      args.$form.find('[rel=ip6dns2]').show();
+            }
+	    else { //Advanced SG-enabled zone
+	      args.$form.find('[rel=guestcidraddress]').hide();
+
+              args.$form.find('[rel=ip6dns1]').hide();
+	      args.$form.find('[rel=ip6dns2]').hide();
+            }
+          
+	  }													
 										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
