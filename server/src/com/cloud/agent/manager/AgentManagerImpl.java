@@ -377,32 +377,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
 
-    @Override
-    public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            return  easySend(ssHost.getId(), cmd);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            return  sendToSSVM(ssHost.getDataCenterId(), cmd);
-        } else {
-            String msg = "do not support Secondary Storage type " + ssHost.getType();
-            s_logger.warn(msg);
-            return new Answer(cmd, false, msg);
-        }
-    }
-
-    @Override
-    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException {
-        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            send(ssHost.getId(), new Commands(cmd), listener);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            sendToSSVM(ssHost.getDataCenterId(), cmd, listener);
-        } else {
-            String err = "do not support Secondary Storage type " + ssHost.getType();
-            s_logger.warn(err);
-            throw new CloudRuntimeException(err);
-        }
-    }
-
 
     private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
         List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);

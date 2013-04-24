@@ -175,18 +175,6 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         return null;
     }
 
-    @Override
-    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 
     @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {

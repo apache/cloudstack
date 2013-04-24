@@ -137,10 +137,6 @@ public interface AgentManager extends Manager {
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
-    void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException;
-
-    Answer sendToSecStorage(HostVO ssHost, Command cmd);
-
 
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);

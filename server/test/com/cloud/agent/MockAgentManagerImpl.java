@@ -131,16 +131,6 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
         return null;
     }
 
-    @Override
-    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
-    }
-
-    @Override
-    public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 
     @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
