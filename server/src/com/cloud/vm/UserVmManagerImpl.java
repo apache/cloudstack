@@ -355,8 +355,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected ItWorkDao _workDao;
     @Inject
-    protected VolumeHostDao _volumeHostDao;
-    @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;

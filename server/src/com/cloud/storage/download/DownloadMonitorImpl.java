@@ -96,8 +96,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Inject
     VolumeDao _volumeDao;
     @Inject
-    VolumeHostDao _volumeHostDao;
-    @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     AlertManager _alertMgr;
@@ -310,7 +308,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         VMTemplateVO tmplt = _templateDao.findById(srcTmpltStore.getTemplateId());
         HypervisorType hyperType = tmplt.getHypervisorType();
-        
+
         if (hyperType != null && hyperType == HypervisorType.KVM) {
             //return "file://" + sourceServer.getParent() + "/" + srcTmpltStore.getInstallPath();
             return "file://"  + "/" + srcTmpltStore.getInstallPath();

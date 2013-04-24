@@ -331,7 +331,6 @@ public class ApiDBUtils {
     static VolumeDao _volumeDao;
     static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
     static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
-    static VolumeHostDao _volumeHostDao;
     static DataCenterDao _zoneDao;
     static NetworkOfferingDao _networkOfferingDao;
     static NetworkDao _networkDao;
@@ -436,7 +435,6 @@ public class ApiDBUtils {
     @Inject private VolumeDao volumeDao;
     @Inject private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
     @Inject private Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
-    @Inject private VolumeHostDao volumeHostDao;
     @Inject private DataCenterDao zoneDao;
     @Inject private NetworkOfferingDao networkOfferingDao;
     @Inject private NetworkDao networkDao;
@@ -539,7 +537,6 @@ public class ApiDBUtils {
         _volumeDao = volumeDao;
         _site2SiteVpnGatewayDao = site2SiteVpnGatewayDao;
         _site2SiteCustomerGatewayDao = site2SiteCustomerGatewayDao;
-        _volumeHostDao = volumeHostDao;
         _zoneDao = zoneDao;
         _securityGroupDao = securityGroupDao;
         _securityGroupJoinDao = securityGroupJoinDao;
@@ -863,10 +860,6 @@ public class ApiDBUtils {
                 template.setDetails(details);
         }
         return template;
-    }
-
-    public static VolumeHostVO findVolumeHostRef(long volumeId, long zoneId) {
-        return _volumeHostDao.findVolumeByZone(volumeId, zoneId);
     }
 
     public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {

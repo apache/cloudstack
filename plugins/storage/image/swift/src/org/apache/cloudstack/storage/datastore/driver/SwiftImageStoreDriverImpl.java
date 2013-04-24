@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -39,6 +40,8 @@ import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -59,6 +62,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -92,7 +96,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
     @Inject VolumeDao volumeDao;
-    @Inject VolumeHostDao volumeHostDao;
+    @Inject VolumeDataStoreDao _volumeStoreDao;
     @Inject HostDao hostDao;
     @Inject SnapshotDao snapshotDao;
     @Inject AgentManager agentMgr;
@@ -109,6 +113,8 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     private AgentManager _agentMgr;
     @Inject TemplateDataStoreDao _templateStoreDao;
     @Inject EndPointSelector _epSelector;
+    @Inject DataStoreManager _dataStoreMgr;
+
 
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
@@ -176,28 +182,29 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
         }
 
         // Find out if the volume is present on secondary storage
-        VolumeHostVO volumeHost = volumeHostDao.findByVolumeId(vol.getId());
-        if (volumeHost != null) {
-            if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                HostVO ssHost = hostDao.findById(volumeHost.getHostId());
+        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
+        if (volumeStore != null) {
+            if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                DataStore store = this._dataStoreMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                EndPoint ep = _epSelector.select(store);
                 DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(
-                        ssHost.getStorageUrl(), volumeHost.getInstallPath());
-                Answer answer = agentMgr.sendToSecStorage(ssHost, dtCommand);
+                        store.getUri(), volumeStore.getInstallPath());
+                Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to delete "
-                            + volumeHost
+                            + volumeStore
                             + " due to "
                             + ((answer == null) ? "answer is null" : answer
                                     .getDetails()));
                     return;
                 }
-            } else if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+            } else if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 s_logger.debug("Volume: " + vol.getName()
                         + " is currently being uploaded; cant' delete it.");
                 throw new CloudRuntimeException(
                         "Please specify a volume that is not currently being uploaded.");
             }
-            volumeHostDao.remove(volumeHost.getId());
+            _volumeStoreDao.remove(volumeStore.getId());
             volumeDao.remove(vol.getId());
             CommandResult result = new CommandResult();
             callback.complete(result);

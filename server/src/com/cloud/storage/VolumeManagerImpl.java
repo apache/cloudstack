@@ -61,6 +61,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -123,12 +125,10 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -149,9 +149,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -233,7 +230,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    VolumeHostDao _volumeHostDao;
+    VolumeDataStoreDao _volumeStoreDao;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
     @Inject
@@ -1248,9 +1245,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (volume.getState() == Volume.State.UploadOp) {
-            VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(volume
+            VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume
                     .getId());
-            if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+            if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 throw new InvalidParameterValueException(
                         "Please specify a volume that is not uploading");
             }
@@ -1424,8 +1421,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     private VolumeInfo copyVolume(StoragePoolVO rootDiskPool
             , VolumeInfo volume, VMInstanceVO vm, VMTemplateVO rootDiskTmplt, DataCenterVO dcVO,
             HostPodVO pod, DiskOfferingVO diskVO, ServiceOfferingVO svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
-        VolumeHostVO volHostVO = _volumeHostDao.findByHostVolume(volume.getDataStore().getId(), volume.getId());
-        if (!volHostVO
+        VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(volume.getDataStore().getId(), volume.getId());
+        if (!volStoreVO
                 .getFormat()
                 .getFileExtension()
                 .equals(
@@ -1433,7 +1430,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                                 .getClusterId()))) {
             throw new InvalidParameterValueException(
                     "Failed to attach volume to VM since volumes format "
-                            + volHostVO.getFormat()
+                            + volStoreVO.getFormat()
                             .getFileExtension()
                             + " is not compatible with the vm hypervisor type");
         }

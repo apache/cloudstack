@@ -41,6 +41,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -55,13 +57,8 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -69,25 +66,19 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
@@ -96,7 +87,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 
 @Component
 public class AncientDataMotionStrategy implements DataMotionStrategy {
@@ -107,7 +97,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject
     TemplateManager templateMgr;
     @Inject
-    VolumeHostDao volumeHostDao;
+    VolumeDataStoreDao volumeStoreDao;
     @Inject
     HostDao hostDao;
     @Inject
@@ -151,15 +141,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
-        VolumeHostVO volumeHostVO = volumeHostDao.findByVolumeId(srcData
+        VolumeDataStoreVO volumeStoreVO = volumeStoreDao.findByVolume(srcData
                 .getId());
-        HostVO secStorage = hostDao.findById(volumeHostVO.getHostId());
-        String secondaryStorageURL = secStorage.getStorageUrl();
-        String[] volumePath = volumeHostVO.getInstallPath().split("/");
+        DataStore srcStore = srcData.getDataStore();
+        String[] volumePath = volumeStoreVO.getInstallPath().split("/");
         String volumeUUID = volumePath[volumePath.length - 1].split("\\.")[0];
         StoragePool destPool = (StoragePool) destData.getDataStore();
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(srcData.getId(),
-                volumeUUID, destPool, secondaryStorageURL, false,
+                volumeUUID, destPool, srcStore.getUri(), false,
                 _copyvolumewait);
         CopyVolumeAnswer cvAnswer = null;
         String errMsg = null;
@@ -186,7 +175,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         vol.setPodId(destPool.getPodId());
 
         this.volDao.update(vol.getId(), vol);
-        volumeHostDao.remove(volumeHostVO.getId());
+        volumeStoreDao.remove(volumeStoreVO.getId());
         txn.commit();
         return cvAnswer;
     }
