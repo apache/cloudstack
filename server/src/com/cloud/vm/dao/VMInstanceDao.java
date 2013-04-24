@@ -116,4 +116,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      */
     List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
 
+    void updatePowerState(long instanceId, VirtualMachine.PowerState powerState);
 }

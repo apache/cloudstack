@@ -97,19 +97,15 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected Long lastHostId;
 
     @Enumerated(value=EnumType.STRING)
-    @Column(name="last_event", updatable=true)
-    protected VirtualMachine.Event lastEvent;
-    
-    @Column(name="last_event_args", updatable=true, nullable=true)
-    protected String lastEventArgs;
-    
-    @Enumerated(value=EnumType.STRING)
     @Column(name="power_state", updatable=true)
     protected PowerState powerState;
     
-    @Column(name="power_state_update_time", updatable = true, nullable=false)
+    @Column(name="power_state_update_time", updatable=true, nullable=false)
     @Temporal(value=TemporalType.TIMESTAMP)
     protected Date powerStateUpdateTime;
+    
+    @Column(name="power_state_update_count", updatable=true)
+    protected int powerStateUpdateCount;
     
     @Column(name="pod_id", updatable=true, nullable=false)
     protected Long podIdToDeployIn;
@@ -201,7 +197,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.hypervisorType = hypervisorType;
         this.limitCpuUse = false;
         
-        this.lastEvent = Event.OperationNop;
         this.powerState = PowerState.PowerUnknown;
         this.powerStateUpdateTime = DateUtil.currentGMTTime();
     }
@@ -222,7 +217,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
 
-        this.lastEvent = Event.OperationNop;
         this.powerState = PowerState.PowerUnknown;
         this.powerStateUpdateTime = DateUtil.currentGMTTime();
     }
@@ -493,7 +487,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return true;
     }
 
-
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
@@ -501,22 +494,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	@Override
 	public Long getDiskOfferingId() {
 		return diskOfferingId;
-	}
-	
-	public VirtualMachine.Event getLastEvent() {
-		return lastEvent;
-	}
-	
-	public void setLastEvent(VirtualMachine.Event event) {
-		this.lastEvent = event;
-	}
-	
-	public String getLastEventArgs() {
-		return this.lastEventArgs;
-	}
-	
-	public void setLastEventArgs(String eventArgs) {
-		this.lastEventArgs = eventArgs;
 	}
 	
 	public VirtualMachine.PowerState getPowerState() {
@@ -533,5 +510,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     
 	public void setPowerStateUpdateTime(Date updateTime) {
 		this.powerStateUpdateTime = updateTime;
+	}
+	
+	public int getPowerStateUpdateCount() {
+		return this.powerStateUpdateCount;
+	}
+	
+	public void setPowerStateUpdateCount(int count) {
+		this.powerStateUpdateCount = count;
 	}
 }

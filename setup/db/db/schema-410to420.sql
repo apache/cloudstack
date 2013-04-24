@@ -416,8 +416,7 @@ ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_type` VARCHAR(32);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_dispatcher` VARCHAR(64);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_executing_msid` bigint;
 
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `last_event` VARCHAR(64) DEFAULT 'OperationNop';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `last_event_args` VARCHAR(256);
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state` VARCHAR(74) DEFAULT 'PowerUnknown';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_time` DATETIME;
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFAULT 0;
 

@@ -37,6 +37,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
@@ -63,6 +64,7 @@ import com.cloud.vm.VirtualMachine.Type;
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
+    private static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;
     protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
@@ -625,5 +627,31 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         txn.commit();
         return result;
     }
-
+    
+    @Override @DB
+    public void updatePowerState(long instanceId, VirtualMachine.PowerState powerState) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        VMInstanceVO instance = findById(instanceId);
+        if(instance != null) {
+        	if(instance.getPowerState() != powerState) {
+        		instance.setPowerState(powerState);
+        		instance.setPowerStateUpdateCount(1);
+        		instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+        		
+        		update(instanceId, instance);
+        	} else {
+        		// to reduce DB updates, consecutive same state update for more than 3 times
+        		if(instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
+            		instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
+            		instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+            		
+            		update(instanceId, instance);
+        		}
+        	}
+        }
+        
+        txn.commit();
+    }
 }
