@@ -2529,7 +2529,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         if (temp == 0){
-            throw new InvalidParameterValueException("The vlan range you are trying to delete dose not exist.");
+            throw new InvalidParameterValueException("The vlan range you are trying to delete does not exist.");
         }
         if(existingRanges.get(i).first() > existingRanges.get(i).second()){
             existingRanges.remove(i);

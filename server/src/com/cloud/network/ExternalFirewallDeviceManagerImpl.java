@@ -725,7 +725,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         }
         if (lowestVlanTag == null) {
-            throw new InvalidParameterValueException ("The vlan tag dose not belong to any of the existing vlan ranges");
+            throw new InvalidParameterValueException ("The vlan tag does not belong to any of the existing vlan ranges");
         }
         return vlanTag - lowestVlanTag;
     }
