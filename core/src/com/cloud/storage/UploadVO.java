@@ -32,7 +32,6 @@ import javax.persistence.TemporalType;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="upload")
@@ -45,7 +44,7 @@ public class UploadVO implements Upload {
 	private String uuid;
 
 	@Column(name="host_id")
-	private long hostId;
+	private long storeId;
 
 	@Column(name="type_id")
 	private long typeId;
@@ -85,12 +84,12 @@ public class UploadVO implements Upload {
 	private String installPath;
 
 	@Override
-    public long getHostId() {
-		return hostId;
+    public long getDataStoreId() {
+		return storeId;
 	}
 
-	public void setHostId(long hostId) {
-		this.hostId = hostId;
+	public void setDataStoreId(long hostId) {
+		this.storeId = hostId;
 	}
 
 	@Override
@@ -99,7 +98,8 @@ public class UploadVO implements Upload {
 	}
 
 
-	public String getUuid() {
+	@Override
+    public String getUuid() {
         return uuid;
     }
 
@@ -119,7 +119,7 @@ public class UploadVO implements Upload {
 
 	public UploadVO(long hostId, long templateId) {
 		super();
-		this.hostId = hostId;
+		this.storeId = hostId;
 		this.typeId = templateId;
 		this.uuid = UUID.randomUUID().toString();
 	}
@@ -128,7 +128,7 @@ public class UploadVO implements Upload {
 			Status uploadState, Type type,
 			String uploadUrl, Mode mode) {
 		super();
-		this.hostId = hostId;
+		this.storeId = hostId;
 		this.typeId = typeId;
 		this.lastUpdated = lastUpdated;
 		this.uploadState = uploadState;
@@ -142,7 +142,7 @@ public class UploadVO implements Upload {
             Status uploadState, int uploadPercent, Type type,
             Mode mode) {
         super();
-        this.hostId = hostId;
+        this.storeId = hostId;
         this.typeId = typeId;
         this.lastUpdated = lastUpdated;
         this.uploadState = uploadState;
@@ -182,7 +182,7 @@ public class UploadVO implements Upload {
 	public boolean equals(Object obj) {
 		if (obj instanceof UploadVO) {
 			UploadVO other = (UploadVO)obj;
-		   return (this.typeId==other.getTypeId() && this.hostId==other.getHostId() && this.type == other.getType());
+		   return (this.typeId==other.getTypeId() && this.storeId==other.getDataStoreId() && this.type == other.getType());
 		}
 		return false;
 	}

@@ -136,7 +136,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   PRIMARY KEY  (`id`),
---  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+--  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_template_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_template_store_ref__template_id` FOREIGN KEY `fk_template_store_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_template_store_ref__template_id`(`template_id`)
@@ -148,6 +148,10 @@ CREATE TABLE  `cloud`.`template_store_ref` (
 -- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `swift_id`;
 -- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id`;
 -- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `sechost_id`;
+
+-- change upload host_id FK to point to image_store table
+ALTER TABLE `cloud`.`upload` DROP FOREIGN KEY `fk_upload__host_id`; 
+ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__store_id` FOREIGN KEY(`host_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE;
 
 CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -162,7 +166,7 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `state` varchar(255) NOT NULL,  
   `destroyed` tinyint(1) COMMENT 'indicates whether the snapshot_store entry was destroyed by the user or not',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_snapshot_store_ref__store_id` FOREIGN KEY `fk_snapshot_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_snapshot_store_ref__store_id` FOREIGN KEY `fk_snapshot_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_snapshot_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_snapshot_store_ref__snapshot_id` FOREIGN KEY `fk_snapshot_store_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`),
   INDEX `i_snapshot_store_ref__snapshot_id`(`snapshot_id`)
@@ -189,7 +193,7 @@ CREATE TABLE  `cloud`.`volume_store_ref` (
   `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_data_store` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_volume_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_volume_store_ref__volume_id` FOREIGN KEY `fk_volume_store_ref__volume_id` (`volume_id`) REFERENCES `volumes` (`id`),
   INDEX `i_volume_store_ref__volume_id`(`volume_id`)

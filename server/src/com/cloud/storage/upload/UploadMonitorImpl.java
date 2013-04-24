@@ -282,7 +282,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
-            DataStore secStore = this.storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getHostId(), DataStoreRole.Image);
+            DataStore secStore = this.storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getDataStoreId(), DataStoreRole.Image);
             EndPoint ep = _epSelector.select(secStore);
             if( ep == null ) {
             	errorString = "There is no secondary storage VM for secondary storage host " + secStore.getName();
@@ -459,14 +459,14 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         for (UploadVO extractJob : extractJobs){
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){
                 String path = extractJob.getInstallPath();
-                DataStore secStore = this.storeMgr.getDataStore(extractJob.getHostId(), DataStoreRole.Image);
+                DataStore secStore = this.storeMgr.getDataStore(extractJob.getDataStoreId(), DataStoreRole.Image);
 
 
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
                 DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), ((ImageStoreVO)secStore).getParent());
                 EndPoint ep = _epSelector.select(secStore);
                  if( ep == null ) {
-                	s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
+                	s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getDataStoreId());
                 	continue; //TODO: why continue? why not break?
                 }
                 if (s_logger.isDebugEnabled()) {

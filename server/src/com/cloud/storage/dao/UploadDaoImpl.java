@@ -54,7 +54,7 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
 		typeUploadStatusSearch.done();
 		
 		typeHostAndUploadStatusSearch = createSearchBuilder();
-		typeHostAndUploadStatusSearch.and("host_id", typeHostAndUploadStatusSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+		typeHostAndUploadStatusSearch.and("host_id", typeHostAndUploadStatusSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
 		typeHostAndUploadStatusSearch.and("upload_state", typeHostAndUploadStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
 		typeHostAndUploadStatusSearch.done();
 		
