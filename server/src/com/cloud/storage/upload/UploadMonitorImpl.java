@@ -47,7 +47,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.agent.manager.Commands;
@@ -66,12 +65,10 @@ import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -92,8 +89,6 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 	static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 
-    @Inject
-    VMTemplateHostDao _vmTemplateHostDao;
     @Inject
     UploadDao _uploadDao;
     @Inject

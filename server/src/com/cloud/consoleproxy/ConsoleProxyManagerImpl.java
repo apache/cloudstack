@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -33,6 +33,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -112,12 +114,10 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -127,7 +127,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -203,7 +202,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private VMInstanceDao _instanceDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -287,7 +286,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
      * "PWpfKR3ISI5yXB0vRNAL6Vet5zbTcUZhKDVtNSbis3UEsGYH8NorEC2z2cpjGQJANhJi9Ow6c5Mh\n"
      * + "/DURBUn+1l5pyCKrZnDbvaALSLATLvjmFTuGjoHszy2OeKnOZmEqExWnKKE/VYuPyhy6V7i3TwJA\n" +
      * "f8skDgtPK0OsBCa6IljPaHoWBjPc4kFkSTSS1d56hUcWSikTmiuKdLyBb85AADSZYsvHWrte4opN\n" + "dhNukMJuRA==\n";
-     * 
+     *
      * private final String certContent = "-----BEGIN CERTIFICATE-----\n" +
      * "MIIE3jCCA8agAwIBAgIFAqv56tIwDQYJKoZIhvcNAQEFBQAwgcoxCzAJBgNVBAYT\n"
      * + "AlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRowGAYD\n" +
@@ -668,7 +667,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if(proxy.getActiveSession() >= _capacityPerProxy){
                     it.remove();
                 }
-            }            
+            }
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
@@ -961,7 +960,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             authenticationAnswer.setReauthenticating(true);
 
             s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
-            GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
+            GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new
                     GetVncPortCommand(vm.getId(), vm.getInstanceName()));
 
             if (answer != null && answer.getResult()) {
@@ -1175,15 +1174,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secondaryStorageHost = this.templateMgr.getSecondaryStorageHost(dataCenterId);
-            boolean templateReady = false;
+            TemplateDataStoreVO templateHostRef = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+                    Status.DOWNLOADED);
 
-            if (template != null && secondaryStorageHost != null) {
-                VMTemplateHostVO templateHostRef = _vmTemplateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
-                templateReady = (templateHostRef != null) && (templateHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            if (templateReady) {
+            if (templateHostRef != null) {
                 List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _use_lvm);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
@@ -1196,11 +1190,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if (s_logger.isDebugEnabled()) {
                     if (template == null) {
                         s_logger.debug("Zone host is ready, but console proxy template is null");
-                    } else if (secondaryStorageHost != null) {
-			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
-		    } else {
-			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
-		    }
+                    } else {
+                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
+                    }
                 }
             }
         }
@@ -1397,7 +1389,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             //expunge the vm
             boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
                         Host.Type.ConsoleProxy);
                 if (host != null) {
                     s_logger.debug("Removing host entry for proxy id=" + vmId);

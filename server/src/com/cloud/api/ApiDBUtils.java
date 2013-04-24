@@ -320,7 +320,6 @@ public class ApiDBUtils {
     static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
-    static VMTemplateHostDao _templateHostDao;
     static VMTemplateSwiftDao _templateSwiftDao;
     static VMTemplateS3Dao _templateS3Dao;
     static UploadDao _uploadDao;
@@ -426,7 +425,6 @@ public class ApiDBUtils {
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
-    @Inject private VMTemplateHostDao templateHostDao;
     @Inject private VMTemplateSwiftDao templateSwiftDao;
     @Inject private VMTemplateS3Dao templateS3Dao;
     @Inject private UploadDao uploadDao;
@@ -530,7 +528,6 @@ public class ApiDBUtils {
         _storagePoolDao = storagePoolDao;
         _templateDao = templateDao;
         _templateDetailsDao = templateDetailsDao;
-        _templateHostDao = templateHostDao;
         _templateSwiftDao = templateSwiftDao;
         _templateS3Dao = templateS3Dao;
         _uploadDao = uploadDao;
@@ -933,18 +930,6 @@ public class ApiDBUtils {
         return _storageMgr.getHypervisorTypeFromFormat(format);
     }
 
-    public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId, boolean readyOnly) {
-        if (zoneId != null) {
-            VMTemplateVO vmTemplate = findTemplateById(templateId);
-            if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-                return _templateHostDao.listByTemplateId(templateId);
-            } else {
-                return _templateHostDao.listByZoneTemplate(zoneId, templateId, readyOnly);
-            }
-        } else {
-            return _templateHostDao.listByOnlyTemplateId(templateId);
-        }
-    }
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {
         return _userStatsDao.listBy(accountId);

@@ -33,7 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
@@ -42,7 +41,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
-import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -56,7 +54,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
@@ -64,9 +61,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -74,7 +69,6 @@ import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
@@ -97,8 +91,6 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     VMTemplateDao templateDao;
     @Inject DownloadMonitor _downloadMonitor;
-    @Inject
-    VMTemplateHostDao _vmTemplateHostDao;
     @Inject VolumeDao volumeDao;
     @Inject VolumeHostDao volumeHostDao;
     @Inject HostDao hostDao;
@@ -176,7 +168,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         		AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         caller.setCallback(caller.getTarget().createAsyncCallback(null, null));
-        
+
 
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;

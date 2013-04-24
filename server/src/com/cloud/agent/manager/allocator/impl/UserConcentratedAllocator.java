@@ -70,8 +70,6 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     @Inject
     HostPodDao _podDao;
     @Inject
-    VMTemplateHostDao _templateHostDao;
-    @Inject
     VMTemplatePoolDao _templatePoolDao;
     @Inject
     ServiceOfferingDao _offeringDao;
@@ -87,7 +85,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     private int _secondsToSkipDestroyedVMs = 0;
 
     @Override
-    public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId, Set<Long> avoids) {
+    public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId,
+            Set<Long> avoids) {
         long zoneId = zone.getId();
         List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
 
@@ -107,23 +106,28 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                 }
 
                 if (offering != null) {
-                    // test for enough memory in the pod (make sure to check for enough memory for the service offering, plus
+                    // test for enough memory in the pod (make sure to check for
+                    // enough memory for the service offering, plus
                     // some extra padding for xen overhead
                     long[] hostCandiates = new long[1];
-                    boolean enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getRamSize()) * 1024L * 1024L, CapacityVO.CAPACITY_TYPE_MEMORY, hostCandiates);
+                    boolean enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getRamSize()) * 1024L * 1024L,
+                            CapacityVO.CAPACITY_TYPE_MEMORY, hostCandiates);
 
                     if (!enoughCapacity) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Not enough RAM available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+                            s_logger.debug("Not enough RAM available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: "
+                                    + podId + ")");
                         }
                         continue;
                     }
 
                     // test for enough CPU in the pod
-                    enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getCpu() * offering.getSpeed()), CapacityVO.CAPACITY_TYPE_CPU, hostCandiates);
+                    enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getCpu() * offering.getSpeed()),
+                            CapacityVO.CAPACITY_TYPE_CPU, hostCandiates);
                     if (!enoughCapacity) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+                            s_logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: "
+                                    + podId + ")");
                         }
                         continue;
                     }
@@ -207,7 +211,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         }
 
         if (vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-            // for Stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+            // for Stopped/Destroyed VMs, we will skip counting it if it hasn't
+            // been used for a while
             int secondsToSkipVMs = _secondsToSkipStoppedVMs;
 
             if (vm.getState() == State.Destroyed) {
@@ -217,8 +222,9 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
             long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
             if (millisecondsSinceLastUpdate > secondsToSkipVMs * 1000L) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Skip counting " + vm.getState().toString() + " vm " + vm.getInstanceName() + " in capacity allocation as it has been " + vm.getState().toString().toLowerCase()
-                            + " for " + millisecondsSinceLastUpdate / 60000 + " minutes");
+                    s_logger.debug("Skip counting " + vm.getState().toString() + " vm " + vm.getInstanceName()
+                            + " in capacity allocation as it has been " + vm.getState().toString().toLowerCase() + " for "
+                            + millisecondsSinceLastUpdate / 60000 + " minutes");
                 }
                 return true;
             }
@@ -228,11 +234,12 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     }
 
     /**
-     * 
+     *
      * @param hostId
      *            Host id to calculate against
      * @param capacityType
-     *            CapacityVO.CAPACITY_TYPE_MEMORY or CapacityVO.CAPACITY_TYPE_CPU
+     *            CapacityVO.CAPACITY_TYPE_MEMORY or
+     *            CapacityVO.CAPACITY_TYPE_CPU
      * @return
      */
     private long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
@@ -253,21 +260,23 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                 if (userVm == null) {
                     continue;
                 }
-            } 
-            
+            }
+
             so = _offeringDao.findById(vm.getServiceOfferingId());
 
             if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
                 usedCapacity += so.getRamSize() * 1024L * 1024L;
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " + usedCapacity + " Bytes");
+                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId
+                            + ", currently counted: " + usedCapacity + " Bytes");
                 }
             } else if (capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
                 usedCapacity += so.getCpu() * so.getSpeed();
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " + usedCapacity + " Bytes");
+                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed()
+                            + ", currently counted: " + usedCapacity + " Bytes");
                 }
             }
         }
@@ -281,7 +290,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
          * List<VMTemplateHostVO> thvoList = _templateHostDao.listByTemplateStatus(templateId, dcId, podId, Status.DOWNLOADED);
          * List<VMTemplateStoragePoolVO> tpvoList = _templatePoolDao.listByTemplateStatus(templateId, dcId, podId,
          * Status.DOWNLOADED);
-         * 
+         *
          * if (thvoList != null && thvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
          * thvoList.size() + " storage hosts in pod " + podId + " with template " + templateId); } return true; } else if
          * (tpvoList != null && tpvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
@@ -304,7 +313,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String stoppedValue = configs.get("vm.resource.release.interval");
-        // String destroyedValue = configs.get("capacity.skipcounting.destroyed.hours");
+        // String destroyedValue =
+        // configs.get("capacity.skipcounting.destroyed.hours");
         String destroyedValue = null;
         _secondsToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 86400);
         _secondsToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);
@@ -312,19 +322,19 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         /*
          * ComponentLocator locator = ComponentLocator.getCurrentLocator(); _vmDao = locator.getDao(UserVmDao.class); if (_vmDao
          * == null) { throw new ConfigurationException("Unable to find UserVMDao."); }
-         * 
+         *
          * _volumeDao = locator.getDao(VolumeDao.class); if (_volumeDao == null) { throw new
          * ConfigurationException("Unable to find VolumeDao."); }
-         * 
+         *
          * _templateHostDao = locator.getDao(VMTemplateHostDao.class); if (_templateHostDao == null) { throw new
          * ConfigurationException("Unable to get template host dao."); }
-         * 
+         *
          * _templatePoolDao = locator.getDao(VMTemplatePoolDao.class); if (_templatePoolDao == null) { throw new
          * ConfigurationException("Unable to get template pool dao."); }
-         * 
+         *
          * _podDao = locator.getDao(HostPodDao.class); if (_podDao == null) { throw new
          * ConfigurationException("Unable to find HostPodDao."); }
-         * 
+         *
          * _capacityDao = locator.getDao(CapacityDao.class); if (_capacityDao == null) { throw new
          * ConfigurationException("Unable to retrieve " + CapacityDao.class); }
          */

@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -140,9 +142,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
 
-    protected GenericSearchBuilder<VMTemplateHostVO, SumCount> templateSizeSearch;
+    protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -172,7 +174,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ResourceCountSearch.done();
 
-        templateSizeSearch = _vmTemplateHostDao.createSearchBuilder(SumCount.class);
+        templateSizeSearch = _vmTemplateStoreDao.createSearchBuilder(SumCount.class);
         templateSizeSearch.select("sum", Func.SUM, templateSizeSearch.entity().getSize());
         templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.EQ);
         templateSizeSearch.and("destroyed", templateSizeSearch.entity().getDestroyed(), Op.EQ);
@@ -198,7 +200,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key())));
-    
+
             accountResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
             accountResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
             accountResourceLimitMap.put(Resource.ResourceType.template, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key())));
@@ -898,7 +900,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setParameters("downloadState", Status.DOWNLOADED);
         sc.setParameters("destroyed", false);
         sc.setJoinParameters("templates", "accountId", accountId);
-        List<SumCount> templates = _vmTemplateHostDao.customSearch(sc, null);
+        List<SumCount> templates = _vmTemplateStoreDao.customSearch(sc, null);
         if (templates != null) {
             totalTemplatesSize = templates.get(0).sum;
         }

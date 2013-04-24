@@ -52,9 +52,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import org.springframework.stereotype.Component;
 
 @Local(value = Discoverer.class)
 public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -63,7 +61,6 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 
     @Inject HostDao _hostDao;
     @Inject VMTemplateDao _vmTemplateDao;
-    @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr = null;

@@ -173,7 +173,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
@@ -248,8 +247,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected VMTemplateDao _templateDao = null;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao = null;
-    @Inject
-    protected VMTemplateHostDao _templateHostDao = null;
     @Inject
     protected VMTemplateZoneDao _templateZoneDao = null;
     @Inject
@@ -367,7 +364,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     VpcManager _vpcMgr;
     @Inject
     TemplateManager templateMgr;
-    @Inject 
+    @Inject
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
@@ -682,7 +679,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.stop(new Long(userId).toString());            
+            status = vmEntity.stop(new Long(userId).toString());
         } catch (ResourceUnavailableException e) {
             s_logger.debug("Unable to stop due to ", e);
             status = false;
@@ -2032,7 +2029,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else {
-            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
+            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
 
@@ -2048,7 +2045,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     }
 
                     isSecurityGroupEnabledNetworkUsed = true;
-                }            
+                }
 
                 if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
@@ -2452,7 +2449,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     // * verify that there are no duplicates
                     if (hostNames.contains(hostName)) {
                         throw new InvalidParameterValueException("The vm with hostName " + hostName
-                                + " already exists in the network domain: " + ntwkDomain + "; network=" 
+                                + " already exists in the network domain: " + ntwkDomain + "; network="
                                 + _networkModel.getNetwork(ntwkId));
                     }
                 }
@@ -2515,7 +2512,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         List<String> computeTags = new ArrayList<String>();
         computeTags.add(offering.getHostTag());
 
-        List<String> rootDiskTags =	new ArrayList<String>();    	
+        List<String> rootDiskTags =	new ArrayList<String>();
         rootDiskTags.add(offering.getTags());
 
         if(isIso){
@@ -2834,7 +2831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            vmEntity.stop(new Long(userId).toString());            
+            vmEntity.stop(new Long(userId).toString());
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException(
                     "Unable to contact the agent to stop the virtual machine "
@@ -3049,7 +3046,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(new Long(userId).toString());    
+            status = vmEntity.destroy(new Long(userId).toString());
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Unable to destroy with specified vmId", e);

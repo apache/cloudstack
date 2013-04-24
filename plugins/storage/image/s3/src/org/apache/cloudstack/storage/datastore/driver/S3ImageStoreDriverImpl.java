@@ -67,7 +67,6 @@ import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
@@ -90,8 +89,6 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     VMTemplateDao templateDao;
     @Inject DownloadMonitor _downloadMonitor;
-    @Inject
-    VMTemplateHostDao _vmTemplateHostDao;
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
     @Inject VolumeDao volumeDao;
