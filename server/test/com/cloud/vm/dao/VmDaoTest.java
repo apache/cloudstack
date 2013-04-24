@@ -79,29 +79,29 @@ public class VmDaoTest extends TestCase {
 		VMInstanceVO instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getInstanceName().equals("Dummy"));
 		
-		instanceDao.updatePowerState(1L, VirtualMachine.PowerState.PowerOn);
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn);
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOn);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 1);
 		
-		instanceDao.updatePowerState(1L, VirtualMachine.PowerState.PowerOn);
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn);
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOn);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 2);
 		
-		instanceDao.updatePowerState(1L, VirtualMachine.PowerState.PowerOn);
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn);
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOn);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 3);
 
 		// after 3 times, the update count should stay at 3
-		instanceDao.updatePowerState(1L, VirtualMachine.PowerState.PowerOn);
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn);
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOn);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 3);
 		
-		// after 3 times, the update count should stay at 3
-		instanceDao.updatePowerState(1L, VirtualMachine.PowerState.PowerOff);
+		// if power state is changed, the update count will be reset
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff);
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOff);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 1);

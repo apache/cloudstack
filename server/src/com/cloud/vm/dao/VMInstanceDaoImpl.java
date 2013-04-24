@@ -29,6 +29,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.persistence.Entity;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -629,14 +630,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
     
     @Override @DB
-    public void updatePowerState(long instanceId, VirtualMachine.PowerState powerState) {
+    public void updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
         VMInstanceVO instance = findById(instanceId);
         if(instance != null) {
-        	if(instance.getPowerState() != powerState) {
+        	Long savedPowerHostId = instance.getPowerHostId();
+        	if(instance.getPowerState() != powerState || savedPowerHostId == null || savedPowerHostId.longValue() != powerHostId) {
         		instance.setPowerState(powerState);
+        		instance.setPowerHostId(powerHostId);
         		instance.setPowerStateUpdateCount(1);
         		instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
         		
@@ -653,5 +656,31 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         }
         
         txn.commit();
+    }
+    
+    @Override @DB
+    public void resetVmPowerStateTracking(long instanceId) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        VMInstanceVO instance = findById(instanceId);
+        if(instance != null) {
+        	instance.setPowerStateUpdateCount(0);
+        	instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+        	update(instanceId, instance);
+        }
+        
+        txn.commit();
+    }
+    
+    @Override @DB
+    public void resetHostPowerStateTracking(long hostId) {
+    	SearchCriteria<VMInstanceVO> sc = this.createSearchCriteria();
+    	sc.addAnd("powerHostId", SearchCriteria.Op.EQ, hostId);
+    	
+    	VMInstanceVO instance = this.createForUpdate();
+    	instance.setPowerStateUpdateCount(0);
+    	instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+    	
+    	this.update(instance, sc);
     }
 }

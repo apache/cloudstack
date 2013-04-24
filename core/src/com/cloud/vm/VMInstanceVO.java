@@ -96,17 +96,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="last_host_id", updatable=true, nullable=true)
     protected Long lastHostId;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="power_state", updatable=true)
-    protected PowerState powerState;
-    
-    @Column(name="power_state_update_time", updatable=true, nullable=false)
-    @Temporal(value=TemporalType.TIMESTAMP)
-    protected Date powerStateUpdateTime;
-    
-    @Column(name="power_state_update_count", updatable=true)
-    protected int powerStateUpdateCount;
-    
     @Column(name="pod_id", updatable=true, nullable=false)
     protected Long podIdToDeployIn;
 
@@ -155,11 +144,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
 
-/*
-    @Column(name="tags")
-    protected String tags;
-*/
-    
     @Transient
     Map<String, String> details;
 
@@ -168,6 +152,23 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="disk_offering_id")
     protected Long diskOfferingId;
+
+    //
+    // Power state for VM state sync
+    //
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="power_state", updatable=true)
+    protected PowerState powerState;
+    
+    @Column(name="power_state_update_time", updatable=true, nullable=false)
+    @Temporal(value=TemporalType.TIMESTAMP)
+    protected Date powerStateUpdateTime;
+    
+    @Column(name="power_state_update_count", updatable=true)
+    protected int powerStateUpdateCount;
+ 
+    @Column(name="power_host", updatable=true)
+    protected Long powerHostId;
     
     public VMInstanceVO(long id,
             long serviceOfferingId,
@@ -518,5 +519,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	
 	public void setPowerStateUpdateCount(int count) {
 		this.powerStateUpdateCount = count;
+	}
+	
+	public Long getPowerHostId() {
+		return this.powerHostId;
+	}
+	
+	public void setPowerHostId(Long hostId) {
+		this.powerHostId = hostId;
 	}
 }
