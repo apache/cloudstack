@@ -1028,7 +1028,13 @@
                       updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
                       });
+                   },
+
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
                    }
+
                   });
 
 
@@ -1073,7 +1079,13 @@
                       updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
                       });
+                   },
+
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
                    }
+
                   });
 
                   },
