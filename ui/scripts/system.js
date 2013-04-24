@@ -1110,23 +1110,24 @@
                 preFilter: function(args) {
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
-                    hiddenFields.push("startVlan");
-                    hiddenFields.push("endVlan");
+                    hiddenFields.push("vlan");
+                   // hiddenFields.push("endVlan");
                   }
                   return hiddenFields;
                 },
                 fields: [
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
-                    startVlan: {
-                      label: 'label.start.vlan',
+                    vlan: {
+                      label: 'VLAN Range(s)',
                       isEditable: true
                     },
-                    endVlan: {
+                  /*  endVlan: {
                       label: 'label.end.vlan',
                       isEditable: true
-                    },
-										tags: { label: 'Tags', isEditable: true },
+                    },*/
+
+		    tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
                   },
                   { //updateTrafficType API
@@ -1148,9 +1149,9 @@
 										success: function(json) {										  
 											selectedPhysicalNetworkObj = json.listphysicalnetworksresponse.physicalnetwork[0];			
 											
-											var startVlan, endVlan;
+										//	var startVlan, endVlan;
 											var vlan = selectedPhysicalNetworkObj.vlan;
-											if(vlan != null && vlan.length > 0) {
+									 	/*	if(vlan != null && vlan.length > 0) {
 												if(vlan.indexOf("-") != -1) {
 													var vlanArray = vlan.split("-");
 													startVlan = vlanArray[0];
@@ -1161,7 +1162,7 @@
 												}
 												selectedPhysicalNetworkObj["startVlan"] = startVlan;
 												selectedPhysicalNetworkObj["endVlan"] = endVlan;
-											}
+											}*/
 
 											//traffic type
 											var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
