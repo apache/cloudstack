@@ -73,7 +73,10 @@ public class VmDaoTest extends TestCase {
 	public void testPowerStateUpdate() {
 		UserVmVO userVmInstance = new UserVmVO(1L, "Dummy", "DummyInstance", 
 				1L, HypervisorType.Any, 1L, true, false, 1L, 1L, 1L, null, null, null);
+		userVmDao.persist(userVmInstance);
 		
+		userVmInstance = new UserVmVO(2L, "Dummy2", "DummyInstance2", 
+				1L, HypervisorType.Any, 1L, true, false, 1L, 1L, 1L, null, null, null);
 		userVmDao.persist(userVmInstance);
 		
 		VMInstanceVO instance = instanceDao.findById(1L);
@@ -105,7 +108,35 @@ public class VmDaoTest extends TestCase {
 		instance = instanceDao.findById(1L);
 		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOff);
 		Assert.assertTrue(instance.getPowerStateUpdateCount() == 1);
+
+		// reset state tracking
+		instanceDao.resetVmPowerStateTracking(1L);
+		instance = instanceDao.findById(1L);
+		Assert.assertTrue(instance.getPowerState() == VirtualMachine.PowerState.PowerOff);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 0);
+
+		// update state tracking status twice (vm id: 1)
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff);
+		instance = instanceDao.findById(1L);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 1);
+		
+		instanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff);
+		instance = instanceDao.findById(1L);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 2);
+
+		// update state tracking (vm id: 2)
+		instanceDao.updatePowerState(2L, 1L, VirtualMachine.PowerState.PowerOn);
+		instanceDao.updatePowerState(2L, 1L, VirtualMachine.PowerState.PowerOn);
+		instance = instanceDao.findById(2L);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 2);
+		
+		instanceDao.resetHostPowerStateTracking(1L);
+		instance = instanceDao.findById(1L);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 0);
+		instance = instanceDao.findById(2L);
+		Assert.assertTrue(instance.getPowerStateUpdateCount() == 0);
 		
 		userVmDao.expunge(1L);
+		userVmDao.expunge(2L);
 	}
 }
