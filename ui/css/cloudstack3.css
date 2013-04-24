@@ -11889,9 +11889,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon,
-.scaleUp .icon {
+.reset .icon {
   background-position: -168px -31px;
+}
+
+.scaleUp .icon{
+   background-position: -167px -66px;
+
 }
 
 .restoreVM:hover .icon,
@@ -11899,8 +11903,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -613px;
 }
 
-.reset:hover .icon,
-.scaleUp:hover .icon {
+.reset:hover .icon {
   background-position: -168px -613px;
 }
 
