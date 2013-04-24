@@ -11690,7 +11690,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -707px;
 }
 
-
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon {
@@ -11874,15 +11873,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .removeVlanRange .icon {
-
   background-position: 1px -92px;
 }
 
-.removeVlanRange:hover .icon{
-
+.removeVlanRange:hover .icon {
   background-position: 1px -92px;
 }
-
 
 .resize .icon,
 .updateResourceCount .icon {
@@ -11913,9 +11909,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.scaleUp .icon{
-   background-position: -167px -66px;
-
+.scaleUp .icon {
+  background-position: -167px -66px;
 }
 
 .restoreVM:hover .icon,
@@ -12045,6 +12040,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .editTags:hover .icon {
   background-position: -228px -646px;
+}
+
+.changeAffinity .icon {
+  background-position: -264px -2px;
+}
+
+.changeAffinity:hover .icon {
+  background-position: -263px -583px;
 }
 
 .label-hovered {
