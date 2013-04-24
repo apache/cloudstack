@@ -111,13 +111,16 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         for (NetworkACLItemVO aclItem : aclItems) {
             // Mark all Network ACLs rules as Revoke, but don't revoke them yet - we have to revoke all rules for ip, no
             // need to send them one by one
-            revokeNetworkACLItem(aclItem.getId(), false, caller, Account.ACCOUNT_ID_SYSTEM);
+            //revokeNetworkACLItem(aclItem.getId(), false, caller, Account.ACCOUNT_ID_SYSTEM);
+            if (aclItem.getState() == State.Add || aclItem.getState() == State.Active) {
+                aclItem.setState(State.Revoke);
+            }
         }
 
         //List<NetworkACLItemVO> ACLsToRevoke = _networkACLItemDao.listByNetwork(networkId);
 
         // now send everything to the backend
-        boolean success = applyNetworkACL(network.getNetworkACLId(), caller);
+        boolean success = applyACLItemsToNetwork(network.getId(), aclItems, caller);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = "
@@ -139,22 +142,45 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public boolean applyNetworkACLtoNetworks(long aclId, Account caller) throws ResourceUnavailableException {
+    public boolean applyNetworkACL(long aclId, Account caller) throws ResourceUnavailableException {
         boolean handled = false;
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(aclId);
         //Find all networks using this ACL
         List<NetworkVO> networks = _networkDao.listByAclId(aclId);
         for(NetworkVO network : networks){
-            applyNetworkACL(network.getId(), caller);
+            //Failure case??
+            handled = applyACLItemsToNetwork(network.getId(), rules, caller);
+        }
+        if(handled){
+            for (NetworkACLItem rule : rules) {
+                if (rule.getState() == NetworkACLItem.State.Revoke) {
+                    removeRule(rule);
+                } else if (rule.getState() == NetworkACLItem.State.Add) {
+                    NetworkACLItemVO ruleVO = _networkACLItemDao.findById(rule.getId());
+                    ruleVO.setState(NetworkACLItem.State.Active);
+                    _networkACLItemDao.update(ruleVO.getId(), ruleVO);
+                }
+            }
         }
         return handled;
     }
 
     @Override
-    public boolean applyNetworkACL(long networkId, Account caller) throws ResourceUnavailableException {
+    public void removeRule(NetworkACLItem rule) {
+        //remove the rule
+        _networkACLItemDao.remove(rule.getId());
+    }
+
+    @Override
+    public boolean applyACLToNetwork(long networkId, Account caller) throws ResourceUnavailableException {
+        Network network = _networkDao.findById(networkId);
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
+        return applyACLItemsToNetwork(networkId, rules, caller);
+    }
+
+    public boolean applyACLItemsToNetwork(long networkId, List<NetworkACLItemVO> rules, Account caller) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
         boolean handled = false;
-        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
         for (NetworkACLServiceProvider element: _networkAclElements) {
             Network.Provider provider = element.getProvider();
             boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
@@ -170,19 +196,16 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd) throws NetworkRuleConflictException {
-        if (aclItemCmd.getSourceCidrList() == null) {
-            //_networkACLItemDao.loadSourceCidrs(aclItemCmd);
-        }
         return createNetworkACLItem(UserContext.current().getCaller(), aclItemCmd.getSourcePortStart(),
                 aclItemCmd.getSourcePortEnd(), aclItemCmd.getProtocol(), aclItemCmd.getSourceCidrList(), aclItemCmd.getIcmpCode(),
-                aclItemCmd.getIcmpType(), null, aclItemCmd.getType(), aclItemCmd.getNetworkId(), aclItemCmd.getTrafficType(), aclItemCmd.getACLId());
+                aclItemCmd.getIcmpType(), aclItemCmd.getNetworkId(), aclItemCmd.getTrafficType(), aclItemCmd.getACLId(), aclItemCmd.getAction(), aclItemCmd.getNumber());
     }
 
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
     protected NetworkACLItem createNetworkACLItem(Account caller, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList,
-                                                  Integer icmpCode, Integer icmpType, Long relatedRuleId, NetworkACLItem.NetworkACLType type,
-                                                  Long networkId, NetworkACLItem.TrafficType trafficType, Long aclId) throws NetworkRuleConflictException {
+                                                  Integer icmpCode, Integer icmpType, Long networkId, NetworkACLItem.TrafficType trafficType, Long aclId,
+                                                  String action, Integer number) throws NetworkRuleConflictException {
 
         if(aclId == null){
             Network network = _networkMgr.getNetwork(networkId);
@@ -229,19 +252,22 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             }
         }
 
+        NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
+        if("deny".equals(action)){
+            ruleAction = NetworkACLItem.Action.Deny;
+        }
+        // If number is null, set it to currentMax + 1
         validateNetworkACLItem(caller, portStart, portEnd, protocol);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType);
-        newRule.setType(type);
+
+        NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, number);
         newRule = _networkACLItemDao.persist(newRule);
 
-        if (type == NetworkACLItem.NetworkACLType.User) {
             //ToDo: Is this required now with??
             //detectNetworkACLConflict(newRule);
-        }
 
         if (!_networkACLItemDao.setStateToAdd(newRule)) {
             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
@@ -292,7 +318,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         if (apply) {
             try {
-                success = applyNetworkACL(rule.getACLId(), caller);
+                applyNetworkACL(rule.getACLId(), caller);
+                success = true;
             } catch (ResourceUnavailableException e) {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
@@ -327,7 +354,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
       //  _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
-        //sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
+        sb.and("aclId", sb.entity().getACLId(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
@@ -350,7 +377,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         }
 
         if (networkId != null) {
-            sc.setParameters("networkId", networkId);
+            Network network = _networkDao.findById(networkId);
+            sc.setParameters("aclId", network.getNetworkACLId());
         }
 
         if (trafficType != null) {
@@ -400,13 +428,25 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean replaceNetworkACL(long aclId, long networkId) {
         NetworkVO network = _networkDao.findById(networkId);
+        if(network == null){
+            throw new InvalidParameterValueException("Unable to find Network: " +networkId);
+        }
+        NetworkACL acl = _networkACLDao.findById(aclId);
+        if(acl == null){
+            throw new InvalidParameterValueException("Unable to find NetworkACL: " +aclId);
+        }
+        if(network.getVpcId() == null){
+            throw new InvalidParameterValueException("Network does not belong to VPC: " +networkId);
+        }
+        if(network.getVpcId() != acl.getVpcId()){
+            throw new InvalidParameterValueException("Network: "+networkId+" and ACL: "+aclId+" do not belong to the same VPC");
+        }
         network.setNetworkACLId(aclId);
         return _networkDao.update(networkId, network);
     }
 
-    @Override
     @DB
-    public void revokeRule(NetworkACLItemVO rule, Account caller, long userId, boolean needUsageEvent) {
+    private void revokeRule(NetworkACLItemVO rule, Account caller, long userId, boolean needUsageEvent) {
         if (caller != null) {
             //_accountMgr.checkAccess(caller, null, true, rule);
         }

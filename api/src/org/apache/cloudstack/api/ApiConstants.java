@@ -491,6 +491,7 @@ public class ApiConstants {
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
     public static final String ACL_ID = "aclid";
+    public static final String NUMBER = "number";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

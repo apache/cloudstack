@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
     NetworkACLItem getNetworkACLItem(long ruleId);
-    boolean applyNetworkACLtoNetworks(long aclId, Account caller) throws ResourceUnavailableException;
+    boolean applyNetworkACL(long aclId, Account caller) throws ResourceUnavailableException;
 
     /**
      * @param createNetworkACLCmd

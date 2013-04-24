@@ -30,11 +30,6 @@ public interface NetworkACLItem extends InternalIdentity {
 
     int getNumber();
 
-    enum NetworkACLType {
-        System, // The pre-defined rules created by admin, in the system wide
-        User // the rules created by user, to a specific ip
-    }
-
     enum State {
         Staged, // Rule been created but has never got through network rule conflict detection.  Rules in this state can not be sent to network elements.
         Add,    // Add means the rule has been created and has gone through network rule conflict detection.
@@ -76,8 +71,6 @@ public interface NetworkACLItem extends InternalIdentity {
     Integer getIcmpType();
 
     List<String> getSourceCidrList();
-
-    NetworkACLType getType();
 
     /**
      * @return

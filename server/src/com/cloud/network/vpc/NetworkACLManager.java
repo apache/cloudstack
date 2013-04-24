@@ -39,8 +39,9 @@ public interface NetworkACLManager extends NetworkACLService{
     
     List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId);
 
-    boolean applyNetworkACL(long networkId, Account caller) throws ResourceUnavailableException;
+    boolean applyNetworkACL(long aclId, Account caller) throws ResourceUnavailableException;
 
-    @DB
-    void revokeRule(NetworkACLItemVO rule, Account caller, long userId, boolean needUsageEvent);
+    void removeRule(NetworkACLItem rule);
+
+    boolean applyACLToNetwork(long networkId, Account caller) throws ResourceUnavailableException;
 }

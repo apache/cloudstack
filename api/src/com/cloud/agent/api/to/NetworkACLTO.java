@@ -72,10 +72,10 @@ public class NetworkACLTO implements InternalIdentity {
         this.icmpCode = icmpCode;
         this.trafficType = trafficType;
 
-        if(allow){
-            this.action = "ACCEPT";
-        } else {
+        if(!allow){
             this.action = "DROP";
+        } else {
+            this.action = "ACCEPT";
         }
 
         this.number = number;

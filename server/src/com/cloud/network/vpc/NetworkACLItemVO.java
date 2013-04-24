@@ -21,9 +21,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
 import javax.persistence.*;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name="network_acl_item")
@@ -59,31 +57,50 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Column(name="icmp_type")
     Integer icmpType;
 
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
-    NetworkACLType type;
-
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
 
-
-    // This is a delayed load value.  If the value is null,
-    // then this field has not been loaded yet.
-    // Call firewallrules dao to load it.
-    @Transient
-    List<String> sourceCidrs;
+    @Column(name="cidr")
+    String sourceCidrs;
 
     @Column(name="uuid")
     String uuid;
 
+    @Column(name="number")
+    int number;
+
+    @Column(name="action")
+    @Enumerated(value=EnumType.STRING)
+    Action action;
+
     public void setSourceCidrList(List<String> sourceCidrs) {
-        this.sourceCidrs=sourceCidrs;
+        if(sourceCidrs == null){
+            this.sourceCidrs = null;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for(String cidr : sourceCidrs){
+                if(sb.length() != 0){
+                    sb.append(",");
+                }
+                sb.append(cidr);
+            }
+            this.sourceCidrs=sb.toString();
+        }
     }
 
     @Override
     public List<String> getSourceCidrList() {
-        return sourceCidrs;
+        if(sourceCidrs == null || sourceCidrs.isEmpty()){
+            return null;
+        } else {
+            List<String> cidrList = new ArrayList<String>();
+            String[] cidrs = sourceCidrs.split(",");
+            for(String cidr : cidrs){
+                cidrList.add(cidr);
+            }
+            return cidrList;
+        }
     }
 
     @Override
@@ -120,10 +137,6 @@ public class NetworkACLItemVO implements NetworkACLItem {
         return ACLId;
     }
 
-    @Override
-    public NetworkACLType getType() {
-        return type;
-    }
     public Date getCreated() {
         return created;
     }
@@ -134,7 +147,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol,
                             long aclId, List<String> sourceCidrs, Integer icmpCode,
-                            Integer icmpType, TrafficType trafficType) {
+                            Integer icmpType, TrafficType trafficType, Action action, int number) {
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
         this.protocol = protocol;
@@ -142,15 +155,16 @@ public class NetworkACLItemVO implements NetworkACLItem {
         this.state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
-        this.sourceCidrs = sourceCidrs;
+        setSourceCidrList(sourceCidrs);
         this.uuid = UUID.randomUUID().toString();
-        this.type = NetworkACLType.User;
         this.trafficType = trafficType;
+        this.action = action;
+        this.number = number;
     }
 
 
-    public NetworkACLItemVO(int port, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType) {
-        this(port, port, protocol, aclId, sourceCidrs, icmpCode, icmpType, null);
+    public NetworkACLItemVO(int port, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Action action, int number) {
+        this(port, port, protocol, aclId, sourceCidrs, icmpCode, icmpType, null, action, number);
     }
 
     @Override
@@ -175,20 +189,16 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     @Override
     public Action getAction() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return action;
     }
 
     @Override
     public int getNumber() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return number;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public void setType(NetworkACLType type) {
-        this.type = type;
     }
 
     @Override

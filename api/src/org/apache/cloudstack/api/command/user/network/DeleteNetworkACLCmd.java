@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
@@ -44,7 +45,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLItemResponse.class,
             required=true, description="the ID of the network ACL")
     private Long id;
 
@@ -70,7 +71,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_CLOSE;
+        return EventTypes.EVENT_NETWORK_ACL_ITEM_DELETE;
     }
 
     @Override
@@ -80,15 +81,19 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        if (ownerId == null) {
+        return 2L;
+/*        if (ownerId == null) {
             NetworkACLItem rule = _networkACLService.getNetworkACLItem(id);
             if (rule == null) {
                 throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
             } else {
-                //ownerId = rule.getAccountId();
+
+                NetworkACL acl = _networkACLService
+                        rule.getACLId();
+
             }
         }
-        return ownerId;
+        return ownerId;*/
     }
 
     @Override
@@ -104,20 +109,5 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
         }
     }
 
-
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
-    }
-
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
-    }
 }
 

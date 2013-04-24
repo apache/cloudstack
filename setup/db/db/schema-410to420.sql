@@ -1199,8 +1199,10 @@ CREATE TABLE `cloud`.`network_acl_item` (
   `created` datetime COMMENT 'Date created',
   `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
   `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
-  `type` varchar(10) NOT NULL DEFAULT 'USER',
   `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
+  `cidr` varchar(255) COMMENT 'comma seperated cidr list',
+  `number` int(10) NOT NULL COMMENT 'priority number of the acl item',
+  `action` varchar(10) NOT NULL COMMENT 'rule action, allow or deny',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)

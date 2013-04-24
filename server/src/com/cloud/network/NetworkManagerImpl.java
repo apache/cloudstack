@@ -2686,7 +2686,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         //apply network ACLs
-        if (!_networkACLMgr.applyNetworkACL(networkId, caller)) {
+        if (!_networkACLMgr.applyACLToNetwork(networkId, caller)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }

@@ -16,28 +16,18 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
-import com.cloud.network.dao.FirewallRulesCidrsDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
-import javax.inject.Inject;
 import java.util.List;
 
 @Component
@@ -48,13 +38,6 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     protected final SearchBuilder<NetworkACLItemVO> AllFieldsSearch;
     protected final SearchBuilder<NetworkACLItemVO> NotRevokedSearch;
     protected final SearchBuilder<NetworkACLItemVO> ReleaseSearch;
-    protected SearchBuilder<NetworkACLItemVO> VmSearch;
-    protected final SearchBuilder<NetworkACLItemVO> SystemRuleSearch;
-    protected final GenericSearchBuilder<NetworkACLItemVO, Long> RulesByIpCount;
-
-    @Inject protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
-    @Inject ResourceTagDao _tagsDao;
-    @Inject IPAddressDao _ipDao;
 
     protected NetworkACLItemDaoImpl() {
         super();
@@ -81,13 +64,6 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
         ReleaseSearch.done();
 
-        SystemRuleSearch = createSearchBuilder();
-        SystemRuleSearch.and("type", SystemRuleSearch.entity().getType(), Op.EQ);
-        SystemRuleSearch.done();
-
-        RulesByIpCount = createSearchBuilder(Long.class);
-        RulesByIpCount.select(null, Func.COUNT, RulesByIpCount.entity().getId());
-        RulesByIpCount.done();
     }
 
 
@@ -109,12 +85,8 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
 
     @Override
     public boolean revoke(NetworkACLItemVO rule) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean releasePorts(long ipAddressId, String protocol, int[] ports) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        rule.setState(State.Revoke);
+        return update(rule.getId(), rule);
     }
 
     @Override
@@ -123,11 +95,6 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         sc.setParameters("aclId", aclId);
 
         return listBy(sc);
-    }
-
-    @Override
-    public List<NetworkACLItemVO> listSystemRules() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -140,8 +107,4 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
-    public void loadSourceCidrs(NetworkACLItemVO rule) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 }
