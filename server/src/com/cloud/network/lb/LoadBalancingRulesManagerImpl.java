@@ -1487,9 +1487,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
         if (lbs != null) {
+            s_logger.debug("Applying load balancer rules of scheme " + scheme + " in network id=" + networkId);
             return applyLoadBalancerRules(lbs, true);
         } else {
-            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to apply");
+            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules of scheme " + scheme + ", nothing to apply");
             return true;
         }
     }
@@ -1526,7 +1527,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         } else {
             List<LbDestination> dstList = getExistingDestinations(lb.getId());
             loadBalancing.setDestinations(dstList);
-	    List<LbHealthCheckPolicy> hcPolicyList = getHealthCheckPolicies(lb.getId());
+            List<LbHealthCheckPolicy> hcPolicyList = getHealthCheckPolicies(lb.getId());
             loadBalancing.setHealthCheckPolicies(hcPolicyList);
         }
 
@@ -2011,7 +2012,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     
     public boolean applyLbRules(List<LoadBalancingRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {
-            s_logger.debug("There are no rules to forward to the network elements");
+            s_logger.debug("There are no Load Balancing Rules to forward to the network elements");
             return true;
         }
 

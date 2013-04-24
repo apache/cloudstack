@@ -108,6 +108,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
@@ -183,31 +184,26 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         }
         
         NicProfile controlNic = null;
+        String defaultDns1 = null;
+        String defaultDns2 = null;
+        Network guestNetwork = null;
       
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            boolean ipv4 = false, ipv6 = false;
-            if (nic.getIp4Address() != null) {
-                ipv4 = true;
-                buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-                buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
-            }
-            if (nic.getIp6Address() != null) {
-                ipv6 = true;
-                buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIp6Address());
-                buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIp6Cidr()));
-            }
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
+            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            
             
             if (nic.isDefaultNic()) {
-                if (ipv4) {
-                    buf.append(" gateway=").append(nic.getGateway());
-                }
-                if (ipv6) {
-                    buf.append(" ip6gateway=").append(nic.getIp6Gateway());
-                }
+                buf.append(" gateway=").append(nic.getGateway());
+                defaultDns1 = nic.getDns1();
+                defaultDns2 = nic.getDns2();
             }
 
-            if (nic.getTrafficType() == TrafficType.Management) {
+            if (nic.getTrafficType() == TrafficType.Guest) {
+                guestNetwork = _ntwkModel.getNetwork(nic.getNetworkId());
+                buf.append(" sshonguest=true");
+            } else if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
@@ -233,14 +229,28 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         if (controlNic == null) {
             throw new CloudRuntimeException("Didn't start a control port");
         }
+                
+        if (guestNetwork != null) {
+            String domain = guestNetwork.getNetworkDomain();
+            if (domain != null) {
+                buf.append(" domain=" + domain);
+            }
+        }
+
+        buf.append(" dns1=").append(defaultDns1);
+        if (defaultDns2 != null) {
+            buf.append(" dns2=").append(defaultDns2);
+        }
 
         //FIXME - change if use other template for internal lb vm
-        String type = "vpcrouter";
+        String type = "elbvm";
         buf.append(" type=" + type);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
-        }
+        //FIXME - change it to DEBUG level later
+//        if (s_logger.isDebugEnabled()) {
+//            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
+//        }
+        s_logger.info("Boot Args for " + profile + ": " + buf.toString());
 
         return true;
     }
@@ -272,7 +282,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         if (answer != null && answer instanceof CheckSshAnswer) {
             CheckSshAnswer sshAnswer = (CheckSshAnswer) answer;
             if (sshAnswer == null || !sshAnswer.getResult()) {
-                s_logger.warn("Unable to ssh to the VM: " + sshAnswer.getDetails());
+                s_logger.warn("Unable to ssh to the internal LB VM: " + sshAnswer.getDetails());
                 result = false;
             }
         } else {
@@ -296,7 +306,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         if (answer != null && answer instanceof GetDomRVersionAnswer) {
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
             if (answer == null || !answer.getResult()) {
-                s_logger.warn("Unable to get the template/scripts version of router " + internalLbVm.getInstanceName() +
+                s_logger.warn("Unable to get the template/scripts version of internal LB VM " + internalLbVm.getInstanceName() +
                         " due to: " + versionAnswer.getDetails());
                 result = false;
             } else {
@@ -650,6 +660,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, offeringId, guestNetwork.getVpcId(),
                 networks, false);
             if (internalLbVm != null) {
+                _routerDao.addRouterToGuestNetwork(internalLbVm, guestNetwork);
                 internalLbs.add(internalLbVm);
             }
         } finally {
@@ -669,7 +680,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         //Form networks
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
         
-        //1) Guest network
+        //1) Guest network - default
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Internal LB in Guest network " + guestNetwork);
             NicProfile guestNic = new NicProfile();
@@ -685,6 +696,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             guestNic.setMode(guestNetwork.getMode());
             String gatewayCidr = guestNetwork.getCidr();
             guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+            guestNic.setDefaultNic(true);
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
         }
 
@@ -759,7 +771,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
                 internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProvider.getId(), 
                 VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, 
-                RedundantState.UNKNOWN, false, false, vpcId);
+                RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _itMgr.allocate(internalLbVm, template, routerOffering, networks, plan, null, owner);
             } catch (InsufficientCapacityException ex) {
@@ -853,8 +865,19 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             return true;
         }
         
-        //FIXME - add validation for the internal lb vm state here
-        return sendLBRules(internalLbVms.get(0), rules, network.getId());
+        //only one internal lb vm is supported per ip address at this time
+        VirtualRouter lbVm = internalLbVms.get(0);
+        if (lbVm.getState() == State.Running) {
+            return sendLBRules(lbVm, rules, network.getId());
+
+        } else if (lbVm.getState() == State.Stopped || lbVm.getState() == State.Stopping) {
+            s_logger.debug("Internal LB VM " + lbVm.getInstanceName() + " is in " + lbVm.getState() + 
+                    ", so not sending apply lb rules commands to the backend");
+            return true;
+        } else {
+            s_logger.warn("Unable to apply lb rules, Internal LB VM is not in the right state " + lbVm.getState());
+            throw new ResourceUnavailableException("Unable to apply lb rules; Internal LB VM is not in the right state", DataCenter.class, lbVm.getDataCenterId());
+        }
     }
     
     protected boolean sendLBRules(VirtualRouter internalLbVm, List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {

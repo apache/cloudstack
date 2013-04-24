@@ -314,12 +314,13 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        
         //1) Get Internal LB VMs to destroy
         Set<Ip> vmsToDestroy = getVmsToDestroy(rules);
         
         //2) Get rules to apply
         Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
+        s_logger.debug("Applying " + rulesToApply.size() + " on element " + this.getName());
+
  
         for (Ip sourceIp : rulesToApply.keySet()) {
             if (vmsToDestroy.contains(sourceIp)) {
@@ -359,8 +360,6 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 if (!_internalLbMgr.applyLoadBalancingRules(network, rulesToApply.get(sourceIp), internalLbVms)) {
                     throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() + 
                             " in network " + network.getId() + " on element " + this.getName());
-                } else {
-                    return true;
                 }
             }
         }
@@ -369,32 +368,11 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     }
 
     protected Map<Ip, List<LoadBalancingRule>> getLbRulesToApply(List<LoadBalancingRule> rules) {
-        //1) Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
-        Map<Ip, List<LoadBalancingRule>> groupedRules = groupBySourceIp(rules);
-
-        //2) Apply only sets containing LB rules in transition state (Add/Revoke).
-        Map<Ip, List<LoadBalancingRule>> rulesToApply = new HashMap<Ip, List<LoadBalancingRule>>();
-        
-        for (Ip sourceIp : groupedRules.keySet()) {
-            boolean apply = false;
-            List<LoadBalancingRule> rulesToCheck = groupedRules.get(sourceIp);
-            for (LoadBalancingRule ruleToCheck : rulesToCheck) {
-                if (ruleToCheck.getState() == FirewallRule.State.Revoke || ruleToCheck.getState() == FirewallRule.State.Add){
-                    apply = true;
-                    break;
-                }
-            }
-            
-            if (apply) {
-                rulesToApply.put(sourceIp, rulesToCheck);
-            } else {
-                s_logger.debug("Not applying the lb rules for soure ip " + sourceIp + " on element " + this.getName()
-                        + " as there are no rules in transition state");
-            }
-        }        
+        //Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
+        Map<Ip, List<LoadBalancingRule>> rulesToApply = groupBySourceIp(rules);
+      
         return rulesToApply;
     }
-    
     
     
     protected Set<Ip> getVmsToDestroy(List<LoadBalancingRule> rules) {

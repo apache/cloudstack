@@ -640,6 +640,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
+        data_center.networktype data_center_type,
         data_center.dns1 dns1,
         data_center.dns2 dns2,
         data_center.ip6_dns1 ip6_dns1,
