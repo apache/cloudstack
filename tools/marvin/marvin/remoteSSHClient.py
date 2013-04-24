@@ -23,11 +23,12 @@ import logging
 from contextlib import closing
 
 class remoteSSHClient(object):
-    def __init__(self, host, port, user, passwd, retries = 10, log_lvl=logging.INFO):
+    def __init__(self, host, port, user, passwd, retries = 10, log_lvl=logging.INFO, keyPairFileLocation=None):
         self.host = host
         self.port = port
         self.user = user
         self.passwd = passwd
+        self.keyPairFile = keyPairFileLocation
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.logger = logging.getLogger('sshClient')
@@ -38,8 +39,19 @@ class remoteSSHClient(object):
         retry_count = retries
         while True:
             try:
-                self.ssh.connect(str(host),int(port), user, passwd)
-                self.logger.debug("SSH connect: %s@%s with passwd %s"%(user, str(host), passwd))
+                if keyPairFileLocation == None:
+                    self.ssh.connect(str(host),int(port), user, passwd)
+                    self.logger.debug("SSH connect: %s@%s with passwd %s"%(user, str(host), passwd))
+                else:
+                    self.ssh.connect(
+                                        hostname=str(host),
+                                        port=int(port),
+                                        username=str(user),
+                                        key_filename=str(keyPairFileLocation),
+                                        look_for_keys=False
+                                    )
+                    self.logger.debug("connecting to server %s with user %s key %s"%(str(host), user, keyPairFileLocation))
+                    self.logger.debug("SSH connect: %s@%s with passwd %s"%(user, str(host), passwd))
             except paramiko.SSHException, sshex:
                 if retry_count == 0:
                     raise cloudstackException.InvalidParameterException(repr(sshex))

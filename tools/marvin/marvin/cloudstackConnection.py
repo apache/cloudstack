@@ -33,13 +33,18 @@ from requests import RequestException
 class cloudConnection(object):
     """ Connections to make API calls to the cloudstack management server
     """
-    def __init__(self, mgtSvr, port=8096, apiKey=None, securityKey=None,
+    def __init__(self, mgtSvr, port=8096, user=None, passwd=None,
+                 apiKey=None, securityKey=None,
                  asyncTimeout=3600, logging=None, scheme='http',
                  path='client/api'):
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
         self.port = port
+        if user:
+            self.user = user
+        if passwd:
+            self.passwd = passwd
         self.logging = logging
         self.path = path
         self.retries = 5
@@ -55,9 +60,10 @@ class cloudConnection(object):
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
     def __copy__(self):
-        return cloudConnection(self.mgtSvr, self.port, self.apiKey,
-                               self.securityKey, self.asyncTimeout,
-                               self.logging, self.protocol, self.path)
+        return cloudConnection(self.mgtSvr, self.port, self.user, self.passwd,
+                               self.apiKey, self.securityKey,
+                               self.asyncTimeout, self.logging, self.protocol,
+                               self.path)
 
     def poll(self, jobid, response):
         """
@@ -200,7 +206,8 @@ class cloudConnection(object):
         @return:
         """
         cmdname, isAsync, payload = self.sanitize_command(cmd)
-        self.logging.debug("sending %s request: %s %s" % (method, cmdname, str(payload)))
+        self.logging.debug("sending %s request: %s %s" % (method, cmdname,
+                                                          str(payload)))
         response = self.request(
             cmdname, self.auth, payload=payload, method=method)
         self.logging.debug("Request: %s Response: %s" %
