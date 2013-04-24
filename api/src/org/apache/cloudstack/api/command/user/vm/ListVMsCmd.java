@@ -79,6 +79,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
             description="the availability zone ID")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN,
             description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
@@ -147,6 +150,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
