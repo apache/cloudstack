@@ -91,7 +91,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             domainid=cls.domain.id
         )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -120,8 +120,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             self.api_client,
             self.services["virtual_machine"],
             templateid=self.template.id,
-            accountid=self.account.account.name,
-            domainid=self.account.account.domainid,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
@@ -153,8 +153,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             self.api_client,
             self.services["virtual_machine"],
             templateid=self.template.id,
-            accountid=self.account.account.name,
-            domainid=self.account.account.domainid,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
