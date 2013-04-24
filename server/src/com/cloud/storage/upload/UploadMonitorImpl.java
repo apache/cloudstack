@@ -156,20 +156,21 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 	}
 
 	@Override
-	public void extractVolume(UploadVO uploadVolumeObj, HostVO sserver, VolumeVO volume, String url, Long dataCenterId, String installPath, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
+	public void extractVolume(UploadVO uploadVolumeObj, DataStore secStore, VolumeVO volume, String url, Long dataCenterId, String installPath, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
 
 		uploadVolumeObj.setUploadState(Upload.Status.NOT_UPLOADED);
 		_uploadDao.update(uploadVolumeObj.getId(), uploadVolumeObj);
 
 	    start();
 		UploadCommand ucmd = new UploadCommand(url, volume.getId(), volume.getSize(), installPath, Type.VOLUME);
-		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj, this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
+		UploadListener ul = new UploadListener(secStore, _timer, _uploadDao, uploadVolumeObj, this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
 		_listenerMap.put(uploadVolumeObj, ul);
 
 		try {
-	        send(sserver.getId(), ucmd, ul);
-        } catch (AgentUnavailableException e) {
-			s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + sserver.getName() + " to " +url, e);
+		    EndPoint ep = _epSelector.select(secStore);
+		    ep.sendMessageAsyncWithListener(ucmd, ul);
+        } catch (Exception e) {
+			s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + secStore.getName() + " to " +url, e);
 			ul.setDisconnected();
 			ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }
@@ -181,23 +182,22 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 		Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 
-		List<HostVO> storageServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
-		HostVO sserver = storageServers.get(0);
+		DataStore secStore = this.storeMgr.getImageStore(dataCenterId);
 
-		UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(),
+		UploadVO uploadTemplateObj = new UploadVO(secStore.getId(), template.getId(), new Date(),
 													Upload.Status.NOT_UPLOADED, type, url, Mode.FTP_UPLOAD);
 		_uploadDao.persist(uploadTemplateObj);
 
 		if(vmTemplateHost != null) {
 		    start();
 			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost.getInstallPath(), vmTemplateHost.getSize());
-			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);
+			UploadListener ul = new UploadListener(secStore, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);
 			_listenerMap.put(uploadTemplateObj, ul);
-
-			try {
-	            send(sserver.getId(), ucmd, ul);
-            } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + sserver.getName() + " to " +url, e);
+			try{
+			    EndPoint ep = _epSelector.select(secStore);
+			    ep.sendMessageAsyncWithListener(ucmd, ul);
+            } catch (Exception e) {
+				s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + secStore.getName() + " to " +url, e);
 				ul.setDisconnected();
 				ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -282,19 +282,18 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
-            HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
-            HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
-            if( ssvm == null ) {
-            	errorString = "There is no secondary storage VM for secondary storage host " + secStorage.getName();
+            DataStore secStore = this.storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getHostId(), DataStoreRole.Image);
+            EndPoint ep = _epSelector.select(secStore);
+            if( ep == null ) {
+            	errorString = "There is no secondary storage VM for secondary storage host " + secStore.getName();
             	throw new CloudRuntimeException(errorString);
             }
 
-            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
-            try {
-	            send(ssvm.getId(), cmd, null);
-            } catch (AgentUnavailableException e) {
-                errorString = "Unable to create a link for " +type+ " id:"+entityId + "," + e.getMessage();
-                s_logger.warn(errorString, e);
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreVO)secStore).getParent(), path, uuid);
+            Answer ans = ep.sendMessage(cmd);
+            if (ans == null || !ans.getResult()) {
+                errorString = "Unable to create a link for " +type+ " id:"+entityId + "," + ans.getDetails();
+                s_logger.warn(errorString);
                 throw new CloudRuntimeException(errorString);
             }
 
@@ -342,9 +341,6 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 
 
-	public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
-		_agentMgr.send(hostId, new Commands(cmd), listener);
-	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
@@ -382,7 +378,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 		return true;
 	}
 
-	public void handleUploadEvent(HostVO host, Long accountId, String typeName, Type type, Long uploadId, com.cloud.storage.Upload.Status reason, long eventId) {
+	public void handleUploadEvent(Long accountId, String typeName, Type type, Long uploadId, com.cloud.storage.Upload.Status reason, long eventId) {
 
 		if ((reason == Upload.Status.UPLOADED) || (reason==Upload.Status.ABANDONED)){
 			UploadVO uploadObj = new UploadVO(uploadId);
@@ -463,23 +459,25 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         for (UploadVO extractJob : extractJobs){
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){
                 String path = extractJob.getInstallPath();
-                HostVO secStorage = ApiDBUtils.findHostById(extractJob.getHostId());
+                DataStore secStore = this.storeMgr.getDataStore(extractJob.getHostId(), DataStoreRole.Image);
+
 
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
-                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), secStorage.getParent());
-                HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
-                if( ssvm == null ) {
+                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), ((ImageStoreVO)secStore).getParent());
+                EndPoint ep = _epSelector.select(secStore);
+                 if( ep == null ) {
                 	s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
                 	continue; //TODO: why continue? why not break?
                 }
                 if (s_logger.isDebugEnabled()) {
-                	s_logger.debug("UploadMonitor cleanup: Sending deletion of extract URL "+ extractJob.getUploadUrl() + " to ssvm " + ssvm.getId());
+                	s_logger.debug("UploadMonitor cleanup: Sending deletion of extract URL "+ extractJob.getUploadUrl() + " to ssvm " + ep.getHostAddr());
                 }
-                try {
-                    send(ssvm.getId(), cmd, null); //TODO: how do you know if it was successful?
+                Answer ans = ep.sendMessage(cmd);
+                if ( ans != null && ans.getResult()){
                     _uploadDao.remove(extractJob.getId());
-                } catch (AgentUnavailableException e) {
-                	s_logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType()+ " id=" + extractJob.getTypeId()+ " url="+ extractJob.getUploadUrl() + " on ssvm " + ssvm.getId(), e);
+                }
+                else{
+                    s_logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType()+ " id=" + extractJob.getTypeId()+ " url="+ extractJob.getUploadUrl() + " on ssvm " + ep.getHostAddr());
                 }
             }
         }

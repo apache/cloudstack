@@ -1742,35 +1742,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
 
-    @Override
-    public HostVO getSecondaryStorageHost(long zoneId) {
-        List<HostVO> hosts = _ssvmMgr
-                .listSecondaryStorageHostsInOneZone(zoneId);
-        if (hosts == null || hosts.size() == 0) {
-            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
-            if (hosts.isEmpty()) {
-                return null;
-            }
-        }
-
-        int size = hosts.size();
-        Random rn = new Random();
-        int index = rn.nextInt(size);
-        return hosts.get(index);
-    }
-
-    @Override
-    public List<HostVO> getSecondaryStorageHosts(long zoneId) {
-        List<HostVO> hosts = _ssvmMgr
-                .listSecondaryStorageHostsInOneZone(zoneId);
-        if (hosts == null || hosts.size() == 0) {
-            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
-            if (hosts.isEmpty()) {
-                return new ArrayList<HostVO>();
-            }
-        }
-        return hosts;
-    }
 
     @Override
     public Long getTemplateSize(long templateId, long zoneId) {

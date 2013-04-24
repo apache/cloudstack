@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.log4j.Level;
@@ -42,6 +44,9 @@ import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
@@ -109,7 +114,7 @@ public class UploadListener implements Listener {
 	}
 
 
-	private HostVO sserver;
+	private DataStore sserver;
 
 	private boolean uploadActive = true;
 
@@ -134,6 +139,7 @@ public class UploadListener implements Listener {
 	private long eventId;
 	private AsyncJobManager asyncMgr;
 	private ExtractResponse resultObj;
+	@Inject EndPointSelector _epSelector;
 
 	public AsyncJobManager getAsyncMgr() {
 		return asyncMgr;
@@ -162,7 +168,7 @@ public class UploadListener implements Listener {
 	private final Map<String,  UploadState> stateMap = new HashMap<String, UploadState>();
 	private Long uploadId;
 
-	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
+	public UploadListener(DataStore host, Timer _timer, UploadDao uploadDao,
 			UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
 			Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
 		this.sserver = host;
@@ -272,7 +278,7 @@ public class UploadListener implements Listener {
 
 	public void setUploadInactive(Status reason) {
 		uploadActive=false;
-		uploadMonitor.handleUploadEvent(sserver, accountId, typeName, type, uploadId, reason, eventId);
+		uploadMonitor.handleUploadEvent(accountId, typeName, type, uploadId, reason, eventId);
 	}
 
 	public void logUploadStart() {
@@ -430,8 +436,9 @@ public class UploadListener implements Listener {
 				log("Sending progress command ", Level.TRACE);
 			}
 			try {
-	            uploadMonitor.send(sserver.getId(), new UploadProgressCommand(getCommand(), getJobId(), reqType), this);
-            } catch (AgentUnavailableException e) {
+			    EndPoint ep = _epSelector.select(sserver);
+			    ep.sendMessageAsyncWithListener(new UploadProgressCommand(getCommand(), getJobId(), reqType), this);
+            } catch (Exception e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();
             }

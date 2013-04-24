@@ -17,6 +17,7 @@
 package com.cloud.storage.upload;
 
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.async.AsyncJobManager;
@@ -48,7 +49,7 @@ public interface UploadMonitor extends Manager{
     UploadVO createNewUploadEntry(Long hostId, Long typeId, Status uploadState,
             Type type, String errorString, Mode extractMode);
 
-    void extractVolume(UploadVO uploadVolumeObj, HostVO sserver, VolumeVO volume, String url,
+    void extractVolume(UploadVO uploadVolumeObj, DataStore secStore, VolumeVO volume, String url,
             Long dataCenterId, String installPath, long eventId,
             long asyncJobId, AsyncJobManager asyncMgr);
 

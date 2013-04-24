@@ -358,8 +358,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         VolumeVO volume = _volsDao.findById(volumeId);
         Long dcId = volume.getDataCenterId();
         Long accountId = volume.getAccountId();
-        HostVO secHost = this.templateMgr.getSecondaryStorageHost(dcId);
-        String secondaryStoragePoolUrl = secHost.getStorageUrl();
+        DataStore secStore = this.dataStoreMgr.getImageStore(dcId);
 
         Long swiftId = ss.getSwiftId();
         SwiftTO swift = _swiftMgr.getSwiftTO(swiftId);
@@ -376,7 +375,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String parent = null;
         try {
             for (String backupUuid : BackupUuids) {
-                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
+                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secStore.getUri(), dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
                 Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
                 if ((answer == null) || !answer.getResult()) {
                     throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
@@ -409,7 +408,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         final VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         final Long zoneId = volume.getDataCenterId();
-        final HostVO secHost = this.templateMgr.getSecondaryStorageHost(zoneId);
+        final DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
 
         final S3TO s3 = _s3Mgr.getS3TO(snapshot.getS3Id());
         final List<String> backupUuids = determineBackupUuids(snapshot);
@@ -418,7 +417,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             String parent = null;
             for (final String backupUuid : backupUuids) {
                 final DownloadSnapshotFromS3Command cmd = new DownloadSnapshotFromS3Command(
-                        s3, parent, secHost.getStorageUrl(), zoneId,
+                        s3, parent, secStore.getUri(), zoneId,
                         volume.getAccountId(), volume.getId(), backupUuid,
                         _backupsnapshotwait);
                 final Answer answer = _agentMgr.sendToSSVM(zoneId, cmd);

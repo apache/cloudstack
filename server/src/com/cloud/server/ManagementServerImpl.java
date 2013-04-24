@@ -313,6 +313,7 @@ import org.apache.cloudstack.api.command.user.vpc.*;
 import org.apache.cloudstack.api.command.user.vpn.*;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -2673,8 +2674,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         long accountId = volume.getAccountId();
         StoragePool srcPool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-        HostVO sserver = this.templateMgr.getSecondaryStorageHost(zoneId);
-        String secondaryStorageURL = sserver.getStorageUrl();
+        DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
+        String secondaryStorageURL = secStore.getUri();
 
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
 
@@ -2682,7 +2683,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return extractURLList.get(0).getId(); // If download url already
             // exists then return
         } else {
-            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
+            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(secStore.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
                     url, extractMode);
             s_logger.debug("Extract Mode - " + uploadJob.getMode());
             uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
@@ -2740,7 +2741,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (extractMode == Mode.FTP_UPLOAD) { // Now that the volume is
                 // copied perform the actual
                 // uploading
-                _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
+                _uploadMonitor.extractVolume(uploadJob, secStore, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
                 return uploadJob.getId();
             } else { // Volume is copied now make it visible under apache and
                 // create a URL.

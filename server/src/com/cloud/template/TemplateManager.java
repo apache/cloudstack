@@ -100,10 +100,6 @@ public interface TemplateManager extends TemplateApiService{
 
     DataStore getImageStore(long zoneId, long tmpltId);
 
-    HostVO getSecondaryStorageHost(long zoneId);
-
-    List<HostVO> getSecondaryStorageHosts(long zoneId);
-
     Long getTemplateSize(long templateId, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId);
