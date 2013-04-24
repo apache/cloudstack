@@ -102,7 +102,7 @@ class Account:
     def delete(self, apiclient):
         """Delete an account"""
         cmd = deleteAccount.deleteAccountCmd()
-        cmd.id = self.account.id
+        cmd.id = self.id
         apiclient.deleteAccount(cmd)
 
     @classmethod
@@ -278,12 +278,9 @@ class VirtualMachine:
             cmd.hostid = hostid
 
         if "userdata" in services:
-            if method == 'POST':
-                postdata = base64.b64encode(services["userdata"])
-                virtual_machine = apiclient.deployVirtualMachine(cmd, postdata = {'userdata' : postdata})
-            else:
-                cmd.userdata = base64.b64encode(services["userdata"])
-        virtual_machine = apiclient.deployVirtualMachine(cmd)
+            cmd.userdata = base64.b64encode(services["userdata"])
+
+        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         # VM should be in Running state after deploy
         timeout = 10
