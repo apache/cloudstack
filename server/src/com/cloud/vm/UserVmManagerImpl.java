@@ -1520,6 +1520,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         @Override
         public void run() {
+            UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
             GlobalLock scanLock = GlobalLock.getInternLock("UserVMExpunge");
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
