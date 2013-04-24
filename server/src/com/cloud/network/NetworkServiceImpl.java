@@ -2066,9 +2066,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     protected Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");
         List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         Set<Long> usedIps = new TreeSet<Long>(); 
-        
+
         for (String ip : ips) {
             if (requestedIp != null && requestedIp.equals(ip)) {
                 s_logger.warn("Requested ip address " + requestedIp + " is already in use in network" + network);
@@ -2077,9 +2076,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
             usedIps.add(NetUtils.ip2Long(ip));
         }
-        if (usedIps.size() != 0) {
-            allPossibleIps.removeAll(usedIps);
-        }
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
 
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
