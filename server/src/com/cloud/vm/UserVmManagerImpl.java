@@ -97,7 +97,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeployPlannerSelector;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -400,9 +399,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
-
-    @Inject
-    List<DeployPlannerSelector> plannerSelectors;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;

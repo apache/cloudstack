@@ -35,6 +35,7 @@ import com.cloud.vm.VirtualMachineProfile;
 /**
  */
 public interface DeploymentPlanner extends Adapter {
+
     /**
      * plan is called to determine where a virtual machine should be running.
      *
@@ -46,6 +47,7 @@ public interface DeploymentPlanner extends Adapter {
      *            avoid these data centers, pods, clusters, or hosts.
      * @return DeployDestination for that virtual machine.
      */
+    @Deprecated
     DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
     /**
@@ -86,6 +88,10 @@ public interface DeploymentPlanner extends Adapter {
         userdispersing,
         userconcentratedpod_random,
         userconcentratedpod_firstfit;
+    }
+
+    public enum PlannerResourceUsage {
+        Shared, Dedicated;
     }
 
     public static class ExcludeList {
