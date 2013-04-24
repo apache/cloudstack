@@ -18,8 +18,6 @@ package com.cloud.template;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
-import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -100,12 +98,7 @@ public interface TemplateManager extends TemplateApiService{
 
     String getSecondaryStorageURL(long zoneId);
 
-    //HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
-
     DataStore getImageStore(long zoneId, long tmpltId);
-
-   // VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
-   //         boolean readyOnly);
 
     HostVO getSecondaryStorageHost(long zoneId);
 
@@ -114,8 +107,6 @@ public interface TemplateManager extends TemplateApiService{
     Long getTemplateSize(long templateId, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId);
-
-    String getChecksum(Long hostId, String templatePath);
 
     String getChecksum(DataStore store, String templatePath);
 

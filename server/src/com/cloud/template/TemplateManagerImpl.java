@@ -106,7 +106,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -646,24 +645,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return null;
     }
 
-
-    @Override
-    public String getChecksum(Long hostId, String templatePath) {
-        HostVO ssHost = _hostDao.findById(hostId);
-        Host.Type type = ssHost.getType();
-        if (type != Host.Type.SecondaryStorage
-                && type != Host.Type.LocalSecondaryStorage) {
-            return null;
-        }
-        String secUrl = ssHost.getStorageUrl();
-        Answer answer;
-        answer = _agentMgr.sendToSecStorage(ssHost, new ComputeChecksumCommand(
-                secUrl, templatePath));
-        if (answer != null && answer.getResult()) {
-            return answer.getDetails();
-        }
-        return null;
-    }
 
     @Override
     public String getChecksum(DataStore store, String templatePath) {
@@ -1741,33 +1722,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public String getSecondaryStorageURL(long zoneId) {
-        // Determine the secondary storage URL
-        HostVO secondaryStorageHost = getSecondaryStorageHost(zoneId);
-
-        if (secondaryStorageHost == null) {
+        DataStore secStore = this._dataStoreMgr.getImageStore(zoneId);
+        if (secStore == null) {
             return null;
         }
 
-        return secondaryStorageHost.getStorageUrl();
+        return secStore.getUri();
     }
 
     // get the image store where a template in a given zone is downloaded to, just pick one is enough.
     @Override
     public DataStore getImageStore(long zoneId, long tmpltId) {
-        List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
-        if (stores == null || stores.size() == 0) {
-            return null;
+        TemplateDataStoreVO tmpltStore = this._tmplStoreDao.findByTemplateZoneDownloadStatus(tmpltId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        if (tmpltStore != null){
+            return this._dataStoreMgr.getDataStore(tmpltStore.getDataStoreId(), DataStoreRole.Image);
         }
-        for (DataStore host : stores) {
-            List<TemplateDataStoreVO> tmpltStore = this._tmplStoreDao.listByTemplateStoreDownloadStatus(
-                    tmpltId, host.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-            if ( tmpltStore != null && tmpltStore.size() > 0 ){
-                return host;
-            }
-        }
+
         return null;
     }
-
 
 
     @Override

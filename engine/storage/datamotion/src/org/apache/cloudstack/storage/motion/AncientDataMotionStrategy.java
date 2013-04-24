@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -38,6 +39,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -124,7 +127,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
-    VMTemplateHostDao templateHostDao;
+    TemplateDataStoreDao templateStoreDao;
     @Inject DiskOfferingDao diskOfferingDao;
     @Inject VMTemplatePoolDao templatePoolDao;
     @Inject
@@ -319,7 +322,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Answer cloneVolume(DataObject template, DataObject volume) {
         CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0);
         StoragePool pool = (StoragePool)volume.getDataStore();
-        
+
         try {
             Answer answer = storageMgr.sendToPool(pool, null, cmd);
             return answer;
@@ -399,7 +402,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             	answer = copyFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT
                     && destData.getType() == DataObjectType.TEMPLATE) {
-            	answer = createTemplateFromSnashot(srcData, destData);
+            	answer = createTemplateFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.VOLUME
                     && destData.getType() == DataObjectType.TEMPLATE) {
             	answer = createTemplateFromVolume(srcData, destData);
@@ -425,7 +428,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     @DB
-    protected Answer createTemplateFromSnashot(DataObject srcData,
+    protected Answer createTemplateFromSnapshot(DataObject srcData,
             DataObject destData) {
         long snapshotId = srcData.getId();
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
@@ -434,8 +437,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     + srcData.getId());
         }
         Long zoneId = snapshot.getDataCenterId();
+        DataStore secStore = destData.getDataStore();
+        /*
         HostVO secondaryStorageHost = this.templateMgr
                 .getSecondaryStorageHost(zoneId);
+                */
         String secondaryStorageURL = snapshotMgr
                 .getSecondaryStorageURL(snapshot);
         VMTemplateVO template = this.templateDao.findById(destData.getId());
@@ -536,13 +542,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 origTemplateInstallPath, template.getId(), name,
                 _createprivatetemplatefromsnapshotwait);
 
-        return sendCommand(cmd, pool, template.getId(), dcId,
-                secondaryStorageHost.getId());
+        return sendCommand(cmd, pool, template.getId(), dcId, secStore);
     }
 
     @DB
     protected Answer sendCommand(Command cmd, StoragePool pool,
-            long templateId, long zoneId, long hostId) {
+            long templateId, long zoneId, DataStore secStore) {
 
         CreatePrivateTemplateAnswer answer = null;
         try {
@@ -573,7 +578,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
 
         String checkSum = this.templateMgr
-                .getChecksum(hostId, answer.getPath());
+                .getChecksum(secStore, answer.getPath());
 
         Transaction txn = Transaction.currentTxn();
 
@@ -584,7 +589,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         // add template zone ref for this template
         templateDao.addTemplateToZone(privateTemplate, zoneId);
-        VMTemplateHostVO templateHostVO = new VMTemplateHostVO(hostId,
+        TemplateDataStoreVO templateHostVO = new TemplateDataStoreVO(secStore.getId(),
                 privateTemplate.getId());
         templateHostVO.setDownloadPercent(100);
         templateHostVO.setDownloadState(Status.DOWNLOADED);
@@ -592,7 +597,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         templateHostVO.setLastUpdated(new Date());
         templateHostVO.setSize(answer.getVirtualSize());
         templateHostVO.setPhysicalSize(answer.getphysicalSize());
-        templateHostDao.persist(templateHostVO);
+        templateStoreDao.persist(templateHostVO);
         txn.close();
         return answer;
     }
@@ -609,13 +614,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         String vmName = this.volumeMgr.getVmNameOnVolume(volume);
         Long zoneId = volume.getDataCenterId();
-        HostVO secondaryStorageHost = this.templateMgr
-                .getSecondaryStorageHost(zoneId);
-        if (secondaryStorageHost == null) {
-            throw new CloudRuntimeException(
-                    "Can not find the secondary storage for zoneId " + zoneId);
-        }
-        String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
+        DataStore secStore = destObj.getDataStore();
+        String secondaryStorageURL = secStore.getUri();
         VMTemplateVO template = this.templateDao.findById(destObj.getId());
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(
                 volume.getPoolId(), DataStoreRole.Primary);
@@ -630,8 +630,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 template.getName(), template.getUniqueName(), volume.getPath(),
                 vmName, _createprivatetemplatefromvolumewait);
 
-        return sendCommand(cmd, pool, template.getId(), zoneId,
-                secondaryStorageHost.getId());
+        return sendCommand(cmd, pool, template.getId(), zoneId, secStore);
     }
 
     private HostVO getSecHost(long volumeId, long dcId) {

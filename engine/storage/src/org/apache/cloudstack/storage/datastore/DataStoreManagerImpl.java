@@ -33,6 +33,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
@@ -73,6 +75,17 @@ public class DataStoreManagerImpl implements DataStoreManager {
         return imageDataStoreMgr.listImageStoresByScope(scope);
     }
 
+
+
+    @Override
+    public DataStore getImageStore(long zoneId) {
+        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
+    }
 
     @Override
     public List<DataStore> getImageStoresByProvider(String provider) {
