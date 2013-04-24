@@ -21,7 +21,6 @@ import java.util.List;
 
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLItem.NetworkACLType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -88,13 +87,15 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
             "can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
 
+    @Parameter(name=ApiConstants.NUMBER, type=CommandType.INTEGER, description="The network of the vm the ACL will be created for")
+    private Integer number;
+
+    @Parameter(name=ApiConstants.ACTION, type=CommandType.STRING, description="scl entry action, allow or deny")
+    private String action;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
-    public Long getIpAddressId() {
-        return null;
-    }
 
     public String getProtocol() {
         return protocol.trim();
@@ -155,8 +156,12 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return s_name;
     }
 
-    public void setSourceCidrList(List<String> cidrs){
-        cidrlist = cidrs;
+    public String getAction() {
+        return action;
+    }
+
+    public Integer getNumber() {
+        return number;
     }
 
     @Override
@@ -166,7 +171,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = _networkACLService.applyNetworkACLtoNetworks(rule.getACLId(), callerContext.getCaller());
+            success = _networkACLService.applyNetworkACL(rule.getACLId(), callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
             NetworkACLItemResponse aclResponse = new NetworkACLItemResponse();
@@ -181,10 +186,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL");
             }
         }
-    }
-
-    public Long getSourceIpAddressId() {
-        return null;
     }
 
     public Integer getSourcePortStart() {
@@ -204,10 +205,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         }
 
         return null;
-    }
-
-    public NetworkACLItem.State getState() {
-        throw new UnsupportedOperationException("Should never call me to find the state");
     }
 
     public Long getNetworkId() {
@@ -294,10 +291,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
         }
         return null;
-    }
-
-    public NetworkACLType getType() {
-        return NetworkACLType.User;
     }
 
     @Override

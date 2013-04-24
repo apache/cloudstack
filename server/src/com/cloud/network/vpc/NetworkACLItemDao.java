@@ -31,14 +31,9 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
 
     boolean revoke(NetworkACLItemVO rule);
 
-    boolean releasePorts(long ipAddressId, String protocol, int[] ports);
-
     List<NetworkACLItemVO> listByACL(long aclId);
-
-    List<NetworkACLItemVO> listSystemRules();
 
     List<NetworkACLItemVO> listByACLTrafficTypeAndNotRevoked(long aclId, NetworkACLItemVO.TrafficType trafficType);
     List<NetworkACLItemVO> listByACLTrafficType(long aclId, NetworkACLItemVO.TrafficType trafficType);
     
-    void loadSourceCidrs(NetworkACLItemVO rule);
 }
