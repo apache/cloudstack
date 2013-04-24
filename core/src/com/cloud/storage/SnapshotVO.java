@@ -85,9 +85,6 @@ public class SnapshotVO implements Snapshot {
     @Column(name="s3_id")
     Long s3Id;
 
-    @Column(name="sechost_id")
-    Long secHostId;
-
     @Column(name="prev_snap_id")
     long prevSnapshotId;
 
@@ -188,14 +185,6 @@ public class SnapshotVO implements Snapshot {
 
     public void setSwiftId(Long swiftId) {
         this.swiftId = swiftId;
-    }
-
-    public Long getSecHostId() {
-        return secHostId;
-    }
-
-    public void setSecHostId(Long secHostId) {
-        this.secHostId = secHostId;
     }
 
     @Override

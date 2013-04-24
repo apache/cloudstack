@@ -191,9 +191,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 				snapshotVO.setPath(preSnapshotPath);
 				snapshotVO.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
-				snapshotVO.setSwiftId(preSnapshotVO.getSwiftId());
 				snapshotVO.setPrevSnapshotId(preSnapshotVO.getId());
-				snapshotVO.setSecHostId(preSnapshotVO.getSecHostId());
 				snapshot.processEvent(Snapshot.Event.OperationNotPerformed);
 			} else {
 				long preSnapshotId = 0;

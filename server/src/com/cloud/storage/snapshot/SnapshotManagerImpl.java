@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -38,6 +39,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -79,6 +82,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
@@ -145,6 +149,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected DiskOfferingDao _diskOfferingDao;
     @Inject
     protected SnapshotDao _snapshotDao;
+    @Inject
+    protected SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -523,24 +529,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
     }
 
-    private HostVO getSecondaryStorageHost(SnapshotVO snapshot) {
-        HostVO secHost = null;
-        if( snapshot.getSwiftId() == null || snapshot.getSwiftId() == 0) {
-            secHost = _hostDao.findById(snapshot.getSecHostId());
-        } else {
-            Long dcId = snapshot.getDataCenterId();
-            secHost = this.templateMgr.getSecondaryStorageHost(dcId);
-        }
-        return secHost;
-    }
 
     @Override
     public String getSecondaryStorageURL(SnapshotVO snapshot) {
-        HostVO secHost = getSecondaryStorageHost(snapshot);
-        if (secHost != null) {
-            return secHost.getStorageUrl();
+        SnapshotDataStoreVO snapshotStore = this._snapshotStoreDao.findBySnapshot(snapshot.getId());
+        if (snapshotStore != null){
+            DataStore store = this.dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
+            if ( store != null ){
+                return store.getUri();
+            }
         }
-        throw new CloudRuntimeException("Can not find secondary storage");
+        throw new CloudRuntimeException("Can not find secondary storage hosting the snapshot");
     }
 
     @Override

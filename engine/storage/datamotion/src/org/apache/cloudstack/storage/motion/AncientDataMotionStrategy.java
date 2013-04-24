@@ -38,6 +38,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -112,6 +114,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     SnapshotManager snapshotMgr;
     @Inject
     SnapshotDao snapshotDao;
+    @Inject
+    SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
@@ -622,12 +626,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return sendCommand(cmd, pool, template.getId(), zoneId, secStore);
     }
 
-    private HostVO getSecHost(long volumeId, long dcId) {
+    private DataStore getSecHost(long volumeId, long dcId) {
         Long id = snapshotDao.getSecHostId(volumeId);
         if ( id != null) {
-            return hostDao.findById(id);
+            return this.dataStoreMgr.getDataStore(id, DataStoreRole.Image);
         }
-        return this.templateMgr.getSecondaryStorageHost(dcId);
+        return this.dataStoreMgr.getImageStore(dcId);
     }
 
     protected Answer copySnapshot(DataObject srcObject, DataObject destObject) {
@@ -636,9 +640,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     	 Long dcId = baseVolume.getDataCenterId();
          Long accountId = baseVolume.getAccountId();
 
-         HostVO secHost = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
-         Long secHostId = secHost.getId();
-         String secondaryStoragePoolUrl = secHost.getStorageUrl();
+         DataStore secStore = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
+         Long secHostId = secStore.getId();
+         String secondaryStoragePoolUrl = secStore.getUri();
          String snapshotUuid = srcSnapshot.getPath();
          // In order to verify that the snapshot is not empty,
          // we check if the parent of the snapshot is not the same as the parent of the previous snapshot.
@@ -681,16 +685,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
          BackupSnapshotAnswer answer = (BackupSnapshotAnswer) this.snapshotMgr.sendToPool(baseVolume, backupSnapshotCommand);
          if (answer != null && answer.getResult()) {
         	 SnapshotVO snapshotVO = this.snapshotDao.findById(srcSnapshot.getId());
-        	 if (backupSnapshotCommand.getSwift() != null ) {
-        		 snapshotVO.setSwiftId(swift.getId());
-        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
-        	 } else if (backupSnapshotCommand.getS3() != null) {
-        		 snapshotVO.setS3Id(s3.getId());
-        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
-        	 } else {
-        		 snapshotVO.setSecHostId(secHost.getId());
-        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
-        	 }
+        	 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
+        	 // persist an entry in snapshot_store_ref
+        	 SnapshotDataStoreVO snapshotStore = new SnapshotDataStoreVO(secStore.getId(), snapshotVO.getId());
+        	 this._snapshotStoreDao.persist(snapshotStore);
  			if (answer.isFull()) {
  				snapshotVO.setPrevSnapshotId(0L);
 			}

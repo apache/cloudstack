@@ -1169,7 +1169,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @DB
     List<Long> findAllVolumeIdInSnapshotTable(Long storeId) {
-        String sql = "SELECT volume_id from snapshots, snapshot_store_ref WHERE store_id=? GROUP BY volume_id";
+        String sql = "SELECT volume_id from snapshots, snapshot_store_ref WHERE snapshots.id = snapshot_store_ref.snapshot_id and store_id=? GROUP BY volume_id";
         List<Long> list = new ArrayList<Long>();
         try {
             Transaction txn = Transaction.currentTxn();
