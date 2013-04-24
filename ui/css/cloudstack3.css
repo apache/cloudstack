@@ -12050,6 +12050,22 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -263px -583px;
 }
 
+.releaseFromAccount .icon {
+  background-position: -230px -123px;
+}
+
+.releaseFromAccount:hover .icon {
+  background-position: -229px -704px;
+}
+
+.addAccount .icon {
+  background-position: -231px -96px;
+}
+
+.addAccount:hover .icon {
+  background-position: -230px -677px;
+}
+
 .label-hovered {
   cursor: pointer;
   color: #0000FF !important;
