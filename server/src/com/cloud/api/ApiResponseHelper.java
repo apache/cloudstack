@@ -3659,7 +3659,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
+
         response.setId(result.getUuid());
+        response.setNetworkid(network.getUuid());
         response.setIpaddress(result.getIp4Address());
 
         if (result.getSecondaryIp()) {
@@ -3677,18 +3680,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setGateway(result.getGateway());
-        response.setId(result.getUuid());
-        response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         response.setMacAddress(result.getMacAddress());
-        if (result.getBroadcastUri() != null) {
-            response.setBroadcastUri(result.getBroadcastUri().toString());
-        }
-        if (result.getIsolationUri() != null) {
-            response.setIsolationUri(result.getIsolationUri().toString());
-        }
+
         if (result.getIp6Address() != null) {
-            response.setId(result.getIp6Address());
+            response.setIp6Address(result.getIp6Address());
         }
 
         response.setIsDefault(result.isDefaultNic());
