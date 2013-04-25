@@ -184,9 +184,16 @@
     dashboard: {
       dataProvider: function(args) {
         var dataFns = {
-          zoneCount: function(data) {
+          zoneCount: function(data) {          	
+            var data = {};
+          	if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data, {
+                networktype: cloudStack.context.zoneType
+              });
+            }          	
             $.ajax({
               url: createURL('listZones'),
+              data: data,
               success: function(json) {
                 dataFns.podCount($.extend(data, {
                   zoneCount: json.listzonesresponse.count ?
@@ -4665,6 +4672,10 @@
                   }
                 }
 
+                if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                  array1.push("&networktype=" + args.context.zoneType);              
+                }
+                
                 $.ajax({
                   url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                   dataType: "json",
@@ -5000,8 +5011,8 @@
                         localstorageenabled: {
                           label: 'label.local.storage.enabled',
                           isBoolean: true,
-			  isEditable: true,
-			  converter:cloudStack.converters.toBooleanText
+												  isEditable: true,
+												  converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],
