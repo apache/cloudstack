@@ -51,7 +51,6 @@ import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.agent.api.storage.DownloadSystemTemplateCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -68,7 +67,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -377,68 +375,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
     }
 
-
-    @Override
-    public void downloadBootstrapSysTemplateToStorage(VMTemplateVO template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback) {
-        boolean downloadJobExists = false;
-        TemplateDataStoreVO vmTemplateStore = null;
-
-        vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
-        if (vmTemplateStore == null) {
-            // This method can be invoked other places, for example,
-            // handleTemplateSync, in that case, vmTemplateStore may be null
-            vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
-                    VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUrl());
-            _vmTemplateStoreDao.persist(vmTemplateStore);
-        } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
-            downloadJobExists = true;
-        }
-
-        Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
-        String secUrl = store.getUri();
-        if (vmTemplateStore != null) {
-            start();
-            DownloadSystemTemplateCommand dcmd = new DownloadSystemTemplateCommand(store.getTO(), secUrl, template, maxTemplateSizeInBytes);
-            dcmd.setProxy(getHttpProxy());
-            // TODO: handle S3 download progress
-            // if (downloadJobExists) {
-            // dcmd = new DownloadProgressCommand(dcmd,
-            // vmTemplateStore.getJobId(), RequestType.GET_OR_RESTART);
-            // }
-            if (vmTemplateStore.isCopy()) {
-                dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
-            }
-            EndPoint endPoint = _epSelector.select(this.tmplFactory.getTemplate(template.getId(), store));
-            if (endPoint == null) {
-                s_logger.warn("There is no endpoint to send download template command");
-                return;
-            }
-            // TODO: wait for Edison's code to pass a listener to
-            // LocalHostEndPoint
-            /*
-            DownloadListener dl = new DownloadListener(ssAhost, store, template, _timer, _vmTemplateStoreDao, vmTemplateStore.getId(), this, dcmd,
-                    _templateDao, _resourceLimitMgr, _alertMgr, _accountMgr, callback);
-            if (downloadJobExists) {
-                // due to handling existing download job issues, we still keep
-                // downloadState in template_store_ref to avoid big change in
-                // DownloadListener to use
-                // new ObjectInDataStore.State transition. TODO: fix this later
-                // to be able to remove downloadState from template_store_ref.
-                dl.setCurrState(vmTemplateStore.getDownloadState());
-            }
-            DownloadListener old = null;
-            synchronized (_listenerTemplateMap) {
-                old = _listenerTemplateMap.put(vmTemplateStore, dl);
-            }
-            if (old != null) {
-                old.abandon();
-            }
-            */
-            // endPoint.sendMessageAsync(dcmd, callback);
-            endPoint.sendMessage(dcmd); // wait for Edison's callback code
-
-        }
-    }
 
     @Override
     public void downloadTemplateToStorage(DataObject template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback) {
