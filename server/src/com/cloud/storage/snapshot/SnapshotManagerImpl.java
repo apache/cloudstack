@@ -33,11 +33,14 @@ import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -198,6 +201,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject SnapshotService snapshotSrv;
     @Inject VolumeDataFactory volFactory;
     @Inject SnapshotDataFactory snapshotFactory;
+    @Inject EndPointSelector _epSelector;
 
 
     private int _totalRetries;
@@ -666,47 +670,18 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 // This volume doesn't have any snapshots. Nothing do delete.
                 continue;
             }
-            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
-            SwiftTO swift = _swiftMgr.getSwiftTO();
-            S3TO s3 = _s3Mgr.getS3TO();
-
-            checkObjectStorageConfiguration(swift, s3);
-
-            if (swift == null && s3 == null) {
-                for (HostVO ssHost : ssHosts) {
-                    DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                            null, null, ssHost.getStorageUrl(), dcId,
-                            accountId, volumeId, "", true);
-                    Answer answer = null;
-                    try {
-                        answer = _agentMgr.sendToSSVM(dcId, cmd);
-                    } catch (Exception e) {
-                        s_logger.warn("Failed to delete all snapshot for volume " + volumeId + " on secondary storage " + ssHost.getStorageUrl());
-                    }
-                    if ((answer != null) && answer.getResult()) {
-                        s_logger.debug("Deleted all snapshots for volume: " + volumeId + " under account: " + accountId);
-                    } else {
-                        success = false;
-                        if (answer != null) {
-                            s_logger.error(answer.getDetails());
-                        }
-                    }
-                }
-            } else {
-                DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                        swift, s3, "", dcId, accountId, volumeId, "", true);
-                Answer answer = null;
-                try {
-                    answer = _agentMgr.sendToSSVM(dcId, cmd);
-                } catch (Exception e) {
-                    final String storeType = s3 != null ? "S3" : "swift";
-                    s_logger.warn("Failed to delete all snapshot for volume " + volumeId + " on " + storeType);
-                }
+            List<DataStore> ssHosts = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dcId));
+            for (DataStore ssHost : ssHosts) {
+                DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(ssHost.getTO(), ssHost.getUri(), dcId, accountId, volumeId, "",
+                        true);
+                EndPoint ep = _epSelector.select(ssHost);
+                Answer answer = ep.sendMessage(cmd);
                 if ((answer != null) && answer.getResult()) {
                     s_logger.debug("Deleted all snapshots for volume: " + volumeId + " under account: " + accountId);
                 } else {
                     success = false;
                     if (answer != null) {
+                        s_logger.warn("Failed to delete all snapshot for volume " + volumeId + " on secondary storage " + ssHost.getUri());
                         s_logger.error(answer.getDetails());
                     }
                 }

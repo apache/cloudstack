@@ -265,22 +265,22 @@ SecondaryStorageResource {
                       break;
                   }
               }
-              
+
               if (destFile == null) {
-                  return new CopyCmdAnswer("Can't find template"); 
+                  return new CopyCmdAnswer("Can't find template");
               }
-              
+
               DataTO newDestTO = null;
-              
+
               if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                   TemplateObjectTO newTemplTO = new TemplateObjectTO();
                   newTemplTO.setPath(destPath + File.separator + destFile.getName());
                   newTemplTO.setName(destFile.getName());
                   newDestTO = newTemplTO;
               } else {
-                  return new CopyCmdAnswer("not implemented yet"); 
+                  return new CopyCmdAnswer("not implemented yet");
               }
-              
+
               return new CopyCmdAnswer(newDestTO);
           } catch (Exception e) {
 
@@ -1145,45 +1145,40 @@ SecondaryStorageResource {
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String name = cmd.getSnapshotUuid();
-        try {
-            SwiftTO swift = cmd.getSwift();
-            S3TO s3 = cmd.getS3();
-            if (swift == null) {
-                final String result = deleteSnapshotBackupFromLocalFileSystem(
-                        secondaryStorageUrl, accountId, volumeId, name,
-                        cmd.isAll());
-                if (result != null) {
-                    s_logger.warn(result);
-                    return new Answer(cmd, false, result);
-                }
-            } else if (s3 != null) {
-                final String result = deleteSnapshotBackupfromS3(s3,
-                        secondaryStorageUrl, accountId, volumeId, name,
-                        cmd.isAll());
-                if (result != null) {
-                    s_logger.warn(result);
-                    return new Answer(cmd, false, result);
-                }
-            } else {
-                String filename;
-                if (cmd.isAll()) {
-                    filename = "";
-                } else {
-                    filename = name;
-                }
-                String result = swiftDelete(swift, "V-" + volumeId.toString(), filename);
-                if (result != null) {
-                    String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
-                    s_logger.warn(errMsg);
-                    return new Answer(cmd, false, errMsg);
-                }
+        DataStoreTO dstore = cmd.getDataStore();
+        if ( dstore instanceof NfsTO ){
+            final String result = deleteSnapshotBackupFromLocalFileSystem(
+                    secondaryStorageUrl, accountId, volumeId, name,
+                    cmd.isAll());
+            if (result != null) {
+                s_logger.warn(result);
+                return new Answer(cmd, false, result);
             }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String errMsg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(errMsg, e);
-            return new Answer(cmd, false, errMsg);
+        } else if (dstore instanceof S3TO ){
+            final String result = deleteSnapshotBackupfromS3((S3TO)dstore,
+                    secondaryStorageUrl, accountId, volumeId, name,
+                    cmd.isAll());
+            if (result != null) {
+                s_logger.warn(result);
+                return new Answer(cmd, false, result);
+            }
+        } else if (dstore instanceof SwiftTO ){
+            String filename;
+            if (cmd.isAll()) {
+                filename = "";
+            } else {
+                filename = name;
+            }
+            String result = swiftDelete((SwiftTO)dstore, "V-" + volumeId.toString(), filename);
+            if (result != null) {
+                String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
+        return new Answer(cmd, true, "success");
     }
 
     Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
@@ -1425,8 +1420,7 @@ SecondaryStorageResource {
                 return new Answer(cmd, false, details);
             }
             return new Answer(cmd, true, null);
-        }
-        else if (dstore instanceof S3TO ){
+        } else if (dstore instanceof S3TO ){
             final S3TO s3 = (S3TO)dstore;
             final Long accountId = cmd.getAccountId();
             final Long templateId = cmd.getTemplateId();
@@ -1458,8 +1452,7 @@ SecondaryStorageResource {
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
-        }
-        else if (dstore instanceof SwiftTO){
+        } else if (dstore instanceof SwiftTO){
             SwiftTO swift = (SwiftTO)dstore;
             String container = "T-" + cmd.getTemplateId();
             String object = "";
@@ -1477,8 +1470,7 @@ SecondaryStorageResource {
                 s_logger.warn(errMsg, e);
                 return new Answer(cmd, false, errMsg);
             }
-        }
-        else{
+        } else{
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
     }

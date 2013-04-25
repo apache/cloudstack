@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -320,43 +321,44 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-    	Long snapshotId = data.getId();
-    	SnapshotVO snapshot = this.snapshotDao.findByIdIncludingRemoved(snapshotId);
-    	CommandResult result = new CommandResult();
+        SnapshotObject snapshotObj = (SnapshotObject)data;
+        DataStore secStore = snapshotObj.getDataStore();
+        CommandResult result = new CommandResult();
+     	SnapshotVO snapshot = snapshotObj.getSnapshotVO();
+
     	if (snapshot == null) {
-    		s_logger.debug("Destroying snapshot " + snapshotId + " backup failed due to unable to find snapshot ");
-    		result.setResult("Unable to find snapshot: " + snapshotId);
+    		s_logger.debug("Destroying snapshot " + snapshotObj.getId() + " backup failed due to unable to find snapshot ");
+    		result.setResult("Unable to find snapshot: " + snapshotObj.getId());
     		callback.complete(result);
     		return;
     	}
 
     	try {
-    		String secondaryStoragePoolUrl = this.snapshotMgr.getSecondaryStorageURL(snapshot);
+    		String secondaryStoragePoolUrl = secStore.getUri();
     		Long dcId = snapshot.getDataCenterId();
     		Long accountId = snapshot.getAccountId();
     		Long volumeId = snapshot.getVolumeId();
 
-    		String backupOfSnapshot = snapshot.getBackupSnapshotId();
+    		String backupOfSnapshot = snapshotObj.getBackupSnapshotId();
     		if (backupOfSnapshot == null) {
     			callback.complete(result);
     			return;
     		}
-    		SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
-    		S3TO s3 = _s3Mgr.getS3TO();
 
     		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-    				swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+    				secStore.getTO(), secondaryStoragePoolUrl, dcId, accountId, volumeId,
     				backupOfSnapshot, false);
-    		Answer answer = agentMgr.sendToSSVM(dcId, cmd);
+    		EndPoint ep = _epSelector.select(secStore);
+    		Answer answer = ep.sendMessage(cmd);
 
     		if ((answer != null) && answer.getResult()) {
     			snapshot.setBackupSnapshotId(null);
-    			snapshotDao.update(snapshotId, snapshot);
+    			snapshotDao.update(snapshotObj.getId(), snapshot);
     		} else if (answer != null) {
     			result.setResult(answer.getDetails());
     		}
     	} catch (Exception e) {
-    		s_logger.debug("failed to delete snapshot: " + snapshotId + ": " + e.toString());
+    		s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
     		result.setResult(e.toString());
     	}
     	callback.complete(result);

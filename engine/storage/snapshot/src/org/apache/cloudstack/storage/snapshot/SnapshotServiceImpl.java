@@ -44,6 +44,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +90,8 @@ public class SnapshotServiceImpl implements SnapshotService {
 	protected ClusterDao _clusterDao;
 	@Inject
 	protected SnapshotDao _snapshotDao;
+	@Inject
+	protected SnapshotDataStoreDao _snapshotStoreDao;
 	@Inject
 	private ResourceManager _resourceMgr;
 	@Inject
@@ -461,9 +465,14 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 	@DB
 	protected boolean destroySnapshotBackUp(SnapshotVO snapshot) {
-		DataStore store = objInStoreMgr.findStore(snapshot.getId(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
+	    SnapshotDataStoreVO snapshotStore = this._snapshotStoreDao.findBySnapshot(snapshot.getId());
+	    if ( snapshotStore == null ){
+            s_logger.debug("Can't find snapshot" + snapshot.getId() + " backed up into image store");
+            return false;
+	    }
+		DataStore store = this.dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
 		if (store == null) {
-			s_logger.debug("Can't find snapshot" + snapshot.getId() + " backed up into image store");
+			s_logger.debug("Can't find mage store " + snapshotStore.getDataStoreId());
 			return false;
 		}
 

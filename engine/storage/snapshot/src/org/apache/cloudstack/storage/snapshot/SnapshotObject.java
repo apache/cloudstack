@@ -48,7 +48,7 @@ public class SnapshotObject implements SnapshotInfo {
     private SnapshotVO snapshot;
     private DataStore store;
     @Inject
-    protected SnapshotDao snapshotDao; 
+    protected SnapshotDao snapshotDao;
     @Inject
     protected VolumeDao volumeDao;
     @Inject protected VolumeDataFactory volFactory;
@@ -56,14 +56,14 @@ public class SnapshotObject implements SnapshotInfo {
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
     public SnapshotObject() {
-      
+
     }
-    
+
     protected void configure(SnapshotVO snapshot, DataStore store) {
     	this.snapshot = snapshot;
     	this.store = store;
     }
-    
+
     public static SnapshotObject getSnapshotObject(SnapshotVO snapshot, DataStore store) {
     	SnapshotObject snapObj = ComponentContext.inject(SnapshotObject.class);
     	snapObj.configure(snapshot, store);
@@ -151,7 +151,7 @@ public class SnapshotObject implements SnapshotInfo {
 	public String getPath() {
 		return this.snapshot.getPath();
 	}
-	
+
 	public void setPath(String path) {
 		this.snapshot.setPath(path);
 	}
@@ -195,7 +195,7 @@ public class SnapshotObject implements SnapshotInfo {
 	public long getDomainId() {
 		return this.snapshot.getDomainId();
 	}
-	
+
 	public void setPrevSnapshotId(Long id) {
 		this.snapshot.setPrevSnapshotId(id);
 	}
@@ -204,7 +204,7 @@ public class SnapshotObject implements SnapshotInfo {
 	public Long getDataCenterId() {
 		return this.snapshot.getDataCenterId();
 	}
-	
+
 	public void processEvent(Snapshot.Event event)
 			throws NoTransitionException {
 		stateMachineMgr.processEvent(this.snapshot, event);
@@ -214,13 +214,17 @@ public class SnapshotObject implements SnapshotInfo {
 	public Long getPrevSnapshotId() {
 		return this.snapshot.getPrevSnapshotId();
 	}
-	
+
 	public void setBackupSnapshotId(String id) {
 		this.snapshot.setBackupSnapshotId(id);
 	}
-	
+
 	public String getBackupSnapshotId() {
 		return this.snapshot.getBackupSnapshotId();
+	}
+
+	public SnapshotVO getSnapshotVO(){
+	    return this.snapshot;
 	}
 
     @Override
@@ -232,6 +236,6 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public void processEvent(org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event event, Answer answer) {
         // TODO Auto-generated method stub
-        
+
     }
 }

@@ -17,6 +17,7 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 
@@ -26,13 +27,8 @@ import com.cloud.agent.api.to.SwiftTO;
  */
 public class DeleteSnapshotBackupCommand extends SnapshotCommand {
     @LogLevel(Log4jLevel.Off)
-    private SwiftTO swift;
-    private S3TO s3;
+    private DataStoreTO store;
     private Boolean all;
-
-    public SwiftTO getSwift() {
-        return swift;
-    }
 
     public Boolean isAll() {
         return all;
@@ -42,12 +38,8 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
         this.all = all;
     }
 
-    public void setSwift(SwiftTO swift) {
-        this.swift = swift;
-    }
-
-    public S3TO getS3() {
-        return s3;
+    public DataStoreTO getDataStore(){
+        return store;
     }
 
     protected DeleteSnapshotBackupCommand() {
@@ -78,8 +70,7 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
      * @param backupUUID                  The VHD which has to be deleted
      * @param childUUID                   The child VHD file of the backup whose parent is reset to its grandparent.
      */
-    public DeleteSnapshotBackupCommand(SwiftTO swift,
-                                       S3TO s3,
+    public DeleteSnapshotBackupCommand(DataStoreTO store,
                                        String secondaryStoragePoolURL,
                                        Long   dcId,
                                        Long   accountId,
@@ -87,8 +78,7 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
  String backupUUID, Boolean all)
     {
         super(null, secondaryStoragePoolURL, backupUUID, null, dcId, accountId, volumeId);
-        setSwift(swift);
-        this.s3 = s3;
+        this.store = store;
         setAll(all);
     }
 }

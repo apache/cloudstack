@@ -45,6 +45,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -279,47 +280,49 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-    	Long snapshotId = data.getId();
-    	SnapshotVO snapshot = this.snapshotDao.findByIdIncludingRemoved(snapshotId);
-    	CommandResult result = new CommandResult();
-    	if (snapshot == null) {
-    		s_logger.debug("Destroying snapshot " + snapshotId + " backup failed due to unable to find snapshot ");
-    		result.setResult("Unable to find snapshot: " + snapshotId);
-    		callback.complete(result);
-    		return;
-    	}
+        SnapshotObject snapshotObj = (SnapshotObject)data;
+        DataStore secStore = snapshotObj.getDataStore();
+        CommandResult result = new CommandResult();
+        SnapshotVO snapshot = snapshotObj.getSnapshotVO();
 
-    	try {
-    		String secondaryStoragePoolUrl = this.snapshotMgr.getSecondaryStorageURL(snapshot);
-    		Long dcId = snapshot.getDataCenterId();
-    		Long accountId = snapshot.getAccountId();
-    		Long volumeId = snapshot.getVolumeId();
+        if (snapshot == null) {
+            s_logger.debug("Destroying snapshot " + snapshotObj.getId() + " backup failed due to unable to find snapshot ");
+            result.setResult("Unable to find snapshot: " + snapshotObj.getId());
+            callback.complete(result);
+            return;
+        }
 
-    		String backupOfSnapshot = snapshot.getBackupSnapshotId();
-    		if (backupOfSnapshot == null) {
-    			callback.complete(result);
-    			return;
-    		}
-    		SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
-    		S3TO s3 = _s3Mgr.getS3TO();
+        try {
+            String secondaryStoragePoolUrl = secStore.getUri();
+            Long dcId = snapshot.getDataCenterId();
+            Long accountId = snapshot.getAccountId();
+            Long volumeId = snapshot.getVolumeId();
 
-    		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-    				swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
-    				backupOfSnapshot, false);
-    		Answer answer = agentMgr.sendToSSVM(dcId, cmd);
+            String backupOfSnapshot = snapshotObj.getBackupSnapshotId();
+            if (backupOfSnapshot == null) {
+                callback.complete(result);
+                return;
+            }
 
-    		if ((answer != null) && answer.getResult()) {
-    			snapshot.setBackupSnapshotId(null);
-    			snapshotDao.update(snapshotId, snapshot);
-    		} else if (answer != null) {
-    			result.setResult(answer.getDetails());
-    		}
-    	} catch (Exception e) {
-    		s_logger.debug("failed to delete snapshot: " + snapshotId + ": " + e.toString());
-    		result.setResult(e.toString());
-    	}
-    	callback.complete(result);
+            DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+                    secStore.getTO(), secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                    backupOfSnapshot, false);
+            EndPoint ep = _epSelector.select(secStore);
+            Answer answer = ep.sendMessage(cmd);
+
+            if ((answer != null) && answer.getResult()) {
+                snapshot.setBackupSnapshotId(null);
+                snapshotDao.update(snapshotObj.getId(), snapshot);
+            } else if (answer != null) {
+                result.setResult(answer.getDetails());
+            }
+        } catch (Exception e) {
+            s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
+            result.setResult(e.toString());
+        }
+        callback.complete(result);
     }
+
 
     @Override
     public void deleteAsync(DataObject data,
