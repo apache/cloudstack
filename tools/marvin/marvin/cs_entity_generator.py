@@ -80,7 +80,7 @@ def singularize(word, num=0):
     @return: singular of `word`
     """
     inflector = inflect.engine()
-    return inflector.singular_noun(word, num)
+    return inflector.singular_noun(word)
 
 
 def transform_entity(entity):
@@ -102,16 +102,17 @@ def skip_list():
     return ['ldapConfigCmd', 'ldapRemoveCmd']
 
 
-def get_verb_and_entity(api):
+def get_verb_and_entity(cmd):
     """Break down the API cmd instance in to `verb` and `Entity`
     @return: verb, Entity tuple
     """
+    api = cmd.__class__.__name__
     matching_verbs = filter(lambda v: api.startswith(v), grammar)
     if len(matching_verbs) > 0:
         verb = matching_verbs[0]
         entity = api.replace(verb, '').replace('Cmd', '')
         entity = transform_entity(entity)
-        return verb, singularize(entity)
+        return verb, singularize(entity) if singularize(entity) else entity
     else:
         print "No matching verb, entity breakdown for api %s" % api
 
@@ -122,7 +123,8 @@ def get_actionable_entities():
     along with the required arguments to satisfy the action
     @return: Dictionary of Entity { "verb" : [required] }
     """
-    cmdlets = sorted(get_api_cmds(), key=lambda k: get_verb_and_entity(k.__class__.__name__))
+    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds()),
+        key=lambda k: get_verb_and_entity(k)[1])
     entities = {}
     for cmd in cmdlets:
         requireds = getattr(cmd, 'required')
@@ -130,7 +132,7 @@ def get_actionable_entities():
         api = cmd.__class__.__name__
         if api in skip_list():
             continue
-        verb, entity = get_verb_and_entity(api)
+        verb, entity = get_verb_and_entity(cmd)
         if entity not in entities:
             entities[entity] = {}
         entities[entity][verb] = {}
@@ -184,14 +186,17 @@ def write_entity_classes(entities, module=None):
                 else:
                     body.append(tabspace * 2 + 'return %s if %s else None' % (entity.lower(), entity.lower()))
             else:
-                body.append(tabspace + 'def %s(cls, apiclient, %s, factory=None, **kwargs):' % (
-                    action, ', '.join(map(lambda arg: arg + '=None', list(set(details['args'])))), entity))
+                if len(details['args']) > 0:
+                    body.append(tabspace + 'def %s(cls, apiclient, %s, factory=None, **kwargs):' % (
+                        action, ', '.join(map(lambda arg: arg + '=None', list(set(details['args']))))))
+                else:
+                    body.append(tabspace + 'def %s(cls, apiclient, factory=None, **kwargs):' % action)
                 #TODO: Add docs for actions
                 body.append(tabspace * 2 + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
                 body.append(tabspace * 2 + 'if factory:')
                 body.append(
-                    tabspace * 3 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in %sFactory.__dict__.iteritems()]' % entity)
+                    tabspace * 3 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]')
                 body.append(tabspace * 2 + 'else:')
                 for arg in details["args"]:
                     body.append(tabspace * 3 + "cmd.%s = %s" % (arg, arg))
@@ -206,7 +211,12 @@ def write_entity_classes(entities, module=None):
 
         entitydict[entity] = code
         #write_entity_factory(entity, actions, path)
-        module_path = '/'.join(module.split('.'))[1:]
+        if module.find('.') > 0:
+            module_path = '/'.join(module.split('.'))[1:]
+        else:
+            module_path = '/'+module
+        if not os.path.exists(".%s" % module_path):
+            os.mkdir(".%s" % module_path)
         with open(".%s/%s.py" % (module_path, entity), "w") as writer:
             writer.write(LICENSE)
             writer.write(code)
