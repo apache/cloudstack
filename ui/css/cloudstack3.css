@@ -2479,6 +2479,10 @@ div.detail-group.actions td {
   background-position: -73px -23px;
 }
 
+#navigation ul li.affinityGroups span.icon {
+  background-position: -73px -87px;
+}
+
 #navigation ul li.storage span.icon {
   background-position: -127px -23px;
 }
