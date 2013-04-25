@@ -1243,4 +1243,7 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `internal_lb` int(1) unsigned
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `public_lb` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering supports Public lb service';
 UPDATE `cloud`.`network_offerings` SET public_lb=1 where id IN (SELECT DISTINCT network_offering_id FROM `cloud`.`ntwk_offering_service_map` WHERE service='Lb');
 
-alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;             
+alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'internallbvm.service.offering', null, 'Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used');
+

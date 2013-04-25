@@ -32,6 +32,9 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBalancerVMService{
+    public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 128;            // 128 MB
+    public static final int DEFAULT_INTERNALLB_VM_CPU_MHZ = 256;            // 256 MHz
+    
     /**
      * Destroys Internal LB vm instance
      * @param vmId

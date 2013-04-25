@@ -79,7 +79,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -95,7 +94,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -123,15 +121,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
 InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
             .getLogger(InternalLoadBalancerVMManagerImpl.class);
+    static final private String _internalLbVmNamePrefix = "b";
+    
     private String _instance;
     private String _mgmtHost;
     private String _mgmtCidr;
-    int _internalLbVmRamSize;
-    int _internalLbVmCpuMHz;
-    private ServiceOfferingVO _internalLbVmOffering;
+    private long _internalLbVmOfferingId;
     
     @Inject VirtualMachineManager _itMgr;
-    @Inject DomainRouterDao _routerDao;
+    @Inject DomainRouterDao _internalLbVmDao;
     @Inject ConfigurationDao _configDao;
     @Inject AgentManager _agentMgr;
     @Inject DataCenterDao _dcDao;
@@ -151,21 +149,21 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
 
     @Override
     public DomainRouterVO findByName(String name) {
-        if (!VirtualMachineName.isValidRouterName(name)) {
+        if (!VirtualMachineName.isValidSystemVmName(name, _instance, _internalLbVmNamePrefix)) {
             return null;
         }
 
-        return _routerDao.findById(VirtualMachineName.getRouterId(name));
+        return _internalLbVmDao.findById(VirtualMachineName.getRouterId(name));
     }
 
     @Override
     public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
+        return _internalLbVmDao.findById(id);
     }
 
     @Override
     public DomainRouterVO persist(DomainRouterVO vm) {
-        DomainRouterVO virtualRouter =  _routerDao.persist(vm);
+        DomainRouterVO virtualRouter =  _internalLbVmDao.persist(vm);
         return virtualRouter;
     }
 
@@ -173,6 +171,10 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile,
             DeployDestination dest, ReservationContext context) {
 
+        //Internal LB vm starts up with 2 Nics
+        //Nic #1 - Guest Nic with IP address that would act as the LB entry point
+        //Nic #2 - Control/Management Nic
+        
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
@@ -257,7 +259,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
                 internalLbVm.setPrivateMacAddress(nic.getMacAddress());
             }
         }
-        _routerDao.update(internalLbVm.getId(), internalLbVm);
+        _internalLbVmDao.update(internalLbVm.getId(), internalLbVm);
 
         finalizeCommandsOnStart(cmds, profile);
         return true;
@@ -285,9 +287,9 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         
         //Get guest network info
         List<Network> guestNetworks = new ArrayList<Network>();
-        List<? extends Nic> internalLbNics = _nicDao.listByVmId(profile.getId());
-        for (Nic routerNic : internalLbNics) {
-            Network network = _ntwkModel.getNetwork(routerNic.getNetworkId());
+        List<? extends Nic> internalLbVmNics = _nicDao.listByVmId(profile.getId());
+        for (Nic internalLbVmNic : internalLbVmNics) {
+            Network network = _ntwkModel.getNetwork(internalLbVmNic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
             }
@@ -303,7 +305,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             } else {
                 internalLbVm.setTemplateVersion(versionAnswer.getTemplateVersion());
                 internalLbVm.setScriptsVersion(versionAnswer.getScriptsVersion());
-                internalLbVm = _routerDao.persist(internalLbVm, guestNetworks);
+                internalLbVm = _internalLbVmDao.persist(internalLbVm, guestNetworks);
             }
         } else {
             result = false;
@@ -359,7 +361,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
 
     @Override
     public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidRouterName(vmName, _instance)) {
+        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _internalLbVmNamePrefix)) {
             return null;
         }
 
@@ -392,17 +394,19 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         }
         
         _mgmtHost = configs.get("host");
-        
         _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
         
-        _internalLbVmRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_VM_RAMSIZE);
-        _internalLbVmCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ);
-        
-        boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _internalLbVmOffering = new ServiceOfferingVO("System Offering For Software Router", 1, _internalLbVmRamSize, _internalLbVmCpuMHz, null,
-                null, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
-        _internalLbVmOffering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
-        _internalLbVmOffering = _serviceOfferingDao.persistSystemServiceOffering(_internalLbVmOffering);
+        String offIdStr = configs.get(Config.InternalLbVmServiceOfferingId.key());
+        if (offIdStr != null && !offIdStr.isEmpty()) {
+            _internalLbVmOfferingId = Long.parseLong(offIdStr);
+        } else {
+            boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+            ServiceOfferingVO newOff = new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null,
+                    null, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm, true);
+            newOff.setUniqueName(ServiceOffering.internalLbVmDefaultOffUniqueName);
+            newOff = _serviceOfferingDao.persistSystemServiceOffering(newOff);
+            _internalLbVmOfferingId = newOff.getId();
+        }
         
         _itMgr.registerGuru(VirtualMachine.Type.InternalLoadBalancerVm, this);
 
@@ -516,7 +520,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         
         if(controlIpAddress == null) {
             s_logger.warn("Unable to find Internal LB control ip in its attached NICs!. Internal LB vm: " + internalLbVmId);
-            DomainRouterVO internalLbVm = _routerDao.findById(internalLbVmId);
+            DomainRouterVO internalLbVm = _internalLbVmDao.findById(internalLbVmId);
             return internalLbVm.getPrivateIpAddress();
         }
             
@@ -530,7 +534,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             s_logger.debug("Attempting to destroy Internal LB vm " + vmId);
         }
 
-        DomainRouterVO internalLbVm = _routerDao.findById(vmId);
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null) {
             return true;
         }
@@ -544,7 +548,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     @Override
     public VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId) throws ConcurrentOperationException,
     ResourceUnavailableException {
-        DomainRouterVO internalLbVm = _routerDao.findById(vmId);
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id");
         }
@@ -556,7 +560,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         s_logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
             if (_itMgr.advanceStop((DomainRouterVO) internalLbVm, forced, _accountMgr.getActiveUser(callerUserId), caller)) {
-                return _routerDao.findById(internalLbVm.getId());
+                return _internalLbVmDao.findById(internalLbVm.getId());
             } else {
                 return null;
             }
@@ -631,11 +635,6 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
                     + guestNetwork;
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
-            Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-            if (offeringId == null) {
-                offeringId = _internalLbVmOffering.getId();
-            }
-
             // 3) deploy internal lb vm
             Pair<DeploymentPlan, List<DomainRouterVO>> planAndInternalLbVms = getDeploymentPlanAndInternalLbVms(dest, guestNetwork.getId(), requestedGuestIp);
             internalLbs = planAndInternalLbVms.second();
@@ -648,10 +647,10 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
 
             List<Pair<NetworkVO, NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //don't start the internal lb as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, offeringId, guestNetwork.getVpcId(),
+            DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProvider, _internalLbVmOfferingId, guestNetwork.getVpcId(),
                 networks, false);
             if (internalLbVm != null) {
-                _routerDao.addRouterToGuestNetwork(internalLbVm, guestNetwork);
+                _internalLbVmDao.addRouterToGuestNetwork(internalLbVm, guestNetwork);
                 internalLbs.add(internalLbVm);
             }
         } finally {
@@ -713,7 +712,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
 
     @Override
     public List<DomainRouterVO> findInternalLbVms(long guestNetworkId, Ip requestedGuestIp) {
-        List<DomainRouterVO> internalLbVms = _routerDao.listByNetworkAndRole(guestNetworkId, Role.INTERNAL_LB_VM); 
+        List<DomainRouterVO> internalLbVms = _internalLbVmDao.listByNetworkAndRole(guestNetworkId, Role.INTERNAL_LB_VM); 
         if (requestedGuestIp != null) {
             Iterator<DomainRouterVO> it = internalLbVms.iterator();
             while (it.hasNext()) {
@@ -734,7 +733,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
         
-        long id = _routerDao.getNextInSequence(Long.class, "id");
+        long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter());
         }
@@ -760,7 +759,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
                 }
 
                 internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProvider.getId(), 
-                VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix), template.getId(), template.getHypervisorType(),
                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, 
                 RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
@@ -811,9 +810,9 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             if (internalLbVm.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
                 internalLbVm.setStopPending(false);
-                internalLbVm = _routerDao.persist(internalLbVm);
+                internalLbVm = _internalLbVmDao.persist(internalLbVm);
             }
-            return _routerDao.findById(internalLbVm.getId());
+            return _internalLbVmDao.findById(internalLbVm.getId());
         } else {
             return null;
         }
@@ -914,7 +913,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         
-        DomainRouterVO internalLbVm = _routerDao.findById(internalLbVmId);
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(internalLbVmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id specified");
         }

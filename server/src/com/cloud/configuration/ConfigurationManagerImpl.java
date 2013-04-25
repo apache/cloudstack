@@ -1857,6 +1857,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 vmType = VirtualMachine.Type.ConsoleProxy;
             } else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.SecondaryStorageVm;
+            } else if (VirtualMachine.Type.InternalLoadBalancerVm.toString().toLowerCase().equals(vmTypeString)) {
+                vmType = VirtualMachine.Type.InternalLoadBalancerVm;
             } else {
                 throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy + ", "
                         + VirtualMachine.Type.SecondaryStorageVm);
