@@ -5534,9 +5534,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { page: args.page, pageSize: pageSize, type: 'routing', listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }                  
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, type: 'routing', listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5628,9 +5635,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }     
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -8909,6 +8923,10 @@
               array1.push("&hostid=" + args.context.instances[0].hostid);
             }
 
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -10515,6 +10533,11 @@
 							}
 						}
             array1.push("&zoneid=" + args.context.zones[0].id);
+
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
