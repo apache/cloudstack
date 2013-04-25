@@ -121,7 +121,7 @@ public class UserVmManagerTest {
 
     // Test restoreVm when VM state not in running/stopped case
     @Test(expected=CloudRuntimeException.class)
-    public void testRestoreVMF1() throws ResourceAllocationException {
+    public void testRestoreVMF1() throws ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
 
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);

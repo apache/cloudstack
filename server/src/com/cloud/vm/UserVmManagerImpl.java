@@ -485,7 +485,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        boolean result = resetVMPasswordInternal(cmd, password);
+        boolean result = resetVMPasswordInternal(vmId, password);
 
         if (result) {
             userVm.setPassword(password);
@@ -512,10 +512,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd,
+    private boolean resetVMPasswordInternal(Long vmId,
             String password) throws ResourceUnavailableException,
             InsufficientCapacityException {
-        Long vmId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -4078,7 +4077,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) {
+    public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
         // Input validation
         Account caller = UserContext.current().getCaller();
 
@@ -4096,7 +4095,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return restoreVMInternal(caller, vm, newTemplateId);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId){
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
 
         Long userId = caller.getId();
         Account owner = _accountDao.findById(vm.getAccountId());
@@ -4189,6 +4188,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _volsDao.detachVolume(root.getId());
         this.volumeMgr.destroyVolume(root);
+
+        if (template.getEnablePassword()) {
+            String password = generateRandomPassword();
+            boolean result = resetVMPasswordInternal(vmId, password);
+            if (result) {
+                vm.setPassword(password);
+                _vmDao.loadDetails(vm);
+                // update the password in vm_details table too
+                // Check if an SSH key pair was selected for the instance and if so
+                // use it to encrypt & save the vm password
+                String sshPublicKey = vm.getDetail("SSH.PublicKey");
+                if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+                    String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+                    if (encryptedPasswd == null) {
+                        throw new CloudRuntimeException("VM reset is completed but error occurred when encrypting newly created password");
+                    }
+                    vm.setDetail("Encrypted.Password", encryptedPasswd);
+                    _vmDao.saveDetails(vm);
+                }
+            } else {
+                throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
+            }
+        }
 
         if (needRestart) {
             try {
