@@ -15,8 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack, _l) {
-  var replaceListViewItem = function($detailView, newData) {
-    var $row = $detailView.data('list-view-row');
+  var replaceListViewItem = function($detailView, newData, options) {
+    var $row = $detailView ? $detailView.data('list-view-row') :
+      options.$row;
 
     if (!$row) return;
 
@@ -32,7 +33,9 @@
         $row: $row,
         data: $.extend(jsonObj, newData),
         after: function($newRow) {
-          $detailView.data('list-view-row', $newRow);
+          if ($detailView) {
+            $detailView.data('list-view-row', $newRow);
+          }
 
           setTimeout(function() {
             $('.data-table').dataTable('selectRow', $newRow.index());
@@ -42,11 +45,13 @@
     }
 
     // Refresh detail view context
-    $.extend(
-      $detailView.data('view-args').context[
-        $detailView.data('view-args').section
-      ][0], newData
-    );
+    if ($detailView) {
+      $.extend(
+        $detailView.data('view-args').context[
+          $detailView.data('view-args').section
+        ][0], newData
+      );
+    }
   };
 
   /**
@@ -125,6 +130,7 @@
               args = args ? args : {};
 
               var $item = args.$item;
+              var $row = $detailView.data('list-view-row');
 
               notification.desc = messages.notification(args.messageArgs);
               notification._custom = $.extend(args._custom ? args._custom : {}, {
@@ -140,11 +146,14 @@
                     viewArgs.onActionComplete();
                   }
 
-                  if (!$detailView.parents('html').size()) return;
+                  if (!$detailView.parents('html').size()) {
+                    replaceListViewItem(null, args.data, { $row: $row });
+                    return;
+                  }
 
+                  replaceListViewItem($detailView, args.data);
                   $loading.remove();
                   $detailView.removeClass('detail-view-loading-state');
-                  replaceListViewItem($detailView, args.data);
 
                   if (!noRefresh) {
                     updateTabContent(args.data);
