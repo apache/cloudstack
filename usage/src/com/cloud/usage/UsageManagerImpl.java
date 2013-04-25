@@ -78,7 +78,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value={UsageManager.class})
@@ -1298,6 +1297,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         long vmId = event.getResourceId();
         long networkOfferingId = event.getOfferingId();
+        long nicId = 0;
+        try{
+            nicId = Long.parseLong(event.getResourceName());
+        }catch (Exception e) {
+            s_logger.warn("failed to get nic id from resource name, resource name is: " + event.getResourceName());
+        }
 
         if (EventTypes.EVENT_NETWORK_OFFERING_CREATE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_ASSIGN.equals(event.getType())) {
             if (s_logger.isDebugEnabled()) {
@@ -1306,12 +1311,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             zoneId = event.getZoneId();
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             boolean isDefault = (event.getSize() == 1) ? true : false ;
-            UsageNetworkOfferingVO networkOffering = new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, isDefault, event.getCreateDate(), null);
+            UsageNetworkOfferingVO networkOffering = new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, nicId, isDefault, event.getCreateDate(), null);
             m_usageNetworkOfferingDao.persist(networkOffering);
         } else if (EventTypes.EVENT_NETWORK_OFFERING_DELETE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_REMOVE.equals(event.getType())) {
             SearchCriteria<UsageNetworkOfferingVO> sc = m_usageNetworkOfferingDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
+            sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
             sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageNetworkOfferingVO> noVOs = m_usageNetworkOfferingDao.search(sc, null);

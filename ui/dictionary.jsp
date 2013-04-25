@@ -25,6 +25,16 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.add.affinity.group': '<fmt:message key="label.add.affinity.group"/>',
+'message.delete.affinity.group': '<fmt:message key="message.delete.affinity.group"/>',
+'label.delete.affinity.group': '<fmt:message key="label.delete.affinity.group"/>',
+'label.edit.affinity.group': '<fmt:message key="label.edit.affinity.group"/>',
+'label.affinity': '<fmt:message key="label.affinity"/>',
+'label.anti.affinity': '<fmt:message key="label.anti.affinity"/>',
+'label.affinity.groups': '<fmt:message key="label.affinity.groups"/>',
+'label.anti.affinity.groups': '<fmt:message key="label.anti.affinity.groups"/>',
+'label.affinity.group': '<fmt:message key="label.affinity.group"/>',
+'label.anti.affinity.group': '<fmt:message key="label.anti.affinity.group"/>',
 'message.redirecting.region': '<fmt:message key="message.redirecting.region"/>',
 'label.use.vm.ip': '<fmt:message key="label.use.vm.ip"/>',
 'label.cpu.limits': '<fmt:message key="label.cpu.limits"/>',

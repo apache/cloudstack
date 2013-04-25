@@ -323,23 +323,30 @@
         preFilter: function(args) {
           var $form = args.$form;
 
-          if (args.data['network-model'] == 'Basic') {
+          if (args.data['network-model'] == 'Basic') { //Basic zone
             args.$form.find('[rel=networkOfferingId]').show();
             args.$form.find('[rel=guestcidraddress]').hide();						
-						args.$form.find('[rel=ip6dns1]').hide();
-						args.$form.find('[rel=ip6dns2]').hide();
+	    
+            args.$form.find('[rel=ip6dns1]').hide();
+	    args.$form.find('[rel=ip6dns2]').hide();
           }
-          else { //args.data['network-model'] == 'Advanced'
+          else { //Advanced zone
             args.$form.find('[rel=networkOfferingId]').hide();
 						
-						if(args.data["zone-advanced-sg-enabled"] !=	"on")
+	    if(args.data["zone-advanced-sg-enabled"] !=	"on") { //Advanced SG-disabled zone
               args.$form.find('[rel=guestcidraddress]').show();
-						else //args.data["zone-advanced-sg-enabled"] ==	"on
-						  args.$form.find('[rel=guestcidraddress]').hide();
-          					  
-						args.$form.find('[rel=ip6dns1]').show();
-						args.$form.find('[rel=ip6dns2]').show();
-					}													
+              					  
+	      args.$form.find('[rel=ip6dns1]').show();
+	      args.$form.find('[rel=ip6dns2]').show();
+            }
+	    else { //Advanced SG-enabled zone
+	      args.$form.find('[rel=guestcidraddress]').hide();
+
+              args.$form.find('[rel=ip6dns1]').hide();
+	      args.$form.find('[rel=ip6dns2]').hide();
+            }
+          
+	  }													
 										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
@@ -653,7 +660,18 @@
           },
           privateinterface: {
             label: 'label.private.interface'
+          },		
+					gslbprovider: {
+            label: 'GSLB service',
+            isBoolean: true,
+            isChecked: true
           },
+					gslbproviderpublicip: {
+            label: 'GSLB service Public IP'
+          },
+					gslbproviderprivateip: {
+            label: 'GSLB service Private IP'
+          },		
           numretries: {
             label: 'label.numretries',
             defaultValue: '2'
@@ -2593,7 +2611,10 @@
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
           array1.push("&username=" + todb(args.data.basicPhysicalNetwork.username));
           array1.push("&password=" + todb(args.data.basicPhysicalNetwork.password));
-          array1.push("&networkdevicetype=" + todb(args.data.basicPhysicalNetwork.networkdevicetype));
+          array1.push("&networkdevicetype=" + todb(args.data.basicPhysicalNetwork.networkdevicetype));					
+					array1.push("&gslbprovider=" + (args.data.basicPhysicalNetwork.gslbprovider == "on"));
+					array1.push("&gslbproviderpublicip=" + todb(args.data.basicPhysicalNetwork.gslbproviderpublicip));
+					array1.push("&gslbproviderprivateip=" + todb(args.data.basicPhysicalNetwork.gslbproviderprivateip));
 
           //construct URL starts here
           var url = [];
@@ -3038,16 +3059,16 @@
               success: function(json) {
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
                 
-								//when hypervisor is BareMetal (begin)   						
-								if(args.data.cluster.hypervisor == "BareMetal") {
-								  alert('Zone creation is completed. Please refresh this page.');
+								if(args.data.zone.hypervisor == "BareMetal") { //if hypervisor is BareMetal, zone creation is completed at this point.										  
+									complete({
+										data: args.data
+									});									
 								}								
 								else {
 									stepFns.addCluster({
 										data: args.data
 									});
-								}
-								//when hypervisor is BareMetal (end)   
+								}								
               },
               error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);

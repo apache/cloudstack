@@ -96,7 +96,7 @@ public class TestSyncQueueManager extends TestCase {
                 }
             }
         }
-                ); 
+                );
 
         thread1.start();
         thread2.start();
@@ -168,7 +168,7 @@ public class TestSyncQueueManager extends TestCase {
                 }
             }
         }
-                ); 
+                );
 
         thread1.start();
         thread2.start();

@@ -19,6 +19,7 @@ package com.cloud.configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 
@@ -28,6 +29,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -35,10 +37,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public enum Config {
 
@@ -196,7 +194,7 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null),
 	MemOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "mem.overprovisioning.factor", "1", "Used for memory overprovisioning calculation", null),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm, "The list of hypervisors that this deployment will use.", "hypervisorList"),
+	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC, "The list of hypervisors that this deployment will use.", "hypervisorList"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
@@ -276,6 +274,7 @@ public enum Config {
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
+    VmwareEnableNestedVirtualization("Advanced", ManagementServer.class, Boolean.class, "vmware.nested.virtualization", "false", "When set to true this will enable nested virtualization when this is supported by the hypervisor", null),
 
     // Midonet
     MidoNetAPIServerAddress("Network", ManagementServer.class, String.class, "midonet.apiserver.address", "http://localhost:8081", "Specify the address at which the Midonet API server can be contacted (if using Midonet)", null),
@@ -304,6 +303,8 @@ public enum Config {
     SSOAuthTolerance("Advanced", ManagementServer.class, Long.class, "security.singlesignon.tolerance.millis", "300000", "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", null),
 	//NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
+	EncryptionKey("Hidden", ManagementServer.class, String.class, "security.encryption.key", null, "base64 encoded key data", null),
+	EncryptionIV("Hidden", ManagementServer.class, String.class, "security.encryption.iv", null, "base64 encoded IV data", null),
 	RouterRamSize("Hidden", NetworkManager.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
 
 	VmOpWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.op.wait.interval", "120", "Time (in seconds) to wait before checking if a previous operation has succeeded", null),
@@ -336,7 +337,7 @@ public enum Config {
 	//disabling lb as cluster sync does not work with distributed cluster
 	AgentLbEnable("Advanced", ManagementServer.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
-	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use external dns1 and dns2", null),
+	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use external dns1 and dns2", null, ConfigurationParameterScope.zone.toString()),
 	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
 	DnsBasicZoneUpdates("Advanced", NetworkManager.class, String.class, "network.dns.basiczone.updates", "all", "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod", "all,pod"),
 
@@ -397,11 +398,12 @@ public enum Config {
 	
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
-    VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "600", "In second, timeout for create vm snapshot", null),
-    VMSnapshotExpungeInterval("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.interval", "60", "The interval (in seconds) to wait before running the expunge thread.", null),
-    VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null),
+    VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
-    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null);
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null),
+	
+    BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
+	           "routes", ConfigurationParameterScope.zone.toString());
     
 	
 	private final String _category;
@@ -411,6 +413,35 @@ public enum Config {
     private final String _defaultValue;
     private final String _description;
     private final String _range;
+    private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+
+    public static enum ConfigurationParameterScope {
+        global,
+        zone,
+        cluster,
+        pool,
+        account
+    }
+
+    private static final HashMap<String, List<Config>> _scopeLevelConfigsMap = new HashMap<String, List<Config>>();
+    static {
+        _scopeLevelConfigsMap.put(ConfigurationParameterScope.zone.toString(), new ArrayList<Config>());
+        _scopeLevelConfigsMap.put(ConfigurationParameterScope.cluster.toString(), new ArrayList<Config>());
+        _scopeLevelConfigsMap.put(ConfigurationParameterScope.pool.toString(), new ArrayList<Config>());
+        _scopeLevelConfigsMap.put(ConfigurationParameterScope.account.toString(), new ArrayList<Config>());
+        _scopeLevelConfigsMap.put(ConfigurationParameterScope.global.toString(), new ArrayList<Config>());
+
+        for (Config c : Config.values()) {
+            //Creating group of parameters per each level (zone/cluster/pool/account)
+            StringTokenizer tokens = new StringTokenizer(c.getScope(), ",");
+            while (tokens.hasMoreTokens()) {
+                String scope = tokens.nextToken().trim();
+                List<Config> currentConfigs = _scopeLevelConfigsMap.get(scope);
+                currentConfigs.add(c);
+                _scopeLevelConfigsMap.put(scope, currentConfigs);
+            }
+        }
+    }
 
     private static final HashMap<String, List<Config>> _configs = new HashMap<String, List<Config>>();
     static {
@@ -446,6 +477,17 @@ public enum Config {
     	_defaultValue = defaultValue;
     	_description = description;
     	_range = range;
+        _scope = ConfigurationParameterScope.global.toString();
+    }
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, String scope) {
+        _category = category;
+        _componentClass = componentClass;
+        _type = type;
+        _name = name;
+        _defaultValue = defaultValue;
+        _description = description;
+        _range = range;
+        _scope = scope;
     }
 
     public String getCategory() {
@@ -472,6 +514,10 @@ public enum Config {
         return _componentClass;
     }
 
+    public String getScope() {
+        return _scope;
+    }
+
     public String getComponent() {
     	if (_componentClass == ManagementServer.class) {
             return "management-server";
@@ -489,6 +535,8 @@ public enum Config {
             return "StorageManager";
         } else if (_componentClass == TemplateManager.class) {
             return "TemplateManager";
+        } else if (_componentClass == VpcManager.class) {
+            return "VpcManager";
         }else {
             return "none";
         }
@@ -528,5 +576,9 @@ public enum Config {
     		categories.add((String) key);
     	}
     	return categories;
+    }
+
+    public static List<Config> getConfigListByScope(String scope) {
+        return _scopeLevelConfigsMap.get(scope);
     }
 }

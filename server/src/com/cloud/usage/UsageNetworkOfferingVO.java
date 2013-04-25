@@ -53,11 +53,14 @@ public class UsageNetworkOfferingVO {
 	@Column(name="deleted")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date deleted = null;
+	
+	@Column(name="nic_id")
+	private Long nicId;
 
 	protected UsageNetworkOfferingVO() {
 	}
 
-	public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, boolean isDefault, Date created, Date deleted) {
+	public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created, Date deleted) {
 		this.zoneId = zoneId;
 		this.accountId = accountId;
 		this.domainId = domainId;
@@ -66,6 +69,7 @@ public class UsageNetworkOfferingVO {
 		this.isDefault = isDefault;
 		this.created = created;
 		this.deleted = deleted;
+		this.nicId = nicId;
 	}
 
 	public long getZoneId() {
@@ -102,4 +106,12 @@ public class UsageNetworkOfferingVO {
 	public void setDeleted(Date deleted) {
 	    this.deleted = deleted;
 	}
+
+    public Long getNicId() {
+        return nicId;
+    }
+
+    public void setNicId(Long nicId) {
+        this.nicId = nicId;
+    }
 }

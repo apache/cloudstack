@@ -1,0 +1,371 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="limit-accounts-domains">
+  <title>Limiting Resource Usage</title>
+  <para>&PRODUCT; allows you to control resource usage based on the types of resources, such as CPU,
+    RAM, Primary storage, and Secondary storage.  A new set of resource types has been added to the
+    existing pool of resources to support the new customization model&mdash;need-basis usage, such
+    as large VM or small VM. The new resource types are now broadly classified as CPU, RAM, Primary
+    storage, and Secondary storage. The root administrator is able to impose resource usage limit by
+    the following resource types for Domain, Project, and Accounts. </para>
+  <itemizedlist>
+    <listitem>
+      <para>CPUs</para>
+    </listitem>
+    <listitem>
+      <para>Memory (RAM)</para>
+    </listitem>
+    <listitem>
+      <para>Primary Storage (Volumes)</para>
+    </listitem>
+    <listitem>
+      <para>Secondary Storage (Snapshots, Templates, ISOs)</para>
+    </listitem>
+  </itemizedlist>
+  <para>To control the behaviour of this feature, the following configuration parameters have been
+    added:</para>
+  <informaltable>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>Parameter Name</para></entry>
+          <entry><para>Description</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>max.account.cpus</para></entry>
+          <entry><para>Maximum number of CPU cores that can be used for an account. </para>
+            <para>Default is 40.</para></entry>
+        </row>
+        <row>
+          <entry><para>max.account.ram (MB)</para></entry>
+          <entry><para>Maximum RAM that can be used for an account. </para>
+            <para>Default is 40960.</para></entry>
+        </row>
+        <row>
+          <entry><para>max.account.primary.storage (GB)</para></entry>
+          <entry><para>Maximum primary storage space that can be used for an account. </para>
+            <para>Default is 200.</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>max.account.secondary.storage (GB)</para></entry>
+          <entry><para>Maximum secondary storage space that can be used for an account. </para>
+            <para>Default is 400.</para></entry>
+        </row>
+        <row>
+          <entry><para>max.project.cpus</para></entry>
+          <entry>
+            <para>Maximum number of CPU cores that can be used for an account. </para>
+            <para>Default is 40.</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>max.project.ram (MB)</para></entry>
+          <entry>
+            <para>Maximum RAM that can be used for an account. </para>
+            <para>Default is 40960.</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>max.project.primary.storage (GB)</para></entry>
+          <entry>
+            <para>Maximum primary storage space that can be used for an account. </para>
+            <para>Default is 200.</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>max.project.secondary.storage (GB)</para></entry>
+          <entry>
+            <para>Maximum secondary storage space that can be used for an account. </para>
+            <para>Default is 400.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+  <section id="user-permission-rn">
+    <title>User Permission</title>
+    <para>The root administrator, domain administrators and users are able to list resources. Ensure
+      that proper logs are maintained in the <filename>vmops.log</filename> and
+        <filename>api.log</filename> files.</para>
+    <itemizedlist>
+      <listitem>
+        <para>The root admin will have the privilege to list and update resource limits.</para>
+      </listitem>
+      <listitem>
+        <para>The domain administrators are allowed to list and change these resource limits only
+          for the sub-domains and accounts under their own domain or the sub-domains. </para>
+      </listitem>
+      <listitem>
+        <para>The end users will the privilege to list resource limits. Use the listResourceLimits
+          API.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="consideration-rn">
+    <title>Limit Usage Considerations</title>
+    <itemizedlist>
+      <listitem>
+        <para>Primary or Secondary storage space refers to the stated size of the volume and not the
+          physical size&mdash; the actual consumed size on disk in case of thin provisioning.</para>
+      </listitem>
+      <listitem>
+        <para>If the admin reduces the resource limit for an account and set it to less than the
+          resources that are currently being consumed, the existing VMs/templates/volumes are not
+          destroyed. Limits are imposed only if the user under that account tries to execute a new
+          operation using any of these resources. For example, the existing behavior in the case of
+          a VM are: </para>
+        <itemizedlist>
+          <listitem>
+            <para>migrateVirtualMachine: The users under that account will be able to migrate the
+              running VM into any other host without facing any limit issue.</para>
+          </listitem>
+          <listitem>
+            <para>recoverVirtualMachine: Destroyed VMs cannot be recovered.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>For any resource type, if a domain has limit X, sub-domains or accounts under that
+          domain can have there own limits. However, the sum of resource allocated to a sub-domain
+          or accounts under the domain at any point of time should not exceed the value X.</para>
+        <para>For example, if a domain has the CPU limit of 40 and the sub-domain D1 and account A1
+          can have limits of 30 each, but at any point of time the resource allocated to D1 and A1
+          should not exceed the limit of 40.</para>
+      </listitem>
+      <listitem>
+        <para>If any operation needs to pass through two of more resource limit check, then the
+          lower of 2 limits will be enforced, For example: if an account has the VM limit of 10 and
+          CPU limit of 20, and a user under that account requests 5 VMs of 4 CPUs each.  The user
+          can deploy 5 more VMs because VM limit is 10. However, the user cannot deploy any more
+          instances because the CPU limit has been exhausted.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="per-domain-limits">
+    <title>Per-Domain Limits</title>
+    <para>&PRODUCT; allows the configuration of limits on a domain basis. With a domain limit in
+      place, all users still have their account limits. They are additionally limited, as a group,
+      to not exceed the resource limits set on their domain. Domain limits aggregate the usage of
+      all accounts in the domain as well as all the accounts in all the sub-domains of that domain.
+      Limits set at the root domain level apply to the sum of resource usage by the accounts in all
+      the domains and sub-domains below that root domain.</para>
+    <para>To set a domain limit:</para>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation tree, click Domains.</para>
+      </listitem>
+      <listitem>
+        <para>Select the domain you want to modify. The current domain limits are displayed. </para>
+        <para>A value of -1 shows that there is no limit in place.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Edit button<inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/edit-icon.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>editbutton.png: edits the settings.</phrase>
+            </textobject>
+          </inlinemediaobject></para>
+      </listitem>
+      <listitem>
+        <para>Edit the following as per your requirement:</para>
+        <informaltable>
+          <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <thead>
+              <row>
+                <entry><para>Parameter Name</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry><para>Instance Limits</para></entry>
+                <entry><para>The number of instances that can be used in a domain.</para></entry>
+              </row>
+              <row>
+                <entry><para>Public IP Limits</para></entry>
+                <entry>
+                  <para>The number of public IP addresses that can be used in a
+                  domain.</para></entry>
+              </row>
+              <row>
+                <entry><para>Volume Limits</para></entry>
+                <entry><para>The number of disk volumes that can be created in a domain. </para>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Snapshot Limits</para></entry>
+                <entry>The number of snapshots that can be created in a domain.</entry>
+              </row>
+              <row>
+                <entry><para>Template Limits</para></entry>
+                <entry><para>The number of templates that can be registered in a
+                  domain.</para></entry>
+              </row>
+              <row>
+                <entry><para>VPC limits</para></entry>
+                <entry><para>The number of VPCs that can be created in a domain.</para></entry>
+              </row>
+              <row>
+                <entry><para>CPU limits</para></entry>
+                <entry>
+                  <para>The number of CPU cores that can be used for a domain.</para>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Memory limits (MB)</para></entry>
+                <entry>
+                  <para>The number of RAM that can be used for a domain.</para>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Primary Storage limits (GB)</para></entry>
+                <entry>
+                  <para>The primary storage space that can be used for a domain.</para>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Secondary Storage limits (GB)</para></entry>
+                <entry>
+                  <para>The secondary storage space that can be used for a domain.</para>
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+      </listitem>
+      <listitem>
+        <para>Click Apply.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="default-account-resource-limit">
+    <title>Default Account Resource Limits</title>
+    <para>You can limit resource use by accounts. The default limits are set by using Global
+      configuration parameters, and they affect all accounts within a cloud. The relevant parameters
+      are those beginning with max.account, for example: max.account.snapshots.</para>
+    <para>To override a default limit for a particular account, set a per-account resource
+      limit.</para>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation tree, click Accounts.</para>
+      </listitem>
+      <listitem>
+        <para>Select the account you want to modify. The current limits are displayed. </para>
+        <para>A value of -1 shows that there is no limit in place.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Edit button.<inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/edit-icon.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>editbutton.png: edits the settings</phrase>
+            </textobject>
+          </inlinemediaobject></para>
+      </listitem>
+      <listitem>
+        <para>Edit the following as per your requirement:</para>
+        <informaltable>
+          <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <thead>
+              <row>
+                <entry><para>Parameter Name</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry><para>Instance Limits</para></entry>
+                <entry><para>The number of instances that can be used in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>Public IP Limits</para></entry>
+                <entry>
+                  <para>The number of public IP addresses that can be used in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>Volume Limits</para></entry>
+                <entry><para>The number of disk volumes that can be created in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>Snapshot Limits</para></entry>
+                <entry><para>The number of snapshots that can be created in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>Template Limits</para></entry>
+                <entry><para>The number of templates that can be registered in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>VPC limits</para></entry>
+                <entry><para>The number of VPCs that can be created in an account.</para>
+                  <para>The default is 20.</para></entry>
+              </row>
+              <row>
+                <entry><para>CPU limits</para></entry>
+                <entry>
+                  <para>The number of CPU cores that can be used for an account.</para>
+                  <para>The default is 40.</para></entry>
+              </row>
+              <row>
+                <entry><para>Memory limits (MB)</para></entry>
+                <entry>
+                  <para>The number of RAM that can be used for an account.</para>
+                  <para>The default is 40960.</para></entry>
+              </row>
+              <row>
+                <entry><para>Primary Storage limits (GB)</para></entry>
+                <entry>
+                  <para>The primary storage space that can be used for an account.</para>
+                  <para>The default is 200.</para></entry>
+              </row>
+              <row>
+                <entry><para>Secondary Storage limits (GB)</para></entry>
+                <entry>
+                  <para>The secondary storage space that can be used for an account.</para>
+                  <para>The default is 400.</para></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+      </listitem>
+      <listitem>
+        <para>Click Apply.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+</section>

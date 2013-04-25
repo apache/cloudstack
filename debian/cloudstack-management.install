@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/server/*
 /etc/cloudstack/management/*
 /etc/init.d/cloudstack-management
 /etc/security/limits.d/cloudstack-limits.conf
@@ -26,9 +25,10 @@
 /var/log/cloudstack/management
 /var/lib/cloudstack/mnt
 /var/lib/cloudstack/management
-/usr/bin/cloud-update-xenserver-licenses
-/usr/bin/cloud-setup-management
-/usr/bin/cloud-setup-databases
-/usr/bin/cloud-migrate-databases
+/usr/bin/cloudstack-update-xenserver-licenses
+/usr/bin/cloudstack-setup-management
+/usr/bin/cloudstack-setup-databases
+/usr/bin/cloudstack-migrate-databases
+/usr/bin/cloudstack-setup-encryption
+/usr/bin/cloudstack-sysvmadm
 /usr/share/cloudstack-management/*
-/usr/share/tomcat6/lib/*

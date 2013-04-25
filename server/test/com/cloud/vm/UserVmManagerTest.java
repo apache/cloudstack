@@ -17,45 +17,54 @@
 
 package com.cloud.vm;
 
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyFloat;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.util.List;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.user.*;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
-import org.apache.log4j.Logger;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.StorageManager;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
-
-import static org.mockito.Mockito.*;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class UserVmManagerTest {
 
@@ -127,7 +136,7 @@ public class UserVmManagerTest {
 
         doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        when(_volsDao.findByInstanceAndType(314L,Volume.Type.ROOT)).thenReturn(_rootVols);
         doReturn(false).when(_rootVols).isEmpty();
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
@@ -150,7 +159,7 @@ public class UserVmManagerTest {
 
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        when(_volsDao.findByInstanceAndType(314L,Volume.Type.ROOT)).thenReturn(_rootVols);
         doReturn(false).when(_rootVols).isEmpty();
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
@@ -174,7 +183,7 @@ public class UserVmManagerTest {
             ConcurrentOperationException, ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
-        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        when(_volsDao.findByInstanceAndType(314L,Volume.Type.ROOT)).thenReturn(_rootVols);
         doReturn(false).when(_rootVols).isEmpty();
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
@@ -361,6 +370,6 @@ public class UserVmManagerTest {
         return serviceOffering;
     }
 
-
+ 
 
 }

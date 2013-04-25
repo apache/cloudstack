@@ -69,6 +69,7 @@ changeServiceForVirtualMachine=15
 scaleVirtualMachine=15
 assignVirtualMachine=1
 migrateVirtualMachine=1
+migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
 
 #### snapshot commands
@@ -124,6 +125,8 @@ listDiskOfferings=15
 createVlanIpRange=1
 deleteVlanIpRange=1
 listVlanIpRanges=1
+dedicatePublicIpRange=1
+releasePublicIpRange=1
 
 #### address commands
 associateIpAddress=15
@@ -252,6 +255,7 @@ deleteHost=3
 prepareHostForMaintenance=1
 cancelHostMaintenance=1
 listHosts=3
+findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
 
@@ -286,6 +290,7 @@ deleteStoragePool=1
 listClusters=3
 enableStorageMaintenance=1
 cancelStorageMaintenance=1
+findStoragePoolsForMigration=1
 
 #### security group commands
 createSecurityGroup=15
@@ -568,3 +573,21 @@ revertToSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+
+#### Affinity group commands
+createAffinityGroup=15
+deleteAffinityGroup=15
+listAffinityGroups=15
+updateVMAffinityGroup=15
+listAffinityGroupTypes=15
+
+#### Cisco Vnmc commands
+addCiscoVnmcResource=1
+deleteCiscoVnmcResource=1
+listCiscoVnmcResources=1
+
+#### Cisco Asa1000v commands
+addCiscoAsa1000vResource=1
+deleteCiscoAsa1000vResource=1
+listCiscoAsa1000vResources=1
+

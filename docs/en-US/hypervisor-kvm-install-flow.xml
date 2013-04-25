@@ -34,4 +34,5 @@
     <xi:include href="hypervisor-host-install-network-openvswitch.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="hypervisor-host-install-firewall.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="hypervisor-host-install-finish.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="hypervisor-support-for-primarystorage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

@@ -22,6 +22,8 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -37,16 +39,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.*;
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -54,60 +52,44 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.*;
-import org.apache.cloudstack.api.command.admin.autoscale.*;
-import org.apache.cloudstack.api.command.admin.cluster.*;
-import org.apache.cloudstack.api.command.admin.config.*;
 import org.apache.cloudstack.api.command.admin.domain.*;
 import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.ldap.*;
 import org.apache.cloudstack.api.command.admin.network.*;
 import org.apache.cloudstack.api.command.admin.offering.*;
-import org.apache.cloudstack.api.command.admin.pod.*;
-import org.apache.cloudstack.api.command.admin.region.*;
 import org.apache.cloudstack.api.command.admin.resource.*;
 import org.apache.cloudstack.api.command.admin.router.*;
 import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.admin.swift.*;
 import org.apache.cloudstack.api.command.admin.systemvm.*;
-import org.apache.cloudstack.api.command.admin.template.*;
 import org.apache.cloudstack.api.command.admin.usage.*;
 import org.apache.cloudstack.api.command.admin.user.*;
 import org.apache.cloudstack.api.command.admin.vlan.*;
-import org.apache.cloudstack.api.command.admin.vm.*;
 import org.apache.cloudstack.api.command.admin.vpc.*;
-import org.apache.cloudstack.api.command.admin.zone.*;
-import org.apache.cloudstack.api.command.user.account.*;
-import org.apache.cloudstack.api.command.user.address.*;
 import org.apache.cloudstack.api.command.user.autoscale.*;
-import org.apache.cloudstack.api.command.user.config.*;
-import org.apache.cloudstack.api.command.user.event.*;
 import org.apache.cloudstack.api.command.user.firewall.*;
-import org.apache.cloudstack.api.command.user.guest.*;
 import org.apache.cloudstack.api.command.user.iso.*;
-import org.apache.cloudstack.api.command.user.job.*;
 import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.cloudstack.api.command.user.nat.*;
 import org.apache.cloudstack.api.command.user.network.*;
-import org.apache.cloudstack.api.command.user.offering.*;
 import org.apache.cloudstack.api.command.user.project.*;
-import org.apache.cloudstack.api.command.user.region.*;
 import org.apache.cloudstack.api.command.user.resource.*;
 import org.apache.cloudstack.api.command.user.securitygroup.*;
 import org.apache.cloudstack.api.command.user.snapshot.*;
-import org.apache.cloudstack.api.command.user.ssh.*;
-import org.apache.cloudstack.api.command.user.tag.*;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.cloudstack.api.command.user.vm.*;
-import org.apache.cloudstack.api.command.user.vmgroup.*;
 import org.apache.cloudstack.api.command.user.volume.*;
 import org.apache.cloudstack.api.command.user.vpc.*;
 import org.apache.cloudstack.api.command.user.vpn.*;
-import org.apache.cloudstack.api.command.user.zone.*;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -125,10 +107,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -136,11 +114,11 @@ import com.cloud.dc.*;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.*;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
-import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -175,7 +153,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.dao.*;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -193,11 +170,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapter;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -214,10 +187,6 @@ import com.cloud.vm.dao.*;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
-import org.apache.cloudstack.api.command.admin.account.*;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -228,12 +197,8 @@ import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.domain.*;
-import org.apache.cloudstack.api.command.admin.host.*;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.network.*;
-import org.apache.cloudstack.api.command.admin.offering.*;
 import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -241,22 +206,16 @@ import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
-import org.apache.cloudstack.api.command.admin.resource.*;
-import org.apache.cloudstack.api.command.admin.router.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
-import org.apache.cloudstack.api.command.admin.usage.*;
-import org.apache.cloudstack.api.command.admin.user.*;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.admin.vpc.*;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
@@ -268,29 +227,19 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.autoscale.*;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.firewall.*;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
-import org.apache.cloudstack.api.command.user.iso.*;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.*;
-import org.apache.cloudstack.api.command.user.nat.*;
-import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.project.*;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
-import org.apache.cloudstack.api.command.user.resource.*;
-import org.apache.cloudstack.api.command.user.securitygroup.*;
-import org.apache.cloudstack.api.command.user.snapshot.*;
 import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
@@ -298,8 +247,6 @@ import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.template.*;
-import org.apache.cloudstack.api.command.user.vm.*;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -308,27 +255,11 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToSnapshotCmd;
-import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.api.command.user.vpc.*;
-import org.apache.cloudstack.api.command.user.vpn.*;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.lang.reflect.Field;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -400,6 +331,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private StorageManager _storageMgr;
     @Inject
+    private VolumeManager _volumeMgr;
+    @Inject
     private VirtualMachineManager _itMgr;
     @Inject
     private HostPodDao _hostPodDao;
@@ -423,10 +356,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private LoadBalancerDao _loadbalancerDao;
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-
     private List<HostAllocator> _hostAllocators;
-
-	@Inject
+    @Inject
+    private List<StoragePoolAllocator> _storagePoolAllocators;
+    @Inject
     private ConfigurationManager _configMgr;
     @Inject
     private ResourceTagDao _resourceTagDao;
@@ -449,6 +382,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     S3Manager _s3Mgr;
 
+    @Inject
+    ConfigurationServer _configServer;
+
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     private KeystoreManager _ksMgr;
@@ -462,15 +398,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
+    private String _encryptionKey = null;
+    private String _encryptionIV = null;
+    
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    protected List<AffinityGroupProcessor> _affinityProcessors;
+    public List<AffinityGroupProcessor> getAffinityGroupProcessors() {
+        return _affinityProcessors;
+    }
+    public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
+        this._affinityProcessors = affinityProcessors;
+    }
 
     public ManagementServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
-    
+
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
     }
-    
+
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
@@ -734,12 +683,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object resourceState = cmd.getResourceState();
         Object haHosts = cmd.getHaHost();
 
-        Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts);
+        Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type,
+                state, zoneId, pod, cluster, id, keyword, resourceState, haHosts, null, null);
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
+            listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -755,12 +706,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
-        // business logic
+
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to" +
+                    " migrate the vm with specified id");
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
@@ -770,17 +722,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " +
+                    "XenServer/VMware/KVM/Ovm only");
         }
-        ServiceOfferingVO svcOffering = _offeringsDao.findById(vm.getServiceOfferingId());
-        if (svcOffering.getUseLocalStorage()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
-            }
-            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
-        }
+
         long srcHostId = vm.getHostId();
-        // why is this not HostVO?
         Host srcHost = _hostDao.findById(srcHostId);
         if (srcHost == null) {
             if (s_logger.isDebugEnabled()) {
@@ -792,55 +738,254 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
-        Long cluster = srcHost.getClusterId();
-        Type hostType = srcHost.getType();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Searching for all hosts in cluster: " + cluster + " for migrating VM " + vm);
+
+        // Check if the vm can be migrated with storage.
+        boolean canMigrateWithStorage = false;
+        HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(
+                srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
+        if (capabilities != null) {
+            canMigrateWithStorage = capabilities.isStorageMotionSupported();
         }
 
-        Pair<List<HostVO>, Integer> allHostsInClusterPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null);
-
-        // filter out the current host
-        List<HostVO> allHostsInCluster = allHostsInClusterPair.first();
-        allHostsInCluster.remove(srcHost);
-        Pair<List<? extends Host>, Integer> otherHostsInCluster = new Pair<List <? extends Host>, Integer>(allHostsInCluster, new Integer(allHostsInClusterPair.second().intValue()-1));
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Other Hosts in this cluster: " + allHostsInCluster);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Calling HostAllocators to search for hosts in cluster: " + cluster + " having enough capacity and suitable for migration");
-        }
-
-        List<Host> suitableHosts = new ArrayList<Host>();
-
+        // Check if the vm is using any disks on local storage.
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
+        boolean usesLocal = false;
+        for (VolumeVO volume : volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, vmProfile.getHypervisorType());
+            if (diskProfile.useLocalStorage()) {
+                usesLocal = true;
+                break;
+            }
+        }
 
-        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        if (!canMigrateWithStorage && usesLocal) {
+            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+        }
+
+        Type hostType = srcHost.getType();
+        Pair<List<HostVO>, Integer> allHostsPair = null;
+        List<HostVO> allHosts = null;
+        Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
+        DataCenterDeployment plan = null;
+        if (canMigrateWithStorage) {
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null,
+                    null, null, null, null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
+            allHosts = allHostsPair.first();
+            allHosts.remove(srcHost);
+
+            // Check if the host has storage pools for all the volumes of the vm to be migrated.
+            for (Host host : allHosts) {
+                Map<Volume, List<StoragePool>> volumePools = findSuitablePoolsForVolumes(vmProfile, host);
+                if (volumePools.isEmpty()) {
+                    allHosts.remove(host);
+                } else {
+                    if (host.getClusterId() != srcHost.getClusterId() || usesLocal) {
+                        requiresStorageMotion.put(host, true);
+                    }
+                }
+            }
+
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
+        } else {
+            Long cluster = srcHost.getClusterId();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
+            }
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null,
+                    null, null, null, null);
+            // Filter out the current host.
+            allHosts = allHostsPair.first();
+            allHosts.remove(srcHost);
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(),
+                    null, null, null);
+        }
+
+        Pair<List<? extends Host>, Integer> otherHosts = new Pair<List <? extends Host>, Integer>(allHosts,
+                new Integer(allHosts.size()));
+        List<Host> suitableHosts = new ArrayList<Host>();
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, excludes);
+            }
+        }
+
         for (HostAllocator allocator : _hostAllocators) {
-            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
+            if  (canMigrateWithStorage) {
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts,
+                        HostAllocator.RETURN_UPTO_ALL, false);
+            } else {
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes,
+                        HostAllocator.RETURN_UPTO_ALL, false);
+            }
+
             if (suitableHosts != null && !suitableHosts.isEmpty()) {
                 break;
             }
         }
 
-        if (suitableHosts.isEmpty()) {
-            s_logger.debug("No suitable hosts found");
-        } else {
-            if (s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
+            if (suitableHosts.isEmpty()) {
+                s_logger.debug("No suitable hosts found");
+            } else {
                 s_logger.debug("Hosts having capacity and suitable for migration: " + suitableHosts);
             }
         }
 
-        return new Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>>(otherHostsInCluster, suitableHosts);
+        return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> (otherHosts,
+                suitableHosts, requiresStorageMotion);
+    }
+
+    private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile<VMInstanceVO> vmProfile,
+            Host host) {
+        List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
+
+        // For each volume find list of suitable storage pools by calling the allocators
+        for (VolumeVO volume : volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, vmProfile.getHypervisorType());
+            DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(),
+                    host.getClusterId(), host.getId(), null, null);
+            ExcludeList avoid = new ExcludeList();
+
+            boolean foundPools = false;
+            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+                List<StoragePool> poolList = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid,
+                        StoragePoolAllocator.RETURN_UPTO_ALL);
+                if (poolList != null && !poolList.isEmpty()) {
+                    suitableVolumeStoragePools.put(volume, poolList);
+                    foundPools = true;
+                    break;
+                }
+            }
+
+            if (!foundPools) {
+                suitableVolumeStoragePools.clear();
+                break;
+            }
+        }
+
+        return suitableVolumeStoragePools;
+    }
+
+    @Override
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId) {
+        // Access check - only root administrator can migrate volumes.
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Caller is not a root admin, permission denied to migrate the volume");
+            }
+            throw new PermissionDeniedException("No permission to migrate volume, only root admin can migrate a volume");
+        }
+
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with" +
+                    " specified id.");
+            ex.addProxyObject(volume, volumeId, "volumeId");
+            throw ex;
+        }
+
+        // Volume must be attached to an instance for live migration.
+        List<StoragePool> allPools = new ArrayList<StoragePool>();
+        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+        Long instanceId = volume.getInstanceId();
+        VMInstanceVO vm = null;
+        if (instanceId != null) {
+            vm = _vmInstanceDao.findById(instanceId);
+        }
+
+        // Check that the VM is in correct state.
+        if (vm == null || vm.getState() != State.Running) {
+            s_logger.info("Volume " + volume + " isn't attached to any running vm. Only volumes attached to a running" +
+                    " VM can be migrated.");
+            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+        }
+
+        // Volume must be in Ready state to be migrated.
+        if (!Volume.State.Ready.equals(volume.getState())) {
+            s_logger.info("Volume " + volume + " must be in ready state for migration.");
+            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+        }
+
+        if (!_volumeMgr.volumeOnSharedStoragePool(volume)) {
+            s_logger.info("Volume " + volume + " is on local storage. It cannot be migrated to another pool.");
+            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+        }
+
+        // Check if the underlying hypervisor supports storage motion.
+        boolean storageMotionSupported = false;
+        Long hostId = vm.getHostId();
+        if (hostId != null) {
+            HostVO host = _hostDao.findById(hostId);
+            HypervisorCapabilitiesVO capabilities = null;
+            if (host != null) {
+                capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(),
+                        host.getHypervisorVersion());
+            } else {
+                s_logger.error("Details of the host on which the vm " + vm + ", to which volume "+ volume + " is "
+                        + "attached, couldn't be retrieved.");
+            }
+
+            if (capabilities != null) {
+                storageMotionSupported = capabilities.isStorageMotionSupported();
+            } else {
+                s_logger.error("Capabilities for host " + host + " couldn't be retrieved.");
+            }
+        }
+
+        if (storageMotionSupported) {
+            // Source pool of the volume.
+            StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
+
+            // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
+            // can be live migrated while the virtual machine stays on the same host.
+            List<StoragePoolVO> storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(),
+                    volume.getPodId(), srcVolumePool.getClusterId(), null);
+            storagePools.remove(srcVolumePool);
+            for (StoragePoolVO pool : storagePools) {
+                if (pool.isShared()) {
+                    allPools.add((StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId()));
+                }
+            }
+
+            // Get all the suitable pools.
+            // Exclude the current pool from the list of pools to which the volume can be migrated.
+            ExcludeList avoid = new ExcludeList();
+            avoid.addPool(srcVolumePool.getId());
+
+            // Volume stays in the same cluster after migration.
+            DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), volume.getPodId(),
+                    srcVolumePool.getClusterId(), null, null, null);
+            VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+
+            // Call the storage pool allocator to find the list of storage pools.
+            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+                List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid,
+                        StoragePoolAllocator.RETURN_UPTO_ALL);
+                if (pools != null && !pools.isEmpty()) {
+                    suitablePools.addAll(pools);
+                    break;
+                }
+            }
+        }
+        return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
     private Pair<List<HostVO>, Integer> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
-            Object resourceState, Object haHosts) {
+            Object resourceState, Object haHosts, Object hypervisorType, Object hypervisorVersion) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
@@ -852,6 +997,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
 
         String haTag = _haMgr.getHaTag();
         SearchBuilder<HostTagVO> hostTagSearch = null;
@@ -900,6 +1047,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (cluster != null) {
             sc.setParameters("clusterId", cluster);
+        }
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
+        if (hypervisorVersion != null) {
+            sc.setParameters("hypervisorVersion", hypervisorVersion);
         }
 
         if (resourceState != null) {
@@ -1084,6 +1237,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object name = cmd.getConfigName();
         Object category = cmd.getCategory();
         Object keyword = cmd.getKeyword();
+        Long id = cmd.getId();
+        String scope = cmd.getScope();
+
+        if (scope!= null && !scope.isEmpty()) {
+            // getting the list of parameters at requested scope
+            try {
+                Config.ConfigurationParameterScope.valueOf(scope.toLowerCase());
+            } catch (Exception e ) {
+                throw new InvalidParameterValueException("Invalid scope " + scope + " while listing configuration parameters");
+            }
+            if (id == null) {
+                throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
+            }
+            List<ConfigurationVO> configList = _configServer.getConfigListByScope(scope, id);
+            return new Pair<List<? extends Configuration>, Integer>(configList, configList.size());
+        }
 
         if (keyword != null) {
             SearchCriteria<ConfigurationVO> ssc = _configDao.createSearchCriteria();
@@ -1999,6 +2168,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CancelMaintenanceCmd.class);
         cmdList.add(DeleteHostCmd.class);
         cmdList.add(ListHostsCmd.class);
+        cmdList.add(FindHostsForMigrationCmd.class);
         cmdList.add(PrepareForMaintenanceCmd.class);
         cmdList.add(ReconnectHostCmd.class);
         cmdList.add(UpdateHostCmd.class);
@@ -2055,6 +2225,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeletePoolCmd.class);
         cmdList.add(ListS3sCmd.class);
         cmdList.add(ListStoragePoolsCmd.class);
+        cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
         cmdList.add(AddSwiftCmd.class);
@@ -2090,8 +2261,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(DeleteVlanIpRangeCmd.class);
         cmdList.add(ListVlanIpRangesCmd.class);
+        cmdList.add(DedicatePublicIpRangeCmd.class);
+        cmdList.add(ReleasePublicIpRangeCmd.class);
         cmdList.add(AssignVMCmd.class);
         cmdList.add(MigrateVMCmd.class);
+        cmdList.add(MigrateVirtualMachineWithVolumeCmd.class);
         cmdList.add(RecoverVMCmd.class);
         cmdList.add(CreatePrivateGatewayCmd.class);
         cmdList.add(CreateVPCOfferingCmd.class);
@@ -2301,6 +2475,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(CreateAffinityGroupCmd.class);
+        cmdList.add(DeleteAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupsCmd.class);
+        cmdList.add(UpdateVMAffinityGroupCmd.class);
+        cmdList.add(ListAffinityGroupTypesCmd.class);
+
         return cmdList;
     }
 
@@ -3034,13 +3214,64 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public String getHashKey() {
-        // although we may have race conditioning here, database transaction
-        // serialization should
+        // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), 
+            	getBase64EncodedRandomKey(128));
         }
         return _hashKey;
+    }
+
+    @Override
+    public String getEncryptionKey() {
+        if (_encryptionKey == null) {
+            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), 
+            	Config.EncryptionKey.getCategory(), 
+            	getBase64EncodedRandomKey(128));
+        }
+        return _encryptionKey;
+    }
+    
+    @Override
+    public String getEncryptionIV() {
+        if (_encryptionIV == null) {
+            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), 
+            	Config.EncryptionIV.getCategory(), 
+            	getBase64EncodedRandomKey(128));
+        }
+        return _encryptionIV;
+    }
+    
+    @Override
+    @DB
+    public void resetEncryptionKeyIV() {
+    	
+    	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
+    	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
+    	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
+    	sb.done();
+    	
+    	SearchCriteria<ConfigurationVO> sc = sb.create();
+    	sc.setParameters("name1", Config.EncryptionKey.key());
+    	sc.setParameters("name2", Config.EncryptionIV.key());
+    	
+    	_configDao.expunge(sc);
+    	_encryptionKey = null;
+    	_encryptionIV = null;
+    }
+    
+    private static String getBase64EncodedRandomKey(int nBits) {
+		SecureRandom random;
+		try {
+			random = SecureRandom.getInstance("SHA1PRNG");
+	        byte[] keyBytes = new byte[nBits/8];
+	        random.nextBytes(keyBytes);
+	        return Base64.encodeBase64URLSafeString(keyBytes);
+		} catch (NoSuchAlgorithmException e) {
+			s_logger.error("Unhandled exception: ", e);
+		}
+		return null;
     }
 
     @Override
@@ -3365,5 +3596,4 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
-
 }

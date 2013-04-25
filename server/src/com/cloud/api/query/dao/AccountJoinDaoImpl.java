@@ -20,17 +20,16 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -66,6 +65,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setState(account.getState().toString());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
         accountResponse.setDefaultZone(account.getDataCenterUuid());
+        accountResponse.setIsDefault(account.isDefault());
 
         // get network stat
         accountResponse.setBytesReceived(account.getBytesReceived());

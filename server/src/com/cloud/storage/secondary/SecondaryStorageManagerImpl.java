@@ -30,8 +30,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -98,8 +96,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -474,7 +472,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     }
 
-    private boolean isSecondaryStorageVmRequired(long dcId) {
+    protected boolean isSecondaryStorageVmRequired(long dcId) {
         DataCenterVO dc = _dcDao.findById(dcId);
         _dcDao.loadDetails(dc);
         String ssvmReq = dc.getDetail(ZoneConfig.EnableSecStorageVm.key());
@@ -742,7 +740,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     return true;
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm");
+                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId + " system.vm.use.local.storage: " + _useLocalStorage +
+                        		"If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
                     }
                 }
             } else {
@@ -1065,10 +1064,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
             } else {
             	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
-                buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+                buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
             }
         } else {
-            buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+            buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
         }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));

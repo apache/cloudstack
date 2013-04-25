@@ -49,7 +49,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 

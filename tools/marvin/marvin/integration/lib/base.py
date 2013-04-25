@@ -90,10 +90,7 @@ class Account:
         cmd.firstname = services["firstname"]
         cmd.lastname = services["lastname"]
 
-        # Password Encoding
-        mdf = hashlib.md5()
-        mdf.update(services["password"])
-        cmd.password = mdf.hexdigest()
+        cmd.password = services["password"]
         cmd.username = "-".join([services["username"], random_gen()])
 
         if domainid:
@@ -105,7 +102,7 @@ class Account:
     def delete(self, apiclient):
         """Delete an account"""
         cmd = deleteAccount.deleteAccountCmd()
-        cmd.id = self.account.id
+        cmd.id = self.id
         apiclient.deleteAccount(cmd)
 
     @classmethod
@@ -223,7 +220,7 @@ class VirtualMachine:
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
-                    diskofferingid=None, hostid=None, mode='basic'):
+                    diskofferingid=None, affinitygroupnames=None, hostid=None, mode='basic', method='GET'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -265,8 +262,11 @@ class VirtualMachine:
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
 
-        if "userdata" in services:
-            cmd.userdata = base64.b64encode(services["userdata"])
+
+        if "affinitygroupnames" in services:
+            cmd.affinitygroupnames  = services["affinitygroupnames"]
+        elif affinitygroupnames:
+            cmd.affinitygroupnames  = affinitygroupnames
 
         if projectid:
             cmd.projectid = projectid
@@ -277,7 +277,10 @@ class VirtualMachine:
         if hostid:
             cmd.hostid = hostid
 
-        virtual_machine = apiclient.deployVirtualMachine(cmd)
+        if "userdata" in services:
+            cmd.userdata = base64.b64encode(services["userdata"])
+
+        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         # VM should be in Running state after deploy
         timeout = 10
@@ -536,6 +539,13 @@ class Volume:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.resizeVolume(cmd))
+
+    @classmethod
+    def migrate(cls, apiclient, **kwargs):
+        """Migrate a volume"""
+        cmd = migrateVolume.migrateVolumeCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.migrateVolume(cmd))
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -1491,6 +1501,14 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listHosts(cmd))
 
+    @classmethod
+    def listForMigration(cls, apiclient, **kwargs):
+        """List all Hosts for migration matching criteria"""
+
+        cmd = findHostsForMigration.findHostsForMigrationCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.findHostsForMigration(cmd))
+
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
@@ -1552,6 +1570,13 @@ class StoragePool:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStoragePools(cmd))
 
+    @classmethod
+    def listForMigration(cls, apiclient, **kwargs):
+        """List all storage pools for migration matching criteria"""
+
+        cmd = findStoragePoolsForMigration.findStoragePoolsForMigrationCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.findStoragePoolsForMigration(cmd))
 
 class Network:
     """Manage Network pools"""
@@ -1871,7 +1896,7 @@ class PublicIpRange:
         """Delete VlanIpRange"""
 
         cmd = deleteVlanIpRange.deleteVlanIpRangeCmd()
-        cmd.id = self.id
+        cmd.id = self.vlan.id
         apiclient.deleteVlanIpRange(cmd)
 
     @classmethod
@@ -1882,6 +1907,23 @@ class PublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVlanIpRanges(cmd))
 
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate VLAN IP range"""
+
+        cmd = dedicatePublicIpRange.dedicatePublicIpRangeCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PublicIpRange(apiclient.dedicatePublicIpRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release VLAN IP range"""
+
+        cmd = releasePublicIpRange.releasePublicIpRangeCmd()
+        cmd.id = self.vlan.id
+        return apiclient.releasePublicIpRange(cmd)
 
 class SecondaryStorage:
     """Manage Secondary storage"""
@@ -1953,7 +1995,7 @@ class PhysicalNetwork:
 
         cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listPhysicalNetworks(cmd))
+        return map(lambda pn : PhysicalNetwork(pn.__dict__), apiclient.listPhysicalNetworks(cmd))
 
 class SecurityGroup:
     """Manage Security Groups"""
@@ -2424,3 +2466,94 @@ class VPC:
         cmd = listVPCs.listVPCsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVPCs(cmd))
+
+class AffinityGroup:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, account=None, domainid=None):
+        agCmd = createAffinityGroup.createAffinityGroupCmd()
+        agCmd.name = services['name']
+        agCmd.displayText = services['displaytext'] if 'displaytext' in services else services['name']
+        agCmd.type = services['type']
+        agCmd.account = services['account'] if 'account' in services else account
+        agCmd.domainid = services['domainid'] if 'domainid' in services else domainid
+        return AffinityGroup(apiclient.createAffinityGroup(agCmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteVPC(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listAffinityGroups.listAffinityGroupsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVPCs(cmd))
+
+class VNMC:
+    """Manage VNMC lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    def create(cls, apiclient, hostname, username, password, physicalnetworkid):
+        """Registers VNMC appliance"""
+
+        cmd = addCiscoVnmcResource.addCiscoVnmcResourceCmd()
+        cmd.hostname = hostname
+        cmd.username = username
+        cmd.password = password
+        cmd.physicalnetworkid = physicalnetworkid
+        return VNMC(apiclient.addCiscoVnmcResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes VNMC appliance"""
+
+        cmd = deleteCiscoVnmcResource.deleteCiscoVnmcResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoVnmcResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List VNMC appliances"""
+
+        cmd = listCiscoVnmcResources.listCiscoVnmcResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoVnmcResources(cmd))
+
+class ASA1000V:
+    """Manage ASA 1000v lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, hostname, insideportprofile, clusterid, physicalnetworkid):
+        """Registers ASA 1000v appliance"""
+
+        cmd = addCiscoAsa1000vResource.addCiscoAsa1000vResourceCmd()
+        cmd.hostname = hostname
+        cmd.insideportprofile = insideportprofile
+        cmd.clusterid = clusterid
+        cmd.physicalnetworkid = physicalnetworkid
+        return ASA1000V(apiclient.addCiscoAsa1000vResource(cmd))
+
+    def delete(self, apiclient):
+        """Removes ASA 1000v appliance"""
+
+        cmd = deleteCiscoAsa1000vResource.deleteCiscoAsa1000vResourceCmd()
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteCiscoAsa1000vResource(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List ASA 1000v appliances"""
+
+        cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listCiscoAsa1000vResources(cmd))

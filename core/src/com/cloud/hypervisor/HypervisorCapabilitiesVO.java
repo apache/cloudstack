@@ -62,15 +62,23 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     @Column(name="max_hosts_per_cluster")
     private Integer maxHostsPerCluster;
 
+    @Column(name="vm_snapshot_enabled")
+    private Boolean vmSnapshotEnabled;
+
+    @Column(name="storage_motion_supported")
+    private boolean storageMotionSupported;
+
     protected HypervisorCapabilitiesVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit, boolean securityGroupEnabled) {
+    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit,
+            boolean securityGroupEnabled, boolean storageMotionSupported) {
         this.hypervisorType = hypervisorType;
         this.hypervisorVersion = hypervisorVersion;
         this.maxGuestsLimit = maxGuestsLimit;
         this.securityGroupEnabled = securityGroupEnabled;
+        this.storageMotionSupported = storageMotionSupported;
     	this.uuid = UUID.randomUUID().toString();
     }
 
@@ -132,6 +140,21 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         return maxGuestsLimit;
     }
 
+    /**
+     * @param storageMotionSupported
+     */
+    public void setStorageMotionSupported(boolean storageMotionSupported) {
+        this.storageMotionSupported = storageMotionSupported;
+    }
+
+    /**
+     * @return if storage motion is supported
+     */
+    @Override
+    public boolean isStorageMotionSupported() {
+        return storageMotionSupported;
+    }
+
 
     public long getId() {
         return id;
@@ -169,7 +192,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.maxHostsPerCluster = maxHostsPerCluster;
     }
 
-    @Override
+	public Boolean getVmSnapshotEnabled() {
+		return vmSnapshotEnabled;
+	}
+
+	public void setVmSnapshotEnabled(Boolean vmSnapshotEnabled) {
+		this.vmSnapshotEnabled = vmSnapshotEnabled;
+	}
+
+	@Override
     public boolean equals(Object obj) {
         if (obj instanceof HypervisorCapabilitiesVO) {
             return ((HypervisorCapabilitiesVO)obj).getId() == this.getId();

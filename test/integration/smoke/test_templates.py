@@ -93,8 +93,6 @@ class Services:
                         "bootable": True,
                         "passwordenabled": True,
                         "ostype": "CentOS 5.3 (64-bit)",
-                        "mode": 'advanced',
-                        # Networking mode: Advanced, basic
                         "sleep": 30,
                         "timeout": 10,
                      }
@@ -126,6 +124,7 @@ class TestCreateTemplate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]

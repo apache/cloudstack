@@ -38,12 +38,15 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the storage pool")
     private String zoneName;
 
+    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description = "network type of the availability zone")
+    private String zoneType;
+    
     @SerializedName("podid") @Param(description="the Pod ID of the storage pool")
     private String podId;
 
     @SerializedName("podname") @Param(description="the Pod name of the storage pool")
-    private String podName;
-
+    private String podName;    
+    
     @SerializedName("name") @Param(description="the name of the storage pool")
     private String name;
 
@@ -79,8 +82,23 @@ public class StoragePoolResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the storage pool")
     private StoragePoolStatus state;
+    
+    @SerializedName(ApiConstants.SCOPE) @Param(description="the scope of the storage pool")
+    private String scope;
 
+    /**
+     * @return the scope
+     */
+    public String getScope() {
+        return scope;
+    }
 
+    /**
+     * @param scope the scope to set
+     */
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
 
     @Override
     public String getObjectId() {
@@ -111,6 +129,14 @@ public class StoragePoolResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public String getPodId() {
         return podId;
     }
@@ -222,5 +248,4 @@ public class StoragePoolResponse extends BaseResponse {
     public void setState(StoragePoolStatus state) {
         this.state = state;
     }
-
 }

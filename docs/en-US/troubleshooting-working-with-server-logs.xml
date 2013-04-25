@@ -24,10 +24,10 @@
 
 <section id="troubleshooting-working-with-server-logs">
     <title>Working with Server Logs</title>
-    <para>The &PRODUCT; Management Server logs all web site, middle tier, and database activities for diagnostics purposes in /var/log/cloud/management/.  The &PRODUCT; logs a variety of error messages.  We recommend this command to find the problematic output in the Management Server log:.</para>
+    <para>The &PRODUCT; Management Server logs all web site, middle tier, and database activities for diagnostics purposes in /var/log/cloudstack/management/.  The &PRODUCT; logs a variety of error messages.  We recommend this command to find the problematic output in the Management Server log:.</para>
     <note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
     <programlisting>
-        grep -i -E 'exception|unable|fail|invalid|leak|warn|error' /var/log/cloud/management/management-server.log
+        grep -i -E 'exception|unable|fail|invalid|leak|warn|error' /var/log/cloudstack/management/management-server.log
     </programlisting>
     <para>The &PRODUCT; processes requests with a Job ID. If you find an error in the logs and you are interested in debugging the issue you can grep for this job ID in the management server log. For example, suppose that you find the following ERROR message:</para>
     <programlisting>
@@ -37,5 +37,5 @@
     <programlisting>
         grep "job-1076)" management-server.log
     </programlisting>
-    <para>The &PRODUCT; Agent Server logs its activities in /var/log/cloud/agent/.</para>
+    <para>The &PRODUCT; Agent Server logs its activities in /var/log/cloudstack/agent/.</para>
 </section>

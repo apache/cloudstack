@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Configuration;
@@ -43,6 +43,12 @@ public class UpdateCfgCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration", length=4095)
     private String value;
 
+    @Parameter(name=ApiConstants.SCOPE, type = CommandType.STRING, description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
+    private String scope;
+
+    @Parameter(name=ApiConstants.ID, type = CommandType.UUID, entityType = {ZoneResponse.class, ClusterResponse.class, StoragePoolResponse.class, AccountResponse.class}, description = "corresponding ID of the scope")
+    private Long id;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -53,6 +59,14 @@ public class UpdateCfgCmd extends BaseCmd {
 
     public String getValue() {
         return value;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -75,6 +89,12 @@ public class UpdateCfgCmd extends BaseCmd {
         if (cfg != null) {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
+            if (scope != null) {
+                response.setScope(scope);
+                response.setValue(value);
+            } else {
+                response.setScope("global");
+            }
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update config");

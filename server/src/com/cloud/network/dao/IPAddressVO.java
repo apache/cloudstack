@@ -292,7 +292,6 @@ public class IPAddressVO implements IpAddress {
         return vpcId;
     }
 
-    @Override
     public void setVpcId(Long vpcId) {
         this.vpcId = vpcId;
     }
@@ -302,7 +301,6 @@ public class IPAddressVO implements IpAddress {
         return vmIp;
     }
 
-    @Override
     public void setVmIp(String vmIp) {
         this.vmIp = vmIp;
     }

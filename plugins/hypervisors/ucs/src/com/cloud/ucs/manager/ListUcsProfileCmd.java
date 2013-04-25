@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.manager;
 
 import javax.inject.Inject;
@@ -40,9 +40,9 @@ import com.cloud.user.Account;
 @APICommand(name="listUcsProfile", description="List profile in ucs manager", responseObject=UcsProfileResponse.class)
 public class ListUcsProfileCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsProfileCmd.class);
-    
+
     @Inject UcsManager mgr;
-    
+
     @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID,  entityType=UcsManagerResponse.class, description="the id for the ucs manager", required=true)
     private Long ucsManagerId;
 
@@ -64,7 +64,7 @@ public class ListUcsProfileCmd extends BaseListCmd {
             this.setResponseObject(response);
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());  
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 

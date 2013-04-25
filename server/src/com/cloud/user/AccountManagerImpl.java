@@ -37,11 +37,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
@@ -52,7 +52,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
-
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;
@@ -64,6 +63,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
@@ -220,6 +220,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private AutoScaleManager _autoscaleMgr;
     @Inject VolumeManager volumeMgr;
+    @Inject
+    private AffinityGroupDao _affinityGroupDao;
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
@@ -238,7 +240,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public List<UserAuthenticator> getUserAuthenticators() {
     	return _userAuthenticators;
     }
-    
+
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
     	_userAuthenticators = authenticators;
     }
@@ -623,6 +625,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
 
+            // Cleanup affinity groups
+            int numAGRemoved = _affinityGroupDao.removeByAccountId(accountId);
+            s_logger.info("deleteAccount: Deleted " + numAGRemoved + " affinity groups for account " + accountId);
+
             // Delete all the networks
             boolean networksDeleted = true;
             s_logger.debug("Deleting networks for account " + account.getId());
@@ -683,13 +689,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 accountCleanupNeeded = true;
             }
 
-            // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
+            // release account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
             // up successfully
             if (networksDeleted) {
-                if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)) {
+                if (!_configMgr.releaseAccountSpecificVirtualRanges(accountId)) {
                     accountCleanupNeeded = true;
                 } else {
-                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully deleted as a part of account id=" + accountId + " cleanup.");
+                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
                 }
             }
 
@@ -1171,8 +1177,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
+        //don't allow to delete default account (system and admin)
+        if (account.isDefault()) {
+            throw new InvalidParameterValueException("The account is default and can't be removed");
         }
 
         // Account that manages project(s) can't be removed
@@ -1377,9 +1384,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
         }
-
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
+        
+        //don't allow to delete default user (system and admin users)
+        if (user.isDefault()) {
+            throw new InvalidParameterValueException("The user is default and can't be removed");
         }
 
         checkAccess(UserContext.current().getCaller(), null, true, account);
@@ -1984,6 +1992,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
@@ -2137,7 +2146,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
             boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
-
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
@@ -2153,10 +2161,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             Account userAccount = null;
+            Domain domain = null;
             if (domainId != null) {
                 userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                domain = _domainDao.findById(domainId);
             } else {
                 userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+                domain = _domainDao.findById(caller.getDomainId());
             }
 
             if (userAccount != null) {
@@ -2164,7 +2175,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 //check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
-                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
             }
         }
 

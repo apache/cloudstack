@@ -27,12 +27,12 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
-import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
@@ -95,6 +95,11 @@ public abstract class BaseCmd {
     private Object _responseObject = null;
     private Map<String, String> fullUrlParams;
 
+    public enum HTTPMethod {
+        GET, POST, PUT, DELETE
+    }
+    private HTTPMethod httpMethod;
+
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
@@ -109,7 +114,6 @@ public abstract class BaseCmd {
     @Inject public TemplateService _templateService;
     @Inject public SecurityGroupService _securityGroupService;
     @Inject public SnapshotService _snapshotService;
-    @Inject public ConsoleProxyService _consoleProxyService;
     @Inject public VpcVirtualNetworkApplianceService _routerService;
     @Inject public ResponseGenerator _responseGenerator;
     @Inject public EntityManager _entityMgr;
@@ -134,10 +138,30 @@ public abstract class BaseCmd {
     @Inject public VMSnapshotService _vmSnapshotService;
     @Inject public DataStoreProviderApiService dataStoreProviderApiService;
     @Inject public VpcProvisioningService _vpcProvSvc;
+    @Inject public AffinityGroupService _affinityGroupService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 
     public void configure() {
+    }
+
+    public HTTPMethod getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String method) {
+        if (method != null) {
+            if (method.equalsIgnoreCase("GET"))
+                httpMethod = HTTPMethod.GET;
+            else if (method.equalsIgnoreCase("PUT"))
+                httpMethod = HTTPMethod.PUT;
+            else if (method.equalsIgnoreCase("POST"))
+                httpMethod = HTTPMethod.POST;
+            else if (method.equalsIgnoreCase("DELETE"))
+                httpMethod = HTTPMethod.DELETE;
+        } else {
+            httpMethod = HTTPMethod.GET;
+	}
     }
 
     public String getResponseType() {
@@ -156,7 +180,7 @@ public abstract class BaseCmd {
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.
-     * 
+     *
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
@@ -469,7 +493,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -486,7 +510,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");                    
+                    ex.addProxyObject(project, projectId, "projectId");
                     throw ex;
                 }
             } else {

@@ -235,14 +235,14 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         if (_eth1ip != null) {
             params.put("private.network.device", "eth1");
         } else {
-            s_logger.warn("WARNING: eth1ip parameter is not found!");
+            s_logger.info("eth1ip parameter has not been configured, assuming that we are not inside a system vm");
         }
 
         String eth2ip = (String) params.get("eth2ip");
         if (eth2ip != null) {
             params.put("public.network.device", "eth2");
         } else {
-            s_logger.warn("WARNING: eth2ip parameter is not found!");
+            s_logger.info("eth2ip parameter is not found, assuming that we are not inside a system vm");
         }
 
         super.configure(name, params);

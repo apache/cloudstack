@@ -25,7 +25,7 @@
 <preface id="pref-cloudstack-Preface">
     <title>Preface</title>
     <xi:include href="Common_Content/Conventions.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="Feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude"><xi:fallback xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include href="Common_Content/Feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude"><xi:fallback xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include href="Common_Content/feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     </xi:fallback>
     </xi:include>
 </preface>

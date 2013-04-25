@@ -17,6 +17,7 @@
 package com.cloud.configuration.dao;
 
 import java.util.Map;
+import java.util.List;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.utils.db.GenericDao;

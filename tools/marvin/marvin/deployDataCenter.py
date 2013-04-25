@@ -270,6 +270,12 @@ class deployDataCenters():
         zoneCmd.allocationstate = allocation_state
         return self.apiClient.updateZone(zoneCmd)
 
+    def updateZoneDetails(self, zoneid, details):
+        zoneCmd = updateZone.updateZoneCmd()
+        zoneCmd.id = zoneid
+        zoneCmd.details = details
+        return self.apiClient.updateZone(zoneCmd)
+
     def createZones(self, zones):
         for zone in zones:
             createzone = createZone.createZoneCmd()
@@ -293,10 +299,11 @@ class deployDataCenters():
 
             if zone.networktype == "Basic":
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
-                
                 listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
                         if len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0 \
                         else "DefaultSharedNetworkOfferingWithSGService"
+                if zone.networkofferingname  is not None:
+                   listnetworkoffering.name = zone.networkofferingname 
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
@@ -320,7 +327,15 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            self.enableZone(zoneId, "Enabled")
+            
+            enabled = getattr(zone, 'enabled', 'True')
+            if enabled == 'True' or enabled is None:
+                self.enableZone(zoneId, "Enabled")
+            details = getattr(zone, 'details')
+            if details is not None:
+                det = [d.__dict__ for d in details]
+                self.updateZoneDetails(zoneId, det)
+
         return
     
     def isEipElbZone(self, zone):
@@ -392,7 +407,6 @@ class deployDataCenters():
                                             logging=self.testClientLogger)
         if mgt.apiKey is None:
             apiKey, securityKey = self.registerApiKey()
-            self.testClient.close()
             self.testClient = \
             cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
                                                       apiKey, securityKey, \

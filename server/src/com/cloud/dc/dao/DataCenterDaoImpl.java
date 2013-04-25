@@ -401,4 +401,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         txn.commit();
         return result;
     }
+    
+    @Override
+    public List<DataCenterVO> listAllZones(){
+        SearchCriteria<DataCenterVO> sc = NameSearch.create();
+        List<DataCenterVO> dcs =  listBy(sc);
+
+        return dcs;
+    }
 }

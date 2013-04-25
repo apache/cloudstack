@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="vm-snapshots">
+  <title>Virtual Machine Snapshots for VMware</title>
+  <para>(VMware hosts only)
+    In addition to the existing &PRODUCT; ability to snapshot individual VM volumes,
+    you can now take a VM snapshot to preserve all the VM's data volumes as well as (optionally) its CPU/memory state.
+    This is useful for quick restore of a VM.
+    For example, you can snapshot a VM, then make changes such as software upgrades.
+    If anything goes wrong, simply restore the VM to its previous state using the previously saved VM snapshot.
+  </para>
+  <para>The snapshot is created using the VMware native snapshot facility. The VM snapshot
+    includes not only the data volumes, but optionally also whether the VM is running or
+    turned off (CPU state) and the memory contents. The snapshot is stored in &PRODUCT;'s
+    primary storage.</para>      
+  <para>VM snapshots can have a parent/child relationship.
+    Each successive snapshot of the same VM is the child of the snapshot that came before it.
+    Each time you take an additional snapshot of the same VM, it saves only the differences
+    between the current state of the VM and the state stored in the most recent previous snapshot.
+    The previous snapshot becomes a parent, and the new snapshot is its child.
+    It is possible to create a long chain of these parent/child snapshots,
+    which amount to a "redo" record leading from the current state of the VM back to the 
+    original.</para>
+  <para>If you need more information about VM snapshots, check out the VMware documentation
+    and the VMware Knowledge Base, especially
+    <ulink url="http://kb.vmware.com/selfservice/microsites/search.do?cmd=displayKC&amp;externalId=1015180">Understanding virtual machine snapshots</ulink>.</para>
+  <section id="vm-snapshot-restrictions">
+    <title>Limitations on VM Snapshots</title>
+    <itemizedlist>
+      <listitem><para>If a VM has some stored snapshots, you can't attach new volume to the VM
+        or delete any existing volumes.
+        If you change the volumes on the VM, it would become impossible to restore the VM snapshot
+        which was created with the previous volume structure.
+        If you want to attach a volume to such a VM, first delete its snapshots.
+      </para></listitem>
+      <listitem><para>VM snapshots which include both data volumes and memory can't be kept if you change the VM's
+        service offering. Any existing VM snapshots of this type will be discarded.</para></listitem>
+      <listitem>
+        <para>You can't make a VM snapshot at the same time as you are taking a volume
+          snapshot.</para>
+      </listitem>
+      <listitem>
+        <para>The "quiesce" option is not supported. This option is provided by the underlying
+          VMware snapshot facility so that you can choose whether to quiesce the file system
+          on a running virtual machine before taking the snapshot. In &PRODUCT;, the quiesce option is always
+          set to false; the file system is not quiesced before taking a snapshot of a running VM.
+        </para>
+      </listitem>
+      <listitem><para>You should use only &PRODUCT; to create VM snapshots on VMware hosts managed by &PRODUCT;.
+        Any snapshots that you make directly on vSphere will not be tracked in &PRODUCT;.</para></listitem>
+    </itemizedlist>
+  </section>
+  <section id="vm-snapshot-configure">
+    <title>Configuring VM Snapshots</title>
+    <para>The cloud administrator can use global configuration variables to control the behavior of VM snapshots.
+      To set these variables, go through the Global Settings area of the &PRODUCT; UI.</para>
+    <informaltable>
+      <tgroup cols="2" align="left" colsep="1" rowsep="1">
+        <thead>
+          <row>
+            <entry><para>Configuration Setting Name</para></entry>
+            <entry><para>Description</para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>vmsnapshots.max</para></entry>
+            <entry><para>The maximum number of VM snapshots that can be saved for any given virtual machine in the cloud.
+              The total possible number of VM snapshots in the cloud is (number of VMs) * vmsnapshots.max.
+              If the number of snapshots for any VM ever hits the maximum, the older ones are removed
+              by the snapshot expunge job.
+            </para></entry>
+          </row>
+          <row>
+            <entry><para>vmsnapshot.create.wait</para></entry>
+            <entry><para>Number of seconds to wait for a snapshot job to succeed before declaring failure and issuing an error.</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+  <section id="vm-snapshot-usage">
+    <title>Using VM Snapshots</title>
+    <para>To create a VM snapshot using the &PRODUCT; UI:</para>
+    <orderedlist>
+      <listitem><para>Log in to the &PRODUCT; UI as a user or administrator.</para></listitem>
+      <listitem><para>Click Instances.</para></listitem>
+      <listitem><para>Click the name of the VM you want to snapshot.</para></listitem>
+      <listitem><para>Click the Take VM Snapshot button.
+        <inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/VMSnapshotButton.png" format="PNG"/>
+          </imageobject>
+        </inlinemediaobject></para>
+        <note><para>If a snapshot is already in progress, then clicking this button will have no effect.</para></note><para/>
+      </listitem>
+      <listitem><para>Provide a name and description. These will be displayed in the VM Snapshots list.</para></listitem>
+      <listitem><para>(For running VMs only) If you want to include the VM's memory in the snapshot, click the
+        Memory checkbox. This saves the CPU and memory state of the virtual machine. If you
+        don't check this box, then only the current state of the VM disk is saved. Checking
+        this box makes the snapshot take longer.</para></listitem>
+      <listitem><para>Click OK.</para></listitem>
+    </orderedlist>
+    <para>To delete a snapshot or restore a VM to the state saved in a particular snapshot:</para>
+    <orderedlist>
+      <listitem><para>Navigate to the VM as described in the earlier steps.</para></listitem>
+      <listitem><para>Click View VM Snapshots.</para></listitem>
+      <listitem><para>In the list of snapshots, click the name of the snapshot you want to work with.</para></listitem>
+      <listitem><para>Depending on what you want to do:</para>
+        <para>To delete the snapshot, click the Delete button.
+          <inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/delete-button.png" format="PNG"/>
+            </imageobject>
+          </inlinemediaobject></para>
+        <para>To revert to the snapshot, click the Revert button.
+          <inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/revert-vm.png" format="PNG"/>
+            </imageobject>
+          </inlinemediaobject></para>
+      </listitem>
+    </orderedlist>
+    <note><para>VM snapshots are deleted automatically when a VM is destroyed.
+      You don't have to manually delete the snapshots in this case.</para></note>
+  </section>
+</section>

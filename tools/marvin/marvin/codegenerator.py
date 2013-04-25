@@ -184,9 +184,9 @@ class codeGenerator:
         body += "\n"
 
         for cmdName in self.cmdsName:
-            body += self.space + 'def %s(self,command):\n'%cmdName
+            body += self.space + 'def %s(self, command, method="GET"):\n'%cmdName
             body += self.space + self.space + 'response = %sResponse()\n'%cmdName
-            body += self.space + self.space + 'response = self.connection.make_request(command, response)\n'
+            body += self.space + self.space + 'response = self.connection.marvin_request(command, response_type=response, method=method)\n'
             body += self.space + self.space + 'return response\n'
             body += '\n'
 

@@ -139,7 +139,7 @@ public class SecurityGroupQueueTest extends TestCase {
         testNumJobsEqToNumVms2(400,5000);
         testNumJobsEqToNumVms2(1,1);
         testNumJobsEqToNumVms2(1,1000000);
-        testNumJobsEqToNumVms2(1000,1);
+        testNumJobsEqToNumVms2(750,1);
 
     }
     

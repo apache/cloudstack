@@ -3358,7 +3358,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vm.setMemoryLimits(conn, maxMemsize, maxMemsize, minMemsize, maxMemsize);
     }
 
-    private void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
+    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
         long beginTime = System.currentTimeMillis();
         while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
             try {
@@ -3374,7 +3374,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private void checkForSuccess(Connection c, Task task) throws XenAPIException, XmlRpcException {
+    protected void checkForSuccess(Connection c, Task task) throws XenAPIException, XmlRpcException {
         if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
             return;
         } else {
@@ -6380,7 +6380,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String guestOSType = cmd.getGuestOSType();
 
         boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
-        long timeout = 600;
+        long timeout = cmd.getWait();
 
         Connection conn = getConnection();
         VM vm = null;

@@ -17,17 +17,16 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -62,7 +61,15 @@ public class Upgrade410to420 implements DbUpgrade {
         upgradeVmwareLabels(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
-        PreparedStatement sql = null;
+        updateSystemVmTemplates(conn);
+        updateCluster_details(conn);
+        updatePrimaryStore(conn);
+        addEgressFwRulesForSRXGuestNw(conn);
+        upgradeEIPNetworkOfferings(conn);
+    }
+	
+	private void updateSystemVmTemplates(Connection conn) {
+	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
             sql.executeUpdate();
@@ -76,8 +83,39 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-        updateCluster_details(conn);
-    }
+	}
+	
+	private void updatePrimaryStore(Connection conn) {
+	    PreparedStatement sql = null;
+	    PreparedStatement sql2 = null;
+        try {
+            sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
+            sql.setString(1, "ancient primary data store provider");
+            sql.setString(2, "HOST");
+            sql.executeUpdate();
+            
+            sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
+            sql2.setString(1, "ancient primary data store provider");
+            sql2.setString(2, "CLUSTER");
+            sql2.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+                }
+            }
+            
+            if (sql2 != null) {
+                try {
+                    sql2.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+	}
 
     //update the cluster_details table with default overcommit ratios.
     private void updateCluster_details(Connection conn) {
@@ -211,7 +249,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     String ip = rs.getString(3);
                     String uuid = UUID.randomUUID().toString();
                     //Insert placeholder nic for each Domain router nic in Shared network
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder')");
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
                     pstmt.setString(1, uuid);
                     pstmt.setString(2, ip);
                     pstmt.setString(3, gateway);
@@ -256,6 +294,99 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    private void addEgressFwRulesForSRXGuestNw(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        ResultSet rsId = null;
+        ResultSet rsNw = null;
+        try {
+            pstmt = conn.prepareStatement("select network_id FROM `cloud`.`ntwk_service_map` where service='Firewall' and provider='JuniperSRX' ");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long netId = rs.getLong(1);
+                //checking for Isolated OR Virtual
+                pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
+                pstmt.setLong(1, netId);
+                s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
+                rsNw = pstmt.executeQuery();
+
+                if(rsNw.next()) {
+                    long accountId = rsNw.getLong(1);
+                    long domainId = rsNw.getLong(2);
+
+                    //Add new rule for the existing networks
+                    s_logger.debug("Adding default egress firewall rule for network " + netId);
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
+                    pstmt.setString(1, UUID.randomUUID().toString());
+                    pstmt.setLong(2, accountId);
+                    pstmt.setLong(3, domainId);
+                    pstmt.setLong(4, netId);
+                    pstmt.setString(5, UUID.randomUUID().toString());
+                    s_logger.debug("Inserting default egress firewall rule " + pstmt);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("select id from firewall_rules where protocol='all' and network_id=?");
+                    pstmt.setLong(1, netId);
+                    rsId = pstmt.executeQuery();
+
+                    long firewallRuleId;
+                    if(rsId.next()) {
+                        firewallRuleId = rsId.getLong(1);
+                        pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
+                        pstmt.setLong(1, firewallRuleId);
+                        s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
+                        pstmt.executeUpdate();
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void upgradeEIPNetworkOfferings(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select id, elastic_ip_service from `cloud`.`network_offerings` where traffic_type='Guest'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                // check if elastic IP service is enabled for network offering
+                if (rs.getLong(2) != 0) {
+                    //update network offering with eip_associate_public_ip set to true
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set eip_associate_public_ip=? where id=?");
+                    pstmt.setBoolean(1, true);
+                    pstmt.setLong(2, id);
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
         } finally {
             try {
                 if (rs != null) {

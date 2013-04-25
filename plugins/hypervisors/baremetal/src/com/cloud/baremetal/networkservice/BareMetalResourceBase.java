@@ -173,7 +173,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		if (_uuid == null) {
 			throw new ConfigurationException("Unable to get the uuid");
 		}
-		
+
 		if (echoScAgent != null) {
 		    _isEchoScAgent = Boolean.valueOf(echoScAgent);
 		}
@@ -416,7 +416,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 	protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
 		return new CheckNetworkAnswer(cmd, true, "Success");
 	}
-	
+
 	protected Answer execute(SecurityGroupRulesCmd cmd) {
 	    SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
 	    return hc.call(cmd.getGuestIp(), cmd);
@@ -532,7 +532,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 					return new StartAnswer(cmd, "IPMI power on failed");
 				}
 			}
-			
+
 			if (_isEchoScAgent) {
 			    SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
 			    boolean echoRet = hc.echo(vm.getNics()[0].getIp(), TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(1));

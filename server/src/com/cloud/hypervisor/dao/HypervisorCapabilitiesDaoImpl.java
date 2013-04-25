@@ -95,4 +95,11 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
         return result.getMaxHostsPerCluster();
     }
+
+	@Override
+	public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType,
+			String hypervisorVersion) {
+		HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
+		return result.getVmSnapshotEnabled();
+	}
 }

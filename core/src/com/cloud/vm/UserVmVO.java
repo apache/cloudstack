@@ -18,9 +18,11 @@ package com.cloud.vm;
 
 import java.util.HashMap;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
@@ -36,7 +38,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="iso_id", nullable=true, length=17)
     private Long isoId = null;
     
-    @Column(name="user_data", updatable=true, nullable=true, length=2048)
+    @Column(name="user_data", updatable=true, nullable=true, length=32768)
+    @Basic(fetch = FetchType.LAZY)
     private String userData;
     
     @Column(name="display_name", updatable=true, nullable=true)
@@ -119,6 +122,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return details != null ? details.get(name) : null;
     }
     
+    @Override
     public void setAccountId(long accountId){
         this.accountId = accountId;
     }

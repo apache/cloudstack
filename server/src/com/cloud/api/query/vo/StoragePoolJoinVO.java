@@ -31,6 +31,7 @@ import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
 /**
  * Storage Pool DB view.
@@ -96,6 +97,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="data_center_name")
     private String zoneName;
 
+    @Column(name="data_center_type")
+    private String zoneType;
+    
     @Column(name="pod_id")
     private long podId;
 
@@ -124,6 +128,24 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
+    
+    @Column(name = "scope")
+    @Enumerated(value = EnumType.STRING)
+    private ScopeType scope;
+
+    /**
+     * @return the scope
+     */
+    public ScopeType getScope() {
+        return scope;
+    }
+
+    /**
+     * @param scope the scope to set
+     */
+    public void setScope(ScopeType scope) {
+        this.scope = scope;
+    }
 
     @Override
     public long getId() {
@@ -264,6 +286,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         this.zoneName = zoneName;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public long getPodId() {
         return podId;
     }

@@ -184,9 +184,16 @@
     dashboard: {
       dataProvider: function(args) {
         var dataFns = {
-          zoneCount: function(data) {
+          zoneCount: function(data) {          	
+            var data = {};
+          	if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data, {
+                networktype: cloudStack.context.zoneType
+              });
+            }          	
             $.ajax({
               url: createURL('listZones'),
+              data: data,
               success: function(json) {
                 dataFns.podCount($.extend(data, {
                   zoneCount: json.listzonesresponse.count ?
@@ -258,24 +265,15 @@
           primaryStorageCount: function(data) {
             $.ajax({
               url: createURL('listStoragePools'),
-							data: {
-							  page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-							},
+	      data: {
+		page: 1,
+		pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+	      },
               success: function(json) {                
-								dataFns.secondaryStorageCount($.extend(data, {
+		dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
-                }));
-																
-								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
-								
-								/*
-								dataFns.systemVmCount($.extend(data, {
-                  primaryStorageCount: json.liststoragepoolsresponse.count ?
-                    json.liststoragepoolsresponse.count : 0
-                }));
-								*/
+                }));		
               }
             });
           },
@@ -565,6 +563,14 @@
                         });
                       }
                     },
+										actionPreFilter: function(args) {										  
+											var actionsToShow = ['destroy'];											
+											if(args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account.account == 'system')  
+											  actionsToShow.push('addAccount');
+											else
+											  actionsToShow.push('releaseFromAccount');											
+											return actionsToShow;
+										},
                     actions: {
                       destroy: {
                         label: 'label.remove.ip.range',
@@ -588,7 +594,87 @@
                             }
                           });
                         }
-                      }
+                      },											
+											
+											releaseFromAccount: {
+                        label: 'Release from Account',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('releasePublicIpRange'),
+                            data: {
+														  id: args.context.multiRule[0].id
+														},                            
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'release from account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      },
+											
+											addAccount: {
+											  label: 'Add Account',												
+												createForm: {
+													title: 'Add Account',
+													fields: {
+														account: { label: 'Account' },
+														domainid: {
+															label: 'Domain',															
+															select: function(args) {
+																$.ajax({
+																	url: createURL('listDomains'),
+																	data: { listAll: true },
+																	success: function(json) {
+																		args.response.success({
+																			data: $.map(json.listdomainsresponse.domain, function(domain) {
+																				return {
+																					id: domain.id,
+																					description: domain.path
+																				};
+																			})
+																		});
+																	}
+																});
+															}
+														}
+													}
+												},												
+												action: function(args) {                          							
+												  var data = {
+														id: args.context.multiRule[0].id,
+														zoneid: args.context.multiRule[0].zoneid,
+														domainid: args.data.domainid,
+														account: args.data.account
+													};												
+                          $.ajax({
+                            url: createURL('dedicatePublicIpRange'),
+                            data: data,                        
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Add Account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+											}	
+                      										
                     },
                     dataProvider: function(args) {
                       $.ajax({
@@ -898,7 +984,113 @@
                   });
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
+              },
+
+             addVlanRange:{
+                   label:'Add VLAN Range',
+                   title:'Add VLAN Range',
+
+                    messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to add another VLAN Range to this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range added';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Add VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&vlan=" + todb(args.data.startvlan) + "-" + todb(args.data.endvlan));
+
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
+                   },
+
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                   }
+
+                  });
+
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+
+               },
+
+                removeVlanRange:{
+                  label:'Remove VLAN Range',
+                   messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to remove an existing VLAN Range from this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range removed';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Remove VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&removevlan=" + args.data.startvlan + "-" +  args.data.endvlan);
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
+                   },
+
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                   }
+
+                  });
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+               }
+ 
             },
 
             tabFilter: function(args) {
@@ -916,23 +1108,24 @@
                 preFilter: function(args) {
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
-                    hiddenFields.push("startVlan");
-                    hiddenFields.push("endVlan");
+                    hiddenFields.push("vlan");
+                   // hiddenFields.push("endVlan");
                   }
                   return hiddenFields;
                 },
                 fields: [
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
-                    startVlan: {
-                      label: 'label.start.vlan',
+                    vlan: {
+                      label: 'VLAN Range(s)',
                       isEditable: true
                     },
-                    endVlan: {
+                  /*  endVlan: {
                       label: 'label.end.vlan',
                       isEditable: true
-                    },
-										tags: { label: 'Tags', isEditable: true },
+                    },*/
+
+		    tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
                   },
                   { //updateTrafficType API
@@ -954,9 +1147,9 @@
 										success: function(json) {										  
 											selectedPhysicalNetworkObj = json.listphysicalnetworksresponse.physicalnetwork[0];			
 											
-											var startVlan, endVlan;
+										//	var startVlan, endVlan;
 											var vlan = selectedPhysicalNetworkObj.vlan;
-											if(vlan != null && vlan.length > 0) {
+									 	/*	if(vlan != null && vlan.length > 0) {
 												if(vlan.indexOf("-") != -1) {
 													var vlanArray = vlan.split("-");
 													startVlan = vlanArray[0];
@@ -967,7 +1160,7 @@
 												}
 												selectedPhysicalNetworkObj["startVlan"] = startVlan;
 												selectedPhysicalNetworkObj["endVlan"] = endVlan;
-											}
+											}*/
 
 											//traffic type
 											var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
@@ -980,7 +1173,7 @@
 
 											args.response.success({
 												actionFilter: function() {
-													var allowedActions = ['edit'];
+													var allowedActions = ['edit' , 'addVlanRange','removeVlanRange'];
 													return allowedActions;
 												},
 												data: selectedPhysicalNetworkObj
@@ -2270,15 +2463,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2846,15 +3037,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -3124,6 +3313,19 @@
                       label: 'label.private.interface',
                       docID: 'helpNetScalerPrivateInterface'
                     },
+										
+										gslbprovider: {
+											label: 'GSLB service',
+											isBoolean: true,
+											isChecked: true
+										},
+										gslbproviderpublicip: {
+											label: 'GSLB service Public IP'
+										},
+										gslbproviderprivateip: {
+											label: 'GSLB service Private IP'
+										},
+										
                     numretries: {
                       label: 'label.numretries',
                       defaultValue: '2',
@@ -4470,6 +4672,10 @@
                   }
                 }
 
+                if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                  array1.push("&networktype=" + args.context.zoneType);              
+                }
+                
                 $.ajax({
                   url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                   dataType: "json",
@@ -4744,14 +4950,16 @@
                       var array1 = [];
                       array1.push("&name="  +todb(args.data.name));
                       array1.push("&dns1=" + todb(args.data.dns1));
-                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
+                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
+                      array1.push("&ip6dns1=" + todb(args.data.ip6dns1));  //p6dns1 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.                      
+                      array1.push("&ip6dns2=" + todb(args.data.ip6dns2));  //ip6dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       
                       if (selectedZoneObj.networktype == "Advanced" && args.data.guestcidraddress) {
                         array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
                       }
                       
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
-                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
+                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       array1.push("&domain=" + todb(args.data.domain));
                       array1.push("&localstorageenabled=" + (args.data.localstorageenabled == 'on'));
                       $.ajax({
@@ -4789,6 +4997,8 @@
                         allocationstate: { label: 'label.allocation.state' },
                         dns1: { label: 'label.dns.1', isEditable: true, validation: { required: true } },
                         dns2: { label: 'label.dns.2', isEditable: true },
+                        ip6dns1: { label: 'IPv6 DNS1', isEditable: true },
+                        ip6dns2: { label: 'IPv6 DNS2', isEditable: true },
                         internaldns1: { label: 'label.internal.dns.1', isEditable: true, validation: { required: true } },
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
@@ -4801,8 +5011,8 @@
                         localstorageenabled: {
                           label: 'label.local.storage.enabled',
                           isBoolean: true,
-													isEditable: true,
-													converter:cloudStack.converters.toBooleanText
+												  isEditable: true,
+												  converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],
@@ -5118,16 +5328,16 @@
                                   validation: { required: true },
                                   select: function(args) {
                                     $.ajax({
-                                      url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                                      //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                                       dataType: "json",
                                       async: true,
                                       success: function(json) {
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																					items.push({id: this.id, description: this.name});
+                                          if(this.requiresStorageMotion == false){
+                                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                           }
                                         });
                                         args.response.success({data: items});
                                       }
@@ -5335,9 +5545,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { page: args.page, pageSize: pageSize, type: 'routing', listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }                  
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, type: 'routing', listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5377,9 +5594,19 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    listAll: true 
+                  };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }
                   $.ajax({
                     url: createURL('listStoragePools' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.liststoragepoolsresponse.storagepool });
                     },
@@ -5419,9 +5646,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }     
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5858,15 +6092,13 @@
                       select: function(args) {
                         $.ajax({
                           url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                             });
                             args.response.success({data: items});
                           }
@@ -6319,16 +6551,16 @@
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
-                          url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                          url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              if(this.requiresStorageMotion == false){
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                              }
                             });
                             args.response.success({data: items});
                           }
@@ -6504,6 +6736,19 @@
                   privateinterface: {
                     label: 'label.private.interface'
                   },
+									
+									gslbprovider: {
+										label: 'GSLB service',
+										isBoolean: true,
+										isChecked: true
+									},
+									gslbproviderpublicip: {
+										label: 'GSLB service Public IP'
+									},
+									gslbproviderprivateip: {
+										label: 'GSLB service Private IP'
+									},
+									
                   numretries: {
                     label: 'label.numretries',
                     defaultValue: '2'
@@ -8689,6 +8934,10 @@
               array1.push("&hostid=" + args.context.instances[0].hostid);
             }
 
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -10295,6 +10544,11 @@
 							}
 						}
             array1.push("&zoneid=" + args.context.zones[0].id);
+
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
@@ -10568,6 +10822,12 @@
     array1.push("&username=" + todb(args.data.username));
     array1.push("&password=" + todb(args.data.password));
     array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+		
+		if(apiCmd == "addNetscalerLoadBalancer") {
+		  array1.push("&gslbprovider=" + (args.data.gslbprovider == "on"));
+			array1.push("&gslbproviderpublicip=" + todb(args.data.gslbproviderpublicip));
+			array1.push("&gslbproviderprivateip=" + todb(args.data.gslbproviderprivateip));
+		}
 
     //construct URL starts here
     var url = [];

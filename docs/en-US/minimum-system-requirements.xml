@@ -57,7 +57,7 @@
             <listitem><note><para>If DHCP is used for hosts, ensure that no conflict occurs between DHCP server used for these hosts and the DHCP router created by &PRODUCT;.</para></note></listitem>
 			<listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
 			<listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
-            <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
+            <listitem><para>All hosts within a cluster must be homogeneous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
 		</itemizedlist>
 		<para>Hosts have additional requirements depending on the hypervisor. See the requirements listed at the top of the Installation section for your chosen hypervisor:</para>
         <warning>
@@ -68,6 +68,7 @@
             <listitem><para><xref linkend="system-requirements-xenserver-hosts"/></para></listitem>
             <listitem><para><xref linkend="vmware-requirements"/></para></listitem>
             <!--            <listitem><para><xref linkend="ovm-requirements"/></para></listitem> -->
+            <listitem><para><xref linkend="lxc-requirements"/></para></listitem>
         </itemizedlist>
     </section>
 </section>

@@ -15,14 +15,14 @@ Description: A common package which contains files which are shared by several C
 
 Package: cloudstack-management
 Architecture: all
-Depends: cloudstack-common (= ${source:Version}), tomcat6, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools
+Depends: cloudstack-common (= ${source:Version}), tomcat6, sysvinit-utils, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
 
 Package: cloudstack-agent
 Architecture: all
-Depends: openjdk-6-jre | openjdk-7-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, libjna-java, openssh-client, libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, perl-base, perl-modules, ebtables, vlan, wget, jsvc, ipset
+Depends: openjdk-6-jre | openjdk-7-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, libjna-java, openssh-client, libvirt0, sysvinit-utils, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, perl-base, perl-modules, ebtables, vlan, wget, jsvc, ipset
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in

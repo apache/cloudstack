@@ -275,7 +275,7 @@ def remove_secip_log_for_vm(vmName):
     try:
         os.remove(logfilename)
     except:
-        util.SMlog("Failed to delete rule log file " + logfilename)
+        logging.debug("Failed to delete rule log file " + logfilename)
         result = False
 
     return result

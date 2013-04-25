@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 
+import com.cloud.configuration.ConfigurationVO;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
@@ -40,7 +41,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -423,9 +426,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#updateConfiguration(long, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public void updateConfiguration(long userId, String name, String category, String value) {
+    public void updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -544,7 +547,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#deleteAccountSpecificVirtualRanges(long)
      */
     @Override
-    public boolean deleteAccountSpecificVirtualRanges(long accountId) {
+    public boolean releaseAccountSpecificVirtualRanges(long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -613,5 +616,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return null;
     }
 
+	@Override
+	public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd)
+			throws ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean releasePublicIpRange(long userId, long vlanDbId,
+			Account caller) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

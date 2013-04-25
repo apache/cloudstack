@@ -28,7 +28,7 @@
     <bookinfo id="cloudstack_plugin_niciranvp">
     <title>&PRODUCT; Plugin Guide for the Nicira NVP Plugin</title>
     <productname>Apache CloudStack</productname>
-    <productnumber>4.0.0-incubating</productnumber>
+    <productnumber>4.2.0</productnumber>
     <edition>1</edition>
     <pubsnumber></pubsnumber>
     <abstract>

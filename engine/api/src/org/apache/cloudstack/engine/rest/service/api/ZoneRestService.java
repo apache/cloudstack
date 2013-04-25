@@ -75,7 +75,7 @@ public class ZoneRestService {
 
 
     @PUT @Path("/zone/create")
-    public ZoneEntity createZone(@QueryParam("xid") String xid, 
+    public ZoneEntity createZone(@QueryParam("xid") String xid,
             @QueryParam("display-name") String displayName) {
         return null;
     }

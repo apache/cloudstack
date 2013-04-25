@@ -25,8 +25,10 @@ import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -69,6 +71,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
@@ -86,6 +89,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
@@ -104,7 +108,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -117,9 +120,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
-import com.cloud.projects.ProjectInvitation;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
@@ -135,7 +138,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -245,6 +247,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    private AffinityGroupJoinDao _affinityGroupJoinDao;
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
@@ -624,12 +632,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         c.addCriteria(Criteria.NAME, cmd.getInstanceName());
         c.addCriteria(Criteria.STATE, cmd.getState());
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.DATACENTERTYPE, cmd.getZoneType());
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
         c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
         c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
         c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
         c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
         c.addCriteria(Criteria.VPC_ID, cmd.getVpcId());
+        c.addCriteria(Criteria.AFFINITY_GROUP_ID, cmd.getAffinityGroupId());
 
         if (domainId != null) {
             c.addCriteria(Criteria.DOMAINID, domainId);
@@ -671,7 +681,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object name = c.getCriteria(Criteria.NAME);
         Object state = c.getCriteria(Criteria.STATE);
         Object notState = c.getCriteria(Criteria.NOTSTATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
+        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
+        Object zoneType = c.getCriteria(Criteria.DATACENTERTYPE);
         Object pod = c.getCriteria(Criteria.PODID);
         Object hostId = c.getCriteria(Criteria.HOSTID);
         Object hostName = c.getCriteria(Criteria.HOSTNAME);
@@ -685,6 +696,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
         Object isoId = c.getCriteria(Criteria.ISO_ID);
         Object vpcId = c.getCriteria(Criteria.VPC_ID);
+        Object affinityGroupId = c.getCriteria(Criteria.AFFINITY_GROUP_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -693,6 +705,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -723,6 +736,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+        }
+
+        if (affinityGroupId != null) {
+            sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -795,13 +812,18 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("stateNIN", "Destroyed", "Expunging");
         }
 
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
 
             if (state == null) {
                 sc.setParameters("stateNEQ", "Destroyed");
             }
         }
+        
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
+        }
+        
         if (pod != null) {
             sc.setParameters("podId", pod);
 
@@ -820,6 +842,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (storageId != null) {
             sc.setParameters("poolId", storageId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.setParameters("affinityGroupId", affinityGroupId);
         }
 
         // search vm details by ids
@@ -1374,6 +1400,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        String zoneType = cmd.getZoneType();
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -1395,6 +1422,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getZoneType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
@@ -1438,6 +1466,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
+        }
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
@@ -1496,6 +1527,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Map<String, String> tags = cmd.getTags();
 
         Long zoneId = cmd.getZoneId();
+        String zoneType = cmd.getZoneType();
         Long podId = null;
         if (_accountMgr.isAdmin(caller.getType())) {
             podId = cmd.getPodId();
@@ -1523,6 +1555,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
@@ -1581,6 +1614,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
+        }
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
         }
         if (podId != null) {
             sc.setParameters("podId", podId);
@@ -1684,6 +1720,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("needsCleanup", sb.entity().isNeedsCleanup(), SearchCriteria.Op.EQ);
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
+
 
         if (listForDomain && isRecursive) {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
@@ -1827,6 +1864,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        String zoneType = cmd.getZoneType();
         Object id = cmd.getId();
         Object name = cmd.getStoragePoolName();
         Object path = cmd.getPath();
@@ -1846,6 +1884,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getZoneType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
@@ -1875,6 +1914,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
+        }
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
@@ -1927,7 +1969,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+        SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
 
 
         Account account = UserContext.current().getCaller();
@@ -1942,9 +1984,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || isPermissible(account.getDomainId(), domainId) ) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
-                sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-                SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-                sc.setParameters("domainId", domainId);
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                 return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
             } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName()
@@ -1952,11 +1992,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-
-        boolean includePublicOfferings = false;
         List<Long> domainIds = null;
         // For non-root users, only return all offerings for the user's domain, and everything above till root
         if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
@@ -1973,16 +2009,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sb.and("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
+
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+            sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
+
         }
 
-        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
-        if (keyword != null) {
+         if (keyword != null) {
             SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1990,24 +2027,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        if (domainIds != null ){
-            sc.setParameters("domainIdIn", domainIds.toArray());
-        }
-
-        if (includePublicOfferings){
-            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         // FIXME: disk offerings should search back up the hierarchy for
@@ -2086,10 +2111,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        boolean includePublicOfferings = false;
+       // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // For non-root users
+            // For non-root users.
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
@@ -2105,12 +2130,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
 
-            // include also public offering if no keyword, name and id specified
-            if ( keyword == null && name == null && id == null ){
-                includePublicOfferings = true;
-            }
+            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+
         }
         else {
             // for root users
@@ -2153,22 +2178,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (isSystem != null) {
+            // note that for non-root users, isSystem is always false when control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-
-        if (includePublicOfferings){
-            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
-            spc.addAnd("domainId", SearchCriteria.Op.NULL);
-            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
@@ -2194,10 +2213,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
+        String networkType = cmd.getNetworkType();
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
+        if(networkType != null)
+          sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         } else if (name != null) {
@@ -2328,5 +2351,99 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return false;
     }
 
+    @Override
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
+                affinityGroupName, affinityGroupType, vmId, startIndex, pageSize);
+        ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
+        List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
+        response.setResponses(agResponses, result.second());
+        return response;
+    }
+
+
+    public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
+            String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+
+        Account caller = UserContext.current().getCaller();
+
+        Long accountId = caller.getAccountId();
+        Long domainId = caller.getDomainId();
+
+        if (vmId != null) {
+            UserVmVO userVM = _userVmDao.findById(vmId);
+            if (userVM == null){
+                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance "
+                        + vmId + "; instance not found.");
+            }
+            _accountMgr.checkAccess(caller, null, true, userVM);
+            return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
+        }
+
+        Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
+        SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
+        groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
+                                                                               // distinct
+
+        SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
+
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
+        }
+
+        if (affinityGroupName != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
+        }
+
+        if (affinityGroupType != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
+        }
+
+
+        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
+                searchFilter);
+        // search group details by ids
+        Integer count = uniqueGroupsPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueGroupsPair;
+        }
+        List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
+        Long[] vrIds = new Long[uniqueGroups.size()];
+        int i = 0;
+        for (AffinityGroupJoinVO v : uniqueGroups) {
+            vrIds[i++] = v.getId();
+        }
+        List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(vrs, count);
+
+    }
+
+    private Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsByVM(long vmId, long pageInd, long pageSize) {
+        Filter sf = new Filter(SecurityGroupVMMapVO.class, null, true, pageInd, pageSize);
+        Pair<List<AffinityGroupVMMapVO>, Integer> agVmMappingPair = _affinityGroupVMMapDao.listByInstanceId(vmId, sf);
+        Integer count = agVmMappingPair.second();
+        if (count.intValue() == 0) {
+            // handle empty result cases
+            return new Pair<List<AffinityGroupJoinVO>, Integer>(new ArrayList<AffinityGroupJoinVO>(), count);
+        }
+        List<AffinityGroupVMMapVO> agVmMappings = agVmMappingPair.first();
+        Long[] agIds = new Long[agVmMappings.size()];
+        int i = 0;
+        for (AffinityGroupVMMapVO agVm : agVmMappings) {
+            agIds[i++] = agVm.getAffinityGroupId();
+        }
+        List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
+        return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+    }
 
 }

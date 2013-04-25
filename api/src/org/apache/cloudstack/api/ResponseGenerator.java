@@ -20,6 +20,9 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -150,18 +153,9 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-
-import java.text.DecimalFormat;
-import java.util.EnumSet;
-import java.util.List;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -196,6 +190,10 @@ public interface ResponseGenerator {
 
     HostResponse createHostResponse(Host host);
 
+    HostForMigrationResponse createHostForMigrationResponse(Host host);
+
+    HostForMigrationResponse createHostForMigrationResponse(Host host, EnumSet<HostDetails> details);
+
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
@@ -222,6 +220,8 @@ public interface ResponseGenerator {
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
+
+    StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
@@ -384,12 +384,16 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
-    
+
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
-    NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
-            Long nicId, Long networkId);
+
+    NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
     public NicResponse createNicResponse(Nic result);
+
+    AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
+
+    Long getAffinityGroupId(String name, long entityOwnerId);
 }
