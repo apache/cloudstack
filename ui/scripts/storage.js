@@ -1056,7 +1056,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("migrateVolume&storageid=" + args.data.storagePool + "&volumeid=" + args.context.volumes[0].id),
+                    url: createURL("migrateVolume&storageid=" + args.data.storageId + "&volumeid=" + args.context.volumes[0].id),
                     dataType: "json",
                     async: true,
                     success: function(json) {
