@@ -28,7 +28,7 @@ public class TemplateObjectTO implements DataTO {
     private  String path;
     private  String uuid;
     private  DiskFormat diskType;
-    private  ImageStoreTO imageDataStore;
+    private  DataStoreTO imageDataStore;
     private  String name;
 
     public TemplateObjectTO() {
@@ -38,7 +38,7 @@ public class TemplateObjectTO implements DataTO {
         this.path = template.getUri();
         this.uuid = template.getUuid();
         //this.diskType = template.getDiskType();
-        this.imageDataStore = new ImageStoreTO((ImageStoreInfo)template.getDataStore());
+        this.imageDataStore = template.getDataStore().getTO();
         this.name = template.getUniqueName();
     }
     
@@ -55,7 +55,7 @@ public class TemplateObjectTO implements DataTO {
         return this.diskType;
     }
     
-    public ImageStoreTO getImageDataStore() {
+    public DataStoreTO getImageDataStore() {
         return this.imageDataStore;
     }
 

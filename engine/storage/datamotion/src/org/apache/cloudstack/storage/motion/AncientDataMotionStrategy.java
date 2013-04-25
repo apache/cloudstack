@@ -141,47 +141,24 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     @DB
     protected Answer copyVolumeFromImage(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
+        String value = configDao.getValue(Config.CopyVolumeWait.key());
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
-        VolumeDataStoreVO volumeStoreVO = volumeStoreDao.findByVolume(srcData
-                .getId());
-        DataStore srcStore = srcData.getDataStore();
-        String[] volumePath = volumeStoreVO.getInstallPath().split("/");
-        String volumeUUID = volumePath[volumePath.length - 1].split("\\.")[0];
-        StoragePool destPool = (StoragePool) destData.getDataStore();
-        CopyVolumeCommand cvCmd = new CopyVolumeCommand(srcData.getId(),
-                volumeUUID, destPool, srcStore.getUri(), false,
-                _copyvolumewait);
-        CopyVolumeAnswer cvAnswer = null;
-        String errMsg = null;
-        try {
-            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(destPool,
-                    cvCmd);
-        } catch (StorageUnavailableException e1) {
-            s_logger.debug("Failed to copy volume " + srcData.getId() + " to "
-                    + destData.getId(), e1);
-            errMsg = e1.toString();
+        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+            //need to copy it to image cache store
+            DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
+            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
+            EndPoint ep = selector.select(cacheData, destData);
+            Answer answer = ep.sendMessage(cmd);
+            return answer;
+        } else {
+            //handle copy it to/from cache store
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _copyvolumewait);
+            EndPoint ep = selector.select(srcData, destData);
+            Answer answer = ep.sendMessage(cmd);
+            return answer;
         }
-
-        if (cvAnswer == null || !cvAnswer.getResult()) {
-            errMsg = cvAnswer.getDetails();
-        }
-
-        VolumeVO vol = this.volDao.findById(destData.getId());
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        vol.setPath(cvAnswer.getVolumePath());
-        vol.setFolder(destPool.getPath());
-        vol.setPodId(destPool.getPodId());
-        vol.setPoolId(destPool.getId());
-        vol.setPodId(destPool.getPodId());
-
-        this.volDao.update(vol.getId(), vol);
-        volumeStoreDao.remove(volumeStoreVO.getId());
-        txn.commit();
-        return cvAnswer;
     }
 
     private Answer copyTemplate(DataObject srcData, DataObject destData) {
@@ -195,7 +172,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             Answer answer = ep.sendMessage(cmd);
             return answer;
         } else {
-            //handle copy it to cache store
+            //handle copy it to/from cache store
             CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
             EndPoint ep = selector.select(srcData, destData);
             Answer answer = ep.sendMessage(cmd);
@@ -326,56 +303,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
-        VolumeInfo volume = (VolumeInfo)srcData;
-        VolumeInfo destVolume = (VolumeInfo)destData;
-        String secondaryStorageURL = this.templateMgr.getSecondaryStorageURL(volume
-                .getDataCenterId());
-        StoragePool srcPool = (StoragePool)this.dataStoreMgr.getDataStore(volume
-                .getPoolId(), DataStoreRole.Primary);
-
-        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destVolume.getPoolId(), DataStoreRole.Primary);
-
-        String value = this.configDao.getValue(Config.CopyVolumeWait.toString());
+        String value = configDao.getValue(Config.CopyVolumeWait.key());
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(),
-                volume.getPath(), srcPool, secondaryStorageURL, true,
-                _copyvolumewait);
-        CopyVolumeAnswer cvAnswer;
-        try {
-            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(srcPool, cvCmd);
-        } catch (StorageUnavailableException e1) {
-            throw new CloudRuntimeException(
-                    "Failed to copy the volume from the source primary storage pool to secondary storage.",
-                    e1);
-        }
 
-        if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new CloudRuntimeException(
-                    "Failed to copy the volume from the source primary storage pool to secondary storage.");
-        }
-
-        String secondaryStorageVolumePath = cvAnswer.getVolumePath();
-
-        cvCmd = new CopyVolumeCommand(volume.getId(),
-                secondaryStorageVolumePath, destPool,
-                secondaryStorageURL, false, _copyvolumewait);
-        try {
-            cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(destPool, cvCmd);
-        } catch (StorageUnavailableException e1) {
-            throw new CloudRuntimeException(
-                    "Failed to copy the volume from secondary storage to the destination primary storage pool.");
-        }
-
-        if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new CloudRuntimeException(
-                    "Failed to copy the volume from secondary storage to the destination primary storage pool.");
-        }
-
-        VolumeVO destVol = this.volDao.findById(destVolume.getId());
-        destVol.setPath(cvAnswer.getVolumePath());
-        this.volDao.update(destVol.getId(), destVol);
-        return cvAnswer;
+        DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
+        CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
+        EndPoint ep = selector.select(cacheData, destData);
+        Answer answer = ep.sendMessage(cmd);
+        return answer;
     }
 
     @Override

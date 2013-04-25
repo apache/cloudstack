@@ -55,12 +55,15 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -774,7 +777,75 @@ public class XenServerStorageResource {
             return new CopyCmdAnswer(e.toString());
         }
     }
- 
+    
+    
+    protected Answer copyVolumeFromImageCacheToPrimary(DataTO srcData, DataTO destData, int wait) {
+        Connection conn = hypervisorResource.getConnection();
+        VolumeObjectTO srcVolume = (VolumeObjectTO)srcData;
+        VolumeObjectTO destVolume = (VolumeObjectTO)destData;
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destVolume.getDataStore();
+        DataStoreTO srcStore = srcVolume.getDataStore();
+
+        if (srcStore instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO)srcStore;
+            try {
+                SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
+                String srUuid = primaryStoragePool.getUuid(conn);
+                String volumePath = nfsStore.getUrl() + ":" + srcVolume.getPath();
+                String uuid = copy_vhd_from_secondarystorage(conn, volumePath, srUuid, wait );
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(uuid);
+                newVol.setSize(srcVolume.getSize());
+
+                return new CopyCmdAnswer(newVol);
+            } catch (Exception e) {
+                String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
+                s_logger.warn(msg, e);
+                return new CopyCmdAnswer(e.toString());
+            }
+        }
+        
+        s_logger.debug("unsupported protocol");
+        return new CopyCmdAnswer("unsupported protocol"); 
+    }
+
+    protected Answer copyVolumeFromPrimaryToSecondary(DataTO srcData, DataTO destData, int wait) {
+        Connection conn = hypervisorResource.getConnection();
+        VolumeObjectTO srcVolume = (VolumeObjectTO)srcData;
+        VolumeObjectTO destVolume = (VolumeObjectTO)destData;
+        DataStoreTO destStore = destVolume.getDataStore();
+
+        if (destStore instanceof NfsTO) {
+            SR secondaryStorage = null;
+            try {
+                NfsTO nfsStore = (NfsTO)destStore;
+                URI uri = new URI(nfsStore.getUrl());
+                // Create the volume folder
+                if (!hypervisorResource.createSecondaryStorageFolder(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath())) {
+                    throw new InternalErrorException("Failed to create the volume folder.");
+                }
+
+                // Create a SR for the volume UUID folder
+                secondaryStorage = hypervisorResource.createNfsSRbyURI(conn, new URI(nfsStore.getUrl() + destVolume.getPath()), false);
+                // Look up the volume on the source primary storage pool
+                VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
+                // Copy the volume to secondary storage
+                VDI destVdi = hypervisorResource.cloudVDIcopy(conn, srcVdi, secondaryStorage, wait);
+                String destVolumeUUID = destVdi.getUuid(conn);
+
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(destVolumeUUID);
+                newVol.setSize(srcVolume.getSize());
+                return new CopyCmdAnswer(newVol);
+            } catch (Exception e) {
+                s_logger.debug("Failed to copy volume to secondary: " + e.toString());
+                return new CopyCmdAnswer("Failed to copy volume to secondary: " + e.toString()); 
+            } finally {
+                hypervisorResource.removeSR(conn, secondaryStorage);
+            }
+        }
+        return new CopyCmdAnswer("unsupported protocol"); 
+    }
     
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -788,6 +859,11 @@ public class XenServerStorageResource {
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
             //clone template to a volume
             return cloneVolumeFromBaseTemplate(srcData, destData);
+        } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.ImageCache) {
+            //copy volume from image cache to primary
+            return copyVolumeFromImageCacheToPrimary(srcData, destData, cmd.getWait());
+        } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            return copyVolumeFromPrimaryToSecondary(srcData, destData, cmd.getWait());
         }
 
         return new Answer(cmd, false, "not implemented yet");

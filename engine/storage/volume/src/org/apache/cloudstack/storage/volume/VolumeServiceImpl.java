@@ -621,7 +621,7 @@ public class VolumeServiceImpl implements VolumeService {
                 return null;
             }
             srcVolume.processEvent(Event.OperationSuccessed);
-            destVolume.processEvent(Event.OperationSuccessed);
+            destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
             AsyncCallFuture<VolumeApiResult> destroyFuture = this.expungeVolumeAsync(srcVolume);
             destroyFuture.get();
             future.complete(res);
@@ -639,25 +639,28 @@ public class VolumeServiceImpl implements VolumeService {
     public AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store) {
 
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
-        VolumeObject vo = (VolumeObject) volume;
-
-        CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, vo, future);
+        DataObject volumeOnStore = store.create(volume);
+        
+        volumeOnStore.processEvent(Event.CreateOnlyRequested);
+        
+        CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().registerVolumeCallback(null, null))
         .setContext(context);
 
-        dataObjectMgr.createAsync(volume, store, caller, true);
+        store.getDriver().createAsync(volumeOnStore, caller);
         return future;
     }
 
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
+        
         VolumeObject vo = (VolumeObject)context.volume;
-        /*if (result.isFailed()) {
-            vo.stateTransit(Volume.Event.OperationFailed);
+        if (result.isFailed()) {
+            vo.processEvent(Event.OperationFailed);
         } else {
-            vo.stateTransit(Volume.Event.OperationSucceeded);
-        }*/
+            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+        }
 
     	_resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage,
               	vo.getSize());

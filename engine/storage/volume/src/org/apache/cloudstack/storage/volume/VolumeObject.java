@@ -29,10 +29,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
@@ -51,6 +54,8 @@ public class VolumeObject implements VolumeInfo {
     protected DataStore dataStore;
     @Inject
     VolumeDao volumeDao;
+    @Inject
+    VolumeDataStoreDao volumeStoreDao;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
     private Object payload;
@@ -356,6 +361,14 @@ public class VolumeObject implements VolumeInfo {
                vol.setPath(newVol.getPath());
                vol.setSize(newVol.getSize());
                volumeDao.update(vol.getId(), vol);
+           }
+       } else if (this.dataStore.getRole() == DataStoreRole.Image) {
+           if (answer instanceof DownloadAnswer) {
+               DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
+               VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+               volStore.setInstallPath(dwdAnswer.getInstallPath());
+               volStore.setChecksum(dwdAnswer.getCheckSum());
+               this.volumeStoreDao.update(volStore.getId(), volStore);
            }
        }
        

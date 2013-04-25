@@ -101,7 +101,7 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
             if (answer.getResult()) {
                 //update imagestorevo
 
-                result = new CreateCmdResult(answer.getPath(), answer.getSize());
+                result = new CreateCmdResult(answer.getPath(), null);
             } else {
                 result.setResult(answer.getDetails());
             }
