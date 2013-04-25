@@ -1166,6 +1166,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
             }
+            if (ntwkOff.getInternalLb()) {
+                throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
+            }
+
             network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
             		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr);
         }  
