@@ -246,13 +246,19 @@
           },
 
           hostCount: function(data) {
+          	var data2= {
+              type: 'routing',
+							page: 1,
+							pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }   
             $.ajax({
               url: createURL('listHosts'),
-              data: {
-                type: 'routing',
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
                 dataFns.primaryStorageCount($.extend(data, {
                   hostCount: json.listhostsresponse.count ?
