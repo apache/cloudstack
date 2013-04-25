@@ -602,3 +602,8 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+
+#### Internal LB VM commands
+stopInternalLoadBalancerVM=1
+startInternalLoadBalancerVM=1
+listInternalLoadBalancerVMs=1

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.router;
+package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,13 +33,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "startRouter", responseObject=DomainRouterResponse.class, description="Starts a router.")
-public class StartRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
-    private static final String s_name = "startrouterresponse";
+@APICommand(name = "startInternalLoadBalancerVM", responseObject=DomainRouterResponse.class, description="Starts an existing internal lb vm.")
+public class StartInternalLBVMCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(StartInternalLBVMCmd.class.getName());
+    private static final String s_name = "startinternallbvmresponse";
 
 
     /////////////////////////////////////////////////////
@@ -47,7 +46,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainRouterResponse.class,
-            required=true, description="the ID of the router")
+            required=true, description="the ID of the internal lb vm")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -74,25 +73,25 @@ public class StartRouterCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
-        if (router != null) {
+        if (router != null && router.getRole() == Role.INTERNAL_LB_VM) {
             return router.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        } else {
+            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
+        } 
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ROUTER_START;
+        return EventTypes.EVENT_INTERNAL_LB_VM_START;
     }
 
     @Override
     public String getEventDescription() {
-        return  "starting router: " + getId();
+        return  "starting internal lb vm: " + getId();
     }
 
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
+        return AsyncJob.Type.InternalLbVm;
     }
 
     public Long getInstanceId() {
@@ -101,20 +100,21 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Router Id: "+getId());
+        UserContext.current().setEventDetails("Internal Lb Vm Id: "+getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
-        if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {
-            throw new InvalidParameterValueException("Can't find router by id");
+        if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
+            throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
-            result = _routerService.startRouter(getId());
+            result = _internalLbSvc.startInternalLbVm(getId(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
         }
+        
         if (result != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start router");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start internal lb vm");
         }
     }
 }

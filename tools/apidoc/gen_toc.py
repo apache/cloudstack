@@ -140,6 +140,7 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
 	'AffinityGroup': 'Affinity Group',
+    'InternalLoadBalancer': 'Internal LB',
     }
 
 

@@ -82,7 +82,10 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.StartInternalLBVMCmd;
+import org.apache.cloudstack.api.command.admin.internallb.StopInternalLBVMCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
@@ -2798,6 +2801,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
+        cmdList.add(StopInternalLBVMCmd.class);
+        cmdList.add(StartInternalLBVMCmd.class);
+        cmdList.add(ListInternalLBVMsCmd.class);
         return cmdList;
     }
 

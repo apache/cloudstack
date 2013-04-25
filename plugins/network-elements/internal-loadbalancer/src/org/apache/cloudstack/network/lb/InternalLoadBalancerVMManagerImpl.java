@@ -173,8 +173,6 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile,
             DeployDestination dest, ReservationContext context) {
 
-        //1) Prepare boot loader elements related with Control network
-
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
@@ -184,8 +182,6 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         }
         
         NicProfile controlNic = null;
-        String defaultDns1 = null;
-        String defaultDns2 = null;
         Network guestNetwork = null;
       
         for (NicProfile nic : profile.getNics()) {
@@ -193,15 +189,15 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             
-            
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
-                defaultDns1 = nic.getDns1();
-                defaultDns2 = nic.getDns2();
+                //FIXME - remove the DNS from boot args if decide to send DhcpEntry command for the Internal LB vm just the way we do for regular user vm
+                buf.append(" dns1=").append(nic.getGateway());
             }
 
             if (nic.getTrafficType() == TrafficType.Guest) {
                 guestNetwork = _ntwkModel.getNetwork(nic.getNetworkId());
+                //FIXME - not sure if sshonguest is required for this type of VM. Fix if needed
                 buf.append(" sshonguest=true");
             } else if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -237,16 +233,11 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             }
         }
 
-        buf.append(" dns1=").append(defaultDns1);
-        if (defaultDns2 != null) {
-            buf.append(" dns2=").append(defaultDns2);
-        }
-
-        //FIXME - change if use other template for internal lb vm
+        //FIXME - fix the type once earlyconfig and patchsystem vm scripts are fixed
         String type = "elbvm";
         buf.append(" type=" + type);
 
-        //FIXME - change it to DEBUG level later
+        //FIXME - change it to DEBUG level later. 
 //        if (s_logger.isDebugEnabled()) {
 //            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
 //        }

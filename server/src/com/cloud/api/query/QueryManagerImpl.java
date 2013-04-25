@@ -29,7 +29,9 @@ import javax.inject.Inject;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -973,7 +975,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
-        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd);
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
+        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+
+        List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        response.setResponses(routerResponses, result.second());
+        return response;
+    }
+    
+    @Override
+    public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -982,18 +998,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
 
-    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(ListRoutersCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getRouterName();
-        String state = cmd.getState();
-        Long zone = cmd.getZoneId();
-        Long pod = cmd.getPodId();
-        Long hostId = cmd.getHostId();
-        String keyword = cmd.getKeyword();
-        Long networkId = cmd.getNetworkId();
-        Long vpcId = cmd.getVpcId();
-        Boolean forVpc = cmd.getForVpc();
-        String role = cmd.getRole();
+    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
+       
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1061,12 +1068,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("state", state);
         }
 
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
 
-        if (pod != null) {
-            sc.setParameters("podId", pod);
+        if (podId != null) {
+            sc.setParameters("podId", podId);
         }
 
         if (hostId != null) {

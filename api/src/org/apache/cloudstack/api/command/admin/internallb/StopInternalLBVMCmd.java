@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.router;
+package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,20 +32,19 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class)
-public class StopRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
-    private static final String s_name = "stoprouterresponse";
+@APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB vm.", responseObject = DomainRouterResponse.class)
+public class StopInternalLBVMCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(StopInternalLBVMCmd.class.getName());
+    private static final String s_name = "stopinternallbvmresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
-            required = true, description = "the ID of the router")
+            required = true, description = "the ID of the internal lb vm")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
@@ -70,27 +69,27 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
-        if (router != null) {
-            return router.getAccountId();
+        VirtualRouter vm = _entityMgr.findById(VirtualRouter.class, getId());
+        if (vm != null && vm.getRole() == Role.INTERNAL_LB_VM) {
+            return vm.getAccountId();
+        } else {
+            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
         }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ROUTER_STOP;
+        return EventTypes.EVENT_INTERNAL_LB_VM_STOP;
     }
 
     @Override
     public String getEventDescription() {
-        return "stopping router: " + getId();
+        return "stopping internal lb vm: " + getId();
     }
 
     @Override
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
+        return AsyncJob.Type.InternalLbVm;
     }
 
     @Override
@@ -104,21 +103,21 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        UserContext.current().setEventDetails("Router Id: "+getId());
+        UserContext.current().setEventDetails("Internal lb vm Id: "+getId());
         VirtualRouter result = null;
-        VirtualRouter router = _routerService.findRouter(getId());
-        if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {
-            throw new InvalidParameterValueException("Can't find router by id");
+        VirtualRouter vm = _routerService.findRouter(getId());
+        if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {
+            throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
-            result = _routerService.stopRouter(getId(), isForced());
-        }
+            result = _internalLbSvc.stopInternalLbVm(getId(), isForced(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
+        } 
         
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop router");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop internal lb vm");
         }
     }
 }
