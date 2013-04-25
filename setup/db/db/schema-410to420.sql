@@ -1209,3 +1209,6 @@ CREATE TABLE `cloud`.`network_acl_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
+INSERT INTO `cloud`.`network_acl` values (1, UUID(), 0, "Default Network ACL", "default");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "tcp", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "tcp", now(), "Egress", "0.0.0.0/0", 2, "Deny");

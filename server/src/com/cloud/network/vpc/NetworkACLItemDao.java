@@ -25,15 +25,12 @@ import java.util.List;
  */
 public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
 
-    List<NetworkACLItemVO> listByACLAndNotRevoked(long aclId);
-
     boolean setStateToAdd(NetworkACLItemVO rule);
 
     boolean revoke(NetworkACLItemVO rule);
 
     List<NetworkACLItemVO> listByACL(long aclId);
 
-    List<NetworkACLItemVO> listByACLTrafficTypeAndNotRevoked(long aclId, NetworkACLItemVO.TrafficType trafficType);
-    List<NetworkACLItemVO> listByACLTrafficType(long aclId, NetworkACLItemVO.TrafficType trafficType);
-    
+    int getMaxNumberByACL(long aclId);
+
 }

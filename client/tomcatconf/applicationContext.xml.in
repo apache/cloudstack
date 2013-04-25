@@ -690,6 +690,7 @@
   <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
   <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" />
   <bean id="networkACLManagerImpl" class="com.cloud.network.vpc.NetworkACLManagerImpl" />
+  <bean id="networkACLServiceImpl" class="com.cloud.network.vpc.NetworkACLServiceImpl" />
   <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" />
   <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
   <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />

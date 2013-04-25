@@ -2556,42 +2556,43 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem networkACL) {
+    public NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem aclItem) {
         NetworkACLItemResponse response = new NetworkACLItemResponse();
 
-        response.setId(networkACL.getUuid());
-        response.setProtocol(networkACL.getProtocol());
-        if (networkACL.getSourcePortStart() != null) {
-            response.setStartPort(Integer.toString(networkACL.getSourcePortStart()));
+        response.setId(aclItem.getUuid());
+        response.setProtocol(aclItem.getProtocol());
+        if (aclItem.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(aclItem.getSourcePortStart()));
         }
 
-        if (networkACL.getSourcePortEnd() != null) {
-            response.setEndPort(Integer.toString(networkACL.getSourcePortEnd()));
+        if (aclItem.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(aclItem.getSourcePortEnd()));
         }
 
-        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(networkACL.getId());
-        response.setCidrList(StringUtils.join(cidrs, ","));
+        response.setCidrList(StringUtils.join(aclItem.getSourceCidrList(), ","));
 
-        response.setTrafficType(networkACL.getTrafficType().toString());
+        response.setTrafficType(aclItem.getTrafficType().toString());
 
-        NetworkACLItem.State state = networkACL.getState();
+        NetworkACLItem.State state = aclItem.getState();
         String stateToSet = state.toString();
         if (state.equals(NetworkACLItem.State.Revoke)) {
             stateToSet = "Deleting";
         }
 
-        response.setIcmpCode(networkACL.getIcmpCode());
-        response.setIcmpType(networkACL.getIcmpType());
+        response.setIcmpCode(aclItem.getIcmpCode());
+        response.setIcmpType(aclItem.getIcmpType());
 
         response.setState(stateToSet);
+        response.setNumber(aclItem.getNumber());
+        response.setAction(aclItem.getAction().toString());
 
-        NetworkACL acl = ApiDBUtils.findByNetworkACLId(networkACL.getACLId());
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
         if(acl != null){
             response.setAclId(acl.getUuid());
         }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, aclItem.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);

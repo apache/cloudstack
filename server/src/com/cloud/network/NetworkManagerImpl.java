@@ -2686,7 +2686,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         //apply network ACLs
-        if (!_networkACLMgr.applyACLToNetwork(networkId, caller)) {
+        if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
@@ -3310,27 +3310,25 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
-        //revoke all Network ACLs for the network w/o applying them in the DB
-        List<FirewallRuleVO> networkACLs = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing " + networkACLs.size() + " Network ACLs for network id=" + networkId +
-                    " as a part of shutdownNetworkRules");
-        }
+        if(network.getVpcId() != null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Releasing Network ACL Items for network id=" + networkId +
+                        " as a part of shutdownNetworkRules");
+            }
 
-        for (FirewallRuleVO networkACL : networkACLs) {
-            s_logger.trace("Marking network ACL " + networkACL + " with Revoke state");
-            networkACL.setState(FirewallRule.State.Revoke);
-        }
-
-        try {
-            if (!_firewallMgr.applyRules(networkACLs, true, false)) {
-                s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
+            try {
+                //revoke all Network ACLs for the network w/o applying them in the DB
+                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+                    s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
+                    success = false;
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
-            success = false;
+
         }
+
 
         //release all static nats for the network
         if (!_rulesMgr.applyStaticNatForNetwork(networkId, false, caller, true)) {

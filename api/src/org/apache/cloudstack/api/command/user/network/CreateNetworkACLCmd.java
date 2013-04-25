@@ -111,30 +111,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         }
     }
 
-    public long getVpcId() {
-        Long vpcId = null;
-
-        if(getACLId() != null){
-            NetworkACL acl = _networkACLService.getNetworkACL(getACLId());
-            if(acl == null){
-                throw new InvalidParameterValueException("Invalid aclId is given");
-            }
-            vpcId = acl.getVpcId();
-        } else if(getNetworkId() != null){
-            Network network = _networkService.getNetwork(getNetworkId());
-            if (network == null) {
-                throw new InvalidParameterValueException("Invalid networkId is given");
-            }
-            vpcId = network.getVpcId();
-        }
-
-        if (vpcId == null) {
-            throw new InvalidParameterValueException("Can create network ACL only for the ACL belonging to the VPC");
-        }
-
-        return vpcId;
-    }
-
     public NetworkACLItem.TrafficType getTrafficType() {
         if (trafficType == null) {
             return NetworkACLItem.TrafficType.Ingress;
@@ -164,44 +140,17 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return number;
     }
 
-    @Override
-    public void execute() throws ResourceUnavailableException {
-        UserContext callerContext = UserContext.current();
-        boolean success = false;
-        NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
-        try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = _networkACLService.applyNetworkACL(rule.getACLId(), callerContext.getCaller());
-
-            // State is different after the rule is applied, so get new object here
-            NetworkACLItemResponse aclResponse = new NetworkACLItemResponse();
-            if (rule != null) {
-                aclResponse = _responseGenerator.createNetworkACLItemResponse(rule);
-                setResponseObject(aclResponse);
-            }
-            aclResponse.setResponseName(getCommandName());
-        } finally {
-            if (!success || rule == null) {
-                _networkACLService.revokeNetworkACLItem(getEntityId(), true);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL");
-            }
-        }
-    }
-
     public Integer getSourcePortStart() {
-        if (publicStartPort != null) {
-            return publicStartPort.intValue();
-        }
-        return null;
+        return publicStartPort;
     }
 
     public Integer getSourcePortEnd() {
         if (publicEndPort == null) {
             if (publicStartPort != null) {
-                return publicStartPort.intValue();
+                return publicStartPort;
             }
         } else {
-            return publicEndPort.intValue();
+            return publicEndPort;
         }
 
         return null;
@@ -213,39 +162,8 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Vpc vpc = _vpcService.getVpc(getVpcId());
-        if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid vpcId is given");
-        }
-
-        Account account = _accountService.getAccount(vpc.getAccountId());
-        return account.getId();
-    }
-
-    public long getDomainId() {
-        Vpc vpc = _vpcService.getVpc(getVpcId());
-        return vpc.getDomainId();
-    }
-
-    @Override
-    public void create() {
-        if (getSourceCidrList() != null) {
-            for (String cidr: getSourceCidrList()){
-                if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
-                }
-            }
-        }
-
-        try {
-            NetworkACLItem result = _networkACLService.createNetworkACLItem(this);
-            setEntityId(result.getId());
-            setEntityUuid(result.getUuid());
-        } catch (NetworkRuleConflictException ex) {
-            s_logger.info("Network rule conflict: " + ex.getMessage());
-            s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
-        }
+        Account caller = UserContext.current().getCaller();
+        return caller.getAccountId();
     }
 
     @Override
@@ -255,23 +173,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        //Network network = _networkService.getNetwork(networkId);
-        return ("Creating Network ACL Item for protocol:" + this.getProtocol());
-    }
-
-    public long getAccountId() {
-        Vpc vpc = _vpcService.getVpc(getVpcId());
-        return vpc.getAccountId();
-    }
-
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return getNetworkId();
+        return "Creating Network ACL Item";
     }
 
     public Integer getIcmpCode() {
@@ -293,12 +195,40 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return null;
     }
 
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
-    }
-
     public Long getACLId() {
         return aclId;
     }
+
+    @Override
+    public void create() {
+        NetworkACLItem result = _networkACLService.createNetworkACLItem(this);
+        setEntityId(result.getId());
+        setEntityUuid(result.getUuid());
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException {
+        boolean success = false;
+        NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
+        try {
+            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            success = _networkACLService.applyNetworkACL(rule.getAclId());
+
+            // State is different after the rule is applied, so get new object here
+            rule = _networkACLService.getNetworkACLItem(getEntityId());
+            NetworkACLItemResponse aclResponse = new NetworkACLItemResponse();
+            if (rule != null) {
+                aclResponse = _responseGenerator.createNetworkACLItemResponse(rule);
+                setResponseObject(aclResponse);
+            }
+            aclResponse.setResponseName(getCommandName());
+        } finally {
+            if (!success || rule == null) {
+                _networkACLService.revokeNetworkACLItem(getEntityId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL Item");
+            }
+        }
+    }
+
 }
+
