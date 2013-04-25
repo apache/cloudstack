@@ -329,22 +329,35 @@
           },
 
           virtualRouterCount: function(data) {
+            var data2 = {
+              projectid: -1,
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }  
             $.ajax({
               url: createURL('listRouters'),
-              data: {
-                projectid: -1,
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
-                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
+                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
+                
+                var data3 = {
+                  listAll: true,
+                  page: 1,
+                  pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                };
+                if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+                  $.extend(data3, {
+                    zonetype: cloudStack.context.zoneType
+                  });
+                }  
 								$.ajax({
 								  url: createURL('listRouters'),
-									data: {
-									  listAll: true,
-										page: 1,
-								    pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-									},
+									data: data3,
 									success: function(json) {
 									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
 										dataFns.capacity($.extend(data, {
@@ -2317,12 +2330,18 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: false
+                    };
+										if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+					            $.extend(data2, {
+					              zonetype: cloudStack.context.zoneType
+					            });
+					          }  										
                     var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                      data: {
-											  forvpc: false
-											},
+                      data: data2,
                       success: function(json) {
                         var items = json.listroutersresponse.router ?
                               json.listroutersresponse.router : [];
@@ -2334,9 +2353,7 @@
                         // Get project routers
                         $.ajax({
                           url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                          data: {
-														forvpc: false
-													},
+                          data: data2,
                           success: function(json) {
                             var items = json.listroutersresponse.router ?
                                   json.listroutersresponse.router : [];
@@ -2798,13 +2815,19 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: true
+                    };
+				            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+				              $.extend(data2, {
+				                zonetype: cloudStack.context.zoneType
+				              });
+				            }    
 										var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
-											data: {
-											  forvpc: true
-											},
+											data: data2,
                       async: true,
                       success: function(json) {
                         var items = json.listroutersresponse.router;												
@@ -2816,9 +2839,7 @@
 												$.ajax({
 													url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
 													dataType: 'json',
-													data: {
-														forvpc: true
-													},
+													data: data2,
 													async: true,
 													success: function(json) {
 														var items = json.listroutersresponse.router;														
@@ -5754,10 +5775,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data2 = {};                  
+                  if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data2, {
+                      zonetype: cloudStack.context.zoneType
+                    });
+                  }                      
                   var routers = [];
                   $.ajax({
                     url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
-                    dataType: 'json',
+                    data: data2,
                     async: true,
                     success: function(json) {
                       var items = json.listroutersresponse.router ?
@@ -5770,7 +5797,7 @@
                       // Get project routers
                       $.ajax({
                         url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
-                        dataType: 'json',
+                        data: data2,
                         async: true,
                         success: function(json) {
                           var items = json.listroutersresponse.router ?
@@ -5854,12 +5881,18 @@
               }
             }
 
+            var data2 = {
+              forvpc: false
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }    
             var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-							  forvpc: false
-							},
+              data: data2,
               success: function(json) {
                 var items = json.listroutersresponse.router ?
                       json.listroutersresponse.router : [];
@@ -5870,9 +5903,7 @@
                 // Get project routers
                 $.ajax({
                   url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                  data: {
-										forvpc: false
-									},
+                  data: data2,
                   success: function(json) {
                     var items = json.listroutersresponse.router ?
                           json.listroutersresponse.router : [];

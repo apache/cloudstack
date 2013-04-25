@@ -994,7 +994,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         String name = cmd.getRouterName();
         String state = cmd.getState();
-        Long zone = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
+        String zoneType = cmd.getZoneType();
         Long pod = cmd.getPodId();
         Long hostId = cmd.getHostId();
         String keyword = cmd.getKeyword();
@@ -1027,6 +1028,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -1067,10 +1069,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("state", state);
         }
 
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
 
+        if (zoneType != null) {
+            sc.setParameters("dataCenterType", zoneType);
+        }
+        
         if (pod != null) {
             sc.setParameters("podId", pod);
         }
