@@ -16,14 +16,10 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +34,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     protected final SearchBuilder<NetworkACLItemVO> AllFieldsSearch;
     protected final SearchBuilder<NetworkACLItemVO> NotRevokedSearch;
     protected final SearchBuilder<NetworkACLItemVO> ReleaseSearch;
+    protected final GenericSearchBuilder<NetworkACLItemVO, Integer> MaxNumberSearch;
 
     protected NetworkACLItemDaoImpl() {
         super();
@@ -46,7 +43,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
-        AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getACLId(), Op.EQ);
+        AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getAclId(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.done();
 
@@ -55,7 +52,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         NotRevokedSearch.and("protocol", NotRevokedSearch.entity().getProtocol(), Op.EQ);
         NotRevokedSearch.and("sourcePortStart", NotRevokedSearch.entity().getSourcePortStart(), Op.EQ);
         NotRevokedSearch.and("sourcePortEnd", NotRevokedSearch.entity().getSourcePortEnd(), Op.EQ);
-        NotRevokedSearch.and("aclId", NotRevokedSearch.entity().getACLId(), Op.EQ);
+        NotRevokedSearch.and("aclId", NotRevokedSearch.entity().getAclId(), Op.EQ);
         NotRevokedSearch.and("trafficType", NotRevokedSearch.entity().getTrafficType(), Op.EQ);
         NotRevokedSearch.done();
 
@@ -64,13 +61,12 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
         ReleaseSearch.done();
 
+        MaxNumberSearch = createSearchBuilder(Integer.class);
+        MaxNumberSearch.select(null, SearchCriteria.Func.MAX, MaxNumberSearch.entity().getNumber());
+        MaxNumberSearch.and("aclId", MaxNumberSearch.entity().getAclId(), Op.EQ);
+        MaxNumberSearch.done();
     }
 
-
-    @Override
-    public List<NetworkACLItemVO> listByACLAndNotRevoked(long aclId) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 
     @Override
     public boolean setStateToAdd(NetworkACLItemVO rule) {
@@ -98,13 +94,11 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     }
 
     @Override
-    public List<NetworkACLItemVO> listByACLTrafficTypeAndNotRevoked(long aclId, NetworkACLItem.TrafficType trafficType) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<NetworkACLItemVO> listByACLTrafficType(long aclId, NetworkACLItem.TrafficType trafficType) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public int getMaxNumberByACL(long aclId) {
+        SearchCriteria<Integer> sc = MaxNumberSearch.create();
+        sc.setParameters("aclId", aclId);
+        Integer max = customSearch(sc, null).get(0);
+        return (max == null) ? 0 : max;
     }
 
 }

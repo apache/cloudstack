@@ -92,7 +92,7 @@ public class NetworkACLTO implements InternalIdentity {
     }
 
     public String getSrcVlanTag() {
-    	return vlanTag;
+        return vlanTag;
     }
 
     public String getProtocol() {
@@ -104,18 +104,18 @@ public class NetworkACLTO implements InternalIdentity {
     }
 
     public Integer getIcmpType(){
-    	return icmpType;
+        return icmpType;
     }
 
     public Integer getIcmpCode(){
-    	return icmpCode;
+        return icmpCode;
     }
 
     public String getStringPortRange() {
-    	if (portRange == null || portRange.length < 2)
-    		return "0:0";
-    	else
-    		return NetUtils.portRangeToString(portRange);
+        if (portRange == null || portRange.length < 2)
+            return "0:0";
+        else
+            return NetUtils.portRangeToString(portRange);
     }
 
     public boolean revoked() {

@@ -64,7 +64,7 @@ public interface NetworkACLItem extends InternalIdentity {
 
     State getState();
 
-    long getACLId();
+    long getAclId();
 
     Integer getIcmpCode();
 

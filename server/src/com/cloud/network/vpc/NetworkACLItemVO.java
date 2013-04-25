@@ -49,7 +49,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     Date created;
 
     @Column(name="acl_id")
-    Long ACLId;
+    long aclId;
 
     @Column(name="icmp_code")
     Integer icmpCode;
@@ -73,6 +73,27 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Column(name="action")
     @Enumerated(value=EnumType.STRING)
     Action action;
+
+    protected NetworkACLItemVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol,
+                            long aclId, List<String> sourceCidrs, Integer icmpCode,
+                            Integer icmpType, TrafficType trafficType, Action action, int number) {
+        this.sourcePortStart = portStart;
+        this.sourcePortEnd = portEnd;
+        this.protocol = protocol;
+        this.aclId = aclId;
+        this.state = State.Staged;
+        this.icmpCode = icmpCode;
+        this.icmpType = icmpType;
+        setSourceCidrList(sourceCidrs);
+        this.uuid = UUID.randomUUID().toString();
+        this.trafficType = trafficType;
+        this.action = action;
+        this.number = number;
+    }
 
     public void setSourceCidrList(List<String> sourceCidrs) {
         if(sourceCidrs == null){
@@ -133,39 +154,15 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     @Override
-    public long getACLId() {
-        return ACLId;
+    public long getAclId() {
+        return aclId;
     }
 
     public Date getCreated() {
         return created;
     }
 
-    protected NetworkACLItemVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
 
-    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol,
-                            long aclId, List<String> sourceCidrs, Integer icmpCode,
-                            Integer icmpType, TrafficType trafficType, Action action, int number) {
-        this.sourcePortStart = portStart;
-        this.sourcePortEnd = portEnd;
-        this.protocol = protocol;
-        this.ACLId = aclId;
-        this.state = State.Staged;
-        this.icmpCode = icmpCode;
-        this.icmpType = icmpType;
-        setSourceCidrList(sourceCidrs);
-        this.uuid = UUID.randomUUID().toString();
-        this.trafficType = trafficType;
-        this.action = action;
-        this.number = number;
-    }
-
-
-    public NetworkACLItemVO(int port, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Action action, int number) {
-        this(port, port, protocol, aclId, sourceCidrs, icmpCode, icmpType, null, action, number);
-    }
 
     @Override
     public String toString() {

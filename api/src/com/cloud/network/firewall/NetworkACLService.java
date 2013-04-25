@@ -32,33 +32,85 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
-    NetworkACLItem getNetworkACLItem(long ruleId);
-    boolean applyNetworkACL(long aclId, Account caller) throws ResourceUnavailableException;
+    /**
+     * Creates Network ACL for the specified VPC
+     * @param name
+     * @param description
+     * @param vpcId
+     * @return
+     */
+    NetworkACL createNetworkACL(String name, String description, long vpcId);
 
     /**
+     * Get Network ACL with specified Id
+     * @param id
+     * @return
+     */
+    NetworkACL getNetworkACL(long id);
+
+    /**
+     * List NeetworkACLs by Id/Name/Network or Vpc it belongs to
+     * @param id
+     * @param name
+     * @param networkId
+     * @param vpcId
+     * @return
+     */
+    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(Long id, String name, Long networkId, Long vpcId);
+
+    /**
+     * Delete specified network ACL. Deletion fails if the list is not empty
+     * @param id
+     * @return
+     */
+    boolean deleteNetworkACL(long id);
+
+    /**
+     * Associates ACL with specified Network
+     * @param aclId
+     * @param networkId
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean replaceNetworkACL(long aclId, long networkId) throws ResourceUnavailableException;
+
+    /**
+     * Applied ACL to associated networks
+     * @param aclId
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean applyNetworkACL(long aclId) throws ResourceUnavailableException;
+
+    /**
+     * Creates a Network ACL Item within an ACL and applies the ACL to associated networks
      * @param createNetworkACLCmd
      * @return
      */
-    NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd) throws NetworkRuleConflictException;
+    NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd);
+
     /**
+     * Return ACL item with specified Id
      * @param ruleId
-     * @param apply
      * @return
      */
-    boolean revokeNetworkACLItem(long ruleId, boolean apply);
+    NetworkACLItem getNetworkACLItem(long ruleId);
+
     /**
+     * Lists Network ACL Items by Id, Network, ACLId, Traffic Type, protocol
      * @param listNetworkACLsCmd
      * @return
      */
     Pair<List<? extends NetworkACLItem>, Integer> listNetworkACLItems(ListNetworkACLsCmd cmd);
 
-    NetworkACL createNetworkACL(CreateNetworkACLListCmd cmd);
+    /**
+     * Revoked ACL Item with specified Id
+     * @param ruleId
+     * @param apply
+     * @return
+     */
+    boolean revokeNetworkACLItem(long ruleId);
 
-    NetworkACL getNetworkACL(long id);
 
-    boolean deleteNetworkACL(long id);
 
-    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(ListNetworkACLListsCmd listNetworkACLListsCmd);
-
-    boolean replaceNetworkACL(long aclId, long networkId);
 }

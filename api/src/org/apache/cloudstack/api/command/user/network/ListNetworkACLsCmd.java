@@ -24,10 +24,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NetworkACLItemResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.FirewallRule;
@@ -43,15 +40,25 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists network ACL with the specified ID.")
+            description="Lists network ACL Item with the specified ID")
     private Long id;
 
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list network ACLs by network Id")
+            description="list network ACL Items by network Id")
     private Long networkId;
 
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACLs by traffic type - Ingress or Egress")
+    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACL Items by traffic type - Ingress or Egress")
     private String trafficType;
+
+    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
+            description="list network ACL Items by ACL Id")
+    private Long aclId;
+
+    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="list network ACL Items by Protocol")
+    private String protocol;
+
+    @Parameter(name=ApiConstants.ACTION, type=CommandType.STRING, description="list network ACL Items by Action")
+    private String action;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -67,6 +74,18 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
 
     public String getTrafficType() {
         return trafficType;
+    }
+
+    public Long getAclId(){
+        return aclId;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getAction() {
+        return action;
     }
 
     /////////////////////////////////////////////////////

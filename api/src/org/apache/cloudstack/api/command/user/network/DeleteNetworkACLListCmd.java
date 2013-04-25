@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -48,7 +49,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -72,18 +73,8 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        NetworkACL acl = _networkACLService.getNetworkACL(id);
-        if (acl == null) {
-            throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
-        } else {
-            long vpcId = acl.getVpcId();
-            Vpc vpc = _vpcService.getVpc(vpcId);
-            if(vpc != null){
-                return vpc.getAccountId();
-            } else {
-                throw new InvalidParameterValueException("Unable to find VPC associated with network ACL by id=" + id);
-            }
-        }
+        Account caller = UserContext.current().getCaller();
+        return caller.getAccountId();
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
@@ -26,9 +27,81 @@ import com.cloud.utils.db.DB;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 
 
-public interface NetworkACLManager extends NetworkACLService{
-    
+public interface NetworkACLManager{
+
     /**
+     * Creates Network ACL for the specified VPC
+     * @param name
+     * @param description
+     * @param vpcId
+     * @return
+     */
+    NetworkACL createNetworkACL(String name, String description, long vpcId);
+
+    /**
+     * Fetches Network ACL with specified Id
+     * @param id
+     * @return
+     */
+    NetworkACL getNetworkACL(long id);
+
+    /**
+     * Applies the items in the ACL to all associated networks
+     * @param aclId
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean applyNetworkACL(long aclId) throws ResourceUnavailableException;
+
+    /**
+     * Deletes the specified Network ACL
+     * @param id
+     * @return
+     */
+    boolean deleteNetworkACL(NetworkACL acl);
+
+    /**
+     * Associates acl with a network and applies the ACLItems
+     * @param acl
+     * @param network
+     * @return
+     */
+    boolean replaceNetworkACL(NetworkACL acl, NetworkVO network) throws ResourceUnavailableException;
+
+    /**
+     * Creates a Network ACL Item within an ACL and applies it to associated networks
+     * @param sourcePortStart
+     * @param sourcePortEnd
+     * @param protocol
+     * @param sourceCidrList
+     * @param icmpCode
+     * @param icmpType
+     * @param trafficType
+     * @param aclId
+     * @param action
+     * @param number
+     * @return
+     */
+    NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol,
+                                        List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
+                                        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number);
+
+    /**
+     * Returns Network ACL Item with specified Id
+     * @param ruleId
+     * @return
+     */
+    NetworkACLItem getNetworkACLItem(long ruleId);
+
+    /**
+     * Revoke ACL Item and apply changes
+     * @param ruleId
+     * @return
+     */
+    boolean revokeNetworkACLItem(long ruleId);
+
+    /**
+     * Revoke ACL Items for network and remove them in back-end. Db is not updated
      * @param networkId
      * @param userId
      * @param caller
@@ -39,9 +112,6 @@ public interface NetworkACLManager extends NetworkACLService{
     
     List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId);
 
-    boolean applyNetworkACL(long aclId, Account caller) throws ResourceUnavailableException;
+    boolean applyACLToNetwork(long networkId) throws ResourceUnavailableException;
 
-    void removeRule(NetworkACLItem rule);
-
-    boolean applyACLToNetwork(long networkId, Account caller) throws ResourceUnavailableException;
 }
