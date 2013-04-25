@@ -36,6 +36,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.NicTO;
@@ -352,5 +353,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             return guid;
 
         return tokens[0] + "@" + vCenterIp;
+    }
+    
+    @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName());
+        List<Command> commands = new ArrayList<Command>();
+        commands.add(unregisterVMCommand);
+        return commands;
     }
 }

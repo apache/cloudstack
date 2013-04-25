@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.List;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -57,4 +59,11 @@ public interface HypervisorGuru extends Adapter {
      * @return
      */
     NicTO toNicTO(NicProfile profile);
+    
+    /**
+     * Give hypervisor guru opportunity to decide if certain command needs to be done after expunge VM from DB
+     * @param vm
+     * @return a list of Commands
+     */
+    List<Command> finalizeExpunge(VirtualMachine vm);
 }

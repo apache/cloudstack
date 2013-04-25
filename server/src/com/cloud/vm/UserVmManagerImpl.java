@@ -1554,6 +1554,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
             } finally {
                 scanLock.releaseRef();
+                UserContext.unregisterContext();
             }
         }
     }
