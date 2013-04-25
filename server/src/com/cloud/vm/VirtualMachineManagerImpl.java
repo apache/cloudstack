@@ -47,7 +47,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -132,6 +131,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -258,6 +258,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         synchronized (_vmGurus) {
             _vmGurus.put(type, guru);
         }
+    }
+    
+    @Override
+    public Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus() {
+    	synchronized(_vmGurus) {
+    		return _vmGurus.values();
+    	}
     }
 
     @Override
@@ -1199,7 +1206,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean checkVmOnHost(VirtualMachine vm, long hostId) throws AgentUnavailableException, OperationTimedoutException {
         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
-        if (!answer.getResult() || answer.getState() == State.Stopped) {
+        if (!answer.getResult() || answer.getState() == PowerState.PowerOff) {
             return false;
         }
 
@@ -1626,12 +1633,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public Command cleanup(String vmName) {
         return new StopCommand(vmName);
     }
-
+/*
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {  
         Commands commands = new Commands(OnError.Continue);
 
         Map<Long, AgentVmInfo> infos = convertToInfos(startup);
-
         final List<? extends VMInstanceVO> vms = _vmDao.listByHostId(hostId);
         s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
         for (VMInstanceVO vm : vms) {
@@ -1718,8 +1724,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return commands;
     }
 
-
-
     public void deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
 
@@ -1754,7 +1758,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
     }
-
+*/
 
     public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         if (newStates==null)return;
@@ -1924,15 +1928,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return map;
     }
 
+/*
     protected Map<Long, AgentVmInfo> convertToInfos(StartupRoutingCommand cmd) { 
-        final Map<String, VmState> states = cmd.getVmStates();
+        final Map<String, HostVmStateReportEntry> states = cmd.getVmStates();
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
         if (states == null) {
             return map;
         }
         Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
 
-        for (Map.Entry<String, VmState> entry : states.entrySet()) {
+        for (Map.Entry<String, HostVmStateReportEntry> entry : states.entrySet()) {
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
                 VMInstanceVO vm = vmGuru.findByName(name);
@@ -1950,7 +1955,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         return map;
     }
-
+*/
     protected Map<Long, AgentVmInfo> convertDeltaToInfos(final Map<String, State> states) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
 
@@ -2233,7 +2238,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
                 if (!hs.isExceuted()){
+                	
+/* TODO                	
                     deltaSync(hs.getNewStates());
+*/                    
                     hs.setExecuted();
                 }
             }
@@ -2258,6 +2266,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (cmd instanceof PingRoutingCommand) {
                 PingRoutingCommand ping = (PingRoutingCommand) cmd;
                 if (ping.getNewStates() != null && ping.getNewStates().size() > 0) {
+
+/* TODO                	
                     Commands commands = deltaHostSync(agentId, ping.getNewStates());
                     if (commands.size() > 0) {
                         try {
@@ -2266,6 +2276,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             s_logger.warn("Agent is now unavailable", e);
                         }
                     }
+*/                    
+                    
                 }
                 processed = true;
             }
@@ -2304,11 +2316,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+
+/* TODO            
             HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
             if (allStates != null){
                 this.fullSync(clusterId, allStates);
             }
-
+*/
             // initiate the cron job
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()), clusterId);
             try {
@@ -2320,6 +2334,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         else { // for others KVM and VMWare 
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+
+/*
             Commands commands = fullHostSync(agentId, startup);
 
             if (commands.size() > 0) {
@@ -2345,7 +2361,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new ConnectionException(true, "Unable to sync", e);
                 }
             }
-
+*/
         }
     }
 

@@ -227,6 +227,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 
@@ -352,21 +353,21 @@ ServerResource {
     protected int _timeout;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
-    protected static HashMap<DomainInfo.DomainState, State> s_statesTable;
+    protected static HashMap<DomainInfo.DomainState, PowerState> s_statesTable;
     static {
-        s_statesTable = new HashMap<DomainInfo.DomainState, State>();
+        s_statesTable = new HashMap<DomainInfo.DomainState, PowerState>();
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF,
-                State.Stopped);
+                PowerState.PowerOff);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_PAUSED,
-                State.Running);
+                PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_RUNNING,
-                State.Running);
+        		PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_BLOCKED,
-                State.Running);
+        		PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_NOSTATE,
-                State.Unknown);
+        		PowerState.PowerUnknown);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN,
-                State.Stopping);
+        		PowerState.PowerOff);
     }
 
     protected HashMap<String, State> _vms = new HashMap<String, State>(20);
@@ -2533,19 +2534,19 @@ ServerResource {
         return new ReadyAnswer(cmd);
     }
 
-    protected State convertToState(DomainInfo.DomainState ps) {
-        final State state = s_statesTable.get(ps);
-        return state == null ? State.Unknown : state;
+    protected PowerState convertToState(DomainInfo.DomainState ps) {
+        final PowerState state = s_statesTable.get(ps);
+        return state == null ? PowerState.PowerUnknown : state;
     }
 
-    protected State getVmState(Connect conn, final String vmName) {
+    protected PowerState getVmState(Connect conn, final String vmName) {
         int retry = 3;
         Domain vms = null;
         while (retry-- > 0) {
             try {
                 vms = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
                         .getBytes()));
-                State s = convertToState(vms.getInfo().state);
+                PowerState s = convertToState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
                 s_logger.warn("Can't get vm state " + vmName + e.getMessage()
@@ -2560,15 +2561,15 @@ ServerResource {
                 }
             }
         }
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     private Answer execute(CheckVirtualMachineCommand cmd) {
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final State state = getVmState(conn, cmd.getVmName());
+            final PowerState state = getVmState(conn, cmd.getVmName());
             Integer vncPort = null;
-            if (state == State.Running) {
+            if (state == PowerState.PowerOn) {
                 vncPort = getVncPort(conn, cmd.getVmName());
 
                 synchronized (_vms) {
@@ -3584,7 +3585,7 @@ ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final HashMap<String, State> newStates = sync();
+        final HashMap<String, PowerState> newStates = sync();
 
         if (!_can_bridge_firewall) {
             return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id,
@@ -3615,7 +3616,7 @@ ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, State> changes = null;
+        Map<String, PowerState> changes = null;
 
         synchronized (_vms) {
             _vms.clear();
@@ -3663,7 +3664,16 @@ ServerResource {
             return new StartupCommand[] { cmd };
         }
     }
-
+    
+    protected HashMap<String, PowerState> sync() {
+    	HashMap<String, PowerState> newStates = getAllVms();
+    	if(newStates != null)
+    		return newStates;
+    	
+    	return new HashMap<String, PowerState>();
+    }
+    
+/*
     protected HashMap<String, State> sync() {
         HashMap<String, State> newStates;
         HashMap<String, State> oldStates = null;
@@ -3775,8 +3785,8 @@ ServerResource {
 
         return changes;
     }
-
-    protected State getRealPowerState(String vm) {
+*/
+    protected PowerState getRealPowerState(String vm) {
         int i = 0;
         s_logger.trace("Checking on the HALTED State");
         Domain dm = null;
@@ -3809,7 +3819,7 @@ ServerResource {
                 s_logger.trace("Ignoring InterruptedException.", e);
             }
         }
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     protected List<String> getAllVmNames(Connect conn) {
@@ -3852,8 +3862,8 @@ ServerResource {
         return la;
     }
 
-    private HashMap<String, State> getAllVms() {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
+    private HashMap<String, PowerState> getAllVms() {
+        final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
         Connect conn = null;
 
         try {
@@ -3873,8 +3883,8 @@ ServerResource {
         return vmStates;
     }
 
-    private HashMap<String, State> getAllVms(Connect conn) {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
+    private HashMap<String, PowerState> getAllVms(Connect conn) {
+        final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
 
         String[] vms = null;
         int[] ids = null;
@@ -3899,7 +3909,7 @@ ServerResource {
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
 
-                final State state = convertToState(ps);
+                final PowerState state = convertToState(ps);
 
                 s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps
                         + "; vm state=" + state.toString());
@@ -3925,7 +3935,7 @@ ServerResource {
                         .getBytes()));
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
-                final State state = convertToState(ps);
+                final PowerState state = convertToState(ps);
                 String vmName = dm.getName();
                 s_logger.trace("VM " + vmName + ": powerstate = " + ps
                         + "; vm state=" + state.toString());

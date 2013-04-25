@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -14,33 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+package com.cloud.vm;
 
-import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.host.Host;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.agent.api.HostVmStateReportEntry;
 
-
-public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
-	HashMap<String, Pair<Long, Long>> newGroupStates;
-
-	protected PingRoutingWithNwGroupsCommand() {
-		super();
-	}
-
-	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, PowerState> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
-		super(type, id, states);
-		newGroupStates = nwGrpStates;
-	}
-
-	public HashMap<String, Pair<Long, Long>> getNewGroupStates() {
-		return newGroupStates;
-	}
-
-	public void setNewGroupStates(HashMap<String, Pair<Long, Long>> newGroupStates) {
-		this.newGroupStates = newGroupStates;
-	}
+public interface VirtualMachinePowerStateSync {
+	void resetHostSyncState(long hostId);
+	void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
 }

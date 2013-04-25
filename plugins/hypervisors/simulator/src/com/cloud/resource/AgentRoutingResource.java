@@ -53,6 +53,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 
 public class AgentRoutingResource extends AgentStorageResource {
@@ -112,17 +113,29 @@ public class AgentRoutingResource extends AgentStorageResource {
 			_vms.putAll(_simMgr.getVmStates(hostGuid));
 		}
         }
-        final HashMap<String, State> newStates = sync();
+        final HashMap<String, PowerState> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
         return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
     }
 
+    private HashMap<String, PowerState> getVmStates() {
+    	Map<String, State> rawStates = _simMgr.getVmStates(this.hostGuid);
+    	if(rawStates != null) {
+    		HashMap<String, PowerState> states = new HashMap<String, PowerState>();
+    		for(Map.Entry<String, State> entry : rawStates.entrySet()) {
+    			states.put(entry.getKey(), entry.getValue() == State.Running ? PowerState.PowerOn : PowerState.PowerOff);
+    		}
+    		return states;
+    	}
+    	return new HashMap<String, PowerState>();
+    }
+    
     @Override
     public StartupCommand[] initialize() {
         synchronized (_vms) {
             _vms.clear();
         }
-        Map<String, State> changes = _simMgr.getVmStates(this.hostGuid);
+        Map<String, PowerState> changes = getVmStates();
         Map<String, MockVMVO> vmsMaps = _simMgr.getVms(this.hostGuid);
         totalCpu = agentHost.getCpuCount() * agentHost.getCpuSpeed();
         totalMem = agentHost.getMemorySize();
@@ -251,8 +264,8 @@ public class AgentRoutingResource extends AgentStorageResource {
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
         final String vmName = cmd.getVmName();
         CheckVirtualMachineAnswer result = (CheckVirtualMachineAnswer)_simMgr.simulate(cmd, hostGuid);
-        State state = result.getState();
-        if (state == State.Running) {
+        PowerState state = result.getState();
+        if (state == PowerState.PowerOn) {
             synchronized (_vms) {
                 _vms.put(vmName, State.Running);
             }
@@ -276,6 +289,11 @@ public class AgentRoutingResource extends AgentStorageResource {
         return info;
     }
 
+    protected HashMap<String, PowerState> sync() {
+    	return this.getVmStates();
+    }
+    
+/*    
     protected HashMap<String, State> sync() {
         Map<String, State> newStates;
         Map<String, State> oldStates = null;
@@ -342,7 +360,7 @@ public class AgentRoutingResource extends AgentStorageResource {
 
         return changes;
     }
-
+*/
     private Answer execute(ShutdownCommand cmd) {
         this.stopped = true;
         return new Answer(cmd);

@@ -36,6 +36,7 @@ import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
@@ -105,7 +106,7 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
 			return null;
 		} else {
 			SSHCmdHelper.releaseSshConnection(sshConnection);
-			return new PingRoutingCommand(getType(), id, new HashMap<String, State>());
+			return new PingRoutingCommand(getType(), id, new HashMap<String, PowerState>());
 		}
 	}
 	

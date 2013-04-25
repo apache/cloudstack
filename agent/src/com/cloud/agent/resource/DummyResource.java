@@ -29,12 +29,12 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -162,7 +162,7 @@ public class DummyResource implements ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, VmState> changes = null;
+        Map<String, HostVmStateReportEntry> changes = null;
 
         final List<Object> info = getHostInfo();
 

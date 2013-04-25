@@ -19,22 +19,22 @@ package com.cloud.agent.api;
 import java.util.Map;
 
 import com.cloud.host.Host;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public class PingRoutingCommand extends PingCommand {
-    Map<String, State> newStates;
+    Map<String, PowerState> newStates;
     boolean _gatewayAccessible = true;
     boolean _vnetAccessible = true;
 
     protected PingRoutingCommand() {
     }
 
-    public PingRoutingCommand(Host.Type type, long id, Map<String, State> states) {
+    public PingRoutingCommand(Host.Type type, long id, Map<String, PowerState> states) {
         super(type, id);
         this.newStates = states;
     }
 
-    public Map<String, State> getNewStates() {
+    public Map<String, PowerState> getNewStates() {
         return newStates;
     }
 

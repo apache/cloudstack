@@ -76,6 +76,7 @@ import com.cloud.utils.script.Script2;
 import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -305,13 +306,13 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		}
 	}
 
-    protected Map<String, State> fullSync() {
-        Map<String, State> states = new HashMap<String, State>();
+    protected Map<String, PowerState> fullSync() {
+        Map<String, PowerState> states = new HashMap<String, PowerState>();
         if (hostId != null) {
             vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             for (VMInstanceVO vm : vms) {
-                states.put(vm.getInstanceName(), vm.getState());
+                states.put(vm.getInstanceName(), vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff);
             }
         }
         /*
@@ -402,7 +403,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 	}
 
 	protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
-		return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
+		return new CheckVirtualMachineAnswer(cmd, PowerState.PowerOff, null);
 	}
 
 	protected Answer execute(IpmiBootorResetCommand cmd) {
@@ -554,8 +555,8 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		}
 	}
 
-	protected HashMap<String, State> deltaSync() {
-		final HashMap<String, State> changes = new HashMap<String, State>();
+	protected HashMap<String, PowerState> deltaSync() {
+		final HashMap<String, PowerState> changes = new HashMap<String, PowerState>();
 		/*
 		 * Disable sync until we find a way that only tracks status but not does
 		 * action

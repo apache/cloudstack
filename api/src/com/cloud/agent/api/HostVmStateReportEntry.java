@@ -16,40 +16,26 @@
 // under the License.
 package com.cloud.agent.api;
 
-import java.util.HashMap;
-
-import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
-public class ClusterSyncAnswer extends Answer {
-    private long _clusterId;
-    private HashMap<String, Pair<String, PowerState>> _newStates;
-    private boolean _isExecuted=false;
-
-    // this is here because a cron command answer is being sent twice
-    //  AgentAttache.processAnswers
-    //  AgentManagerImpl.notifyAnswersToMonitors
-    public boolean isExceuted(){
-        return _isExecuted;
+public class HostVmStateReportEntry {
+    VirtualMachine.PowerState state;
+    String host;
+    
+    public HostVmStateReportEntry() {
     }
-
-    public void setExecuted(){
-        _isExecuted = true;
+    
+    public HostVmStateReportEntry(PowerState state, String host) {
+        this.state = state;
+        this.host = host;
     }
-
-
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, PowerState>> newStates){
-        _clusterId = clusterId;
-        _newStates = newStates;
-        result = true;
+    
+    public PowerState getState() {
+        return state;
     }
-
-    public long getClusterId() {
-        return _clusterId;
+    
+    public String getHost() {
+        return host;
     }
-
-    public HashMap<String, Pair<String, PowerState>> getNewStates() {
-        return _newStates;
-    }
-
 }

@@ -223,6 +223,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
@@ -314,12 +315,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected volatile long _cmdSequence = 1;
 
-    protected static HashMap<VirtualMachinePowerState, State> s_statesTable;
+    protected static HashMap<VirtualMachinePowerState, PowerState> s_statesTable;
     static {
-        s_statesTable = new HashMap<VirtualMachinePowerState, State>();
-        s_statesTable.put(VirtualMachinePowerState.POWERED_ON, State.Running);
-        s_statesTable.put(VirtualMachinePowerState.POWERED_OFF, State.Stopped);
-        s_statesTable.put(VirtualMachinePowerState.SUSPENDED, State.Stopped);
+        s_statesTable = new HashMap<VirtualMachinePowerState, PowerState>();
+        s_statesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
+        s_statesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
+        s_statesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
     }
 
     public VmwareResource() {
@@ -2082,7 +2083,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo != null) {
                 s_logger.info("VM " + vmName + " already exists, tear down devices for reconfiguration");
-                if (getVmState(vmMo) != State.Stopped)
+                if (getVmState(vmMo) != PowerState.PowerOff)
                     vmMo.safePowerOff(_shutdown_waitMs);
                 vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                 vmMo.ensureScsiDeviceController();
@@ -2098,7 +2099,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     takeVmFromOtherHyperHost(hyperHost, vmName);
 
-                    if (getVmState(vmMo) != State.Stopped)
+                    if (getVmState(vmMo) != PowerState.PowerOff)
                         vmMo.safePowerOff(_shutdown_waitMs);
                     vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                     vmMo.ensureScsiDeviceController();
@@ -2759,7 +2760,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         HashMap<String, VmStatsEntry> vmStatsMap = null;
 
         try {
-            HashMap<String, State> newStates = getVmStates();
+            HashMap<String, PowerState> newStates = getVmStates();
 
             List<String> requestedVmNames = cmd.getVmNames();
             List<String> vmNames = new ArrayList();
@@ -2833,7 +2834,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 try {
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
 
-                    if (getVmState(vmMo) != State.Stopped) {
+                    if (getVmState(vmMo) != PowerState.PowerOff) {
 
                         // before we stop VM, remove all possible snapshots on the VM to let
                         // disk chain be collapsed
@@ -2948,7 +2949,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         final String vmName = cmd.getVmName();
-        State state = State.Unknown;
+        PowerState state = PowerState.PowerOff;
         Integer vncPort = null;
 
         VmwareContext context = getServiceContext();
@@ -2958,7 +2959,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo != null) {
                 state = getVmState(vmMo);
-                if (state == State.Running) {
+                if (state == PowerState.PowerOn) {
                     synchronized (_vms) {
                         _vms.put(vmName, State.Running);
                     }
@@ -3719,7 +3720,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-                        if (getVmState(vmMo) != State.Stopped)
+                        if (getVmState(vmMo) != PowerState.PowerOff)
                             vmMo.safePowerOff(_shutdown_waitMs);
                         vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
@@ -4074,7 +4075,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        HashMap<String, State> newStates = sync();
+        HashMap<String, PowerState> newStates = sync();
         if (newStates == null) {
             return null;
         }
@@ -4180,7 +4181,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(cmd);
 
-        Map<String, State> changes = null;
+        Map<String, PowerState> changes = null;
         synchronized (_vms) {
             _vms.clear();
             changes = sync();
@@ -4338,7 +4339,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             details.put("NativeHA", "true");
         }
     }
+    
+    protected HashMap<String, PowerState> sync() {
+    	try {
+    		return this.getVmStates();
+    	} catch(Exception e) {
+    		return new HashMap<String, PowerState>();
+    	}
+    }
 
+/*
     protected HashMap<String, State> sync() {
         HashMap<String, State> changes = new HashMap<String, State>();
         HashMap<String, State> oldStates = null;
@@ -4388,10 +4398,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     } else if (oldState != newState) {
                         _vms.put(vm, newState);
                         if (newState == State.Stopped) {
-                            /*
-                             * if (_vmsKilled.remove(vm)) { s_logger.debug("VM " + vm + " has been killed for storage. ");
-                             * newState = State.Error; }
-                             */
                         }
                         changes.put(vm, newState);
                     }
@@ -4445,7 +4451,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         return changes;
     }
-
+*/
     private boolean isVmInCluster(String vmName) throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
 
@@ -4610,11 +4616,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private HashMap<String, State> getVmStates() throws Exception {
+    private HashMap<String, PowerState> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] { "name", "runtime.powerState", "config.template" });
 
-        HashMap<String, State> newStates = new HashMap<String, State>();
+        HashMap<String, PowerState> newStates = new HashMap<String, PowerState>();
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -4853,11 +4859,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return connect(vmname, ipAddress, 3922);
     }
 
-    private static State convertState(VirtualMachinePowerState powerState) {
+    private static PowerState convertState(VirtualMachinePowerState powerState) {
         return s_statesTable.get(powerState);
     }
 
-    private static State getVmState(VirtualMachineMO vmMo) throws Exception {
+    private static PowerState getVmState(VirtualMachineMO vmMo) throws Exception {
         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
         return convertState(runtimeInfo.getPowerState());
     }

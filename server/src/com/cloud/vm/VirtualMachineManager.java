@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -90,6 +91,8 @@ public interface VirtualMachineManager extends Manager {
     <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
 
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
+    
+    Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus();
 
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 

@@ -109,6 +109,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 
@@ -900,8 +901,8 @@ public class HypervResource extends ServerResourceBase implements ServerResource
         return hypervHosts;
     }
 
-    protected HashMap<String, State> sync() {
-        HashMap<String, State> changes = new HashMap<String, State>();
+    protected HashMap<String, PowerState> sync() {
+        HashMap<String, PowerState> changes = new HashMap<String, PowerState>();
 
         try {
             synchronized (_vms) {
@@ -916,9 +917,9 @@ public class HypervResource extends ServerResourceBase implements ServerResource
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        HashMap<String, State> newStates = sync();
+        HashMap<String, PowerState> newStates = sync();
         if (newStates == null) {
-            newStates = new HashMap<String, State>();
+            newStates = new HashMap<String, PowerState>();
         }
         PingRoutingCommand cmd = new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
         return cmd;

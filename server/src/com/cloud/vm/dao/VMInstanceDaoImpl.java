@@ -29,7 +29,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.persistence.Entity;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -630,7 +629,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
     
     @Override @DB
-    public void updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState) {
+    public boolean updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState) {
+    	boolean needToUpdate = false;
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
@@ -642,20 +642,21 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         		instance.setPowerHostId(powerHostId);
         		instance.setPowerStateUpdateCount(1);
         		instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-        		
+        		needToUpdate = true;
         		update(instanceId, instance);
         	} else {
         		// to reduce DB updates, consecutive same state update for more than 3 times
         		if(instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
             		instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
             		instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-            		
+            		needToUpdate = true;
             		update(instanceId, instance);
         		}
         	}
         }
         
         txn.commit();
+        return needToUpdate;
     }
     
     @Override @DB

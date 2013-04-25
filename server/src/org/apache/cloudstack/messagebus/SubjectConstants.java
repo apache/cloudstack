@@ -14,33 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+package org.apache.cloudstack.messagebus;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.cloud.host.Host;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.PowerState;
-
-
-public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
-	HashMap<String, Pair<Long, Long>> newGroupStates;
-
-	protected PingRoutingWithNwGroupsCommand() {
-		super();
-	}
-
-	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, PowerState> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
-		super(type, id, states);
-		newGroupStates = nwGrpStates;
-	}
-
-	public HashMap<String, Pair<Long, Long>> getNewGroupStates() {
-		return newGroupStates;
-	}
-
-	public void setNewGroupStates(HashMap<String, Pair<Long, Long>> newGroupStates) {
-		this.newGroupStates = newGroupStates;
-	}
+public interface SubjectConstants {
+	public static final String VM_POWER_STATE = "vm.powerstate";
 }
