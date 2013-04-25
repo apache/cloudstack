@@ -1699,6 +1699,8 @@ div.list-view td.state.off span {
   max-height: 407px;
   overflow: auto;
   overflow-x: hidden;
+  width: 100%;
+  /*[empty]padding:;*/
   margin-right: 12px;
 }
 
@@ -1784,6 +1786,12 @@ div.list-view td.state.off span {
 .detail-view .details.group-multiple {
   float: left;
   width: 100%;
+}
+
+.detail-view .details.group-multiple .main-groups {
+  overflow: visible;
+  width: 98%;
+  margin-bottom: 35px;
 }
 
 /*List-view: subselect dropdown*/
@@ -2020,13 +2028,15 @@ div.detail-group.actions td {
   margin: -15px 0 -5px;
 }
 
-.details.group-multiple div.detail-group.actions .detail-actions {
+.details.group-multiple div.detail-group.actions table {
+  background: none;
+}
+
+.details.group-multiple div.detail-group.actions td.detail-actions {
+  background: none;
   display: block;
   height: 35px;
   padding: 0;
-}
-
-.details.group-multiple div.detail-group.actions .detail-actions td {
 }
 
 .details.group-multiple div.detail-group.actions .detail-actions .action {
@@ -2035,6 +2045,11 @@ div.detail-group.actions td {
   position: relative;
   left: 2px;
   top: 7px;
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions .action a {
+  background: none;
+  width: 24px;
 }
 
 .detail-group table td.detail-actions {
