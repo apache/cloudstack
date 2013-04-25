@@ -530,61 +530,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
 
-
-    String uploadTemplateToSwiftFromSecondaryStorage(VMTemplateHostVO templateHostRef) {
-        Long templateId = templateHostRef.getTemplateId();
-        VMTemplateVO template = _tmpltDao.findById(templateId);
-        if (template == null) {
-            String errMsg = " Can not find template " + templateId;
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-
-        if (template.getTemplateType() == TemplateType.PERHOST) {
-            return null;
-        }
-
-        SwiftTO swift = _swiftMgr.getSwiftTO();
-        if (swift == null) {
-            String errMsg = " There is no Swift in this setup ";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-
-        HostVO secHost = _hostDao.findById(templateHostRef.getHostId());
-        if (secHost == null) {
-            String errMsg = "Can not find secondary storage " + templateHostRef.getHostId();
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-
-        uploadTemplateToSwiftFromSecondaryStorageCommand cmd = new uploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
-                templateId, _primaryStorageDownloadWait);
-        Answer answer = null;
-        try {
-            answer = _agentMgr.sendToSSVM(secHost.getDataCenterId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                if (template.getTemplateType() != TemplateType.SYSTEM) {
-                    String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + ((answer == null) ? "null" : answer.getDetails());
-                    s_logger.warn(errMsg);
-                    throw new CloudRuntimeException(errMsg);
-                }
-                return null;
-            }
-            String path = templateHostRef.getInstallPath();
-            int index = path.lastIndexOf('/');
-            path = path.substring(index + 1);
-            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), path, templateHostRef.getSize(), templateHostRef.getPhysicalSize());
-            _tmpltSwiftDao.persist(tmpltSwift);
-            _swiftMgr.propagateTemplateOnAllZones(templateHostRef.getTemplateId());
-        } catch (Exception e) {
-            String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + e.toString();
-            s_logger.warn(errMsg);
-            throw new CloudRuntimeException(errMsg);
-        }
-        return null;
-    }
-
     @Override @DB
     public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO templ, StoragePool pool) {
     	VMTemplateVO template = _tmpltDao.findById(templ.getId(), true);
@@ -1182,30 +1127,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}
-        if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
-            _swiftMgr.deleteIso(cmd);
-    	}
-        if (cmd.getZoneId() == null && _s3Mgr.isS3Enabled()) {
-            _s3Mgr.deleteTemplate(caller.getAccountId(), templateId);
-        }
 
-    	if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+    	if (zoneId != null && (this._dataStoreMgr.getImageStore(zoneId) == null)) {
+    		throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
         boolean result = adapter.delete(profile);
         if (result) {
-            if (cmd.getZoneId() == null
-                    && (_swiftMgr.isSwiftEnabled() || _s3Mgr.isS3Enabled())) {
-                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao
-                        .listByZoneTemplate(null, templateId);
-                if (templateZones != null) {
-                    for (VMTemplateZoneVO templateZone : templateZones) {
-                        _tmpltZoneDao.remove(templateZone.getId());
-                    }
-                }
-            }
             return true;
         } else {
     		throw new CloudRuntimeException("Failed to delete ISO");

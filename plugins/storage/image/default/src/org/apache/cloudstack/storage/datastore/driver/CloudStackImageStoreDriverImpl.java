@@ -310,12 +310,13 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                     callback.complete(result);
                 }
 
-                VMTemplateZoneVO templateZone = templateZoneDao.findByZoneTemplate(sZoneId, templateId);
-
-                if (templateZone != null) {
-                    templateZoneDao.remove(templateZone.getId());
+                List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        templateZoneDao.remove(templateZone.getId());
+                    }
                 }
-            }
+             }
         }
 
     }

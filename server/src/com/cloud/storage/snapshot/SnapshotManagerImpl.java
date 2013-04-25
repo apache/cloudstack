@@ -319,20 +319,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         return snapshot;
     }
 
-    private void checkObjectStorageConfiguration(SwiftTO swift, S3TO s3) {
-
-        if (swift != null && s3 != null) {
-            throw new CloudRuntimeException(
-                    "Swift and S3 are not simultaneously supported for snapshot backup.");
-        }
-
-    }
 
     @Override
     public void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId) {
         DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(secondaryStoragePoolUrl, dcId, accountId, volumeId);
         try {
-            Answer ans = _agentMgr.sendToSSVM(dcId, cmd);
+            DataStore store = this.dataStoreMgr.getImageStore(dcId);
+            EndPoint ep = _epSelector.select(store);
+            Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
                 s_logger.warn("DeleteSnapshotsDirCommand failed due to " + ans.getDetails() + " volume id: " + volumeId);
             }
