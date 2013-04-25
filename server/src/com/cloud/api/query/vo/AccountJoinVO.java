@@ -149,7 +149,7 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     private Long vpcTotal;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -536,12 +536,12 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 

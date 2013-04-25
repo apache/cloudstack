@@ -181,8 +181,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setResourceState(host.getResourceState().toString());
 
         // set async job
-        hostResponse.setJobId(host.getJobUuid());
-        hostResponse.setJobStatus(host.getJobStatus());
+        if (host.getJobId() != null) {
+            hostResponse.setJobId(host.getJobUuid());
+            hostResponse.setJobStatus(host.getJobStatus());
+        }
 
         hostResponse.setObjectName("host");
 

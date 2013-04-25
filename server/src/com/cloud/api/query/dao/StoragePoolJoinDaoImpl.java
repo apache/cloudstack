@@ -100,8 +100,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setTags(pool.getTag());
 
         // set async job
-        poolResponse.setJobId(pool.getJobUuid());
-        poolResponse.setJobStatus(pool.getJobStatus());
+        if (pool.getJobId() != null) {
+            poolResponse.setJobId(pool.getJobUuid());
+            poolResponse.setJobStatus(pool.getJobStatus());
+        }
 
         poolResponse.setObjectName("storagepool");
         return poolResponse;
