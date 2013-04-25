@@ -23,6 +23,7 @@ from cloudstackAPI import *
 
 class jsonLoader(object):
     '''The recursive class for building and representing objects with.'''
+
     def __init__(self, obj):
         for k in obj:
             v = obj[k]
@@ -51,7 +52,7 @@ class jsonLoader(object):
                                       in self.__dict__.iteritems()))
 
 
-class jsonDump(object):
+class jsonDump:
     @staticmethod
     def __serialize(obj):
         """Recursively walk object's hierarchy."""
@@ -74,15 +75,20 @@ class jsonDump(object):
         elif hasattr(obj, '__dict__'):
             return jsonDump.__serialize(obj.__dict__)
         else:
-            return repr(obj)  # Don't know how to handle, convert to string
+            return repr(obj) # Don't know how to handle, convert to string
 
     @staticmethod
     def dump(obj):
         return jsonDump.__serialize(obj)
 
 
-def getclassFromName(cmd, name):
-    module = inspect.getmodule(cmd)
+def getClass(module, name):
+    """Get the CloudStack command class in a module given the name
+    @param module: cloudstack API module eg: createVolume
+    @param name: string name of the class within the module eg: createVolumeResponse
+    @return: response class
+    """
+    module = inspect.getmodule(module)
     return getattr(module, name)()
 
 
@@ -94,7 +100,7 @@ def finalizeResultObj(result, responseName, responsecls):
         '''infer the response class from the name'''
         moduleName = responseName.replace("response", "")
         try:
-            responsecls = getclassFromName(moduleName, responseName)
+            responsecls = getClass(moduleName, responseName)
         except:
             pass
 
@@ -117,18 +123,18 @@ def finalizeResultObj(result, responseName, responsecls):
         if not isinstance(value, jsonLoader):
             return result
 
-        mirrorObj = True
-        for k,v in value.__dict__.iteritems():
-            if k == 'jobstatus':
-                continue
-            if k not in responsecls.__dict__:
+        mirrorObj = False
+        for k, v in value.__dict__.iteritems():
+            if k in responsecls.__dict__:
+                mirrorObj = True
+            else:
                 mirrorObj = False
                 break
         if mirrorObj:
             responsecls.__dict__.update(value.__dict__)
-            return responsecls
         else:
-            return result
+            responsecls.__dict__.update(result.__dict__)
+        return responsecls
     else:
         return result
 
@@ -250,16 +256,17 @@ due to missing parameter jobid"
 }'''
     try:
         asynJob = getResultObj(result)
+        print "AsyncJob %s" % asynJob
     except cloudstackException.cloudstackAPIException, e:
         print e
 
-    result = '{ "queryasyncjobresultresponse" : {}  }'
+    result = { "queryasyncjobresultresponse" : {}  }
     asynJob = getResultObj(result)
-    print asynJob
+    print "AsyncJob %s" % asynJob
 
-    result = '{}'
+    result = {}
     asynJob = getResultObj(result)
-    print asynJob
+    print "AsyncJob %s" % asynJob
 
     result = '''{
     "createzoneresponse" : {
@@ -275,14 +282,15 @@ due to missing parameter jobid"
 }'''
     res = createZone.createZoneResponse()
     zone = getResultObj(result, res)
-    print zone.id
+    print "Zone id %s" % zone.id
 
-    result = '{ "queryasyncjobresultresponse" : {"accountid":"4a8c3cd0-a696-11e2-b7a5-1aab0c3b0463","userid":"4a8c671e-a696-11e2-b7a5-1aab0c3b0463","cmd":"org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd","jobstatus":1,"jobprocstatus":0,"jobresultcode":0,"jobresulttype":"object","jobresult":{"physicalnetwork":{"id":"e0bc9017-9ba8-4551-a6f9-6b3b2ac1d59c","name":"Sandbox-pnet","broadcastdomainrange":"ZONE","zoneid":"88e796cd-953a-44b9-9445-a7c3ee205cc2","state":"Disabled"}},"created":"2013-04-16T18:37:01+0530","jobid":"8fc09350-f42a-4e04-9427-3d1b68f73dd0"} }'
+    result = { "queryasyncjobresultresponse" : {"accountid":"4a8c3cd0-a696-11e2-b7a5-1aab0c3b0463","userid":"4a8c671e-a696-11e2-b7a5-1aab0c3b0463","cmd":"org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd","jobstatus":1,"jobprocstatus":0,"jobresultcode":0,"jobresulttype":"object","jobresult":{"physicalnetwork":{"id":"e0bc9017-9ba8-4551-a6f9-6b3b2ac1d59c","name":"Sandbox-pnet","broadcastdomainrange":"ZONE","zoneid":"88e796cd-953a-44b9-9445-a7c3ee205cc2","state":"Disabled"}},"created":"2013-04-16T18:37:01+0530","jobid":"8fc09350-f42a-4e04-9427-3d1b68f73dd0"} }
     res = createPhysicalNetwork.createPhysicalNetworkResponse()
     res = getResultObj(result, res)
-    print res
+    print "PhysicalNetworkResponse %s" % res
+    print "PhysicalNetwork %s" % res.jobresult.id
 
-    result = '{ "listtemplatesresponse" : { } }'
+    result = { "listtemplatesresponse" : { } }
     print getResultObj(result, listTemplates.listTemplatesResponse())
 
     result = '''{
@@ -377,8 +385,3 @@ due to missing parameter jobid"
     vm = getResultObj(result,
                       deployVirtualMachine.deployVirtualMachineResponse())
     print vm.jobresult.id
-
-    cmd = deployVirtualMachine.deployVirtualMachineCmd()
-    responsename = cmd.__class__.__name__.replace("Cmd", "Response")
-    response = getclassFromName(cmd, responsename)
-    print response.id
