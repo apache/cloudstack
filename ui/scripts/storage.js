@@ -398,10 +398,16 @@
            
             if(args.context != null) {
               if("instances" in args.context) {
-							  $.extend(data, {
-								  virtualMachineId: args.context.instances[0].id
-								});
+		$.extend(data, {
+		  virtualMachineId: args.context.instances[0].id
+		});
               }
+            }
+
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data, {
+                zonetype: args.context.zoneType
+              });
             }
 
             $.ajax({

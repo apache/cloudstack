@@ -511,6 +511,20 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         return null;
     }
 
+    @Override
+    public List<LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
+        List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
+        List<LoadBalancer> siteLoadBalancers = new ArrayList<LoadBalancer>();
+        if (gslbLbMapVos != null) {
+            for (GlobalLoadBalancerLbRuleMapVO gslbLbMapVo : gslbLbMapVos) {
+                LoadBalancerVO loadBalancer = _lbDao.findById(gslbLbMapVo.getLoadBalancerId());
+                siteLoadBalancers.add(loadBalancer);
+            }
+            return siteLoadBalancers;
+        }
+        return null;
+    }
+
     private boolean applyGlobalLoadBalancerRuleConfig(long gslbRuleId, boolean revoke) throws ResourceUnavailableException {
 
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);

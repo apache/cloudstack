@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -433,6 +434,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         guru.finalizeExpunge(vm);
         //remove the overcommit detials from the uservm details
         _uservmDetailsDao.deleteDetails(vm.getId());
+
+        // send hypervisor-dependent commands before removing
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+        List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
+        if(finalizeExpungeCommands != null && finalizeExpungeCommands.size() > 0){
+            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+            if(hostId != null){
+                Commands cmds = new Commands(OnError.Stop);
+                for (Command command : finalizeExpungeCommands) {
+                    cmds.addCommand(command);
+                }
+                _agentMgr.send(hostId, cmds);
+                if(!cmds.isSuccessful()){
+                    for (Answer answer : cmds.getAnswers()){
+                        if(answer != null && !answer.getResult()){
+                            s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
+                            break;
+                        }
+                    }
+                    return false;
+                }
+            }
+        }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);

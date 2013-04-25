@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import java.util.List;
+
 @EntityReference(value= GlobalLoadBalancerRule.class)
 public class GlobalLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
 
@@ -75,6 +77,10 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain of the load balancer rule")
     private String domainName;
+
+    @SerializedName(ApiConstants.LOAD_BALANCER_RULE)
+    @Param(description="List of load balancer rules that are part of GSLB rule", responseObject = LoadBalancerResponse.class)
+    private List<LoadBalancerResponse> siteLoadBalancers;
 
     public void setRegionIdId(Integer regionId) {
         this.regionId = regionId;
@@ -129,5 +135,9 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public void setSiteLoadBalancers(List<LoadBalancerResponse> siteLoadBalancers) {
+        this.siteLoadBalancers = siteLoadBalancers;
     }
 }

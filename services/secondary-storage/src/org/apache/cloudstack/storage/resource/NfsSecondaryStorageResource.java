@@ -1291,6 +1291,17 @@ SecondaryStorageResource {
                 if (!found && f.getName().equals("template.properties")) {
                     found = true;
                 }
+
+                // KVM HA monitor makes a mess in the templates with its heartbeat tests
+                // Don't let this stop us from cleaning up the template
+                if (f.isDirectory() && f.getName().equals("KVMHA")) {
+                    s_logger.debug("Deleting KVMHA directory contents from template location");
+                    File[] haFiles = f.listFiles();
+                    for (File haFile : haFiles) {
+                        haFile.delete();
+                    }
+                }
+
                 if (!f.delete()) {
                     return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Template path "
                             + relativeTemplatePath);
@@ -1339,6 +1350,17 @@ SecondaryStorageResource {
                 if (!found && f.getName().equals("volume.properties")) {
                     found = true;
                 }
+
+                // KVM HA monitor makes a mess in the templates with its heartbeat tests
+                // Don't let this stop us from cleaning up the template
+                if (f.isDirectory() && f.getName().equals("KVMHA")) {
+                    s_logger.debug("Deleting KVMHA directory contents from template location");
+                    File[] haFiles = f.listFiles();
+                    for (File haFile : haFiles) {
+                        haFile.delete();
+                    }
+                }
+
                 if (!f.delete()) {
                     return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path "
                             + relativeVolumePath);

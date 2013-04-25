@@ -798,6 +798,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(globalLoadBalancerRule.getUuid());
         populateOwner(response, globalLoadBalancerRule);
         response.setObjectName("globalloadbalancer");
+
+        List<LoadBalancerResponse> siteLbResponses = new ArrayList<LoadBalancerResponse>();
+        List<? extends LoadBalancer> siteLoadBalaners = ApiDBUtils.listSiteLoadBalancers(globalLoadBalancerRule.getId());
+        for (LoadBalancer siteLb : siteLoadBalaners) {
+            LoadBalancerResponse siteLbResponse = createLoadBalancerResponse(siteLb);
+            siteLbResponses.add(siteLbResponse);
+        }
+        response.setSiteLoadBalancers(siteLbResponses);
         return response;
     }
 

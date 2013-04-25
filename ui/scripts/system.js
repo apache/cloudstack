@@ -258,24 +258,15 @@
           primaryStorageCount: function(data) {
             $.ajax({
               url: createURL('listStoragePools'),
-							data: {
-							  page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-							},
+	      data: {
+		page: 1,
+		pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+	      },
               success: function(json) {                
-								dataFns.secondaryStorageCount($.extend(data, {
+		dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
-                }));
-																
-								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
-								
-								/*
-								dataFns.systemVmCount($.extend(data, {
-                  primaryStorageCount: json.liststoragepoolsresponse.count ?
-                    json.liststoragepoolsresponse.count : 0
-                }));
-								*/
+                }));		
               }
             });
           },
@@ -5585,9 +5576,19 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    listAll: true 
+                  };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }
                   $.ajax({
                     url: createURL('listStoragePools' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.liststoragepoolsresponse.storagepool });
                     },
