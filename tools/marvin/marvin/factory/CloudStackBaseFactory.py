@@ -32,7 +32,7 @@ class CloudStackBaseFactory(factory.Factory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        if cls.apiclient:
+        if hasattr(cls, 'apiclient'):
             members = inspect.getmembers(target_class,
                 predicate=inspect.ismethod)
             creators = filter(lambda x: x[0] in CREATORS, members)

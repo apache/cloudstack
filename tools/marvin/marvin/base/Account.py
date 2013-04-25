@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 from marvin.base import CloudStackEntity
 from marvin.cloudstackAPI import enableAccount
 from marvin.cloudstackAPI import lockAccount
@@ -24,8 +25,8 @@ from marvin.cloudstackAPI import disableAccount
 from marvin.cloudstackAPI import deleteAccount
 from marvin.cloudstackAPI import markDefaultZoneForAccount
 
-class Account(CloudStackEntity.CloudStackEntity):
 
+class Account(CloudStackEntity.CloudStackEntity):
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -90,6 +91,7 @@ class Account(CloudStackEntity.CloudStackEntity):
         [setattr(cmd, key, value) for key,value in kwargs.iteritems()]
         account = apiclient.deleteAccount(cmd)
         return account
+
 
     def mark(self, apiclient, zoneid, **kwargs):
         cmd = markDefaultZoneForAccount.markDefaultZoneForAccountCmd()

@@ -20,11 +20,18 @@ from marvin.factory.CloudStackBaseFactory import CloudStackBaseFactory
 from marvin.base import Account
 from marvin.utils import random_gen
 
-@factory.use_strategy(new_strategy=factory.BUILD_STRATEGY)
 class AccountFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = Account.Account
 
+    accounttype = None
+    firstname = None
+    lastname = None
+    email = None
+    username = None
+    password = None
+
+class UserAccountFactory(AccountFactory):
     accounttype = 0
     firstname = factory.Sequence(lambda n: random_gen())
     lastname = factory.Sequence(lambda n: random_gen())
@@ -33,10 +40,10 @@ class AccountFactory(CloudStackBaseFactory):
     password = 'password'
 
 
-class AdminAccountFactory(AccountFactory):
+class AdminAccountFactory(UserAccountFactory):
     accounttype = 1
 
 
-class DomainAdminFactory(AccountFactory):
+class DomainAdminFactory(UserAccountFactory):
     accounttype = 2
     domainid = None

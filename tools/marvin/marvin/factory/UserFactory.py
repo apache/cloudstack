@@ -23,12 +23,12 @@ class UserFactory(CloudStackBaseFactory):
 
     FACTORY_FOR = User.User
 
-    account = factory.SubFactory(AccountFactory, apiclient=factory.SelfAttribute('..apiclient')).factory()
-    email = account.email
-    firstname = account.firstname
-    lastname = account.lastname
-    password = account.password
-    username = account.username
+    account = factory.SubFactory(AccountFactory, apiclient=factory.SelfAttribute('..apiclient'))
+    email = factory.SelfAttribute('account.email')
+    firstname = factory.SelfAttribute('account.firstname')
+    lastname = factory.SelfAttribute('account.lastname')
+    password = factory.SelfAttribute('account.password')
+    username = factory.SelfAttribute('account.name')
 
 class AdminUserFactory(UserFactory):
-    account = factory.SubFactory(AccountFactory, accounttype=1).factory()
+    account = factory.SubFactory(AccountFactory, accounttype=1)

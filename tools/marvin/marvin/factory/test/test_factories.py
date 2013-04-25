@@ -27,16 +27,12 @@ from marvin.factory.TemplateFactory import *
 from marvin.factory.VirtualMachineFactory import *
 from marvin.factory.UserFactory import *
 
-
 from marvin.base.ServiceOffering import ServiceOffering
 from marvin.base.Zone import Zone
 from marvin.base.Account import Account
 from marvin.base.Template import Template
 from marvin.base.IpAddress import IpAddress
 from marvin.base.Network import Network
-
-
-
 
 class BuildVsCreateStrategyTest(unittest.TestCase):
     def setUp(self):
@@ -45,9 +41,9 @@ class BuildVsCreateStrategyTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_buildAccountFactory(self):
-        af = AccountFactory()
-        self.assert_(af.username is not None, msg="Acount factory didn't initialize")
+    def test_buildUserAccountFactory(self):
+        af = UserAccountFactory()
+        self.assert_(af.account is not None, msg="Acount factory didn't initialize")
 
     def test_createAccountFactory(self):
         af = AccountFactory.create(apiclient=self.apiClient)
@@ -66,7 +62,7 @@ class AccountFactoryTest(unittest.TestCase):
         self.assert_(accnt.account.name is not None)
 
     def test_userAccountFactoryCustomArgs(self):
-        accnt = AccountFactory.create(apiclient=self.apiClient, firstname='test', lastname='test')
+        accnt = UserAccountFactory.create(apiclient=self.apiClient, firstname='test', lastname='test')
         a = accnt.list(apiclient=self.apiClient, account=accnt.account.username, domainid=accnt.account.domainid)
         self.assert_(accnt is not None, msg="no account created by factory")
         self.assert_(accnt.account.name is not None)
@@ -147,7 +143,7 @@ class UserFactorySubFactoryTest(unittest.TestCase):
 
     def test_userSubFactory(self):
         uf = UserFactory.create(apiclient=self.apiClient)
-        user = User.list(apiclient=self.apiClient, username=uf.account.username)
+        user = User.list(apiclient=self.apiClient, username=uf.username)
         self.assert_(uf.username == user[0].username, msg="Usernames don't match")
 
 
