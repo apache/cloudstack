@@ -177,7 +177,10 @@ public interface UserVmService {
      *            TODO
      * @param defaultIp
      *            TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
+     *
      * @param accountName
      *            - an optional account for the virtual machine. Must be used
      *            with domainId
@@ -197,9 +200,9 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+        String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
 	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIp, String keyboard, List<Long> affinityGroupIdList)
+	    IpAddresses defaultIp, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -250,7 +253,10 @@ public interface UserVmService {
      *            TODO
      * @param defaultIps
      *            TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
+     *
      * @param accountName
      *            - an optional account for the virtual machine. Must be used
      *            with domainId
@@ -270,8 +276,8 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
-            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData, String sshKeyPair,
-	    Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList)
+        Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData, String sshKeyPair,
+	    Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -319,7 +325,10 @@ public interface UserVmService {
      *            TODO
      * @param defaultIps
      *            TODO
+     * @param displayVm
+     *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
+     *
      * @param accountName
      *            - an optional account for the virtual machine. Must be used
      *            with domainId
@@ -340,8 +349,9 @@ public interface UserVmService {
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
             String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList)
+	        HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
+	        IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList)
+
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**

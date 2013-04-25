@@ -156,6 +156,7 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
         this(that.getSize(), that.getVolumeType(), that.getName(), that.getTemplateId());
         this.recreatable = that.isRecreatable();
         this.state = that.getState();
+
         this.size = that.getSize();
         this.diskOfferingId = that.getDiskOfferingId();
         this.poolId = that.getPoolId();
@@ -413,4 +414,5 @@ public class VolumeVO implements Identity, StateObject<Volume.State> {
     public void setDiskType(DiskFormat type) {
         diskType = type;
     }
+
 }

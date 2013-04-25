@@ -166,6 +166,9 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";
     public static final String EVENT_VOLUME_MIGRATE = "VOLUME.MIGRATE";
     public static final String EVENT_VOLUME_RESIZE = "VOLUME.RESIZE";
+    public static final String EVENT_VOLUME_DETAIL_UPDATE = "VOLUME.DETAIL.UPDATE";
+    public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
+    public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";

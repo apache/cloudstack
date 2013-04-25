@@ -93,9 +93,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param numGibibytes
      * @param tags
      * @param isCustomized
+     * @param localStorageRequired
+     * @param isDisplayOfferingEnabled
      * @return newly created disk offering
      */
-    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired);
+    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled);
 
     /**
      * Creates a new pod

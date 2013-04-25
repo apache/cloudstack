@@ -162,7 +162,18 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     
     @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
     private String ip6Cidr;
-    
+
+    @SerializedName(ApiConstants.DISPLAY_NETWORK) @Param(description="an optional field, whether to the display the network to the end user or not.")
+    private Boolean displayNetwork;
+
+    public Boolean getDisplayNetwork() {
+        return displayNetwork;
+    }
+
+    public void setDisplayNetwork(Boolean displayNetwork) {
+        this.displayNetwork = displayNetwork;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

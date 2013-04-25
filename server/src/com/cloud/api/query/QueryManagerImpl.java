@@ -16,12 +16,7 @@
 // under the License.
 package com.cloud.api.query;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -29,6 +24,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -45,28 +42,12 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumeDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -244,6 +225,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private DomainRouterDao _routerDao;
+
+    @Inject
+    private VolumeDetailsDao _volumeDetailDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1506,6 +1490,34 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(new VolumeJoinVO[result.first().size()]));
         response.setResponses(volumeResponses, result.second());
         return response;
+    }
+
+    @Override
+    public List<VolumeDetailResponse> searchForVolumeDetails(ListVolumeDetailsCmd cmd){
+
+        Long id = cmd.getId();
+        String name = cmd.getName();
+
+        List<VolumeDetailVO> volumeDetailList;
+        if(name == null){
+            volumeDetailList = _volumeDetailDao.findDetails(id);
+        }else{
+            VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, name);
+            volumeDetailList = new LinkedList<VolumeDetailVO>();
+            volumeDetailList.add(volumeDetail);
+        }
+
+        List<VolumeDetailResponse> volumeDetailResponseList = new ArrayList<VolumeDetailResponse>();
+        for (VolumeDetailVO volumeDetail : volumeDetailList ){
+            VolumeDetailResponse volumeDetailResponse = new VolumeDetailResponse();
+            volumeDetailResponse.setId(id.toString());
+            volumeDetailResponse.setName(volumeDetail.getName());
+            volumeDetailResponse.setValue(volumeDetail.getValue());
+            volumeDetailResponse.setObjectName("volumedetail");
+            volumeDetailResponseList.add(volumeDetailResponse);
+        }
+
+        return volumeDetailResponseList;
     }
 
 

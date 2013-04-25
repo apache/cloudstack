@@ -58,8 +58,20 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
 
+    @SerializedName("displayoffering") @Param(description="whether to display the offering to the end user or not.")
+    private Boolean displayOffering;
+
+    public Boolean getDisplayOffering() {
+        return displayOffering;
+    }
+
+    public void setDisplayOffering(Boolean displayOffering) {
+        this.displayOffering = displayOffering;
+    }
+
     public String getId() {
         return id;
+
     }
 
     public void setId(String id) {

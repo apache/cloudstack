@@ -319,6 +319,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean getSpecifyIpRanges();
 
+    boolean getDisplayNetwork();
+
     /**
      * @return
      */

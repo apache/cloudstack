@@ -2394,6 +2394,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getAclType() != null) {
             response.setAclType(network.getAclType().toString());
         }
+        response.setDisplayNetwork(network.getDisplayNetwork());
         response.setState(network.getState().toString());
         response.setRestartRequired(network.isRestartRequired());
         NetworkVO nw = ApiDBUtils.findNetworkById(network.getRelated());

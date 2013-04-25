@@ -126,6 +126,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
+    @Parameter(name=ApiConstants.DISPLAY_NETWORK, type=CommandType.BOOLEAN, description="an optional field, whether to the display the network to the end user or not.")
+    private Boolean displayNetwork;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -187,6 +190,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public Boolean getDisplayNetwork() {
+        return displayNetwork;
     }
 
     public Long getZoneId() {

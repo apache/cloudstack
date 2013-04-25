@@ -1572,6 +1572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
+        Boolean isDisplayVmEnabled = cmd.getDisplayVm();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
@@ -1603,6 +1604,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (ha == null) {
             ha = vmInstance.isHaEnabled();
+        }
+
+        if (isDisplayVmEnabled == null) {
+            isDisplayVmEnabled = vmInstance.isDisplayVm();
         }
 
         UserVmVO vm = _vmDao.findById(id);
@@ -1653,7 +1658,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData);
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled);
 
         if (updateUserdata) {
             boolean result = updateUserDataInternal(_vmDao.findById(id));
@@ -1945,9 +1950,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group,
 	    HypervisorType hypervisor, HTTPMethod httpmethod, String userData, String sshKeyPair,
-	    Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard,
+	    Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
 	    List<Long> affinityGroupIdList)
-                    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -1997,16 +2002,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
                 diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPair, hypervisor,
-		caller, requestedIps, defaultIps, keyboard, affinityGroupIdList);
+		caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList);
+
     }
 
     @Override
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId,
-	    Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
-            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard,
-	    List<Long> affinityGroupIdList) throws InsufficientCapacityException, ConcurrentOperationException,
-	    ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+	        Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
+            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
+	        List<Long> affinityGroupIdList) throws InsufficientCapacityException, ConcurrentOperationException,
+	        ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -2113,15 +2119,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
                 diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPair, hypervisor,
-		caller, requestedIps, defaultIps, keyboard, affinityGroupIdList);
+		        caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList);
     }
 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+        String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
 	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList)
-                    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+	    IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList)
+        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -2165,7 +2171,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException(
@@ -2230,7 +2236,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
 		diskSize, networkList, null, group, httpmethod, userData, sshKeyPair, hypervisor, caller, requestedIps,
-		defaultIps, keyboard, affinityGroupIdList);
+		defaultIps, displayvm, keyboard, affinityGroupIdList);
     }
 
 
@@ -2243,9 +2249,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @DB @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
-            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod,
+        Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod,
 	    String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList)
+	    IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList)
                     throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, true, owner);
@@ -2510,6 +2516,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         } else {
             hypervisorType = template.getHypervisorType();
         }
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVmVO vm = new UserVmVO(id, instanceName, displayName,
@@ -2528,6 +2535,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (isIso) {
             vm.setIsoId(template.getId());
+        }
+
+        if(displayvm != null){
+            vm.setDisplayVm(displayvm);
+        }else {
+            vm.setDisplayVm(true);
         }
 
         // If hypervisor is vSphere, check for clone type setting.
@@ -4003,7 +4016,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                     requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).getIsPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);

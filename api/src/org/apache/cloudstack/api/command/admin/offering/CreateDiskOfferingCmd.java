@@ -62,7 +62,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
-    /////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
+    private Boolean displayOffering;
+
+/////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -92,6 +95,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public String getStorageType() {
         return storageType;
+    }
+
+    public Boolean getDisplayOffering() {
+        return displayOffering;
     }
 
     /////////////////////////////////////////////////////

@@ -18,12 +18,7 @@
  */
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.*;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -79,4 +74,10 @@ public interface VolumeApiService {
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
+
+    void updateVolumeDetails(UpdateVolumeDetailCmd updateVolumeDetailCmd);
+
+    void removeVolumeDetail(RemoveVolumeDetailCmd removeVolumeDetailCmd);
+
+    void addVolumeDetail(AddVolumeDetailCmd addVolumeDetailCmd);
 }

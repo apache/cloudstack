@@ -2480,7 +2480,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
-
+        cmdList.add(AddVolumeDetailCmd.class);
+        cmdList.add(UpdateVolumeDetailCmd.class);
+        cmdList.add(RemoveVolumeDetailCmd.class);
+        cmdList.add(ListVolumeDetailsCmd.class);
+        cmdList.add(AddNicDetailCmd.class);
+        cmdList.add(UpdateNicDetailCmd.class);
+        cmdList.add(RemoveNicDetailCmd.class);
         return cmdList;
     }
 

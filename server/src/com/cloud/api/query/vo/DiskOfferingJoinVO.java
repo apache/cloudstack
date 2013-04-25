@@ -85,6 +85,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="domain_path")
     private String domainPath = null;
 
+    @Column(name="display_offering")
+    boolean displayOffering;
+
 
     public DiskOfferingJoinVO() {
     }
@@ -162,6 +165,14 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public void setCustomized(boolean customized) {
         this.customized = customized;
+    }
+
+    public boolean isDisplayOffering() {
+        return displayOffering;
+    }
+
+    public void setDisplayOffering(boolean displayOffering) {
+        this.displayOffering = displayOffering;
     }
 
     public Date getCreated() {

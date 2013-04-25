@@ -100,6 +100,9 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="sort_key")
     int sortKey;
 
+    @Column(name="display_offering")
+    boolean displayOffering;
+
     public DiskOfferingVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -314,5 +317,14 @@ public class DiskOfferingVO implements DiskOffering {
     
     public void setRecreatable(boolean recreatable) {
     	this.recreatable = recreatable;
+    }
+
+
+    public boolean getDisplayOffering() {
+        return displayOffering;
+    }
+
+    public void setDisplayOffering(boolean displayOffering) {
+        this.displayOffering = displayOffering;
     }
 }

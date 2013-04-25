@@ -36,14 +36,10 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.dao.*;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.api.command.user.volume.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -122,18 +118,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolWorkDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -301,6 +285,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VolumeDetailsDao _volDetailDao;
     @Inject
     ManagementServer _msServer;
     @Inject
@@ -817,6 +803,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Account caller = UserContext.current().getCaller();
 
         long ownerId = cmd.getEntityOwnerId();
+        Boolean displayVolumeEnabled = cmd.getDisplayVolume();
 
         // permission check
         _accountMgr.checkAccess(caller, null, true,
@@ -889,6 +876,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
+            }
+
+            if(displayVolumeEnabled == null){
+                displayVolumeEnabled = true;
             }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
@@ -971,6 +962,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
                 .getDomainId());
+        volume.setDisplayVolume(displayVolumeEnabled);
         if (parentVolume != null) {
             volume.setTemplateId(parentVolume.getTemplateId());
         }  else {
@@ -1780,6 +1772,66 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
     }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_UPDATE, eventDescription = "updating volume detail", async = true)
+    public void updateVolumeDetails(UpdateVolumeDetailCmd cmd){
+        UserContext.current().setEventDetails("Volume Id: "+cmd.getId());
+        Account caller = UserContext.current().getCaller();
+        Long volumeId = cmd.getId();
+        String name = cmd.getName();
+        String value = cmd.getValue();
+
+        VolumeVO volume = _volsDao.findById(volumeId);
+        _accountMgr.checkAccess(caller, null, true, volume);
+        VolumeDetailVO volDetail = _volDetailDao.findDetail(volumeId, name);
+        if(volDetail != null){
+            volDetail.setValue(value);
+             _volDetailDao.update(volDetail.getId(), volDetail);
+        }else{
+            throw new InvalidParameterValueException("This detail doesnt exist for the volume ");
+        }
+
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_REMOVE, eventDescription = "removing volume detail", async = true)
+    public void removeVolumeDetail(RemoveVolumeDetailCmd cmd){
+        UserContext.current().setEventDetails("Volume Id: "+cmd.getId());
+        Account caller = UserContext.current().getCaller();
+        Long volumeId = cmd.getId();
+        String name = cmd.getName();
+
+        VolumeVO volume = _volsDao.findById(volumeId);
+        _accountMgr.checkAccess(caller, null, true, volume);
+        VolumeDetailVO volDetail = _volDetailDao.findDetail(volumeId, name);
+        if(volDetail != null){
+            _volDetailDao.remove(volDetail.getId());
+        }else{
+            throw new InvalidParameterValueException("This detail doesnt exist for the volume ");
+        }
+
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_ADD, eventDescription = "adding volume detail", async = true)
+    public void addVolumeDetail(AddVolumeDetailCmd cmd){
+
+        Account caller = UserContext.current().getCaller();
+        UserContext.current().setEventDetails("Volume Id: "+ cmd.getId());
+
+        Long volumeId = cmd.getId();
+        String name = cmd.getName();
+        String value = cmd.getValue();
+
+        VolumeVO volume = _volsDao.findById(volumeId);
+        _accountMgr.checkAccess(caller, null, true, volume);
+        VolumeDetailVO volDetail = new VolumeDetailVO(volumeId, name, value);
+        _volDetailDao.persist(volDetail);
+    }
+
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)

@@ -111,6 +111,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="ha_enabled", updatable=true, nullable=true)
     protected boolean haEnabled;
 
+    @Column(name="display_vm", updatable=true, nullable=false)
+    protected boolean displayVm = true;
+
     @Column(name="limit_cpu_use", updatable=true, nullable=true)
     private boolean limitCpuUse;
 
@@ -374,6 +377,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public boolean isHaEnabled() {
         return haEnabled;
+    }
+
+    public boolean isDisplayVm() {
+        return displayVm;
+    }
+
+    public void setDisplayVm(boolean displayVm) {
+        this.displayVm = displayVm;
     }
 
     @Override

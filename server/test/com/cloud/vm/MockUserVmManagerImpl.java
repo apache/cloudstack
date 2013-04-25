@@ -23,7 +23,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
@@ -339,11 +342,10 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         return null;
     }
 
-    @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
 	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-            IpAddresses defaultIp, String keyboard, List<Long> affinityGroupIdList)
+            IpAddresses defaultIp, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList)
 	    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
             ResourceAllocationException {
         // TODO Auto-generated method stub
@@ -355,7 +357,7 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize,
 	    String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
             String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps,
-	    String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
+            Boolean displayVm, String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
 	    ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -365,7 +367,7 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
             String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
 	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIps, String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
+	    IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList) throws InsufficientCapacityException,
 	    ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
