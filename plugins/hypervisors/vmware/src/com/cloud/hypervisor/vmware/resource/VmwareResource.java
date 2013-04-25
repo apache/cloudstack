@@ -2856,10 +2856,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
 
                     if (getVmState(vmMo) != State.Stopped) {
-
-                        // before we stop VM, remove all possible snapshots on the VM to let
-                        // disk chain be collapsed
-                        s_logger.info("Remove all snapshot before stopping VM " + cmd.getVmName());
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
