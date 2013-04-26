@@ -19,6 +19,8 @@ package com.cloud.async;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+
+import com.cloud.utils.Predicate;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
@@ -38,6 +40,9 @@ public interface AsyncJobManager extends Manager {
     public void releaseSyncSource();
     
     public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
+    
+    public boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 
+    	long timeoutInMiliseconds, Predicate predicate);
     
     /**
      * Queries for the status or final result of an async job.

@@ -151,9 +151,8 @@
           <argLine>-Xmx1024m</argLine>
           <excludes>
             <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
-              <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
-              <exclude>com/cloud/upgrade/AdvanceZone217To224UpgradeTest</exclude>
-            <exclude>com/cloud/async/*</exclude>
+            <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
+            <exclude>com/cloud/upgrade/AdvanceZone217To224UpgradeTest</exclude>
             <exclude>com/cloud/cluster/*</exclude>
             <exclude>com/cloud/snapshot/*</exclude>
             <exclude>com/cloud/storage/dao/*</exclude>

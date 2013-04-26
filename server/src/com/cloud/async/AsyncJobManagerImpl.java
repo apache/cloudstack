@@ -36,6 +36,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -54,6 +56,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Predicate;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -81,6 +84,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private AsyncJobDao _jobDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
+    @Inject private MessageBus _messageBus;
 
     // property
     private String defaultDispatcher;
@@ -489,6 +493,25 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _queueMgr.purgeItem(executionContext.getSyncSource().getId());
             checkQueue(executionContext.getSyncSource().getQueueId());
     	}
+    }
+    
+    public boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 
+        long timeoutInMiliseconds, Predicate predicate) {
+    	
+    	MessageDetector msgDetector = new MessageDetector();
+    	msgDetector.open(_messageBus, wakupSubjects);
+    	try {
+    		long startTick = System.currentTimeMillis();
+    		while(System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
+    			msgDetector.waitAny(checkIntervalInMilliSeconds);
+    			if(predicate.checkCondition())
+    				return true;
+    		}
+    	} finally {
+    		msgDetector.close();
+    	}
+    	
+    	return false;
     }
 
     private void checkQueue(long queueId) {

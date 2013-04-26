@@ -624,7 +624,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 return null;
             }
         } catch (final AgentUnavailableException e) {
-            s_logger.debug("Agnet is not available" + e.getMessage());
+            s_logger.	debug("Agnet is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
             s_logger.debug("operation timed out: " + e.getMessage());
         } catch (ConcurrentOperationException e) {

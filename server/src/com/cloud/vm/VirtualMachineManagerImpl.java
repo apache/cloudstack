@@ -38,6 +38,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
+import org.apache.cloudstack.messagebus.SubjectConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.dc.*;
@@ -237,6 +240,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ConfigurationDao _configDao;
     @Inject
     VolumeManager volumeMgr;
+    
+    @Inject protected MessageBus _messageBus;
+    @Inject protected VirtualMachinePowerStateSync _syncMgr;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -448,7 +454,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _nodeId = _clusterMgr.getManagementNodeId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
-
+      
         return true;
     }
 
@@ -2294,7 +2300,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean processDisconnect(long agentId, Status state) {
         return true;
     }
-
+    
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+        if (!(cmd instanceof StartupRoutingCommand)) {
+            return;
+        }
+        
+        _syncMgr.resetHostSyncState(agent.getId());
+    }
+    
+/*    
     @Override
     public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
@@ -2317,12 +2332,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
 
-/* TODO            
             HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
             if (allStates != null){
                 this.fullSync(clusterId, allStates);
             }
-*/
             // initiate the cron job
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()), clusterId);
             try {
@@ -2335,7 +2348,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         else { // for others KVM and VMWare 
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
 
-/*
             Commands commands = fullHostSync(agentId, startup);
 
             if (commands.size() > 0) {
@@ -2361,10 +2373,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new ConnectionException(true, "Unable to sync", e);
                 }
             }
-*/
         }
     }
-
+*/
+    
     protected class TransitionTask implements Runnable {
         @Override
         public void run() {

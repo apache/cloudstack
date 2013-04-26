@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.cloud.async.AsyncJobManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
@@ -39,6 +40,7 @@ public class TestAsyncJobManager extends TestCase {
 
     @Inject AsyncJobManager asyncMgr;
     @Inject ClusterManager clusterMgr;
+    @Inject MessageBus messageBus;
 
     @Before                                                  
     public void setUp() {                                    
@@ -55,5 +57,30 @@ public class TestAsyncJobManager extends TestCase {
     
     @Test
     public void test() {
+		Thread thread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for(int i = 0; i < 2; i++) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+					}
+					messageBus.publish(null, "VM", PublishScope.GLOBAL, null);
+				}
+			}
+		});
+		thread.start();
+    	
+    	asyncMgr.waitAndCheck("VM", 5000, 10000, new Predicate() {
+    		public boolean checkCondition() {
+    			s_logger.info("Check condition to exit");
+    			return false;
+    		}
+    	});
+    	
+    	try {
+    		thread.join();
+    	} catch(InterruptedException e) {
+    	}
     }
 }
