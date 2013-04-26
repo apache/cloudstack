@@ -1786,6 +1786,7 @@ div.list-view td.state.off span {
 .detail-view .details.group-multiple {
   float: left;
   width: 100%;
+  margin-bottom: 30px;
 }
 
 .detail-view .details.group-multiple .main-groups {
@@ -2036,20 +2037,22 @@ div.detail-group.actions td {
   background: none;
   display: block;
   height: 35px;
+  float: right;
   padding: 0;
 }
 
 .details.group-multiple div.detail-group.actions .detail-actions .action {
-  float: right;
-  /*+placement:shift 2px 7px;*/
+  float: left;
+  width: 32px;
+  /*+placement:shift 11px 7px;*/
   position: relative;
-  left: 2px;
+  left: 11px;
   top: 7px;
 }
 
 .details.group-multiple div.detail-group.actions .detail-actions .action a {
   background: none;
-  width: 34px;
+  width: 31px;
 }
 
 .detail-group table td.detail-actions {
