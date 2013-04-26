@@ -109,7 +109,7 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     private String domainPath = null;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -324,11 +324,11 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
         this.loginAttempts = loginAttempts;
     }
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
