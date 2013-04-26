@@ -32,6 +32,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -46,6 +47,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 	protected SearchBuilder<DomainVO> DomainPairSearch;
 	protected SearchBuilder<DomainVO> ImmediateChildDomainSearch;
 	protected SearchBuilder<DomainVO> FindAllChildrenSearch;
+	protected GenericSearchBuilder<DomainVO, Long> FindIdsOfAllChildrenSearch;
 	protected SearchBuilder<DomainVO> AllFieldsSearch;
 	
 	public DomainDaoImpl () {
@@ -70,7 +72,12 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		FindAllChildrenSearch.and("path", FindAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
 		FindAllChildrenSearch.and("id", FindAllChildrenSearch.entity().getId(), SearchCriteria.Op.NEQ);
 		FindAllChildrenSearch.done();
-		
+
+		FindIdsOfAllChildrenSearch = createSearchBuilder(Long.class);
+		FindIdsOfAllChildrenSearch.selectField(FindIdsOfAllChildrenSearch.entity().getId());
+		FindIdsOfAllChildrenSearch.and("path", FindIdsOfAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+		FindIdsOfAllChildrenSearch.done();
+
 		AllFieldsSearch = createSearchBuilder();
 		AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
 		AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -221,7 +228,14 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     	sc.setParameters("id", parentId);
     	return listBy(sc);
     }
-    
+
+    @Override
+    public List<Long> getDomainChildrenIds(String path){
+        SearchCriteria<Long> sc = FindIdsOfAllChildrenSearch.create();
+        sc.setParameters("path", path+"%");
+        return customSearch(sc, null);
+    }
+
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         if ((parentId == null) || (childId == null)) {

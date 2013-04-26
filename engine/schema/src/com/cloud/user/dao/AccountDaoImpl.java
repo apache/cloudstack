@@ -35,8 +35,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Component
@@ -54,7 +56,8 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
-    
+    protected final GenericSearchBuilder<AccountVO, Long> AccountIdsSearch;
+
     public AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountName", AllFieldsSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
@@ -91,6 +94,11 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         NonProjectAccountSearch.and("state", NonProjectAccountSearch.entity().getState(), SearchCriteria.Op.EQ);
         NonProjectAccountSearch.and("type", NonProjectAccountSearch.entity().getType(), SearchCriteria.Op.NEQ);
         NonProjectAccountSearch.done();
+
+        AccountIdsSearch = createSearchBuilder(Long.class);
+        AccountIdsSearch.selectField(AccountIdsSearch.entity().getId());
+        AccountIdsSearch.and("ids", AccountIdsSearch.entity().getDomainId(), Op.IN);
+        AccountIdsSearch.done();
     }
     
     @Override
@@ -263,5 +271,12 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         	}
 		}
 	}
-	
+
+    @Override
+    public List<Long> getAccountIdsForDomains(List<Long> domainIds) {
+        SearchCriteria<Long> sc = AccountIdsSearch.create();
+        sc.setParameters("ids", domainIds.toArray(new Object[domainIds.size()]));
+        return customSearch(sc, null);
+    }
+
 }
