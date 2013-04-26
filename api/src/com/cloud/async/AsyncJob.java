@@ -22,37 +22,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface AsyncJob extends Identity, InternalIdentity {
-/*	
-    public enum Type {
-        None,
-        VirtualMachine,
-        DomainRouter,
-        Volume,
-        ConsoleProxy,
-        Snapshot,
-        Template,
-        Iso,
-        SystemVm,
-        Host,
-        StoragePool,
-        IpAddress,
-        SecurityGroup,
-        PhysicalNetwork,
-        TrafficType,
-        PhysicalNetworkServiceProvider,
-        FirewallRule,
-        Account,
-        User,
-        PrivateGateway,
-        StaticRoute,
-        Counter,
-        Condition,
-        AutoScalePolicy,
-        AutoScaleVmProfile,
-        AutoScaleVmGroup,
-        GlobalLoadBalancerRule
-    }
- */   
     Long getParentId();
     
     String getType();

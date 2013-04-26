@@ -1433,7 +1433,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO to = hvGuru.implement(profile);
         return to;
-    }
+    	}
 
     protected void cancelWorkItems(long nodeId) {
         GlobalLock scanLock = GlobalLock.getInternLock("vmmgr.cancel.workitem");

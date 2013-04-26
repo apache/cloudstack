@@ -19,7 +19,8 @@ package com.cloud.async;
 import javax.inject.Inject;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,20 +31,20 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.async.AsyncJobManager;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/AsyncJobTestContext.xml")
 public class TestAsyncJobManager extends TestCase {
-    public static final Logger s_logger = Logger.getLogger(TestAsyncJobManager.class.getName());
 
     @Inject AsyncJobManager asyncMgr;
     @Inject ClusterManager clusterMgr;
     @Inject MessageBus messageBus;
 
     @Before                                                  
-    public void setUp() {                                    
+    public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
     	Mockito.when(clusterMgr.getManagementNodeId()).thenReturn(1L);
     	
@@ -65,15 +66,16 @@ public class TestAsyncJobManager extends TestCase {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 					}
+					System.out.println("Publish wakeup message");
 					messageBus.publish(null, "VM", PublishScope.GLOBAL, null);
 				}
 			}
 		});
 		thread.start();
     	
-    	asyncMgr.waitAndCheck("VM", 5000, 10000, new Predicate() {
+    	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {
-    			s_logger.info("Check condition to exit");
+    			System.out.println("Check condition to exit");
     			return false;
     		}
     	});
