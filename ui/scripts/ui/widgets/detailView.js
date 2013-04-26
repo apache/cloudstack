@@ -302,29 +302,36 @@
     },
 
     remove: function($detailView, args) {
+      var tab = args.tabs[args.activeTab];
+      var isMultiple = tab.multiple;
+
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
-          var $browser = $('#browser .container');
-          var $panel = $detailView.closest('.panel');
+          if (isMultiple) {
+            $detailView.find('.refresh').click(); // Reload tab
+          } else {
+            var $browser = $('#browser .container');
+            var $panel = $detailView.closest('.panel');
 
-          if ($detailView.is(':visible')) {
-            $browser.cloudBrowser('selectPanel', {
-              panel: $panel.prev()
-            });
-          }
-
-          if($detailView.data("list-view-row") != null) {
-            var $row = $detailView.data('list-view-row');
-            var $tbody = $row.closest('tbody');
-
-            $row.remove();
-            if(!$tbody.find('tr').size()) {
-              $("<tr>").addClass('empty').append(
-                $("<td>").html(_l('label.no.data'))
-              ).appendTo($tbody);
+            if ($detailView.is(':visible')) {
+              $browser.cloudBrowser('selectPanel', {
+                panel: $panel.prev()
+              });
             }
-            $tbody.closest('table').dataTable('refresh');
+
+            if($detailView.data("list-view-row") != null) {
+              var $row = $detailView.data('list-view-row');
+              var $tbody = $row.closest('tbody');
+
+              $row.remove();
+              if(!$tbody.find('tr').size()) {
+                $("<tr>").addClass('empty').append(
+                  $("<td>").html(_l('label.no.data'))
+                ).appendTo($tbody);
+              }
+              $tbody.closest('table').dataTable('refresh');
+            }
           }
         }
       });

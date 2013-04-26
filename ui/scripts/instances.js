@@ -1491,7 +1491,7 @@
               },
 
               // Remove NIC/Network from VM
-              destroy: {
+              remove: {
                 label: 'label.action.delete.nic',
                 messages: {
                   confirm: function(args) {
