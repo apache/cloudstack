@@ -64,7 +64,6 @@
     standard: function($detailView, args, additional) {
       var tab = args.tabs[args.activeTab];
       var isMultiple = tab.multiple;
-      
       var action = isMultiple ? tab.actions[args.actionName] : args.actions[args.actionName];
       var preAction = action.preAction;
       var notification = action.notification ?
@@ -999,7 +998,8 @@
     $tabContent.html('');
 
     var targetTabID = $tabContent.data('detail-view-tab-id');
-    var tabs = args.tabs[targetTabID];
+    var tabList = args.tabs;
+    var tabs = tabList[targetTabID];
     var dataProvider = tabs.dataProvider;
     var isMultiple = tabs.multiple || tabs.isMultiple;
     var viewAllArgs = args.viewAll;
@@ -1111,7 +1111,12 @@
                 ).click(function() {
                   uiActions.standard(
                     $detailView,
-                    { actions: tabData.actions, actionName: 'add' }, {
+                    {
+                      tabs: tabList,
+                      activeTab: targetTabID,
+                      actions: tabData.actions,
+                      actionName: 'add'
+                    }, {
                       noRefresh: true,
                       complete: function(args) {
                         if ($detailView.is(':visible')) {
