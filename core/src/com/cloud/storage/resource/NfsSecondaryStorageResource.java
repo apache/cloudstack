@@ -96,6 +96,7 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
@@ -130,6 +131,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String SNAPSHOT_ROOT_DIR = "snapshots";
+    private static final String VOLUME_ROOT_DIR = "volumes";
 
     int _timeout;
 
@@ -323,6 +325,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
     }
 
+    @SuppressWarnings("unchecked")
+    protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
+        return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
+    }
+
 
     @SuppressWarnings("unchecked")
     private String determineStorageTemplatePath(final String storagePath, String dataPath) {
@@ -401,10 +408,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             final String bucket = s3.getBucketName();
-            // convention is no / in the end for install path based on S3Utils implementation.
-            String path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
-            // template key is
-            // TEMPLATE_ROOT_DIR/account_id/template_id/template_name
+            String path = null;
+            if (cmd.getResourceType() == ResourceType.TEMPLATE) {
+                // convention is no / in the end for install path based on
+                // S3Utils implementation.
+                // template key is
+                // TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by adding template_name in the key, I can avoid generating a template.properties file
+                // for listTemplateCommand.
+                path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
+            } else {
+                path = determineS3VolumeDirectory(cmd.getAccountId(), cmd.getResourceId());
+            }
+
             String key = join(asList(path, urlObj.getFile()), S3Utils.SEPARATOR);
             S3Utils.putObject(s3, in, bucket, key);
             List<S3ObjectSummary> s3Obj = S3Utils.getDirectory(s3, bucket, path);

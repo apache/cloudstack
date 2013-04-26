@@ -21,6 +21,7 @@ import java.net.URI;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -125,36 +126,41 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	    this.resourceType = that.resourceType;
 	}
 
-	public DownloadCommand(DataStoreTO store, String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
+	public DownloadCommand(DataStoreTO store, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), template.getUrl(), template.getFormat(), template.getAccountId());
 	    this._store = store;
 	    this.hvm = template.isRequiresHvm();
 	    this.checksum = template.getChecksum();
 	    this.id = template.getId();
 	    this.description = template.getDisplayText();
-	    this.setSecUrl(secUrl);
+        if (store instanceof NfsTO) {
+            this.setSecUrl(((NfsTO) store).getUrl());
+        }
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	    this.resourceId = template.getId();
 	}
 
-	public DownloadCommand(String secUrl, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
+	public DownloadCommand(DataStoreTO store, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
 	    super(volume.getName(), url, format, volume.getAccountId());
 	    //this.hvm = volume.isRequiresHvm();
 	    this.checksum = checkSum;
 	    this.id = volume.getId();
-	    this.setSecUrl(secUrl);
+	    this._store = store;
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	    this.resourceType = ResourceType.VOLUME;
+	    this.resourceId = volume.getId();
 	}
 
-	public DownloadCommand(DataStoreTO store, String secUrl, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
+	public DownloadCommand(DataStoreTO store, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), url, template.getFormat(), template.getAccountId());
         this._store = store;
 	    this.hvm = template.isRequiresHvm();
         this.checksum = template.getChecksum();
         this.id = template.getId();
         this.description = template.getDisplayText();
-        this.setSecUrl(secUrl);
+        if (store instanceof NfsTO) {
+            this.setSecUrl(((NfsTO) store).getUrl());
+        }
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 		auth = new PasswordAuth(user, passwd);
 	}

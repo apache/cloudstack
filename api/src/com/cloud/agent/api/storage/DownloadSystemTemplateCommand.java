@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import java.net.URI;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
