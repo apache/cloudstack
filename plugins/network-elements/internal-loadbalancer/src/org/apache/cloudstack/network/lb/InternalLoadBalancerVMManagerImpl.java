@@ -550,7 +550,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     ResourceUnavailableException {
         DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb vm by id");
+            throw new InvalidParameterValueException("Can't find internal lb vm by id specified");
         }
         
         return stopInternalLbVm(internalLbVm, forced, caller, callerUserId);

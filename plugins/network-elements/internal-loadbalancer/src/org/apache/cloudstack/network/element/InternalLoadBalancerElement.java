@@ -103,12 +103,14 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     protected InternalLoadBalancerElement() {
     }
     
+    
     public static InternalLoadBalancerElement getInstance() {
         if ( internalLbElement == null) {
             internalLbElement = new InternalLoadBalancerElement();
         }
         return internalLbElement;
      }
+    
     
     private boolean canHandle(Network config, Scheme lbScheme) {
         //works in Advance zone only
@@ -141,16 +143,19 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return true;
     }
 
+    
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }
 
+    
     @Override
     public Provider getProvider() {
         return Provider.InternalLbVm;
     }
 
+    
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
@@ -187,6 +192,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return true;
     }
 
+    
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
@@ -229,6 +235,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return true;
     }
 
+    
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
@@ -253,6 +260,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return result;
     }
 
+    
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
@@ -267,6 +275,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return result;
     }
 
+    
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), 
@@ -277,6 +286,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return element.isEnabled();
     }
 
+    
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
@@ -297,21 +307,25 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return result;
     }
 
+    
     @Override
     public boolean canEnableIndividualServices() {
         return true;
     }
 
+    
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 
+    
     @Override
     public IpDeployer getIpDeployer(Network network) {
         return this;
     }
 
+    
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         //1) Get Internal LB VMs to destroy
@@ -367,6 +381,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return true;    
     }
 
+    
     protected Map<Ip, List<LoadBalancingRule>> getLbRulesToApply(List<LoadBalancingRule> rules) {
         //Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
         Map<Ip, List<LoadBalancingRule>> rulesToApply = groupBySourceIp(rules);
@@ -399,6 +414,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return vmsToDestroy;
     }
 
+    
     protected Map<Ip, List<LoadBalancingRule>> groupBySourceIp(List<LoadBalancingRule> rules) {
         Map<Ip, List<LoadBalancingRule>> groupedRules = new HashMap<Ip, List<LoadBalancingRule>>();
         for (LoadBalancingRule rule : rules) {
@@ -464,13 +480,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(id);
         if (element == null || element.getType() != VirtualRouterProviderType.InternalLbVm) {
-            s_logger.debug("Can't find " + this.getName() + " element with network service provider id " + id +
+            throw new InvalidParameterValueException("Can't find " + this.getName() + " element with network service provider id " + id +
                     " to be used as a provider for " + this.getName());
-            return null;
         }
 
         element.setEnabled(enable);
-        _vrProviderDao.persist(element);
+        element = _vrProviderDao.persist(element);
 
         return element;
     }
@@ -489,14 +504,15 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         }
         
         element = new VirtualRouterProviderVO(ntwkSvcProviderId, VirtualRouterProviderType.InternalLbVm);
-        _vrProviderDao.persist(element);
+        element = _vrProviderDao.persist(element);
         return element;
     }
 
+    
     @Override
     public VirtualRouterProvider getInternalLoadBalancerElement(long id) {
         VirtualRouterProvider provider = _vrProviderDao.findById(id);
-        if (provider.getType() != VirtualRouterProviderType.InternalLbVm) {
+        if (provider == null || provider.getType() != VirtualRouterProviderType.InternalLbVm) {
             throw new InvalidParameterValueException("Unable to find " + this.getName() + " by id");
         }
         return provider;

@@ -30,8 +30,6 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
@@ -39,7 +37,6 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.SpringComponentScanUtils;
 
 @Configuration
@@ -90,26 +87,11 @@ import com.cloud.utils.component.SpringComponentScanUtils;
                 return Mockito.mock(NetworkManager.class);
             }
             
-//            @Bean
-//            public UsageEventUtils UsageEventUtils() {
-//                return Mockito.mock(UsageEventUtils.class);
-//            }
-            
             @Bean
             public UsageEventDao UsageEventDao() {
                 return Mockito.mock(UsageEventDao.class);
             }
             
-//            @Bean
-//            public AccountDao accountDao() {
-//                return Mockito.mock(AccountDao.class);
-//            }
-//            
-//            @Bean
-//            public DataCenterDao dataCenterDao() {
-//                return Mockito.mock(DataCenterDao.class);
-//            }
-    
             @Override
             public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
                 mdr.getClassMetadata().getClassName();

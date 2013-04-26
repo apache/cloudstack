@@ -32,6 +32,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBalancerVMService{
+    //RAM/CPU for the system offering used by Internal LB VMs
     public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 128;            // 128 MB
     public static final int DEFAULT_INTERNALLB_VM_CPU_MHZ = 256;            // 256 MHz
     
@@ -79,7 +80,7 @@ public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBala
 
 
     /**
-     * Returns existing Internal Load Balancer elements based on guestNetworkId (requried) and requestedIp (optional)
+     * Returns existing Internal Load Balancer elements based on guestNetworkId (required) and requestedIp (optional)
      * @param guestNetworkId
      * @param requestedGuestIp
      * @return

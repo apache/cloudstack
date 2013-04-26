@@ -30,5 +30,21 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>resources</directory>
+        <includes>
+          <include>**/*.xml</include>
+        </includes>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>test/resources</directory>
+          <excludes>
+              <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
+          </excludes>
+      </testResource>
+    </testResources>
   </build>
 </project>
