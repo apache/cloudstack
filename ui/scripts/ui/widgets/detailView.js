@@ -199,7 +199,11 @@
                       $loading.remove();
 
                       if (!noRefresh && !viewArgs.compact) {
-                        updateTabContent(args.data? args.data : args2.data);
+                        if (isMultiple) {
+                          $detailView.find('.refresh').click();
+                        } else {
+                          updateTabContent(args.data? args.data : args2.data);
+                        }
                       }
                     }
 
