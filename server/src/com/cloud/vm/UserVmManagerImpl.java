@@ -2902,10 +2902,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         UserVO user = _userDao.findById(userId);
-
+        boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            vmEntity.stop(new Long(userId).toString());
+            status = vmEntity.stop(new Long(userId).toString());
+            if (status) {
+               return _vmDao.findById(vmId);
+            } else {
+               return null;
+            }
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException(
                     "Unable to contact the agent to stop the virtual machine "
@@ -2915,8 +2920,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Unable to contact the agent to stop the virtual machine "
                             + vm, e);
         }
-
-        return _vmDao.findById(vmId);
     }
 
     @Override
