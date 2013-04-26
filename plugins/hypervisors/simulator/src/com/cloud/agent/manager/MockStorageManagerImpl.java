@@ -56,6 +56,7 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.simulator.MockHost;
@@ -82,6 +83,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import com.cloud.agent.api.to.NfsTO;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -468,18 +470,23 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public Answer ListTemplates(ListTemplateCommand cmd) {
+        DataStoreTO store = cmd.getDataStore();
+        if ( !(store instanceof NfsTO )){
+            return new Answer(cmd, false, "Unsupported image data store: " + store);
+        }
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockSecStorageVO storage = null;
+        String nfsUrl = ((NfsTO)cmd.getDataStore()).getUrl();
         try {
             txn.start();
-            storage = _mockSecStorageDao.findByUrl(cmd.getSecUrl());
+            storage = _mockSecStorageDao.findByUrl(nfsUrl);
             if (storage == null) {
                 return new Answer(cmd, false, "Failed to get secondary storage");
             }
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when finding sec storage " + cmd.getSecUrl(), ex);
+            throw new CloudRuntimeException("Error when finding sec storage " + nfsUrl, ex);
         } finally {
             txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
@@ -498,7 +505,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                         .replaceAll(storage.getMountPoint(), ""), template.getSize(), template.getSize(), true, false));
             }
             txn.commit();
-            return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+            return new ListTemplateAnswer(nfsUrl, templateInfos);
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
