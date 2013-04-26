@@ -1490,6 +1490,35 @@
                 notification: { poll: pollAsyncJobResult }
               },
 
+              makeDefault: {
+                label: 'Set default NIC',
+                messages: {
+                  confirm: function() {
+                    return 'Please confirm that you would like to make this NIC the default for this VM.';
+                  },
+                  notification: function(args) {
+                    return 'Set default NIC'
+                  }
+                },
+                action: function (args) {
+                  $.ajax({
+                    url: createURL('updateDefaultNicForVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.updatedefaultnicforvirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
               // Remove NIC/Network from VM
               remove: {
                 label: 'label.action.delete.nic',
@@ -1506,7 +1535,7 @@
                     url: createURL('removeNicFromVirtualMachine'),
                     data: {
                       virtualmachineid: args.context.instances[0].id,
-                      nicid: args.context.nics.id
+                      nicid: args.context.nics[0].id
                     },
                     success: function(json) {
                       args.response.success({
@@ -1522,6 +1551,7 @@
             },
             fields: [
               {
+                id: { label: 'ID' },
                 name: { label: 'label.name', header: true },
                 networkname: {label: 'Network Name' },
                 type: { label: 'label.type' },
@@ -1551,26 +1581,33 @@
               }
             },
             dataProvider: function(args) {
-                    $.ajax({
-                     url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
-                     dataType: "json",
-                     async:true,
-                     success:function(json) {
-                     // Handling the display of network name for a VM under the NICS tabs
-                     args.response.success({
-                     data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
-                     var name = 'NIC ' + (index + 1);                    
-                     if (nic.isdefault) {
-                          name += ' (' + _l('label.default') + ')';
-                          }
-                     return $.extend(nic, {
+              $.ajax({
+                url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
+                dataType: "json",
+                async:true,
+                success:function(json) {
+                  // Handling the display of network name for a VM under the NICS tabs
+                  args.response.success({
+                    actionFilter: function(args) {
+                      if (args.context.item.isdefault) {
+                        return [];
+                      } else {
+                        return ['remove', 'makeDefault'];
+                      }
+                    },
+                    data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                      var name = 'NIC ' + (index + 1);
+                      if (nic.isdefault) {
+                        name += ' (' + _l('label.default') + ')';
+                      }
+                      return $.extend(nic, {
                         name: name
-                               });
-                            })
-                        });
-                     }
-                });
-              }
+                      });
+                    })
+                  });
+                }
+              });
+            }
           },
 
            /**

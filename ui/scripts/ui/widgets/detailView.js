@@ -70,7 +70,7 @@
             action.notification : {};
       var messages = action.messages;
       var id = args.id;
-      var context = $detailView.data('view-args').context;
+      var context = args.context ? args.context : $detailView.data('view-args').context;
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
@@ -180,7 +180,7 @@
             data: data,
             _custom: _custom,
             ref: options.ref,
-            context: $detailView.data('view-args').context,
+            context: context,
             $form: $form,
             response: {
               success: function(args) {
@@ -288,14 +288,14 @@
             after: function(args) {
               performAction(args.data, {
                 ref: args.ref,
-                context: $detailView.data('view-args').context,
+                context: context,
                 $form: args.$form
               });
             },
             ref: {
               id: id
             },
-            context: $detailView.data('view-args').context
+            context: context
           });
         }
       }
@@ -308,7 +308,7 @@
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
-          if (isMultiple) {
+          if (isMultiple && $detailView.is(':visible')) {
             $detailView.find('.refresh').click(); // Reload tab
           } else {
             var $browser = $('#browser .container');
@@ -790,12 +790,13 @@
     var detailViewArgs = $detailView.data('view-args');
     var fields = tabData.fields;
     var hiddenFields;
-    var context = detailViewArgs ? detailViewArgs.context : cloudStack.context;
+    var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
     var isMultiple = tabData.multiple || tabData.isMultiple;
     var actions = tabData.actions;
 
     if (isMultiple) {
-      context[tabData.id] = data;
+      context[tabData.id] = [data];
+      $detailGroups.data('item-context', context);
     }
 
     // Make header
@@ -1087,7 +1088,11 @@
                         tabData.viewAll.path,
                         {
                           updateContext: function(args) {
-                            return { nics: [item] };
+                            var obj = {};
+
+                            obj[targetTabID] = [item];
+
+                            return obj;
                           },
                           title: tabData.viewAll.title
                         }
@@ -1099,9 +1104,11 @@
               // Add action bar
               if (tabData.multiple && tabData.actions) {
                 var $actions = makeActionButtons(tabData.actions, {
-                  actionFilter: tabData.actions.actionFilter,
+                  actionFilter: actionFilter,
                   data: item,
-                  context: $detailView.data('view-args').context,
+                  context: $.extend(true, {}, $detailView.data('view-args').context, {
+                    item: [item]
+                  }),
                   ignoreAddAction: true
                 });
 
@@ -1357,15 +1364,20 @@
       var $action = $target.closest('.action').find('[detail-action]');
       var actionName = $action.attr('detail-action');
       var actionCallback = $action.data('detail-view-action-callback');
-      var detailViewArgs = $action.closest('div.detail-view').data('view-args');
+      var detailViewArgs = $.extend(true, {}, $action.closest('div.detail-view').data('view-args'));
       var additionalArgs = {};
       var actionSet = uiActions;
+      var $details = $action.closest('.details');
 
       var uiCallback = actionSet[actionName];
       if (!uiCallback)
         uiCallback = actionSet['standard'];
 
       detailViewArgs.actionName = actionName;
+
+      if ($details.data('item-context')) {
+        detailViewArgs.context = $details.data('item-context');
+      }
 
       uiCallback($target.closest('div.detail-view'), detailViewArgs, additionalArgs);
 
