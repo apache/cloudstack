@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
@@ -47,12 +48,13 @@ import com.cloud.serializer.Param;
 import com.cloud.user.User;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.gson.annotations.SerializedName;
 
 @Component
 @Local(value = ApiDiscoveryService.class)
-public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
+public class ApiDiscoveryServiceImpl extends ManagerBase implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
     @Inject protected List<APIChecker> _apiAccessCheckers = null;
@@ -63,8 +65,9 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         super();
     }
 
-    @PostConstruct
-    void init() {
+    @Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
@@ -78,6 +81,8 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
+        
+        return true;
     }
 
     protected void cacheResponseMap(Set<Class<?>> cmdClasses) {
