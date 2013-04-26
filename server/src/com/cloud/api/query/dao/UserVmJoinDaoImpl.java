@@ -134,8 +134,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             }
         }
         userVmResponse.setPassword(userVm.getPassword());
-        userVmResponse.setJobId(userVm.getJobUuid());
-        userVmResponse.setJobStatus(userVm.getJobStatus());
+        if (userVm.getJobId() != null) {
+            userVmResponse.setJobId(userVm.getJobUuid());
+            userVmResponse.setJobStatus(userVm.getJobStatus());
+        }
         //userVmResponse.setForVirtualNetwork(userVm.getForVirtualNetwork());
 
         userVmResponse.setPublicIpId(userVm.getPublicIpUuid());

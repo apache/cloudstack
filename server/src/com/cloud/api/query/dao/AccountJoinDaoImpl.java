@@ -203,8 +203,10 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setObjectName("account");
 
         // set async job
-        accountResponse.setJobId(account.getJobUuid());
-        accountResponse.setJobStatus(account.getJobStatus());
+        if (account.getJobId() != null) {
+            accountResponse.setJobId(account.getJobUuid());
+            accountResponse.setJobStatus(account.getJobStatus());
+        }
         return accountResponse;
     }
 
