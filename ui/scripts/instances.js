@@ -1492,20 +1492,31 @@
 
               // Remove NIC/Network from VM
               destroy: {
-                label: 'label.action.delete.network',
+                label: 'label.action.delete.nic',
                 messages: {
                   confirm: function(args) {
-                    return 'message.action.delete.network';
+                    return 'message.action.delete.nic';
                   },
                   notification: function(args) {
-                    return 'label.action.delete.network';
+                    return 'label.action.delete.nic';
                   }
                 },
                 action: function(args) {
-                  args.response.success();
+                  $.ajax({
+                    url: createURL('removeNicFromVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics.id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.removenicfromvirtualmachineresponse.jobid }
+                      })
+                    }
+                  });
                 },
                 notification: {
-                  poll: function(args) { args.complete(); }
+                  poll: pollAsyncJobResult
                 }
               }
             },
