@@ -450,16 +450,15 @@
             </goals>
             <configuration>
               <target if="${nonoss}">
-                <echo>test</echo>
                 <replaceregexp
                   file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true" />
-                <exec executable="cp">
-                    <arg value="-r" />
-                    <arg value="${basedir}/../plugins/network-elements/cisco-vnmc/scripts" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
-                </exec>
+                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                    <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/scripts">
+                        <include name="**/*" />
+                    </fileset>
+                </copy>
               </target>
             </configuration>
           </execution>
