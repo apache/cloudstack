@@ -1376,7 +1376,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 S3Utils.deleteDirectory(s3, bucket, path);
                 return new Answer(cmd, true, String.format("Deleted template %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete templaet %1$s from bucket %2$s due to the following error: %3$s",
+                final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s",
                         path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
@@ -1405,49 +1405,71 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected Answer execute(final DeleteVolumeCommand cmd) {
-        String relativeVolumePath = cmd.getVolumePath();
-        String parent = getRootDir(cmd);
+        DataStoreTO dstore = cmd.getDataStore();
+        if (dstore instanceof NfsTO) {
+            NfsTO nfs = (NfsTO) dstore;
+            String relativeVolumePath = cmd.getVolumePath();
+            String parent = getRootDir(nfs.getUrl());
 
-        if (relativeVolumePath.startsWith(File.separator)) {
-            relativeVolumePath = relativeVolumePath.substring(1);
-        }
-
-        if (!parent.endsWith(File.separator)) {
-            parent += File.separator;
-        }
-        String absoluteVolumePath = parent + relativeVolumePath;
-        File tmpltParent = new File(absoluteVolumePath).getParentFile();
-        String details = null;
-        if (!tmpltParent.exists()) {
-            details = "volume parent directory " + tmpltParent.getName() + " doesn't exist";
-            s_logger.debug(details);
-            return new Answer(cmd, true, details);
-        }
-        File[] tmpltFiles = tmpltParent.listFiles();
-        if (tmpltFiles == null || tmpltFiles.length == 0) {
-            details = "No files under volume parent directory " + tmpltParent.getName();
-            s_logger.debug(details);
-        } else {
-            boolean found = false;
-            for (File f : tmpltFiles) {
-                if (!found && f.getName().equals("volume.properties")) {
-                    found = true;
-                }
-                if (!f.delete()) {
-                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path " + relativeVolumePath);
-                }
+            if (relativeVolumePath.startsWith(File.separator)) {
+                relativeVolumePath = relativeVolumePath.substring(1);
             }
-            if (!found) {
-                details = "Can not find volume.properties under " + tmpltParent.getName();
+
+            if (!parent.endsWith(File.separator)) {
+                parent += File.separator;
+            }
+            String absoluteVolumePath = parent + relativeVolumePath;
+            File tmpltParent = new File(absoluteVolumePath).getParentFile();
+            String details = null;
+            if (!tmpltParent.exists()) {
+                details = "volume parent directory " + tmpltParent.getName() + " doesn't exist";
                 s_logger.debug(details);
+                return new Answer(cmd, true, details);
             }
+            File[] tmpltFiles = tmpltParent.listFiles();
+            if (tmpltFiles == null || tmpltFiles.length == 0) {
+                details = "No files under volume parent directory " + tmpltParent.getName();
+                s_logger.debug(details);
+            } else {
+                boolean found = false;
+                for (File f : tmpltFiles) {
+                    if (!found && f.getName().equals("volume.properties")) {
+                        found = true;
+                    }
+                    if (!f.delete()) {
+                        return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path " + relativeVolumePath);
+                    }
+                }
+                if (!found) {
+                    details = "Can not find volume.properties under " + tmpltParent.getName();
+                    s_logger.debug(details);
+                }
+            }
+            if (!tmpltParent.delete()) {
+                details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path " + relativeVolumePath;
+                s_logger.debug(details);
+                return new Answer(cmd, false, details);
+            }
+            return new Answer(cmd, true, null);
+        } else if (dstore instanceof S3TO) {
+            final S3TO s3 = (S3TO) dstore;
+            final String path = cmd.getVolumePath();
+            final String bucket = s3.getBucketName();
+            try {
+                S3Utils.deleteDirectory(s3, bucket, path);
+                return new Answer(cmd, true, String.format("Deleted volume %1%s from bucket %2$s.", path, bucket));
+            } catch (Exception e) {
+                final String errorMessage = String.format("Failed to delete volume %1$s from bucket %2$s due to the following error: %3$s", path,
+                        bucket, e.getMessage());
+                s_logger.error(errorMessage, e);
+                return new Answer(cmd, false, errorMessage);
+            }
+        } else if (dstore instanceof SwiftTO) {
+            return new Answer(cmd, false, "Swift is not currently support DeleteVolumeCommand");
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
-        if (!tmpltParent.delete()) {
-            details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path " + relativeVolumePath;
-            s_logger.debug(details);
-            return new Answer(cmd, false, details);
-        }
-        return new Answer(cmd, true, null);
+
     }
 
     Answer execute(CleanupSnapshotBackupCommand cmd) {

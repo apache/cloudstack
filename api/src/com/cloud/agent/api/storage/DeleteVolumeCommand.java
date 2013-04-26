@@ -16,14 +16,17 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.to.DataStoreTO;
+
 public class DeleteVolumeCommand extends ssCommand {
+    private DataStoreTO store;
 	private String volumePath;
 
 	public DeleteVolumeCommand() {
 	}
 
-	public DeleteVolumeCommand(String secUrl, String volumePath) {
-	    this.setSecUrl(secUrl);
+	public DeleteVolumeCommand(DataStoreTO store, String volumePath) {
+	    this.store = store;
     	this.volumePath = volumePath;
     }
 
@@ -35,4 +38,10 @@ public class DeleteVolumeCommand extends ssCommand {
 	public String getVolumePath() {
 		return volumePath;
 	}
+
+    public DataStoreTO getDataStore() {
+        return store;
+    }
+
+
 }

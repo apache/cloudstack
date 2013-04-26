@@ -1325,7 +1325,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            DeleteVolumeCommand cmd = new DeleteVolumeCommand(store.getUri(), destroyedStoreVO.getInstallPath());
+                            DeleteVolumeCommand cmd = new DeleteVolumeCommand(store.getTO(), destroyedStoreVO.getInstallPath());
                             Answer answer = ep.sendMessage(cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete " + destroyedStoreVO + " due to "

@@ -189,7 +189,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
                 DataStore store = this._dataStoreMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
                 EndPoint ep = _epSelector.select(store);
                 DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(
-                        store.getUri(), volumeStore.getInstallPath());
+                        store.getTO(), volumeStore.getInstallPath());
                 Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to delete "
