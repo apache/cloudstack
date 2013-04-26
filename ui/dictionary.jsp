@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.action.delete.nic': '<fmt:message key="label.action.delete.nic"/>',
+'message.action.delete.nic': '<fmt:message key="message.action.delete.nic"/>',
 'label.add.affinity.group': '<fmt:message key="label.add.affinity.group"/>',
 'message.delete.affinity.group': '<fmt:message key="message.delete.affinity.group"/>',
 'label.delete.affinity.group': '<fmt:message key="label.delete.affinity.group"/>',
