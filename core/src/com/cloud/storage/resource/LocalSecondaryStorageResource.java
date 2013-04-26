@@ -50,6 +50,7 @@ import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.agent.api.to.NfsTO;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(LocalSecondaryStorageResource.class);
@@ -94,7 +95,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof ListTemplateCommand){
-            return execute((ListTemplateCommand)cmd);   
+            return execute((ListTemplateCommand)cmd);
         } else if (cmd instanceof ComputeChecksumCommand){
             return execute((ComputeChecksumCommand)cmd);
         } else {
@@ -103,14 +104,14 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     }
 
     private Answer execute(ComputeChecksumCommand cmd) {
-        return new Answer(cmd, false, null);   
+        return new Answer(cmd, false, null);
     }
 
 
     private Answer execute(ListTemplateCommand cmd) {
         String root = getRootDir();
         Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
-        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        return new ListTemplateAnswer(((NfsTO)cmd.getDataStore()).getUrl(), templateInfos);
     }
 
     @Override
@@ -213,14 +214,14 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 	@Override
 	public void setName(String name) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 
 	@Override
 	public void setConfigParams(Map<String, Object> params) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 
@@ -241,6 +242,6 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 	@Override
 	public void setRunLevel(int level) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

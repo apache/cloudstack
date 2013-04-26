@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.resource;
 
-import static com.cloud.utils.S3Utils.deleteDirectory;
 import static com.cloud.utils.S3Utils.getDirectory;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
@@ -52,8 +51,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -63,7 +64,6 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
-import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -87,6 +87,7 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
@@ -105,6 +106,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
@@ -122,11 +124,9 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
-public class NfsSecondaryStorageResource extends ServerResourceBase implements
-SecondaryStorageResource {
+public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
-    private static final Logger s_logger = Logger
-            .getLogger(NfsSecondaryStorageResource.class);
+    private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String SNAPSHOT_ROOT_DIR = "snapshots";
@@ -160,6 +160,7 @@ SecondaryStorageResource {
     final private String _parent = "/mnt/SecStorage";
     final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
+
     @Override
     public void disconnected() {
     }
@@ -167,45 +168,45 @@ SecondaryStorageResource {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
-            return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
+            return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand) cmd);
         } else if (cmd instanceof DownloadCommand) {
-            return execute((DownloadCommand)cmd);
+            return execute((DownloadCommand) cmd);
         } else if (cmd instanceof UploadCommand) {
-            return _upldMgr.handleUploadCommand(this, (UploadCommand)cmd);
-        } else if (cmd instanceof CreateEntityDownloadURLCommand){
-            return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
-        } else if(cmd instanceof DeleteEntityDownloadURLCommand){
-            return _upldMgr.handleDeleteEntityDownloadURLCommand((DeleteEntityDownloadURLCommand)cmd);
+            return _upldMgr.handleUploadCommand(this, (UploadCommand) cmd);
+        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+            return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand) cmd);
+        } else if (cmd instanceof DeleteEntityDownloadURLCommand) {
+            return _upldMgr.handleDeleteEntityDownloadURLCommand((DeleteEntityDownloadURLCommand) cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
-            return execute((GetStorageStatsCommand)cmd);
+            return execute((GetStorageStatsCommand) cmd);
         } else if (cmd instanceof CheckHealthCommand) {
-            return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
+            return new CheckHealthAnswer((CheckHealthCommand) cmd, true);
         } else if (cmd instanceof DeleteTemplateCommand) {
             return execute((DeleteTemplateCommand) cmd);
         } else if (cmd instanceof DeleteVolumeCommand) {
             return execute((DeleteVolumeCommand) cmd);
-        }else if (cmd instanceof ReadyCommand) {
-            return new ReadyAnswer((ReadyCommand)cmd);
-        } else if (cmd instanceof SecStorageFirewallCfgCommand){
-            return execute((SecStorageFirewallCfgCommand)cmd);
-        } else if (cmd instanceof SecStorageVMSetupCommand){
-            return execute((SecStorageVMSetupCommand)cmd);
-        } else if (cmd instanceof SecStorageSetupCommand){
-            return execute((SecStorageSetupCommand)cmd);
-        } else if (cmd instanceof ComputeChecksumCommand){
-            return execute((ComputeChecksumCommand)cmd);
-        } else if (cmd instanceof ListTemplateCommand){
-            return execute((ListTemplateCommand)cmd);
-        } else if (cmd instanceof ListVolumeCommand){
-            return execute((ListVolumeCommand)cmd);
-        }else if (cmd instanceof downloadSnapshotFromSwiftCommand){
-            return execute((downloadSnapshotFromSwiftCommand)cmd);
+        } else if (cmd instanceof ReadyCommand) {
+            return new ReadyAnswer((ReadyCommand) cmd);
+        } else if (cmd instanceof SecStorageFirewallCfgCommand) {
+            return execute((SecStorageFirewallCfgCommand) cmd);
+        } else if (cmd instanceof SecStorageVMSetupCommand) {
+            return execute((SecStorageVMSetupCommand) cmd);
+        } else if (cmd instanceof SecStorageSetupCommand) {
+            return execute((SecStorageSetupCommand) cmd);
+        } else if (cmd instanceof ComputeChecksumCommand) {
+            return execute((ComputeChecksumCommand) cmd);
+        } else if (cmd instanceof ListTemplateCommand) {
+            return execute((ListTemplateCommand) cmd);
+        } else if (cmd instanceof ListVolumeCommand) {
+            return execute((ListVolumeCommand) cmd);
+        } else if (cmd instanceof downloadSnapshotFromSwiftCommand) {
+            return execute((downloadSnapshotFromSwiftCommand) cmd);
         } else if (cmd instanceof DownloadSnapshotFromS3Command) {
             return execute((DownloadSnapshotFromS3Command) cmd);
-        } else if (cmd instanceof DeleteSnapshotBackupCommand){
-            return execute((DeleteSnapshotBackupCommand)cmd);
-        } else if (cmd instanceof DeleteSnapshotsDirCommand){
-            return execute((DeleteSnapshotsDirCommand)cmd);
+        } else if (cmd instanceof DeleteSnapshotBackupCommand) {
+            return execute((DeleteSnapshotBackupCommand) cmd);
+        } else if (cmd instanceof DeleteSnapshotsDirCommand) {
+            return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
             return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
@@ -214,130 +215,118 @@ SecondaryStorageResource {
             return execute((UploadTemplateToS3FromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
             return execute((DeleteObjectFromSwiftCommand) cmd);
-        } else if (cmd instanceof DeleteTemplateFromS3Command) {
-            return execute((DeleteTemplateFromS3Command) cmd);
-        } else if (cmd instanceof CleanupSnapshotBackupCommand){
-            return execute((CleanupSnapshotBackupCommand)cmd);
+        } else if (cmd instanceof CleanupSnapshotBackupCommand) {
+            return execute((CleanupSnapshotBackupCommand) cmd);
         } else if (cmd instanceof CopyCommand) {
-        	return execute((CopyCommand)cmd);
+            return execute((CopyCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
-
     protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3,
 
-    		DataTO destData, NfsTO destImageStore) {
-          final String storagePath = destImageStore.getUrl();
-          final String destPath = destData.getPath();
+    DataTO destData, NfsTO destImageStore) {
+        final String storagePath = destImageStore.getUrl();
+        final String destPath = destData.getPath();
 
-          try {
+        try {
 
-              final File downloadDirectory = _storage
-                      .getFile(determineStorageTemplatePath(storagePath,
-                              destPath));
-              downloadDirectory.mkdirs();
+            final File downloadDirectory = _storage.getFile(determineStorageTemplatePath(storagePath, destPath));
+            downloadDirectory.mkdirs();
 
-              if (!downloadDirectory.exists()) {
-                  final String errMsg = format(
-                          "Unable to create directory "
-                                  + "download directory %1$s for download from S3.", downloadDirectory.getName()
-                                 );
-                  s_logger.error(errMsg);
-                  return new CopyCmdAnswer(errMsg);
-              }
+            if (!downloadDirectory.exists()) {
+                final String errMsg = format("Unable to create directory " + "download directory %1$s for download from S3.",
+                        downloadDirectory.getName());
+                s_logger.error(errMsg);
+                return new CopyCmdAnswer(errMsg);
+            }
 
-              List<File> files = getDirectory(s3, s3.getBucketName(),
-                      destPath,
-                      downloadDirectory, new FileNamingStrategy() {
-                  @Override
-                  public String determineFileName(final String key) {
-                      return substringAfterLast(key, S3Utils.SEPARATOR);
-                  }
-              });
+            List<File> files = getDirectory(s3, s3.getBucketName(), destPath, downloadDirectory, new FileNamingStrategy() {
+                @Override
+                public String determineFileName(final String key) {
+                    return substringAfterLast(key, S3Utils.SEPARATOR);
+                }
+            });
 
-              //find out template name
-              File destFile = null;
-              for (File f : files) {
-                  if (!f.getName().endsWith(".properties")) {
-                      destFile = f;
-                      break;
-                  }
-              }
+            // find out template name
+            File destFile = null;
+            for (File f : files) {
+                if (!f.getName().endsWith(".properties")) {
+                    destFile = f;
+                    break;
+                }
+            }
 
-              if (destFile == null) {
-                  return new CopyCmdAnswer("Can't find template");
-              }
+            if (destFile == null) {
+                return new CopyCmdAnswer("Can't find template");
+            }
 
-              DataTO newDestTO = null;
+            DataTO newDestTO = null;
 
-              if (destData.getObjectType() == DataObjectType.TEMPLATE) {
-                  TemplateObjectTO newTemplTO = new TemplateObjectTO();
-                  newTemplTO.setPath(destPath + File.separator + destFile.getName());
-                  newTemplTO.setName(destFile.getName());
-                  newDestTO = newTemplTO;
-              } else {
-                  return new CopyCmdAnswer("not implemented yet");
-              }
+            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                TemplateObjectTO newTemplTO = new TemplateObjectTO();
+                newTemplTO.setPath(destPath + File.separator + destFile.getName());
+                newTemplTO.setName(destFile.getName());
+                newDestTO = newTemplTO;
+            } else {
+                return new CopyCmdAnswer("not implemented yet");
+            }
 
-              return new CopyCmdAnswer(newDestTO);
-          } catch (Exception e) {
+            return new CopyCmdAnswer(newDestTO);
+        } catch (Exception e) {
 
-              final String errMsg = format("Failed to download"
-                      + "due to $2%s", e.getMessage());
-              s_logger.error(errMsg, e);
-              return new CopyCmdAnswer(errMsg);
-          }
+            final String errMsg = format("Failed to download" + "due to $2%s", e.getMessage());
+            s_logger.error(errMsg, e);
+            return new CopyCmdAnswer(errMsg);
+        }
     }
 
     protected Answer copyFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO srcImageStore,
 
-    		DataTO destData, NfsTO destImageStore) {
-    	return Answer.createUnsupportedCommandAnswer(cmd);
+    DataTO destData, NfsTO destImageStore) {
+        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     protected Answer execute(CopyCommand cmd) {
-    	DataTO srcData = cmd.getSrcTO();
-    	DataTO destData = cmd.getDestTO();
-    	DataStoreTO srcDataStore = srcData.getDataStore();
-    	DataStoreTO destDataStore = destData.getDataStore();
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
 
-    	if (srcDataStore.getRole() == DataStoreRole.Image
-    			&& destDataStore.getRole() == DataStoreRole.ImageCache
-    			) {
+        if (srcDataStore.getRole() == DataStoreRole.Image && destDataStore.getRole() == DataStoreRole.ImageCache) {
 
-    		if (!(destDataStore instanceof NfsTO)) {
-    			s_logger.debug("only support nfs as cache storage");
-    			return Answer.createUnsupportedCommandAnswer(cmd);
-    		}
+            if (!(destDataStore instanceof NfsTO)) {
+                s_logger.debug("only support nfs as cache storage");
+                return Answer.createUnsupportedCommandAnswer(cmd);
+            }
 
-    		if (srcDataStore instanceof S3TO) {
-    			return copyFromS3ToNfs(cmd, srcData, (S3TO)srcDataStore,
-    					destData, (NfsTO)destDataStore);
-    		} else if (srcDataStore instanceof SwiftTO) {
-    			return copyFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore,
-    					destData, (NfsTO)destDataStore);
-    		} else {
-    			return Answer.createUnsupportedCommandAnswer(cmd);
-    		}
+            if (srcDataStore instanceof S3TO) {
+                return copyFromS3ToNfs(cmd, srcData, (S3TO) srcDataStore, destData, (NfsTO) destDataStore);
+            } else if (srcDataStore instanceof SwiftTO) {
+                return copyFromSwiftToNfs(cmd, srcData, (SwiftTO) srcDataStore, destData, (NfsTO) destDataStore);
+            } else {
+                return Answer.createUnsupportedCommandAnswer(cmd);
+            }
 
-    	}
-    	return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @SuppressWarnings("unchecked")
-    protected String determineS3TemplateDirectory(final Long accountId,
-            final Long templateId) {
-        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId),
-                S3Utils.SEPARATOR);
+    protected String determineS3TemplateDirectory(final Long accountId, final Long templateId, final String templateUniqueName) {
+        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
     }
 
     @SuppressWarnings("unchecked")
-    private String determineStorageTemplatePath(final String storagePath,
-            String dataPath) {
-        return join(
-                asList(getRootDir(storagePath), dataPath), File.separator);
+    private String determineS3TemplateNameFromKey(String key){
+        return StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private String determineStorageTemplatePath(final String storagePath, String dataPath) {
+        return join(asList(getRootDir(storagePath), dataPath), File.separator);
     }
 
     private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
@@ -383,14 +372,14 @@ SecondaryStorageResource {
         }
     }
 
-    private Answer execute(DownloadCommand cmd){
+    private Answer execute(DownloadCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
-        if ( dstore instanceof NfsTO ){
+        if (dstore instanceof NfsTO) {
             return _dlMgr.handleDownloadCommand(this, cmd);
-        }
-        else if ( dstore instanceof S3TO ){
-            //TODO: how to handle download progress for S3
-            S3TO s3 = (S3TO)cmd.getDataStore();
+        } else if (dstore instanceof S3TO) {
+            // TODO: start download job to handle this
+            // TODO: how to handle download progress for S3
+            S3TO s3 = (S3TO) cmd.getDataStore();
             String url = cmd.getUrl();
             String user = null;
             String password = null;
@@ -412,17 +401,27 @@ SecondaryStorageResource {
             }
 
             final String bucket = s3.getBucketName();
-            String key = join(asList(determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId()), urlObj.getFile()), S3Utils.SEPARATOR);
+            // convention is no / in the end for install path based on S3Utils implementation.
+            String path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
+            // template key is
+            // TEMPLATE_ROOT_DIR/account_id/template_id/template_name
+            String key = join(asList(path, urlObj.getFile()), S3Utils.SEPARATOR);
             S3Utils.putObject(s3, in, bucket, key);
-            return new Answer(cmd, true, format("Uploaded the contents of input stream from %1$s for template id %2$s to S3 bucket %3$s", url,
-                    cmd.getResourceId(), bucket));
-        }
-        else if ( dstore instanceof SwiftTO ){
-            //TODO: need to move code from execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here, but we need to handle
-            // source is url, most likely we need to modify our existing swiftUpload python script.
+            List<S3ObjectSummary> s3Obj = S3Utils.getDirectory(s3, bucket, path);
+            if (s3Obj == null || s3Obj.size() == 0) {
+                return new Answer(cmd, false, "Failed to download to S3 bucket: " + bucket + " with key: " + key);
+            } else {
+                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj.get(0)
+                        .getETag());
+            }
+        } else if (dstore instanceof SwiftTO) {
+            // TODO: need to move code from
+            // execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here,
+            // but we need to handle
+            // source is url, most likely we need to modify our existing
+            // swiftUpload python script.
             return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
-        }
-        else{
+        } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
 
@@ -456,82 +455,82 @@ SecondaryStorageResource {
     }
 
     private Answer execute(UploadTemplateToS3FromSecondaryStorageCommand cmd) {
-/*
-        final S3TO s3 = cmd.getS3();
-        final Long accountId = cmd.getAccountId();
-        final Long templateId = cmd.getTemplateId();
+        /*
+                final S3TO s3 = cmd.getS3();
+                final Long accountId = cmd.getAccountId();
+                final Long templateId = cmd.getTemplateId();
 
-        try {
+                try {
 
-            final String templatePath = determineStorageTemplatePath(
-                    cmd.getStoragePath(), accountId, templateId);
+                    final String templatePath = determineStorageTemplatePath(
+                            cmd.getStoragePath(), accountId, templateId);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found template id " + templateId
-                        + " account id " + accountId + " from directory "
-                        + templatePath + " to upload to S3.");
-            }
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found template id " + templateId
+                                + " account id " + accountId + " from directory "
+                                + templatePath + " to upload to S3.");
+                    }
 
-            if (!_storage.isDirectory(templatePath)) {
-                final String errMsg = format("S3 Sync Failure: Directory %1$s"
-                        + "for template id %2$s does not exist.", templatePath,
-                        templateId);
-                s_logger.error(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
+                    if (!_storage.isDirectory(templatePath)) {
+                        final String errMsg = format("S3 Sync Failure: Directory %1$s"
+                                + "for template id %2$s does not exist.", templatePath,
+                                templateId);
+                        s_logger.error(errMsg);
+                        return new Answer(cmd, false, errMsg);
+                    }
 
-            if (!_storage.isFile(templatePath + "/template.properties")) {
-                final String errMsg = format("S3 Sync Failure: Template id "
-                        + "%1$s does not exist on the file system.",
-                        templatePath);
-                s_logger.error(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
+                    if (!_storage.isFile(templatePath + "/template.properties")) {
+                        final String errMsg = format("S3 Sync Failure: Template id "
+                                + "%1$s does not exist on the file system.",
+                                templatePath);
+                        s_logger.error(errMsg);
+                        return new Answer(cmd, false, errMsg);
+                    }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(format(
-                        "Pushing template id %1$s from %2$s to S3...",
-                        templateId, templatePath));
-            }
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(format(
+                                "Pushing template id %1$s from %2$s to S3...",
+                                templateId, templatePath));
+                    }
 
-            final String bucket = s3.getBucketName();
-            putDirectory(s3, bucket, _storage.getFile(templatePath),
-                    new FilenameFilter() {
-                @Override
-                public boolean accept(final File directory,
-                        final String fileName) {
-                            File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
-                            return !fileName.startsWith(".") && !fileToUpload.isDirectory();
+                    final String bucket = s3.getBucketName();
+                    putDirectory(s3, bucket, _storage.getFile(templatePath),
+                            new FilenameFilter() {
+                        @Override
+                        public boolean accept(final File directory,
+                                final String fileName) {
+                                    File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
+                                    return !fileName.startsWith(".") && !fileToUpload.isDirectory();
+                        }
+                    }, new ObjectNamingStrategy() {
+                        @Override
+                        public String determineKey(final File file) {
+                            s_logger.debug(String
+                                    .format("Determining key using account id %1$s and template id %2$s",
+                                            accountId, templateId));
+                            return join(
+                                    asList(determineS3TemplateDirectory(
+                                            accountId, templateId), file
+                                            .getName()), S3Utils.SEPARATOR);
+                        }
+                    });
+
+                    return new Answer(
+                            cmd,
+                            true,
+                            format("Uploaded the contents of directory %1$s for template id %2$s to S3 bucket %3$s",
+                                    templatePath, templateId, bucket));
+
+                } catch (Exception e) {
+
+                    final String errMsg = format("Failed to upload template id %1$s",
+                            templateId);
+                    s_logger.error(errMsg, e);
+                    return new Answer(cmd, false, errMsg);
+
                 }
-            }, new ObjectNamingStrategy() {
-                @Override
-                public String determineKey(final File file) {
-                    s_logger.debug(String
-                            .format("Determining key using account id %1$s and template id %2$s",
-                                    accountId, templateId));
-                    return join(
-                            asList(determineS3TemplateDirectory(
-                                    accountId, templateId), file
-                                    .getName()), S3Utils.SEPARATOR);
-                }
-            });
-
-            return new Answer(
-                    cmd,
-                    true,
-                    format("Uploaded the contents of directory %1$s for template id %2$s to S3 bucket %3$s",
-                            templatePath, templateId, bucket));
-
-        } catch (Exception e) {
-
-            final String errMsg = format("Failed to upload template id %1$s",
-                    templateId);
-            s_logger.error(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-
-        }
-*/
-    	return new Answer(cmd, false, "not supported ");
+        */
+        return new Answer(cmd, false, "not supported ");
     }
 
     private Answer execute(DeleteObjectFromSwiftCommand cmd) {
@@ -559,53 +558,11 @@ SecondaryStorageResource {
 
 
 
-    private Answer execute(final DeleteTemplateFromS3Command cmd) {
-
-        final S3TO s3 = cmd.getS3();
-        final Long accountId = cmd.getAccountId();
-        final Long templateId = cmd.getTemplateId();
-
-        if (accountId == null || (accountId != null && accountId <= 0)) {
-            final String errorMessage = "No account id specified for S3 template deletion.";
-            s_logger.error(errorMessage);
-            return new Answer(cmd, false, errorMessage);
-        }
-
-        if (templateId == null || (templateId != null && templateId <= 0)) {
-            final String errorMessage = "No template id specified for S3 template deletion.";
-            s_logger.error(errorMessage);
-            return new Answer(cmd, false, errorMessage);
-        }
-
-        if (s3 == null) {
-            final String errorMessge = "No S3 client options provided";
-            s_logger.error(errorMessge);
-            return new Answer(cmd, false, errorMessge);
-        }
-
-        final String bucket = s3.getBucketName();
-        try {
-            deleteDirectory(s3, bucket,
-                    determineS3TemplateDirectory(templateId, accountId));
-            return new Answer(cmd, true, String.format(
-                    "Deleted template %1%s from bucket %2$s.", templateId,
-                    bucket));
-        } catch (Exception e) {
-            final String errorMessage = String
-                    .format("Failed to delete templaet id %1$s from bucket %2$s due to the following error: %3$s",
-                            templateId, bucket, e.getMessage());
-            s_logger.error(errorMessage, e);
-            return new Answer(cmd, false, errorMessage);
-        }
-
-    }
-
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
-                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
-                + " download " + container + " " + rfilename + " -o " + lFullPath);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount()
+                + ":" + swift.getUserName() + " -K " + swift.getKey() + " download " + container + " " + rfilename + " -o " + lFullPath);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -630,8 +587,8 @@ SecondaryStorageResource {
     String swiftDownloadContainer(SwiftTO swift, String container, String ldir) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("cd " + ldir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K "
-                + swift.getKey() + " download " + container);
+        command.add("cd " + ldir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U "
+                + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey() + " download " + container);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -674,11 +631,12 @@ SecondaryStorageResource {
             Script command = new Script("/bin/bash", s_logger);
             command.add("-c");
             if (size <= SWIFT_MAX_SIZE) {
-                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                        + " -K " + swift.getKey() + " upload " + container + " " + file);
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U "
+                        + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey() + " upload " + container + " " + file);
             } else {
-                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                        + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + file);
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U "
+                        + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container
+                        + " " + file);
             }
             OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             String result = command.execute(parser);
@@ -705,8 +663,8 @@ SecondaryStorageResource {
     String[] swiftList(SwiftTO swift, String container, String rFilename) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K "
-                + swift.getKey() + " list " + container + " " + rFilename);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount()
+                + ":" + swift.getUserName() + " -K " + swift.getKey() + " list " + container + " " + rFilename);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result == null && parser.getLines() != null) {
@@ -727,9 +685,8 @@ SecondaryStorageResource {
     String swiftDelete(SwiftTO swift, String container, String object) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
-                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
-                + " delete " + container + " " + object);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount()
+                + ":" + swift.getUserName() + " -K " + swift.getKey() + " delete " + container + " " + object);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -750,8 +707,7 @@ SecondaryStorageResource {
         return null;
     }
 
-
-    public Answer execute(DeleteSnapshotsDirCommand cmd){
+    public Answer execute(DeleteSnapshotsDirCommand cmd) {
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
@@ -781,34 +737,24 @@ SecondaryStorageResource {
 
         try {
 
-            executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId),
-                    new Callable<Void>() {
+            executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId), new Callable<Void>() {
 
                 @Override
                 public Void call() throws Exception {
 
-                    final String directoryName = determineSnapshotLocalDirectory(
-                            secondaryStorageUrl, accountId, volumeId);
+                    final String directoryName = determineSnapshotLocalDirectory(secondaryStorageUrl, accountId, volumeId);
 
                     String result = createLocalDir(directoryName);
                     if (result != null) {
-                        throw new InternalErrorException(
-                                format("Failed to create directory %1$s during S3 snapshot download.",
-                                        directoryName));
+                        throw new InternalErrorException(format("Failed to create directory %1$s during S3 snapshot download.", directoryName));
                     }
 
-                    final String snapshotFileName = determineSnapshotBackupFilename(cmd
-                            .getSnapshotUuid());
-                    final String key = determineSnapshotS3Key(
-                            accountId, volumeId, snapshotFileName);
-                    final File targetFile = S3Utils.getFile(s3,
-                            s3.getBucketName(), key,
-                            _storage.getFile(directoryName),
-                            new FileNamingStrategy() {
+                    final String snapshotFileName = determineSnapshotBackupFilename(cmd.getSnapshotUuid());
+                    final String key = determineSnapshotS3Key(accountId, volumeId, snapshotFileName);
+                    final File targetFile = S3Utils.getFile(s3, s3.getBucketName(), key, _storage.getFile(directoryName), new FileNamingStrategy() {
 
                         @Override
-                        public String determineFileName(
-                                String key) {
+                        public String determineFileName(String key) {
                             return snapshotFileName;
                         }
 
@@ -816,19 +762,11 @@ SecondaryStorageResource {
 
                     if (cmd.getParent() != null) {
 
-                        final String parentPath = join(
-                                File.pathSeparator, directoryName,
-                                determineSnapshotBackupFilename(cmd
-                                        .getParent()));
-                        result = setVhdParent(
-                                targetFile.getAbsolutePath(),
-                                parentPath);
+                        final String parentPath = join(File.pathSeparator, directoryName, determineSnapshotBackupFilename(cmd.getParent()));
+                        result = setVhdParent(targetFile.getAbsolutePath(), parentPath);
                         if (result != null) {
-                            throw new InternalErrorException(
-                                    format("Failed to set the parent for backup %1$s to %2$s due to %3$s.",
-                                            targetFile
-                                            .getAbsolutePath(),
-                                            parentPath, result));
+                            throw new InternalErrorException(format("Failed to set the parent for backup %1$s to %2$s due to %3$s.",
+                                    targetFile.getAbsolutePath(), parentPath, result));
                         }
 
                     }
@@ -839,44 +777,37 @@ SecondaryStorageResource {
 
             });
 
-            return new Answer(
-                    cmd,
-                    true,
-                    format("Succesfully retrieved volume id %1$s for account id %2$s to %3$s from S3.",
-                            volumeId, accountId, secondaryStorageUrl));
+            return new Answer(cmd, true, format("Succesfully retrieved volume id %1$s for account id %2$s to %3$s from S3.", volumeId, accountId,
+                    secondaryStorageUrl));
 
         } catch (Exception e) {
-            final String errMsg = format(
-                    "Failed to retrieve volume id %1$s for account id %2$s to %3$s from S3 due to exception %4$s",
-                    volumeId, accountId, secondaryStorageUrl, e.getMessage());
+            final String errMsg = format("Failed to retrieve volume id %1$s for account id %2$s to %3$s from S3 due to exception %4$s", volumeId,
+                    accountId, secondaryStorageUrl, e.getMessage());
             s_logger.error(errMsg);
             return new Answer(cmd, false, errMsg);
         }
 
     }
 
-    private String determineSnapshotS3Directory(final Long accountId,
-            final Long volumeId) {
+
+
+
+    private String determineSnapshotS3Directory(final Long accountId, final Long volumeId) {
         return join(S3Utils.SEPARATOR, SNAPSHOT_ROOT_DIR, accountId, volumeId);
     }
 
-    private String determineSnapshotS3Key(final Long accountId,
-            final Long volumeId, final String snapshotFileName) {
+    private String determineSnapshotS3Key(final Long accountId, final Long volumeId, final String snapshotFileName) {
 
-        final String directoryName = determineSnapshotS3Directory(accountId,
-                volumeId);
+        final String directoryName = determineSnapshotS3Directory(accountId, volumeId);
         return join(S3Utils.SEPARATOR, directoryName, snapshotFileName);
 
     }
 
-    private String determineSnapshotLocalDirectory(
-            final String secondaryStorageUrl, final Long accountId,
-            final Long volumeId) {
-        return join(File.pathSeparator, getRootDir(secondaryStorageUrl),
-                SNAPSHOT_ROOT_DIR, accountId, volumeId);
+    private String determineSnapshotLocalDirectory(final String secondaryStorageUrl, final Long accountId, final Long volumeId) {
+        return join(File.pathSeparator, getRootDir(secondaryStorageUrl), SNAPSHOT_ROOT_DIR, accountId, volumeId);
     }
 
-    public Answer execute(downloadSnapshotFromSwiftCommand cmd){
+    public Answer execute(downloadSnapshotFromSwiftCommand cmd) {
         SwiftTO swift = cmd.getSwift();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
@@ -889,13 +820,13 @@ SecondaryStorageResource {
             String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId);
 
             String result = createLocalDir(lPath);
-            if ( result != null ) {
+            if (result != null) {
                 errMsg = "downloadSnapshotFromSwiftCommand failed due to Create local path failed";
                 s_logger.warn(errMsg);
                 throw new InternalErrorException(errMsg);
             }
             String lFilename = rFilename;
-            if ( rFilename.startsWith("VHD-") ) {
+            if (rFilename.startsWith("VHD-")) {
                 lFilename = rFilename.replace("VHD-", "") + ".vhd";
             }
             String lFullPath = lPath + "/" + lFilename;
@@ -944,38 +875,36 @@ SecondaryStorageResource {
         InputStream is = null;
         byte[] buffer = new byte[8192];
         int read = 0;
-        if(s_logger.isDebugEnabled()){
-            s_logger.debug("parent path " +parent+ " relative template path " +relativeTemplatePath );
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("parent path " + parent + " relative template path " + relativeTemplatePath);
         }
-
 
         try {
             digest = MessageDigest.getInstance("MD5");
             is = new FileInputStream(f);
-            while( (read = is.read(buffer)) > 0) {
+            while ((read = is.read(buffer)) > 0) {
                 digest.update(buffer, 0, read);
             }
             byte[] md5sum = digest.digest();
             BigInteger bigInt = new BigInteger(1, md5sum);
             checksum = bigInt.toString(16);
-            if(s_logger.isDebugEnabled()){
-                s_logger.debug("Successfully calculated checksum for file " +absoluteTemplatePath+ " - " +checksum );
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Successfully calculated checksum for file " + absoluteTemplatePath + " - " + checksum);
             }
 
-        }catch(IOException e) {
+        } catch (IOException e) {
             String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
             s_logger.error(logMsg);
             return new Answer(cmd, false, checksum);
-        }catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             return new Answer(cmd, false, checksum);
-        }
-        finally {
+        } finally {
             try {
-                if(is != null)
+                if (is != null)
                     is.close();
             } catch (IOException e) {
-                if(s_logger.isDebugEnabled()){
-                    s_logger.debug("Could not close the file " +absoluteTemplatePath);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Could not close the file " + absoluteTemplatePath);
                 }
                 return new Answer(cmd, false, checksum);
             }
@@ -1018,11 +947,11 @@ SecondaryStorageResource {
     }
 
     private Answer execute(SecStorageSetupCommand cmd) {
-        if (!_inSystemVM){
+        if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
         DataStoreTO dStore = cmd.getDataStore();
-        if (dStore instanceof NfsTO ){
+        if (dStore instanceof NfsTO) {
             String secUrl = cmd.getSecUrl();
             try {
                 URI uri = new URI(secUrl);
@@ -1047,20 +976,17 @@ SecondaryStorageResource {
                 return new Answer(cmd, false, msg);
 
             }
-        }
-        else{
-            // TODO: what do we need to setup for S3/Swift, maybe need to mount to some cache storage
+        } else {
+            // TODO: what do we need to setup for S3/Swift, maybe need to mount
+            // to some cache storage
             return new Answer(cmd, true, null);
         }
     }
 
-    private String deleteSnapshotBackupFromLocalFileSystem(
-            final String secondaryStorageUrl, final Long accountId,
-            final Long volumeId, final String name, final Boolean deleteAllFlag) {
+    private String deleteSnapshotBackupFromLocalFileSystem(final String secondaryStorageUrl, final Long accountId, final Long volumeId,
+            final String name, final Boolean deleteAllFlag) {
 
-        final String lPath = determineSnapshotLocalDirectory(
-                secondaryStorageUrl, accountId, volumeId)
-                + File.pathSeparator
+        final String lPath = determineSnapshotLocalDirectory(secondaryStorageUrl, accountId, volumeId) + File.pathSeparator
                 + (deleteAllFlag ? "*" : "*" + name + "*");
 
         final String result = deleteLocalFile(lPath);
@@ -1073,58 +999,40 @@ SecondaryStorageResource {
 
     }
 
-    private String deleteSnapshotBackupfromS3(final S3TO s3,
-            final String secondaryStorageUrl, final Long accountId,
-            final Long volumeId, final String name, final Boolean deleteAllFlag) {
+    private String deleteSnapshotBackupfromS3(final S3TO s3, final String secondaryStorageUrl, final Long accountId, final Long volumeId,
+            final String name, final Boolean deleteAllFlag) {
 
         try {
 
             final String bucket = s3.getBucketName();
 
-            final String result = executeWithNoWaitLock(
-                    determineSnapshotLockId(accountId, volumeId),
-                    new Callable<String>() {
+            final String result = executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId), new Callable<String>() {
 
-                        @Override
-                        public String call() throws Exception {
+                @Override
+                public String call() throws Exception {
 
-                            final String innerResult = deleteSnapshotBackupFromLocalFileSystem(
-                                    secondaryStorageUrl, accountId, volumeId,
-                                    name, deleteAllFlag);
-                            if (innerResult != null) {
-                                return innerResult;
-                            }
+                    final String innerResult = deleteSnapshotBackupFromLocalFileSystem(secondaryStorageUrl, accountId, volumeId, name, deleteAllFlag);
+                    if (innerResult != null) {
+                        return innerResult;
+                    }
 
-                            if (deleteAllFlag) {
-                                S3Utils.deleteDirectory(
-                                        s3,
-                                        bucket,
-                                        determineSnapshotS3Directory(accountId,
-                                                volumeId));
-                            } else {
-                                S3Utils.deleteObject(
-                                        s3,
-                                        bucket,
-                                        determineSnapshotS3Key(
-                                                accountId,
-                                                volumeId,
-                                                determineSnapshotBackupFilename(name)));
-                            }
+                    if (deleteAllFlag) {
+                        S3Utils.deleteDirectory(s3, bucket, determineSnapshotS3Directory(accountId, volumeId));
+                    } else {
+                        S3Utils.deleteObject(s3, bucket, determineSnapshotS3Key(accountId, volumeId, determineSnapshotBackupFilename(name)));
+                    }
 
-                            return null;
+                    return null;
 
-                        }
+                }
 
-                    });
+            });
 
             return result;
 
         } catch (Exception e) {
 
-            s_logger.error(
-                    String.format(
-                            "Failed to delete snapshot backup for account id %1$s volume id %2$sfrom S3.",
-                            accountId, volumeId), e);
+            s_logger.error(String.format("Failed to delete snapshot backup for account id %1$s volume id %2$sfrom S3.", accountId, volumeId), e);
             return e.getMessage();
 
         }
@@ -1135,8 +1043,7 @@ SecondaryStorageResource {
         return snapshotUuid + ".vhd";
     }
 
-    private String determineSnapshotLockId(final Long accountId,
-            final Long volumeId) {
+    private String determineSnapshotLockId(final Long accountId, final Long volumeId) {
         return join("_", "SNAPSHOT", accountId, volumeId);
     }
 
@@ -1146,30 +1053,26 @@ SecondaryStorageResource {
         Long volumeId = cmd.getVolumeId();
         String name = cmd.getSnapshotUuid();
         DataStoreTO dstore = cmd.getDataStore();
-        if ( dstore instanceof NfsTO ){
-            final String result = deleteSnapshotBackupFromLocalFileSystem(
-                    secondaryStorageUrl, accountId, volumeId, name,
-                    cmd.isAll());
+        if (dstore instanceof NfsTO) {
+            final String result = deleteSnapshotBackupFromLocalFileSystem(secondaryStorageUrl, accountId, volumeId, name, cmd.isAll());
             if (result != null) {
                 s_logger.warn(result);
                 return new Answer(cmd, false, result);
             }
-        } else if (dstore instanceof S3TO ){
-            final String result = deleteSnapshotBackupfromS3((S3TO)dstore,
-                    secondaryStorageUrl, accountId, volumeId, name,
-                    cmd.isAll());
+        } else if (dstore instanceof S3TO) {
+            final String result = deleteSnapshotBackupfromS3((S3TO) dstore, secondaryStorageUrl, accountId, volumeId, name, cmd.isAll());
             if (result != null) {
                 s_logger.warn(result);
                 return new Answer(cmd, false, result);
             }
-        } else if (dstore instanceof SwiftTO ){
+        } else if (dstore instanceof SwiftTO) {
             String filename;
             if (cmd.isAll()) {
                 filename = "";
             } else {
                 filename = name;
             }
-            String result = swiftDelete((SwiftTO)dstore, "V-" + volumeId.toString(), filename);
+            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), filename);
             if (result != null) {
                 String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
                 s_logger.warn(errMsg);
@@ -1187,8 +1090,8 @@ SecondaryStorageResource {
             return null;
         }
         Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
-        for( String container : containers) {
-            if ( container.startsWith("T-")) {
+        for (String container : containers) {
+            if (container.startsWith("T-")) {
                 String ldir = _tmpltDir + "/" + UUID.randomUUID().toString();
                 createLocalDir(ldir);
                 String lFullPath = ldir + "/" + _tmpltpp;
@@ -1214,22 +1117,51 @@ SecondaryStorageResource {
 
     }
 
+    Map<String, TemplateProp> s3ListTemplate(S3TO s3) {
+        String bucket = s3.getBucketName();
+        // List the objects in the source directory on S3
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.TEMPLATE_ROOT_DIR);
+        if ( objectSummaries == null )
+            return null;
+        Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
+        for (S3ObjectSummary objectSummary : objectSummaries){
+            String key = objectSummary.getKey();
+            String installPath = StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR);
+            String uniqueName = this.determineS3TemplateNameFromKey(key);
+            //TODO: isPublic value, where to get?
+            TemplateProp tInfo = new TemplateProp(uniqueName, installPath, objectSummary.getSize(), objectSummary.getSize(), true, false);
+            tmpltInfos.put(uniqueName, tInfo);
+        }
+        return tmpltInfos;
+
+    }
+
     private Answer execute(ListTemplateCommand cmd) {
-        if (!_inSystemVM){
+        if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
-        if (cmd.getSwift() != null) {
-            Map<String, TemplateProp> templateInfos = swiftListTemplate(cmd.getSwift());
-            return new ListTemplateAnswer(cmd.getSwift().toString(), templateInfos);
-        } else {
-            String root = getRootDir(cmd.getSecUrl());
+
+        DataStoreTO store = cmd.getDataStore();
+        if (store instanceof NfsTO) {
+            NfsTO nfs = (NfsTO)store;
+            String root = getRootDir(nfs.getUrl());
             Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
-            return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+            return new ListTemplateAnswer(nfs.getUrl(), templateInfos);
+        } else if (store instanceof SwiftTO) {
+            SwiftTO swift = (SwiftTO) store;
+            Map<String, TemplateProp> templateInfos = swiftListTemplate(swift);
+            return new ListTemplateAnswer(swift.toString(), templateInfos);
+        } else if (store instanceof S3TO) {
+            S3TO s3 = (S3TO) store;
+            Map<String, TemplateProp> templateInfos = s3ListTemplate(s3);
+            return new ListTemplateAnswer(s3.getBucketName(), templateInfos);
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + store);
         }
     }
 
     private Answer execute(ListVolumeCommand cmd) {
-        if (!_inSystemVM){
+        if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
 
@@ -1240,12 +1172,12 @@ SecondaryStorageResource {
     }
 
     private Answer execute(SecStorageVMSetupCommand cmd) {
-        if (!_inSystemVM){
+        if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
         boolean success = true;
         StringBuilder result = new StringBuilder();
-        for (String cidr: cmd.getAllowedInternalSites()) {
+        for (String cidr : cmd.getAllowedInternalSites()) {
             if (nfsIps.contains(cidr)) {
                 /*
                  * if the internal download ip is the same with secondary storage ip, adding internal sites will flush
@@ -1333,7 +1265,7 @@ SecondaryStorageResource {
 
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result );
+            s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
             return "Error in allowing outgoing to " + destCidr + ", err=" + result;
         }
 
@@ -1343,13 +1275,13 @@ SecondaryStorageResource {
     }
 
     private Answer execute(SecStorageFirewallCfgCommand cmd) {
-        if (!_inSystemVM){
+        if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
 
         List<String> ipList = new ArrayList<String>();
 
-        for (PortConfig pCfg:cmd.getPortConfigs()){
+        for (PortConfig pCfg : cmd.getPortConfigs()) {
             if (pCfg.isAdd()) {
                 ipList.add(pCfg.getSourceIp());
             }
@@ -1357,7 +1289,7 @@ SecondaryStorageResource {
         boolean success = true;
         String result;
         result = configureIpFirewall(ipList, cmd.getIsAppendAIp());
-        if (result !=null)
+        if (result != null)
             success = false;
 
         return new Answer(cmd, success, result);
@@ -1370,15 +1302,16 @@ SecondaryStorageResource {
         if (usedSize == -1 || totalSize == -1) {
             return new GetStorageStatsAnswer(cmd, "Unable to get storage stats");
         } else {
-            return new GetStorageStatsAnswer(cmd, totalSize, usedSize) ;
+            return new GetStorageStatsAnswer(cmd, totalSize, usedSize);
         }
     }
 
     protected Answer execute(final DeleteTemplateCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO) {
+            NfsTO nfs = (NfsTO)dstore;
             String relativeTemplatePath = cmd.getTemplatePath();
-            String parent = getRootDir(cmd);
+            String parent = getRootDir(nfs.getUrl());
 
             if (relativeTemplatePath.startsWith(File.separator)) {
                 relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1420,40 +1353,21 @@ SecondaryStorageResource {
                 return new Answer(cmd, false, details);
             }
             return new Answer(cmd, true, null);
-        } else if (dstore instanceof S3TO ){
-            final S3TO s3 = (S3TO)dstore;
-            final Long accountId = cmd.getAccountId();
-            final Long templateId = cmd.getTemplateId();
-
-            if (accountId == null || (accountId != null && accountId <= 0)) {
-                final String errorMessage = "No account id specified for S3 template deletion.";
-                s_logger.error(errorMessage);
-                return new Answer(cmd, false, errorMessage);
-            }
-
-            if (templateId == null || (templateId != null && templateId <= 0)) {
-                final String errorMessage = "No template id specified for S3 template deletion.";
-                s_logger.error(errorMessage);
-                return new Answer(cmd, false, errorMessage);
-            }
-
-
+        } else if (dstore instanceof S3TO) {
+            final S3TO s3 = (S3TO) dstore;
+            final String path = cmd.getTemplatePath();
             final String bucket = s3.getBucketName();
             try {
-                S3Utils.deleteDirectory(s3, bucket,
-                        determineS3TemplateDirectory(templateId, accountId));
-                return new Answer(cmd, true, String.format(
-                        "Deleted template %1%s from bucket %2$s.", templateId,
-                        bucket));
+                S3Utils.deleteDirectory(s3, bucket, path);
+                return new Answer(cmd, true, String.format("Deleted template %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String
-                        .format("Failed to delete templaet id %1$s from bucket %2$s due to the following error: %3$s",
-                                templateId, bucket, e.getMessage());
+                final String errorMessage = String.format("Failed to delete templaet %1$s from bucket %2$s due to the following error: %3$s",
+                        path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
-        } else if (dstore instanceof SwiftTO){
-            SwiftTO swift = (SwiftTO)dstore;
+        } else if (dstore instanceof SwiftTO) {
+            SwiftTO swift = (SwiftTO) dstore;
             String container = "T-" + cmd.getTemplateId();
             String object = "";
 
@@ -1470,7 +1384,7 @@ SecondaryStorageResource {
                 s_logger.warn(errMsg, e);
                 return new Answer(cmd, false, errMsg);
             }
-        } else{
+        } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
     }
@@ -1505,8 +1419,7 @@ SecondaryStorageResource {
                     found = true;
                 }
                 if (!f.delete()) {
-                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path "
-                            + relativeVolumePath);
+                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path " + relativeVolumePath);
                 }
             }
             if (!found) {
@@ -1515,8 +1428,7 @@ SecondaryStorageResource {
             }
         }
         if (!tmpltParent.delete()) {
-            details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path "
-                    + relativeVolumePath;
+            details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path " + relativeVolumePath;
             s_logger.debug(details);
             return new Answer(cmd, false, details);
         }
@@ -1528,7 +1440,8 @@ SecondaryStorageResource {
         if (!parent.endsWith(File.separator)) {
             parent += File.separator;
         }
-        String absoluteSnapsthotDir = parent + File.separator + "snapshots" + File.separator + cmd.getAccountId() + File.separator + cmd.getVolumeId();
+        String absoluteSnapsthotDir = parent + File.separator + "snapshots" + File.separator + cmd.getAccountId() + File.separator
+                + cmd.getVolumeId();
         File ssParent = new File(absoluteSnapsthotDir);
         if (ssParent.exists() && ssParent.isDirectory()) {
             File[] files = ssParent.listFiles();
@@ -1551,7 +1464,6 @@ SecondaryStorageResource {
         return new Answer(cmd, true, null);
     }
 
-
     synchronized public String getRootDir(String secUrl) {
         try {
             URI uri = new URI(secUrl);
@@ -1571,9 +1483,8 @@ SecondaryStorageResource {
         }
     }
 
-
     @Override
-    public String getRootDir(ssCommand cmd){
+    public String getRootDir(ssCommand cmd) {
         return getRootDir(cmd.getSecUrl());
 
     }
@@ -1602,13 +1513,12 @@ SecondaryStorageResource {
             assert (false) : "Well, I have no idea what this is: " + size;
         }
 
-        return (long)(Double.parseDouble(size.substring(0, size.length() - 1)) * multiplier);
+        return (long) (Double.parseDouble(size.substring(0, size.length() - 1)) * multiplier);
     }
-
 
     @Override
     public Type getType() {
-        if(SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
+        if (SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
             return Host.Type.SecondaryStorage;
 
         return Host.Type.SecondaryStorageCmdExecutor;
@@ -1621,9 +1531,9 @@ SecondaryStorageResource {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _eth1ip = (String)params.get("eth1ip");
-        _eth1mask = (String)params.get("eth1mask");
-        if (_eth1ip != null) { //can only happen inside service vm
+        _eth1ip = (String) params.get("eth1ip");
+        _eth1mask = (String) params.get("eth1mask");
+        if (_eth1ip != null) { // can only happen inside service vm
             params.put("private.network.device", "eth1");
         } else {
             s_logger.warn("Wait, what's going on? eth1ip is null!!");
@@ -1644,19 +1554,19 @@ SecondaryStorageResource {
         super.configure(name, params);
 
         _params = params;
-        String value = (String)params.get("scripts.timeout");
+        String value = (String) params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 1440) * 1000;
 
-        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
+        _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
-            value = (String)params.get(StorageLayer.ClassConfigKey);
+            value = (String) params.get(StorageLayer.ClassConfigKey);
             if (value == null) {
                 value = "com.cloud.storage.JavaStorageLayer";
             }
 
             try {
                 Class<?> clazz = Class.forName(value);
-                _storage = (StorageLayer)clazz.newInstance();
+                _storage = (StorageLayer) clazz.newInstance();
                 _storage.configure("StorageLayer", params);
             } catch (ClassNotFoundException e) {
                 throw new ConfigurationException("Unable to find class " + value);
@@ -1682,29 +1592,28 @@ SecondaryStorageResource {
             s_logger.info("_configIpFirewallScr found in " + _configIpFirewallScr);
         }
 
-        _role = (String)params.get("role");
-        if(_role == null)
+        _role = (String) params.get("role");
+        if (_role == null)
             _role = SecondaryStorageVm.Role.templateProcessor.toString();
         s_logger.info("Secondary storage runs in role " + _role);
 
-        _guid = (String)params.get("guid");
+        _guid = (String) params.get("guid");
         if (_guid == null) {
             throw new ConfigurationException("Unable to find the guid");
         }
 
-        _dc = (String)params.get("zone");
+        _dc = (String) params.get("zone");
         if (_dc == null) {
             throw new ConfigurationException("Unable to find the zone");
         }
-        _pod = (String)params.get("pod");
+        _pod = (String) params.get("pod");
 
-        _instance = (String)params.get("instance");
+        _instance = (String) params.get("instance");
 
-
-        String inSystemVM = (String)params.get("secondary.storage.vm");
+        String inSystemVM = (String) params.get("secondary.storage.vm");
         if (inSystemVM == null || "true".equalsIgnoreCase(inSystemVM)) {
             _inSystemVM = true;
-            _localgw = (String)params.get("localgw");
+            _localgw = (String) params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
                 String mgmtHost = (String) params.get("host");
                 addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
@@ -1747,14 +1656,14 @@ SecondaryStorageResource {
         command.add("if [ -f /etc/init.d/ssh ]; then service ssh restart; else service sshd restart; fi ");
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in starting sshd service err=" + result );
+            s_logger.warn("Error in starting sshd service err=" + result);
         }
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("iptables -I INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in opening up ssh port err=" + result );
+            s_logger.warn("Error in opening up ssh port err=" + result);
         }
     }
 
@@ -1764,7 +1673,7 @@ SecondaryStorageResource {
             s_logger.debug("addRouteToInternalIp: destIp is null");
             return;
         }
-        if (!NetUtils.isValidIp(destIpOrCidr) && !NetUtils.isValidCIDR(destIpOrCidr)){
+        if (!NetUtils.isValidIp(destIpOrCidr) && !NetUtils.isValidCIDR(destIpOrCidr)) {
             s_logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
             return;
         }
@@ -1773,7 +1682,8 @@ SecondaryStorageResource {
             if (eth1ip != null && eth1mask != null) {
                 inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr, eth1mask);
             } else {
-                s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip=" + eth1ip + ", dest ip=" + destIpOrCidr + ", _eth1mask=" + eth1mask);
+                s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip=" + eth1ip + ", dest ip=" + destIpOrCidr
+                        + ", _eth1mask=" + eth1mask);
             }
         } else {
             inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
@@ -1791,7 +1701,7 @@ SecondaryStorageResource {
         command.add("ip route add " + destIpOrCidr + " via " + localgw);
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in configuring route to internal ip err=" + result );
+            s_logger.warn("Error in configuring route to internal ip err=" + result);
         } else {
             s_logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
         }
@@ -1833,16 +1743,16 @@ SecondaryStorageResource {
         return result;
     }
 
-    private String configureIpFirewall(List<String> ipList, boolean isAppend){
+    private String configureIpFirewall(List<String> ipList, boolean isAppend) {
         Script command = new Script(_configIpFirewallScr);
         command.add(String.valueOf(isAppend));
-        for (String ip : ipList){
+        for (String ip : ipList) {
             command.add(ip);
         }
 
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Unable to configure firewall for command : " +command);
+            s_logger.warn("Unable to configure firewall for command : " + command);
         }
         return result;
     }
@@ -1865,8 +1775,8 @@ SecondaryStorageResource {
         ZfsPathParser parser = new ZfsPathParser(root);
         script.execute(parser);
         res.addAll(parser.getPaths());
-        for( String s : res ) {
-            if ( s.contains(root)) {
+        for (String s : res) {
+            if (s.contains(root)) {
                 return root;
             }
         }
@@ -1874,7 +1784,7 @@ SecondaryStorageResource {
         Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
         command.add("-t", "nfs");
         if (_inSystemVM) {
-            //Fedora Core 12 errors out with any -o option executed from java
+            // Fedora Core 12 errors out with any -o option executed from java
             command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
         }
         command.add(nfsPath);
@@ -1888,7 +1798,8 @@ SecondaryStorageResource {
             return null;
         }
 
-        // XXX: Adding the check for creation of snapshots dir here. Might have to move it somewhere more logical later.
+        // XXX: Adding the check for creation of snapshots dir here. Might have
+        // to move it somewhere more logical later.
         if (!checkForSnapshotsDir(root)) {
             return null;
         }
@@ -1916,7 +1827,7 @@ SecondaryStorageResource {
 
         final StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
         fillNetworkInformation(cmd);
-        if(_publicIp != null)
+        if (_publicIp != null)
             cmd.setPublicIpAddress(_publicIp);
 
         Script command = new Script("/bin/bash", s_logger);
@@ -1927,7 +1838,7 @@ SecondaryStorageResource {
             s_logger.warn("Error in linking  err=" + result);
             return null;
         }
-        return new StartupCommand[] {cmd};
+        return new StartupCommand[] { cmd };
     }
 
     protected boolean checkForSnapshotsDir(String mountPoint) {
@@ -1958,7 +1869,7 @@ SecondaryStorageResource {
         }
 
         if (dirExists) {
-            s_logger.info(dirName  + " directory created/exists on Secondary Storage.");
+            s_logger.info(dirName + " directory created/exists on Secondary Storage.");
         } else {
             s_logger.info(dirName + " directory does not exist on Secondary Storage.");
         }
@@ -1971,33 +1882,33 @@ SecondaryStorageResource {
         return "./scripts/storage/secondary";
     }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 }

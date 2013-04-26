@@ -18,37 +18,27 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
-import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.agent.api.to.DataStoreTO;
 
 public class ListTemplateCommand extends StorageCommand {
-    private String secUrl;
     @LogLevel(Log4jLevel.Off)
-    private SwiftTO swift;
+    private DataStoreTO store;
 
     public ListTemplateCommand() {
     }
 
-	public ListTemplateCommand(String secUrl) {
-	    this.secUrl = secUrl;
-        this.swift = null;
+	public ListTemplateCommand(DataStoreTO store) {
+        this.store = store;
 	}
-
-    public ListTemplateCommand(SwiftTO swift) {
-        this.secUrl = null;
-        this.swift = swift;
-    }
 
     @Override
     public boolean executeInSequence() {
         return true;
     }
 
-    public String getSecUrl() {
-        return secUrl;
-    }
 
-    public SwiftTO getSwift() {
-        return swift;
+    public DataStoreTO getDataStore() {
+        return store;
     }
 
 }

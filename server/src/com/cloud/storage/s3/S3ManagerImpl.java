@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -54,7 +53,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
@@ -282,70 +280,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                         + "been implemented");
     }
 
-    @Override
-    public void deleteTemplate(final Long templateId, final Long accountId) {
 
-        final S3TO s3 = getS3TO();
-
-        if (s3 == null) {
-            final String errorMessage = "Delete Template Failed: No S3 configuration defined.";
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
-        }
-
-        final VMTemplateS3VO vmTemplateS3VO = vmTemplateS3Dao
-                .findOneByS3Template(s3.getId(), templateId);
-        if (vmTemplateS3VO == null) {
-            final String errorMessage = format(
-                    "Delete Template Failed: Unable to find Template %1$s in S3.",
-                    templateId);
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
-        }
-
-        try {
-
-            executeWithNoWaitLock(determineLockId(accountId, templateId),
-                    new Callable<Void>() {
-
-                @Override
-                public Void call() throws Exception {
-
-                    final Answer answer = agentManager.sendToSSVM(null,
-                            new DeleteTemplateFromS3Command(s3,
-                                    accountId, templateId));
-                    if (answer == null || !answer.getResult()) {
-                        final String errorMessage = format(
-                                "Delete Template Failed: Unable to delete template id %1$s from S3 due to following error: %2$s",
-                                templateId,
-                                ((answer == null) ? "answer is null"
-                                        : answer.getDetails()));
-                        LOGGER.error(errorMessage);
-                        throw new CloudRuntimeException(errorMessage);
-                    }
-
-                    vmTemplateS3Dao.remove(vmTemplateS3VO.getId());
-                    LOGGER.debug(format(
-                            "Deleted template %1$s from S3.",
-                            templateId));
-
-                    return null;
-
-                }
-
-            });
-
-        } catch (Exception e) {
-
-            final String errorMessage = format(
-                    "Delete Template Failed: Unable to delete template id %1$s from S3 due to the following error: %2$s.",
-                    templateId, e.getMessage());
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage, e);
-
-        }
-
-    }
 
     @SuppressWarnings("unchecked")
     @Override

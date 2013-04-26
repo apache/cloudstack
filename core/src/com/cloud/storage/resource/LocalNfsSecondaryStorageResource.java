@@ -9,16 +9,20 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadSystemTemplateCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -62,10 +66,19 @@ public class LocalNfsSecondaryStorageResource extends
             }
 
             final String bucket = s3.getBucketName();
-            String key = join(asList(determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId()), urlObj.getFile()), S3Utils.SEPARATOR);
+            // convention is no / in the end for install path based on S3Utils implementation.
+            String path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
+            // template key is
+            // TEMPLATE_ROOT_DIR/account_id/template_id/template_name
+            String key = join(asList(path, urlObj.getFile()), S3Utils.SEPARATOR);
             S3Utils.putObject(s3, in, bucket, key);
-            return new Answer(cmd, true, format("Uploaded the contents of input stream from %1$s for template id %2$s to S3 bucket %3$s", url,
-                    cmd.getResourceId(), bucket));
+            List<S3ObjectSummary> s3Obj = S3Utils.getDirectory(s3, bucket, path);
+            if (s3Obj == null || s3Obj.size() == 0) {
+                return new Answer(cmd, false, "Failed to download to S3 bucket: " + bucket + " with key: " + key);
+            } else {
+                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj.get(0)
+                        .getETag());
+            }
         }
         else if ( dstore instanceof NfsTO ){
             return new Answer(cmd, false, "Nfs needs to be pre-installed with system vm templates");

@@ -414,7 +414,7 @@ public class TemplateServiceImpl implements TemplateService {
 
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getUri());
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {

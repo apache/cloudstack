@@ -51,6 +51,7 @@ public class DownloadSystemTemplateCommand extends Command {
     private Long accountId;
     private String url;
     private Long maxDownloadSizeInBytes;
+    private String name;
 
 	protected DownloadSystemTemplateCommand() {
 	}
@@ -63,6 +64,7 @@ public class DownloadSystemTemplateCommand extends Command {
 	    this.url = secUrl;
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	    this.resourceId = template.getId();
+	    this.name = template.getUniqueName();
 	}
 
 
@@ -73,6 +75,7 @@ public class DownloadSystemTemplateCommand extends Command {
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         this.resourceId = template.getId();
 		auth = new PasswordAuth(user, passwd);
+		this.name = template.getUniqueName();
 	}
 
 
@@ -140,6 +143,18 @@ public class DownloadSystemTemplateCommand extends Command {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+
+
+    public String getName() {
+        return name;
+    }
+
+
+
+    public void setName(String name) {
+        this.name = name;
     }
 
 

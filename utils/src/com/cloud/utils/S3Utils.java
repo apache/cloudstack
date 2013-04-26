@@ -54,6 +54,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -155,6 +156,22 @@ public final class S3Utils {
 
     }
 
+    // Note that whenever S3Object is returned, client code needs to close the internal stream to avoid resource leak.
+    public static S3Object getObject(final ClientOptions clientOptions,
+            final String bucketName, final String key) {
+
+        assert clientOptions != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Get S3 object %1$s in "
+                    + "bucket %2$s", key, bucketName));
+        }
+
+        return acquireClient(clientOptions).getObject(bucketName, key);
+
+    }
 
     @SuppressWarnings("unchecked")
     public static File getFile(final ClientOptions clientOptions,
@@ -241,6 +258,18 @@ public final class S3Utils {
 
         return unmodifiableList(files);
 
+    }
+
+    public static List<S3ObjectSummary> getDirectory(final ClientOptions clientOptions,
+            final String bucketName, final String sourcePath){
+        assert clientOptions != null;
+        assert isNotBlank(bucketName);
+        assert isNotBlank(sourcePath);
+
+        final AmazonS3 connection = acquireClient(clientOptions);
+
+        // List the objects in the source directory on S3
+        return listDirectory(bucketName, sourcePath, connection);
     }
 
     private static List<S3ObjectSummary> listDirectory(final String bucketName,

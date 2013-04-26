@@ -93,7 +93,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         CreateCmdResult result = null;
         CreateObjectAnswer volAnswer = (CreateObjectAnswer) callback.getResult();
         if (volAnswer.getResult()) {
-            result = new CreateCmdResult(volAnswer.getPath(), volAnswer.getSize());
+            result = new CreateCmdResult(volAnswer.getPath(), volAnswer);
         } else {
             result = new CreateCmdResult("", null);
             result.setResult(volAnswer.getDetails());

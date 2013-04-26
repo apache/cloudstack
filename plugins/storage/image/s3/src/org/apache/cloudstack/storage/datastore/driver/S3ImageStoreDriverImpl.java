@@ -249,7 +249,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
             String installPath = tmplStore.getInstallPath();
             if (installPath != null) {
-                DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), store.getUri(), installPath, template.getId(), template.getAccountId());
+                DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
                 EndPoint ep = _epSelector.select(templateObj);
                 Answer answer = ep.sendMessage(cmd);
 

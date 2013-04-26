@@ -49,7 +49,7 @@ public interface S3Manager extends Manager {
 
     boolean isTemplateInstalled(Long templateId);
 
-    void deleteTemplate(final Long accountId, final Long templateId);
+    //void deleteTemplate(final Long accountId, final Long templateId);
 
     String downloadTemplateFromS3ToSecondaryStorage(final long dcId,
             final long templateId, final int primaryStorageDownloadWait);

@@ -30,8 +30,7 @@ public class DeleteTemplateCommand extends ssCommand {
 	}
 
 
-	public DeleteTemplateCommand(DataStoreTO store, String secUrl, String templatePath, Long templateId, Long accountId) {
-	    this.setSecUrl(secUrl);
+	public DeleteTemplateCommand(DataStoreTO store, String templatePath, Long templateId, Long accountId) {
     	this.templatePath = templatePath;
     	this.templateId = templateId;
     	this.accountId = accountId;

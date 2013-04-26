@@ -1245,7 +1245,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            Command cmd = new DeleteTemplateCommand(store.getTO(), store.getUri(), destroyedTemplateStoreVO.getInstallPath(),
+                            Command cmd = new DeleteTemplateCommand(store.getTO(), destroyedTemplateStoreVO.getInstallPath(),
                                     destroyedTemplate.getId(), destroyedTemplate.getAccountId());
                             Answer answer = ep.sendMessage(cmd);
 
