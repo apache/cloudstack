@@ -61,7 +61,6 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
@@ -215,8 +214,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof UploadTemplateToS3FromSecondaryStorageCommand) {
             return execute((UploadTemplateToS3FromSecondaryStorageCommand) cmd);
-        } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
-            return execute((DeleteObjectFromSwiftCommand) cmd);
         } else if (cmd instanceof CleanupSnapshotBackupCommand) {
             return execute((CleanupSnapshotBackupCommand) cmd);
         } else if (cmd instanceof CopyCommand) {
@@ -321,7 +318,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     @SuppressWarnings("unchecked")
-    private String determineS3TemplateNameFromKey(String key){
+    private String determineS3TemplateNameFromKey(String key) {
         return StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
     }
 
@@ -329,7 +326,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
         return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
     }
-
 
     @SuppressWarnings("unchecked")
     private String determineStorageTemplatePath(final String storagePath, String dataPath) {
@@ -413,7 +409,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 // convention is no / in the end for install path based on
                 // S3Utils implementation.
                 // template key is
-                // TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by adding template_name in the key, I can avoid generating a template.properties file
+                // TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by
+                // adding template_name in the key, I can avoid generating a
+                // template.properties file
                 // for listTemplateCommand.
                 path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
             } else {
@@ -426,8 +424,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (s3Obj == null || s3Obj.size() == 0) {
                 return new Answer(cmd, false, "Failed to download to S3 bucket: " + bucket + " with key: " + key);
             } else {
-                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj.get(0)
-                        .getETag());
+                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj
+                        .get(0).getETag());
             }
         } else if (dstore instanceof SwiftTO) {
             // TODO: need to move code from
@@ -547,31 +545,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         */
         return new Answer(cmd, false, "not supported ");
     }
-
-    private Answer execute(DeleteObjectFromSwiftCommand cmd) {
-        SwiftTO swift = cmd.getSwift();
-        String container = cmd.getContainer();
-        String object = cmd.getObject();
-        if (object == null) {
-            object = "";
-        }
-        try {
-            String result = swiftDelete(swift, container, object);
-            if (result != null) {
-                String errMsg = "failed to delete object " + container + "/" + object + " , err=" + result;
-                s_logger.warn(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String errMsg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-        }
-
-    }
-
-
 
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
         Script command = new Script("/bin/bash", s_logger);
@@ -722,6 +695,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
+    // TODO: this DeleteSnapshotsDirCommand should be removed after
+    // SnapshotManager refactor, this is used to delete those snapshot directory
+    // in the cachestorage. This should be able to be done through
+    // DeleteSnapshotBackupCommand with deleteAll flag set to true.
     public Answer execute(DeleteSnapshotsDirCommand cmd) {
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
@@ -803,9 +780,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
     }
-
-
-
 
     private String determineSnapshotS3Directory(final Long accountId, final Long volumeId) {
         return join(S3Utils.SEPARATOR, SNAPSHOT_ROOT_DIR, accountId, volumeId);
@@ -1014,8 +988,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    private String deleteSnapshotBackupfromS3(final S3TO s3, final String secondaryStorageUrl, final Long accountId, final Long volumeId,
-            final String name, final Boolean deleteAllFlag) {
+    private String deleteSnapshotBackupfromS3(final S3TO s3, final Long accountId, final Long volumeId, final String name, final Boolean deleteAllFlag) {
 
         try {
 
@@ -1025,11 +998,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                 @Override
                 public String call() throws Exception {
-
-                    final String innerResult = deleteSnapshotBackupFromLocalFileSystem(secondaryStorageUrl, accountId, volumeId, name, deleteAllFlag);
-                    if (innerResult != null) {
-                        return innerResult;
-                    }
 
                     if (deleteAllFlag) {
                         S3Utils.deleteDirectory(s3, bucket, determineSnapshotS3Directory(accountId, volumeId));
@@ -1063,19 +1031,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String name = cmd.getSnapshotUuid();
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO) {
-            final String result = deleteSnapshotBackupFromLocalFileSystem(secondaryStorageUrl, accountId, volumeId, name, cmd.isAll());
+            final String result = deleteSnapshotBackupFromLocalFileSystem(((NfsTO) dstore).getUrl(), accountId, volumeId, name, cmd.isAll());
             if (result != null) {
                 s_logger.warn(result);
                 return new Answer(cmd, false, result);
             }
         } else if (dstore instanceof S3TO) {
-            final String result = deleteSnapshotBackupfromS3((S3TO) dstore, secondaryStorageUrl, accountId, volumeId, name, cmd.isAll());
+            final String result = deleteSnapshotBackupfromS3((S3TO) dstore, accountId, volumeId, name, cmd.isAll());
             if (result != null) {
                 s_logger.warn(result);
                 return new Answer(cmd, false, result);
@@ -1136,14 +1103,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
         final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.TEMPLATE_ROOT_DIR);
-        if ( objectSummaries == null )
+        if (objectSummaries == null)
             return null;
         Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
-        for (S3ObjectSummary objectSummary : objectSummaries){
+        for (S3ObjectSummary objectSummary : objectSummaries) {
             String key = objectSummary.getKey();
             String installPath = StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR);
             String uniqueName = this.determineS3TemplateNameFromKey(key);
-            //TODO: isPublic value, where to get?
+            // TODO: isPublic value, where to get?
             TemplateProp tInfo = new TemplateProp(uniqueName, installPath, objectSummary.getSize(), objectSummary.getSize(), true, false);
             tmpltInfos.put(uniqueName, tInfo);
         }
@@ -1158,7 +1125,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
-            NfsTO nfs = (NfsTO)store;
+            NfsTO nfs = (NfsTO) store;
             String root = getRootDir(nfs.getUrl());
             Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
             return new ListTemplateAnswer(nfs.getUrl(), templateInfos);
@@ -1324,7 +1291,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected Answer execute(final DeleteTemplateCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO) {
-            NfsTO nfs = (NfsTO)dstore;
+            NfsTO nfs = (NfsTO) dstore;
             String relativeTemplatePath = cmd.getTemplatePath();
             String parent = getRootDir(nfs.getUrl());
 
@@ -1376,8 +1343,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 S3Utils.deleteDirectory(s3, bucket, path);
                 return new Answer(cmd, true, String.format("Deleted template %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s",
-                        path, bucket, e.getMessage());
+                final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path,
+                        bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1465,6 +1432,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
+            Long volumeId = cmd.getVolumeId();
+            String path = cmd.getVolumePath();
+            String filename = StringUtils.substringAfterLast(path, "/"); // assuming
+                                                                         // that
+                                                                         // the
+                                                                         // filename
+                                                                         // is
+                                                                         // the
+                                                                         // last
+                                                                         // section
+                                                                         // in
+                                                                         // the
+                                                                         // path
+            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), filename);
+            if (result != null) {
+                String errMsg = "failed to delete volume " + filename + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
             return new Answer(cmd, false, "Swift is not currently support DeleteVolumeCommand");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);

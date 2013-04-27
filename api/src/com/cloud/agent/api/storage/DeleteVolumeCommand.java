@@ -21,12 +21,14 @@ import com.cloud.agent.api.to.DataStoreTO;
 public class DeleteVolumeCommand extends ssCommand {
     private DataStoreTO store;
 	private String volumePath;
+	private Long volumeId;
 
 	public DeleteVolumeCommand() {
 	}
 
-	public DeleteVolumeCommand(DataStoreTO store, String volumePath) {
+	public DeleteVolumeCommand(DataStoreTO store, Long volumeId, String volumePath) {
 	    this.store = store;
+	    this.volumeId = volumeId;
     	this.volumePath = volumePath;
     }
 
@@ -42,6 +44,11 @@ public class DeleteVolumeCommand extends ssCommand {
     public DataStoreTO getDataStore() {
         return store;
     }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
 
 
 }
