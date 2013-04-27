@@ -99,7 +99,7 @@ public interface NetworkManager  {
             throws ConcurrentOperationException;
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException;
+            ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException;
 
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
@@ -127,8 +127,8 @@ public interface NetworkManager  {
     boolean destroyNetwork(long networkId, ReservationContext context);
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr,
-            String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr) 
+                               String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
+                               long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr, Boolean displayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**

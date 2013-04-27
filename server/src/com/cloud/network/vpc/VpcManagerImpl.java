@@ -1938,9 +1938,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @DB
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway,
+                                         String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                         PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
@@ -1965,7 +1965,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled);
 
         return guestNetwork;
     }

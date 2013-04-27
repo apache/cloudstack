@@ -1387,6 +1387,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
+	data_center.networktype data_center_type,
         vm_instance.id vm_id,
         vm_instance.uuid vm_uuid,
         vm_instance.name vm_name,

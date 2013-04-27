@@ -21,6 +21,7 @@ import java.util.*;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -1510,7 +1511,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<VolumeDetailResponse> volumeDetailResponseList = new ArrayList<VolumeDetailResponse>();
         for (VolumeDetailVO volumeDetail : volumeDetailList ){
             VolumeDetailResponse volumeDetailResponse = new VolumeDetailResponse();
-            volumeDetailResponse.setId(id.toString());
+            String uuid = ApiDBUtils.findVolumeById(id).getUuid();
+            volumeDetailResponse.setId(uuid);
             volumeDetailResponse.setName(volumeDetail.getName());
             volumeDetailResponse.setValue(volumeDetail.getValue());
             volumeDetailResponse.setObjectName("volumedetail");

@@ -256,6 +256,7 @@
   <bean id="networkRuleConfigDaoImpl" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl" />
   <bean id="networkServiceMapDaoImpl" class="com.cloud.network.dao.NetworkServiceMapDaoImpl" />
   <bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
+  <bean id="nicDetailDaoImpl" class="com.cloud.vm.dao.NicDetailDaoImpl" />
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
@@ -355,6 +356,7 @@
   <bean id="vmRulesetLogDaoImpl" class="com.cloud.network.security.dao.VmRulesetLogDaoImpl" />
   <bean id="volumeDao2Impl" class="org.apache.cloudstack.storage.volume.db.VolumeDao2Impl" />
   <bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
+  <bean id="volumeDetailsDaoImpl" class="com.cloud.storage.dao.VolumeDetailsDaoImpl" />
   <bean id="volumeHostDaoImpl" class="com.cloud.storage.dao.VolumeHostDaoImpl" />
   <bean id="volumeJoinDaoImpl" class="com.cloud.api.query.dao.VolumeJoinDaoImpl" />
   <bean id="volumeReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VolumeReservationDaoImpl" />

@@ -19,9 +19,7 @@ package com.cloud.network;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -165,4 +163,11 @@ public interface NetworkService {
 
     /* lists the nic informaton */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
+
+    void removeNicDetail(RemoveNicDetailCmd removeNicDetailCmd);
+
+    void addNicDetail(AddNicDetailCmd cmd);
+
+    void updateNicDetail(UpdateNicDetailCmd cmd);
+
 }

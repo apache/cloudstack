@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -29,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Local(value = { NicDetailDao.class })
+@Local (value={NicDetailDao.class})
 public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implements NicDetailDao {
     protected final SearchBuilder<NicDetailVO> NicSearch;
     protected final SearchBuilder<NicDetailVO> DetailSearch;
