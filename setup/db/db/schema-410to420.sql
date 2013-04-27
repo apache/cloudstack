@@ -421,3 +421,14 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_time` DATETIME;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFAULT 0;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_host` bigint unsigned;
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FOREIGN KEY (`power_host`) REFERENCES `cloud`.`host`(`id`);
+
+CREATE TABLE `cloud`.`vm_work_job` (
+  `id` bigint unsigned UNIQUE NOT NULL,
+  `step` char(32) NOT NULL COMMENT 'state',
+  `vm_type` char(32) NOT NULL COMMENT 'type of vm',
+  `vm_instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vm_work_job__instance_id` FOREIGN KEY (`vm_instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  INDEX `i_vm_work_job__vm`(`vm_type`, `vm_instance_id`),
+  INDEX `i_vm_work_job__step`(`step`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -33,6 +33,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmWorkJobDao;
+import com.cloud.vm.VmWorkJobVO;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
@@ -43,6 +45,7 @@ public class VmDaoTest extends TestCase {
 	
 	@Inject UserVmDao userVmDao;
 	@Inject VMInstanceDao instanceDao;
+	@Inject VmWorkJobDao workJobDao;
 	
 	@Before
 	public void setup() {
@@ -138,5 +141,30 @@ public class VmDaoTest extends TestCase {
 		
 		userVmDao.expunge(1L);
 		userVmDao.expunge(2L);
+	}
+	
+	@Test
+	public void testVmWork() {
+		VmWorkJobVO workJob = new VmWorkJobVO();
+		workJob.setAccountId(1);
+		workJob.setCmd("StartVM");
+		workJob.setInitMsid(1L);
+		workJob.setStep(VmWorkJobVO.Step.Prepare);
+		workJob.setVmType(VirtualMachine.Type.ConsoleProxy);
+		workJob.setVmInstanceid(1L);
+		
+		workJobDao.persist(workJob);
+		
+		VmWorkJobVO pendingWorkJob = workJobDao.findPendingWorkJob(VirtualMachine.Type.ConsoleProxy, 1L);
+		Assert.assertTrue(pendingWorkJob.getCmd().equals("StartVM"));
+		Assert.assertTrue(pendingWorkJob.getInitMsid() == 1);
+		Assert.assertTrue(pendingWorkJob.getAccountId() == 1);
+		Assert.assertTrue(pendingWorkJob.getStep() == VmWorkJobVO.Step.Prepare);
+		
+		workJobDao.updateStep(pendingWorkJob.getId(), VmWorkJobVO.Step.Starting);
+		pendingWorkJob = workJobDao.findPendingWorkJob(VirtualMachine.Type.ConsoleProxy, 1L);
+		Assert.assertTrue(pendingWorkJob.getStep() == VmWorkJobVO.Step.Starting);
+		
+		workJobDao.expunge(workJob.getId());
 	}
 }
