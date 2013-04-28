@@ -1711,8 +1711,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
+                                      User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -1754,6 +1754,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+
+        if(displayNetwork != null){
+            if(!_accountMgr.isRootAdmin(callerAccount.getType())){
+                throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
+            }
+            network.setDisplayNetwork(displayNetwork);
         }
 
         // network offering and domain suffix can be updated for Isolated networks only in 3.0

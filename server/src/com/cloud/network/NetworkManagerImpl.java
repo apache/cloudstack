@@ -1173,7 +1173,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(),
                         related, name, displayText, predefined.getNetworkDomain(), offering.getGuestType(),
                         plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
-                vo.setDisplayNetwork(isDisplayNetworkEnabled);
+                vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                         finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 

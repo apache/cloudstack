@@ -1232,6 +1232,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
         data_center.is_security_group_enabled security_group_enabled,
+	data_center.networktype data_center_type,
         host.id host_id,
         host.uuid host_uuid,
         host.name host_name,
@@ -1297,7 +1298,12 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         async_job.id job_id,
         async_job.uuid job_uuid,
         async_job.job_status job_status,
-        async_job.account_id job_account_id
+        async_job.account_id job_account_id,
+        affinity_group.id affinity_group_id,
+        affinity_group.uuid affinity_group_uuid,
+        affinity_group.name affinity_group_name,
+        affinity_group.description affinity_group_description
+
     from
         `cloud`.`user_vm`
             inner join
@@ -1356,7 +1362,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'VirtualMachine'
-            and async_job.job_status = 0;
+            and async_job.job_status = 0
+	left join 
+	`cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
+	left join 
+	`cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS

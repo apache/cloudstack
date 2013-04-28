@@ -51,7 +51,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.*;
@@ -563,7 +562,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
+                                      User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
         // TODO Auto-generated method stub
         return null;
     }

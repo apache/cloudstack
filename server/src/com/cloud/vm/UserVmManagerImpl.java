@@ -755,6 +755,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ResourceAllocationException {
         Long vmId = cmd.getId();
         Long svcOffId = cmd.getServiceOfferingId();
+        return upgradeStoppedVirtualMachine(vmId, svcOffId);
+    }
+
+
+    private UserVm upgradeStoppedVirtualMachine(Long vmId, Long svcOffId) throws ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
@@ -815,6 +820,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         return _vmDao.findById(vmInstance.getId());
+
     }
 
     @Override
@@ -1052,7 +1058,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
     public UserVm
-    upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException {
+    upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException, ResourceAllocationException {
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
         Account caller = UserContext.current().getCaller();
@@ -1061,6 +1067,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         if(vmInstance.getHypervisorType() != HypervisorType.XenServer){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
+        }
+
+        if(vmInstance.getState().equals(State.Stopped)){
+            return upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
