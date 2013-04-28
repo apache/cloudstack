@@ -1068,17 +1068,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
-        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
-
         String podName = cmd.getPodName();
         Long id = cmd.getId();
-        Long zoneId = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();        
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
-
+        String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
+    	
+    	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();        
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);          
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        
+        if(zoneType != null) {
+            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+               
+        SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1088,21 +1100,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
-
+        
         if (podName != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + podName + "%");
+            sc.setParameters("name", "%" + podName + "%");
         }
-
+        
         if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
-
+        
         if (allocationState != null) {
-            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+            sc.setParameters("allocationState", allocationState);
+        }        
+    
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
         }
-
+        
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
