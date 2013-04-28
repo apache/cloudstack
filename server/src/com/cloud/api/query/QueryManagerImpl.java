@@ -22,6 +22,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.dao.NicDetailDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -35,6 +37,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNicDetailsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -48,7 +51,6 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -229,6 +231,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private VolumeDetailsDao _volumeDetailDao;
+
+    @Inject
+    private NicDetailDao _nicDetailDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1521,6 +1526,35 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return volumeDetailResponseList;
     }
+
+    @Override
+    public List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd cmd){
+        Long id = cmd.getId();
+        String name = cmd.getName();
+
+        List<NicDetailVO> nicDetailList;
+        if(name == null){
+            nicDetailList = _nicDetailDao.findDetails(id);
+        }else {
+            NicDetailVO nicDetail = _nicDetailDao.findDetail(id, name);
+            nicDetailList = new LinkedList<NicDetailVO>();
+            nicDetailList.add(nicDetail);
+        }
+
+        List<NicDetailResponse> nicDetailResponseList = new ArrayList<NicDetailResponse>();
+        for(NicDetailVO nicDetail : nicDetailList){
+            NicDetailResponse nicDetailResponse = new NicDetailResponse();
+            //String uuid = ApiDBUtils.findN
+            nicDetailResponse.setName(nicDetail.getName());
+            nicDetailResponse.setValue(nicDetail.getValue());
+            nicDetailResponse.setObjectName("nicdetail");
+            nicDetailResponseList.add(nicDetailResponse);
+        }
+
+        return nicDetailResponseList;
+
+    }
+
 
 
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {

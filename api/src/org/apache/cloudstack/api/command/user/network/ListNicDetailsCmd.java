@@ -18,26 +18,19 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
-import com.cloud.event.EventTypes;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+import java.util.List;
 
-@APICommand(name = "addNicDetail", description="Adds detail for the volume.", since="4.2", responseObject=SuccessResponse.class)
-public class AddNicDetailCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddNicDetailCmd.class.getName());
-    private static final String s_name = "addNicDetailresponse";
+
+@APICommand(name = "listNicDetails", description="Lists all nic details.", responseObject=NicDetailResponse.class)
+public class ListNicDetailsCmd extends BaseListTaggedResourcesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListNicDetailsCmd.class.getName());
+
+    private static final String s_name = "listnicdetailsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -47,29 +40,19 @@ public class AddNicDetailCmd extends BaseAsyncCmd {
             required=true, description="the ID of the nic")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING,
-            required=true, description="the name of the field")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the nic detail")
     private String name;
-
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING,
-            required=true, description="the value of the field")
-    private String value;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getId() {
+        return id;
+    }
 
     public String getName() {
         return name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public Long getId() {
-        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -81,33 +64,14 @@ public class AddNicDetailCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Volume;
-    }
 
-    public Long getInstanceId() {
-        return getId();
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
-        return caller.getAccountId();
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_NIC_CREATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return  "adding detail to the nic: " + getId();
-    }
 
     @Override
     public void execute(){
-        _networkService.addNicDetail(this);
-        this.setResponseObject(new SuccessResponse(getCommandName()));
+        ListResponse<NicDetailResponse> responses = new ListResponse<NicDetailResponse>();
+        List<NicDetailResponse> nicDetailList = _queryService.searchForNicDetails(this);
+        responses.setResponses(nicDetailList);
+        responses.setResponseName(getCommandName());
+        this.setResponseObject(responses);
     }
 }

@@ -32,10 +32,10 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "updateVolumeDetail", description="Updates the volume.", responseObject=VolumeResponse.class)
+@APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
-    private static final String s_name = "addVolumeDetailresponse";
+    public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
+    private static final String s_name = "addVolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -45,25 +45,16 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
             required=true, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING,
-            required=true, description="the name of the field")
-    private String name;
-
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, entityType=UserVmResponse.class,
-            required=true, description="the value of the field")
-    private String value;
+    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING,
+            required=true, description="the path of the volume")
+    private String path;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
-    public String getName() {
-        return name;
-    }
-
-    public String getValue() {
-        return value;
+    public String getPath() {
+        return path;
     }
 
     public Long getId() {
@@ -109,13 +100,13 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getId());
-        /*Volume result = _volumeService.attachVolumeToVM(this);
+        Volume result = _volumeService.updateVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach volume");
-        } */
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
+        }
     }
 }

@@ -2424,6 +2424,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AttachVolumeCmd.class);
         cmdList.add(CreateVolumeCmd.class);
         cmdList.add(DeleteVolumeCmd.class);
+        cmdList.add(UpdateVolumeCmd.class);
         cmdList.add(DetachVolumeCmd.class);
         cmdList.add(ExtractVolumeCmd.class);
         cmdList.add(ListVolumesCmd.class);
@@ -2487,6 +2488,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddNicDetailCmd.class);
         cmdList.add(UpdateNicDetailCmd.class);
         cmdList.add(RemoveNicDetailCmd.class);
+        cmdList.add(ListNicDetailsCmd.class);
         return cmdList;
     }
 

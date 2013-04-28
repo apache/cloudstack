@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNicDetailsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -89,4 +90,5 @@ public interface QueryService {
 
     public List<VolumeDetailResponse> searchForVolumeDetails(ListVolumeDetailsCmd cmd);
 
-    }
+    List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd ListNicDetailsCmd);
+}

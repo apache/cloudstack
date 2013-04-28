@@ -880,6 +880,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             if(displayVolumeEnabled == null){
                 displayVolumeEnabled = true;
+            } else{
+                if(!_accountMgr.isRootAdmin(caller.getType())){
+                    throw new PermissionDeniedException( "Cannot update parameter displayvolume, only admin permitted ");
+                }
             }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
@@ -1771,6 +1775,22 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         VolumeVO newVol = _volumeDao.findById(volumeOnPrimaryStorage.getId());
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
+    }
+
+    @Override
+    public Volume updateVolume(UpdateVolumeCmd cmd){
+        Long volumeId = cmd.getId();
+        String path = cmd.getPath();
+
+        if(path == null){
+            throw new InvalidParameterValueException("Failed to update the volume as path was null");
+        }
+
+        VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
+        volume.setPath(path);
+        _volumeDao.update(volumeId, volume);
+
+        return volume;
     }
 
     @Override

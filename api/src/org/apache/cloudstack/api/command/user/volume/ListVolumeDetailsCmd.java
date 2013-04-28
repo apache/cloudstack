@@ -30,7 +30,7 @@ import java.util.List;
 
 @APICommand(name = "listVolumeDetails", description="Lists all volume details.", responseObject=VolumeDetailResponse.class)
 public class ListVolumeDetailsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVolumeDetailsCmd.class.getName());
 
     private static final String s_name = "listvolumedetailsresponse";
 

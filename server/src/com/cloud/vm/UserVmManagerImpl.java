@@ -1576,6 +1576,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
+        Account caller = UserContext.current().getCaller();
 
         // Input validation
         UserVmVO vmInstance = null;
@@ -1608,6 +1609,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (isDisplayVmEnabled == null) {
             isDisplayVmEnabled = vmInstance.isDisplayVm();
+        } else{
+            if(!_accountMgr.isRootAdmin(caller.getType())){
+                throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
+            }
         }
 
         UserVmVO vm = _vmDao.findById(id);
@@ -2251,7 +2256,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
         Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod,
 	    String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps,
-	    IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList)
+	    IpAddresses defaultIps, Boolean isDisplayVmEnabled, String keyboard, List<Long> affinityGroupIdList)
                     throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, true, owner);
@@ -2537,8 +2542,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             vm.setIsoId(template.getId());
         }
 
-        if(displayvm != null){
-            vm.setDisplayVm(displayvm);
+        if(isDisplayVmEnabled != null){
+            if(!_accountMgr.isRootAdmin(caller.getType())){
+                throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
+            }
+            vm.setDisplayVm(isDisplayVmEnabled);
         }else {
             vm.setDisplayVm(true);
         }

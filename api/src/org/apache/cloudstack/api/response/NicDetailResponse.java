@@ -26,26 +26,25 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
-import com.cloud.storage.Volume;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class VolumeDetailResponse extends BaseResponse{
+public class NicDetailResponse extends BaseResponse{
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the volume")
+    @Param(description = "ID of the nic")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the volume detail")
+    @Param(description = "name of the nic detail")
     private String name;
 
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "value of the volume detail")
+    @Param(description = "value of the nic detail")
     private String value;
 
-    @SerializedName(ApiConstants.DISPLAY_VOLUME) @Param(description="an optional field whether to the display the volume to the end user or not.")
-    private Boolean displayVm;
+    @SerializedName(ApiConstants.DISPLAY_NIC) @Param(description="an optional field whether to the display the nic to the end user or not.")
+    private Boolean displayNic;
 
     public String getId() {
         return id;
@@ -72,11 +71,11 @@ public class VolumeDetailResponse extends BaseResponse{
         this.name = name;
     }
 
-    public Boolean getDisplayVm() {
-        return displayVm;
+    public Boolean getDisplayNic() {
+        return displayNic;
     }
 
-    public void setDisplayVm(Boolean displayVm) {
-        this.displayVm = displayVm;
+    public void setDisplayNic(Boolean displayNic) {
+        this.displayNic = displayNic;
     }
 }

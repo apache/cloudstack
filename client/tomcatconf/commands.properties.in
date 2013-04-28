@@ -269,10 +269,11 @@ listVolumes=15
 extractVolume=15
 migrateVolume=15
 resizeVolume=15
-addVolumeDetail=15
-updateVolumeDetail=15
-removeVolumeDetail=15
-listVolumeDetails=15
+updateVolume=1
+addVolumeDetail=1
+updateVolumeDetail=1
+removeVolumeDetail=1
+listVolumeDetails=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -343,9 +344,10 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
-addNicDetail=15
-updateNicDetail=15
-removeNicDetail=15
+addNicDetail=1
+updateNicDetail=1
+removeNicDetail=1
+listNicDetails=1
 
 ####
 addIpToNic=15

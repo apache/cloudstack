@@ -48,11 +48,11 @@ public class RemoveNicDetailCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING,
-            required=true, description="the name of the field")
+            required=false, description="the name of the field")
     private String name;
 
     @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING,
-            required=true, description="the value of the field")
+            required=false, description="the value of the field")
     private String value;
 
     /////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ public class RemoveNicDetailCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VOLUME_ATTACH;
+        return EventTypes.EVENT_NIC_DETAIL_REMOVE;
     }
 
     @Override

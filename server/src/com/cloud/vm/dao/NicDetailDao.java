@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicDetailVO;
 
 public interface NicDetailDao extends GenericDao<NicDetailVO, Long> {
-    Map<String, String> findDetails(long nicId);
+    List<NicDetailVO> findDetails(long nicId);
 
     void persist(long nicId, Map<String, String> details);
 

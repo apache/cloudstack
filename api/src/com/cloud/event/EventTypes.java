@@ -103,6 +103,10 @@ public class EventTypes {
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
     public static final String EVENT_NIC_DELETE = "NIC.DELETE";
     public static final String EVENT_NIC_UPDATE = "NIC.UPDATE";
+    public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
+    public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
+    public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -26,7 +24,6 @@ import com.cloud.vm.NicDetailVO;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,17 +65,17 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
     }
 
     @Override
-    public Map<String, String> findDetails(long nicId) {
+    public List<NicDetailVO> findDetails(long nicId) {
         SearchCriteria<NicDetailVO> sc = NicSearch.create();
         sc.setParameters("nicId", nicId);
 
         List<NicDetailVO> results = search(sc, null);
-        Map<String, String> details = new HashMap<String, String>(results.size());
+        /*Map<String, String> details = new HashMap<String, String>(results.size());
         for (NicDetailVO result : results) {
             details.put(result.getName(), result.getValue());
-        }
+        } */
 
-        return details;
+        return results;
     }
 
     @Override
