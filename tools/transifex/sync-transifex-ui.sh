@@ -67,7 +67,9 @@ doDownloadL10NLangs()
                         sed -i"" "s/\\\\\\\'/'/g" ${WORKDIR}/messages_${CODELANG}.properties
                         tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties
                 else   
-                        echo "Warning: the resource file for language ${CODELANG} doesn't exist."
+                        echo "\nWarning: the resource file for language ${CODELANG} doesn't exist."
+                        echo "Run this command to force get this language from transifex:"
+                        echo "\ntx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties\n"
                 fi
         done
 
