@@ -64,6 +64,9 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
             description="the Zone ID of the router")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
             description="list by network id")
     private Long networkId;
@@ -103,6 +106,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Long getNetworkId() {
         return networkId;
     }

@@ -194,17 +194,23 @@
 				}
 
         if("hosts" in args.context) {
-	  $.extend(data, {
-	    hostid: args.context.hosts[0].id
-	  });
-	}
-        
+					$.extend(data, {
+					  hostid: args.context.hosts[0].id
+					});
+				}
+				
+				if("affinityGroups" in args.context) {				  
+					$.extend(data, {
+					  affinitygroupid: args.context.affinityGroups[0].id
+					});		
+				}
+
         if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
           $.extend(data, {
             zonetype: args.context.zoneType
           });
-	}
-	
+	      }
+        
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,
@@ -223,6 +229,7 @@
         viewAll: [
           { path: 'storage.volumes', label: 'label.volumes' },
           { path: 'vmsnapshots', label: 'label.snapshots' },
+					{ path: 'affinityGroups', label: 'label.affinity.groups' },
           {
             path: '_zone.hosts',
             label: 'label.hosts',
@@ -426,7 +433,6 @@
               poll: pollAsyncJobResult
             }
           },
-
           snapshot: {
             messages: {
               notification: function(args) {
@@ -489,7 +495,6 @@
               pool: pollAsyncJobResult
             }
           },          
-
           destroy: {
             label: 'label.action.destroy.instance',
             compactLabel: 'label.destroy',
@@ -555,7 +560,6 @@
               }
             }
           },
-
           reset: {
             label: 'Reset VM',
             messages:{
@@ -586,8 +590,128 @@
               }
             }
 
-           },
+          },
 
+          changeAffinity: {
+            label: 'Change affinity',
+
+            action: {
+              custom: cloudStack.uiCustom.affinity({
+                tierSelect: function(args) {
+                  if ('vpc' in args.context) { //from VPC section
+                    args.$tierSelect.show(); //show tier dropdown
+
+                    $.ajax({ //populate tier dropdown
+                      url: createURL("listNetworks"),
+                      async: false,
+                      data: {
+                        vpcid: args.context.vpc[0].id,
+                        //listAll: true,  //do not pass listAll to listNetworks under VPC
+											  domainid: args.context.vpc[0].domainid,
+						            account: args.context.vpc[0].account,
+                        supportedservices: 'StaticNat'
+                      },
+                      success: function(json) {
+                        var networks = json.listnetworksresponse.network;
+                        var items = [{ id: -1, description: 'Please select a tier' }];
+                        $(networks).each(function(){
+                          items.push({id: this.id, description: this.displaytext});
+                        });
+                        args.response.success({ data: items });
+                      }
+                    });
+                  }
+                  else { //from Guest Network section
+                    args.$tierSelect.hide();
+                  }
+
+                  args.$tierSelect.change(function() {
+                    args.$tierSelect.closest('.list-view').listView('refresh');
+                  });
+                  args.$tierSelect.closest('.list-view').listView('refresh');
+                },
+
+                listView: {
+                  listView: {
+                    id: 'affinityGroups',
+                    fields: {
+                      name: { label: 'label.name' },
+                      type: { label: 'label.type' }
+                    },
+                    dataProvider: function(args) {										  
+											$.ajax({
+												url: createURL('listAffinityGroups'),
+												async: false, //make it sync to avoid dataProvider() being called twice which produces duplicate data
+												success: function(json) {	
+                          var items = [];												
+													var allAffinityGroups = json.listaffinitygroupsresponse.affinitygroup;
+													var previouslySelectedAffinityGroups = args.context.instances[0].affinitygroup;
+													if(allAffinityGroups != null) {		
+													  for(var i = 0; i < allAffinityGroups.length; i++) {														  
+														  var isPreviouslySelected = false;														  
+															if(previouslySelectedAffinityGroups != null) {
+															  for(var k = 0; k < previouslySelectedAffinityGroups.length; k++) {
+																  if(previouslySelectedAffinityGroups[k].id == allAffinityGroups[i].id) {
+																	  isPreviouslySelected = true;
+																	  break; //break for loop
+																	}
+																}																
+															}												
+															items.push($.extend(allAffinityGroups[i], {
+															  _isSelected: isPreviouslySelected
+															}));	                             													
+														}
+													}											
+													args.response.success({data: items});
+												}
+											});													
+                    }
+                  }
+                },
+                action: function(args) {                  
+									var affinityGroupIdArray = [];
+									if(args.context.affinityGroups != null) {
+									  for(var i = 0; i < args.context.affinityGroups.length; i++) {										  
+											if(args.context.affinityGroups[i]._isSelected == true) {
+											  affinityGroupIdArray.push(args.context.affinityGroups[i].id);
+											}
+										}
+									}									
+									var data = {
+									  id: args.context.instances[0].id,
+										affinitygroupids: affinityGroupIdArray.join(",")
+									};									
+									$.ajax({
+									  url: createURL('updateVMAffinityGroup'),
+										data: data,
+										success: function(json) {										  
+											var jid = json.updatevirtualmachineresponse.jobid;											
+											args.response.success(
+												{_custom:
+												 {jobId: jid,
+													getUpdatedItem: function(json) {													  
+														return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+													},
+													getActionFilter: function() {
+														return vmActionfilter;
+													}
+												 }
+												}
+											);												
+										}
+									});			
+                }
+              })
+            },
+            messages: {
+              notification: function(args) {
+                return 'Change affinity';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+          },
 
           edit: {
             label: 'label.edit',
@@ -597,7 +721,7 @@
 							  group: args.data.group,
 								ostypeid: args.data.guestosid
 							};
-						             						
+						  
 							if(args.data.displayname != args.context.instances[0].displayname) {
 							  $.extend(data, {
 								  displayName: args.data.displayname
@@ -1380,7 +1504,7 @@
               args.response.success({data: args.context.instances[0].securitygroup});
             }
           },
-
+					
           /**
            * Statistics tab
            */
@@ -1450,6 +1574,7 @@
       allowedActions.push("reset");
       allowedActions.push("snapshot");
       allowedActions.push("scaleUp");
+      allowedActions.push("changeAffinity");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");

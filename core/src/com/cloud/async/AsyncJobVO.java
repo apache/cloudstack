@@ -133,6 +133,7 @@ public class AsyncJobVO implements AsyncJob {
     	this.callbackType = CALLBACK_POLLING;
     	this.uuid = UUID.randomUUID().toString();
         this.instanceId = instanceId;
+        this.instanceType = instanceType;
     }
 
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,

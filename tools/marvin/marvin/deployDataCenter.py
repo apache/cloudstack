@@ -402,6 +402,7 @@ class deployDataCenters():
 
         self.testClient = \
         cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, \
+                                                  mgt.user, mgt.passwd, \
                                                   mgt.apiKey, \
                                                   mgt.securityKey, \
                                             logging=self.testClientLogger)
@@ -409,6 +410,7 @@ class deployDataCenters():
             apiKey, securityKey = self.registerApiKey()
             self.testClient = \
             cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
+                                                      mgt.user, mgt.passwd, \
                                                       apiKey, securityKey, \
                                              logging=self.testClientLogger)
 
@@ -419,6 +421,11 @@ class deployDataCenters():
                                       dbSvr.passwd, dbSvr.db)
 
         self.apiClient = self.testClient.getApiClient()
+        """set hypervisor"""
+        if mgt.hypervisor:
+            self.apiClient.hypervisor = mgt.hypervisor
+        else:
+            self.apiClient.hypervisor = "XenServer"     #Defaults to Xenserver
 
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:

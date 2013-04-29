@@ -483,7 +483,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
 
-    public String allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
 
         Long accountId = null;
         Long domainId = null;
@@ -565,6 +565,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return null;
         }
 
+        NicSecondaryIpVO secondaryIpVO;
         if (ipaddr != null) {
             // we got the ip addr so up the nics table and secodary ip
             Transaction txn = Transaction.currentTxn();
@@ -580,11 +581,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
             s_logger.debug("Setting nic_secondary_ip table ...");
             vmId = nicVO.getInstanceId();
-            NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
+            secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
             _nicSecondaryIpDao.persist(secondaryIpVO);
             txn.commit();
+           return  getNicSecondaryIp(secondaryIpVO.getId());
+        } else {
+            return null;
         }
-        return ipaddr;
     }
 
     @DB
@@ -674,6 +677,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _nicSecondaryIpDao.remove(ipVO.getId());
         txn.commit();
         return true;
+    }
+
+    NicSecondaryIp getNicSecondaryIp (long id) {
+        NicSecondaryIp nicSecIp = _nicSecondaryIpDao.findById(id);
+        if (nicSecIp == null) {
+            return null;
+        }
+        return nicSecIp;
     }
 
     @Override
@@ -1147,6 +1158,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
+        String zoneType = cmd.getZoneType();
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1295,39 +1307,39 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                         permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                                     domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
                         isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
                                 isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                                     caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
-                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags),
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType),
                     searchFilter);
         }
 
@@ -1372,7 +1384,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, 
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags) {
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, String zoneType) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1394,6 +1406,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSearch", "networkType", zoneType);          
+        }
+        
         if (guestIpType != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
         }

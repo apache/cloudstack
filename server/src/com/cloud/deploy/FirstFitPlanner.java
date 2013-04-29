@@ -452,21 +452,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return disabledPods;
     }
 
-    private Map<Short,Float> getCapacityThresholdMap(){
-        // Lets build this real time so that the admin wont have to restart MS if he changes these values
-        Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
-
-        String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
-        float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
-
-        String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
-        float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
-
-        return disableThresholdMap;
-    }
-
     private List<Short> getCapacitiesForCheckingThreshold(){
         List<Short> capacityList = new ArrayList<Short>();
         capacityList.add(Capacity.CAPACITY_TYPE_CPU);
@@ -476,7 +461,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
 
-        Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
 
@@ -491,12 +475,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
            		return;
            	}
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), cpu_requested);
+                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), Config.CPUCapacityDisableThreshold.key(), cpu_requested);
             }
             else if (capacity == Capacity.CAPACITY_TYPE_MEMORY ) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-                        capacityThresholdMap.get(capacity), ram_requested );
+                        Config.MemoryCapacityDisableThreshold.key(), ram_requested );
             }
 
 
@@ -506,8 +489,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
            		// Remove clusters crossing disabled threshold
                	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
-           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");
+                   s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+                           " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
            	}
 
         }

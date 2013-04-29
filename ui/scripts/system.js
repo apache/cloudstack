@@ -184,9 +184,16 @@
     dashboard: {
       dataProvider: function(args) {
         var dataFns = {
-          zoneCount: function(data) {
+          zoneCount: function(data) {          	
+            var data = {};
+          	if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data, {
+                networktype: cloudStack.context.zoneType
+              });
+            }          	
             $.ajax({
               url: createURL('listZones'),
+              data: data,
               success: function(json) {
                 dataFns.podCount($.extend(data, {
                   zoneCount: json.listzonesresponse.count ?
@@ -239,13 +246,19 @@
           },
 
           hostCount: function(data) {
+          	var data2= {
+              type: 'routing',
+							page: 1,
+							pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }   
             $.ajax({
               url: createURL('listHosts'),
-              data: {
-                type: 'routing',
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
                 dataFns.primaryStorageCount($.extend(data, {
                   hostCount: json.listhostsresponse.count ?
@@ -256,29 +269,40 @@
           },
 
           primaryStorageCount: function(data) {
+            var data2 = {
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }   
             $.ajax({
               url: createURL('listStoragePools'),
-	      data: {
-		page: 1,
-		pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-	      },
+	            data: data2,
               success: function(json) {                
-		dataFns.secondaryStorageCount($.extend(data, {
-                  primaryStorageCount: json.liststoragepoolsresponse.count ?
-                    json.liststoragepoolsresponse.count : 0
+		            dataFns.secondaryStorageCount($.extend(data, {
+                  primaryStorageCount: json.liststoragepoolsresponse.count ? json.liststoragepoolsresponse.count : 0
                 }));		
               }
             });
           },
 
           secondaryStorageCount: function(data) {
+            var data2 = {
+              type: 'SecondaryStorage',
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }  
             $.ajax({
               url: createURL('listHosts'),
-              data: {
-                type: 'SecondaryStorage',
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
                 dataFns.systemVmCount($.extend(data, {
                   secondaryStorageCount: json.listhostsresponse.count ?
@@ -305,22 +329,35 @@
           },
 
           virtualRouterCount: function(data) {
+            var data2 = {
+              projectid: -1,
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }  
             $.ajax({
               url: createURL('listRouters'),
-              data: {
-                projectid: -1,
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
-                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
+                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
+                
+                var data3 = {
+                  listAll: true,
+                  page: 1,
+                  pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                };
+                if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+                  $.extend(data3, {
+                    zonetype: cloudStack.context.zoneType
+                  });
+                }  
 								$.ajax({
 								  url: createURL('listRouters'),
-									data: {
-									  listAll: true,
-										page: 1,
-								    pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-									},
+									data: data3,
 									success: function(json) {
 									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
 										dataFns.capacity($.extend(data, {
@@ -2293,12 +2330,18 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: false
+                    };
+										if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+					            $.extend(data2, {
+					              zonetype: cloudStack.context.zoneType
+					            });
+					          }  										
                     var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                      data: {
-											  forvpc: false
-											},
+                      data: data2,
                       success: function(json) {
                         var items = json.listroutersresponse.router ?
                               json.listroutersresponse.router : [];
@@ -2310,9 +2353,7 @@
                         // Get project routers
                         $.ajax({
                           url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                          data: {
-														forvpc: false
-													},
+                          data: data2,
                           success: function(json) {
                             var items = json.listroutersresponse.router ?
                                   json.listroutersresponse.router : [];
@@ -2774,13 +2815,19 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: true
+                    };
+				            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+				              $.extend(data2, {
+				                zonetype: cloudStack.context.zoneType
+				              });
+				            }    
 										var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
-											data: {
-											  forvpc: true
-											},
+											data: data2,
                       async: true,
                       success: function(json) {
                         var items = json.listroutersresponse.router;												
@@ -2792,9 +2839,7 @@
 												$.ajax({
 													url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
 													dataType: 'json',
-													data: {
-														forvpc: true
-													},
+													data: data2,
 													async: true,
 													success: function(json) {
 														var items = json.listroutersresponse.router;														
@@ -4665,6 +4710,10 @@
                   }
                 }
 
+                if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                  array1.push("&networktype=" + args.context.zoneType);              
+                }
+                
                 $.ajax({
                   url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                   dataType: "json",
@@ -5000,8 +5049,8 @@
                         localstorageenabled: {
                           label: 'label.local.storage.enabled',
                           isBoolean: true,
-			  isEditable: true,
-			  converter:cloudStack.converters.toBooleanText
+												  isEditable: true,
+												  converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],
@@ -5375,6 +5424,83 @@
                               poll: pollAsyncJobResult
                             }
                           },
+                   
+                          scaleUp:{
+            label:'scaleUp System VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+                    serviceOfferingId: {
+                      label: 'label.compute.offering',
+                      select: function(args) {
+                        var apiCmd = "listServiceOfferings&issystem=true";
+                        if(args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
+                          apiCmd += "&systemvmtype=secondarystoragevm";
+                        else if(args.context.systemVMs[0].systemvmtype == "consoleproxy")
+                          apiCmd += "&systemvmtype=consoleproxy";
+                        $.ajax({
+                          url: createURL(apiCmd),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                            var items = [];
+                            $(serviceofferings).each(function() {
+                              if(this.id != args.context.systemVMs[0].serviceofferingid) {
+                                items.push({id: this.id, description: this.name});
+                              }
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                         }
+                          
+                       }
+                    }
+                  );
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the system VM ?';
+              },
+              notification: function(args) {
+
+                    return 'System VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
 
                           viewConsole: {
                             label: 'label.view.console',
@@ -5534,9 +5660,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { page: args.page, pageSize: pageSize, type: 'routing', listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }                  
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, type: 'routing', listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5628,9 +5761,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true };
+                  if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data, {
+                      zonetype: args.context.zoneType
+                    });
+                  }     
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5712,10 +5852,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data2 = {};                  
+                  if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+                    $.extend(data2, {
+                      zonetype: cloudStack.context.zoneType
+                    });
+                  }                      
                   var routers = [];
                   $.ajax({
                     url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
-                    dataType: 'json',
+                    data: data2,
                     async: true,
                     success: function(json) {
                       var items = json.listroutersresponse.router ?
@@ -5728,7 +5874,7 @@
                       // Get project routers
                       $.ajax({
                         url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
-                        dataType: 'json',
+                        data: data2,
                         async: true,
                         success: function(json) {
                           var items = json.listroutersresponse.router ?
@@ -5812,12 +5958,18 @@
               }
             }
 
+            var data2 = {
+              forvpc: false
+            };
+            if(cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+              $.extend(data2, {
+                zonetype: cloudStack.context.zoneType
+              });
+            }    
             var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-							  forvpc: false
-							},
+              data: data2,
               success: function(json) {
                 var items = json.listroutersresponse.router ?
                       json.listroutersresponse.router : [];
@@ -5828,9 +5980,7 @@
                 // Get project routers
                 $.ajax({
                   url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                  data: {
-										forvpc: false
-									},
+                  data: data2,
                   success: function(json) {
                     var items = json.listroutersresponse.router ?
                           json.listroutersresponse.router : [];
@@ -6584,6 +6734,83 @@
                   poll: pollAsyncJobResult
                 }
               },
+
+               scaleUp:{
+            label:'scaleUp System VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+                    serviceOfferingId: {
+                      label: 'label.compute.offering',
+                      select: function(args) {
+                        var apiCmd = "listServiceOfferings&issystem=true";
+                        if(args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
+                          apiCmd += "&systemvmtype=secondarystoragevm";
+                        else if(args.context.systemVMs[0].systemvmtype == "consoleproxy")
+                          apiCmd += "&systemvmtype=consoleproxy";
+                        $.ajax({
+                          url: createURL(apiCmd),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                            var items = [];
+                            $(serviceofferings).each(function() {
+                              if(this.id != args.context.systemVMs[0].serviceofferingid) {
+                                items.push({id: this.id, description: this.name});
+                              }
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                   }
+                    }
+                  );
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the system VM ?';
+              },
+              notification: function(args) {
+
+                    return 'System VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
+
 
               viewConsole: {
                 label: 'label.view.console',
@@ -8909,6 +9136,10 @@
               array1.push("&hostid=" + args.context.instances[0].hostid);
             }
 
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -10515,6 +10746,11 @@
 							}
 						}
             array1.push("&zoneid=" + args.context.zones[0].id);
+
+            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+              array1.push("&zonetype=" + args.context.zoneType);              
+            }
+
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
@@ -11605,14 +11841,16 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("remove");  
+      allowedActions.push("remove"); 
+      allowedActions.push("scaleUp");
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-			allowedActions.push("changeService");
+      allowedActions.push("scaleUp");
+      allowedActions.push("changeService");
       allowedActions.push("remove");
     }
     else if (jsonObj.state == 'Error') {

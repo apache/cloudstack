@@ -582,7 +582,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             // 2) If null, generate networkDomain using domain suffix from the global config variables
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain();
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain(zoneId);
             }
         }
         

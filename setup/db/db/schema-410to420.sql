@@ -1110,3 +1110,7 @@ CREATE VIEW `cloud`.`account_view` AS
             and async_job.job_status = 0;
 
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
+ALTER TABLE `cloud`.`data_center_details` MODIFY value varchar(1024);
+ALTER TABLE `cloud`.`cluster_details` MODIFY value varchar(255);
+ALTER TABLE `cloud`.`storage_pool_details` MODIFY value varchar(255);
+ALTER TABLE `cloud`.`account_details` MODIFY value varchar(255);

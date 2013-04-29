@@ -835,7 +835,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public String allocateSecondaryGuestIP(Account account, long zoneId,
+    public NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId,
             Long nicId, Long networkId, String ipaddress) {
         // TODO Auto-generated method stub
         return null;

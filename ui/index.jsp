@@ -95,8 +95,9 @@ under the License.
             <li><span class="number">2</span><span class="multiline"><fmt:message key="label.select.a.template"/></span><span class="arrow"></span></li>
             <li><span class="number">3</span><span class="multiline"><fmt:message key="label.compute.offering"/></span><span class="arrow"></span></li>
             <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
-            <li><span class="number">5</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
-            <li class="last"><span class="number">6</span><span><fmt:message key="label.review"/></span></li>
+            <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
+            <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
+            <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
           </ul>
         </div>
         <form>
@@ -226,7 +227,15 @@ under the License.
               </div>
             </div>
 
-            <!-- Step 5: Network -->
+            <!-- Step 5: Affinity groups -->
+            <div class="step affinity" wizard-step-id="affinity">
+              <div class="content">
+                <!-- Existing offerings -->
+                <div class="select-container"></div>
+              </div>
+            </div>
+
+            <!-- Step 6: Network -->
             <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
@@ -326,7 +335,7 @@ under the License.
                 </div>
               </div>
             </div>
-            <!-- Step 6: Review -->
+            <!-- Step 7: Review -->
             <div class="step review" wizard-step-id="review">
               <div class="main-desc">
                 <fmt:message key="message.vm.review.launch"/>
@@ -1661,6 +1670,8 @@ under the License.
     <script type="text/javascript" src="scripts/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/affinity.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/ui-custom/affinity.js?t=<%=now%>"></script>  
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>

@@ -994,7 +994,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         String name = cmd.getRouterName();
         String state = cmd.getState();
-        Long zone = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
+        String zoneType = cmd.getZoneType();
         Long pod = cmd.getPodId();
         Long hostId = cmd.getHostId();
         String keyword = cmd.getKeyword();
@@ -1027,6 +1028,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -1067,10 +1069,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("state", state);
         }
 
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
 
+        if (zoneType != null) {
+            sc.setParameters("dataCenterType", zoneType);
+        }
+        
         if (pod != null) {
             sc.setParameters("podId", pod);
         }
@@ -1400,6 +1406,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        String zoneType = cmd.getZoneType();
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -1421,6 +1428,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getZoneType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
@@ -1464,6 +1472,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
+        }
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
@@ -2208,10 +2219,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
+        String networkType = cmd.getZoneType();
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
+        if(networkType != null)
+          sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         } else if (name != null) {

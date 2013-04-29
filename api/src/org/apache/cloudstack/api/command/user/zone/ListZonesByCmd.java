@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -56,6 +57,9 @@ public class ListZonesByCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the zone")
     private String name;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
     private Boolean showCapacities;
 
@@ -79,6 +83,10 @@ public class ListZonesByCmd extends BaseListCmd {
         return name;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Boolean getShowCapacities() {
         return showCapacities;
     }
