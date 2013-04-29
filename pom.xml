@@ -398,6 +398,7 @@
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+              <exclude>tools/transifex/.tx/config</exclude>
             </excludes>
           </configuration>
         </plugin>
