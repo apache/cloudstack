@@ -1034,7 +1034,7 @@ public class ApiDBUtils {
     }
 
     public static Integer getNetworkRate(long networkOfferingId) {
-        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
+        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, null);
     }
 
     public static Account getVlanAccount(long vlanId) {

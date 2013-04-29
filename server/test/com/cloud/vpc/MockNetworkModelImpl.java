@@ -581,7 +581,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      * @see com.cloud.network.NetworkModel#getDefaultNetworkDomain()
      */
     @Override
-    public String getDefaultNetworkDomain() {
+    public String getDefaultNetworkDomain(long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -1274,16 +1274,41 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object name = cmd.getConfigName();
         Object category = cmd.getCategory();
         Object keyword = cmd.getKeyword();
-        Long id = cmd.getId();
-        String scope = cmd.getScope();
+        Long zoneId = cmd.getZoneId();
+        Long clusterId = cmd.getClusterId();
+        Long storagepoolId = cmd.getStoragepoolId();
+        Long accountId = cmd.getAccountId();
+        String scope = null;
+        Long id = null;
+        int paramCountCheck = 0;
 
-        if (scope!= null && !scope.isEmpty()) {
+        if (zoneId != null) {
+            scope = Config.ConfigurationParameterScope.zone.toString();
+            id = zoneId;
+            paramCountCheck++;
+        }
+        if (clusterId != null) {
+            scope = Config.ConfigurationParameterScope.cluster.toString();
+            id = clusterId;
+            paramCountCheck++;
+        }
+        if (accountId != null) {
+            scope = Config.ConfigurationParameterScope.account.toString();
+            id = accountId;
+            paramCountCheck++;
+        }
+        if (storagepoolId != null) {
+            scope = Config.ConfigurationParameterScope.storagepool.toString();
+            id = storagepoolId;
+            paramCountCheck++;
+        }
+
+        if (paramCountCheck > 1) {
+            throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        if (scope != null && !scope.isEmpty()) {
             // getting the list of parameters at requested scope
-            try {
-                Config.ConfigurationParameterScope.valueOf(scope.toLowerCase());
-            } catch (Exception e ) {
-                throw new InvalidParameterValueException("Invalid scope " + scope + " while listing configuration parameters");
-            }
             if (id == null) {
                 throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
             }

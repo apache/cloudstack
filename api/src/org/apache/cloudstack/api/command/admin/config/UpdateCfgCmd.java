@@ -43,11 +43,17 @@ public class UpdateCfgCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration", length=4095)
     private String value;
 
-    @Parameter(name=ApiConstants.SCOPE, type = CommandType.STRING, description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
-    private String scope;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the ID of the Zone to update the parameter value for corresponding zone")
+    private Long zone_id;
 
-    @Parameter(name=ApiConstants.ID, type = CommandType.UUID, entityType = {ZoneResponse.class, ClusterResponse.class, StoragePoolResponse.class, AccountResponse.class}, description = "corresponding ID of the scope")
-    private Long id;
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="the ID of the Cluster to update the parameter value for corresponding cluster")
+    private Long cluster_id;
+
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class, description="the ID of the Storage pool to update the parameter value for corresponding storage pool")
+    private Long storagepool_id;
+
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType=AccountResponse.class, description="the ID of the Account to update the parameter value for corresponding account")
+    private Long account_id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,12 +67,20 @@ public class UpdateCfgCmd extends BaseCmd {
         return value;
     }
 
-    public String getScope() {
-        return scope;
+    public Long getZoneId() {
+        return zone_id;
     }
 
-    public Long getId() {
-        return id;
+    public Long getClusterId() {
+        return cluster_id;
+    }
+
+    public Long getStoragepoolId() {
+        return storagepool_id;
+    }
+
+    public Long getAccountId() {
+        return account_id;
     }
 
     /////////////////////////////////////////////////////
@@ -89,12 +103,19 @@ public class UpdateCfgCmd extends BaseCmd {
         if (cfg != null) {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
-            if (scope != null) {
-                response.setScope(scope);
-                response.setValue(value);
-            } else {
-                response.setScope("global");
+            if(getZoneId() != null) {
+                response.setScope("zone");
             }
+            if(getClusterId() != null) {
+                response.setScope("cluster");
+            }
+            if(getStoragepoolId() != null) {
+                response.setScope("storagepool");
+            }
+            if(getAccountId() != null) {
+                response.setScope("account");
+            }
+            response.setValue(value);
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update config");
