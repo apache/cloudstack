@@ -81,6 +81,7 @@ under the License.
                 <option value="de_DE"><fmt:message key="label.lang.german"/></option>
                 <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
                 <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
+                <option value="ar"><fmt:message key="label.lang.arabic"/></option>
               </select>
             </div>
           </div>
