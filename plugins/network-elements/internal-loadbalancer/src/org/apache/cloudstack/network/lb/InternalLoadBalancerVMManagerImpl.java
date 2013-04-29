@@ -236,7 +236,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
         }
 
         //FIXME - fix the type once earlyconfig and patchsystem vm scripts are fixed
-        String type = "elbvm";
+        String type = "ilbvm";
         buf.append(" type=" + type);
 
         //FIXME - change it to DEBUG level later. 
