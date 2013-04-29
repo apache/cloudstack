@@ -17,7 +17,7 @@
 # under the License.
 
 SRCLANG=en
-LIST_LANG="ca de_DE es fr_FR it_IT ja ko_KR nb_NO pt_BR ru_RU zh_CN"
+LIST_LANG="ar ca de_DE es fr_FR it_IT ja ko_KR nb_NO pt_BR ru_RU zh_CN"
 
 DIRECTORY_RESOURCES="../../client/WEB-INF/classes/resources"
 WORKDIR="./work-dir"
@@ -49,8 +49,8 @@ doUploadL10NLangs()
         for CODELANG in ${LIST_LANG} ; do
                 if [ -f "${DIRECTORY_RESOURCES}/messages_${CODELANG}.properties" ]; then
                         native2ascii -reverse -encoding UTF-8 ${DIRECTORY_RESOURCES}/messages_${CODELANG}.properties ${WORKDIR}/messages_${CODELANG}.properties
-                        sed -i "s/\\\\\\\'/'/g" ${WORKDIR}/messages_${CODELANG}.properties
-        		tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties
+                        sed -i"" "s/\\\\\\\'/'/g" ${WORKDIR}/messages_${CODELANG}.properties
+                        tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties
                         tx push -t -r ${ARGUMENTS} -l ${CODELANG}
                 else   
                         echo "Warning: the resource file for language ${CODELANG} doesn't exist."
@@ -64,8 +64,8 @@ doDownloadL10NLangs()
         for CODELANG in ${LIST_LANG} ; do
                 if [ -f "${DIRECTORY_RESOURCES}/messages_${CODELANG}.properties" ]; then
                         native2ascii -reverse -encoding UTF-8 ${DIRECTORY_RESOURCES}/messages_${CODELANG}.properties ${WORKDIR}/messages_${CODELANG}.properties
-                        sed -i "s/\\\\\\\'/'/g" ${WORKDIR}/messages_${CODELANG}.properties
-        		tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties
+                        sed -i"" "s/\\\\\\\'/'/g" ${WORKDIR}/messages_${CODELANG}.properties
+                        tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/messages_${CODELANG}.properties
                 else   
                         echo "Warning: the resource file for language ${CODELANG} doesn't exist."
                 fi
@@ -92,11 +92,11 @@ doUploadSourceLang()
         # Source language
         if [ -f ${DIRECTORY_RESOURCES}/messages.properties ]; then
                 native2ascii -reverse -encoding UTF-8 ${DIRECTORY_RESOURCES}/messages.properties ${WORKDIR}/messages.properties
-                sed -i "s/\\\\\\\'/'/g" ${WORKDIR}/messages.properties
+                sed -i"" "s/\\\\\\\'/'/g" ${WORKDIR}/messages.properties
                 tx set --source -r ${ARGUMENTS} -l ${SRCLANG} ${WORKDIR}/messages.properties
                 tx push -s -r ${ARGUMENTS} 
         else
-		echo "Warning: the source language doesn't exist!"
+                echo "Warning: the source language doesn't exist!"
         fi
 }
 
@@ -110,8 +110,8 @@ doDownloadSourceLang()
                 grep -v "^#" ${WORKDIR}/messages.properties.tmp1 | sort -f | uniq | sed "s/'/\\\\\\\\\'/g" > ${WORKDIR}/messages.properties.tmp2
                 echo "$AL2_STRING" | cat - ${WORKDIR}/messages.properties.tmp2 > ${DIRECTORY_RESOURCES}/messages.properties
         else
-		echo "Warning: the source language hasn't been retrieve!"
-	fi
+                echo "Warning: the source language hasn't been retrieve!"
+        fi
 }
 
 if [ $# -ne 2 ]; then
@@ -119,7 +119,7 @@ if [ $# -ne 2 ]; then
 else
         COMMAND="$1"
         ARGUMENTS="$2"
-	doMakeWdir
+        doMakeWdir
 fi
 
 case "$COMMAND" in
