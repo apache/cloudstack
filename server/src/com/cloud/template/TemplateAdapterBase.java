@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -44,6 +45,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -82,6 +84,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
+    @Inject ConfigurationServer _configServer;
 	
 	@Override
 	public boolean stop() {
@@ -167,8 +170,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		if (url.toLowerCase().contains("file://")) {
 			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
 		}
-		
-		boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));
+		// check whether owner can create public templates
+		boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
 		if (!isAdmin && !allowPublicUserTemplates && isPublic) {
 			throw new InvalidParameterValueException("Only private templates/ISO can be created.");
 		}

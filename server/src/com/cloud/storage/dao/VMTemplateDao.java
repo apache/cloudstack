@@ -56,7 +56,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso,
 	        List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId,
 	        HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller,
-	        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
+	        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType);
 	
     public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter,
             boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,

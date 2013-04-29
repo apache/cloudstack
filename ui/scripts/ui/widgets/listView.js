@@ -734,6 +734,8 @@
   var makeActionIcons = function($td, actions, options) {
     options = options ? options : {};
     var allowedActions = options.allowedActions;
+    var $tr = $td.closest('tr');
+    var data = $tr && $tr.data('json-obj') ? $tr.data('json-obj') : null;
 
     $.each(actions, function(actionName, action) {
       if (actionName == 'add' || action.isHeader)
@@ -766,7 +768,9 @@
             .append(
               $('<input>').attr({
                 type: 'checkbox',
-                name: actionName
+                name: actionName,
+                checked: data && data._isSelected ?
+                  'checked' : false
               })
             )
             .attr({
@@ -775,6 +779,10 @@
             })
             .data('list-view-action-id', actionName)
         );
+
+        if ($td.find('input[type=checkbox]').is(':checked')) {
+          $tr.addClass('multi-edit-selected');
+        }
 
         return true;
       }

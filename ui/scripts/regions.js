@@ -382,7 +382,7 @@
 										
 					detailView: {
             name: 'GSLB details',
-            viewAll: { path: 'regions.lbUnderGSLB', label: 'load balancer rules' },
+            viewAll: { path: 'regions.lbUnderGSLB', label: 'assigned load balancing' },
             actions: {              
 							remove: {
                 label: 'delete GSLB',
@@ -452,77 +452,91 @@
         }
       },
 						
-			lbUnderGSLB: {
+     lbUnderGSLB: {
         id: 'lbUnderGSLB',
         type: 'select',
-        title: 'assigned load balancer rules',
+        title: 'assigned load balancing',
         listView: {
           section: 'lbUnderGSLB',
           id: 'lbUnderGSLB',
-          label: 'assigned load balancer rules',
+          label: 'assigned load balancing',
           fields: {
             name: { label: 'label.name' },
             publicport: { label: 'label.public.port' },
-						privateport: { label: 'label.private.port' },
-						algorithm: { label: 'label.algorithm' }
+	          privateport: { label: 'label.private.port' },
+	          algorithm: { label: 'label.algorithm' }
           },					
-					dataProvider: function(args) {					
-						var data = {
-						  globalloadbalancerruleid: args.context.GSLB[0].id,
-						  listAll: true
-						};
+	        dataProvider: function(args) {		
+	          var data = {
+              id: args.context.GSLB[0].id
+            };
             $.ajax({
-              url: createURL('listLoadBalancerRules'),
-							data: data,
-              success: function(json) {
-                var items = json.listloadbalancerrulesresponse.loadbalancerrule;
-                args.response.success({								 
+              url: createURL('listGlobalLoadBalancerRules'),
+              data: data,
+              success: function(json) {    
+                var items = json.listgloballoadbalancerrulesresponse.globalloadbalancerrule[0].loadbalancerrule;
+                args.response.success({
                   data: items
                 });
               }
-            });
+            });	          
           },	        
-					actions: {            
+	        actions: {            
             add: {
-              label: 'assign load balancer rule to GSLB',
-              messages: {
-                confirm: function(args) {
-                  return 'Please confirm you want to assign load balancer rule to GSLB';
-                },
+              label: 'assign more load balancing',
+              messages: {                
                 notification: function(args) {
-                  return 'assign load balancer rule to GSLB';
+                  return 'assign more load balancing';
                 }
               },
               createForm: {
-                title: 'assign load balancer rule to GSLB',              
+                title: 'assign more load balancing',              
                 fields: {                  
                   loadbalancerrule: {
-                    label: 'load balancer rule',                    
+                    label: 'load balancing rule',                    
                     select: function(args) {		
-											var data = {
-												globalloadbalancerruleid: args.context.GSLB[0].id,
-												listAll: true
-											};
-											$.ajax({
-												url: createURL('listLoadBalancerRules'),
-												data: data,
-												success: function(json) {
-													var items = json.listloadbalancerrulesresponse.loadbalancerrule;
-													args.response.success({								 
-														data: items,
-														descriptionField: 'name'
-													});													
-												}
-											});																						
+		      var data = {
+			globalloadbalancerruleid: args.context.GSLB[0].id,
+			listAll: true
+		      };
+		      $.ajax({
+			url: createURL('listLoadBalancerRules'),
+			data: data,
+			success: function(json) {
+			  var allLbRules = json.listloadbalancerrulesresponse.loadbalancerrule;
+                          var assignedLbRules = args.context.GSLB[0].loadbalancerrule;
+                          var items = [];
+                          if(allLbRules != null) {
+                            for(var i = 0; i < allLbRules.length; i++) {  
+                              var isAssigned = false;                            
+                              if(assignedLbRules != null) {
+                                for(var k = 0; k < assignedLbRules.length; k++) {
+                                  if(allLbRules[i].id == assignedLbRules[k].id) {
+                                    isAssigned = true;
+                                    break; 
+                                  }
+                                }
+                              }
+                              if(isAssigned == false) {
+                                items.push(allLbRules[i]);
+                              }
+                            }
+                          }                        
+			  args.response.success({								 
+			    data: items,
+			    descriptionField: 'name'
+			  });													
+			}
+		      });																						
                     }
                   }  
                 }
               },
               action: function(args) {							  
-								var data = {
-								  id: args.context.GSLB[0].id,
-									loadbalancerrulelist: args.data.loadbalancerrule
-								};			
+		var data = {
+		  id: args.context.GSLB[0].id,
+		  loadbalancerrulelist: args.data.loadbalancerrule
+		};			
                 $.ajax({
                   url: createURL('assignToGlobalLoadBalancerRule'),
                   data: data,                 
@@ -547,16 +561,16 @@
 					},						
 									
 					detailView: {
-            name: 'load balancer rule details',            
+            name: 'load balancing details',            
             actions: {              
               remove: {
-                label: 'remove load balancer rule from this GSLB',
+                label: 'remove load balancing from this GSLB',
                 messages: {
                   notification: function() { 
-									  return 'remove load balancer rule from GSLB'; 
+									  return 'remove load balancing from GSLB'; 
 									},
                   confirm: function() { 
-									  return 'Please confirm you want to remove load balancer rule from GSLB'; 
+									  return 'Please confirm you want to remove load balancing from GSLB'; 
 									}
                 },               
                 action: function(args) {								                

@@ -172,8 +172,8 @@ class TestDeployVM(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
-            accountid=cls.account.account.name,
-            domainid=cls.account.account.domainid,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
             mode=cls.services['mode']
         )
@@ -250,12 +250,12 @@ class TestDeployVM(cloudstackTestCase):
         3. Has a linklocalip, publicip and a guestip
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.account.name)
+        routers = list_routers(self.apiclient, account=self.account.name)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
         self.assertEqual(router.state, 'Running', msg="Router is not in running state")
-        self.assertEqual(router.account, self.account.account.name, msg="Router does not belong to the account")
+        self.assertEqual(router.account, self.account.name, msg="Router does not belong to the account")
 
         #Has linklocal, public and guest ips
         self.assertIsNotNone(router.linklocalip, msg="Router has no linklocal ip")
@@ -271,12 +271,12 @@ class TestDeployVM(cloudstackTestCase):
         2. is in the account the VM was deployed in
         @return:
         """
-        routers = list_routers(self.apiclient, account=self.account.account.name)
+        routers = list_routers(self.apiclient, account=self.account.name)
         self.assertTrue(len(routers) > 0, msg = "No virtual router found")
         router = routers[0]
 
         self.assertEqual(router.state, 'Running', msg="Router is not in running state")
-        self.assertEqual(router.account, self.account.account.name, msg="Router does not belong to the account")
+        self.assertEqual(router.account, self.account.name, msg="Router does not belong to the account")
 
     def tearDown(self):
         pass
@@ -334,24 +334,24 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.small_virtual_machine = VirtualMachine.create(
                                         cls.api_client,
                                         cls.services["small"],
-                                        accountid=cls.account.account.name,
-                                        domainid=cls.account.account.domainid,
+                                        accountid=cls.account.name,
+                                        domainid=cls.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
         cls.medium_virtual_machine = VirtualMachine.create(
                                        cls.api_client,
                                        cls.services["medium"],
-                                       accountid=cls.account.account.name,
-                                       domainid=cls.account.account.domainid,
+                                       accountid=cls.account.name,
+                                       domainid=cls.account.domainid,
                                        serviceofferingid=cls.medium_offering.id,
                                        mode=cls.services["mode"]
                                     )
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
                                         cls.services["small"],
-                                        accountid=cls.account.account.name,
-                                        domainid=cls.account.account.domainid,
+                                        accountid=cls.account.name,
+                                        domainid=cls.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
@@ -939,8 +939,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=self.account.account.name,
-                         domainid=self.account.account.domainid
+                         account=self.account.name,
+                         domainid=self.account.domainid
                          )
 
         self.debug("Successfully created ISO with ID: %s" % iso.id)

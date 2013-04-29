@@ -44,7 +44,7 @@ if echo $VERSION | grep SNAPSHOT ; then
 else
   DEFVER="-D_ver $REALVER"
   DEFPRE=
-  DEFREL=
+  DEFREL="-D_rel 1"
 fi
 
 mkdir -p $RPMDIR/SPECS
@@ -78,7 +78,7 @@ else
   REALVER=`echo $VERSION`
   DEFVER="-D_ver $REALVER"
   DEFPRE=
-  DEFREL=
+  DEFREL="-D_rel 1"
 fi
 
 mkdir -p $RPMDIR/SPECS

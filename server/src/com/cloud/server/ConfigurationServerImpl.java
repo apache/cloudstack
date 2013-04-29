@@ -48,8 +48,10 @@ import com.cloud.dc.*;
 import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.user.*;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -59,6 +61,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -112,6 +115,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @Inject private ConfigurationDao _configDao;
     @Inject private DataCenterDao _zoneDao;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private HostPodDao _podDao;
     @Inject private DiskOfferingDao _diskOfferingDao;
     @Inject private ServiceOfferingDao _serviceOfferingDao;
@@ -698,7 +703,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return dcDetailVO.getValue();
                                     } break;
 
-                    case cluster:   ClusterDetailsVO cluster = _clusterDetailsDao.findById(resourceId);
+                    case cluster:   ClusterVO cluster = _clusterDao.findById(resourceId);
                                     if (cluster == null) {
                                         throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                                     }
@@ -707,7 +712,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return clusterDetailsVO.getValue();
                                     } break;
 
-                    case pool:      StoragePoolDetailVO pool = _storagePoolDetailsDao.findById(resourceId);
+                    case storagepool:      StoragePoolVO pool = _storagePoolDao.findById(resourceId);
                                     if (pool == null) {
                                         throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                                     }
@@ -716,7 +721,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return storagePoolDetailVO.getValue();
                                     } break;
 
-                    case account:   AccountDetailVO account = _accountDetailsDao.findById(resourceId);
+                    case account:   AccountVO account = _accountDao.findById(resourceId);
                                     if (account == null) {
                                         throw new InvalidParameterValueException("unable to find account by id " + resourceId);
                                     }

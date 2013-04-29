@@ -60,7 +60,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param name
      * @param value
      */
-    void updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
+    String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
 
     /**
      * Creates a new service offering

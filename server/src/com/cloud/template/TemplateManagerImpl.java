@@ -113,6 +113,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
@@ -253,6 +254,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     protected ResourceManager _resourceMgr;
     @Inject VolumeManager volumeMgr;
     @Inject VMTemplateHostDao templateHostDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     
     int _primaryStorageDownloadWait;
@@ -1609,7 +1612,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         boolean isAdmin = _accountMgr.isAdmin(caller.getType());
-        boolean allowPublicUserTemplates = Boolean.valueOf(_configDao.getValue("allow.public.user.templates"));
+        // check configuration parameter(allow.public.user.templates) value for the template owner
+        boolean allowPublicUserTemplates = Boolean.valueOf(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), template.getAccountId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
@@ -1842,8 +1846,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao
-                .getValue("allow.public.user.templates"));
+        // check whether template owner can create public templates
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template "
                     + name + ", only private templates can be created.");

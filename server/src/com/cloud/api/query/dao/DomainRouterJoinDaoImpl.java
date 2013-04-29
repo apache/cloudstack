@@ -161,8 +161,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setRole(router.getRole().toString());
 
         // set async job
-        routerResponse.setJobId(router.getJobUuid());
-        routerResponse.setJobStatus(router.getJobStatus());
+        if (router.getJobId() != null) {
+            routerResponse.setJobId(router.getJobUuid());
+            routerResponse.setJobStatus(router.getJobStatus());
+        }
 
         if (router.getRole() == Role.INTERNAL_LB_VM) {
             routerResponse.setObjectName("internalloadbalancervm");

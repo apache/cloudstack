@@ -519,6 +519,7 @@ setup_sshd(){
   local ip=$1
   local eth=$2
   [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  sed -i "/3922/s/eth./$eth/" /etc/iptables/rules.v4
   sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
 }
 
@@ -691,6 +692,8 @@ setup_router() {
   disable_rpfilter_domR
   enable_fwding 1
   chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
+#for old templates
   cp /etc/iptables/iptables-router /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
 }
@@ -763,6 +766,7 @@ EOF
   enable_svc cloud 0
   disable_rpfilter
   enable_fwding 1
+  cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
   setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
@@ -789,6 +793,7 @@ setup_dhcpsrvr() {
   enable_svc cloud 0
   enable_fwding 0
   chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
   cp /etc/iptables/iptables-router /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then
@@ -824,6 +829,7 @@ setup_secstorage() {
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
+  cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
     setup_sshd $ETH1_IP "eth1"
@@ -848,6 +854,7 @@ setup_console_proxy() {
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
+  cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
     setup_sshd $ETH1_IP "eth1"
@@ -873,6 +880,7 @@ setup_elbvm() {
   [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
+  cp /etc/iptables/iptables-elbvm /etc/iptables/rules.v4
   cp /etc/iptables/iptables-elbvm /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then

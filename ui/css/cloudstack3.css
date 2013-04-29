@@ -1502,7 +1502,6 @@ div.list-view td.state.off span {
   position: relative;
   left: 0px;
   float: left;
-  width: 460px;
   height: 22px;
   border-top: 1px solid #808080;
   /*+box-shadow:inset 0px 1px #FFFFFF;*/
@@ -1907,7 +1906,7 @@ div.detail-group td.view-all a {
   background: url(../images/gradients.png) repeat-x 0px -529px;
   font-size: 11px;
   display: block;
-  height: 25px;
+  height: 27px;
   text-decoration: none;
   color: #4C5D6C;
   /*+text-shadow:0px 1px 2px #FFFFFF;*/
@@ -1916,7 +1915,7 @@ div.detail-group td.view-all a {
   -o-text-shadow: 0px 1px 2px #FFFFFF;
   text-shadow: 0px 1px 2px #FFFFFF;
   float: left;
-  padding: 0 8px 0 5px;
+  padding: 0 1px;
   border-left: 1px solid #9B9EA2;
   /*+border-radius:5px 0 0 5px;*/
   -moz-border-radius: 5px 0 0 5px;
@@ -1971,10 +1970,10 @@ div.details .main-groups label.error {
 }
 
 .detail-view td.view-all.multiple {
-  width: 123px !important;
-  height: 22px;
-  float: left;
+  max-width: 145px;
+  height: 17px;
   display: block;
+  float: left;
   margin: 8px 2px 8px 8px;
   border: none !important;
   /*+box-shadow:none;*/
@@ -2478,6 +2477,10 @@ div.detail-group.actions td {
 
 #navigation ul li.instances span.icon {
   background-position: -73px -23px;
+}
+
+#navigation ul li.affinityGroups span.icon {
+  background-position: -73px -87px;
 }
 
 #navigation ul li.storage span.icon {
@@ -5265,6 +5268,10 @@ label.error {
   position: relative;
 }
 
+.multi-wizard.instance-wizard .progress ul li {
+  width: 109px;
+}
+
 .multi-wizard .progress ul li.first {
   /*+border-radius:5px 0 0 5px;*/
   -moz-border-radius: 5px 0 0 5px;
@@ -5306,6 +5313,10 @@ label.error {
   text-align: center;
 }
 
+.multi-wizard.instance-wizard .progress ul li span {
+  left: 36px;
+}
+
 .multi-wizard .progress ul li span.multiline {
   width: 71px;
   top: 12px;
@@ -5320,6 +5331,10 @@ label.error {
   margin-top: -3px;
   background: url(../images/icons.png) no-repeat 0px -422px;
   z-index: 1000;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.arrow {
+  left: 27px;
 }
 
 .multi-wizard .progress ul li.active span.arrow {
@@ -5340,6 +5355,15 @@ label.error {
   -o-text-shadow: 0px -1px 1px #C2BDBD;
   text-shadow: 0px -1px 1px #C2BDBD;
   background: transparent;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.number {
+  left: 16px;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.multiline {
+  width: 79px;
+  left: 23px;
 }
 
 .multi-wizard .progress ul li.active span {
@@ -11670,7 +11694,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -707px;
 }
 
-
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon {
@@ -11846,11 +11869,19 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .addVlanRange .icon {
-  background-position: -168px -31px;
+  background-position: -37px -62px;
 }
 
 .addVlanRange:hover .icon {
-  background-position: -168px -613px;
+  background-position: -37px -62px;
+}
+
+.removeVlanRange .icon {
+  background-position: 1px -92px;
+}
+
+.removeVlanRange:hover .icon {
+  background-position: 1px -92px;
 }
 
 .resize .icon,
@@ -11878,9 +11909,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
-.reset .icon,
-.scaleUp .icon {
+.reset .icon {
   background-position: -168px -31px;
+}
+
+.scaleUp .icon {
+  background-position: -167px -66px;
 }
 
 .restoreVM:hover .icon,
@@ -11888,8 +11922,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -613px;
 }
 
-.reset:hover .icon,
-.scaleUp:hover .icon {
+.reset:hover .icon {
   background-position: -168px -613px;
 }
 
@@ -12011,6 +12044,30 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .editTags:hover .icon {
   background-position: -228px -646px;
+}
+
+.changeAffinity .icon {
+  background-position: -264px -2px;
+}
+
+.changeAffinity:hover .icon {
+  background-position: -263px -583px;
+}
+
+.releaseFromAccount .icon {
+  background-position: -230px -123px;
+}
+
+.releaseFromAccount:hover .icon {
+  background-position: -229px -704px;
+}
+
+.addAccount .icon {
+  background-position: -231px -96px;
+}
+
+.addAccount:hover .icon {
+  background-position: -230px -677px;
 }
 
 .label-hovered {

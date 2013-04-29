@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -389,6 +391,7 @@ public class ApiDBUtils {
     static VpcProvisioningService _vpcProvSvc;
     static AffinityGroupDao _affinityGroupDao;
     static AffinityGroupJoinDao _affinityGroupJoinDao;
+    static GlobalLoadBalancingRulesService _gslbService;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -496,6 +499,7 @@ public class ApiDBUtils {
     @Inject private ApplicationLoadBalancerRuleDao _appLbDao;
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
+    @Inject private GlobalLoadBalancingRulesService gslbService;
 
     @PostConstruct
     void init() {
@@ -601,6 +605,7 @@ public class ApiDBUtils {
         _vpcProvSvc = vpcProvSvc;
         _affinityGroupDao = affinityGroupDao;
         _affinityGroupJoinDao = affinityGroupJoinDao;
+        _gslbService = gslbService;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1031,7 +1036,7 @@ public class ApiDBUtils {
     }
 
     public static Integer getNetworkRate(long networkOfferingId) {
-        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
+        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, null);
     }
 
     public static Account getVlanAccount(long vlanId) {
@@ -1631,5 +1636,9 @@ public class ApiDBUtils {
 
     public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
+    }
+
+    public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
+        return _gslbService.listSiteLoadBalancers(gslbRuleId);
     }
 }

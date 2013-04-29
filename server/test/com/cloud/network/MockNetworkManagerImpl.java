@@ -66,6 +66,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
@@ -841,7 +842,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public String allocateSecondaryGuestIP(Account account, long zoneId,
+    public NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId,
             Long nicId, Long networkId, String ipaddress) {
         // TODO Auto-generated method stub
         return null;

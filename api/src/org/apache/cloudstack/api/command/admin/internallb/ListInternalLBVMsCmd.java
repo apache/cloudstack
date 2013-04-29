@@ -76,6 +76,9 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC Internal LB VMs")
     private Boolean forVpc;
     
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -119,6 +122,10 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     
     public String getRole() {
         return Role.INTERNAL_LB_VM.toString();
+    }
+    
+    public String getZoneType() {
+        return zoneType;
     }
 
     /////////////////////////////////////////////////////

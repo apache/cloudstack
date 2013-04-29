@@ -73,6 +73,7 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -473,6 +474,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((CheckS2SVpnConnectionsCommand) cmd);
             } else if (clz == ResizeVolumeCommand.class) {
                 return execute((ResizeVolumeCommand) cmd);
+            } else if (clz == UnregisterVMCommand.class) {
+                return execute((UnregisterVMCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -2853,10 +2856,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
 
                     if (getVmState(vmMo) != State.Stopped) {
-
-                        // before we stop VM, remove all possible snapshots on the VM to let
-                        // disk chain be collapsed
-                        s_logger.info("Remove all snapshot before stopping VM " + cmd.getVmName());
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
@@ -3686,6 +3685,43 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "PrimaryStorageDownloadCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new PrimaryStorageDownloadAnswer(msg);
+        }
+    }
+
+    protected Answer execute(UnregisterVMCommand cmd){
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource UnregisterVMCommand: " + _gson.toJson(cmd));
+        }
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        try {
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            if (vmMo != null) {
+                try {
+                    context.getService().unregisterVM(vmMo.getMor());
+                    return new Answer(cmd, true, "unregister succeeded");
+                } catch(Exception e) {
+                    s_logger.warn("We are not able to unregister VM " + VmwareHelper.getExceptionMessage(e));
+                }
+
+                String msg = "Expunge failed in vSphere. vm: " + cmd.getVmName();
+                s_logger.warn(msg);
+                return new Answer(cmd, false, msg);
+            } else {
+                String msg = "Unable to find the VM in vSphere to unregister, assume it is already removed. VM: " + cmd.getVmName();
+                s_logger.warn(msg);
+                return new Answer(cmd, true, msg);
+            }
+        } catch (Exception e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+
+            String msg = "UnregisterVMCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            return new Answer(cmd, false, msg);
         }
     }
 

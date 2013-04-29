@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
+import com.cloud.network.dao.*;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -50,10 +51,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
-import com.cloud.network.dao.FirewallRulesCidrsDao;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
@@ -126,6 +123,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
+    NetworkDao _networkDao;
+    @Inject
     VpcManager _vpcMgr;
     @Inject List<FirewallServiceProvider> _firewallElements;
 
@@ -149,6 +148,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Override
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
+
+        Network network = _networkDao.findById(rule.getNetworkId());
+        if (network.getGuestType() == Network.GuestType.Shared) {
+            throw new InvalidParameterValueException("Egress firewall rules are not supported for " + network.getGuestType() + "  networks");
+        }
         
         return createFirewallRule(null, caller, rule.getXid(), rule.getSourcePortStart(), 
                 rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),

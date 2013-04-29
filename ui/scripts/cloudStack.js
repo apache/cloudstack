@@ -22,16 +22,16 @@
       var sections = [];
 
       if(isAdmin()) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions", "affinityGroups"];
       }
       else if(isDomainAdmin()) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects", "regions"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects", "regions", "affinityGroups"];
       }
       else if (g_userProjectsEnabled) {
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects", "regions"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects", "regions", "affinityGroups"];
       }
       else { //normal user
-        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions", "affinityGroups"];
       }
 
       if (cloudStack.plugins.length) {
@@ -46,6 +46,7 @@
        */
       dashboard: {},      
       instances: {},
+      affinityGroups: {},
       storage: {},
       network: {},
       templates: {},
