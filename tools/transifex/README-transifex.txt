@@ -18,6 +18,12 @@
 sync-transifex-ui is a script to automate the synchronisation between
 Apache CloudStack L10N resource files and Transifex CloudStack project.
 
+Requirements to use this script:
+* A GNU/Linux or Unix machine
+* Transifex client installed
+http://support.transifex.com/customer/portal/topics/440187-transifex-client/articles
+On Debian/Ubuntu: apt-get install transifex-client
+
 Commun usage is:
 
 1/ Init and configure the transifex client CLI
