@@ -183,7 +183,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 return false;
             }
             
-            if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+            if (internalLbVms == null || internalLbVms.isEmpty()) {
                 throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
                         DataCenter.class, network.getDataCenterId());
             }
@@ -220,7 +220,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     return false;
                 }
                 
-                if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+                if (internalLbVms == null || internalLbVms.isEmpty()) {
                     throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
                             DataCenter.class, network.getDataCenterId());
                 }
@@ -365,7 +365,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     return false;
                 }
                 
-                if ((internalLbVms == null) || (internalLbVms.size() == 0)) {
+                if (internalLbVms == null || internalLbVms.isEmpty()) {
                     throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules",
                             DataCenter.class, network.getDataCenterId());
                 }

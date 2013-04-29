@@ -22,12 +22,10 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 

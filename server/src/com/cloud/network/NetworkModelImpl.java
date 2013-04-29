@@ -919,7 +919,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         boolean isUserVmsDefaultNetwork = false;
         boolean isDomRGuestOrPublicNetwork = false;
         if (vm != null) {
-            Nic nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+            Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
             if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true;
             } else if (vm.getType() == Type.DomainRouter && ntwkOff != null && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
@@ -1807,7 +1807,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (broadcastUri != null) {
             nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(networkId, vm.getId(), broadcastUri);
         } else {
-           nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+           nic =  _nicDao.findByNtwkIdAndInstanceId(networkId, vm.getId());
         }
         if (nic == null) {
            return null;

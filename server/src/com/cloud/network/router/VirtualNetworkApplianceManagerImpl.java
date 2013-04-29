@@ -3035,7 +3035,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         
         Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(guestNetwork.getId(), router.getId());
+        Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
         NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()), 
                 _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), 
@@ -3128,7 +3128,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             if (createVmData) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(guestNetworkId, vm.getId());
+                NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
                     createVmDataCommand(router, vm, nic, null, cmds);
@@ -3181,7 +3181,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 createDhcp = false;
             }
             if (createDhcp) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(guestNetworkId, vm.getId());
+                NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                     createDhcpEntryCommand(router, vm, nic, cmds);

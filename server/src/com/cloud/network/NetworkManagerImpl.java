@@ -3626,7 +3626,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
             }
         } else {
-            NicVO nicVO = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
+            NicVO nicVO = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
             if (nicVO != null) {
                 nic = _networkModel.getNicProfile(vm, network.getId(), null);
             }
