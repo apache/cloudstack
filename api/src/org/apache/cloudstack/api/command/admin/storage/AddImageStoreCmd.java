@@ -78,10 +78,27 @@ public class AddImageStoreCmd extends BaseCmd {
         return this.providerName;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
     @Override
     public String getCommandName() {

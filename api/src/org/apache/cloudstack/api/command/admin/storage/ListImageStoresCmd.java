@@ -83,10 +83,15 @@ public class ListImageStoresCmd extends BaseListCmd {
         return provider;
     }
 
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
 
     @Override

@@ -31,12 +31,17 @@ import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.INTEGER;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.S3Response;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -44,10 +49,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.S3;
+import com.cloud.storage.ImageStore;
 
-@APICommand(name = "addS3", description = "Adds S3", responseObject = S3Response.class, since = "4.0.0")
+@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0")
 public final class AddS3Cmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(AddS3Cmd.class.getName());
 
     private static String COMMAND_NAME = "adds3response";
 
@@ -88,26 +94,33 @@ public final class AddS3Cmd extends BaseCmd {
             ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-        final S3 result;
+        AddImageStoreCmd cmd = new AddImageStoreCmd();
+        cmd.setProviderName("S3");
+        Map<String, String> details = new HashMap<String, String>();
+        details.put(ApiConstants.S3_ACCESS_KEY, this.getAccessKey());
+        details.put(ApiConstants.S3_SECRET_KEY, this.getSecretKey());
+        details.put(ApiConstants.S3_END_POINT, this.getEndPoint());
+        details.put(ApiConstants.S3_BUCKET_NAME, this.getBucketName());
+        details.put(ApiConstants.S3_HTTPS_FLAG, this.getHttpsFlag().toString());
+        details.put(ApiConstants.S3_CONNECTION_TIMEOUT, this.getConnectionTimeout().toString());
+        details.put(ApiConstants.S3_MAX_ERROR_RETRY, this.getMaxErrorRetry().toString());
+        details.put(ApiConstants.S3_SOCKET_TIMEOUT, this.getSocketTimeout().toString());
 
-        try {
-
-            result = _resourceService.discoverS3(this);
-
-            if (result == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3.");
+        try{
+            ImageStore result = _storageService.discoverImageStore(cmd);
+            ImageStoreResponse storeResponse = null;
+            if (result != null ) {
+                    storeResponse = _responseGenerator.createImageStoreResponse(result);
+                    storeResponse.setResponseName(getCommandName());
+                    storeResponse.setObjectName("secondarystorage");
+                    this.setResponseObject(storeResponse);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
-
-        } catch (DiscoveryException e) {
-
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 due to " + e.getMessage());
-
+        } catch (DiscoveryException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-
-        final S3Response response = _responseGenerator.createS3Response(result);
-        response.setResponseName(this.getCommandName());
-        this.setResponseObject(response);
-
     }
 
     @Override
