@@ -1,0 +1,19 @@
+[main]
+host = https://www.transifex.com
+
+[CloudStack_UI.2-2messagesproperties]
+file_filter = translations/CloudStack_UI.2-2messagesproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.30xmessagesproperties]
+file_filter = translations/CloudStack_UI.30xmessagesproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.41xmessageproperties]
+file_filter = translations/CloudStack_UI.41xmessageproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.42xmessagesproperties]
+file_filter = translations/CloudStack_UI.42xmessagesproperties/<lang>.properties
+source_lang = en
+
