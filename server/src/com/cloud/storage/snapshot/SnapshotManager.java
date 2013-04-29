@@ -18,6 +18,7 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.Answer;
@@ -68,7 +69,10 @@ public interface SnapshotManager {
 
 	Answer sendToPool(Volume vol, Command cmd);
 
-	SnapshotVO getParentSnapshot(VolumeInfo volume, Snapshot snapshot);
+	SnapshotVO getParentSnapshot(VolumeInfo volume);
 
 	Snapshot backupSnapshot(Long snapshotId);
+
+	SnapshotInfo takeSnapshot(VolumeInfo volume)
+			throws ResourceAllocationException;
 }

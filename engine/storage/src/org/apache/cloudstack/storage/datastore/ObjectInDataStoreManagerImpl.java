@@ -120,6 +120,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             if ( obj.getType() == DataObjectType.TEMPLATE){
                 VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());
                 vo = templatePoolDao.persist(vo);
+            } else if (obj.getType() == DataObjectType.SNAPSHOT) {
+                SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
+                ss.setSnapshotId(obj.getId());
+                ss.setDataStoreId(dataStore.getId());
+                ss.setRole(dataStore.getRole());
+                ss = snapshotDataStoreDao.persist(ss);
             }
         } else {
             // Image store
@@ -137,6 +143,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
+                ss.setRole(dataStore.getRole());
                 if (dataStore.getRole() == DataStoreRole.ImageCache) {
                 	ss.setInstallPath("/snapshots/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 }
@@ -185,7 +192,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     return true;
                 }
             case SNAPSHOT:
-                SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getId(), objId);
+                SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
                 if ( destSnapshotStore != null ){
                     return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                 }
@@ -262,24 +269,17 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     public DataObjectInStore findObject(long objId, DataObjectType type,
             long dataStoreId, DataStoreRole role) {
         DataObjectInStore vo = null;
-        if (role == DataStoreRole.Image) {
+        if (role == DataStoreRole.Image || role == DataStoreRole.ImageCache) {
             switch (type){
             case TEMPLATE:
                 vo = templateDataStoreDao.findByStoreTemplate(dataStoreId, objId);
             case SNAPSHOT:
-                vo = snapshotDataStoreDao.findByStoreSnapshot(dataStoreId, objId);
+                vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
             case VOLUME:
                 vo = volumeDataStoreDao.findByStoreVolume(dataStoreId, objId);
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
-        } else if (role == DataStoreRole.ImageCache) {
-        	SearchCriteriaService<ObjectInDataStoreVO, ObjectInDataStoreVO> sc = SearchCriteria2.create(ObjectInDataStoreVO.class);
-        	sc.addAnd(sc.getEntity().getObjectId(), Op.EQ, objId);
-        	sc.addAnd(sc.getEntity().getObjectType(), Op.EQ, type);
-        	sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, dataStoreId);
-        	sc.addAnd(sc.getEntity().getDataStoreRole(), Op.EQ, role);
-        	vo = sc.find();
         } else {
             s_logger.debug("Invalid data or store type: " + type + " " + role);
             throw new CloudRuntimeException("Invalid data or store type: " + type + " " + role);
@@ -298,7 +298,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             case TEMPLATE:
                 vo = templateDataStoreDao.findByTemplate(objId);
             case SNAPSHOT:
-                vo = snapshotDataStoreDao.findBySnapshot(objId);
+                vo = snapshotDataStoreDao.findBySnapshot(objId, role);
             case VOLUME:
                 vo = volumeDataStoreDao.findByVolume(objId);
             }

@@ -34,6 +34,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
@@ -108,46 +109,15 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		return null;
 	}
 
-	public boolean createVolume(
+	public Answer createVolume(
 			VolumeInfo volume) throws StorageUnavailableException {
 		if (s_logger.isDebugEnabled()) {
 			s_logger.debug("Creating volume: " + volume);
 		}
-
-		DiskOfferingVO offering = diskOfferingDao.findById(volume.getDiskOfferingId());
-		DiskProfile diskProfile = new DiskProfile(volume, offering,
-				null);
-
-		StoragePool pool = (StoragePool)volume.getDataStore();
-		VolumeVO vol = volumeDao.findById(volume.getId());
-		if (pool != null) {
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("Trying to create in " + pool);
-			}
-			vol.setPoolId(pool.getId());
-
-			CreateCommand cmd = new CreateCommand(diskProfile, new StorageFilerTO(
-					pool));
-
-			Answer answer = storageMgr.sendToPool(pool, null, cmd);
-			if (answer.getResult()) {
-				CreateAnswer createAnswer = (CreateAnswer) answer;
-				vol.setFolder(pool.getPath());
-				vol.setPath(createAnswer.getVolume().getPath());
-				vol.setSize(createAnswer.getVolume().getSize());
-				vol.setPoolType(pool.getPoolType());
-				vol.setPoolId(pool.getId());
-				vol.setPodId(pool.getPodId());
-				this.volumeDao.update(vol.getId(), vol);
-				return true;
-			} 
-
-		}
-
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Unable to create volume " + volume.getId());
-		}
-		return false;
+		
+		CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
+		Answer answer = storageMgr.sendToPool((StoragePool)volume.getDataStore(), null, cmd);
+		return answer;
 	}
 
 	@Override
@@ -155,9 +125,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 		// TODO Auto-generated method stub
 		String errMsg = null;
+		Answer answer = null;
 		if (data.getType() == DataObjectType.VOLUME) {
 			try {
-				createVolume((VolumeInfo)data);
+				answer = createVolume((VolumeInfo)data);
 			} catch (StorageUnavailableException e) {
 				s_logger.debug("failed to create volume", e);
 				errMsg = e.toString();
@@ -166,13 +137,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 				errMsg = e.toString();
 			}
 		}
-		CreateCmdResult result = new CreateCmdResult(null, null);
+		CreateCmdResult result = new CreateCmdResult(null, answer);
 		if (errMsg != null) {
 			result.setResult(errMsg);
 		}
 
 		callback.complete(result);
-
 	}
 
 	@Override

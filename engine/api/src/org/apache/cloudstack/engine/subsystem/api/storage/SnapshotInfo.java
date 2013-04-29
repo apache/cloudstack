@@ -21,8 +21,11 @@ import com.cloud.storage.Snapshot;
 
 public interface SnapshotInfo extends DataObject, Snapshot {
 	public SnapshotInfo getParent();
+	public String getPath();
 	public SnapshotInfo getChild();
 	public VolumeInfo getBaseVolume();
+	public void addPayload(Object data);
     Long getDataCenterId();
     public Long getPrevSnapshotId();
+    ObjectInDataStoreStateMachine.State getStatus();
 }

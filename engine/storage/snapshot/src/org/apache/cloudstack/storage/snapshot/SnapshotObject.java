@@ -30,7 +30,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -55,6 +59,8 @@ public class SnapshotObject implements SnapshotInfo {
     @Inject protected SnapshotStateMachineManager stateMachineMgr;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
+    @Inject
+    SnapshotDataStoreDao snapshotStore;
     public SnapshotObject() {
 
     }
@@ -76,6 +82,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
+    	
         // TODO Auto-generated method stub
         return null;
     }
@@ -149,11 +156,7 @@ public class SnapshotObject implements SnapshotInfo {
 
 	@Override
 	public String getPath() {
-		return this.snapshot.getPath();
-	}
-
-	public void setPath(String path) {
-		this.snapshot.setPath(path);
+		return this.ojbectInStoreMgr.findObject(this, getDataStore()).getInstallPath();
 	}
 
 	@Override
@@ -196,9 +199,6 @@ public class SnapshotObject implements SnapshotInfo {
 		return this.snapshot.getDomainId();
 	}
 
-	public void setPrevSnapshotId(Long id) {
-		this.snapshot.setPrevSnapshotId(id);
-	}
 
 	@Override
 	public Long getDataCenterId() {
@@ -212,15 +212,8 @@ public class SnapshotObject implements SnapshotInfo {
 
 	@Override
 	public Long getPrevSnapshotId() {
-		return this.snapshot.getPrevSnapshotId();
-	}
-
-	public void setBackupSnapshotId(String id) {
-		this.snapshot.setBackupSnapshotId(id);
-	}
-
-	public String getBackupSnapshotId() {
-		return this.snapshot.getBackupSnapshotId();
+		SnapshotDataStoreVO snapshotStoreVO = this.snapshotStore.findBySnapshot(this.getId(), this.getDataStore().getRole());
+		return snapshotStoreVO.getParentSnapshotId();
 	}
 
 	public SnapshotVO getSnapshotVO(){
@@ -234,8 +227,28 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public void processEvent(org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event event, Answer answer) {
-        // TODO Auto-generated method stub
-
+    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
+    	SnapshotDataStoreVO snapshotStore = this.snapshotStore.findByStoreSnapshot(this.getDataStore().getRole(), 
+    		   this.getDataStore().getId(), this.getId());
+    	if (answer instanceof CreateObjectAnswer) {
+    		SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer) answer).getData();
+    		snapshotStore.setInstallPath(snapshotTO.getPath());
+    		this.snapshotStore.update(snapshotStore.getId(), snapshotStore);
+    	} else {
+    		throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
+    	}
+    	this.processEvent(event);
     }
+
+    @Override
+    public ObjectInDataStoreStateMachine.State getStatus() {
+       return this.ojbectInStoreMgr.findObject(this, store).getObjectInStoreState();
+    }
+
+	@Override
+	public void addPayload(Object data) {
+		// TODO Auto-generated method stub
+		
+	}
+    
 }

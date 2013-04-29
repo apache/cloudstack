@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
@@ -29,7 +30,7 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
 	List<SnapshotVO> listByVolumeId(long volumeId);
 	List<SnapshotVO> listByVolumeId(Filter filter, long volumeId);
 	SnapshotVO findNextSnapshot(long parentSnapId);
-	long getLastSnapshot(long volumeId, long snapId);
+	long getLastSnapshot(long volumeId, DataStoreRole role);
     List<SnapshotVO> listByVolumeIdType(long volumeId, Type type);
     List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId);
     List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid);

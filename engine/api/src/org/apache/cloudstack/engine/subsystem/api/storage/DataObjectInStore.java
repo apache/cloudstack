@@ -26,4 +26,5 @@ public interface DataObjectInStore extends StateObject<ObjectInDataStoreStateMac
     public void setInstallPath(String path);
     public long getObjectId();
     public long getDataStoreId();
+    public ObjectInDataStoreStateMachine.State getObjectInStoreState();
 }

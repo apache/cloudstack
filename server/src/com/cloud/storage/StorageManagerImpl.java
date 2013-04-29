@@ -1931,7 +1931,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), store.getDataCenterId());
 
         // Verify that there are no live snapshot, template, volume on the image store to be deleted
-        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listByStoreId(storeId);
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listByStoreId(storeId, DataStoreRole.Image);
         if ( snapshots != null && snapshots.size() > 0 ){
             throw new CloudRuntimeException("Cannot delete image store with active snapshots backup!");
         }

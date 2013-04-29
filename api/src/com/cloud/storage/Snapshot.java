@@ -18,11 +18,12 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.fsm.StateObject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.fsm.StateObject;
 
 public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
     public enum Type {
@@ -84,8 +85,6 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
     long getAccountId();
 
     long getVolumeId();
-
-    String getPath();
 
     String getName();
 

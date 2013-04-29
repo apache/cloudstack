@@ -96,12 +96,12 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
                 callback.complete(result);
                 return;
             }
-            CreateObjectCommand createCmd = new CreateObjectCommand(data.getUri());
+            CreateObjectCommand createCmd = new CreateObjectCommand(data.getTO());
             CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
             if (answer.getResult()) {
                 //update imagestorevo
 
-                result = new CreateCmdResult(answer.getPath(), null);
+                result = new CreateCmdResult(null, null);
             } else {
                 result.setResult(answer.getDetails());
             }

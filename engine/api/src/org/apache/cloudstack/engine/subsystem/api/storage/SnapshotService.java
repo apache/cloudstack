@@ -18,8 +18,9 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
+
 public interface SnapshotService {
-	public SnapshotInfo takeSnapshot(VolumeInfo volume, Long snapshotId);
+	public SnapshotResult takeSnapshot(SnapshotInfo snapshot);
 	public SnapshotInfo backupSnapshot(SnapshotInfo snapshot);
 	public boolean deleteSnapshot(SnapshotInfo snapshot);
 	public boolean revertSnapshot(SnapshotInfo snapshot);

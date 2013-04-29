@@ -18,31 +18,26 @@
  */
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 
 public class CreateObjectAnswer extends Answer {
-    private String path;
-    private Long size;
+    private DataTO data;
     protected CreateObjectAnswer() {
         super();
     }
 
-    public CreateObjectAnswer(Command cmd, String path, Long size) {
-        super(cmd);
-        this.path = path;
-        this.size = size;
+    public CreateObjectAnswer(DataTO data) {
+        super();
+        this.data = data;
     }
     
-    public CreateObjectAnswer(Command cmd, boolean status, String result) {
-        super(cmd, status, result);
-    }
-
-    public String getPath() {
-        return this.path;
+    public DataTO getData() {
+        return this.data;
     }
     
-    public Long getSize() {
-        return this.size;
-    }
+    public CreateObjectAnswer(String errMsg) {
+        super(null, false, errMsg);
+    } 
 }

@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Event;
 import com.cloud.storage.Snapshot.State;
@@ -55,7 +56,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
     //TODO: we should remove these direct sqls
-    private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? AND path IS NOT NULL ORDER BY created DESC";
+    private static final String GET_LAST_SNAPSHOT = "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
     private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
     private static final String GET_SECHOST_ID = "SELECT store_id FROM snapshots, snapshot_store_ref where snapshots.id = snapshot_store_ref.snapshot_id AND volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
@@ -212,14 +213,14 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return null;
     }
     @Override
-    public long getLastSnapshot(long volumeId, long snapId) {
+    public long getLastSnapshot(long volumeId, DataStoreRole role) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_SNAPSHOT;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setLong(1, volumeId);
-            pstmt.setLong(2, snapId);
+            pstmt.setString(2, role.toString());
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rs.getLong(1);

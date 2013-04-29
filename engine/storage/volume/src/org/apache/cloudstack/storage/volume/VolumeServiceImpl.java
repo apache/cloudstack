@@ -840,5 +840,26 @@ public class VolumeServiceImpl implements VolumeService {
 
         return null;
     }
+    
+    @Override
+    public SnapshotInfo takeSnapshot(VolumeInfo volume) {
+    	VolumeObject vol = (VolumeObject)volume;
+    	vol.stateTransit(Volume.Event.SnapshotRequested);
+    	
+    	SnapshotInfo snapshot = null;
+    	try {
+    		snapshot = this.snapshotMgr.takeSnapshot(volume);
+		} catch (Exception e) {
+			s_logger.debug("Take snapshot: " + volume.getId() + " failed: " + e.toString());
+		} finally {
+			if (snapshot != null) {
+				vol.stateTransit(Volume.Event.OperationSucceeded);
+			} else {
+				vol.stateTransit(Volume.Event.OperationFailed);
+			}
+		}
+ 
+    	return snapshot;
+    }
 
 }

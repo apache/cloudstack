@@ -79,4 +79,6 @@ public interface VolumeService {
 
     void handleVolumeSync(DataStore store);
 
+	SnapshotInfo takeSnapshot(VolumeInfo volume);
+
 }

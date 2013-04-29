@@ -281,5 +281,10 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         return this.getPoolId();
     }
 
+    @Override
+    public State getObjectInStoreState() {
+        return this.state;
+    }
+
 
 }

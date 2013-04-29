@@ -245,7 +245,8 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     }
                 }
             }
-
+        } else if (obj.getType() == DataObjectType.SNAPSHOT) {
+            return objectInStoreMgr.create(obj, this);
         }
 
         return objectInStoreMgr.get(obj, this);

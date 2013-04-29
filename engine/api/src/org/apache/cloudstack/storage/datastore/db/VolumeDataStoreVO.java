@@ -31,6 +31,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -349,6 +350,11 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Override
     public long getObjectId() {
         return this.getVolumeId();
+    }
+
+    @Override
+    public State getObjectInStoreState() {
+        return this.state;
     }
 
 

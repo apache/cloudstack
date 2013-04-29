@@ -32,6 +32,7 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -191,4 +192,9 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	public void setDataStoreId(long dataStoreId) {
 		this.dataStoreId = dataStoreId;
 	}
+
+    @Override
+    public State getObjectInStoreState() {
+       return this.state;
+    }
 }

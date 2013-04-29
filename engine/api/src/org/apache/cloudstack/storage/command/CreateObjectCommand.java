@@ -18,14 +18,16 @@
  */
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+
 import com.cloud.agent.api.Command;
 
 public class CreateObjectCommand extends Command implements StorageSubSystemCommand {
-    protected String objectUri;
+    private DataTO data;
 
-    public CreateObjectCommand(String objectUri) {
+    public CreateObjectCommand(DataTO obj) {
         super();
-        this.objectUri = objectUri;
+        this.data = obj;
     }
 
     protected CreateObjectCommand() {
@@ -38,8 +40,8 @@ public class CreateObjectCommand extends Command implements StorageSubSystemComm
         return false;
     }
     
-    public String getObjectUri() {
-        return this.objectUri;
+    public DataTO getData() {
+        return this.data;
     }
 
 }

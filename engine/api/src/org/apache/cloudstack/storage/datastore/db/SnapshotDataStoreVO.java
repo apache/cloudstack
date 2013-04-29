@@ -31,10 +31,10 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -51,6 +51,10 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 	@Column(name="store_id")
 	private long dataStoreId;
+	
+	@Column(name="store_role")
+	@Enumerated(EnumType.STRING)
+	private DataStoreRole role;
 
 	@Column(name="snapshot_id")
 	private long snapshotId;
@@ -62,23 +66,23 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date lastUpdated = null;
 
-
 	@Column (name="size")
 	private long size;
 
 	@Column (name="physical_size")
 	private long physicalSize;
 
-
+	@Column(name="parent_snapshot_id")
+	private long parentSnapshotId;
+	
 	@Column (name="job_id")
 	private String jobId;
 
 	@Column (name="install_path")
     private String installPath;
 
-
-    @Column(name="destroyed")
-    boolean destroyed = false;
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    Date removed;
 
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
@@ -201,14 +205,6 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return physicalSize;
     }
 
-    public void setDestroyed(boolean destroyed) {
-    	this.destroyed = destroyed;
-    }
-
-    public boolean getDestroyed() {
-    	return destroyed;
-    }
-
 	public long getVolumeSize() {
 	    return -1;
 	}
@@ -245,5 +241,24 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.getSnapshotId();
     }
 
+    public DataStoreRole getRole() {
+        return role;
+    }
 
+    public void setRole(DataStoreRole role) {
+        this.role = role;
+    }
+
+    @Override
+    public State getObjectInStoreState() {
+       return this.state;
+    }
+
+	public long getParentSnapshotId() {
+		return parentSnapshotId;
+	}
+
+	public void setParentSnapshotId(long parentSnapshotId) {
+		this.parentSnapshotId = parentSnapshotId;
+	}
 }

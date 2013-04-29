@@ -23,20 +23,19 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore>  {
 
-    public List<SnapshotDataStoreVO> listByStoreId(long id);
+    public List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role);
 
     public void deletePrimaryRecordsForStore(long id);
 
-    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId);
+    public SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId);
 
     public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock);
 
-    public SnapshotDataStoreVO findBySnapshot(long snapshotId);
-
-    public List<SnapshotDataStoreVO> listDestroyed(long storeId);
+    public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
 }

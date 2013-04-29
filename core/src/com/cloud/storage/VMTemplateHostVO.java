@@ -31,6 +31,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.utils.db.GenericDaoBase;
 
@@ -327,6 +328,11 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     @Override
     public long getDataStoreId() {
         return this.getHostId();
+    }
+
+    @Override
+    public State getObjectInStoreState() {
+        return this.state;
     }
 
 

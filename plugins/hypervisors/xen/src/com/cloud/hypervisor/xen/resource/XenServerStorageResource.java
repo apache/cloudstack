@@ -141,58 +141,22 @@ public class XenServerStorageResource {
     }
     
     protected CreateObjectAnswer getTemplateSize(CreateObjectCommand cmd, String templateUrl) {
-        Connection conn = hypervisorResource.getConnection();
+        /*Connection conn = hypervisorResource.getConnection();
         long size = this.getTemplateSize(conn, templateUrl);
-        return new CreateObjectAnswer(cmd, templateUrl, size);
+        return new CreateObjectAnswer(cmd, templateUrl, size);*/
+        return null;
     }
     protected CreateObjectAnswer execute(CreateObjectCommand cmd) {
-        String uriString = cmd.getObjectUri();
-        DecodedDataObject obj = null;
-
-        Connection conn = hypervisorResource.getConnection();
-        VDI vdi = null;
-        boolean result = false;
-        String errorMsg = null;
-        
-        try {
-            obj = Decoder.decode(uriString);
-
-            DecodedDataStore store = obj.getStore(); 
-            if (obj.getObjType().equalsIgnoreCase("template") && store.getRole().equalsIgnoreCase("image")) {
-                return getTemplateSize(cmd, obj.getPath());
-            }
-            
-            long size = obj.getSize();
-            String name = obj.getName();
-            String storeUuid = store.getUuid();
-            SR primaryDataStoreSR = getSRByNameLabel(conn, storeUuid);
-            vdi = createVdi(conn, name, primaryDataStoreSR, size);
-            VDI.Record record = vdi.getRecord(conn);
-            result = true;
-            return new CreateObjectAnswer(cmd, record.uuid, record.virtualSize);
-        } catch (BadServerResponse e) {
-            s_logger.debug("Failed to create volume", e);
-            errorMsg = e.toString();
-        } catch (XenAPIException e) {
-            s_logger.debug("Failed to create volume", e);
-            errorMsg = e.toString();
-        } catch (XmlRpcException e) {
-            s_logger.debug("Failed to create volume", e);
-            errorMsg = e.toString();
-        } catch (URISyntaxException e) {
-            s_logger.debug("Failed to create volume", e);
-            errorMsg = e.toString();
-        } finally {
-            if (!result && vdi != null) {
-                try {
-                    deleteVDI(conn, vdi);
-                } catch (Exception e) {
-                    s_logger.debug("Faled to delete vdi: " + vdi.toString());
-                }
-            }
-        }
-        
-        return new CreateObjectAnswer(cmd, false, errorMsg);
+       DataTO data = cmd.getData();
+       try {
+           if (data.getObjectType() == DataObjectType.VOLUME) {
+               return createVolume(data);
+           } 
+           return new CreateObjectAnswer("not supported type");
+       } catch (Exception e) {
+           s_logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
+           return new CreateObjectAnswer(e.toString());
+       }
     }
     
     protected Answer execute(DeleteVolumeCommand cmd) {
@@ -735,20 +699,30 @@ public class XenServerStorageResource {
         return new CopyCmdAnswer("not implemented yet");
     }
     
-    protected CreateObjectAnswer createVolume(DataTO data) {
-        /*
+    protected CreateObjectAnswer createVolume(DataTO data) throws BadServerResponse, XenAPIException, XmlRpcException {
+        VolumeObjectTO volume = (VolumeObjectTO)data;
+
+        Connection conn = hypervisorResource.getConnection();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
+        SR poolSr = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
         VDI.Record vdir = new VDI.Record();
-        vdir.nameLabel = dskch.getName();
+        vdir.nameLabel = volume.getName();
         vdir.SR = poolSr;
         vdir.type = Types.VdiType.USER;
 
-        vdir.virtualSize = dskch.getSize();
+        vdir.virtualSize = volume.getSize();
+        VDI vdi;
+
         vdi = VDI.create(conn, vdir);
-        VDI.Record vdir;
         vdir = vdi.getRecord(conn);
-        s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);*/
-        return null;
+        VolumeObjectTO newVol = new VolumeObjectTO();
+        newVol.setName(vdir.nameLabel);
+        newVol.setSize(vdir.virtualSize);
+        newVol.setPath(vdir.uuid);
+
+        return new CreateObjectAnswer(newVol);
     }
+    
     protected CopyCmdAnswer cloneVolumeFromBaseTemplate(DataTO srcData, DataTO destData) {
         Connection conn = hypervisorResource.getConnection();
         PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();

@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -52,7 +53,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+
         storeSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
@@ -63,13 +65,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         snapshotSearch = createSearchBuilder();
         snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        snapshotSearch.and("destroyed", snapshotSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         snapshotSearch.done();
 
         storeSnapshotSearch = createSearchBuilder();
         storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeSnapshotSearch.and("destroyed", storeSnapshotSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.done();
 
         return true;
@@ -114,11 +116,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
 
     @Override
-    public List<SnapshotDataStoreVO> listByStoreId(long id) {
+    public List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
-        sc.setParameters("destroyed", false);
-        return listIncludingRemovedBy(sc);
+        sc.setParameters("store_role", role);
+        return listBy(sc);
     }
 
     @Override
@@ -132,40 +134,19 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId) {
+    public SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
         sc.setParameters("store_id", storeId);
         sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("destroyed", false);
+        sc.setParameters("store_role", role);
         return findOneIncludingRemovedBy(sc);
     }
 
-
     @Override
-    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
-        sc.setParameters("store_id", storeId);
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("destroyed", false);
-        if (!lock)
-            return findOneIncludingRemovedBy(sc);
-        else
-            return lockOneRandomRow(sc, true);
-    }
-
-    @Override
-    public SnapshotDataStoreVO findBySnapshot(long snapshotId) {
+    public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("destroyed", false);
-        return findOneIncludingRemovedBy(sc);
-    }
-
-    @Override
-    public List<SnapshotDataStoreVO> listDestroyed(long id) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("destroyed", true);
-        return listIncludingRemovedBy(sc);
+        sc.setParameters("store_role", role);
+        return findOneBy(sc);
     }
 }

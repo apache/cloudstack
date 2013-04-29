@@ -35,6 +35,9 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -49,35 +52,29 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     VolumeDataFactory volumeFactory;
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
-        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
         SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
 
     @Override
-    public SnapshotInfo getSnapshot(long snapshotId) {
-    	SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
-    	SnapshotObject so = null;
-    	if (snapshot.getState() == Snapshot.State.BackedUp) {
-    	    DataStore store = null;
-    	    SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId);
-    	    if ( snapshotStore != null ){
-    	        store = this.storeMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
-    	    }
-    		so =  SnapshotObject.getSnapshotObject(snapshot, store);
-    	} else {
-    		VolumeInfo volume = this.volumeFactory.getVolume(snapshot.getVolumeId());
-    		so = SnapshotObject.getSnapshotObject(snapshot, volume.getDataStore());
-    	}
-    	return so;
-    }
-
-    @Override
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
-        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(obj.getId());
+        SnapshotVO snapshot = snapshotDao.findById(obj.getId());
         if (snapshot == null) {
             throw new CloudRuntimeException("Can't find snapshot: " + obj.getId());
         }
+        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
+        return so;
+    }
+
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId, role);
+        if (snapshotStore == null) {
+            return null;
+        }
+        DataStore store = this.storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
         SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }

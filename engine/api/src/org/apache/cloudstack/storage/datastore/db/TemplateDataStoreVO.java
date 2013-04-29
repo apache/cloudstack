@@ -31,6 +31,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
@@ -320,5 +321,8 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.getTemplateId();
     }
 
-
+    @Override
+    public State getObjectInStoreState() {
+       return this.state;
+    }
 }
