@@ -62,13 +62,15 @@
      * Default behavior for actions -- just show a confirmation popup and add notification
      */
     standard: function($detailView, args, additional) {
-      var action = args.actions[args.actionName];
+      var tab = args.tabs[args.activeTab];
+      var isMultiple = tab.multiple;
+      var action = isMultiple ? tab.actions[args.actionName] : args.actions[args.actionName];
       var preAction = action.preAction;
       var notification = action.notification ?
             action.notification : {};
       var messages = action.messages;
       var id = args.id;
-      var context = $detailView.data('view-args').context;
+      var context = args.context ? args.context : $detailView.data('view-args').context;
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
@@ -178,7 +180,7 @@
             data: data,
             _custom: _custom,
             ref: options.ref,
-            context: $detailView.data('view-args').context,
+            context: context,
             $form: $form,
             response: {
               success: function(args) {
@@ -197,7 +199,11 @@
                       $loading.remove();
 
                       if (!noRefresh && !viewArgs.compact) {
-                        updateTabContent(args.data? args.data : args2.data);
+                        if (isMultiple) {
+                          $detailView.find('.refresh').click();
+                        } else {
+                          updateTabContent(args.data? args.data : args2.data);
+                        }
                       }
                     }
 
@@ -286,43 +292,50 @@
             after: function(args) {
               performAction(args.data, {
                 ref: args.ref,
-                context: $detailView.data('view-args').context,
+                context: context,
                 $form: args.$form
               });
             },
             ref: {
               id: id
             },
-            context: $detailView.data('view-args').context
+            context: context
           });
         }
       }
     },
 
     remove: function($detailView, args) {
+      var tab = args.tabs[args.activeTab];
+      var isMultiple = tab.multiple;
+
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
-          var $browser = $('#browser .container');
-          var $panel = $detailView.closest('.panel');
+          if (isMultiple && $detailView.is(':visible')) {
+            $detailView.find('.refresh').click(); // Reload tab
+          } else {
+            var $browser = $('#browser .container');
+            var $panel = $detailView.closest('.panel');
 
-          if ($detailView.is(':visible')) {
-            $browser.cloudBrowser('selectPanel', {
-              panel: $panel.prev()
-            });
-          }
-
-          if($detailView.data("list-view-row") != null) {
-            var $row = $detailView.data('list-view-row');
-            var $tbody = $row.closest('tbody');
-
-            $row.remove();
-            if(!$tbody.find('tr').size()) {
-              $("<tr>").addClass('empty').append(
-                $("<td>").html(_l('label.no.data'))
-              ).appendTo($tbody);
+            if ($detailView.is(':visible')) {
+              $browser.cloudBrowser('selectPanel', {
+                panel: $panel.prev()
+              });
             }
-            $tbody.closest('table').dataTable('refresh');
+
+            if($detailView.data("list-view-row") != null) {
+              var $row = $detailView.data('list-view-row');
+              var $tbody = $row.closest('tbody');
+
+              $row.remove();
+              if(!$tbody.find('tr').size()) {
+                $("<tr>").addClass('empty').append(
+                  $("<td>").html(_l('label.no.data'))
+                ).appendTo($tbody);
+              }
+              $tbody.closest('table').dataTable('refresh');
+            }
           }
         }
       });
@@ -707,7 +720,10 @@
 
       $.each(actions, function(key, value) {
         if ($.inArray(key, allowedActions) == -1 ||
-           (key == 'edit' && options.compact)) return true;
+            (options.ignoreAddAction && key == 'add') ||
+            (key == 'edit' && options.compact)) {
+          return true;
+        }
 
         var $action = $('<div></div>')
               .addClass('action').addClass(key)
@@ -778,11 +794,13 @@
     var detailViewArgs = $detailView.data('view-args');
     var fields = tabData.fields;
     var hiddenFields;
-    var context = detailViewArgs ? detailViewArgs.context : cloudStack.context;
+    var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
     var isMultiple = tabData.multiple || tabData.isMultiple;
+    var actions = tabData.actions;
 
     if (isMultiple) {
-      context[tabData.id] = data;
+      context[tabData.id] = [data];
+      $detailGroups.data('item-context', context);
     }
 
     // Make header
@@ -992,7 +1010,8 @@
     $tabContent.html('');
 
     var targetTabID = $tabContent.data('detail-view-tab-id');
-    var tabs = args.tabs[targetTabID];
+    var tabList = args.tabs;
+    var tabs = tabList[targetTabID];
     var dataProvider = tabs.dataProvider;
     var isMultiple = tabs.multiple || tabs.isMultiple;
     var viewAllArgs = args.viewAll;
@@ -1073,7 +1092,11 @@
                         tabData.viewAll.path,
                         {
                           updateContext: function(args) {
-                            return { nics: [item] };
+                            var obj = {};
+
+                            obj[targetTabID] = [item];
+
+                            return obj;
                           },
                           title: tabData.viewAll.title
                         }
@@ -1081,7 +1104,51 @@
                     })
                   );
               }
+
+              // Add action bar
+              if (tabData.multiple && tabData.actions) {
+                var $actions = makeActionButtons(tabData.actions, {
+                  actionFilter: actionFilter,
+                  data: item,
+                  context: $.extend(true, {}, $detailView.data('view-args').context, {
+                    item: [item]
+                  }),
+                  ignoreAddAction: true
+                });
+
+                $fieldContent.find('th').append($actions);
+              }
             });
+
+            // Add item action
+            if (tabData.multiple && tabData.actions && tabData.actions.add) {
+              $tabContent.prepend(
+                $('<div>').addClass('button add').append(
+                  $('<span>').addClass('icon').html('&nbsp;'),
+                  $('<span>').html(_l(tabData.actions.add.label))
+                ).click(function() {
+                  uiActions.standard(
+                    $detailView,
+                    {
+                      tabs: tabList,
+                      activeTab: targetTabID,
+                      actions: tabData.actions,
+                      actionName: 'add'
+                    }, {
+                      noRefresh: true,
+                      complete: function(args) {
+                        if ($detailView.is(':visible')) {
+                          loadTabContent(
+                            $detailView.find('div.detail-group:visible'),
+                            $detailView.data('view-args')
+                          );
+                        }
+                      }
+                    }
+                  )
+                })
+              );
+            }
 
             return true;
           }
@@ -1301,15 +1368,20 @@
       var $action = $target.closest('.action').find('[detail-action]');
       var actionName = $action.attr('detail-action');
       var actionCallback = $action.data('detail-view-action-callback');
-      var detailViewArgs = $action.closest('div.detail-view').data('view-args');
+      var detailViewArgs = $.extend(true, {}, $action.closest('div.detail-view').data('view-args'));
       var additionalArgs = {};
       var actionSet = uiActions;
+      var $details = $action.closest('.details');
 
       var uiCallback = actionSet[actionName];
       if (!uiCallback)
         uiCallback = actionSet['standard'];
 
       detailViewArgs.actionName = actionName;
+
+      if ($details.data('item-context')) {
+        detailViewArgs.context = $details.data('item-context');
+      }
 
       uiCallback($target.closest('div.detail-view'), detailViewArgs, additionalArgs);
 

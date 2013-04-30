@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.action.delete.nic': '<fmt:message key="label.action.delete.nic" />',
+'message.action.delete.nic': '<fmt:message key="message.action.delete.nic" />',
 'changed.item.properties': '<fmt:message key="changed.item.properties" />',
 'confirm.enable.s3': '<fmt:message key="confirm.enable.s3" />',
 'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
