@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.internallbvm;
+package org.apache.cloudstack.internallbelement;
 
 import java.io.IOException;
 
@@ -32,6 +32,7 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -105,6 +106,13 @@ public class ElementChildTestConfiguration {
         public ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao() {
             return Mockito.mock(ApplicationLoadBalancerRuleDao.class);
         }
+        
+        @Bean
+        public DataCenterDao dataCenterDao() {
+            return Mockito.mock(DataCenterDao.class);
+        }
+        
+        
         
         @Override
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {

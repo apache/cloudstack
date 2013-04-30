@@ -41,6 +41,6 @@
         <property name="name" value="InternalLoadBalancerElementService"/>
     </bean>
   
-    <bean class="org.apache.cloudstack.internallbvm.ElementChildTestConfiguration" />
+    <bean class="org.apache.cloudstack.internallbelement.ElementChildTestConfiguration" />
     
 </beans>
