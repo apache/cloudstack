@@ -35,7 +35,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=DeploymentPlanner.class)
-public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentPlanner {
+public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
     private static final Logger s_logger = Logger.getLogger(UserDispersingPlanner.class);
     

@@ -17,6 +17,7 @@
 package com.cloud.deploy;
 
 import java.util.List;
+
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -36,10 +37,9 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
      *            avoid these data centers, pods, clusters, or hosts.
      * @return DeployDestination for that virtual machine.
      */
-    List<Long> orderClusters(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan,
-            ExcludeList avoid) throws InsufficientServerCapacityException;
+    List<Long> orderClusters(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid)
+            throws InsufficientServerCapacityException;
 
-
-    PlannerResourceUsage getResourceType();
+    PlannerResourceUsage getResourceUsage();
 
 }

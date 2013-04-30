@@ -16,8 +16,13 @@
 // under the License.
 package com.cloud.deploy;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -27,26 +32,63 @@ import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
@@ -59,6 +101,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.manager.allocator.HostAllocator;
 
 @Local(value = { DeploymentPlanningManager.class })
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener {
@@ -78,6 +121,41 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     DataCenterDao _dcDao;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
+
+    protected List<StoragePoolAllocator> _storagePoolAllocators;
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+        return _storagePoolAllocators;
+    }
+    public void setStoragePoolAllocators(
+            List<StoragePoolAllocator> _storagePoolAllocators) {
+        this._storagePoolAllocators = _storagePoolAllocators;
+    }
+
+    protected List<HostAllocator> _hostAllocators;
+    public List<HostAllocator> getHostAllocators() {
+        return _hostAllocators;
+    }
+    public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+        this._hostAllocators = _hostAllocators;
+    }
+
+    @Inject protected HostDao _hostDao;
+    @Inject protected HostPodDao _podDao;
+    @Inject protected ClusterDao _clusterDao;
+    @Inject protected GuestOSDao _guestOSDao = null;
+    @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
+    @Inject protected DiskOfferingDao _diskOfferingDao;
+    @Inject protected StoragePoolHostDao _poolHostDao;
+
+    @Inject protected VolumeDao _volsDao;
+    @Inject protected CapacityManager _capacityMgr;
+    @Inject protected ConfigurationDao _configDao;
+    @Inject protected PrimaryDataStoreDao _storagePoolDao;
+    @Inject protected CapacityDao _capacityDao;
+    @Inject protected AccountManager _accountMgr;
+    @Inject protected StorageManager _storageMgr;
+    @Inject DataStoreManager dataStoreMgr;
+    @Inject protected ClusterDetailsDao _clusterDetailsDao;
 
     protected List<DeploymentPlanner> _planners;
     public List<DeploymentPlanner> getPlanners() {
@@ -116,47 +194,231 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         // call planners
-        DeployDestination dest = null;
-        List<Long> clusterIds = null;
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        // check if datacenter is in avoid set
+        if (avoids.shouldAvoid(dc)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DataCenter id = '" + dc.getId()
+                        + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+            }
+            return null;
+        }
+
 
         ServiceOffering offering = vmProfile.getServiceOffering();
+        DeploymentPlanner planner = ComponentContext.getComponent(offering.getDeploymentPlanner());
+
+        int cpu_requested = offering.getCpu() * offering.getSpeed();
+        long ram_requested = offering.getRamSize() * 1024L * 1024L;
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("DeploymentPlanner allocation algorithm: " + planner);
+
+            s_logger.debug("Trying to allocate a host and storage pools from dc:" + plan.getDataCenterId() + ", pod:"
+                    + plan.getPodId() + ",cluster:" + plan.getClusterId() + ", requested cpu: " + cpu_requested
+                    + ", requested ram: " + ram_requested);
+
+            s_logger.debug("Is ROOT volume READY (pool already allocated)?: "
+                    + (plan.getPoolId() != null ? "Yes" : "No"));
+        }
+
+        String haVmTag = (String) vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+
+        if (plan.getHostId() != null && haVmTag == null) {
+            Long hostIdSpecified = plan.getHostId();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: "
+                        + hostIdSpecified);
+            }
+            HostVO host = _hostDao.findById(hostIdSpecified);
+            if (host == null) {
+                s_logger.debug("The specified host cannot be found");
+            } else if (avoids.shouldAvoid(host)) {
+                s_logger.debug("The specified host is in avoid set");
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Looking for suitable pools for this host under zone: " + host.getDataCenterId()
+                            + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
+                }
+
+                // search for storage under the zone, pod, cluster of the host.
+                DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(),
+                        host.getClusterId(), hostIdSpecified, plan.getPoolId(), null, plan.getReservationContext());
+
+                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile,
+                        lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                List<Volume> readyAndReusedVolumes = result.second();
+
+                // choose the potential pool for this VM for this host
+                if (!suitableVolumeStoragePools.isEmpty()) {
+                    List<Host> suitableHosts = new ArrayList<Host>();
+                    suitableHosts.add(host);
+
+                    Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                            suitableHosts, suitableVolumeStoragePools, getPlannerUsage(planner));
+                    if (potentialResources != null) {
+                        Pod pod = _podDao.findById(host.getPodId());
+                        Cluster cluster = _clusterDao.findById(host.getClusterId());
+                        Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                        // remove the reused vol<->pool from destination, since
+                        // we don't have to prepare this volume.
+                        for (Volume vol : readyAndReusedVolumes) {
+                            storageVolMap.remove(vol);
+                        }
+                        DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap);
+                        s_logger.debug("Returning Deployment Destination: " + dest);
+                        return dest;
+                    }
+                }
+            }
+            s_logger.debug("Cannnot deploy to specified host, returning.");
+            return null;
+        }
+
+        if (vm.getLastHostId() != null && haVmTag == null) {
+            s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
+
+            HostVO host = _hostDao.findById(vm.getLastHostId());
+            if (host == null) {
+                s_logger.debug("The last host of this VM cannot be found");
+            } else if (avoids.shouldAvoid(host)) {
+                s_logger.debug("The last host of this VM is in avoid set");
+            } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
+                s_logger.debug("The last Host, hostId: "
+                        + host.getId()
+                        + " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+            } else {
+                if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
+                    long cluster_id = host.getClusterId();
+                    ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
+                            "cpuOvercommitRatio");
+                    ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id,
+                            "memoryOvercommitRatio");
+                    Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                    Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+                    if (_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true,
+                            cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                        s_logger.debug("The last host of this VM is UP and has enough capacity");
+                        s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId()
+                                + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
+                        // search for storage under the zone, pod, cluster of
+                        // the last host.
+                        DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
+                                host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
+                        Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
+                                vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+                        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                        List<Volume> readyAndReusedVolumes = result.second();
+                        // choose the potential pool for this VM for this host
+                        if (!suitableVolumeStoragePools.isEmpty()) {
+                            List<Host> suitableHosts = new ArrayList<Host>();
+                            suitableHosts.add(host);
+
+                            Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                                    suitableHosts, suitableVolumeStoragePools, getPlannerUsage(planner));
+                            if (potentialResources != null) {
+                                Pod pod = _podDao.findById(host.getPodId());
+                                Cluster cluster = _clusterDao.findById(host.getClusterId());
+                                Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                                // remove the reused vol<->pool from
+                                // destination, since we don't have to prepare
+                                // this volume.
+                                for (Volume vol : readyAndReusedVolumes) {
+                                    storageVolMap.remove(vol);
+                                }
+                                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap);
+                                s_logger.debug("Returning Deployment Destination: " + dest);
+                                return dest;
+                            }
+                        }
+                    } else {
+                        s_logger.debug("The last host of this VM does not have enough capacity");
+                    }
+                } else {
+                    s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: "
+                            + host.getStatus().name() + ", host resource state is: " + host.getResourceState());
+                }
+            }
+            s_logger.debug("Cannot choose the last host to deploy this VM ");
+        }
+
+        DeployDestination dest = null;
+        List<Long> clusterList = null;
+
         if (offering != null && offering.getDeploymentPlanner() != null) {
-            DeploymentPlanner planner = ComponentContext.getComponent(offering.getDeploymentPlanner());
             if (planner != null && planner.canHandle(vmProfile, plan, avoids)) {
                 while (true) {
+
                     if (planner instanceof DeploymentClusterPlanner) {
-                        clusterIds = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
+                        clusterList = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
+                        ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                                avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
+                                avoids.getPoolsToAvoid());
+
+                        if (clusterList != null && !clusterList.isEmpty()) {
+                            // planner refactoring. call allocators to list hosts
+                            ExcludeList PlannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                                    avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
+                                    avoids.getPoolsToAvoid());
+
+                            PlannerAvoidOutput.getDataCentersToAvoid().removeAll(PlannerAvoidInput.getDataCentersToAvoid());
+                            PlannerAvoidOutput.getPodsToAvoid().removeAll(PlannerAvoidInput.getPodsToAvoid());
+                            PlannerAvoidOutput.getClustersToAvoid().removeAll(PlannerAvoidInput.getClustersToAvoid());
+                            PlannerAvoidOutput.getHostsToAvoid().removeAll(PlannerAvoidInput.getHostsToAvoid());
+                            PlannerAvoidOutput.getPoolsToAvoid().removeAll(PlannerAvoidInput.getPoolsToAvoid());
+
+
+                            dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
+                                    getPlannerUsage(planner), PlannerAvoidOutput);
+                            if(dest != null){
+                                return dest;
+                            }
+                            // reset the avoid input to the planners
+                            avoids.getDataCentersToAvoid().removeAll(PlannerAvoidOutput.getDataCentersToAvoid());
+                            avoids.getPodsToAvoid().removeAll(PlannerAvoidOutput.getPodsToAvoid());
+                            avoids.getClustersToAvoid().removeAll(PlannerAvoidOutput.getClustersToAvoid());
+                            avoids.getHostsToAvoid().removeAll(PlannerAvoidOutput.getHostsToAvoid());
+                            avoids.getPoolsToAvoid().removeAll(PlannerAvoidOutput.getPoolsToAvoid());
+
+                        } else {
+                            return null;
+                        }
                     } else {
                         dest = planner.plan(vmProfile, plan, avoids);
-                    }
+                        if (dest != null) {
+                            long hostId = dest.getHost().getId();
+                            avoids.addHost(dest.getHost().getId());
 
-                    if (dest != null) {
-                        long hostId = dest.getHost().getId();
-                        avoids.addHost(dest.getHost().getId());
-
-                        if (checkIfHostCanBeUsed(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
-                            // found destination
-                            return dest;
-                        } else {
-                            // find another host - seems some concurrent deployment picked it up for dedicated access
-                            continue;
+                            if (checkIfHostFitsPlannerUsage(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
+                                // found destination
+                                return dest;
+                            } else {
+                                // find another host - seems some concurrent deployment picked it up for dedicated access
+                                continue;
+                            }
+                        }else{
+                            return null;
                         }
-                    } else if (clusterIds != null && !clusterIds.isEmpty()) {
-                        // planner refactoring. call allocators to list hosts
-
-                    } else {
-                        return null;
                     }
                 }
             }
         }
 
-
         return dest;
     }
 
+    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner) {
+        if (planner instanceof DeploymentClusterPlanner) {
+            return ((DeploymentClusterPlanner) planner).getResourceUsage();
+        } else {
+            return DeploymentPlanner.PlannerResourceUsage.Shared;
+        }
+
+    }
+
     @DB
-    private boolean checkIfHostCanBeUsed(long hostId, PlannerResourceUsage resourceTypeRequired) {
+    private boolean checkIfHostFitsPlannerUsage(long hostId, PlannerResourceUsage resourceUsageRequired) {
         // TODO Auto-generated method stub
         // check if this host has been picked up by some other planner
         // exclusively
@@ -170,7 +432,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             PlannerResourceUsage hostResourceType = reservationEntry.getResourceUsage();
 
             if (hostResourceType != null) {
-                if (hostResourceType == resourceTypeRequired) {
+                if (hostResourceType == resourceUsageRequired) {
                     return true;
                 } else {
                     return false;
@@ -190,12 +452,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     }
                     // check before updating
                     if (lockedEntry.getResourceUsage() == null) {
-                        lockedEntry.setResourceUsage(resourceTypeRequired);
+                        lockedEntry.setResourceUsage(resourceUsageRequired);
                         _plannerHostReserveDao.persist(lockedEntry);
                         return true;
                     } else {
                         // someone updated it earlier. check if we can still use it
-                        if (lockedEntry.getResourceUsage() == resourceTypeRequired) {
+                        if (lockedEntry.getResourceUsage() == resourceUsageRequired) {
                             return true;
                         } else {
                             return false;
@@ -275,4 +537,374 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return super.configure(name, params);
     }
 
+    // /refactoring planner methods
+    private DeployDestination checkClustersforDestination(List<Long> clusterList,
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            DataCenter dc, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, ExcludeList PlannerAvoidOutput) {
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("ClusterId List to consider: " + clusterList);
+        }
+
+        for (Long clusterId : clusterList) {
+            Cluster clusterVO = _clusterDao.findById(clusterId);
+
+            if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
+                s_logger.debug("Cluster: " + clusterId
+                        + " has HyperVisorType that does not match the VM, skipping this cluster");
+                avoid.addCluster(clusterVO.getId());
+                continue;
+            }
+
+            s_logger.debug("Checking resources in Cluster: " + clusterId + " under Pod: " + clusterVO.getPodId());
+            // search for resources(hosts and storage) under this zone, pod,
+            // cluster.
+            DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(),
+                    clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
+
+            // find suitable hosts under this cluster, need as many hosts as we
+            // get.
+            List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
+            // if found suitable hosts in this cluster, find suitable storage
+            // pools for each volume of the VM
+            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
+                    Pod pod = _podDao.findById(clusterVO.getPodId());
+                    DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
+                    return dest;
+                }
+
+                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile,
+                        potentialPlan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                List<Volume> readyAndReusedVolumes = result.second();
+
+                // choose the potential host and pool for the VM
+                if (!suitableVolumeStoragePools.isEmpty()) {
+                    Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                            suitableHosts, suitableVolumeStoragePools, resourceUsageRequired);
+
+                    if (potentialResources != null) {
+                        Pod pod = _podDao.findById(clusterVO.getPodId());
+                        Host host = _hostDao.findById(potentialResources.first().getId());
+                        Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                        // remove the reused vol<->pool from destination, since
+                        // we don't have to prepare this volume.
+                        for (Volume vol : readyAndReusedVolumes) {
+                            storageVolMap.remove(vol);
+                        }
+                        DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap);
+                        s_logger.debug("Returning Deployment Destination: " + dest);
+                        return dest;
+                    }
+                } else {
+                    s_logger.debug("No suitable storagePools found under this Cluster: " + clusterId);
+                }
+            } else {
+                s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
+            }
+
+            if (canAvoidCluster(clusterVO, avoid, PlannerAvoidOutput)) {
+                avoid.addCluster(clusterVO.getId());
+            }
+        }
+        s_logger.debug("Could not find suitable Deployment Destination for this VM under any clusters, returning. ");
+        return null;
+    }
+
+    private boolean canAvoidCluster(Cluster clusterVO, ExcludeList avoids, ExcludeList plannerAvoidOutput) {
+
+        ExcludeList allocatorAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(), avoids.getPodsToAvoid(),
+                avoids.getClustersToAvoid(), avoids.getHostsToAvoid(), avoids.getPoolsToAvoid());
+
+        // remove any hosts/pools that the planners might have added
+        // to get the list of hosts/pools that Allocators flagged as 'avoid'
+        allocatorAvoidOutput.getHostsToAvoid().removeAll(plannerAvoidOutput.getHostsToAvoid());
+        allocatorAvoidOutput.getPoolsToAvoid().removeAll(plannerAvoidOutput.getPoolsToAvoid());
+
+        // if all hosts or all pools in the cluster are in avoid set after this
+        // pass, then put the cluster in avoid set.
+
+        List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(),
+                clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
+
+        for (HostVO host : allhostsInCluster) {
+            if (!allocatorAvoidOutput.getHostsToAvoid().contains(host.getId())) {
+                // there's some host in the cluster that is not yet in avoid set
+                return false;
+            }
+        }
+
+        List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
+                clusterVO.getPodId(), clusterVO.getId(), null);
+        for (StoragePoolVO pool : allPoolsInCluster) {
+            if (!allocatorAvoidOutput.getPoolsToAvoid().contains(pool.getId())) {
+                // there's some pool in the cluster that is not yet in avoid set
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts,
+            Map<Volume, List<StoragePool>> suitableVolumeStoragePools, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired) {
+        s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
+
+        boolean hostCanAccessPool = false;
+        boolean haveEnoughSpace = false;
+        Map<Volume, StoragePool> storage = new HashMap<Volume, StoragePool>();
+        TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<Volume>(new Comparator<Volume>() {
+            @Override
+            public int compare(Volume v1, Volume v2) {
+                if (v1.getSize() < v2.getSize())
+                    return 1;
+                else
+                    return -1;
+            }
+        });
+        volumesOrderBySizeDesc.addAll(suitableVolumeStoragePools.keySet());
+        boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
+        for (Host potentialHost : suitableHosts) {
+            Map<StoragePool, List<Volume>> volumeAllocationMap = new HashMap<StoragePool, List<Volume>>();
+            for (Volume vol : volumesOrderBySizeDesc) {
+                haveEnoughSpace = false;
+                s_logger.debug("Checking if host: " + potentialHost.getId()
+                        + " can access any suitable storage pool for volume: " + vol.getVolumeType());
+                List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
+                hostCanAccessPool = false;
+                for (StoragePool potentialSPool : volumePoolList) {
+                    if (hostCanAccessSPool(potentialHost, potentialSPool)) {
+                        hostCanAccessPool = true;
+                        if (multipleVolume) {
+                            List<Volume> requestVolumes = null;
+                            if (volumeAllocationMap.containsKey(potentialSPool))
+                                requestVolumes = volumeAllocationMap.get(potentialSPool);
+                            else
+                                requestVolumes = new ArrayList<Volume>();
+                            requestVolumes.add(vol);
+
+                            if (!_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool))
+                                continue;
+                            volumeAllocationMap.put(potentialSPool, requestVolumes);
+                        }
+                        storage.put(vol, potentialSPool);
+                        haveEnoughSpace = true;
+                        break;
+                    }
+                }
+                if (!hostCanAccessPool) {
+                    break;
+                }
+                if (!haveEnoughSpace) {
+                    s_logger.warn("insufficient capacity to allocate all volumes");
+                    break;
+                }
+            }
+            if (hostCanAccessPool && haveEnoughSpace) {
+                // check the planner host reservation
+                if (checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
+                    s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: "
+                            + potentialHost.getName() + " and associated storage pools for this VM");
+                    return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
+                }
+            }
+        }
+        s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");
+        return null;
+    }
+
+    protected boolean hostCanAccessSPool(Host host, StoragePool pool) {
+        boolean hostCanAccessSPool = false;
+
+        StoragePoolHostVO hostPoolLinkage = _poolHostDao.findByPoolHost(pool.getId(), host.getId());
+        if (hostPoolLinkage != null) {
+            hostCanAccessSPool = true;
+        }
+
+        s_logger.debug("Host: " + host.getId() + (hostCanAccessSPool ? " can" : " cannot") + " access pool: "
+                + pool.getId());
+        return hostCanAccessSPool;
+    }
+
+    protected List<Host> findSuitableHosts(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+        List<Host> suitableHosts = new ArrayList<Host>();
+        for (HostAllocator allocator : _hostAllocators) {
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
+            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                break;
+            }
+        }
+
+        if (suitableHosts.isEmpty()) {
+            s_logger.debug("No suitable hosts found");
+        }
+        return suitableHosts;
+    }
+
+    protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            int returnUpTo) {
+        List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
+        List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
+
+        // for each volume find list of suitable storage pools by calling the
+        // allocators
+        for (VolumeVO toBeCreated : volumesTobeCreated) {
+            s_logger.debug("Checking suitable pools for volume (Id, Type): (" + toBeCreated.getId() + ","
+                    + toBeCreated.getVolumeType().name() + ")");
+
+            // If the plan specifies a poolId, it means that this VM's ROOT
+            // volume is ready and the pool should be reused.
+            // In this case, also check if rest of the volumes are ready and can
+            // be reused.
+            if (plan.getPoolId() != null) {
+                s_logger.debug("Volume has pool already allocated, checking if pool can be reused, poolId: "
+                        + toBeCreated.getPoolId());
+                List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+                StoragePool pool = null;
+                if (toBeCreated.getPoolId() != null) {
+                    pool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
+                } else {
+                    pool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
+                }
+
+                if (!pool.isInMaintenance()) {
+                    if (!avoid.shouldAvoid(pool)) {
+                        long exstPoolDcId = pool.getDataCenterId();
+
+                        long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
+                        long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
+                        if (plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId
+                                && plan.getClusterId() == exstPoolClusterId) {
+                            s_logger.debug("Planner need not allocate a pool for this volume since its READY");
+                            suitablePools.add(pool);
+                            suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                            if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
+                                readyAndReusedVolumes.add(toBeCreated);
+                            }
+                            continue;
+                        } else {
+                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
+                        }
+                    } else {
+                        s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
+                    }
+                } else {
+                    s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
+                }
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("We need to allocate new storagepool for this volume");
+            }
+            if (!isRootAdmin(plan.getReservationContext())) {
+                if (!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");
+                        s_logger.debug("Cannot deploy to this specified plan, allocation state is disabled, returning.");
+                    }
+                    // Cannot find suitable storage pools under this cluster for
+                    // this volume since allocation_state is disabled.
+                    // - remove any suitable pools found for other volumes.
+                    // All volumes should get suitable pools under this cluster;
+                    // else we cant use this cluster.
+                    suitableVolumeStoragePools.clear();
+                    break;
+                }
+            }
+
+            s_logger.debug("Calling StoragePoolAllocators to find suitable pools");
+
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
+
+            boolean useLocalStorage = false;
+            if (vmProfile.getType() != VirtualMachine.Type.User) {
+                String ssvmUseLocalStorage = _configDao.getValue(Config.SystemVMUseLocalStorage.key());
+                if (ssvmUseLocalStorage.equalsIgnoreCase("true")) {
+                    useLocalStorage = true;
+                }
+            } else {
+                useLocalStorage = diskOffering.getUseLocalStorage();
+
+                // TODO: this is a hacking fix for the problem of deploy
+                // ISO-based VM on local storage
+                // when deploying VM based on ISO, we have a service offering
+                // and an additional disk offering, use-local storage flag is
+                // actually
+                // saved in service offering, overrde the flag from service
+                // offering when it is a ROOT disk
+                if (!useLocalStorage && vmProfile.getServiceOffering().getUseLocalStorage()) {
+                    if (toBeCreated.getVolumeType() == Volume.Type.ROOT)
+                        useLocalStorage = true;
+                }
+            }
+            diskProfile.setUseLocalStorage(useLocalStorage);
+
+            boolean foundPotentialPools = false;
+            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+                final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid,
+                        returnUpTo);
+                if (suitablePools != null && !suitablePools.isEmpty()) {
+                    suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                    foundPotentialPools = true;
+                    break;
+                }
+            }
+
+            if (!foundPotentialPools) {
+                s_logger.debug("No suitable pools found for volume: " + toBeCreated + " under cluster: "
+                        + plan.getClusterId());
+                // No suitable storage pools found under this cluster for this
+                // volume. - remove any suitable pools found for other volumes.
+                // All volumes should get suitable pools under this cluster;
+                // else we cant use this cluster.
+                suitableVolumeStoragePools.clear();
+                break;
+            }
+        }
+
+        if (suitableVolumeStoragePools.isEmpty()) {
+            s_logger.debug("No suitable pools found");
+        }
+
+        return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
+    }
+
+    private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId) {
+        // Check if the zone exists in the system
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone != null && Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+            s_logger.info("Zone is currently disabled, cannot allocate to this zone: " + zoneId);
+            return false;
+        }
+
+        Pod pod = _podDao.findById(podId);
+        if (pod != null && Grouping.AllocationState.Disabled == pod.getAllocationState()) {
+            s_logger.info("Pod is currently disabled, cannot allocate to this pod: " + podId);
+            return false;
+        }
+
+        Cluster cluster = _clusterDao.findById(clusterId);
+        if (cluster != null && Grouping.AllocationState.Disabled == cluster.getAllocationState()) {
+            s_logger.info("Cluster is currently disabled, cannot allocate to this cluster: " + clusterId);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isRootAdmin(ReservationContext reservationContext) {
+        if (reservationContext != null) {
+            if (reservationContext.getAccount() != null) {
+                return _accountMgr.isRootAdmin(reservationContext.getAccount().getType());
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
 }
