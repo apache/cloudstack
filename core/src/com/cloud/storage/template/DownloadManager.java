@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.storage.template;
 
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.SecondaryStorageResource;
@@ -40,19 +40,21 @@ public interface DownloadManager extends Manager {
 	 * @param user username used for authentication to the server
 	 * @param password password used for authentication to the server
 	 * @param maxDownloadSizeInBytes (optional) max download size for the template, in bytes.
-	 * @param resourceType signifying the type of resource like template, volume etc. 
+	 * @param resourceType signifying the type of resource like template, volume etc.
 	 * @return job-id that can be used to interrogate the status of the download.
 	 */
 	public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String userName, String passwd, long maxDownloadSizeInBytes, Proxy proxy, ResourceType resourceType);
-	
-	
+
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType);
+
+
 	/**
 	 * Get the status of a download job
 	 * @param jobId job Id
 	 * @return status of the download job
 	 */
 	public TemplateDownloader.Status getDownloadStatus(String jobId);
-	
+
 	/**
 	 * Get the status of a download job
 	 * @param jobId job Id
@@ -80,19 +82,19 @@ public interface DownloadManager extends Manager {
 	 * @return
 	public String getDownloadLocalPath(String jobId);
      */
-	
+
 	/** Handle download commands from the management server
 	 * @param cmd cmd from server
 	 * @return answer representing status of download.
 	 */
 	public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd);
-		
+
 	/**
 	/**
 	 * @return list of template info for installed templates
 	 */
 	public Map<String, TemplateProp> gatherTemplateInfo(String templateDir);
-	
+
 	/**
 	/**
 	 * @return list of volume info for installed volumes

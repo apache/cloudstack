@@ -61,6 +61,7 @@ import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -274,15 +275,18 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             threadPool.execute(td);
             break;
         case DOWNLOAD_FINISHED:
-            td.setDownloadError("Download success, starting install ");
-            String result = postDownload(jobId);
-            if (result != null) {
-                s_logger.error("Failed post download script: " + result);
-                td.setStatus(Status.UNRECOVERABLE_ERROR);
-                td.setDownloadError("Failed post download script: " + result);
-            } else {
-                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
-                td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
+            if (!(td instanceof S3TemplateDownloader)) {
+                // we currently only create template.properties for NFS by running some post download script
+                td.setDownloadError("Download success, starting install ");
+                String result = postDownload(jobId);
+                if (result != null) {
+                    s_logger.error("Failed post download script: " + result);
+                    td.setStatus(Status.UNRECOVERABLE_ERROR);
+                    td.setDownloadError("Failed post download script: " + result);
+                } else {
+                    td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+                    td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
+                }
             }
             dj.cleanup();
             break;
@@ -457,6 +461,36 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+        UUID uuid = UUID.randomUUID();
+        String jobId = uuid.toString();
+
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("URI is incorrect: " + url);
+        }
+        TemplateDownloader td;
+        if ((uri != null) && (uri.getScheme() != null)) {
+            if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                td = new S3TemplateDownloader(s3, url, installPathPrefix, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy,
+                        resourceType);
+            } else {
+                throw new CloudRuntimeException("Scheme is not supported " + url);
+            }
+        } else {
+            throw new CloudRuntimeException("Unable to download from URL: " + url);
+        }
+        DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
+        jobs.put(jobId, dj);
+        threadPool.execute(td);
+
+        return jobId;
+    }
+
+
+    @Override
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
@@ -616,10 +650,26 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
 
         String installPathPrefix = null;
-        if (ResourceType.TEMPLATE == resourceType){
-            installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
-        }else {
-            installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
+        DataStoreTO dstore = cmd.getDataStore();
+        if (dstore instanceof S3TO) {
+            if (resourceType == ResourceType.TEMPLATE) {
+                // convention is no / in the end for install path based on
+                // S3Utils implementation.
+                // template key is
+                // TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by
+                // adding template_name in the key, I can avoid generating a
+                // template.properties file
+                // for listTemplateCommand.
+                installPathPrefix = join(asList(_templateDir, cmd.getAccountId(), cmd.getId(), cmd.getName()), S3Utils.SEPARATOR);
+            } else {
+                installPathPrefix = join(asList(_volumeDir, cmd.getAccountId(), cmd.getId()), S3Utils.SEPARATOR);
+            }
+        } else {
+            if (ResourceType.TEMPLATE == resourceType) {
+                installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
+            } else {
+                installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
+            }
         }
 
         String user = null;
@@ -630,7 +680,13 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         //TO DO - Define Volume max size as well
         long maxDownloadSizeInBytes = (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd.getMaxDownloadSizeInBytes());
-        String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+        String jobId = null;
+        if (dstore instanceof S3TO){
+            jobId = downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+        }
+        else{
+            jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+        }
         sleep();
         if (jobId == null) {
             return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);

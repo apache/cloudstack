@@ -108,7 +108,6 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	private long id;
 	private ResourceType resourceType = ResourceType.TEMPLATE;
 	private DataStoreTO _store;
-    private Long resourceId;
 
 	protected DownloadCommand() {
 	}
@@ -137,7 +136,6 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
             this.setSecUrl(((NfsTO) store).getUrl());
         }
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
-	    this.resourceId = template.getId();
 	}
 
 	public DownloadCommand(DataStoreTO store, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
@@ -148,7 +146,6 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	    this._store = store;
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	    this.resourceType = ResourceType.VOLUME;
-	    this.resourceId = volume.getId();
 	}
 
 	public DownloadCommand(DataStoreTO store, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
@@ -240,14 +237,6 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     }
 
 
-    public Long getResourceId() {
-        return resourceId;
-    }
-
-
-    public void setResourceId(Long resourceId) {
-        this.resourceId = resourceId;
-    }
 
 
 }

@@ -54,6 +54,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -155,6 +156,17 @@ public final class S3Utils {
         acquireClient(clientOptions).putObject(bucketName, key, sourceStream, null);
 
     }
+
+    public static void putObject(final ClientOptions clientOptions,
+            final PutObjectRequest req) {
+
+        assert clientOptions != null;
+        assert req != null;
+
+        acquireClient(clientOptions).putObject(req);
+
+    }
+
 
     // Note that whenever S3Object is returned, client code needs to close the internal stream to avoid resource leak.
     public static S3Object getObject(final ClientOptions clientOptions,

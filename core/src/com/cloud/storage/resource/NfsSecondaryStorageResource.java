@@ -377,9 +377,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(DownloadCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
-        if (dstore instanceof NfsTO) {
+        if (dstore instanceof NfsTO || dstore instanceof S3TO ) {
             return _dlMgr.handleDownloadCommand(this, cmd);
-        } else if (dstore instanceof S3TO) {
+        }
+        /*
+        else if (dstore instanceof S3TO) {
             // TODO: start download job to handle this
             // TODO: how to handle download progress for S3
             S3TO s3 = (S3TO) cmd.getDataStore();
@@ -427,7 +429,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj
                         .get(0).getETag());
             }
-        } else if (dstore instanceof SwiftTO) {
+        } */
+        else if (dstore instanceof SwiftTO) {
             // TODO: need to move code from
             // execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here,
             // but we need to handle
