@@ -5703,7 +5703,7 @@ label.error {
 
 /*** Select container*/
 .multi-wizard .select-container {
-  height: 94%;
+  height: 352px;
   overflow: auto;
   overflow-x: hidden;
   border: 1px solid #D9DFE1;
