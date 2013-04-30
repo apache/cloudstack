@@ -5716,6 +5716,12 @@ label.error {
   margin: 10px 10px 0px;
 }
 
+.multi-wizard .select-container p {
+  padding: 11px;
+  color: #424242;
+  background: #DFDFDF;
+}
+
 .multi-wizard .select-container .select {
   font-size: 13px;
   margin: -1px 0 0;
