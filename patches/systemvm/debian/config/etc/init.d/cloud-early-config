@@ -904,13 +904,9 @@ setup_ilbvm() {
   setup_common eth0 eth1
   #eth0 = guest network, eth1=control network
 
+  cp /etc/iptables/iptables-ilbvm /etc/iptables/rules.v4
   cp /etc/iptables/iptables-ilbvm /etc/iptables/rules
-  if [ "$SSHONGUEST" == "true" ]
-  then
-    setup_sshd $ETH0_IP "eth0"
-  else
-    setup_sshd $ETH1_IP "eth1"
-  fi
+  setup_sshd $ETH1_IP "eth1"
   
   enable_fwding 0
   enable_svc haproxy 1
