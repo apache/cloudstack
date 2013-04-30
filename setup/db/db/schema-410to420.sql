@@ -30,12 +30,12 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'Agent
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
-alter table template_host_ref add state varchar(255);
-alter table template_host_ref add update_count bigint unsigned;
-alter table template_host_ref add updated datetime;
-alter table volume_host_ref add state varchar(255);
-alter table volume_host_ref add update_count bigint unsigned;
-alter table volume_host_ref add updated datetime;
+-- alter table template_host_ref add state varchar(255);
+-- alter table template_host_ref add update_count bigint unsigned;
+-- alter table template_host_ref add updated datetime;
+-- alter table volume_host_ref add state varchar(255);
+-- alter table volume_host_ref add update_count bigint unsigned;
+-- alter table volume_host_ref add updated datetime;
 alter table template_spool_ref add updated datetime;
 CREATE TABLE  `cloud`.`object_datastore_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -652,12 +652,12 @@ CREATE VIEW `cloud`.`volume_view` AS
         vm_instance.state vm_state,
         vm_instance.vm_type,
         user_vm.display_name vm_display_name,
-        volume_host_ref.size volume_host_size,
-        volume_host_ref.created volume_host_created,
-        volume_host_ref.format,
-        volume_host_ref.download_pct,
-        volume_host_ref.download_state,
-        volume_host_ref.error_str,
+        volume_store_ref.size volume_host_size,
+        volume_store_ref.created volume_host_created,
+        volume_store_ref.format,
+        volume_store_ref.download_pct,
+        volume_store_ref.download_state,
+        volume_store_ref.error_str,
         disk_offering.id disk_offering_id,
         disk_offering.uuid disk_offering_uuid,
         disk_offering.name disk_offering_name,

@@ -191,6 +191,11 @@
     </dependency>
     <dependency>
         <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-cache</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine-storage-backup</artifactId>
         <version>${project.version}</version>
     </dependency>
@@ -201,7 +206,7 @@
     </dependency>
     <dependency>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-imagemotion</artifactId>
+        <artifactId>cloud-engine-storage-datamotion</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
