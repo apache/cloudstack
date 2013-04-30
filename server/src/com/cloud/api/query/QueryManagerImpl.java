@@ -2535,7 +2535,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(TemplateJoinVO.class, "sort_key", isAscending, startIndex, pageSize);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
         SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
 
         // add criteria for project or not
@@ -2577,7 +2577,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             // add hypervisor criteria
-            if ( !hypers.isEmpty()){
+            if ( hypers != null && !hypers.isEmpty()){
                 String[] relatedHypers = new String[hypers.size()];
                 for (int i = 0; i < hypers.size(); i++){
                     relatedHypers[i] = hypers.get(i).toString();

@@ -553,6 +553,8 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.extractable,
         vm_template.template_tag,
         vm_template.sort_key,
+        vm_template.removed,
+        vm_template.enable_sshkey,
         source_template.id source_template_id,
         source_template.uuid source_template_uuid,
         account.id account_id,

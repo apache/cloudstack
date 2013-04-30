@@ -720,6 +720,7 @@
   <bean id="ancientDataMotionStrategy" class="org.apache.cloudstack.storage.motion.AncientDataMotionStrategy" />
   <bean id="storageCacheManagerImpl" class="org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl"  />
   <bean id="storageCacheRandomAllocator" class="org.apache.cloudstack.storage.cache.allocator.StorageCacheRandomAllocator" />
+  <bean id="xenserverSnapshotStrategy" class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
   <bean id="apiDBUtils" class="com.cloud.api.ApiDBUtils" />
   <bean id="apiDiscoveryServiceImpl" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl" />
   <bean id="apiDispatcher" class="com.cloud.api.ApiDispatcher" />

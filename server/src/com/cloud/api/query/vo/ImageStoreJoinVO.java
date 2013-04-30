@@ -52,7 +52,7 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name = "protocol")
     private String protocol;
 
-    @Column(name = "provider_name", nullable = false)
+    @Column(name = "image_provider_name", nullable = false)
     private String providerName;
 
     @Column(name="scope")

@@ -58,7 +58,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         dsIdSearch.and("id", dsIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dsIdSearch.done();
 
-        this._count = "select count(distinct id) from image_data_store_view WHERE ";
+        this._count = "select count(distinct id) from image_store_view WHERE ";
     }
 
 
