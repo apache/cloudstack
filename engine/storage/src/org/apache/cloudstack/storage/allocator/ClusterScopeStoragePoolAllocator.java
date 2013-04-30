@@ -50,7 +50,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 
     @Override
 	protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-	    
+
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
@@ -65,6 +65,14 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         }
 
         List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
+
+        // add remaining pools in cluster, that did not match tags, to avoid set
+        List<StoragePoolVO> allPools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
+        allPools.removeAll(pools);
+        for (StoragePoolVO pool : allPools) {
+            avoid.addPool(pool.getId());
+        }
+
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
                 String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
@@ -72,7 +80,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             return suitablePools;
         }
-    	
+
         for (StoragePoolVO pool: pools) {
         	if(suitablePools.size() == returnUpTo){
         		break;
@@ -80,13 +88,15 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         	StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
         	if (filter(avoid, pol, dskCh, plan)) {
         		suitablePools.add(pol);
+            } else {
+                avoid.addPool(pool.getId());
         	}
         }
-        
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("FirstFitStoragePoolAllocator returning "+suitablePools.size() +" suitable storage pools");
         }
-        
+
         return suitablePools;
 	}
 
