@@ -86,11 +86,24 @@ def singularize(word, num=0):
 def transform_api(api):
     """Brute-force transform for entities that don't match other transform rules
     """
-
-    if api == 'markDefaultZoneForAccount':
-        #markDefaultZoneForAccount -> Account.markDefaultZone
-        return 'markDefaultZone', 'Account'
+    if api == 'associateIpAddress':
+        return 'associate', 'IpAddress'
+    if api == 'disassociateIpAddress':
+        return 'disassociate', 'IpAddress'
     return api, None
+
+def post_transform_adjust(entity):
+    """Some API entities are incorrectly managed
+
+    #BUG: Inflect engine returns IpAddress => IpAddres as singular
+    """
+    if entity == 'IpAddres':
+        return 'IpAddress'
+    elif entity == 'SecurityGroupIngres':
+        return 'SecurityGroupIngress'
+    elif entity == 'SecurityGroupEgres':
+        return 'SecurityGroupEgress'
+    return entity
 
 
 def prepositon_transformer(preposition=None):
@@ -133,15 +146,17 @@ def get_verb_and_entity(cmd):
     for transformer in get_transformers():
         api = api.replace('Cmd', '')
         if transformer(api)[0] != api:
-            print "Transforming using %s, %s -> %s" % (transformer.__name__, api, transformer(api))
-            return transformer(api)[0], \
-                   singularize(transformer(api)[1]) if singularize(transformer(api)[1]) else transformer(api)[1]
+            print "%s, %s -> %s" % (transformer.__name__, api, transformer(api))
+            verb, entity = transformer(api)[0], \
+                           singularize(transformer(api)[1]) if singularize(transformer(api)[1]) else transformer(api)[1]
+            return verb, post_transform_adjust(entity)
 
     matching_verbs = filter(lambda v: api.startswith(v), grammar)
     if len(matching_verbs) > 0:
         verb = matching_verbs[0]
         entity = api.replace(verb, '').replace('Cmd', '')
-        return verb, singularize(entity) if singularize(entity) else entity
+        entity = singularize(entity) if singularize(entity) else entity
+        return verb, post_transform_adjust(entity)
     else:
         print "No matching verb, entity breakdown for api %s" % api
 
@@ -195,16 +210,17 @@ def write_entity_classes(entities, module=None):
             if action in ['create', 'list', 'deploy']:
                 body.append(tabspace + '@classmethod')
             if action not in ['create', 'deploy']:
-                if len(details['args']) > 0:
+                no_id_args = filter(lambda arg: arg!= 'id', details['args'])
+                if len(no_id_args) > 0:
                     body.append(tabspace + 'def %s(self, apiclient, %s, **kwargs):' % (
-                        action, ', '.join(list(set(details['args'])))))
+                        action, ', '.join(list(set(no_id_args)))))
                 else:
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):' % (action))
                 body.append(tabspace * 2 + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
                 if action not in ['create', 'list', 'deploy']:
                     body.append(tabspace * 2 + 'cmd.id = self.id')
-                for arg in details['args']:
+                for arg in no_id_args:
                     body.append(tabspace * 2 + 'cmd.%s = %s' % (arg, arg))
                 body.append(tabspace * 2 + '[setattr(cmd, key, value) for key,value in kwargs.iteritems()]')
                 body.append(tabspace * 2 + '%s = apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
