@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -115,12 +116,20 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
     private static final String UPDATE_CAPACITY_STATE = "UPDATE `cloud`.`op_host_capacity` SET capacity_state = ? WHERE ";
-    private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT cluster_id " +
-            "FROM (SELECT cluster_id, ( (sum(capacity.used_capacity) + sum(capacity.reserved_capacity) + ?)/sum(total_capacity) ) ratio "+
-            "FROM `cloud`.`op_host_capacity` capacity "+
-            "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 "+    		    		
-            "GROUP BY cluster_id) tmp " +
-            "WHERE tmp.ratio > ? ";
+
+    private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT clusterList.cluster_id " +
+                       "FROM (	SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value " +
+                                "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity total, " +
+                                            "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
+                                                "WHEN 1 THEN (	SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
+                                                "ELSE (	SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " +
+                                            "END configValue " +
+                                        "FROM `cloud`.`op_host_capacity` capacity " +
+                                        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0) cluster " +
+
+                                "GROUP BY cluster.cluster_id)  clusterList " +
+                        "WHERE clusterList.ratio > clusterList.value; ";
+
 
 
     public CapacityDaoImpl() {
@@ -146,20 +155,22 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
           
     @Override
-    public  List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, Float disableThreshold, long compute_requested){
+    public  List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, String configName, long compute_requested){
 
          Transaction txn = Transaction.currentTxn();
          PreparedStatement pstmt = null;
          List<Long> result = new ArrayList<Long>();         
          StringBuilder sql = new StringBuilder(LIST_CLUSTERS_CROSSING_THRESHOLD);
-         
- 
+         // during listing the clusters that cross the threshold
+         // we need to check with disabled thresholds of each cluster if not defined at cluster consider the global value
          try {
              pstmt = txn.prepareAutoCloseStatement(sql.toString());
              pstmt.setLong(1,compute_requested);
-             pstmt.setShort(2,capacityType);
-             pstmt.setFloat(3,disableThreshold);
-             pstmt.setLong(4,zoneId);
+             pstmt.setString(2, configName);
+             pstmt.setString(3, configName);
+             pstmt.setString(4, configName);
+             pstmt.setLong(5,zoneId);
+             pstmt.setShort(6,capacityType);
 
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {

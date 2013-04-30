@@ -46,6 +46,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.*;
@@ -153,6 +154,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -245,7 +248,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     int _networkGcWait;
     int _networkGcInterval;
-    String _networkDomain;
     int _networkLockTimeout;
 
     private Map<String, String> _configs;
@@ -866,7 +868,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
 
         _configs = _configDao.getConfiguration("Network", params);
-        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
 
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
@@ -2023,7 +2024,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                     // 2) If null, generate networkDomain using domain suffix from the global config variables
                     if (networkDomain == null) {
-                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _configServer.getConfigValue(Config.GuestDomainSuffix.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
                     }
 
                 } else {
@@ -2885,7 +2886,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             // Save usage event
-            if (ip.getAllocatedToAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+            if (ip.getAllocatedToAccountId() != null && ip.getAllocatedToAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 VlanVO vlan = _vlanDao.findById(ip.getVlanId());
 
                 String guestType = vlan.getVlanType().toString();

@@ -41,6 +41,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
         super();
         PoolSearch = createSearchBuilder();
         PoolSearch.and("pool", PoolSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        PoolSearch.and("name", PoolSearch.entity().getName(), SearchCriteria.Op.EQ);
         PoolSearch.done();
     }
     
