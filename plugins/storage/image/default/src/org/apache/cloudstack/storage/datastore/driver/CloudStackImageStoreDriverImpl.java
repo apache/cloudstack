@@ -335,12 +335,12 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     	}
 
     	try {
-    		String secondaryStoragePoolUrl = secStore.getUri();
+    		/*String secondaryStoragePoolUrl = secStore.getUri();
     		Long dcId = snapshot.getDataCenterId();
     		Long accountId = snapshot.getAccountId();
     		Long volumeId = snapshot.getVolumeId();
 
-    		String backupOfSnapshot = snapshotObj.getBackupSnapshotId();
+    		String backupOfSnapshot = snapshotObj;
     		if (backupOfSnapshot == null) {
     			callback.complete(result);
     			return;
@@ -357,7 +357,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     			snapshotDao.update(snapshotObj.getId(), snapshot);
     		} else if (answer != null) {
     			result.setResult(answer.getDetails());
-    		}
+    		}*/
     	} catch (Exception e) {
     		s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
     		result.setResult(e.toString());

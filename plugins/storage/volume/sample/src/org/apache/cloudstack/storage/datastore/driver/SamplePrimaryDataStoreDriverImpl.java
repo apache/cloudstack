@@ -90,7 +90,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
-        CreateCmdResult result = null;
+        /*CreateCmdResult result = null;
         CreateObjectAnswer volAnswer = (CreateObjectAnswer) callback.getResult();
         if (volAnswer.getResult()) {
             result = new CreateCmdResult(volAnswer.getPath(), volAnswer);
@@ -99,7 +99,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
             result.setResult(volAnswer.getDetails());
         }
 
-        context.getParentCallback().complete(result);
+        context.getParentCallback().complete(result);*/
         return null;
     }
 
@@ -177,7 +177,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     public void createAsync(DataObject vol,
             AsyncCompletionCallback<CreateCmdResult> callback) {
         EndPoint ep = selector.select(vol);
-        CreateObjectCommand createCmd = new CreateObjectCommand(vol.getUri());
+        CreateObjectCommand createCmd = new CreateObjectCommand(null);
 
         CreateVolumeContext<CreateCmdResult> context = new CreateVolumeContext<CreateCmdResult>(callback, vol);
         AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
@@ -197,10 +197,10 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
             if (obj.getPath() == null) {
                 //create an obj
                 EndPoint newEp = selector.select(object);
-                CreateObjectCommand createCmd = new CreateObjectCommand(uri);
+                CreateObjectCommand createCmd = new CreateObjectCommand(null);
                 CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
                 if (answer.getResult()) {
-                    dataObjMgr.update(object, answer.getPath(), answer.getSize());
+                    //dataObjMgr.update(object, answer.getPath(), answer.getSize());
                 } else {
                     s_logger.debug("failed to create object" + answer.getDetails());
                     throw new CloudRuntimeException("failed to create object" + answer.getDetails());

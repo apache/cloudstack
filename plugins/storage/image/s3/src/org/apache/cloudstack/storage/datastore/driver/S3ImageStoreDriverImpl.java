@@ -298,7 +298,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             Long accountId = snapshot.getAccountId();
             Long volumeId = snapshot.getVolumeId();
 
-            String backupOfSnapshot = snapshotObj.getBackupSnapshotId();
+            String backupOfSnapshot = snapshotObj.getPath();
             if (backupOfSnapshot == null) {
                 callback.complete(result);
                 return;
@@ -310,10 +310,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             EndPoint ep = _epSelector.select(secStore);
             Answer answer = ep.sendMessage(cmd);
 
-            if ((answer != null) && answer.getResult()) {
-                snapshot.setBackupSnapshotId(null);
-                snapshotDao.update(snapshotObj.getId(), snapshot);
-            } else if (answer != null) {
+            if (answer != null) {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception e) {

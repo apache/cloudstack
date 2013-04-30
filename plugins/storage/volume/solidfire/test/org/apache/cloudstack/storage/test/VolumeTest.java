@@ -109,7 +109,7 @@ public class VolumeTest {
 		results.add(host);
 		Mockito.when(hostDao.listAll()).thenReturn(results);
 		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
-		CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
+		//CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
 
 
 
