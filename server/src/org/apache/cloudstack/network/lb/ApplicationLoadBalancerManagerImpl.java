@@ -236,14 +236,14 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
      * @return
      * @throws InsufficientVirtualNetworkCapcityException
      */
-    protected Ip getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapcityException {
-        //Get source IP address
-        if (_lbDao.countBySourceIp(new Ip(requestedIp), sourceIpNtwk.getId()) > 0)  {
-            s_logger.debug("IP address " + requestedIp + " is already used by existing LB rule, returning it");
-            return new Ip(requestedIp);
-        }
+    protected Ip getSourceIp(Scheme scheme, Network sourceIpNtwk, String requestedIp) throws InsufficientVirtualNetworkCapcityException {       
         
         if (requestedIp != null) {
+            if (_lbDao.countBySourceIp(new Ip(requestedIp), sourceIpNtwk.getId()) > 0)  {
+                s_logger.debug("IP address " + requestedIp + " is already used by existing LB rule, returning it");
+                return new Ip(requestedIp);
+            }
+            
             validateRequestedSourceIpForLbRule(sourceIpNtwk, new Ip(requestedIp), scheme);
         }
         
