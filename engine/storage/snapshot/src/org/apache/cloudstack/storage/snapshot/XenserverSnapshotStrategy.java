@@ -27,6 +27,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,6 +48,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 	SnapshotDataStoreDao snapshotStoreDao;
 	@Inject
 	ConfigurationDao configDao;
+	@Inject
+	SnapshotDao snapshotDao;
 	@Inject
 	SnapshotDataFactory snapshotDataFactory;
 
@@ -114,81 +117,71 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 		snapshot.addPayload(fullBackup);
 		return this.snapshotSvr.backupSnapshot(snapshot);
 	}
+	
+	protected void deleteSnapshotChain(SnapshotInfo snapshot) {
+	    while(snapshot != null) {
+	        SnapshotInfo child = snapshot.getChild();
+	        SnapshotInfo parent = snapshot.getParent();
+	        if (child == null) {
+	            if (!parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
+	                this.snapshotSvr.deleteSnapshot(snapshot);
+	                snapshot = parent;
+	                continue;
+	            }
+	            break;
+	        } else {
+	            break;
+	        }
+	    }
+	}
 
 	@Override
-	public boolean deleteSnapshot(SnapshotInfo snapshot) {
-		Long snapshotId = snapshot.getId();
-		SnapshotObject snapObj = (SnapshotObject)snapshot;
-
-		if (!Snapshot.State.BackedUp.equals(snapshot.getState()) || !Snapshot) {
+	public boolean deleteSnapshot(Long snapshotId) {
+	    SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+	    if (snapshotVO.getState() == Snapshot.State.Destroyed) {
+	        return true;
+	    }
+	    
+		if (!Snapshot.State.BackedUp.equals(snapshotVO.getState())) {
 			throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is not in BackedUp Status");
 		}
 
 		if (s_logger.isDebugEnabled()) {
 			s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId);
 		}
-		SnapshotVO lastSnapshot = null;
-		if (snapshot.getPrevSnapshotId() != null) {
-			List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(snapshot.getVolumeId(), snapshot.getBackupSnapshotId());
-			if (snaps != null && snaps.size() > 1) {
-				snapshot.setBackupSnapshotId(null);
-				SnapshotVO snapshotVO = this._snapshotDao.findById(snapshotId);
-				_snapshotDao.update(snapshot.getId(), snapshotVO);
-			}
-		}
+		
+		
+		//firt mark the snapshot as destroyed, so that ui can't see it, but we may not destroy the snapshot on the storage, as other snaphosts may depend on it.
+		SnapshotInfo snapshotOnPrimary = this.snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+		SnapshotObject obj = (SnapshotObject)snapshotOnPrimary;
+		try {
+            obj.processEvent(Snapshot.Event.DestroyRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to destroy snapshot: " + e.toString());
+            return false;
+        }
+		
+		try {
+		    if (snapshotOnPrimary != null) {
+		        deleteSnapshotChain(snapshotOnPrimary);
+		    }
 
-		_snapshotDao.remove(snapshotId);
-
-		long lastId = snapshotId;
-		boolean destroy = false;
-		while (true) {
-			lastSnapshot = _snapshotDao.findNextSnapshot(lastId);
-			if (lastSnapshot == null) {
-				// if all snapshots after this snapshot in this chain are removed, remove those snapshots.
-				destroy = true;
-				break;
-			}
-			if (lastSnapshot.getRemoved() == null) {
-				// if there is one child not removed, then can not remove back up snapshot.
-				break;
-			}
-			lastId = lastSnapshot.getId();
+		    SnapshotInfo snapshotOnImage = this.snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+		    if (snapshotOnImage != null) {
+		        deleteSnapshotChain(snapshotOnImage);
+		    }
+		    
+		    obj.processEvent(Snapshot.Event.OperationSucceeded);
+		} catch (Exception e) {
+		    s_logger.debug("Failed to delete snapshot: " + e.toString());
+		    try {
+                obj.processEvent(Snapshot.Event.OperationFailed);
+            } catch (NoTransitionException e1) {
+                s_logger.debug("Failed to change snapshot state: " + e.toString());
+            }
 		}
-		if (destroy) {
-			lastSnapshot = _snapshotDao.findByIdIncludingRemoved(lastId);
-			while (lastSnapshot.getRemoved() != null) {
-				String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
-				if (BackupSnapshotId != null) {
-					List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(lastSnapshot.getVolumeId(), BackupSnapshotId);
-					if (snaps != null && snaps.size() > 1) {
-						lastSnapshot.setBackupSnapshotId(null);
-						_snapshotDao.update(lastSnapshot.getId(), lastSnapshot);
-					} else {
-						if (destroySnapshotBackUp(lastSnapshot)) {
-
-						} else {
-							s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
-							break;
-						}
-					}
-				}
-				lastId = lastSnapshot.getPrevSnapshotId();
-				if (lastId == 0) {
-					break;
-				}
-				lastSnapshot = _snapshotDao.findByIdIncludingRemoved(lastId);
-			}
-		}
+		
 		return true;
-	}
-
-	@Override
-	public boolean canHandle(SnapshotInfo snapshot) {
-		if (snapshot.getHypervisorType() == HypervisorType.XenServer) {
-			return true;
-		} else {
-			return false;
-		}
 	}
 	
 	@Override
@@ -197,4 +190,13 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 		//TODO: add async
 		return this.backupSnapshot(snapshot);
 	}
+
+    @Override
+    public boolean canHandle(Snapshot snapshot) {
+        if (snapshot.getHypervisorType() == HypervisorType.XenServer) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

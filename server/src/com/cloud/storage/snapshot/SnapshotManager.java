@@ -56,10 +56,6 @@ public interface SnapshotManager {
      *            The account which is to be deleted.
      */
     boolean deleteSnapshotDirsForAccount(long accountId);
-  
-    void downloadSnapshotsFromSwift(SnapshotVO ss);
-
-    void downloadSnapshotsFromS3(SnapshotVO snapshot);
 
     String getSecondaryStorageURL(SnapshotVO snapshot);
 

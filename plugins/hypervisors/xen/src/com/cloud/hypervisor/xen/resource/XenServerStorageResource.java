@@ -18,12 +18,20 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +51,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.http.HttpEntity;
@@ -54,18 +63,25 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ManageSnapshotAnswer;
+import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.S3Utils;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
@@ -79,8 +95,6 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class XenServerStorageResource {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageResource.class);
@@ -146,12 +160,62 @@ public class XenServerStorageResource {
         return new CreateObjectAnswer(cmd, templateUrl, size);*/
         return null;
     }
+    
+    protected CreateObjectAnswer createSnapshot(SnapshotObjectTO snapshotTO) {
+        Connection conn = hypervisorResource.getConnection();
+        long snapshotId = snapshotTO.getId();
+        String snapshotName = snapshotTO.getName();
+        String details = "create snapshot operation Failed for snapshotId: " + snapshotId;
+        String snapshotUUID = null;
+
+        try {
+                String volumeUUID = snapshotTO.getVolume().getPath();
+                VDI volume = VDI.getByUuid(conn, volumeUUID);
+
+                VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
+
+                if (snapshotName != null) {
+                    snapshot.setNameLabel(conn, snapshotName);
+                }
+
+                snapshotUUID = snapshot.getUuid(conn);
+                String preSnapshotUUID = snapshotTO.getPath();
+                //check if it is a empty snapshot
+                if( preSnapshotUUID != null) {
+                    SR sr = volume.getSR(conn);
+                    String srUUID = sr.getUuid(conn);
+                    String type = sr.getType(conn);
+                    Boolean isISCSI = IsISCSI(type);
+                    String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
+
+                    String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
+                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                        // this is empty snapshot, remove it
+                        snapshot.destroy(conn);
+                        snapshotUUID = preSnapshotUUID;
+                    }
+                }
+                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                newSnapshot.setPath(snapshotUUID);
+                return new CreateObjectAnswer(newSnapshot);
+        } catch (XenAPIException e) {
+            details += ", reason: " + e.toString();
+            s_logger.warn(details, e);
+        } catch (Exception e) {
+            details += ", reason: " + e.toString();
+            s_logger.warn(details, e);
+        }
+
+        return new CreateObjectAnswer(details);
+    }
     protected CreateObjectAnswer execute(CreateObjectCommand cmd) {
        DataTO data = cmd.getData();
        try {
            if (data.getObjectType() == DataObjectType.VOLUME) {
                return createVolume(data);
-           } 
+           } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
+               return createSnapshot((SnapshotObjectTO)data);
+           }
            return new CreateObjectAnswer("not supported type");
        } catch (Exception e) {
            s_logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
@@ -821,6 +885,330 @@ public class XenServerStorageResource {
         return new CopyCmdAnswer("unsupported protocol"); 
     }
     
+    boolean swiftUpload(Connection conn, SwiftTO swift, String container, String ldir, String lfilename, Boolean isISCSI, int wait) {
+        String result = null;
+        try {
+            result = hypervisorResource.callHostPluginAsync(conn, "swiftxen", "swift", wait,
+                    "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(),
+                    "username", swift.getUserName(), "key", swift.getKey(), "container", container,
+                    "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
+            if( result != null && result.equals("true")) {
+                return true;
+            }
+        } catch (Exception e) {
+            s_logger.warn("swift upload failed due to " + e.toString(), e);
+        }
+        return false;
+    }
+    
+    protected String deleteSnapshotBackup(Connection conn, String path, String secondaryStorageMountPath, String backupUUID) {
+
+        // If anybody modifies the formatting below again, I'll skin them
+        String result = hypervisorResource.callHostPlugin(conn, "vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath);
+
+        return result;
+    }
+    
+    public void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+        String lfilename;
+        String ldir;
+        if ( isISCSI ) {
+            ldir = "/dev/VG_XenStorage-" + srUuid;
+            lfilename = "VHD-" + snapshotUuid;
+        } else {
+            ldir = "/var/run/sr-mount/" + srUuid;
+            lfilename = snapshotUuid + ".vhd";
+        }
+        swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
+    }
+    
+    private static List<String> serializeProperties(final Object object,
+            final Class<?> propertySet) {
+
+        assert object != null;
+        assert propertySet != null;
+        assert propertySet.isAssignableFrom(object.getClass());
+
+        try {
+
+            final BeanInfo beanInfo = Introspector.getBeanInfo(propertySet);
+            final PropertyDescriptor[] descriptors = beanInfo
+                    .getPropertyDescriptors();
+
+            final List<String> serializedProperties = new ArrayList<String>();
+            for (final PropertyDescriptor descriptor : descriptors) {
+
+                serializedProperties.add(descriptor.getName());
+                final Object value = descriptor.getReadMethod().invoke(object);
+                serializedProperties.add(value != null ? value.toString()
+                        : "null");
+
+            }
+
+            return Collections.unmodifiableList(serializedProperties);
+
+        } catch (IntrospectionException e) {
+            s_logger.warn(
+                    "Ignored IntrospectionException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (IllegalArgumentException e) {
+            s_logger.warn(
+                    "Ignored IllegalArgumentException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (IllegalAccessException e) {
+            s_logger.warn(
+                    "Ignored IllegalAccessException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        } catch (InvocationTargetException e) {
+            s_logger.warn(
+                    "Ignored InvocationTargetException when serializing class "
+                            + object.getClass().getCanonicalName(), e);
+        }
+
+        return Collections.emptyList();
+
+    }
+    
+    private boolean backupSnapshotToS3(final Connection connection,
+            final S3TO s3, final String srUuid, final String snapshotUuid,
+            final Boolean iSCSIFlag, final int wait) {
+
+        final String filename = iSCSIFlag ? "VHD-" + snapshotUuid
+                : snapshotUuid + ".vhd";
+        final String dir = (iSCSIFlag ? "/dev/VG_XenStorage-"
+                : "/var/run/sr-mount/") + srUuid;
+        final String key = StringUtils.join("/", "snapshots", snapshotUuid);
+
+        try {
+
+            final List<String> parameters = new ArrayList<String>(
+                    serializeProperties(s3, S3Utils.ClientOptions.class));
+            parameters.addAll(Arrays.asList("operation", "put", "directory",
+                    dir, "filename", filename, "iSCSIFlag",
+                    iSCSIFlag.toString(), "key", key));
+            final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
+                    "s3", wait,
+                    parameters.toArray(new String[parameters.size()]));
+
+            if (result != null && result.equals("true")) {
+                return true;
+            }
+
+        } catch (Exception e) {
+            s_logger.error(String.format(
+                    "S3 upload failed of snapshot %1$s due to %2$s.",
+                    snapshotUuid, e.toString()), e);
+        }
+
+        return false;
+
+    }
+    
+    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
+        String backupSnapshotUuid = null;
+
+        if (prevBackupUuid == null) {
+            prevBackupUuid = "";
+        }
+
+        // Each argument is put in a separate line for readability.
+        // Using more lines does not harm the environment.
+        String backupUuid = UUID.randomUUID().toString();
+        String results = hypervisorResource.callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
+                "primaryStorageSRUuid", primaryStorageSRUuid, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath,
+                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString());
+        String errMsg = null;
+        if (results == null || results.isEmpty()) {
+            errMsg = "Could not copy backupUuid: " + backupSnapshotUuid 
+                    + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
+                    + secondaryStorageMountPath + " due to null";
+        } else {
+
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            backupSnapshotUuid = tmp[1];
+            // status == "1" if and only if backupSnapshotUuid != null
+            // So we don't rely on status value but return backupSnapshotUuid as an
+            // indicator of success.
+            if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
+                s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid
+                        + " to secondary storage");
+                return backupSnapshotUuid;
+            } else {
+                errMsg = "Could not copy backupUuid: " + backupSnapshotUuid
+                        + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
+                        + secondaryStorageMountPath + " due to " + tmp[1];
+            }
+        }
+        String source = backupUuid + ".vhd";
+        hypervisorResource.killCopyProcess(conn, source);
+        s_logger.warn(errMsg);
+        return null;
+
+    }
+    
+    private boolean destroySnapshotOnPrimaryStorageExceptThis(Connection conn, String volumeUuid, String avoidSnapshotUuid){
+        try {
+            VDI volume = getVDIbyUuid(conn, volumeUuid);
+            if (volume == null) {
+                throw new InternalErrorException("Could not destroy snapshot on volume " + volumeUuid + " due to can not find it");
+            }
+            Set<VDI> snapshots = volume.getSnapshots(conn);
+            for( VDI snapshot : snapshots ) {
+                try {
+                    if(! snapshot.getUuid(conn).equals(avoidSnapshotUuid)) {
+                        snapshot.destroy(conn);
+                    }
+                } catch (Exception e) {
+                    String msg = "Destroying snapshot: " + snapshot+ " on primary storage failed due to " + e.toString();
+                    s_logger.warn(msg, e);
+                }
+            }
+            s_logger.debug("Successfully destroyed snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid );
+            return true;
+        } catch (XenAPIException e) {
+            String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+        } catch (Exception e) {
+            String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+            s_logger.warn(msg, e);
+        }
+
+        return false;
+    }
+    
+    protected Answer backupSnasphot(DataTO srcData, DataTO destData, DataTO cacheData, int wait) {
+        Connection conn = hypervisorResource.getConnection();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
+        String primaryStorageNameLabel = primaryStore.getUuid();
+        String secondaryStorageUrl = null;
+        NfsTO cacheStore = null;
+        String destPath = null;
+        if (cacheData != null) {
+            cacheStore = (NfsTO)cacheData.getDataStore();
+            secondaryStorageUrl = cacheStore.getUrl();
+            destPath = cacheData.getPath();
+        } else {
+            cacheStore = (NfsTO)destData.getDataStore();
+            secondaryStorageUrl = cacheStore.getUrl();
+            destPath = destData.getPath();
+        }
+        
+        SnapshotObjectTO snapshotTO = (SnapshotObjectTO)srcData;
+        SnapshotObjectTO snapshotOnImage = (SnapshotObjectTO)destData;
+        String snapshotUuid = snapshotTO.getPath();
+        
+        String prevBackupUuid = snapshotOnImage.getParentSnapshotPath();
+        String prevSnapshotUuid = snapshotTO.getParentSnapshotPath();
+
+        // By default assume failure
+        String details = null;
+        String snapshotBackupUuid = null;
+        boolean fullbackup = true;
+        try {
+            SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+            if (primaryStorageSR == null) {
+                throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
+            }
+            String psUuid = primaryStorageSR.getUuid(conn);
+            Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
+       
+            VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
+            String snapshotPaUuid = null;
+            if ( prevBackupUuid != null ) {
+                try {
+                    snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
+                    if( snapshotPaUuid != null ) {
+                        String snashotPaPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
+                        String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
+                        if (snashotPaPaPaUuid != null && prevSnashotPaUuid!= null && prevSnashotPaUuid.equals(snashotPaPaPaUuid)) {
+                            fullbackup = false;
+                        }
+                    }
+                } catch (Exception e) {
+                }
+            }
+
+            URI uri = new URI(secondaryStorageUrl);
+            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            DataStoreTO destStore = destData.getDataStore();
+            String folder = destPath;
+            if (fullbackup) {
+                // the first snapshot is always a full snapshot
+               
+                if( !hypervisorResource.createSecondaryStorageFolder(conn, secondaryStorageMountPath, folder)) {
+                    details = " Filed to create folder " + folder + " in secondary storage";
+                    s_logger.warn(details);
+                    return new CopyCmdAnswer(details);
+                }
+                String snapshotMountpoint = secondaryStorageUrl + "/" + folder;
+                SR snapshotSr = null;
+                try {
+                    snapshotSr = hypervisorResource.createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
+                    VDI backedVdi = hypervisorResource.cloudVDIcopy(conn, snapshotVdi, snapshotSr, wait);
+                    snapshotBackupUuid = backedVdi.getUuid(conn);
+                    
+                    if( destStore instanceof SwiftTO) {
+                        try {
+                            hypervisorResource.swiftBackupSnapshot(conn, (SwiftTO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, "S-" + snapshotTO.getVolume().getVolumeId().toString(), false, wait);
+                            snapshotBackupUuid = snapshotBackupUuid + ".vhd";
+                        } finally {
+                            deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                        }
+                    } else if (destStore instanceof S3TO) {
+                        try {
+                            backupSnapshotToS3(conn, (S3TO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, isISCSI, wait);
+                            snapshotBackupUuid = snapshotBackupUuid + ".vhd";
+                        } finally {
+                            deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                        }
+                    }                    
+
+                } finally {
+                    if( snapshotSr != null) {
+                        hypervisorResource.removeSR(conn, snapshotSr);
+                    }
+                }
+            } else {
+                String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
+                if( destStore instanceof SwiftTO ) {
+                    swiftBackupSnapshot(conn, (SwiftTO)destStore, primaryStorageSRUuid, snapshotPaUuid, "S-" + snapshotTO.getVolume().getVolumeId().toString(), isISCSI, wait);
+                    if ( isISCSI ) {
+                        snapshotBackupUuid = "VHD-" + snapshotPaUuid;
+                    } else {
+                        snapshotBackupUuid = snapshotPaUuid + ".vhd";
+                    }
+
+                } else if (destStore instanceof S3TO ) {
+                    backupSnapshotToS3(conn, (S3TO)destStore, primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
+                } else {
+                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, folder + File.separator + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes())
+                             , secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
+
+                }
+            }
+            String volumeUuid = snapshotTO.getVolume().getPath();
+            destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
+            
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            newSnapshot.setPath(snapshotBackupUuid);
+            if (fullbackup) {
+                newSnapshot.setParentSnapshotPath(null);
+            } else {
+                newSnapshot.setParentSnapshotPath(prevBackupUuid);
+            }
+            return new CopyCmdAnswer(newSnapshot);
+        } catch (XenAPIException e) {
+            details = "BackupSnapshot Failed due to " + e.toString();
+            s_logger.warn(details, e);
+        } catch (Exception e) {
+            details = "BackupSnapshot Failed due to " + e.getMessage();
+            s_logger.warn(details, e);
+        }
+
+        return new CopyCmdAnswer(details);
+    }
+    
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
@@ -838,6 +1226,9 @@ public class XenServerStorageResource {
             return copyVolumeFromImageCacheToPrimary(srcData, destData, cmd.getWait());
         } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             return copyVolumeFromPrimaryToSecondary(srcData, destData, cmd.getWait());
+        } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            DataTO cacheData = cmd.getCacheTO();
+            return backupSnasphot(srcData, destData, cacheData, cmd.getWait());
         }
 
         return new Answer(cmd, false, "not implemented yet");

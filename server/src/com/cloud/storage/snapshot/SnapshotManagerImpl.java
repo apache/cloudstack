@@ -349,8 +349,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
          return this.snapshotSrv.backupSnapshot(snapshot);
     }
 
+    /*
     @Override
     public void downloadSnapshotsFromSwift(SnapshotVO ss) {
+       
         long volumeId = ss.getVolumeId();
         VolumeVO volume = _volsDao.findById(volumeId);
         Long dcId = volume.getDataCenterId();
@@ -432,7 +434,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     e);
         }
 
-    }
+    }*/
 
     @Override
     public SnapshotVO getParentSnapshot(VolumeInfo volume) {
@@ -974,72 +976,44 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 	}
     @Override
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
-        Account caller = UserContext.current().getCaller();
-        
-        supportedByHypervisor(volume);
-        CreateSnapshotPayload snapInfo = (CreateSnapshotPayload)volume.getpayload();
-        Long policyId = snapInfo.getSnapshotPolicyId();
-        // Verify permissions
-        _accountMgr.checkAccess(caller, null, true, volume);
-        Type snapshotType = getSnapshotType(policyId);
-        Account owner = _accountMgr.getAccount(volume.getAccountId());
-
-        try{
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-            if (backup) {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long(volume.getSize()));
-            }
-        } catch (ResourceAllocationException e) {
-            if (snapshotType != Type.MANUAL){
-                String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
-                s_logger.warn(msg);
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg,
-                        "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
-            }
-            throw e;
-        }
-
-        // Determine the name for this snapshot
-        // Snapshot Name: VMInstancename + volumeName + timeString
-        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
-
-        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
-        String vmDisplayName = "detached";
-        if (vmInstance != null) {
-            vmDisplayName = vmInstance.getHostName();
-        }
-        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
-
-        HypervisorType hypervisorType = volume.getHypervisorType();
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
-        
-        SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
-        if (snapshot == null) {
-            throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
-        }
-        if (backup) {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
-                    new Long(volume.getSize()));
-        } else {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize()));
-        }
-        SnapshotInfo snap = this.snapshotFactory.getSnapshot(snapshot.getId(), volume.getDataStore());
+        CreateSnapshotPayload payload = (CreateSnapshotPayload)volume.getpayload();
+        Long snapshotId = payload.getSnapshotId();
+        Account snapshotOwner = payload.getAccount();
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
         boolean processed = false;
-        for (SnapshotStrategy strategy : snapshotStrategies) {
-        	if (strategy.canHandle(snap)) {
-        		processed = true;
-        		snap = strategy.takeSnapshot(snap);
-        		break;
-        	}
+        
+        try {
+            for (SnapshotStrategy strategy : snapshotStrategies) {
+                if (strategy.canHandle(snapshot)) {
+                    processed = true;
+                    snapshot = strategy.takeSnapshot(snapshot);
+                    break;
+                }
+            }
+            if (!processed) {
+                throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
+            }
+            postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
+        
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
+                    snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                    volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+
+
+            _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+
+        } catch(Exception e) {
+            s_logger.debug("Failed to create snapshot", e);
+            if (backup) {
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage,
+                        new Long(volume.getSize()));
+            } else {
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage,
+                        new Long(volume.getSize()));
+            }
+            throw new CloudRuntimeException("Failed to create snapshot", e);
         }
-        if (!processed) {
-        	throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshot.getId());
-        }
-        return snap;
+        return snapshot;
     }
 
     @Override
@@ -1127,5 +1101,62 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     		return false;
     	}
     	return true;
+    }
+
+    @Override
+    public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+        Account caller = UserContext.current().getCaller();
+        VolumeInfo volume = this.volFactory.getVolume(volumeId);
+        supportedByHypervisor(volume);
+
+        // Verify permissions
+        _accountMgr.checkAccess(caller, null, true, volume);
+        Type snapshotType = getSnapshotType(policyId);
+        Account owner = _accountMgr.getAccount(volume.getAccountId());
+
+        try{
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
+            if (backup) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
+            } else {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long(volume.getSize()));
+            }
+        } catch (ResourceAllocationException e) {
+            if (snapshotType != Type.MANUAL){
+                String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
+                s_logger.warn(msg);
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg,
+                        "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
+            }
+            throw e;
+        }
+
+        // Determine the name for this snapshot
+        // Snapshot Name: VMInstancename + volumeName + timeString
+        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
+
+        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
+        String vmDisplayName = "detached";
+        if (vmInstance != null) {
+            vmDisplayName = vmInstance.getHostName();
+        }
+        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
+
+        HypervisorType hypervisorType = volume.getHypervisorType();
+        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
+                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
+        
+        SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
+        }
+        if (backup) {
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
+                    new Long(volume.getSize()));
+        } else {
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
+                    new Long(volume.getSize()));
+        }
+        return snapshot;
     }
 }

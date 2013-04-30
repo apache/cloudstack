@@ -32,6 +32,7 @@ public class VolumeObjectTO implements DataTO {
     private String name;
     private long size;
     private String path;
+    private Long volumeId;
     
     public VolumeObjectTO() {
 
@@ -49,6 +50,7 @@ public class VolumeObjectTO implements DataTO {
         }
         //this.name = volume.getName();
         this.size = volume.getSize();
+        this.setVolumeId(volume.getId());
     }
     
     public String getUuid() {
@@ -101,6 +103,14 @@ public class VolumeObjectTO implements DataTO {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
     }
 
 }

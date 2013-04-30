@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -234,6 +235,13 @@ public class SnapshotObject implements SnapshotInfo {
     		SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer) answer).getData();
     		snapshotStore.setInstallPath(snapshotTO.getPath());
     		this.snapshotStore.update(snapshotStore.getId(), snapshotStore);
+    	} else if (answer instanceof CopyCmdAnswer) {
+    	    SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer) answer).getNewData();
+    	    snapshotStore.setInstallPath(snapshotTO.getPath());
+    	    if (snapshotTO.getParentSnapshotPath() == null) {
+    	        snapshotStore.setParentSnapshotId(0L);
+    	    }
+    	    this.snapshotStore.update(snapshotStore.getId(), snapshotStore);
     	} else {
     		throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
     	}

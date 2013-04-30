@@ -408,15 +408,17 @@ public class VolumeServiceImpl implements VolumeService {
         private final AsyncCallFuture<VolumeApiResult> future;
         private final DataStore primaryStore;
         private final DataObject templateOnStore;
+        private final SnapshotInfo snapshot;
         public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, VolumeObject vo,
                 DataStore primaryStore,
                 DataObject templateOnStore,
-                AsyncCallFuture<VolumeApiResult> future) {
+                AsyncCallFuture<VolumeApiResult> future, SnapshotInfo snapshot) {
             super(callback);
             this.vo = vo;
             this.future = future;
             this.primaryStore = primaryStore;
             this.templateOnStore = templateOnStore;
+            this.snapshot = snapshot;
         }
 
 
@@ -428,7 +430,7 @@ public class VolumeServiceImpl implements VolumeService {
     @DB
     protected void createVolumeFromBaseImageAsync(VolumeInfo volume, DataObject templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
         VolumeObject vo = (VolumeObject)volume;
-        CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, vo, pd, templateOnPrimaryStore, future);
+        CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, vo, pd, templateOnPrimaryStore, future, null);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null))
         .setContext(context);
@@ -497,8 +499,9 @@ public class VolumeServiceImpl implements VolumeService {
         try {
         	DataObject volumeOnStore = store.create(volume);
         	volume.processEvent(Event.CreateOnlyRequested);
+        	snapshot.processEvent(Event.CopyingRequested);
         	 CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null,
-        			 (VolumeObject)volume, store, volumeOnStore, future);
+        			 (VolumeObject)volume, store, volumeOnStore, future, snapshot);
              AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
              caller.setCallback(caller.getTarget().createVolumeFromSnapshotCallback(null, null))
              .setContext(context);
@@ -517,6 +520,7 @@ public class VolumeServiceImpl implements VolumeService {
     		CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
     	CopyCommandResult result = callback.getResult();
     	VolumeInfo volume = context.vo;
+    	SnapshotInfo snapshot = context.snapshot;
     	VolumeApiResult apiResult = new VolumeApiResult(volume);
     	Event event = null;
     	if (result.isFailed()) {
@@ -528,6 +532,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     	try {
     		volume.processEvent(event);
+    		snapshot.processEvent(event);
     	} catch (Exception e) {
     		s_logger.debug("create volume from snapshot failed", e);
     		apiResult.setResult(e.toString());

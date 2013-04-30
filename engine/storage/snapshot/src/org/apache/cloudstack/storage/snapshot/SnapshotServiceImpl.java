@@ -399,7 +399,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 	@Override
 	public boolean deleteSnapshot(SnapshotInfo snapInfo) {
-		
+		return true;
 
 	}
 

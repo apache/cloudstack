@@ -84,33 +84,17 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
 
     public ObjectInDataStoreManagerImpl() {
         stateMachines = new StateMachine2<State, Event, DataObjectInStore>();
-        stateMachines.addTransition(State.Allocated, Event.CreateRequested,
+        stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested,
                 State.Creating);
-        stateMachines.addTransition(State.Creating, Event.OperationSuccessed,
-                State.Created);
         stateMachines.addTransition(State.Creating, Event.OperationFailed,
-                State.Failed);
-        stateMachines.addTransition(State.Failed, Event.CreateRequested,
-                State.Creating);
-        stateMachines.addTransition(State.Ready, Event.DestroyRequested,
-                State.Destroying);
-        stateMachines.addTransition(State.Destroying, Event.OperationSuccessed,
-                State.Destroyed);
-        stateMachines.addTransition(State.Destroying, Event.OperationFailed,
-                State.Destroying);
-        stateMachines.addTransition(State.Destroying, Event.DestroyRequested,
-                State.Destroying);
-        stateMachines.addTransition(State.Created, Event.CopyingRequested,
+                State.Allocated);
+        stateMachines.addTransition(State.Creating, Event.OperationSuccessed,
+                State.Ready);
+        stateMachines.addTransition(State.Ready, Event.CopyingRequested,
                 State.Copying);
-        stateMachines.addTransition(State.Copying, Event.OperationFailed,
-                State.Created);
         stateMachines.addTransition(State.Copying, Event.OperationSuccessed,
                 State.Ready);
-        stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested,
-                State.Creating2);
-        stateMachines.addTransition(State.Creating2, Event.OperationFailed,
-                State.Allocated);
-        stateMachines.addTransition(State.Creating2, Event.OperationSuccessed,
+        stateMachines.addTransition(State.Copying, Event.OperationFailed,
                 State.Ready);
     }
 

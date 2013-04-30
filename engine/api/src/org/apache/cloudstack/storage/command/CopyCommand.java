@@ -23,12 +23,12 @@ import com.cloud.agent.api.Command;
 public class CopyCommand extends Command implements StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
+    private DataTO cacheTO;
 
-
-    public CopyCommand(DataTO srcUri, DataTO destUri, int timeout) {
+    public CopyCommand(DataTO srcData, DataTO destData, int timeout) {
         super();
-        this.srcTO = srcUri;
-        this.destTO = destUri;
+        this.srcTO = srcData;
+        this.destTO = destData;
         this.setWait(timeout);
     }
     
@@ -43,6 +43,14 @@ public class CopyCommand extends Command implements StorageSubSystemCommand {
     @Override
     public boolean executeInSequence() {
         return true;
+    }
+
+    public DataTO getCacheTO() {
+        return cacheTO;
+    }
+
+    public void setCacheTO(DataTO cacheTO) {
+        this.cacheTO = cacheTO;
     }
 
 }

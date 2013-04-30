@@ -164,10 +164,24 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 		return null;
 	}
 	
+	@Override
+    public DataObject getCacheObject(DataObject data, Scope scope) {
+        DataStore cacheStore = this.getCacheStorage(scope);
+        DataObject objOnCacheStore = cacheStore.create(data);
+        
+        return objOnCacheStore;
+    }
+	
 	protected Void createCacheObjectCallBack(AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCommandResult> callback, 
 	        CreateCacheObjectContext<CopyCommandResult> context) {
 	    AsyncCallFuture<CopyCommandResult> future = context.future;
 	    future.complete(callback.getResult());
 	    return null;
 	}
+
+    @Override
+    public DataObject deleteCacheObject(DataObject data) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

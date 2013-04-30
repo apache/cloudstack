@@ -60,6 +60,9 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
         CreatedOnPrimary,
         BackingUp,
         BackedUp,
+        Copying,
+        Destroying,
+        Destroyed,//it's a state, user can't see the snapshot from ui, while the snapshot may still exist on the storage
         Error;
 
         public String toString() {
@@ -76,6 +79,8 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
         OperationNotPerformed,
         BackupToSecondary,
         BackedupToSecondary,
+        DestroyRequested,
+        CopyingRequested,
         OperationSucceeded,
         OperationFailed
     }

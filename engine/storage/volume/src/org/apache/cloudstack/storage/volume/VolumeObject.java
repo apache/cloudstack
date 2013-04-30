@@ -46,6 +46,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.storage.encoding.EncodingType;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
@@ -58,6 +60,8 @@ public class VolumeObject implements VolumeInfo {
     VolumeDataStoreDao volumeStoreDao;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
+    @Inject
+    VMInstanceDao vmInstanceDao;
     private Object payload;
 
     public VolumeObject() {
@@ -73,6 +77,19 @@ public class VolumeObject implements VolumeInfo {
         VolumeObject vo = ComponentContext.inject(VolumeObject.class);
         vo.configure(dataStore, volumeVO);
         return vo;
+    }
+    
+    public String getAttachedVmName() {
+        Long vmId = this.volumeVO.getInstanceId();
+        if (vmId != null) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+
+            if (vm == null) {
+                return null;
+            }
+            return vm.getInstanceName();
+        }
+        return null;
     }
 
     @Override

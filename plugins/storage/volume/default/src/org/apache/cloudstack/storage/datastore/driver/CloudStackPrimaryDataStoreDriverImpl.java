@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -193,24 +194,17 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 			AsyncCompletionCallback<CreateCmdResult> callback) {
 	    CreateCmdResult result = null;
 	    try {
-	        VolumeInfo volume = snapshot.getBaseVolume();
-	        String vmName = this.volumeMgr.getVmNameOnVolume(volume);
-	        SnapshotVO preSnapshotVO = this.snapshotMgr.getParentSnapshot(volume, snapshot);
-	        String parentSnapshotPath = null;
-	        if (preSnapshotVO != null) {
-	            parentSnapshotPath = preSnapshotVO.getPath();
+	        DataTO snapshotTO = snapshot.getTO();
+	        
+	        CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
+	        Answer answer = storageMgr.sendToPool((StoragePool)snapshot.getDataStore(), null, cmd);
+	
+	        result = new CreateCmdResult(null, answer);
+	        if (answer != null && !answer.getResult()) {
+	            result.setResult(answer.getDetails());
 	        }
-	        StoragePool srcPool = (StoragePool)volume.getDataStore();
 
-	        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshot.getId(), volume.getPath(), srcPool, parentSnapshotPath, snapshot.getName(), vmName);
-
-	        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) this.snapshotMgr.sendToPool(volume, cmd);
-
-	        if ((answer != null) && answer.getResult()) {
-	            result = new CreateCmdResult(answer.getSnapshotPath(), null);
-	        } else {
-	            result = new CreateCmdResult(null, null);
-	        }
+	        callback.complete(result);
 	    } catch (Exception e) {
 	        s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
 	        result = new CreateCmdResult(null, null);

@@ -133,6 +133,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -307,6 +308,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     TemplateDataFactory tmplFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
+    @Inject
+    SnapshotApiService snapshotMgr;
     private int _copyvolumewait;
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
@@ -526,7 +529,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         VolumeInfo vol = this.volFactory.getVolume(volume.getId());
         DataStore store = this.dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-        SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshot.getId());
+        SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
         AsyncCallFuture<VolumeApiResult> future = this.volService.createVolumeFromSnapshot(vol, store, snapInfo);
         try {
             VolumeApiResult result = future.get();
@@ -2470,8 +2473,26 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     
     
     @Override
-    public Snapshot takeSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
-    	Account caller = UserContext.current().getCaller();
+    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account) throws ResourceAllocationException {
+        VolumeInfo volume = this.volFactory.getVolume(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+        }
+        
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
+        }
+       
+        CreateSnapshotPayload payload = new CreateSnapshotPayload();
+        payload.setSnapshotId(snapshotId);
+        payload.setSnapshotPolicyId(policyId);
+        payload.setAccount(account);
+        return this.volService.takeSnapshot(volume);
+    }
+
+    @Override
+    public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+        Account caller = UserContext.current().getCaller();
 
         VolumeInfo volume = this.volFactory.getVolume(volumeId);
         if (volume == null) {
@@ -2502,10 +2523,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
         
-        CreateSnapshotPayload payload = new CreateSnapshotPayload();
-        payload.setSnapshotPolicyId(policyId);
-        return this.volService.takeSnapshot(volume);
-
+        return this.snapshotMgr.allocSnapshot(volumeId, policyId);
     }
 
 }

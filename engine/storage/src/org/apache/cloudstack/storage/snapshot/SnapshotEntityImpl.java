@@ -88,12 +88,6 @@ public class SnapshotEntityImpl implements SnapshotEntity {
 	}
 
 	@Override
-	public String getPath() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String getName() {
 		// TODO Auto-generated method stub
 		return null;

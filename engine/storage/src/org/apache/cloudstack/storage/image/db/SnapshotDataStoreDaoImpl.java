@@ -149,4 +149,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_role", role);
         return findOneBy(sc);
     }
+
+    @Override
+    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
