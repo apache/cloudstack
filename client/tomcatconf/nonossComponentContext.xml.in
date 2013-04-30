@@ -42,7 +42,7 @@
   independent configuration
     
 -->
-  <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
+  <bean id="DatabaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
   <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
     <property name="GslbServiceProvider">
       <ref bean="Netscaler"/>
