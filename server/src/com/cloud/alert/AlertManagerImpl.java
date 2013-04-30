@@ -569,7 +569,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 switch (capacityType) {
                     case Capacity.CAPACITY_TYPE_STORAGE:
                         capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
-                        capacityValue = _capacityTypeThresholdMap.get(capacityType);
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        break;
+                    case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
                         break;
                     case Capacity.CAPACITY_TYPE_CPU:
                         overProvFactor = ApiDBUtils.getCpuOverprovisioningFactor();

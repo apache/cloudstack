@@ -324,7 +324,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public String updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
 
-        String validationMsg = validateConfigurationValue(name, value);
+        String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
             s_logger.error("Invalid configuration option, name: " + name + ", value:" + value);
@@ -553,7 +553,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private String validateConfigurationValue(String name, String value) {
+    private String validateConfigurationValue(String name, String value, String scope) {
 
         Config c = Config.getConfig(name);
         if (c == null) {
@@ -561,6 +561,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return "Invalid configuration variable.";
         }
         String configScope = c.getScope();
+        if (scope != null) {
+            if (!configScope.contains(scope)) {
+                s_logger.error("Invalid scope id provided for the parameter " + name);
+                return "Invalid scope id provided for the parameter " + name;
+            }
+            if ((name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) && value == null) {
+                s_logger.error("value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor");
+                return "value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor";
+            }
+        }
 
         Class<?> type = c.getType();
 

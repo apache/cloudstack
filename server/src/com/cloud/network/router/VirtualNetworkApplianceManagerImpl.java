@@ -1591,7 +1591,26 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             HypervisorType hType = iter.next();
             try {
                 s_logger.debug("Allocating the domR with the hypervisor type " + hType);
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
+                String templateName = null;
+                switch (hType) {
+                    case XenServer:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case KVM:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case VMware:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case Hyperv:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case LXC:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    default: break;
+                }
+                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
                     s_logger.debug(hType + " won't support system vm, skip it");

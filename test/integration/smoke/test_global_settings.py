@@ -54,7 +54,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         self.assertNotEqual(len(listConfigurationsResponse), 0, "Check if the list API \
                             returns a non-empty response")
 
-        configParam = listConfigurationsResponse[2]
+        configParam = listConfigurationsResponse[7]
         self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned \
                          is the same as the one we got in the list API")
 
