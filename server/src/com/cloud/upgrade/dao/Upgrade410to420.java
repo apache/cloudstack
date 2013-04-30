@@ -68,6 +68,7 @@ public class Upgrade410to420 implements DbUpgrade {
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
         upgradeDefaultVpcOffering(conn);
+        upgradePhysicalNtwksWithInternalLbProvider(conn);
     }
 	
 	private void updateSystemVmTemplates(Connection conn) {
@@ -434,5 +435,55 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+    
+    
+    private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where removed is null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long pNtwkId = rs.getLong(1);
+                String uuid = UUID.randomUUID().toString();
+                //Add internal LB VM to the list of physical network service providers
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` " +
+                		"(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
+                		" VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
+                pstmt.setString(1, uuid);
+                pstmt.setLong(2, pNtwkId);
+                pstmt.executeUpdate();
+                
+                //Add internal lb vm to the list of physical network elements
+                PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
+                		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                ResultSet rs1 = pstmt1.executeQuery();
+                while (rs1.next()) {
+                    long providerId = rs1.getLong(1);
+                    uuid = UUID.randomUUID().toString();
+                    pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`virtual_router_providers` (nsp_id, uuid, type, enabled) VALUES (?, ?, 'InternalLbVm', 1)");
+                    pstmt1.setLong(1, providerId);
+                    pstmt1.setString(2, uuid);
+                    pstmt1.executeUpdate();
+                }
+            }
+            
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        
     }
 }
