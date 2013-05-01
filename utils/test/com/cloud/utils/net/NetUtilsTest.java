@@ -17,6 +17,7 @@
 package com.cloud.utils.net;
 
 import java.math.BigInteger;
+import java.net.URI;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -127,5 +128,12 @@ public class NetUtilsTest extends TestCase {
     	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678:abcd::2-1234:5678:abcd::1"));
     	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", null));
     	assertTrue(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678::1-1234:5679::1"));
+    }
+    
+    public void testPvlan() {
+    	URI uri = NetUtils.generateUriForPvlan("123", "456");
+    	assertTrue(uri.toString().equals("pvlan://123-i456"));
+    	assertTrue(NetUtils.getPrimaryPvlanFromUri(uri).equals("123"));
+    	assertTrue(NetUtils.getIsolatedPvlanFromUri(uri).equals("456"));
     }
 }

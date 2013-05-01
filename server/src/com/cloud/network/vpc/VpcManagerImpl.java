@@ -1965,7 +1965,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, null);
 
         return guestNetwork;
     }

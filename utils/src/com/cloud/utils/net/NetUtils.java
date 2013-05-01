@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
@@ -1289,5 +1290,30 @@ public class NetUtils {
     		resultIp = result.toString();
     	}
 		return resultIp;
+	}
+
+	public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
+        return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
+	}
+	
+	public static String getPrimaryPvlanFromUri(URI uri) {
+		String[] vlans = uri.getHost().split("-");
+		if (vlans.length < 1) {
+			return null;
+		}
+		return vlans[0];
+	}
+	
+	public static String getIsolatedPvlanFromUri(URI uri) {
+		String[] vlans = uri.getHost().split("-");
+		if (vlans.length < 2) {
+			return null;
+		}
+		for (String vlan : vlans) {
+			if (vlan.startsWith("i")) {
+				return vlan.replace("i", " ").trim();
+			}
+		}
+		return null;
 	}
 }

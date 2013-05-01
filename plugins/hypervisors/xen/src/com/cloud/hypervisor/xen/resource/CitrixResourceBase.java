@@ -1014,6 +1014,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (nic.getBroadcastType() == BroadcastDomainType.Lswitch) {
             // Nicira Logical Switch
             return network.getNetwork();
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Pvlan) {
+            URI broadcastUri = nic.getBroadcastUri();
+            assert broadcastUri.getScheme().equals(BroadcastDomainType.Pvlan.scheme());
+            long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(broadcastUri));
+            return enableVlanNetwork(conn, vlan, network);
         }
 
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());

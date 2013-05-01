@@ -828,6 +828,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
+        String isolatedPvlan = cmd.getIsolatedPvlan();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1014,6 +1015,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         	}
         }
         
+        if (isolatedPvlan != null && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared)) {
+        	throw new InvalidParameterValueException("Can only support create Private VLAN network with advance shared network!");
+        }
+        
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL
                 && (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Isolated
@@ -1044,6 +1049,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Collection<String> ntwkProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(ntwkOff, physicalNetworkId).values();
         if (ipv6 && providersConfiguredForExternalNetworking(ntwkProviders)) {
         	throw new InvalidParameterValueException("Cannot support IPv6 on network offering with external devices!");
+        }
+        if (isolatedPvlan != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
+        	throw new InvalidParameterValueException("Cannot support private vlan on network offering with external devices!");
         }
         
         if (cidr != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
@@ -1115,7 +1123,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
             }
             network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
-            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr);
+            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId,
+            		ip6Gateway, ip6Cidr, isolatedPvlan);
         }  
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
@@ -3363,7 +3372,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
-                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null);
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null, null);
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);

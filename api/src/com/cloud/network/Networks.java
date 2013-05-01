@@ -63,6 +63,7 @@ public class Networks {
         Storage("storage", Integer.class),
         Lswitch("lswitch", String.class),
         Mido("mido", String.class),
+        Pvlan("pvlan", String.class),
         UnDecided(null, null);
 
         private String scheme;

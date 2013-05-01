@@ -86,6 +86,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
 
+    @Parameter(name=ApiConstants.ISOLATED_PVLAN, type=CommandType.STRING, description="the isolated private vlan for this network")
+    private String isolatedPvlan;
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
 
@@ -139,6 +142,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getVlan() {
         return vlan;
+    }
+
+    public String getIsolatedPvlan() {
+        return isolatedPvlan;
     }
 
     public String getAccountName() {

@@ -223,6 +223,7 @@ public class ApiConstants {
     public static final String VLAN = "vlan";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
+    public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
