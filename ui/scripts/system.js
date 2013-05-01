@@ -6278,6 +6278,80 @@
                 }
               },
 
+          scaleUp:{
+            label:'scaleUp Router VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+
+                       serviceOfferingId: {
+                            label: 'label.compute.offering',
+                            select: function(args) {
+                            $.ajax({
+                            url: createURL('listServiceOfferings'),
+                            data: {
+                              issystem: true,
+                              systemvmtype: 'domainrouter'
+                                },
+                            success: function(json) {
+                              var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                              var items = [];
+                              $(serviceofferings).each(function() {
+                              // if(this.id != args.context.routers[0].serviceofferingid) {
+                                   items.push({id: this.id, description: this.name});  //default one (i.e. "System Offering For Software Router") doesn't have displaytext property. So, got to use name property instead.
+
+                            });
+                             args.response.success({data: items});
+                           }
+                        });
+                      }
+                   }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                        }
+                     }
+                    }
+                  );
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the Router VM ?';
+              },
+              notification: function(args) {
+
+                    return 'Router VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
+
               viewConsole: {
                 label: 'label.view.console',
                 action: {
@@ -11816,9 +11890,9 @@
 
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
-      			
+      allowedActions.push("scaleUp");	
 		//	if(jsonObj.vpcid != null) 
-        allowedActions.push("restart");
+      allowedActions.push("restart");
 				
       allowedActions.push("viewConsole");
       if (isAdmin())
@@ -11826,7 +11900,8 @@
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-	    allowedActions.push("remove");
+      allowedActions.push("scaleUp");
+      allowedActions.push("remove");
 			
       if(jsonObj.vpcid != null)
         allowedActions.push("changeService");
