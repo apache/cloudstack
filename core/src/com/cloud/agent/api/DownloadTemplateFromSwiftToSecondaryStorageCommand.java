@@ -24,7 +24,7 @@ import com.cloud.agent.api.to.SwiftTO;
  *
  */
 
-public class downloadTemplateFromSwiftToSecondaryStorageCommand extends Command {
+public class DownloadTemplateFromSwiftToSecondaryStorageCommand extends Command {
     @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
     private String secondaryStorageUrl;
@@ -34,11 +34,11 @@ public class downloadTemplateFromSwiftToSecondaryStorageCommand extends Command 
     private Long templateId;
     private String path;
 
-    protected downloadTemplateFromSwiftToSecondaryStorageCommand() {
+    protected DownloadTemplateFromSwiftToSecondaryStorageCommand() {
 
     }
 
-    public downloadTemplateFromSwiftToSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, String path, int wait) {
+    public DownloadTemplateFromSwiftToSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, String path, int wait) {
 
         this.swift = swift;
         this.secondaryStorageUrl = secondaryStorageUrl;

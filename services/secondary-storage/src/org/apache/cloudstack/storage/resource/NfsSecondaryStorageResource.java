@@ -80,9 +80,9 @@ import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
-import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
-import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
-import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
+import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.DownloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -190,20 +190,20 @@ SecondaryStorageResource {
             return execute((ListTemplateCommand)cmd);
         } else if (cmd instanceof ListVolumeCommand){
             return execute((ListVolumeCommand)cmd);
-        }else if (cmd instanceof downloadSnapshotFromSwiftCommand){
-            return execute((downloadSnapshotFromSwiftCommand)cmd);
+        }else if (cmd instanceof DownloadSnapshotFromSwiftCommand){
+            return execute((DownloadSnapshotFromSwiftCommand)cmd);
         } else if (cmd instanceof DownloadSnapshotFromS3Command) {
             return execute((DownloadSnapshotFromS3Command) cmd);
         } else if (cmd instanceof DeleteSnapshotBackupCommand){
             return execute((DeleteSnapshotBackupCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand){
             return execute((DeleteSnapshotsDirCommand)cmd);
-        } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
-            return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof DownloadTemplateFromSwiftToSecondaryStorageCommand) {
+            return execute((DownloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof DownloadTemplateFromS3ToSecondaryStorageCommand) {
             return execute((DownloadTemplateFromS3ToSecondaryStorageCommand) cmd);
-        } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
-            return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof UploadTemplateToSwiftFromSecondaryStorageCommand) {
+            return execute((UploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof UploadTemplateToS3FromSecondaryStorageCommand) {
             return execute((UploadTemplateToS3FromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
@@ -281,7 +281,7 @@ SecondaryStorageResource {
 
     }
 
-    private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
+    private Answer execute(DownloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
         SwiftTO swift = cmd.getSwift();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
@@ -324,7 +324,7 @@ SecondaryStorageResource {
         }
     }
 
-    private Answer execute(uploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
+    private Answer execute(UploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
         SwiftTO swift = cmd.getSwift();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
@@ -769,7 +769,7 @@ SecondaryStorageResource {
                 SNAPSHOT_ROOT_DIR, accountId, volumeId);
     }
 
-    public Answer execute(downloadSnapshotFromSwiftCommand cmd){
+    public Answer execute(DownloadSnapshotFromSwiftCommand cmd){
         SwiftTO swift = cmd.getSwift();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();

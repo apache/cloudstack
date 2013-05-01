@@ -20,41 +20,61 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
- * This currently assumes that both primary and secondary storage are mounted on the XenServer.
+ *
+ *
  */
-public class downloadSnapshotFromSwiftCommand extends SnapshotCommand {
+
+public class UploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
     @LogLevel(Log4jLevel.Off)
-    private SwiftTO _swift;
+    private SwiftTO swift;
+    private String secondaryStorageUrl;
 
-    private String _parent;
+    private Long dcId;
+    private Long accountId;
+    private Long templateId;
 
-    protected downloadSnapshotFromSwiftCommand() {
+    protected UploadTemplateToSwiftFromSecondaryStorageCommand() {
 
     }
 
-    public downloadSnapshotFromSwiftCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long volumeId, String parent, String BackupUuid, int wait) {
+    public UploadTemplateToSwiftFromSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, int wait) {
 
-        super(null, secondaryStorageUrl, BackupUuid, "", dcId, accountId, volumeId);
-        setParent(parent);
-        setSwift(swift);
+        this.swift = swift;
+        this.secondaryStorageUrl = secondaryStorageUrl;
+        this.dcId = dcId;
+        this.accountId = accountId;
+        this.templateId = templateId;
         setWait(wait);
     }
 
-
     public SwiftTO getSwift() {
-        return this._swift;
+        return this.swift;
     }
 
     public void setSwift(SwiftTO swift) {
-        this._swift = swift;
+        this.swift = swift;
     }
 
-    public String getParent() {
-        return _parent;
+    public String getSecondaryStorageUrl() {
+        return secondaryStorageUrl;
     }
 
-    public void setParent(String parent) {
-        this._parent = parent;
+    public Long getDcId() {
+        return dcId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return true;
     }
 
 }
