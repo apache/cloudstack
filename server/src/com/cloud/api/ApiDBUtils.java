@@ -130,6 +130,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -309,6 +311,7 @@ public class ApiDBUtils {
     static GuestOSDao _guestOSDao;
     static GuestOSCategoryDao _guestOSCategoryDao;
     static HostDao _hostDao;
+    static AccountGuestVlanMapDao _accountGuestVlanMapDao;
     static IPAddressDao _ipAddressDao;
     static LoadBalancerDao _loadBalancerDao;
     static SecurityGroupDao _securityGroupDao;
@@ -416,6 +419,7 @@ public class ApiDBUtils {
     @Inject private GuestOSDao guestOSDao;
     @Inject private GuestOSCategoryDao guestOSCategoryDao;
     @Inject private HostDao hostDao;
+    @Inject private AccountGuestVlanMapDao accountGuestVlanMapDao;
     @Inject private IPAddressDao ipAddressDao;
     @Inject private LoadBalancerDao loadBalancerDao;
     @Inject private SecurityGroupDao securityGroupDao;
@@ -512,6 +516,7 @@ public class ApiDBUtils {
         _templateMgr = templateMgr;
 
         _accountDao = accountDao;
+        _accountGuestVlanMapDao = accountGuestVlanMapDao;
         _accountVlanMapDao = accountVlanMapDao;
         _clusterDao = clusterDao;
         _capacityDao = capacityDao;
@@ -942,6 +947,15 @@ public class ApiDBUtils {
             return null;
         } else {
             return accountVlanMaps.get(0).getAccountId();
+        }
+    }
+
+    public static Long getAccountIdForGuestVlan(long vlanDbId) {
+        List<AccountGuestVlanMapVO> accountGuestVlanMaps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByVlan(vlanDbId);
+        if (accountGuestVlanMaps.isEmpty()) {
+            return null;
+        } else {
+            return accountGuestVlanMaps.get(0).getAccountId();
         }
     }
 

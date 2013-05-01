@@ -2258,6 +2258,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateNetworkServiceProviderCmd.class);
         cmdList.add(UpdatePhysicalNetworkCmd.class);
         cmdList.add(UpdateStorageNetworkIpRangeCmd.class);
+        cmdList.add(DedicateGuestVlanRangeCmd.class);
+        cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
+        cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);

@@ -2179,6 +2179,33 @@ class PhysicalNetwork:
         return apiclient.addTrafficType(cmd)
 
     @classmethod
+    def dedicate(cls, apiclient, vlanrange, physicalnetworkid, account=None, domainid=None, projectid=None):
+        """Dedicate guest vlan range"""
+
+        cmd = dedicateGuestVlanRange.dedicateGuestVlanRangeCmd()
+        cmd.vlanrange = vlanrange
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PhysicalNetwork(apiclient.dedicateGuestVlanRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release guest vlan range"""
+
+        cmd = releaseDedicatedGuestVlanRange.releaseDedicatedGuestVlanRangeCmd()
+        cmd.id = self.id
+        return apiclient.releaseDedicatedGuestVlanRange(cmd)
+
+    @classmethod
+    def listDedicated(cls, apiclient, **kwargs):
+        """Lists all dedicated guest vlan ranges"""
+
+        cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return map(lambda pn : PhysicalNetwork(pn.__dict__), apiclient.listDedicatedGuestVlanRanges(cmd))
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists all physical networks"""
 
