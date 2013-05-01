@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.dc.Vlan;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
-import com.cloud.exception.UsageServerException;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -38,6 +37,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value={UsageEventDao.class})
@@ -58,8 +58,8 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         latestEventsSearch.and("processed", latestEventsSearch.entity().isProcessed(), SearchCriteria.Op.EQ);
         latestEventsSearch.and("enddate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         latestEventsSearch.done();
-        
-        IpeventsSearch = createSearchBuilder();        
+
+        IpeventsSearch = createSearchBuilder();
         IpeventsSearch.and("startdate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         IpeventsSearch.and("enddate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         IpeventsSearch.and("zoneid", IpeventsSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
@@ -84,10 +84,10 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         Filter filter = new Filter(UsageEventVO.class, "id", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
         return listAll(filter);
     }
-    
+
     @Override
     @DB
-    public synchronized List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException {
+    public synchronized List<UsageEventVO> getRecentEvents(Date endDate) {
         long recentEventId = getMostRecentEventId();
         long maxEventId = getMaxEventId(endDate);
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
@@ -114,12 +114,12 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         } catch (Exception ex) {
             txn.rollback();
             s_logger.error("error copying events from cloud db to usage db", ex);
-            throw new UsageServerException(ex.getMessage());
+            throw new CloudRuntimeException(ex.getMessage());
         }
     }
 
     @DB
-    private long getMostRecentEventId() throws UsageServerException {
+    private long getMostRecentEventId() {
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
         try {
             List<UsageEventVO> latestEvents = getLatestEvent();
@@ -133,25 +133,25 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             return 0;
         } catch (Exception ex) {
             s_logger.error("error getting most recent event id", ex);
-            throw new UsageServerException(ex.getMessage());
+            throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
         }
     }
 
-    private List<UsageEventVO> findRecentEvents(Date endDate) throws UsageServerException {
+    private List<UsageEventVO> findRecentEvents(Date endDate) {
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
         try {
             return listLatestEvents(endDate);
         } catch (Exception ex) {
             s_logger.error("error getting most recent event date", ex);
-            throw new UsageServerException(ex.getMessage());
+            throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
         }
     }
-    
-    private long getMaxEventId(Date endDate) throws UsageServerException {
+
+    private long getMaxEventId(Date endDate) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
@@ -165,7 +165,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             return 0;
         } catch (Exception ex) {
             s_logger.error("error getting max event id", ex);
-            throw new UsageServerException(ex.getMessage());
+            throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
         }

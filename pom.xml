@@ -255,6 +255,13 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>test/resources</directory>
+      </testResource>
+    </testResources>
     <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
     <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <pluginManagement>
@@ -275,8 +282,8 @@
             </execution>
           </executions>
         </plugin>
-        <!--This plugin's configuration is used to store Eclipse m2e settings
-          only. It has no influence on the Maven build itself. -->
+        <!--This plugin's configuration is used to store Eclipse m2e settings only. 
+          It has no influence on the Maven build itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -298,7 +305,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore/>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>

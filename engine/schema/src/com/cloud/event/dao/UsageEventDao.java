@@ -20,16 +20,15 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.event.UsageEventVO;
-import com.cloud.exception.UsageServerException;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
-    
+
     public List<UsageEventVO> listLatestEvents(Date endDate);
 
     public List<UsageEventVO> getLatestEvent();
-    
-    List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException;
+
+    List<UsageEventVO> getRecentEvents(Date endDate);
 
     List<UsageEventVO> listDirectIpEvents(Date startDate, Date endDate, long zoneId);
 
