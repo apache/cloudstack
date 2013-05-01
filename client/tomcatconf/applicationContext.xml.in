@@ -614,8 +614,6 @@
 
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
     <property name="name" value="FirstFitPlanner"/>
-    <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
-    <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
   </bean>
   
   <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
@@ -835,6 +833,8 @@
   <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl">
     <property name="Planners" value="#{deploymentPlanners.Adapters}" />
 	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
+    <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
+    <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
   </bean>
   
   <bean id="AffinityGroupJoinDaoImpl" class="com.cloud.api.query.dao.AffinityGroupJoinDaoImpl">

@@ -362,12 +362,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                     avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                                     avoids.getPoolsToAvoid());
 
-                            PlannerAvoidOutput.getDataCentersToAvoid().removeAll(PlannerAvoidInput.getDataCentersToAvoid());
-                            PlannerAvoidOutput.getPodsToAvoid().removeAll(PlannerAvoidInput.getPodsToAvoid());
-                            PlannerAvoidOutput.getClustersToAvoid().removeAll(PlannerAvoidInput.getClustersToAvoid());
-                            PlannerAvoidOutput.getHostsToAvoid().removeAll(PlannerAvoidInput.getHostsToAvoid());
-                            PlannerAvoidOutput.getPoolsToAvoid().removeAll(PlannerAvoidInput.getPoolsToAvoid());
-
+                            resetAvoidSet(PlannerAvoidOutput, PlannerAvoidInput);
 
                             dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
                                     getPlannerUsage(planner), PlannerAvoidOutput);
@@ -375,11 +370,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 return dest;
                             }
                             // reset the avoid input to the planners
-                            avoids.getDataCentersToAvoid().removeAll(PlannerAvoidOutput.getDataCentersToAvoid());
-                            avoids.getPodsToAvoid().removeAll(PlannerAvoidOutput.getPodsToAvoid());
-                            avoids.getClustersToAvoid().removeAll(PlannerAvoidOutput.getClustersToAvoid());
-                            avoids.getHostsToAvoid().removeAll(PlannerAvoidOutput.getHostsToAvoid());
-                            avoids.getPoolsToAvoid().removeAll(PlannerAvoidOutput.getPoolsToAvoid());
+                            resetAvoidSet(avoids, PlannerAvoidOutput);
 
                         } else {
                             return null;
@@ -406,6 +397,24 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         return dest;
+    }
+
+    private void resetAvoidSet(ExcludeList avoidSet, ExcludeList removeSet) {
+        if (avoidSet.getDataCentersToAvoid() != null && removeSet.getDataCentersToAvoid() != null) {
+            avoidSet.getDataCentersToAvoid().removeAll(removeSet.getDataCentersToAvoid());
+        }
+        if (avoidSet.getPodsToAvoid() != null && removeSet.getPodsToAvoid() != null) {
+            avoidSet.getPodsToAvoid().removeAll(removeSet.getPodsToAvoid());
+        }
+        if (avoidSet.getClustersToAvoid() != null && removeSet.getClustersToAvoid() != null) {
+            avoidSet.getClustersToAvoid().removeAll(removeSet.getClustersToAvoid());
+        }
+        if (avoidSet.getHostsToAvoid() != null && removeSet.getHostsToAvoid() != null) {
+            avoidSet.getHostsToAvoid().removeAll(removeSet.getHostsToAvoid());
+        }
+        if (avoidSet.getPoolsToAvoid() != null && removeSet.getPoolsToAvoid() != null) {
+            avoidSet.getPoolsToAvoid().removeAll(removeSet.getPoolsToAvoid());
+        }
     }
 
     private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner) {
@@ -619,8 +628,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // remove any hosts/pools that the planners might have added
         // to get the list of hosts/pools that Allocators flagged as 'avoid'
-        allocatorAvoidOutput.getHostsToAvoid().removeAll(plannerAvoidOutput.getHostsToAvoid());
-        allocatorAvoidOutput.getPoolsToAvoid().removeAll(plannerAvoidOutput.getPoolsToAvoid());
+        if (allocatorAvoidOutput.getHostsToAvoid() != null && plannerAvoidOutput.getHostsToAvoid() != null) {
+            allocatorAvoidOutput.getHostsToAvoid().removeAll(plannerAvoidOutput.getHostsToAvoid());
+        }
+        if (allocatorAvoidOutput.getPoolsToAvoid() != null && plannerAvoidOutput.getPoolsToAvoid() != null) {
+            allocatorAvoidOutput.getPoolsToAvoid().removeAll(plannerAvoidOutput.getPoolsToAvoid());
+        }
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
