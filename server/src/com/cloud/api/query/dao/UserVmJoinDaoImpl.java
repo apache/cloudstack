@@ -101,6 +101,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
         userVmResponse.setZoneId(userVm.getDataCenterUuid());
         userVmResponse.setZoneName(userVm.getDataCenterName());
+        userVmResponse.setZoneType(userVm.getDataCenterType());
         if ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
@@ -133,8 +134,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             }
         }
         userVmResponse.setPassword(userVm.getPassword());
-        userVmResponse.setJobId(userVm.getJobUuid());
-        userVmResponse.setJobStatus(userVm.getJobStatus());
+        if (userVm.getJobId() != null) {
+            userVmResponse.setJobId(userVm.getJobUuid());
+            userVmResponse.setJobStatus(userVm.getJobStatus());
+        }
         //userVmResponse.setForVirtualNetwork(userVm.getForVirtualNetwork());
 
         userVmResponse.setPublicIpId(userVm.getPublicIpUuid());

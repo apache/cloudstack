@@ -114,6 +114,10 @@ function createURL(apiName, options) {
   if (cloudStack.context && cloudStack.context.projects && !options.ignoreProject) {
     urlString = urlString + '&projectid=' + cloudStack.context.projects[0].id;
   }
+    
+  if(cloudStack.context != null && cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+    urlString = urlString + '&zonetype=' + cloudStack.context.zoneType;    
+  }    
   
   return urlString;
 }

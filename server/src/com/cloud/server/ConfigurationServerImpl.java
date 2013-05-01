@@ -36,28 +36,32 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.StringTokenizer;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.*;
+import com.cloud.dc.*;
+import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.user.*;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -91,9 +95,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
@@ -114,6 +115,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @Inject private ConfigurationDao _configDao;
     @Inject private DataCenterDao _zoneDao;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private HostPodDao _podDao;
     @Inject private DiskOfferingDao _diskOfferingDao;
     @Inject private ServiceOfferingDao _serviceOfferingDao;
@@ -127,6 +130,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private ResourceCountDao _resourceCountDao;
     @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     @Inject private IdentityDao _identityDao;
+    @Inject private DcDetailsDao _dcDetailsDao;
+    @Inject private ClusterDetailsDao _clusterDetailsDao;
+    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
+    @Inject private AccountDetailsDao _accountDetailsDao;
+
 
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
@@ -333,7 +341,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @DB
     protected void saveUser() {
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (1, UUID(), 'system', '1', '1', 1)";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -341,8 +349,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
-                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, user.default)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), 1)";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -358,7 +366,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', 1)";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -367,8 +375,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state, user.default) " +
+                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', 1)";
 
         txn = Transaction.currentTxn();
         try {
@@ -670,6 +678,76 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 throw new CloudRuntimeException(e.getMessage());
             }
         }
+    }
+
+    @Override
+    public String getConfigValue(String name, String scope, Long resourceId) {
+        // If either of scope or resourceId is null then return global config value otherwise return value at the scope
+        Config c = Config.getConfig(name);
+        if (c == null) {
+            throw new CloudRuntimeException("Missing configuration variable " + name + " in configuration table");
+        }
+        String configScope = c.getScope();
+        if (scope != null && !scope.isEmpty()) {
+            if (!configScope.contains(scope)) {
+                throw new CloudRuntimeException("Invalid scope " + scope + " for the parameter " + name );
+            }
+            if (resourceId != null) {
+                switch (Config.ConfigurationParameterScope.valueOf(scope)) {
+                    case zone:      DataCenterVO zone = _zoneDao.findById(resourceId);
+                                    if (zone == null) {
+                                        throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
+                                    }
+                                    DcDetailVO dcDetailVO = _dcDetailsDao.findDetail(resourceId, name);
+                                    if (dcDetailVO != null && dcDetailVO.getValue() != null) {
+                                        return dcDetailVO.getValue();
+                                    } break;
+
+                    case cluster:   ClusterVO cluster = _clusterDao.findById(resourceId);
+                                    if (cluster == null) {
+                                        throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
+                                    }
+                                    ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, name);
+                                    if (clusterDetailsVO != null && clusterDetailsVO.getValue() != null) {
+                                        return clusterDetailsVO.getValue();
+                                    } break;
+
+                    case storagepool:      StoragePoolVO pool = _storagePoolDao.findById(resourceId);
+                                    if (pool == null) {
+                                        throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
+                                    }
+                                    StoragePoolDetailVO storagePoolDetailVO = _storagePoolDetailsDao.findDetail(resourceId, name);
+                                    if (storagePoolDetailVO != null && storagePoolDetailVO.getValue() != null) {
+                                        return storagePoolDetailVO.getValue();
+                                    } break;
+
+                    case account:   AccountVO account = _accountDao.findById(resourceId);
+                                    if (account == null) {
+                                        throw new InvalidParameterValueException("unable to find account by id " + resourceId);
+                                    }
+                                    AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(resourceId, name);
+                                    if (accountDetailVO != null && accountDetailVO.getValue() != null) {
+                                        return accountDetailVO.getValue();
+                                    } break;
+                    default:
+                }
+            }
+        }
+        return _configDao.getValue(name);
+    }
+
+    @Override
+    public List<ConfigurationVO> getConfigListByScope(String scope, Long resourceId) {
+
+        // Getting the list of parameters defined at the scope
+        List<Config> configList = Config.getConfigListByScope(scope);
+        List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
+        for (Config param:configList){
+            ConfigurationVO configVo = _configDao.findByName(param.toString());
+            configVo.setValue(getConfigValue(param.toString(), scope, resourceId));
+            configVOList.add(configVo);
+        }
+        return configVOList;
     }
 
     private void writeKeyToDisk(String key, String keyPath) {

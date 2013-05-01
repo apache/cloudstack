@@ -55,9 +55,10 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public void removeStoragePool(String uuid) {
         synchronized (_storagePool) {
             NfsStoragePool pool = this._storagePool.get(uuid);
-            Script.runSimpleBashScript("umount " + pool._mountDestPath);
-            s_logger.debug("attempted to umount '" + pool._mountDestPath + "'");
-            this._storagePool.remove(uuid);
+            if (pool != null) {
+                Script.runSimpleBashScript("umount " + pool._mountDestPath);
+                this._storagePool.remove(uuid);
+            }
         }
     }
 

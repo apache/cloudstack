@@ -181,7 +181,7 @@ public interface NetworkModel {
     /**
      * @return
      */
-    String getDefaultNetworkDomain();
+    String getDefaultNetworkDomain(long zoneId);
 
     /**
      * @param ntwkOffId

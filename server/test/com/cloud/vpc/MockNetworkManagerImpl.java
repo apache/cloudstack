@@ -328,7 +328,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
-            String newVnetRangeString, String state) {
+                                                 String newVnetRangeString, String state, String removeVlan) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1316,7 +1316,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public String allocateSecondaryGuestIP(Account account, long zoneId,
+    public NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId,
             Long nicId, Long networkId, String ipaddress) {
         // TODO Auto-generated method stub
         return null;

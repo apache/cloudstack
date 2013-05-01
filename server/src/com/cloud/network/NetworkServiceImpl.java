@@ -19,16 +19,10 @@ package com.cloud.network;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter;
+import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.AccountVlanMapDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.*;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -89,6 +83,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.*;
 import com.cloud.vm.dao.*;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
@@ -206,6 +201,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     HostDao _hostDao;
     @Inject
     HostPodDao _hostPodDao;
+    @Inject
+    DataCenterVnetDao _datacneter_vnet;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -486,7 +483,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
 
-    public String allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP (Account ipOwner, long zoneId, Long nicId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
 
         Long accountId = null;
         Long domainId = null;
@@ -538,7 +535,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType()  == Network.GuestType.Shared) {
             Account caller = UserContext.current().getCaller();
             long callerUserId = UserContext.current().getCallerUserId();
-            _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseNetwork, false, network);
             //handle the basic networks here
             VirtualMachine vm = _userVmDao.findById(nicVO.getInstanceId());
             if (vm == null) {
@@ -568,6 +565,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return null;
         }
 
+        NicSecondaryIpVO secondaryIpVO;
         if (ipaddr != null) {
             // we got the ip addr so up the nics table and secodary ip
             Transaction txn = Transaction.currentTxn();
@@ -583,11 +581,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
             s_logger.debug("Setting nic_secondary_ip table ...");
             vmId = nicVO.getInstanceId();
-            NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
+            secondaryIpVO = new NicSecondaryIpVO(nicId, ipaddr, vmId, accountId, domainId, networkId);
             _nicSecondaryIpDao.persist(secondaryIpVO);
             txn.commit();
+           return  getNicSecondaryIp(secondaryIpVO.getId());
+        } else {
+            return null;
         }
-        return ipaddr;
     }
 
     @DB
@@ -679,6 +679,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return true;
     }
 
+    NicSecondaryIp getNicSecondaryIp (long id) {
+        NicSecondaryIp nicSecIp = _nicSecondaryIpDao.findById(id);
+        if (nicSecIp == null) {
+            return null;
+        }
+        return nicSecIp;
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
@@ -758,18 +766,20 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // in the zone when using external networking
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNetwork.getVnet() != null) {
-            String vlanRange[] = pNetwork.getVnet().split("-");
-            int lowestVlanTag = Integer.valueOf(vlanRange[0]);
-            int highestVlanTag = Integer.valueOf(vlanRange[1]);
-            for (int vlan=lowestVlanTag; vlan <= highestVlanTag; ++vlan) {
-                int offset = vlan - lowestVlanTag;
-                String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-                int cidrSize = 8 + Integer.parseInt(globalVlanBits);
-                String guestNetworkCidr = zone.getGuestNetworkCidr();
-                String[] cidrTuple = guestNetworkCidr.split("\\/");
-                long newCidrAddress = (NetUtils.ip2Long(cidrTuple[0]) & 0xff000000) | (offset << (32 - cidrSize));
-                if (NetUtils.isNetworksOverlap(NetUtils.long2Ip(newCidrAddress), cidr)) {
-                    throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR that is reserved for zone vlan " + vlan);
+            List <Pair<Integer,Integer>> vlanList = pNetwork.getVnet();
+            for (Pair<Integer,Integer> vlanRange : vlanList){
+                Integer lowestVlanTag = vlanRange.first();
+                Integer highestVlanTag = vlanRange.second();
+                for (int vlan=lowestVlanTag; vlan <= highestVlanTag; ++vlan) {
+                    int offset = vlan - lowestVlanTag;
+                    String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
+                    int cidrSize = 8 + Integer.parseInt(globalVlanBits);
+                    String guestNetworkCidr = zone.getGuestNetworkCidr();
+                    String[] cidrTuple = guestNetworkCidr.split("\\/");
+                    long newCidrAddress = (NetUtils.ip2Long(cidrTuple[0]) & 0xff000000) | (offset << (32 - cidrSize));
+                    if (NetUtils.isNetworksOverlap(NetUtils.long2Ip(newCidrAddress), cidr)) {
+                        throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR that is reserved for zone vlan " + vlan);
+                    }
                 }
             }
         }
@@ -1148,6 +1158,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
+        String zoneType = cmd.getZoneType();
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1296,39 +1307,39 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                         permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                                     domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
                         isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
                                 isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
                                     caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
-                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags),
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType),
                     searchFilter);
         }
 
@@ -1373,7 +1384,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, 
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags) {
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, String zoneType) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1395,6 +1406,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSearch", "networkType", zoneType);          
+        }
+        
         if (guestIpType != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
         }
@@ -1869,11 +1884,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
             // If networkCidr is null it implies that there was no prior IP reservation, so the network cidr is network.getCidr()
             // But in case networkCidr is a non null value (IP reservation already exists), it implies network cidr is networkCidr
-            if (networkCidr != null && ! NetUtils.isNetworkAWithinNetworkB(guestVmCidr, networkCidr)) {
+            if (networkCidr != null) {
+                if(! NetUtils.isNetworkAWithinNetworkB(guestVmCidr, networkCidr)) {
                     throw new InvalidParameterValueException ("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR : " + networkCidr);
+                }
             } else {
                 if (! NetUtils.isNetworkAWithinNetworkB(guestVmCidr, network.getCidr())) {
-                     throw new InvalidParameterValueException ("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR :  " + network.getCidr());
+                    throw new InvalidParameterValueException ("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR :  " + network.getCidr());
                 }
             }
 
@@ -1987,8 +2004,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         continue;
                     }
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-                    UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, oldNetworkOfferingId, null, 0L);
-                    UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
+                    String nicIdString = Long.toString(nic.getId());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(),
+                            vm.getId(), nicIdString, oldNetworkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(),
+                            vm.getId(), nicIdString, networkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
                 }
                 txn.commit();
             }   else {
@@ -2198,7 +2218,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
-            
             if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
                 s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
                 throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
@@ -2289,7 +2308,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE, eventDescription = "updating physical network", async = true)
-    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state) {
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state, String removeVlan) {
 
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
@@ -2312,6 +2331,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: "
                         + zone.isSecurityGroupEnabled());
             }
+        }
+
+        if (removeVlan != null){
+            List<Integer> tokens = processVlanRange(network,removeVlan);
+            boolean result = removeVlanRange(network, tokens.get(0), tokens.get(1));
+
         }
 
         if (tags != null && tags.size() > 1) {
@@ -2340,88 +2365,207 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Vnet range can be extended only
-        boolean replaceVnet = false;
-        ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2);
+        boolean AddVnet = true;
+        List<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>();
 
         if (newVnetRangeString != null) {
             Integer newStartVnet = 0;
             Integer newEndVnet = 0;
-            String[] newVnetRange = newVnetRangeString.split("-");
-            int maxVnet = 4096;
-            // for GRE phynets allow up to 32bits
-            // TODO: Not happy about this test.  
-            // What about guru-like objects for physical networs?
-            s_logger.debug("ISOLATION METHODS:" + network.getIsolationMethods());
-            // Java does not have unsigned types...
-            if (network.getIsolationMethods().contains("GRE")) { 
-                maxVnet = (int)(Math.pow(2, 32)-1);
-            }
-            String rangeMessage = " between 0 and " + maxVnet; 
-            if (newVnetRange.length < 2) {
-                throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
-            }
+            List<Integer> tokens = processVlanRange(network, newVnetRangeString);
+            newStartVnet = tokens.get(0);
+            newEndVnet = tokens.get(1);
+            Integer j=0;
+            List <Pair <Integer,Integer>> existingRanges = network.getVnet();
+            if (!existingRanges.isEmpty()) {
+                for (; j < existingRanges.size(); j++){
+                    int existingStartVnet = existingRanges.get(j).first();
+                    int existingEndVnet = existingRanges.get(j).second();
 
-            if (newVnetRange[0] == null || newVnetRange[1] == null) {
-                throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
-            }
+                    // check if vnet is being extended
+                    if (newStartVnet.intValue() >= existingStartVnet & newEndVnet.intValue() <= existingEndVnet) {
+                        throw new InvalidParameterValueException("The vlan range you trying to add already exists.");
+                    }
 
-            try {
-                newStartVnet = Integer.parseInt(newVnetRange[0]);
-                newEndVnet = Integer.parseInt(newVnetRange[1]);
-            } catch (NumberFormatException e) {
-                s_logger.warn("Unable to parse vnet range:", e);
-                throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
-            }
-            if (newStartVnet < 0 || newEndVnet > maxVnet) {
-                throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage);
-            }
+                    if (newStartVnet < existingStartVnet & newEndVnet+1 >= existingStartVnet & newEndVnet <= existingEndVnet) {
+                        vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
+                        existingRanges.get(j).first(newStartVnet);
+                        AddVnet = false;
+                        break;
+                    }
 
-            if (newStartVnet > newEndVnet) {
-                throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage + " and start range should be lesser than or equal to stop range");
-            }
-            
-            if (physicalNetworkHasAllocatedVnets(network.getDataCenterId(), network.getId())) {
-                String[] existingRange = network.getVnet().split("-");
-                int existingStartVnet = Integer.parseInt(existingRange[0]);
-                int existingEndVnet = Integer.parseInt(existingRange[1]);
+                    else if (newStartVnet > existingStartVnet & newStartVnet-1 <= existingEndVnet & newEndVnet >= existingEndVnet) {
+                        vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
+                        existingRanges.get(j).second(newEndVnet);
+                        AddVnet = false;
+                        break;
+                    }
 
-                // check if vnet is being extended
-                if (newStartVnet.intValue() > existingStartVnet || newEndVnet.intValue() < existingEndVnet) {
-                    throw new InvalidParameterValueException("Can't shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
+                    else if (newStartVnet< existingStartVnet & newEndVnet > existingEndVnet){
+                        vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet,existingStartVnet-1));
+                        vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet+1,newEndVnet));
+                        existingRanges.get(j).first(newStartVnet);
+                        existingRanges.get(j).second(newEndVnet);
+                        break;
+                    }
                 }
 
-                if (newStartVnet < existingStartVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
-                }
-
-                if (newEndVnet > existingEndVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
-                }
-
-            } else {
-                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
-                replaceVnet = true;
             }
-        }
+            if (AddVnet){
+                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
+                    existingRanges.add(new Pair<Integer, Integer>(newStartVnet,newEndVnet));
+            }
 
-        if (newVnetRangeString != null) {
-            network.setVnet(newVnetRangeString);
+            Map <Integer,Integer> vnetMap = new HashMap<Integer, Integer>(existingRanges.size());
+            Map <Integer, Integer> IndexMap = new HashMap<Integer, Integer>(existingRanges.size());
+            for (int i=0; i< existingRanges.size(); i++){
+                 vnetMap.put(existingRanges.get(i).first(),existingRanges.get(i).second());
+                 IndexMap.put(existingRanges.get(i).first(),i);
+            }
+
+            Integer value;
+            Integer index;
+            String vnetString = "";
+            for (int i=0; i < existingRanges.size(); i++){
+                 value = vnetMap.get((existingRanges.get(i).second()+1));
+                 if (value != null) {
+                     vnetMap.remove((existingRanges.get(i).second()+1));
+                     vnetMap.remove(existingRanges.get(i).first());
+                     vnetMap.put(existingRanges.get(i).first(),value);
+                     existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
+                     index = IndexMap.get(existingRanges.get(i).second()+1);
+                     existingRanges.get(index).first(-1);
+                     existingRanges.get(index).second(-1);
+                     existingRanges.get(i).first(-1);
+                     existingRanges.get(i).second(-1);
+                 }
+                value = vnetMap.get((existingRanges.get(i).second()));
+                if (value != null) {
+                    vnetMap.remove((existingRanges.get(i).second()));
+                    vnetMap.remove(existingRanges.get(i).first());
+                    vnetMap.put(existingRanges.get(i).first(),value);
+                    existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
+                    index = IndexMap.get(existingRanges.get(i).second());
+                    existingRanges.get(index).first(-1);
+                    existingRanges.get(index).second(-1);
+                    existingRanges.get(i).first(-1);
+                    existingRanges.get(i).second(-1);
+                }
+            }
+
+
+
+            if (newVnetRangeString != null) {
+               for (Pair<Integer,Integer> vnetRange : existingRanges ){
+                    value=vnetMap.get(vnetRange.first());
+                    if (value != null){
+                        vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
+                    }
+               }
+                vnetString = vnetString+"*";
+                vnetString = vnetString.replace(";*","");
+                network.setVnet(vnetString);
+            }
+
+            for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
+                s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
+                    + " as a part of updatePhysicalNetwork call");
+                _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
+            }
         }
 
         _physicalNetworkDao.update(id, network);
 
-        if (replaceVnet) {
-            s_logger.debug("Deleting existing vnet range for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId() + " as a part of updatePhysicalNetwork call");
-            _dcDao.deleteVnet(network.getId());
-        }
-
-        for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
-            s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
-                    + " as a part of updatePhysicalNetwork call");
-            _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
-        }
-
         return network;
+    }
+
+    private List<Integer> processVlanRange(PhysicalNetworkVO network, String removeVlan) {
+        Integer StartVnet;
+        Integer EndVnet;
+        String[] VnetRange = removeVlan.split("-");
+        int maxVnet = 4096;
+        // for GRE phynets allow up to 32bits
+        // TODO: Not happy about this test.
+        // What about guru-like objects for physical networs?
+        s_logger.debug("ISOLATION METHODS:" + network.getIsolationMethods());
+        // Java does not have unsigned types...
+        if (network.getIsolationMethods().contains("GRE")) {
+            maxVnet = (int)(Math.pow(2, 32)-1);
+        }
+        String rangeMessage = " between 0 and " + maxVnet;
+        if (VnetRange.length < 2) {
+            throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
+        }
+
+        if (VnetRange[0] == null || VnetRange[1] == null) {
+            throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
+        }
+
+        try {
+            StartVnet = Integer.parseInt(VnetRange[0]);
+            EndVnet = Integer.parseInt(VnetRange[1]);
+        } catch (NumberFormatException e) {
+            s_logger.warn("Unable to parse vnet range:", e);
+            throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
+        }
+        if (StartVnet < 0 || EndVnet > maxVnet) {
+            throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage);
+        }
+
+        if (StartVnet > EndVnet) {
+            throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage + " and start range should be lesser than or equal to stop range");
+        }
+        List<Integer> tokens = new ArrayList<Integer>();
+        tokens.add(StartVnet);
+        tokens.add(EndVnet);
+        return tokens;
+
+    }
+
+
+    private boolean removeVlanRange( PhysicalNetworkVO network, Integer start, Integer end) {
+        Integer temp=0;
+        int i;
+        List <Pair <Integer,Integer>> existingRanges = network.getVnet();
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _physicalNetworkDao.acquireInLockTable(network.getId(),10);
+        _datacneter_vnet.lockRange(network.getDataCenterId(), network.getId(), start, end);
+        List<DataCenterVnetVO> result = _datacneter_vnet.listAllocatedVnetsInRange(network.getDataCenterId(), network.getId(), start, end);
+        if (!result.isEmpty()){
+            txn.close();
+            throw new InvalidParameterValueException("Some of the vnets from this range are allocated, can only remove a range which has no allocated vnets");
+        }
+        for (i=0; i<existingRanges.size(); i++){
+            if (existingRanges.get(i).first()<= start & existingRanges.get(i).second()>= end){
+                temp = existingRanges.get(i).second();
+                existingRanges.get(i).second(start - 1);
+                existingRanges.add(new Pair<Integer, Integer>((end+1),temp));
+                break;
+            }
+        }
+
+        if (temp == 0){
+            throw new InvalidParameterValueException("The vlan range you are trying to delete does not exist.");
+        }
+        if(existingRanges.get(i).first() > existingRanges.get(i).second()){
+            existingRanges.remove(i);
+        }
+        if(existingRanges.get(existingRanges.size()-1).first() > existingRanges.get(existingRanges.size()-1).second()){
+            existingRanges.remove(existingRanges.size()-1);
+        }
+        _datacneter_vnet.deleteRange(txn, network.getDataCenterId(), network.getId(), start, end);
+
+        String vnetString="";
+        for (Pair<Integer,Integer> vnetRange : existingRanges ){
+            vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
+        }
+        vnetString = vnetString+"*";
+        vnetString = vnetString.replace(";*","");
+        network.setVnet(vnetString);
+        _physicalNetworkDao.update(network.getId(), network);
+        txn.commit();
+        _physicalNetworkDao.releaseFromLockTable(network.getId());
+        return  true;
     }
 
     private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {

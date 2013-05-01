@@ -142,7 +142,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         VirtualMachine.State.getStateMachine().registerListener(this);
-        _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageOverProvisioningFactor), true, false, false);
+        _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
 
         return true;

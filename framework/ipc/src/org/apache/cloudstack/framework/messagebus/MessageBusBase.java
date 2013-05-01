@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.cloudstack.framework.eventbus;
+package org.apache.cloudstack.framework.messagebus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
-public class EventBusBase implements EventBus {
+public class MessageBusBase implements MessageBus {
 
 	private Gate _gate;
 	private List<ActionRecord> _pendingActions;
@@ -36,11 +36,11 @@ public class EventBusBase implements EventBus {
 	private SubscriptionNode _subscriberRoot;
 	private MessageSerializer _messageSerializer; 
 	
-	public EventBusBase() {
+	public MessageBusBase() {
 		_gate = new Gate();
 		_pendingActions = new ArrayList<ActionRecord>();
 		
-		_subscriberRoot = new SubscriptionNode("/", null);
+		_subscriberRoot = new SubscriptionNode(null, "/", null);
 	}
 	
 	@Override
@@ -54,7 +54,7 @@ public class EventBusBase implements EventBus {
 	}
 	
 	@Override
-	public void subscribe(String subject, Subscriber subscriber) {
+	public void subscribe(String subject, MessageSubscriber subscriber) {
 		assert(subject != null);
 		assert(subscriber != null);
 		if(_gate.enter()) {
@@ -70,12 +70,15 @@ public class EventBusBase implements EventBus {
 	}
 
 	@Override
-	public void unsubscribe(String subject, Subscriber subscriber) {
+	public void unsubscribe(String subject, MessageSubscriber subscriber) {
 		if(_gate.enter()) {
-			SubscriptionNode current = locate(subject, null, false);
-			if(current != null)
-				current.removeSubscriber(subscriber);
-			
+			if(subject != null) {
+				SubscriptionNode current = locate(subject, null, false);
+				if(current != null)
+					current.removeSubscriber(subscriber, false);
+			} else {
+				this._subscriberRoot.removeSubscriber(subscriber, true);
+			}
 			_gate.leave();
 		} else {
 			synchronized(_pendingActions) {
@@ -83,7 +86,48 @@ public class EventBusBase implements EventBus {
 			}
 		}
 	}
-
+	
+	@Override
+	public void clearAll() {
+		if(_gate.enter()) {
+			_subscriberRoot.clearAll();
+			doPrune();
+			_gate.leave();
+		} else {
+			synchronized(_pendingActions) {
+				_pendingActions.add(new ActionRecord(ActionType.ClearAll, null, null));
+			}
+		}
+	}
+		
+	@Override
+	public void prune() {
+		if(_gate.enter()) {
+			doPrune();
+			_gate.leave();
+		} else {
+			synchronized(_pendingActions) {
+				_pendingActions.add(new ActionRecord(ActionType.Prune, null, null));
+			}
+		}
+	}
+	
+	private void doPrune() {
+		List<SubscriptionNode> trimNodes = new ArrayList<SubscriptionNode>();
+		_subscriberRoot.prune(trimNodes);
+		
+		while(trimNodes.size() > 0) {
+			SubscriptionNode node = trimNodes.remove(0);
+			SubscriptionNode parent = node.getParent();
+			if(parent != null) {
+				parent.removeChild(node.getNodeKey());
+				if(parent.isTrimmable()) {
+					trimNodes.add(parent);
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void publish(String senderAddress, String subject, PublishScope scope, 
 		Object args) {
@@ -119,11 +163,21 @@ public class EventBusBase implements EventBus {
 						break;
 						
 					case Unsubscribe :
-						{
+						if(record.getSubject() != null) {
 							SubscriptionNode current = locate(record.getSubject(), null, false);
 							if(current != null)
-								current.removeSubscriber(record.getSubscriber());
+								current.removeSubscriber(record.getSubscriber(), false);
+						} else {
+							this._subscriberRoot.removeSubscriber(record.getSubscriber(), true);
 						}
+						break;
+					
+					case ClearAll :
+						_subscriberRoot.clearAll();
+						break;
+						
+					case Prune :
+						doPrune();
 						break;
 						
 					default :
@@ -136,11 +190,13 @@ public class EventBusBase implements EventBus {
 		}
 	}
 	
-	
 	private SubscriptionNode locate(String subject, List<SubscriptionNode> chainFromTop,
 		boolean createPath) {
 		
 		assert(subject != null);
+		// "/" is special name for root node
+		if(subject.equals("/"))
+			return _subscriberRoot;
 		
 		String[] subjectPathTokens = subject.split("\\.");
 		return locate(subjectPathTokens, _subscriberRoot, chainFromTop, createPath);
@@ -159,7 +215,7 @@ public class EventBusBase implements EventBus {
 		SubscriptionNode next = current.getChild(subjectPathTokens[0]);
 		if(next == null) {
 			if(createPath) {
-				next = new SubscriptionNode(subjectPathTokens[0], null);
+				next = new SubscriptionNode(current, subjectPathTokens[0], null);
 				current.addChild(subjectPathTokens[0], next);
 			} else {
 				return null;
@@ -180,15 +236,17 @@ public class EventBusBase implements EventBus {
 	//
 	private static enum ActionType {
 		Subscribe,
-		Unsubscribe
+		Unsubscribe,
+		ClearAll,
+		Prune
 	}
 	
 	private static class ActionRecord {
 		private ActionType _type;
 		private String _subject;
-		private Subscriber _subscriber;
+		private MessageSubscriber _subscriber;
 		
-		public ActionRecord(ActionType type, String subject, Subscriber subscriber) {
+		public ActionRecord(ActionType type, String subject, MessageSubscriber subscriber) {
 			_type = type;
 			_subject = subject;
 			_subscriber = subscriber;
@@ -202,7 +260,7 @@ public class EventBusBase implements EventBus {
 			return _subject;
 		}
 		
-		public Subscriber getSubscriber() {
+		public MessageSubscriber getSubscriber() {
 			return _subscriber;
 		}
 	}
@@ -262,15 +320,16 @@ public class EventBusBase implements EventBus {
 	}
 	
 	private static class SubscriptionNode {
-		@SuppressWarnings("unused")
 		private String _nodeKey;
-		private List<Subscriber> _subscribers;
+		private List<MessageSubscriber> _subscribers;
 		private Map<String, SubscriptionNode> _children;
+		private SubscriptionNode _parent;
 		
-		public SubscriptionNode(String nodeKey, Subscriber subscriber) {
+		public SubscriptionNode(SubscriptionNode parent, String nodeKey, MessageSubscriber subscriber) {
 			assert(nodeKey != null);
+			_parent = parent;
 			_nodeKey = nodeKey;
-			_subscribers = new ArrayList<Subscriber>();
+			_subscribers = new ArrayList<MessageSubscriber>();
 			
 			if(subscriber != null)
 				_subscribers.add(subscriber);
@@ -278,16 +337,30 @@ public class EventBusBase implements EventBus {
 			_children = new HashMap<String, SubscriptionNode>();
 		}
 		
+		public SubscriptionNode getParent() {
+			return _parent;			
+		}
+		
+		public String getNodeKey() {
+			return _nodeKey;
+		}
+		
 		@SuppressWarnings("unused")
-		public List<Subscriber> getSubscriber() {
+		public List<MessageSubscriber> getSubscriber() {
 			return _subscribers;
 		}
 		
-		public void addSubscriber(Subscriber subscriber) {
-			_subscribers.add(subscriber);
+		public void addSubscriber(MessageSubscriber subscriber) {
+			if(!_subscribers.contains(subscriber))
+				_subscribers.add(subscriber);
 		}
 		
-		public void removeSubscriber(Subscriber subscriber) {
+		public void removeSubscriber(MessageSubscriber subscriber, boolean recursively) {
+			if(recursively) {
+				for(Map.Entry<String, SubscriptionNode> entry : _children.entrySet()) {
+					entry.getValue().removeSubscriber(subscriber, true);
+				}
+			}
 			_subscribers.remove(subscriber);
 		}
 		
@@ -299,10 +372,37 @@ public class EventBusBase implements EventBus {
 			_children.put(key, childNode);
 		}
 		
-		public void notifySubscribers(String senderAddress, String subject,  Object args) {
-			for(Subscriber subscriber : _subscribers) {
-				subscriber.onPublishEvent(senderAddress, subject, args);
+		public void removeChild(String key) {
+			_children.remove(key);
+		}
+		
+		public void clearAll() {
+			// depth-first
+			for(Map.Entry<String, SubscriptionNode> entry : _children.entrySet()) {
+				entry.getValue().clearAll();
 			}
+			_subscribers.clear();
+		}
+		
+		public void prune(List<SubscriptionNode> trimNodes) {
+			assert(trimNodes != null);
+			
+			for(Map.Entry<String, SubscriptionNode> entry : _children.entrySet()) {
+				entry.getValue().prune(trimNodes);
+			}
+			
+			if(isTrimmable())
+				trimNodes.add(this);
+		}
+		
+		public void notifySubscribers(String senderAddress, String subject,  Object args) {
+			for(MessageSubscriber subscriber : _subscribers) {
+				subscriber.onPublishMessage(senderAddress, subject, args);
+			}
+		}
+		
+		public boolean isTrimmable() {
+			return _children.size() == 0 && _subscribers.size() == 0;
 		}
 	}
 }

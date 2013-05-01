@@ -50,8 +50,16 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     @Override
     public ClusterDetailsVO findDetail(long clusterId, String name) {
         SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
+        // This is temporary fix to support list/update configuration api for cpu and memory overprovisioning ratios
+        if(name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
+            name = "cpuOvercommitRatio";
+        }
+        if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+            name = "memoryOvercommitRatio";
+        }
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("name", name);
+
 
         ClusterDetailsVO detail = findOneIncludingRemovedBy(sc);
         if("password".equals(name) && detail != null){

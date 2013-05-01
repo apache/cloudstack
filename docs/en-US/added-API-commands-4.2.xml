@@ -39,5 +39,29 @@
       <para>The response parameters are: id, ipaddress, secondaryips, gateway, netmask, macaddr,
         broadcasturi, isolationuri, isdefault,</para>
     </listitem>
+    <listitem>
+      <para>deleteAlerts </para>
+      <para>Deletes the specified alerts. The request parameters are: ids (allowed to pass one or
+        more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
+      <para>The response parameters are: true, false </para>
+    </listitem>
+    <listitem>
+      <para>archiveAlerts</para>
+      <para>Archives the specified alerts. The request parameters are: ids (allowed to pass one or
+        more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
+      <para>The response parameters are: true, false </para>
+    </listitem>
+    <listitem>
+      <para>deleteEvents </para>
+      <para>Deletes the specified events. The request parameters are: ids (allowed to pass one or
+        more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
+      <para>The response parameters are: true, false</para>
+    </listitem>
+    <listitem>
+      <para>archiveEvents</para>
+      <para>Archives the specified events. The request parameters are: ids (allowed to pass one or
+        more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
+      <para>The response parameters are: true, false </para>
+    </listitem>
   </itemizedlist>
 </section>

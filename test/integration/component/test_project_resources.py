@@ -134,7 +134,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',
                     }
 
 
@@ -149,6 +148,7 @@ class TestOfferings(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone and template
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -329,6 +329,7 @@ class TestNetwork(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone and template
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -516,6 +517,7 @@ class TestTemplates(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -745,6 +747,7 @@ class TestSnapshots(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -891,6 +894,7 @@ class TestPublicIpAddress(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -1190,6 +1194,7 @@ class TestSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,

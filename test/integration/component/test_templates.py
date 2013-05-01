@@ -97,7 +97,6 @@ class Services:
                         "ostype": 'CentOS 5.3 (64-bit)',
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',     # Networking mode: Advanced, basic
                      }
 
 
@@ -128,6 +127,7 @@ class TestCreateTemplate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(
@@ -283,6 +283,7 @@ class TestTemplates(cloudstackTestCase):
         # Get Zone, templates etc
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
         zones = cls.api_client.listZones(cmd)

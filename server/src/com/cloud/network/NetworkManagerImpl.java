@@ -46,6 +46,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.*;
@@ -153,6 +154,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -245,7 +248,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     int _networkGcWait;
     int _networkGcInterval;
-    String _networkDomain;
     int _networkLockTimeout;
 
     private Map<String, String> _configs;
@@ -367,9 +369,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             VlanVO vlan = _vlanDao.findById(addr.getVlanId());
 
             String guestType = vlan.getVlanType().toString();
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
-                    addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
-                    addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+
+            if (!isIpDedicated(addr)) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
+                        addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
+                        addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+            }
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -379,6 +384,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         txn.commit();
     }
 
+    private boolean isIpDedicated(IPAddressVO addr) {
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(addr.getVlanId());
+        if (maps != null && !maps.isEmpty())
+            return true;
+        return false;
+    }
 
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork)
@@ -581,6 +592,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
         boolean allocateFromDedicatedRange = false;
+        List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // zone is of type DataCenter. See DataCenterVO.java.
@@ -615,18 +628,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             txn.start();
 
             // If account has dedicated Public IP ranges, allocate IP from the dedicated range
-            List<Long> vlanDbIds = new ArrayList<Long>();
             List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ipOwner.getId());
             for (AccountVlanMapVO map : maps) {
-                vlanDbIds.add(map.getVlanDbId());
+                dedicatedVlanDbIds.add(map.getVlanDbId());
             }
-            if (vlanDbIds != null && !vlanDbIds.isEmpty()) {
+            if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
                 allocateFromDedicatedRange = true;
             }
 
             try {
                 if (allocateFromDedicatedRange) {
-                    ip = fetchNewPublicIp(zone.getId(), null, vlanDbIds, ipOwner, vlanType, null,
+                    ip = fetchNewPublicIp(zone.getId(), null, dedicatedVlanDbIds, ipOwner, vlanType, null,
                             false, assign, null, isSystem, null);
                 }
             } catch(InsufficientAddressCapacityException e) {
@@ -637,12 +649,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             if (!allocateFromDedicatedRange) {
-                ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, null,
+                List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(zone.getId());
+                for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
+                    nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
+                }
+                ip = fetchNewPublicIp(zone.getId(), null, nonDedicatedVlanDbIds, ipOwner, vlanType, null, false, assign, null,
                        isSystem, null);
             }
 
             if (ip == null) {
-
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException
                         ("Unable to find available public IP addresses", DataCenter.class, zone.getId());
                 ex.addProxyObject(ApiDBUtils.findZoneById(zone.getId()).getUuid());
@@ -862,7 +877,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
 
         _configs = _configDao.getConfiguration("Network", params);
-        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
 
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
@@ -2019,7 +2033,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                     // 2) If null, generate networkDomain using domain suffix from the global config variables
                     if (networkDomain == null) {
-                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _configServer.getConfigValue(Config.GuestDomainSuffix.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
                     }
 
                 } else {
@@ -2881,14 +2895,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             // Save usage event
-            if (ip.getAllocatedToAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+            if (ip.getAllocatedToAccountId() != null && ip.getAllocatedToAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 VlanVO vlan = _vlanDao.findById(ip.getVlanId());
 
                 String guestType = vlan.getVlanType().toString();
-
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
-                        ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
-                        ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                if (!isIpDedicated(ip)) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
+                            ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
+                            ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                }
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);
@@ -3632,8 +3647,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 
                 //2) prepare nic
                 if (prepare) {
-                    NetworkVO networkVO = _networksDao.findById(network.getId());
-                    nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+                    Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+                    nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
                     s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
                 }
                 

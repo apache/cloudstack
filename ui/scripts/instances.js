@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+  var requiresStorageMotion = false;
   cloudStack.sections.instances = {
     title: 'label.instances',
     id: 'instances',
@@ -197,34 +198,28 @@
 					  hostid: args.context.hosts[0].id
 					});
 				}
+				
+				if("affinityGroups" in args.context) {				  
+					$.extend(data, {
+					  affinitygroupid: args.context.affinityGroups[0].id
+					});		
+				}
 
+        if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
+          $.extend(data, {
+            zonetype: args.context.zoneType
+          });
+	      }
+        
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,
           success: function(json) {
-            var items = json.listvirtualmachinesresponse.virtualmachine;
-           // Code for hiding "Expunged VMs"
-           /* if(items != null) {
-            var i=0;
-            for( i=0;i< items.length;i++){
-              if(items[i].state == 'Expunging')
-                args.response.success ({
-
-              });
-            else {
+            var items = json.listvirtualmachinesresponse.virtualmachine;           
             args.response.success({
               actionFilter: vmActionfilter,
-              data: items[i]
-             });
-            }
-           }
-          }
-          else {*/
-             args.response.success({
-              actionFilter: vmActionfilter,
               data: items
-             });
-
+            });
           }
         });
       },
@@ -234,6 +229,7 @@
         viewAll: [
           { path: 'storage.volumes', label: 'label.volumes' },
           { path: 'vmsnapshots', label: 'label.snapshots' },
+					{ path: 'affinityGroups', label: 'label.affinity.groups' },
           {
             path: '_zone.hosts',
             label: 'label.hosts',
@@ -437,7 +433,6 @@
               poll: pollAsyncJobResult
             }
           },
-
           snapshot: {
             messages: {
               notification: function(args) {
@@ -500,7 +495,6 @@
               pool: pollAsyncJobResult
             }
           },          
-
           destroy: {
             label: 'label.action.destroy.instance',
             compactLabel: 'label.destroy',
@@ -566,7 +560,6 @@
               }
             }
           },
-
           reset: {
             label: 'Reset VM',
             messages:{
@@ -597,8 +590,128 @@
               }
             }
 
-           },
+          },
 
+          changeAffinity: {
+            label: 'Change affinity',
+
+            action: {
+              custom: cloudStack.uiCustom.affinity({
+                tierSelect: function(args) {
+                  if ('vpc' in args.context) { //from VPC section
+                    args.$tierSelect.show(); //show tier dropdown
+
+                    $.ajax({ //populate tier dropdown
+                      url: createURL("listNetworks"),
+                      async: false,
+                      data: {
+                        vpcid: args.context.vpc[0].id,
+                        //listAll: true,  //do not pass listAll to listNetworks under VPC
+											  domainid: args.context.vpc[0].domainid,
+						            account: args.context.vpc[0].account,
+                        supportedservices: 'StaticNat'
+                      },
+                      success: function(json) {
+                        var networks = json.listnetworksresponse.network;
+                        var items = [{ id: -1, description: 'Please select a tier' }];
+                        $(networks).each(function(){
+                          items.push({id: this.id, description: this.displaytext});
+                        });
+                        args.response.success({ data: items });
+                      }
+                    });
+                  }
+                  else { //from Guest Network section
+                    args.$tierSelect.hide();
+                  }
+
+                  args.$tierSelect.change(function() {
+                    args.$tierSelect.closest('.list-view').listView('refresh');
+                  });
+                  args.$tierSelect.closest('.list-view').listView('refresh');
+                },
+
+                listView: {
+                  listView: {
+                    id: 'affinityGroups',
+                    fields: {
+                      name: { label: 'label.name' },
+                      type: { label: 'label.type' }
+                    },
+                    dataProvider: function(args) {										  
+											$.ajax({
+												url: createURL('listAffinityGroups'),
+												async: false, //make it sync to avoid dataProvider() being called twice which produces duplicate data
+												success: function(json) {	
+                          var items = [];												
+													var allAffinityGroups = json.listaffinitygroupsresponse.affinitygroup;
+													var previouslySelectedAffinityGroups = args.context.instances[0].affinitygroup;
+													if(allAffinityGroups != null) {		
+													  for(var i = 0; i < allAffinityGroups.length; i++) {														  
+														  var isPreviouslySelected = false;														  
+															if(previouslySelectedAffinityGroups != null) {
+															  for(var k = 0; k < previouslySelectedAffinityGroups.length; k++) {
+																  if(previouslySelectedAffinityGroups[k].id == allAffinityGroups[i].id) {
+																	  isPreviouslySelected = true;
+																	  break; //break for loop
+																	}
+																}																
+															}												
+															items.push($.extend(allAffinityGroups[i], {
+															  _isSelected: isPreviouslySelected
+															}));	                             													
+														}
+													}											
+													args.response.success({data: items});
+												}
+											});													
+                    }
+                  }
+                },
+                action: function(args) {                  
+									var affinityGroupIdArray = [];
+									if(args.context.affinityGroups != null) {
+									  for(var i = 0; i < args.context.affinityGroups.length; i++) {										  
+											if(args.context.affinityGroups[i]._isSelected == true) {
+											  affinityGroupIdArray.push(args.context.affinityGroups[i].id);
+											}
+										}
+									}									
+									var data = {
+									  id: args.context.instances[0].id,
+										affinitygroupids: affinityGroupIdArray.join(",")
+									};									
+									$.ajax({
+									  url: createURL('updateVMAffinityGroup'),
+										data: data,
+										success: function(json) {										  
+											var jid = json.updatevirtualmachineresponse.jobid;											
+											args.response.success(
+												{_custom:
+												 {jobId: jid,
+													getUpdatedItem: function(json) {													  
+														return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+													},
+													getActionFilter: function() {
+														return vmActionfilter;
+													}
+												 }
+												}
+											);												
+										}
+									});			
+                }
+              })
+            },
+            messages: {
+              notification: function(args) {
+                return 'Change affinity';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+          },
 
           edit: {
             label: 'label.edit',
@@ -608,7 +721,7 @@
 							  group: args.data.group,
 								ostypeid: args.data.guestosid
 							};
-						             						
+						  
 							if(args.data.displayname != args.context.instances[0].displayname) {
 							  $.extend(data, {
 								  displayName: args.data.displayname
@@ -958,17 +1071,31 @@
                   validation: { required: true },
                   select: function(args) {
                     $.ajax({
-                      url: createURL("listHosts&VirtualMachineId=" + args.context.instances[0].id),
+                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.instances[0].id),
                       //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                       dataType: "json",
                       async: true,
                       success: function(json) {
-                        var hosts = json.listhostsresponse.host;
+                        if(json.findhostsformigrationresponse.host != undefined){
+                        var hosts = json.findhostsformigrationresponse.host;
+                        requiresStorageMotion =  json.findhostsformigrationresponse.host[0].requiresStorageMotion;
                         var items = [];
                         $(hosts).each(function() {
-                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
-                        });
+                        if(this.requiresStorageMotion == true){
+                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable, ": "Not Suitable, ")  +  "Storage migration required)"  )});
+
+                        }
+                        else {
+                     
+                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable")  + ")"  )});
+
+                          }
+                         });
                         args.response.success({data: items});
+                        }
+                       else
+                          cloudStack.dialog.notice({ message: _l('No Hosts are avaialble for Migration') }); //Only a single host in the set up 
+                        
                       }
                     });
                   }
@@ -976,7 +1103,31 @@
               }
             },
             action: function(args) {
+              
+            if(requiresStorageMotion == true){   
               $.ajax({
+                url: createURL("migrateVirtualMachineWithVolume&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                     }
+                    }
+                  );
+                }
+              });
+             }
+             else{
+                  $.ajax({
                 url: createURL("migrateVirtualMachine&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
@@ -987,21 +1138,6 @@
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                        /*
-                         var vmObj;
-                         $.ajax({
-                         url: createURL("listVirtualMachines&id=" + args.context.instances[0].id),
-                         dataType: "json",
-                         async: false,
-                         success: function(json) {
-                         var items =  json.listvirtualmachinesresponse.virtualmachine;
-                         if(items != null && items.length > 0) {
-                         vmObj = items[0];
-                         }
-                         }
-                         });
-                         return vmObj;
-                         */
                       },
                       getActionFilter: function() {
                         return vmActionfilter;
@@ -1011,6 +1147,8 @@
                   );
                 }
               });
+
+              } 
             },
             notification: {
               poll: pollAsyncJobResult
@@ -1115,7 +1253,7 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.scaleupvirtualmachineresponse.jobid;
+                  var jid = json.scalevirtualmachineresponse.jobid;
                   args.response.success(
                     {_custom:
                      {jobId: jid,
@@ -1296,14 +1434,135 @@
           nics: {
             title: 'label.nics',
             multiple: true,
+            actions: {
+              add: {
+                label: 'Add network to VM',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you would like to add a new VM NIC for this network.';
+                  },
+                  notification: function(args) {
+                    return 'Add network to VM';
+                  }
+                },
+                createForm: {
+                  title: 'Add network to VM',
+                  desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                  fields: {
+                    networkid: {
+                      label: 'label.network',
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL('listNetworks'),
+                          data: {
+                            listAll: true,
+                            zoneid: args.context.instances[0].zoneid
+                          },
+                          success: function(json) {
+                            args.response.success({
+                              data: $.map(json.listnetworksresponse.network, function(network) {
+                                return {
+                                  id: network.id,
+                                  description: network.name
+                                };
+                              })
+                            });
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('addNicToVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      networkid: args.data.networkid
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.addnictovirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              makeDefault: {
+                label: 'Set default NIC',
+                messages: {
+                  confirm: function() {
+                    return 'Please confirm that you would like to make this NIC the default for this VM.';
+                  },
+                  notification: function(args) {
+                    return 'Set default NIC'
+                  }
+                },
+                action: function (args) {
+                  $.ajax({
+                    url: createURL('updateDefaultNicForVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.updatedefaultnicforvirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              // Remove NIC/Network from VM
+              remove: {
+                label: 'label.action.delete.nic',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.nic';
+                  },
+                  notification: function(args) {
+                    return 'label.action.delete.nic';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('removeNicFromVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.removenicfromvirtualmachineresponse.jobid }
+                      })
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
             fields: [
               {
+                id: { label: 'ID' },
                 name: { label: 'label.name', header: true },
                 networkname: {label: 'Network Name' },
-                ipaddress: { label: 'label.ip.address' },
                 type: { label: 'label.type' },
+                ipaddress: { label: 'label.ip.address' },                
                 gateway: { label: 'label.gateway' },
                 netmask: { label: 'label.netmask' },
+
+                ip6address: { label: 'IPv6 IP Address' },
+                ip6gateway: { label: 'IPv6 Gateway' },
+                ip6cidr: { label: 'IPv6 CIDR' },
+
                 isdefault: {
                   label: 'label.is.default',
                   converter: function(data) {
@@ -1322,26 +1581,33 @@
               }
             },
             dataProvider: function(args) {
-                    $.ajax({
-                     url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
-                     dataType: "json",
-                     async:true,
-                     success:function(json) {
-                     // Handling the display of network name for a VM under the NICS tabs
-                     args.response.success({
-                     data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
-                     var name = 'NIC ' + (index + 1);                    
-                     if (nic.isdefault) {
-                          name += ' (' + _l('label.default') + ')';
-                          }
-                     return $.extend(nic, {
+              $.ajax({
+                url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
+                dataType: "json",
+                async:true,
+                success:function(json) {
+                  // Handling the display of network name for a VM under the NICS tabs
+                  args.response.success({
+                    actionFilter: function(args) {
+                      if (args.context.item.isdefault) {
+                        return [];
+                      } else {
+                        return ['remove', 'makeDefault'];
+                      }
+                    },
+                    data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                      var name = 'NIC ' + (index + 1);
+                      if (nic.isdefault) {
+                        name += ' (' + _l('label.default') + ')';
+                      }
+                      return $.extend(nic, {
                         name: name
-                               });
-                            })
-                        });
-                     }
-                });
-              }
+                      });
+                    })
+                  });
+                }
+              });
+            }
           },
 
            /**
@@ -1361,7 +1627,7 @@
               args.response.success({data: args.context.instances[0].securitygroup});
             }
           },
-
+					
           /**
            * Statistics tab
            */
@@ -1431,6 +1697,7 @@
       allowedActions.push("reset");
       allowedActions.push("snapshot");
       allowedActions.push("scaleUp");
+      allowedActions.push("changeAffinity");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");

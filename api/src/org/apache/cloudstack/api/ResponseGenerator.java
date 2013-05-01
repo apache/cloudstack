@@ -20,6 +20,7 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.vm.NicSecondaryIp;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -189,6 +190,10 @@ public interface ResponseGenerator {
 
     HostResponse createHostResponse(Host host);
 
+    HostForMigrationResponse createHostForMigrationResponse(Host host);
+
+    HostForMigrationResponse createHostForMigrationResponse(Host host, EnumSet<HostDetails> details);
+
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
@@ -215,6 +220,8 @@ public interface ResponseGenerator {
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
+
+    StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
@@ -383,8 +390,7 @@ public interface ResponseGenerator {
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
 
-    NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
-            Long nicId, Long networkId);
+    NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
     public NicResponse createNicResponse(Nic result);
 
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);

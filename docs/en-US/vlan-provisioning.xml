@@ -40,4 +40,6 @@
     different physical NIC and use the same set of VLANs if you run out of VLANs. Another advantage
     is that you can use the same set of IPs for different customers, each one with their own routers
     and the guest networks on different physical NICs.</para>
+  <xi:include href="vlan-allocation-eg.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="non-contiguous-vlan.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

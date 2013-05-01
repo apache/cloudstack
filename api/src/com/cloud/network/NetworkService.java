@@ -79,7 +79,7 @@ public interface NetworkService {
             Long startIndex, Long pageSize, String name);
 
     PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
-            String newVnetRangeString, String state);
+                                          String newVnetRangeString, String state, String removeVlan);
 
     boolean deletePhysicalNetwork(Long id);
 
@@ -158,7 +158,7 @@ public interface NetworkService {
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
-    String allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
+    NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
             Long networkId, String ipaddress) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);

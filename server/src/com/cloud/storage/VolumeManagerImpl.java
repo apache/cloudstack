@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,7 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -68,6 +70,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -102,11 +105,13 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.network.NetworkModel;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
@@ -2003,7 +2008,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public Volume migrateVolume(MigrateVolumeCmd cmd) {
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
-        
+
         VolumeVO vol = _volsDao.findById(volumeId);
         if (vol == null) {
             throw new InvalidParameterValueException(
@@ -2015,9 +2020,39 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Volume must be in ready state");
         }
 
-        if (vol.getInstanceId() != null) {
-            throw new InvalidParameterValueException(
-                    "Volume needs to be dettached from VM");
+        boolean liveMigrateVolume = false;
+        Long instanceId = vol.getInstanceId();
+        VMInstanceVO vm = null;
+        if (instanceId != null) {
+            vm = _vmInstanceDao.findById(instanceId);
+        }
+
+        if (vm != null && vm.getState() == State.Running) {
+            // Check if the underlying hypervisor supports storage motion.
+            Long hostId = vm.getHostId();
+            if (hostId != null) {
+                HostVO host = _hostDao.findById(hostId);
+                HypervisorCapabilitiesVO capabilities = null;
+                if (host != null) {
+                    capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(),
+                            host.getHypervisorVersion());
+                }
+
+                if (capabilities != null) {
+                    liveMigrateVolume = capabilities.isStorageMotionSupported();
+                }
+            }
+        }
+
+        // If the disk is not attached to any VM then it can be moved. Otherwise, it needs to be attached to a vm
+        // running on a hypervisor that supports storage motion so that it be be migrated.
+        if (instanceId != null && !liveMigrateVolume) {
+            throw new InvalidParameterValueException("Volume needs to be detached from VM");
+        }
+
+        if (liveMigrateVolume && !cmd.isLiveMigrate()) {
+            throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " +
+                    "the parameter livemigrate should be specified");
         }
 
         StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
@@ -2032,12 +2067,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Migration of volume from local storage pool is not supported");
         }
 
-        Volume newVol = migrateVolume(vol, destPool);
+        Volume newVol = null;
+        if (liveMigrateVolume) {
+            newVol = liveMigrateVolume(vol, destPool);
+        } else {
+            newVol = migrateVolume(vol, destPool);
+        }
         return newVol;
     }
 
-    
-    
     @DB
     protected Volume migrateVolume(Volume volume, StoragePool destPool) {
         VolumeInfo vol = this.volFactory.getVolume(volume.getId());
@@ -2055,6 +2093,66 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
             return null;
+        }
+    }
+
+    @DB
+    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
+        VolumeInfo vol = this.volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = this.volService.migrateVolume(vol, (DataStore)destPool);
+        try {
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.debug("migrate volume failed:" + result.getResult());
+                return null;
+            }
+            return result.getVolume();
+        } catch (InterruptedException e) {
+            s_logger.debug("migrate volume failed", e);
+            return null;
+        } catch (ExecutionException e) {
+            s_logger.debug("migrate volume failed", e);
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            Map<VolumeVO, StoragePoolVO> volumeToPool) {
+        // Check if all the vms being migrated belong to the vm.
+        // Check if the storage pool is of the right type.
+        // Create a VolumeInfo to DataStore map too.
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+        for (Map.Entry<VolumeVO, StoragePoolVO> entry : volumeToPool.entrySet()) {
+            VolumeVO volume = entry.getKey();
+            StoragePoolVO storagePool = entry.getValue();
+            StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(storagePool.getId(),
+                    DataStoreRole.Primary);
+
+            if (volume.getInstanceId() != vm.getId()) {
+                throw new CloudRuntimeException("Volume " + volume + " that has to be migrated doesn't belong to the" +
+                        " instance " + vm);
+            }
+
+            if (destPool == null) {
+                throw new CloudRuntimeException("Failed to find the destination storage pool " + storagePool.getId());
+            }
+
+            volumeMap.put(this.volFactory.getVolume(volume.getId()), (DataStore)destPool);
+        }
+
+        AsyncCallFuture<CommandResult> future = this.volService.migrateVolumes(volumeMap, vmTo, srcHost, destHost);
+        try {
+            CommandResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.debug("Failed to migrated vm " + vm + " along with its volumes. " + result.getResult());
+                throw new CloudRuntimeException("Failed to migrated vm " + vm + " along with its volumes. " +
+                        result.getResult());
+            }
+        } catch (InterruptedException e) {
+            s_logger.debug("Failed to migrated vm " + vm + " along with its volumes.", e);
+        } catch (ExecutionException e) {
+            s_logger.debug("Failed to migrated vm " + vm + " along with its volumes.", e);
         }
     }
 

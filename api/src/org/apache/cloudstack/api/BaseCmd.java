@@ -95,6 +95,11 @@ public abstract class BaseCmd {
     private Object _responseObject = null;
     private Map<String, String> fullUrlParams;
 
+    public enum HTTPMethod {
+        GET, POST, PUT, DELETE
+    }
+    private HTTPMethod httpMethod;
+
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
@@ -138,6 +143,25 @@ public abstract class BaseCmd {
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 
     public void configure() {
+    }
+
+    public HTTPMethod getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String method) {
+        if (method != null) {
+            if (method.equalsIgnoreCase("GET"))
+                httpMethod = HTTPMethod.GET;
+            else if (method.equalsIgnoreCase("PUT"))
+                httpMethod = HTTPMethod.PUT;
+            else if (method.equalsIgnoreCase("POST"))
+                httpMethod = HTTPMethod.POST;
+            else if (method.equalsIgnoreCase("DELETE"))
+                httpMethod = HTTPMethod.DELETE;
+        } else {
+            httpMethod = HTTPMethod.GET;
+	}
     }
 
     public String getResponseType() {

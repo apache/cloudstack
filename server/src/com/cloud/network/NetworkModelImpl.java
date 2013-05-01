@@ -52,6 +52,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -143,6 +144,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
    
     @Inject
     PodVlanMapDao _podVlanMapDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     List<NetworkElement> _networkElements;
     public List<NetworkElement> getNetworkElements() {
@@ -921,9 +924,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         }
         if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
-            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId());
+            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), vm.getDataCenterId());
         } else {
-            return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId());
+            return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), vm.getDataCenterId());
         }
     }
 
@@ -1564,8 +1567,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public String getDefaultNetworkDomain() {
-        return _networkDomain;
+    public String getDefaultNetworkDomain(long zoneId) {
+        return _configServer.getConfigValue(Config.GuestDomainSuffix.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
     }
 
     @Override

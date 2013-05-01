@@ -452,21 +452,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return disabledPods;
     }
 
-    private Map<Short,Float> getCapacityThresholdMap(){
-        // Lets build this real time so that the admin wont have to restart MS if he changes these values
-        Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
-
-        String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
-        float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
-
-        String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
-        float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
-
-        return disableThresholdMap;
-    }
-
     private List<Short> getCapacitiesForCheckingThreshold(){
         List<Short> capacityList = new ArrayList<Short>();
         capacityList.add(Capacity.CAPACITY_TYPE_CPU);
@@ -476,7 +461,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
 
-        Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
 
@@ -491,12 +475,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
            		return;
            	}
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), cpu_requested);
+                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), Config.CPUCapacityDisableThreshold.key(), cpu_requested);
             }
             else if (capacity == Capacity.CAPACITY_TYPE_MEMORY ) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-                        capacityThresholdMap.get(capacity), ram_requested );
+                        Config.MemoryCapacityDisableThreshold.key(), ram_requested );
             }
 
 
@@ -506,8 +489,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
            		// Remove clusters crossing disabled threshold
                	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
-           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");
+                   s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+                           " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
            	}
 
         }
@@ -748,37 +731,43 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             //If the plan specifies a poolId, it means that this VM's ROOT volume is ready and the pool should be reused.
             //In this case, also check if rest of the volumes are ready and can be reused.
             if(plan.getPoolId() != null){
-                s_logger.debug("Volume has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
+                s_logger.debug("Volume has pool(" + plan.getPoolId() + ") already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
                 List<StoragePool> suitablePools = new ArrayList<StoragePool>();
                 StoragePool pool = null;
                 if(toBeCreated.getPoolId() != null){
+                    s_logger.debug("finding pool by id '" + toBeCreated.getPoolId() + "'");
                     pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 }else{
+                    s_logger.debug("finding pool by id '" + plan.getPoolId() + "'");
                     pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
 
-                if(!pool.isInMaintenance()){
-                    if(!avoid.shouldAvoid(pool)){
-                        long exstPoolDcId = pool.getDataCenterId();
+                if(pool != null){
+                    if(!pool.isInMaintenance()){
+                        if(!avoid.shouldAvoid(pool)){
+                            long exstPoolDcId = pool.getDataCenterId();
 
-                        long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
-                        long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
-                        if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
-                            s_logger.debug("Planner need not allocate a pool for this volume since its READY");
-                            suitablePools.add(pool);
-                            suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-                            if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
-                                readyAndReusedVolumes.add(toBeCreated);
+                            long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
+                            long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
+                            if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
+                                s_logger.debug("Planner need not allocate a pool for this volume since its READY");
+                                suitablePools.add(pool);
+                                suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                                if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
+                                    readyAndReusedVolumes.add(toBeCreated);
+                                }
+                                continue;
+                            }else{
+                                s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
                             }
-                            continue;
                         }else{
-                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
+                            s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
                         }
                     }else{
-                        s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
+                        s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
                     }
                 }else{
-                    s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
+                    s_logger.debug("Unable to find pool by provided id");
                 }
             }
 

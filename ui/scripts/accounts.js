@@ -1394,6 +1394,9 @@
 
     if (jsonObj.state == 'Destroyed') return [];
 
+    if( isAdmin() && jsonObj.isdefault == false)
+       allowedActions.push("remove");
+
     if(isAdmin()) {
         allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
         if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
@@ -1415,6 +1418,10 @@
   var userActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+   
+    if( isAdmin() && jsonObj.isdefault == false)
+       allowedActions.push("remove");
+
     if(isAdmin()) {
       allowedActions.push("edit");
       allowedActions.push("changePassword");

@@ -113,6 +113,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
@@ -253,6 +254,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     protected ResourceManager _resourceMgr;
     @Inject VolumeManager volumeMgr;
     @Inject VMTemplateHostDao templateHostDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     
     int _primaryStorageDownloadWait;
@@ -1609,7 +1612,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         boolean isAdmin = _accountMgr.isAdmin(caller.getType());
-        boolean allowPublicUserTemplates = Boolean.valueOf(_configDao.getValue("allow.public.user.templates"));
+        // check configuration parameter(allow.public.user.templates) value for the template owner
+        boolean allowPublicUserTemplates = Boolean.valueOf(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), template.getAccountId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
@@ -1716,8 +1720,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         try {
             TemplateInfo tmplInfo = this.tmplFactory.getTemplate(templateId);
-            snapshot = _snapshotDao.findById(snapshotId);
-            ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
+            ZoneScope scope = null;
+            Long zoneId = null;
+            if (snapshotId != null) {
+                snapshot = _snapshotDao.findById(snapshotId);
+                zoneId = snapshot.getDataCenterId();
+                
+            } else if (volumeId != null) {
+                volume = _volumeDao.findById(volumeId);
+                zoneId = volume.getDataCenterId();
+            }
+            scope = new ZoneScope(zoneId);
             List<DataStore> store = this.dataStoreMgr.getImageStores(scope);
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
@@ -1727,7 +1740,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshotId);
                 future = this.imageSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
-               volume = _volumeDao.findById(volumeId);
                VolumeInfo volInfo = this.volFactory.getVolume(volumeId);
                future = this.imageSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
@@ -1748,7 +1760,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 UsageEventVO usageEvent = new UsageEventVO(
                         EventTypes.EVENT_TEMPLATE_CREATE,
                         privateTemplate.getAccountId(),
-                        snapshot.getDataCenterId(),
+                        zoneId,
                         privateTemplate.getId(), privateTemplate.getName(),
                         null, privateTemplate.getSourceTemplateId(),
                         privateTemplate.getSize());
@@ -1834,8 +1846,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao
-                .getValue("allow.public.user.templates"));
+        // check whether template owner can create public templates
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template "
                     + name + ", only private templates can be created.");
@@ -1971,6 +1983,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         privateTemplate.setSourceTemplateId(sourceTemplateId);
+        privateTemplate.setImageDataStoreId(1);
 
         VMTemplateVO template = this._tmpltDao.persist(privateTemplate);
         // Increment the number of templates

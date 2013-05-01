@@ -183,6 +183,9 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
     private Map<String, String> details;
+    
+    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if account is default, false otherwise", since="4.2.0")
+    private Boolean isDefault;
 
 
     @Override
@@ -380,5 +383,9 @@ public class AccountResponse extends BaseResponse {
 
     public void setDefaultZone(String defaultZoneId) {
         this.defaultZoneId = defaultZoneId;
+    }
+    
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -715,8 +716,17 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (pNetwork.getVnet() == null) {
             throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
         }
-        String vlanRange[] = pNetwork.getVnet().split("-");
-        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
+        Integer lowestVlanTag = null;
+        List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
+        //finding the vlanrange in which the vlanTag lies.
+        for (Pair <Integer,Integer> vnet : vnetList){
+            if (vlanTag >= vnet.first() && vlanTag <= vnet.second()){
+                lowestVlanTag = vnet.first();
+            }
+        }
+        if (lowestVlanTag == null) {
+            throw new InvalidParameterValueException ("The vlan tag does not belong to any of the existing vlan ranges");
+        }
         return vlanTag - lowestVlanTag;
     }
     

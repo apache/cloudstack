@@ -1,0 +1,144 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import get_template, get_zone, list_virtual_machines, cleanup_resources
+from nose.plugins.attrib import attr
+
+import random
+import string
+
+class Services:
+    def __init__(self):
+        self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                "password": "password",
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 256,
+            },
+        }
+
+
+class TestDeployVmWithUserData(cloudstackTestCase):
+    """Tests for UserData
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.apiClient = super(TestDeployVmWithUserData, cls).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        cls.zone = get_zone(cls.apiClient, cls.services)
+        if cls.zone.localstorageenabled:
+            #For devcloud since localstroage is enabled
+            cls.services["service_offering"]["storagetype"] = "local"
+        cls.service_offering = ServiceOffering.create(
+            cls.apiClient,
+            cls.services["service_offering"]
+        )
+        cls.account = Account.create(cls.apiClient, services=cls.services["account"])
+        cls.template = get_template(
+            cls.apiClient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        cls.debug("Successfully created account: %s, id: \
+                   %s" % (cls.account.name,\
+                          cls.account.id))
+        cls.cleanup = [cls.account]
+
+        # Generate userdata of 2500 bytes. This is larger than the 2048 bytes limit.
+        # CS however allows for upto 4K bytes in the code. So this must succeed.
+        # Overall, the query length must not exceed 4K, for then the json decoder
+        # will fail this operation at the marvin client side itcls.
+        user_data = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
+        cls.services["virtual_machine"]["userdata"] = user_data
+
+    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    def test_deployvm_userdata_post(self):
+        """Test userdata as POST, size > 2k
+        """
+        deployVmResponse = VirtualMachine.create(
+            self.apiClient,
+            services=self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id,
+            method='POST'
+        )
+        vms = list_virtual_machines(
+            self.apiClient,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        vm = vms[0]
+        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assert_(vm.state == "Running", "VM is not in Running state")
+
+    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    def test_deployvm_userdata(self):
+        """Test userdata as GET, size > 2k
+        """
+        deployVmResponse = VirtualMachine.create(
+            self.apiClient,
+            services=self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+        vms = list_virtual_machines(
+            self.apiClient,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        vm = vms[0]
+        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assert_(vm.state == "Running", "VM is not in Running state")
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.apiClient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)

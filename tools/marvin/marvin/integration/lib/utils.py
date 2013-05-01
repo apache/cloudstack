@@ -106,12 +106,17 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=50, keyPairFileLocation=None):
     """Return ssh handle else wait till sshd is running"""
     loop_cnt = retries
     while True:
         try:
-            ssh = remoteSSHClient(ipaddress, port, username, password)
+            ssh = remoteSSHClient(
+                                    host=ipaddress,
+                                    port=port,
+                                    user=username,
+                                    passwd=password,
+                                    keyPairFileLocation=keyPairFileLocation)
         except Exception as e:
             if loop_cnt == 0:
                 raise e
@@ -149,12 +154,16 @@ def fetch_api_client(config_file='datacenterCfg'):
                                             )
 
 
-def get_process_status(hostip, port, username, password, linklocalip, process):
+def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
     """Double hop and returns a process status"""
 
     #SSH to the machine
     ssh = remoteSSHClient(hostip, port, username, password)
-    ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+    if str(hypervisor).lower() == 'vmware':
+        ssh_command = "ssh -i /var/lib/cloud/management/.ssh/id_rsa -ostricthostkeychecking=no "
+    else:
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+
     ssh_command = ssh_command + \
                     "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" % (
                                                                 linklocalip,

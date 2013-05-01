@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -36,6 +38,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -43,6 +46,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -386,6 +390,7 @@ public class ApiDBUtils {
     static VpcProvisioningService _vpcProvSvc;
     static AffinityGroupDao _affinityGroupDao;
     static AffinityGroupJoinDao _affinityGroupJoinDao;
+    static GlobalLoadBalancingRulesService _gslbService;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -492,6 +497,7 @@ public class ApiDBUtils {
     @Inject private VpcProvisioningService vpcProvSvc;
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
+    @Inject private GlobalLoadBalancingRulesService gslbService;
 
     @PostConstruct
     void init() {
@@ -597,6 +603,7 @@ public class ApiDBUtils {
         _vpcProvSvc = vpcProvSvc;
         _affinityGroupDao = affinityGroupDao;
         _affinityGroupJoinDao = affinityGroupJoinDao;
+        _gslbService = gslbService;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1027,7 +1034,7 @@ public class ApiDBUtils {
     }
 
     public static Integer getNetworkRate(long networkOfferingId) {
-        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
+        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, null);
     }
 
     public static Account getVlanAccount(long vlanId) {
@@ -1518,6 +1525,14 @@ public class ApiDBUtils {
         return _hostJoinDao.setHostResponse(vrData, vr);
     }
 
+    public static HostForMigrationResponse newHostForMigrationResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
+        return _hostJoinDao.newHostForMigrationResponse(vr, details);
+    }
+
+    public static HostForMigrationResponse fillHostForMigrationDetails(HostForMigrationResponse vrData, HostJoinVO vr) {
+        return _hostJoinDao.setHostForMigrationResponse(vrData, vr);
+    }
+
     public static List<HostJoinVO> newHostView(Host vr){
         return _hostJoinDao.newHostView(vr);
     }
@@ -1541,6 +1556,15 @@ public class ApiDBUtils {
 
     public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
         return _poolJoinDao.setStoragePoolResponse(vrData, vr);
+    }
+
+    public static StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO vr) {
+        return _poolJoinDao.newStoragePoolForMigrationResponse(vr);
+    }
+
+    public static StoragePoolForMigrationResponse fillStoragePoolForMigrationDetails(StoragePoolForMigrationResponse
+            vrData, StoragePoolJoinVO vr){
+        return _poolJoinDao.setStoragePoolForMigrationResponse(vrData, vr);
     }
 
     public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
@@ -1610,5 +1634,9 @@ public class ApiDBUtils {
 
     public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
+    }
+
+    public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
+        return _gslbService.listSiteLoadBalancers(gslbRuleId);
     }
 }

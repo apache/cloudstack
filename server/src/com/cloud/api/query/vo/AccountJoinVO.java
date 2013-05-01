@@ -177,13 +177,16 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     private Long secondaryStorageTotal;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
 
     @Column(name="job_status")
     private int jobStatus;
+    
+    @Column(name = "default")
+    boolean isDefault;
 
     public AccountJoinVO() {
     }
@@ -642,12 +645,12 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
@@ -672,6 +675,13 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
 
+    public boolean isDefault() {
+        return isDefault;
+    }
 
 
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+ 
 }
