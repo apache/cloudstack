@@ -113,7 +113,8 @@ if [ $ipv6 ]
 then
   sed -i  /$ipv6,/d $DHCP_HOSTS
 fi
-sed -i  /$host,/d $DHCP_HOSTS
+# don't want to do this in the future, we can have same VM with multiple nics/entries
+#sed -i  /$host,/d $DHCP_HOSTS
 
 
 #put in the new entry
