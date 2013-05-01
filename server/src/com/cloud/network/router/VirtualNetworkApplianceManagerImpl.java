@@ -62,6 +62,7 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -2210,6 +2211,72 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return dhcpRange;
     }
 
+    private boolean setupDhcpForPvlanOnHost(boolean add, DomainRouterVO router, Nic routerNic) {
+    	if (!routerNic.getBroadcastUri().getScheme().equals("pvlan")) {
+    		return false;
+    	}
+    	setupDhcpForPvlan(add, router, routerNic);
+    	Long hostId = router.getHostId();
+    	List<UserVmVO> vms = _userVmDao.listByHostId(hostId);
+    	for (UserVmVO vm : vms) {
+    		if (vm.getState() != State.Running) {
+    			continue;
+    		}
+    		List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+    		for (NicVO nic : nics) {
+    			if (nic.getNetworkId() == routerNic.getNetworkId()) {
+    				try {
+    					Network network = _networkDao.findById(routerNic.getNetworkId());
+    					NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+    							null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+						setupVmWithDhcpHostForPvlan(add, router, profile);
+					} catch (ResourceUnavailableException e) {
+						s_logger.warn("Fail to program pvlan on nic " + nic.getMacAddress(), e);
+						return false;
+					}
+    			}
+    		}
+    	}
+    	return true;
+    }
+    
+    private boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Nic nic) {
+    	if (!nic.getBroadcastUri().getScheme().equals("pvlan")) {
+    		return false;
+    	}
+    	String op = "add";
+    	if (!add) {
+    		op = "delete";
+    	}
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, "xenbr0", nic.getBroadcastUri(), nic.getMacAddress(), nic.getIp4Address());
+    	Commands cmds = new Commands(cmd);
+    	// In fact we send command to the host of router, we're not programming router but the host
+    	try {
+			sendCommandsToRouter(router, cmds);
+		} catch (AgentUnavailableException e) {
+            s_logger.warn("Agent Unavailable ", e);
+			return false;
+		}
+    	return true;
+    }
+    
+    @Override
+    public void setupVmWithDhcpHostForPvlan(boolean add, DomainRouterVO router, NicProfile profile) throws ResourceUnavailableException
+    {
+    	if (!profile.getBroadCastUri().getScheme().equals("pvlan")) {
+    		return;
+    	}
+    	String op = "add";
+    	if (!add) {
+    		op = "delete";
+    	}
+    	NicVO routerNic = _nicDao.findByInstanceIdAndNetworkId(profile.getNetworkId(), router.getId());
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmInDhcpHostSetup(op, "xenbr0", profile.getBroadCastUri(), routerNic.getMacAddress(), profile.getMacAddress());
+    	Commands cmds = new Commands(cmd);
+    	// In fact we send command to the host of router, we're not programming router but the host
+    	sendCommandsToRouter(router, cmds);
+    }
+    
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, 
             DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
@@ -2505,11 +2572,18 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<Network> guestNetworks = new ArrayList<Network>();
         
         List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
-        for (Nic routerNic : routerNics) {
-            Network network = _networkModel.getNetwork(routerNic.getNetworkId());
+        for (Nic nic : routerNics) {
+        	Network network = _networkModel.getNetwork(nic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
-            } 
+                if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
+                	result = setupDhcpForPvlanOnHost(true, router, nic);
+                }
+            }
+        }
+        
+        if (!result) {
+        	return result;
         }
         
         answer = cmds.getAnswer("getDomRVersion");
@@ -2537,6 +2611,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             VMInstanceVO vm = profile.getVirtualMachine();
             DomainRouterVO domR = _routerDao.findById(vm.getId());
             processStopOrRebootAnswer(domR, answer);
+            List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
+            for (Nic nic : routerNics) {
+            	Network network = _networkModel.getNetwork(nic.getNetworkId());
+            	if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri().getScheme().equals("pvlan")) {
+            		setupDhcpForPvlanOnHost(false, domR, nic);
+            	}
+            }
         }
     }
 

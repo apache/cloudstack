@@ -604,6 +604,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((NetworkRulesVmSecondaryIpCommand)cmd);
         } else if (clazz == ScaleVmCommand.class) {
             return execute((ScaleVmCommand) cmd);
+        } else if (clazz == PvlanSetupCommand.class) {
+            return execute((PvlanSetupCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1054,7 +1056,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vifr = vif.getRecord(conn);
             s_logger.debug("Created a vif " + vifr.uuid + " on " + nic.getDeviceId());
         }
-
+        
         return vif;
     }
 
@@ -1464,6 +1466,48 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
         }
+    }
+    
+    private Answer execute(PvlanSetupCommand cmd) {
+    	Connection conn = getConnection();
+    	
+    	String primaryPvlan = cmd.getPrimary();
+    	String isolatedPvlan = cmd.getIsolated();
+    	String op = cmd.getOp();
+    	String bridge = cmd.getBridge();
+    	String result = null;
+    	String dhcpMac = cmd.getDhcpMac();
+    	String dhcpIp = cmd.getDhcpIp();
+    	String vmMac = cmd.getVmMac();
+    	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "bridge", bridge,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+    		}
+    	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm-alone", "op", op, "bridge", bridge,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+    		}
+    	} else if (cmd.getType() == PvlanSetupCommand.Type.VM_IN_DHCP_HOST) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm-dhcp", "op", op, "bridge", bridge,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac, "dhcp-mac", dhcpMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for vm in dhcp host with mac " + vmMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for vm in dhcp host with mac " + vmMac);
+    		}
+    	}
+    	return new Answer(cmd, true, result);
     }
 
     @Override

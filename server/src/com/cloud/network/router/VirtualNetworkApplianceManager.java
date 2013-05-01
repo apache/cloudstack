@@ -19,6 +19,7 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,6 +36,7 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -103,4 +105,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
+	void setupVmWithDhcpHostForPvlan(boolean add, DomainRouterVO router, NicProfile profile) throws ResourceUnavailableException;
 }

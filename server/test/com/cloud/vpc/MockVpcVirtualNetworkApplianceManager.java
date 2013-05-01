@@ -402,4 +402,11 @@ VpcVirtualNetworkApplianceService {
         return null;
     }
 
+	@Override
+	public void setupVmWithDhcpHostForPvlan(boolean add,
+			DomainRouterVO router, NicProfile nic) throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

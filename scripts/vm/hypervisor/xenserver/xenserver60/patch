@@ -67,4 +67,8 @@ bumpUpPriority.sh=../../../../network/domr/,0755,/opt/xensource/bin
 swift=..,0755,/opt/xensource/bin
 swiftxen=..,0755,/etc/xapi.d/plugins
 s3xen=..,0755,/etc/xapi.d/plugins
-
+ovs-pvlan=..,0755,/etc/xapi.d/plugins
+ovs-pvlan-dhcp-host.sh=../../../network,0755,/opt/xensource/bin
+ovs-pvlan-vm-in-dhcp-host.sh=../../../network,0755,/opt/xensource/bin
+ovs-pvlan-vm.sh=../../../network,0755,/opt/xensource/bin
+ovs-pvlan-cleanup.sh=../../../network,0755,/opt/xensource/bin
