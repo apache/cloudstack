@@ -48,7 +48,7 @@ public class RemoteHostEndPoint implements EndPoint {
     HostEndpointRpcServer rpcServer;
     private ScheduledExecutorService executor;
 
-    protected RemoteHostEndPoint() {
+    public RemoteHostEndPoint() {
     	executor = Executors.newScheduledThreadPool(10);
     }
 

@@ -166,6 +166,7 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `store_role` varchar(255),
   `size` bigint unsigned,
   `physical_size` bigint unsigned DEFAULT 0,
+  `parent_snapshot_id` bigint unsigned DEFAULT 0,
   `install_path` varchar(255),
   `state` varchar(255) NOT NULL,  
   `destroyed` tinyint(1) COMMENT 'indicates whether the snapshot_store entry was destroyed by the user or not',

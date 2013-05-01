@@ -58,9 +58,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Inject
     HostDao hostDao;
     private String findOneHostInaScope = "select id from host where "
-            + " status == 'Up' and hypervisor_type != 'VMware' and type in ('Routing', 'SecondaryStorageVM') ";
+            + " status = 'Up' and hypervisor_type != 'VMware' and type in ('Routing', 'SecondaryStorageVM') ";
     private String findOneHostOnPrimaryStorage = "select id from host where"
-            +  "status == 'Up' and type == 'Routing' ";
+            +  "status = 'Up' and type = 'Routing' ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore,
             DataStore destStore) {

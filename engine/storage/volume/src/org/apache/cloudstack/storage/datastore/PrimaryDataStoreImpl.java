@@ -42,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -345,6 +346,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public DataStoreTO getTO() {
-        return getDriver().getStoreTO(this);
+        DataStoreTO to =  getDriver().getStoreTO(this);
+        if (to == null) {
+            PrimaryDataStoreTO primaryTO = new PrimaryDataStoreTO(this);
+            return primaryTO;
+        }
+        return to;
     }
 }

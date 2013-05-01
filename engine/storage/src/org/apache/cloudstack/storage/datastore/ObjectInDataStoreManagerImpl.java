@@ -219,10 +219,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             switch (data.getType()){
             case TEMPLATE:
                 this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
+                break;
             case SNAPSHOT:
                 this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
+                break;
             case VOLUME:
                 this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
+                break;
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
 
@@ -262,10 +265,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             switch (type){
             case TEMPLATE:
                 vo = templateDataStoreDao.findByStoreTemplate(dataStoreId, objId);
+                break;
             case SNAPSHOT:
                 vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
+                break;
             case VOLUME:
                 vo = volumeDataStoreDao.findByStoreVolume(dataStoreId, objId);
+                break;
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
@@ -286,10 +292,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             switch (type){
             case TEMPLATE:
                 vo = templateDataStoreDao.findByTemplate(objId);
+                break;
             case SNAPSHOT:
                 vo = snapshotDataStoreDao.findBySnapshot(objId, role);
+                break;
             case VOLUME:
                 vo = volumeDataStoreDao.findByVolume(objId);
+                break;
             }
             if (vo != null) {
                 store = this.storeMgr.getDataStore(vo.getDataStoreId(), DataStoreRole.Image);
