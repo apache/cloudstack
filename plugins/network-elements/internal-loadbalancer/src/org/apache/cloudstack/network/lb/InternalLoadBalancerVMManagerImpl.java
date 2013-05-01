@@ -193,14 +193,11 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
-                //FIXME - remove the DNS from boot args if decide to send DhcpEntry command for the Internal LB vm just the way we do for regular user vm
                 buf.append(" dns1=").append(nic.getGateway());
             }
 
             if (nic.getTrafficType() == TrafficType.Guest) {
                 guestNetwork = _ntwkModel.getNetwork(nic.getNetworkId());
-                //FIXME - not sure if sshonguest is required for this type of VM. Fix if needed
-                buf.append(" sshonguest=true");
             } else if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             } else if (nic.getTrafficType() == TrafficType.Control) {
@@ -235,15 +232,12 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             }
         }
 
-        //FIXME - fix the type once earlyconfig and patchsystem vm scripts are fixed
         String type = "ilbvm";
         buf.append(" type=" + type);
 
-        //FIXME - change it to DEBUG level later. 
-//        if (s_logger.isDebugEnabled()) {
-//            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
-//        }
-        s_logger.info("Boot Args for " + profile + ": " + buf.toString());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
+        }
 
         return true;
     }
@@ -489,7 +483,6 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
                 _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), 
                 _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
 
-        //FIXME - for ha proxy 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), 
                 guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), 
                 _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId());
@@ -908,7 +901,6 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             return false;
         }
 
-        // FIXME: Have to return state for individual command in the future
         boolean result = true;
         if (answers.length > 0) {
             for (Answer answer : answers) {
