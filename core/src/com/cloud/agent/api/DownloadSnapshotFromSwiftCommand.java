@@ -20,61 +20,41 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
- *
- *
+ * This currently assumes that both primary and secondary storage are mounted on the XenServer.
  */
-
-public class uploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
+public class DownloadSnapshotFromSwiftCommand extends SnapshotCommand {
     @LogLevel(Log4jLevel.Off)
-    private SwiftTO swift;
-    private String secondaryStorageUrl;
+    private SwiftTO _swift;
 
-    private Long dcId;
-    private Long accountId;
-    private Long templateId;
+    private String _parent;
 
-    protected uploadTemplateToSwiftFromSecondaryStorageCommand() {
+    protected DownloadSnapshotFromSwiftCommand() {
 
     }
 
-    public uploadTemplateToSwiftFromSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, int wait) {
+    public DownloadSnapshotFromSwiftCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long volumeId, String parent, String BackupUuid, int wait) {
 
-        this.swift = swift;
-        this.secondaryStorageUrl = secondaryStorageUrl;
-        this.dcId = dcId;
-        this.accountId = accountId;
-        this.templateId = templateId;
+        super(null, secondaryStorageUrl, BackupUuid, "", dcId, accountId, volumeId);
+        setParent(parent);
+        setSwift(swift);
         setWait(wait);
     }
 
+
     public SwiftTO getSwift() {
-        return this.swift;
+        return this._swift;
     }
 
     public void setSwift(SwiftTO swift) {
-        this.swift = swift;
+        this._swift = swift;
     }
 
-    public String getSecondaryStorageUrl() {
-        return secondaryStorageUrl;
+    public String getParent() {
+        return _parent;
     }
 
-    public Long getDcId() {
-        return dcId;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public Long getTemplateId() {
-        return templateId;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        // TODO Auto-generated method stub
-        return true;
+    public void setParent(String parent) {
+        this._parent = parent;
     }
 
 }
