@@ -215,16 +215,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
         }
-        
-        // Setup PVlan for vm if necessary
-        if (network.getTrafficType() == TrafficType.Guest && network.getBroadcastDomainType() == BroadcastDomainType.Pvlan) {
-        	assert routers.size() == 1;
-        	DomainRouterVO router = routers.get(0);
-        	if (router.getHostId() == dest.getHost().getId()) {
-        		_routerMgr.setupVmWithDhcpHostForPvlan(true, router, nic);
-        	}
-        }
-        
         return true;      
     }
 

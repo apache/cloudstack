@@ -1475,13 +1475,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	String isolatedPvlan = cmd.getIsolated();
     	String op = cmd.getOp();
     	String bridge = cmd.getBridge();
-    	String result = null;
+    	String dhcpName = cmd.getDhcpName();
     	String dhcpMac = cmd.getDhcpMac();
     	String dhcpIp = cmd.getDhcpIp();
     	String vmMac = cmd.getVmMac();
+    	
+    	String result = null;
     	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
     		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "bridge", bridge,
-    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-name", dhcpName,
+    				"dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
     			s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
     			return new Answer(cmd, false, result);
@@ -1489,22 +1492,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
     		}
     	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm-alone", "op", op, "bridge", bridge,
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "bridge", bridge,
     				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
     			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
     			return new Answer(cmd, false, result);
     		} else {
     			s_logger.info("Programmed pvlan for vm with mac " + vmMac);
-    		}
-    	} else if (cmd.getType() == PvlanSetupCommand.Type.VM_IN_DHCP_HOST) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm-dhcp", "op", op, "bridge", bridge,
-    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac, "dhcp-mac", dhcpMac);
-    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-    			s_logger.warn("Failed to program pvlan for vm in dhcp host with mac " + vmMac);
-    			return new Answer(cmd, false, result);
-    		} else {
-    			s_logger.info("Programmed pvlan for vm in dhcp host with mac " + vmMac);
     		}
     	}
     	return new Answer(cmd, true, result);

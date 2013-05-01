@@ -105,6 +105,4 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
-
-	void setupVmWithDhcpHostForPvlan(boolean add, DomainRouterVO router, NicProfile profile) throws ResourceUnavailableException;
 }

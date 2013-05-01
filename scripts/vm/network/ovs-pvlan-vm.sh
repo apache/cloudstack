@@ -16,6 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+#!/bin/bash
+
 usage() {
   printf "Usage: %s: (-A|-D) -b <bridge/switch> -p <primary vlan> -i <secondary isolated vlan> -d <DHCP server IP> -m <DHCP server MAC> -v <VM MAC> -h \n" $(basename $0) >&2
   exit 2
@@ -72,6 +74,12 @@ then
     exit 1
 fi
 
+if [ -z "$pri_vlan" ]
+then
+    echo Missing parameter secondary isolate vlan!
+    exit 1
+fi
+
 if [ -z "$sec_iso_vlan" ]
 then
     echo Missing parameter secondary isolate vlan!
@@ -82,9 +90,10 @@ trunk_port=1
 
 if [ "$op" == "add" ]
 then
-    ovs-ofctl add-flow $br priority=50,dl_src=$vm_mac,actions=mod_vlan_vid:$sec_iso_vlan,output:$trunk_port
+    ovs-ofctl add-flow $br priority=50,dl_vlan=0xffff,dl_src=$vm_mac,actions=mod_vlan_vid:$sec_iso_vlan,resubmit:$trunk_port
+    ovs-ofctl add-flow $br priority=60,dl_vlan=$sec_iso_vlan,dl_src=$vm_mac,actions=output:1
 else
-    # it would delete any rule related to this vm, not only the rule added above
-    ovs-ofctl del-flows $br dl_src=$vm_mac
+    ovs-ofctl del-flows --strict $br priority=50,dl_vlan=0xffff,dl_src=$vm_mac
+    ovs-ofctl del-flows --strict $br priority=60,dl_vlan=$sec_iso_vlan,dl_src=$vm_mac
 fi
 

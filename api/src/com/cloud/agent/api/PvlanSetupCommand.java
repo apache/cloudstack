@@ -23,17 +23,16 @@ import com.cloud.utils.net.NetUtils;
 public class PvlanSetupCommand extends Command {
 	public enum Type {
 		DHCP,
-		VM,
-		VM_IN_DHCP_HOST
+		VM
 	}
 	private String op;
 	private String bridge;
 	private String primary;
 	private String isolated;
 	private String vmMac;
+	private String dhcpName;
 	private String dhcpMac;
 	private String dhcpIp;
-	private boolean strict;
 	private Type type;
 
 	protected PvlanSetupCommand() {}
@@ -45,12 +44,12 @@ public class PvlanSetupCommand extends Command {
 		this.bridge = bridge;
 		this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
 		this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
-		this.strict = true;
 	}
 	
-	static public PvlanSetupCommand createDhcpSetup(String op, String bridge, URI uri, String dhcpMac, String dhcpIp)
+	static public PvlanSetupCommand createDhcpSetup(String op, String bridge, URI uri, String dhcpName, String dhcpMac, String dhcpIp)
 	{
 		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, bridge, uri);
+		cmd.setDhcpName(dhcpName);
 		cmd.setDhcpMac(dhcpMac);
 		cmd.setDhcpIp(dhcpIp);
 		return cmd;
@@ -59,14 +58,6 @@ public class PvlanSetupCommand extends Command {
 	static public PvlanSetupCommand createVmSetup(String op, String bridge, URI uri, String vmMac)
 	{
 		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, bridge, uri);
-		cmd.setVmMac(vmMac);
-		return cmd;
-	}
-	
-	static public PvlanSetupCommand createVmInDhcpHostSetup(String op, String bridge, URI uri, String dhcpMac, String vmMac)
-	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM_IN_DHCP_HOST, op, bridge, uri);
-		cmd.setDhcpMac(dhcpMac);
 		cmd.setVmMac(vmMac);
 		return cmd;
 	}
@@ -120,11 +111,11 @@ public class PvlanSetupCommand extends Command {
 		return type;
 	}
 
-	public boolean isStrict() {
-		return strict;
+	public String getDhcpName() {
+		return dhcpName;
 	}
 
-	public void setStrict(boolean strict) {
-		this.strict = strict;
+	public void setDhcpName(String dhcpName) {
+		this.dhcpName = dhcpName;
 	}
 }
