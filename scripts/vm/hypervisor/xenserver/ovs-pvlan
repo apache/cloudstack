@@ -34,7 +34,7 @@ xePath = "/opt/xensource/bin/xe"
 lib.setup_logging("/var/log/ovs-pvlan.log")
 dhcpSetupPath = "/opt/xensource/bin/ovs-pvlan-dhcp-host.sh"
 vmSetupPath = "/opt/xensource/bin/ovs-pvlan-vm.sh"
-getDhcpPortPath = "/opt/xensource/bin/ovs-get-dhcp-port.sh"
+getDhcpIfacePath = "/opt/xensource/bin/ovs-get-dhcp-iface.sh"
 pvlanCleanupPath = "/opt/xensource/bin/ovs-pvlan-cleanup.sh"
 getBridgePath = "/opt/xensource/bin/ovs-get-bridge.sh"
 
@@ -67,11 +67,11 @@ def setup_pvlan_dhcp(session, args):
 
     if op == "add":
         logging.debug("Try to get dhcp vm %s port on the switch:%s" % (dhcp_name, bridge))
-        dhcp_port = lib.do_cmd([getDhcpPortPath, bridge, dhcp_name])
+        dhcp_iface = lib.do_cmd([getDhcpIfacePath, bridge, dhcp_name])
         logging.debug("About to setup dhcp vm on the switch:%s" % bridge)
         res = lib.do_cmd([dhcpSetupPath, "-A", "-b", bridge, "-p", primary,
             "-i", isolated, "-n", dhcp_name, "-d", dhcp_ip, "-m", dhcp_mac,
-            "-P", dhcp_port])
+            "-I", dhcp_iface])
 	if res:
 	    result = "FAILURE:%s" % res
 	    return result;

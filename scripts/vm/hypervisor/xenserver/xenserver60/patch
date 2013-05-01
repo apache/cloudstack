@@ -71,5 +71,5 @@ ovs-pvlan=..,0755,/etc/xapi.d/plugins
 ovs-pvlan-dhcp-host.sh=../../../network,0755,/opt/xensource/bin
 ovs-pvlan-vm.sh=../../../network,0755,/opt/xensource/bin
 ovs-pvlan-cleanup.sh=../../../network,0755,/opt/xensource/bin
-ovs-get-dhcp-port.sh=..,0755,/opt/xensource/bin
+ovs-get-dhcp-iface.sh=..,0755,/opt/xensource/bin
 ovs-get-bridge.sh=..,0755,/opt/xensource/bin

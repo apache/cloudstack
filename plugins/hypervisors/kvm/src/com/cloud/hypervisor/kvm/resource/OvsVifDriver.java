@@ -79,7 +79,7 @@ public class OvsVifDriver extends VifDriverBase {
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
+            if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan)
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);

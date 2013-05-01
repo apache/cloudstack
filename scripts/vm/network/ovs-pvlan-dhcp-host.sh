@@ -18,10 +18,8 @@
 
 #!/bin/bash
 
-source ovs-func.sh
-
 usage() {
-  printf "Usage: %s: (-A|-D) -b <bridge/switch> -p <primary vlan> -i <secondary isolated vlan> -n <DHCP server name> -d <DHCP server IP> -m <DHCP server MAC> -P <DHCP on OVS port> -v <VM MAC> -h \n" $(basename $0) >&2
+  printf "Usage: %s: (-A|-D) -b <bridge/switch> -p <primary vlan> -i <secondary isolated vlan> -n <DHCP server name> -d <DHCP server IP> -m <DHCP server MAC> -I <interface> -v <VM MAC> -h \n" $(basename $0) >&2
   exit 2
 }
 
@@ -31,11 +29,11 @@ sec_iso_vlan=
 dhcp_name=
 dhcp_ip=
 dhcp_mac=
-dhcp_port=
 vm_mac=
+iface=
 op=
 
-while getopts 'ADb:p:i:d:m:v:n:P:h' OPTION
+while getopts 'ADb:p:i:d:m:v:n:I:h' OPTION
 do
   case $OPTION in
   A)  op="add"
@@ -54,7 +52,7 @@ do
       ;;
   m)  dhcp_mac="$OPTARG"
       ;;
-  P)  dhcp_port="$OPTARG"
+  I)  iface="$OPTARG"
       ;;
   v)  vm_mac="$OPTARG"
       ;;
@@ -106,14 +104,15 @@ then
     exit 1
 fi
 
-if [ "$op" == "add" -a -z "$dhcp_port" ]
+if [ "$op" == "add" -a -z "$iface" ]
 then
-    echo Missing parameter DHCP PORT!
+    echo Missing parameter DHCP VM interface!
     exit 1
 fi
 
 if [ "$op" == "add" ]
 then
+    dhcp_port=`ovs-ofctl show $br | grep $iface | cut -d '(' -f 1|tr -d ' '`
     ovs-ofctl add-flow $br priority=200,arp,dl_vlan=$sec_iso_vlan,nw_dst=$dhcp_ip,actions=strip_vlan,output:$dhcp_port
     ovs-ofctl add-flow $br priority=180,arp,nw_dst=$dhcp_ip,actions=strip_vlan,output:$dhcp_port
     ovs-ofctl add-flow $br priority=150,dl_vlan=$sec_iso_vlan,dl_dst=$dhcp_mac,actions=strip_vlan,output:$dhcp_port
