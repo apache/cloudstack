@@ -14,13 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package com.cloud.vm;
 
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.cloud.api.ApiDispatcher;
+import com.cloud.async.SyncQueueManager;
+import com.cloud.async.SyncQueueManagerImpl;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
@@ -33,12 +35,10 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineManagerImpl;
 
 @Configuration
-public class AsyncJobTestConfiguration {
-
+public class VmWorkTestConfiguration {
+	
 	@Bean
 	public ClusterManager clusterManager() {
 		return Mockito.mock(ClusterManager.class);
@@ -96,6 +96,11 @@ public class AsyncJobTestConfiguration {
 	
 	@Bean
 	public VirtualMachineManager virtualMachineManager() {
-		return Mockito.mock(VirtualMachineManager.class);
+		return new VmWorkMockVirtualMachineManagerImpl();
+	}
+	
+	@Bean
+	public VmWorkJobDao vmworkJobDao() {
+		return new VmWorkJobDaoImpl();
 	}
 }

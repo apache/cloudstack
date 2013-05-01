@@ -801,6 +801,9 @@
   <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
     <property name="name" value="ApiAsyncJobDispatcher" />
   </bean>
+  <bean id="VmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
+    <property name="name" value="VmWorkJobDispatcher" />
+  </bean>
 
   <!--
     Baremetal components

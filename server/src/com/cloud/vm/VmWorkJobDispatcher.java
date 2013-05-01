@@ -16,7 +16,13 @@
 // under the License.
 package com.cloud.vm;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJob;
@@ -29,30 +35,66 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 
 public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
+    private static final Logger s_logger = Logger.getLogger(VmWorkJobDispatcher.class);
 
 	@Inject private VirtualMachineManager _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private AccountDao _accountDao;
+    
+    private Map<String, Method> _handlerMap = new HashMap<String, Method>();
 	
 	@Override
 	public void RunJob(AsyncJob job) {
         try {
+        	String cmd = job.getCmd();
+        	assert(cmd != null);
+        	
         	VmWork work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
         	assert(work != null);
         	
             AccountVO account = _accountDao.findById(work.getAccountId());
-            UserContext.registerContext(work.getUserId(), account, null, false);
+            assert(account != null);
             
+            UserContext.registerContext(work.getUserId(), account, null, false);
             try {
-            	
-            	
-                _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
+            	Method handler = getHandler(cmd);
+            	if(handler != null) {
+        			handler.invoke(_vmMgr, work);
+            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
+            	} else {
+            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, null);
+            	}
             } finally {
                 UserContext.unregisterContext();
             }
-        	
         } catch(Throwable e) {
             _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, null);
         }
+	}
+	
+	private Method getHandler(String cmd) {
+		
+		synchronized(_handlerMap) {
+			Method method = _handlerMap.get(cmd);
+			if(method != null)
+				return method;
+			
+			Class<?> clz = _vmMgr.getClass();
+			try {
+				method = clz.getMethod(cmd, VmWork.class);
+				method.setAccessible(true);
+			} catch (SecurityException e) {
+				assert(false);
+				s_logger.error("Unexpected exception", e);
+				return null;
+			} catch (NoSuchMethodException e) {
+				assert(false);
+				s_logger.error("Unexpected exception", e);
+				return null;
+			}
+			
+			_handlerMap.put(cmd, method);
+			return method;
+		}
 	}
 }

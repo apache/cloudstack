@@ -31,6 +31,7 @@ public interface AsyncJobManager extends Manager {
 	
 	public long submitAsyncJob(AsyncJob job);
 	public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
+	public long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
 	public AsyncJobResult queryAsyncJobResult(long jobId);    
 	
     public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
@@ -38,7 +39,6 @@ public interface AsyncJobManager extends Manager {
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
    
     public void releaseSyncSource();
-    
     public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
     
     public boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 

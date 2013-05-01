@@ -16,21 +16,76 @@
 // under the License.
 package com.cloud.vm;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import junit.framework.TestCase;
 
+import com.cloud.api.ApiSerializerHelper;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.Predicate;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Transaction;
+import com.cloud.vm.VmWorkJobVO.Step;
 import com.google.gson.Gson;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/VmWorkTestContext.xml")
 public class VmWorkTest extends TestCase {
-	Gson gson = new Gson();
+	@Inject AsyncJobManager _jobMgr;
+	@Inject VirtualMachineManager _vmMgr;
+    @Inject ClusterManager _clusterMgr;
+    @Inject VmWorkJobDao _vmworkJobDao;
+	
+	Gson _gson = new Gson();
+	
+	@Before
+	public void setup() {
+		LogUtils.initLog4j("cloud-log4j.xml");
+    	ComponentContext.initComponentsLifeCycle();
+       	_vmMgr = Mockito.spy(_vmMgr);
+       	Mockito.when(_clusterMgr.getManagementNodeId()).thenReturn(1L);
+    	
+    	Transaction.open("dummy");
+    	
+		// drop constraint check in order to do single table test
+		Statement stat = null;
+		try {
+			stat = Transaction.currentTxn().getConnection().createStatement();
+			stat.execute("SET foreign_key_checks = 0;");
+		} catch (SQLException e) {
+		} finally {
+			if(stat != null) {
+				try {
+					stat.close();
+				} catch (SQLException e) {
+				}
+			}
+		}
+ 	}
+	
+    @After                                                   
+    public void tearDown() {                                 
+    	Transaction.currentTxn().close();                    
+    }                                                        
 	
 	@Test
 	public void testDeployPlanSerialization() {
@@ -40,8 +95,8 @@ public class VmWorkTest extends TestCase {
 		excludeList.addCluster(1);
 		plan.setAvoids(excludeList);
 		
-		String json = gson.toJson(plan);
-		DeploymentPlan planClone = gson.fromJson(json, DataCenterDeployment.class);
+		String json = _gson.toJson(plan);
+		DeploymentPlan planClone = _gson.fromJson(json, DataCenterDeployment.class);
 		Assert.assertTrue(planClone.getDataCenterId() == plan.getDataCenterId());
 	}
 	
@@ -53,9 +108,33 @@ public class VmWorkTest extends TestCase {
 		params.put(VirtualMachineProfile.Param.ControlNic, new Long(100));
 		work.setParams(params);
 		
-		VmWorkStart workClone = gson.fromJson(gson.toJson(work), VmWorkStart.class);
+		VmWorkStart workClone = _gson.fromJson(_gson.toJson(work), VmWorkStart.class);
 		Assert.assertTrue(work.getParams().size() == workClone.getParams().size());
 		Assert.assertTrue(work.getParams().get(VirtualMachineProfile.Param.HaTag).equals(workClone.getParams().get(VirtualMachineProfile.Param.HaTag)));
+	}
+	
+	@Test
+	public void testVmWorkDispatcher() {
+		VmWorkJobVO workJob = new VmWorkJobVO();
+		workJob.setDispatcher("VmWorkJobDispatcher");
+		workJob.setCmd("doVmWorkStart");
+		workJob.setAccountId(1L);
+		workJob.setUserId(2L);
+		workJob.setStep(Step.Starting);
+		workJob.setVmType(VirtualMachine.Type.ConsoleProxy);
+		workJob.setVmInstanceid(1L);
 		
+		VmWorkStart workInfo = new VmWorkStart();
+		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
+		
+		_jobMgr.submitAsyncJob(workJob, "VM", 1);
+		
+		_jobMgr.waitAndCheck(new String[] {"Done"}, 120000, 120000, new Predicate() {
+
+			@Override
+			public boolean checkCondition() {
+				return true;
+			}
+		});
 	}
 }

@@ -42,7 +42,7 @@ public class TestAsyncJobManager extends TestCase {
     @Inject AsyncJobManager asyncMgr;
     @Inject ClusterManager clusterMgr;
     @Inject MessageBus messageBus;
-
+    
     @Before                                                  
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
@@ -57,7 +57,7 @@ public class TestAsyncJobManager extends TestCase {
     }                                                        
     
     @Test
-    public void test() {
+    public void testWaitAndCheck() {
 		Thread thread = new Thread(new Runnable() {
 			@Override
 			public void run() {

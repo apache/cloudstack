@@ -145,6 +145,29 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
     }
 
+    @SuppressWarnings("unchecked")
+	@Override @DB
+	public long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId) {
+        Transaction txt = Transaction.currentTxn();
+        try {
+        	@SuppressWarnings("rawtypes")
+			GenericDao dao = GenericDaoBase.getDao(job.getClass());
+        	
+            txt.start();
+            job.setInitMsid(getMsid());
+            dao.persist(job);
+
+            syncAsyncJobExecution(job, syncObjType, syncObjId, 1);
+            txt.commit();
+            return job.getId();
+        } catch(Exception e) {
+            txt.rollback();
+            String errMsg = "Unable to schedule async job for command " + job.getCmd() + ", unexpected exception.";
+            s_logger.warn(errMsg, e);
+            throw new CloudRuntimeException(errMsg);
+        }
+	}
+    
     @Override @DB
     public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject) {
         if(s_logger.isDebugEnabled()) {
@@ -232,7 +255,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             txt.start();
 
             AsyncJobVO job = _jobDao.createForUpdate();
-            //job.setInstanceType(instanceType);
+            job.setInstanceType(instanceType);
             job.setInstanceId(instanceId);
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
@@ -243,7 +266,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             txt.rollback();
         }
     }
-
+    
     @Override
     public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit) {
         if(s_logger.isDebugEnabled()) {
@@ -458,7 +481,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
 
             job.setSyncSource(item);
-
+            
+            job.setExecutingMsid(getMsid());
             job.setCompleteMsid(getMsid());
             _jobDao.update(job.getId(), job);
 
@@ -467,6 +491,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             } catch(RejectedExecutionException e) {
                 s_logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
                 _queueMgr.returnItem(item.getId());
+            } finally {
+            	job.setExecutingMsid(null);
+            	_jobDao.update(job.getId(), job);
             }
 
         } else {
@@ -538,6 +565,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return new Runnable() {
             @Override
             public void run() {
+            	Transaction txn = Transaction.open("AsyncJobManagerImpl.getHeartbeatTask");
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if(l != null && l.size() > 0) {
@@ -550,6 +578,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
                 } catch(Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
+                } finally {
+                	try {
+                		txn.close();
+                	} catch(Throwable e) {
+                        s_logger.error("Unexpected exception", e);
+                	}
                 }
             }
         };
