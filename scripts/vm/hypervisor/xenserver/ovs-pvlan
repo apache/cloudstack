@@ -36,6 +36,7 @@ dhcpSetupPath = "/opt/xensource/bin/ovs-pvlan-dhcp-host.sh"
 vmSetupPath = "/opt/xensource/bin/ovs-pvlan-vm.sh"
 getDhcpPortPath = "/opt/xensource/bin/ovs-get-dhcp-port.sh"
 pvlanCleanupPath = "/opt/xensource/bin/ovs-pvlan-cleanup.sh"
+getBridgePath = "/opt/xensource/bin/ovs-get-bridge.sh"
 
 def echo(fn):
     def wrapped(*v, **k):
@@ -46,11 +47,10 @@ def echo(fn):
         return res
     return wrapped
 
-
 @echo
 def setup_pvlan_dhcp(session, args):
     op = args.pop("op")
-    bridge = args.pop("bridge")
+    nw_label = args.pop("nw-label")
     primary = args.pop("primary-pvlan")
     isolated = args.pop("isolated-pvlan")
     dhcp_name = args.pop("dhcp-name")
@@ -60,6 +60,10 @@ def setup_pvlan_dhcp(session, args):
     res = lib.check_switch()
     if res != "SUCCESS":
         return "FAILURE:%s" % res
+
+    logging.debug("Network is:%s" % (nw_label))
+    bridge = lib.do_cmd([getBridgePath, nw_label])
+    logging.debug("Determine bridge/switch is :%s" % (bridge))
 
     if op == "add":
         logging.debug("Try to get dhcp vm %s port on the switch:%s" % (dhcp_name, bridge))
@@ -88,7 +92,7 @@ def setup_pvlan_dhcp(session, args):
 @echo
 def setup_pvlan_vm(session, args):
     op = args.pop("op")
-    bridge = args.pop("bridge")
+    nw_label = args.pop("nw-label")
     primary = args.pop("primary-pvlan")
     isolated = args.pop("isolated-pvlan")
     vm_mac = args.pop("vm-mac")
@@ -97,6 +101,9 @@ def setup_pvlan_vm(session, args):
     res = lib.check_switch()
     if res != "SUCCESS":
         return "FAILURE:%s" % res
+
+    bridge = lib.do_cmd([getBridgePath, nw_label])
+    logging.debug("Determine bridge/switch is :%s" % (bridge))
 
     if op == "add":
         logging.debug("About to setup vm on the switch:%s" % bridge)

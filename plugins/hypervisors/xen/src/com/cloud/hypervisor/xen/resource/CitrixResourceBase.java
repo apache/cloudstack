@@ -1478,11 +1478,24 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	String dhcpMac = cmd.getDhcpMac();
     	String dhcpIp = cmd.getDhcpIp();
     	String vmMac = cmd.getVmMac();
+    	String networkTag = cmd.getNetworkTag();
     	
-    	String bridge = "xenbr0";
+    	XsLocalNetwork nw = null;
+    	String nwNameLabel = null;
+    	try {
+			nw = getNativeNetworkForTraffic(conn, TrafficType.Guest, networkTag);
+			nwNameLabel = nw.getNetwork().getNameLabel(conn);
+		} catch (XenAPIException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		} catch (XmlRpcException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		}
+    	
     	String result = null;
     	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "bridge", bridge,
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", nwNameLabel,
     				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-name", dhcpName,
     				"dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
@@ -1492,7 +1505,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
     		}
     	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
-    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "bridge", bridge,
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel,
     				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
     		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
     			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);

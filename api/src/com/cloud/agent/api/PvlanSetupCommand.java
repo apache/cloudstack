@@ -33,29 +33,31 @@ public class PvlanSetupCommand extends Command {
 	private String dhcpMac;
 	private String dhcpIp;
 	private Type type;
+	private String networkTag;
 
 	protected PvlanSetupCommand() {}
 	
-	protected PvlanSetupCommand(Type type, String op, URI uri)
+	protected PvlanSetupCommand(Type type, String op, URI uri, String networkTag)
 	{
 		this.type = type;
 		this.op = op;
 		this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
 		this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
+		this.networkTag = networkTag;
 	}
 	
-	static public PvlanSetupCommand createDhcpSetup(String op, URI uri, String dhcpName, String dhcpMac, String dhcpIp)
+	static public PvlanSetupCommand createDhcpSetup(String op, URI uri, String networkTag, String dhcpName, String dhcpMac, String dhcpIp)
 	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, uri);
+		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, uri, networkTag);
 		cmd.setDhcpName(dhcpName);
 		cmd.setDhcpMac(dhcpMac);
 		cmd.setDhcpIp(dhcpIp);
 		return cmd;
 	}
 	
-	static public PvlanSetupCommand createVmSetup(String op, URI uri, String vmMac)
+	static public PvlanSetupCommand createVmSetup(String op, URI uri, String networkTag, String vmMac)
 	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, uri);
+		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, uri, networkTag);
 		cmd.setVmMac(vmMac);
 		return cmd;
 	}
@@ -111,5 +113,9 @@ public class PvlanSetupCommand extends Command {
 
 	public void setDhcpName(String dhcpName) {
 		this.dhcpName = dhcpName;
+	}
+
+	public String getNetworkTag() {
+		return networkTag;
 	}
 }
