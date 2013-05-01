@@ -94,5 +94,10 @@ public class S3ImageStoreProviderImpl implements ImageStoreProvider {
         return false;
     }
 
+    @Override
+    public boolean needDownloadSysTemplate() {
+         return true;
+    }
+
 
 }

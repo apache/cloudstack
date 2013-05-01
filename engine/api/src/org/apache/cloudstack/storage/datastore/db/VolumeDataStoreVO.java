@@ -347,6 +347,11 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         return this.state;
     }
 
+
+    public void setState(ObjectInDataStoreStateMachine.State state) {
+        this.state = state;
+    }
+
     @Override
     public long getObjectId() {
         return this.getVolumeId();

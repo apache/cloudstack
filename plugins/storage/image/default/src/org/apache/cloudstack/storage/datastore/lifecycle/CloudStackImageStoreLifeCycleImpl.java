@@ -46,6 +46,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.UriUtils;
 
@@ -80,6 +81,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
+        DataStoreRole role =(DataStoreRole) dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
@@ -115,6 +117,8 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         imageStoreParameters.put("protocol", uri.getScheme().toLowerCase());
         imageStoreParameters.put("scope", ScopeType.ZONE);  // default cloudstack provider only supports zone-wide image store
         imageStoreParameters.put("providerName", providerName);
+        imageStoreParameters.put("role", role);
+
 
         ImageStoreVO ids = imageStoreHelper.createImageStore(imageStoreParameters, details);
         return imageStoreMgr.getImageStore(ids.getId());

@@ -46,6 +46,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.UriUtils;
 
@@ -81,6 +82,8 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         String url = (String) dsInfos.get("url");
         ScopeType scope = (ScopeType)dsInfos.get("scope");
         String providerName = (String)dsInfos.get("providerName");
+        DataStoreRole role =(DataStoreRole) dsInfos.get("role");
+
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a swift store at " + url + " in data center " + dcId);
@@ -97,8 +100,9 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
             imageStoreParameters.put("scope", ScopeType.REGION);
         }
         imageStoreParameters.put("providerName", providerName);
+        imageStoreParameters.put("role", role);
 
-        ImageStoreVO ids = imageStoreHelper.createImageStore(imageStoreParameters);
+        ImageStoreVO ids = imageStoreHelper.createImageStore(imageStoreParameters, details);
         return imageStoreMgr.getImageStore(ids.getId());
     }
 

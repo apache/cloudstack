@@ -47,6 +47,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.utils.UriUtils;
@@ -85,6 +86,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         String url = (String) dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
         ScopeType scope = (ScopeType)dsInfos.get("scope");
+        DataStoreRole role =(DataStoreRole) dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a S3 store in data center " + dcId);
@@ -113,6 +115,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
             imageStoreParameters.put("scope", ScopeType.REGION);
         }
         imageStoreParameters.put("providerName", providerName);
+        imageStoreParameters.put("role", role);
 
         ImageStoreVO ids = imageStoreHelper.createImageStore(imageStoreParameters, details);
         return imageStoreMgr.getImageStore(ids.getId());

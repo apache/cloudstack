@@ -51,7 +51,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 	@Column(name="store_id")
 	private long dataStoreId;
-	
+
 	@Column(name="store_role")
 	@Enumerated(EnumType.STRING)
 	private DataStoreRole role;
@@ -74,7 +74,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 	@Column(name="parent_snapshot_id")
 	private long parentSnapshotId;
-	
+
 	@Column (name="job_id")
 	private String jobId;
 
@@ -234,6 +234,11 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public ObjectInDataStoreStateMachine.State getState() {
         // TODO Auto-generated method stub
         return this.state;
+    }
+
+
+    public void setState(ObjectInDataStoreStateMachine.State state) {
+        this.state = state;
     }
 
     @Override

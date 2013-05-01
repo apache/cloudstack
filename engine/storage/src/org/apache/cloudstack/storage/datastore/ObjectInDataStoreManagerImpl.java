@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -109,6 +110,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
+                ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
             }
         } else {
@@ -121,6 +123,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (dataStore.getRole() == DataStoreRole.ImageCache) {
                 	ts.setInstallPath("template/tmpl/" + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 }
+                ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ts = templateDataStoreDao.persist(ts);
                 break;
             case SNAPSHOT:
@@ -131,6 +134,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (dataStore.getRole() == DataStoreRole.ImageCache) {
                 	ss.setInstallPath("/snapshots/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 }
+                ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
                 break;
             case VOLUME:
@@ -140,6 +144,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (dataStore.getRole() == DataStoreRole.ImageCache) {
                 	vs.setInstallPath("/volumes/" + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 }
+                vs.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 vs = volumeDataStoreDao.persist(vs);
                 break;
             }

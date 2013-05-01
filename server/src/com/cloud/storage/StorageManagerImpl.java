@@ -1913,8 +1913,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new CloudRuntimeException("Failed to add data store", e);
         }
 
-        // trigger system vm template download
-        this._imageSrv.downloadBootstrapSysTemplate(store);
+        if (((ImageStoreProvider) storeProvider).needDownloadSysTemplate()) {
+            // trigger system vm template download
+            this._imageSrv.downloadBootstrapSysTemplate(store);
+        }
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }

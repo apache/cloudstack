@@ -138,10 +138,12 @@ class deployDataCenters():
         if secondaryStorages is None:
             return
         for secondary in secondaryStorages:
-            secondarycmd = addSecondaryStorage.addSecondaryStorageCmd()
+            secondarycmd = addImageStore.addImageStoreCmd()
             secondarycmd.url = secondary.url
+            secondarycmd.provider = secondary.providerName
+            """if secondary.provider == "CloudStack ImageStore Provider":"""
             secondarycmd.zoneid = zoneId
-            self.apiClient.addSecondaryStorage(secondarycmd)
+            self.apiClient.addImageStore(secondarycmd)
 
     def createnetworks(self, networks, zoneId):
         if networks is None:

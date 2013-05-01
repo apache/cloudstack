@@ -70,6 +70,7 @@ class zone():
         self.physical_networks = []
         self.pods = []
         self.secondaryStorages = []
+
         
 class traffictype():
     def __init__(self, typ, labeldict=None):
@@ -178,6 +179,8 @@ class primaryStorage():
 class secondaryStorage():
     def __init__(self):
         self.url = None
+        self.providerName = None
+        self.details = None
 
 class s3():
     def __init__(self):

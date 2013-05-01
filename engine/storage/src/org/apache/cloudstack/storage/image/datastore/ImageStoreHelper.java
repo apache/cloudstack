@@ -70,7 +70,7 @@ public class ImageStoreHelper {
         store.setScope((ScopeType)params.get("scope"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
-        store.setRole(DataStoreRole.getRole((String)params.get("role")));
+        store.setRole((DataStoreRole)params.get("role"));
         store = imageStoreDao.persist(store);
 
         // persist details

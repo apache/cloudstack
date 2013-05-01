@@ -1347,7 +1347,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 			}
 		}
         */
-		return host;
+		return null; // no need to handle this event anymore since secondary storage is not in host table anymore.
     }
 
 	@Override

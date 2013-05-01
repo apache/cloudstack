@@ -88,5 +88,10 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
         return false;
     }
 
+    @Override
+    public boolean needDownloadSysTemplate() {
+        return false;
+    }
+
 
 }

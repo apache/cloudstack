@@ -94,5 +94,10 @@ public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
         return false;
     }
 
+    @Override
+    public boolean needDownloadSysTemplate() {
+         return false;
+    }
+
 
 }

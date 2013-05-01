@@ -74,6 +74,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -160,7 +161,9 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         _copyAuthPasswd = configs.get("secstorage.copy.password");
 
-        _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
+        DownloadListener dl = new DownloadListener(this);
+        ComponentContext.inject(dl);
+        _agentMgr.registerForHostEvents(dl, true, false, false);
 
         ReadyTemplateStatesSearch = _vmTemplateStoreDao.createSearchBuilder();
         ReadyTemplateStatesSearch.and("state", ReadyTemplateStatesSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -229,6 +232,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd,
                      callback);
+            ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
             if (downloadJobExists) {
                 // due to handling existing download job issues, we still keep
                 // downloadState in template_store_ref to avoid big change in
@@ -298,6 +302,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 return;
             }
             DownloadListener dl = new DownloadListener(ep, store, volume, _timer, this, dcmd, callback);
+            ComponentContext.inject(dl); // auto-wired those injected fields in DownloadListener
 
             if (downloadJobExists) {
                 dl.setCurrState(volumeHost.getDownloadState());
