@@ -597,6 +597,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return advanceStart(vm, params, caller, account, null);
     }
     
+    public <T extends VMInstanceVO> T advanceStartNew(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        vm = vmGuru.findById(vm.getId());
+        
+        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+
+    	return vm;
+    }
+    
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {

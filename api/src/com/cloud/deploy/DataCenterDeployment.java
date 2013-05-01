@@ -30,6 +30,10 @@ public class DataCenterDeployment implements DeploymentPlan {
     boolean _recreateDisks;
     ReservationContext _context;
 
+    public DataCenterDeployment() {
+    	_dcId = 0;
+    }
+    
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
     }

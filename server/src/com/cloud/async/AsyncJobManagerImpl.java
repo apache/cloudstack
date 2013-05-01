@@ -175,7 +175,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setInstanceId(null);
 
             if (resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedStringOld(resultObject));
+                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
             }
 
             job.setLastUpdated(DateUtil.currentGMTTime());
@@ -209,7 +209,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setProcessStatus(processStatus);
             if(resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedStringOld(resultObject));
+                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
             }
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
@@ -732,7 +732,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private static String getSerializedErrorMessage(String errorMessage) {
-        return ApiSerializerHelper.toSerializedStringOld(getResetResultResponse(errorMessage));
+        return ApiSerializerHelper.toSerializedString(getResetResultResponse(errorMessage));
     }
 
     @Override

@@ -16,17 +16,22 @@
 // under the License.
 package com.cloud.utils;
 
-import org.springframework.stereotype.Component;
+import java.lang.reflect.Method;
 
-@Component
-public class DummyImpl implements DummyInterface {
-
-	@Override
-	public void foo() {
-		System.out.println("Basic foo implementation");
+public class MethodCatpurerTest {
+	
+	public MethodCatpurerTest() {
 	}
 	
-	public int foo2() {
-		return 0;
+	public void MethodCapturerTest() {
+		DummyImpl dummy = new DummyImpl();
+		MethodCapturer<DummyImpl> capturer = MethodCapturer.capture(dummy);
+		Method method = capturer.get(capturer.instance().foo2());
+	
+		System.out.println("Method name: " + method.getName());
+	}
+	
+	public static void main(String args[]) {
+		new MethodCatpurerTest().MethodCapturerTest();
 	}
 }

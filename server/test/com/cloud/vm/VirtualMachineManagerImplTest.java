@@ -40,16 +40,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.junit.Test;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import static org.mockito.Mockito.*;
-
-
-import java.lang.reflect.Field;
 import java.util.List;
 
 public class VirtualMachineManagerImplTest {

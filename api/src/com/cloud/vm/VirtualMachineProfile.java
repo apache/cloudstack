@@ -36,6 +36,7 @@ import com.cloud.user.Account;
  */
 public interface VirtualMachineProfile<T extends VirtualMachine> {
 
+	// Making Param strong-typing looks like a over-kill to me
     public static class Param {
 
         public static final Param VmPassword = new Param("VmPassword");
@@ -55,6 +56,27 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
 
         public String getName() {
             return name;
+        }
+        
+        // Param is used in HashMap data-structure, we need to provide hashCode() and equals in order to
+        // make HashMap work
+        @Override
+        public int hashCode() {
+        	if(name != null)
+        		return name.hashCode();
+        	return 0;
+        }
+        
+        @Override
+        public boolean equals(Object other) {
+        	if(other == null)
+        		return false;
+        	
+        	if(!(other instanceof Param))
+        		return false;
+
+        	assert(name != null);
+        	return name.equals(((Param)other).getName());
         }
     }
 

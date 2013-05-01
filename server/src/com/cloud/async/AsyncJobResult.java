@@ -91,7 +91,7 @@ public class AsyncJobResult {
 	}
 	
 	public void setResultObject(Object result) {
-		this.result = ApiSerializerHelper.toSerializedStringOld(result);
+		this.result = ApiSerializerHelper.toSerializedString(result);
 	}
 	
 	@Override

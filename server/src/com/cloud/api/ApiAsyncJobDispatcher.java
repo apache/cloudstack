@@ -31,7 +31,6 @@ import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.SyncQueueManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -46,7 +45,6 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
     @Inject private ApiDispatcher _dispatcher;
     
     @Inject private AsyncJobManager _asyncJobMgr;
-    @Inject private SyncQueueManager _queueMgr;
     @Inject private AccountDao _accountDao;
     
     public ApiAsyncJobDispatcher() {

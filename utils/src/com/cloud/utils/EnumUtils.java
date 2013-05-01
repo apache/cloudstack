@@ -39,4 +39,17 @@ public class EnumUtils {
         }
         return defaultVal;
     }
+    
+    public static <T extends Enum<T>> T fromString(Class<T> clz, String value) {
+    	assert(clz != null);
+    	
+        if(value != null) {
+            try {
+                return Enum.valueOf(clz, value.trim());
+            } catch(IllegalArgumentException ex) {
+            	assert(false);
+            }
+        }
+        return null;
+    }
 }

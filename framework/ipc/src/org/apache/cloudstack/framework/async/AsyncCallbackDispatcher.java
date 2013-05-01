@@ -56,7 +56,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
 	public T getTarget() {
 	    Enhancer en = new Enhancer();
 	    en.setSuperclass(_targetObject.getClass());
-	    en.setCallbacks(new Callback[]{new MethodInterceptor() {
+	    en.setCallbacks(new Callback[] { new MethodInterceptor() {
             @Override
             public Object intercept(Object arg0, Method arg1, Object[] arg2,
                 MethodProxy arg3) throws Throwable {
