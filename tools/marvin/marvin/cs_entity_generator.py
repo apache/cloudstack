@@ -86,10 +86,10 @@ def singularize(word, num=0):
 def transform_api(api):
     """Brute-force transform for entities that don't match other transform rules
     """
-    if api == 'associateIpAddress':
-        return 'associate', 'IpAddress'
-    if api == 'disassociateIpAddress':
-        return 'disassociate', 'IpAddress'
+    if api == 'ldapConfig':
+        return 'configure', 'Ldap'
+    if api == 'ldapRemove':
+        return 'remove', 'Ldap'
     return api, None
 
 def post_transform_adjust(entity):
@@ -123,7 +123,7 @@ def prepositon_transformer(preposition=None):
 def skip_list():
     """APIs that we will not auto-generate
     """
-    return ['ldapConfigCmd', 'ldapRemoveCmd']
+    return []
 
 
 def get_transformers():
@@ -133,6 +133,7 @@ def get_transformers():
                     prepositon_transformer('For'),
                     prepositon_transformer('To'),
                     prepositon_transformer('From'),
+                    prepositon_transformer('With'),
                     transform_api]
     return transformers
 
