@@ -18,8 +18,10 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import com.cloud.storage.template.TemplateConstants;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -549,4 +552,19 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
+
+    @Override
+    public void addSystemVMTemplatesToSecondary(DataStore store){
+        long storeId = store.getId();
+        List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+        for ( VMTemplateVO tmplt : rtngTmplts ) {
+            TemplateDataStoreVO tmpltStore = this._vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+            if ( tmpltStore == null ) {
+                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
+                tmpltStore.setSize(0);
+                tmpltStore.setPhysicalSize(0); // no size information for pre-seeded system vm templates
+                _vmTemplateStoreDao.persist(tmpltStore);
+            }
+        }
+    }
 }

@@ -190,6 +190,26 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		this.jobId = jobId;
 		this.installPath = installPath;
 		this.setDownloadUrl(downloadUrl);
+        switch (downloadState) {
+        case DOWNLOADED:
+            this.state = ObjectInDataStoreStateMachine.State.Ready;
+            break;
+        case CREATING:
+        case DOWNLOAD_IN_PROGRESS:
+        case UPLOAD_IN_PROGRESS:
+            this.state = ObjectInDataStoreStateMachine.State.Creating2;
+            break;
+        case DOWNLOAD_ERROR:
+        case UPLOAD_ERROR:
+            this.state = ObjectInDataStoreStateMachine.State.Failed;
+            break;
+        case ABANDONED:
+            this.state = ObjectInDataStoreStateMachine.State.Destroyed;
+            break;
+        default:
+            this.state = ObjectInDataStoreStateMachine.State.Allocated;
+            break;
+        }
 	}
 
 	public TemplateDataStoreVO() {

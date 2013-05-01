@@ -2665,7 +2665,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (onlyReady){
-                sc.addAnd("downlaadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
+                sc.addAnd("downloadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
                 sc.addAnd("destroyed",  SearchCriteria.Op.EQ, false);
             }
 
@@ -2675,7 +2675,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             if (!showDomr){
                 // excluding system template
-                sc.addAnd("type", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
+                sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
             }
 
             // search unique templates and find details by Ids

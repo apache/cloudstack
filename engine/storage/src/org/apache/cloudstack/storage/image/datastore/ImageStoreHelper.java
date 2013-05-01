@@ -68,6 +68,7 @@ public class ImageStoreHelper {
         store.setProtocol((String)params.get("protocol"));
         store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
+        store.setDataCenterId((Long)params.get("zoneId"));
         store.setUuid((String)params.get("uuid"));
         store.setUrl((String)params.get("url"));
         store.setRole((DataStoreRole)params.get("role"));

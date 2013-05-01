@@ -60,7 +60,7 @@ public class ImageStoreVO implements ImageStore {
     private String providerName;
 
     @Column(name = "data_center_id")
-    private long dcId;
+    private Long dcId;
 
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
@@ -117,7 +117,7 @@ public class ImageStoreVO implements ImageStore {
         return this.protocol;
     }
 
-    public void setDataCenterId(long dcId) {
+    public void setDataCenterId(Long dcId) {
         this.dcId = dcId;
     }
 

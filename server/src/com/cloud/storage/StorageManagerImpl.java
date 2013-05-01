@@ -1521,18 +1521,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
-        List<HostVO> hosts = new ArrayList<HostVO>();
+        List<Long> hosts = new ArrayList<Long>();
         if (hostId != null) {
-            hosts.add(ApiDBUtils.findHostById(hostId));
+            hosts.add(hostId);
         } else {
-            hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
-        }
+            List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+            if (stores != null){
+                for (DataStore store : stores){
+                    hosts.add(store.getId());
+                }
+            }
+         }
 
         CapacityVO capacity = new CapacityVO(hostId, zoneId, null, null, 0, 0,
                 CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
-        for (HostVO host : hosts) {
-            StorageStats stats = ApiDBUtils.getSecondaryStorageStatistics(host
-                    .getId());
+        for (Long id : hosts) {
+            StorageStats stats = ApiDBUtils.getSecondaryStorageStatistics(id);
             if (stats == null) {
                 continue;
             }
@@ -1916,6 +1920,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (((ImageStoreProvider) storeProvider).needDownloadSysTemplate()) {
             // trigger system vm template download
             this._imageSrv.downloadBootstrapSysTemplate(store);
+        } else {
+            // populate template_store_ref table
+            this._imageSrv.addSystemVMTemplatesToSecondary(store);
         }
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);

@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -47,38 +46,24 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmVO;
 
 @Local(value=TemplateAdapter.class)
 public class HypervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(HypervisorTemplateAdapter.class);
 	@Inject DownloadMonitor _downloadMonitor;
-	@Inject SecondaryStorageVmManager _ssvmMgr;
 	@Inject AgentManager _agentMgr;
 
     @Inject DataStoreManager storeMgr;
@@ -196,10 +181,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
                     .createTemplateAsync(tmpl, imageStore, caller);
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-       
+
         return template;
     }
-	
+
 	private class CreateTemplateContext<T> extends AsyncRpcConext<T> {
 		final TemplateInfo template;
 		public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo template) {
@@ -207,15 +192,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 			this.template = template;
 		}
 	}
-	
-	protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, 
+
+	protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter,
 			TemplateApiResult> callback, CreateTemplateContext<TemplateApiResult> context) {
 		TemplateInfo template = context.template;
 		VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
 		long accountId = tmplt.getAccountId();
 		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage,
 		              	template.getSize());
-		
+
 		return null;
 	}
 
@@ -280,7 +265,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 
 	}
 
-	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
+	@Override
+    public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
 		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
 		Long zoneId = profile.getZoneId();
@@ -289,19 +275,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 			throw new InvalidParameterValueException("The DomR template cannot be deleted.");
 		}
 
-		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
-			throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+		if (zoneId != null && (this.storeMgr.getImageStore(zoneId) == null)) {
+			throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
 		}
 
 		return profile;
 	}
 
-	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
+	@Override
+    public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
 		Long zoneId = profile.getZoneId();
 
-		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+		if (zoneId != null && (this.storeMgr.getImageStore(zoneId) == null)) {
+    		throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
     	}
 
 		return profile;

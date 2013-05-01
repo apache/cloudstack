@@ -48,6 +48,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -116,8 +118,9 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
     @Inject
     private HostDao hostDao;
 
+
     @Inject
-    private SecondaryStorageVmManager secondaryStorageVMManager;
+    private DataStoreManager dataStoreManager;
 
     public S3ManagerImpl() {
     }
@@ -319,11 +322,10 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
             return errorMessage;
         }
 
-        final HostVO secondaryStorageHost = secondaryStorageVMManager
-                .findSecondaryStorageHost(dataCenterId);
-        if (secondaryStorageHost == null) {
+        final DataStore secondaryStore = this.dataStoreManager.getImageStore(dataCenterId);
+        if (secondaryStore == null) {
             final String errorMessage = format(
-                    "Unable to find secondary storage host for zone id %1$s.",
+                    "Unable to find secondary storage for zone id %1$s.",
                     dataCenterId);
             LOGGER.error(errorMessage);
             throw new CloudRuntimeException(errorMessage);
@@ -331,7 +333,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
         final long accountId = template.getAccountId();
         final DownloadTemplateFromS3ToSecondaryStorageCommand cmd = new DownloadTemplateFromS3ToSecondaryStorageCommand(
-                s3, accountId, templateId, secondaryStorageHost.getName(),
+                s3, accountId, templateId, secondaryStore.getName(),
                 primaryStorageDownloadWait);
 
         try {
@@ -358,7 +360,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                             asList("template", "tmpl", accountId,
                                     templateId), File.separator);
                     final VMTemplateHostVO tmpltHost = new VMTemplateHostVO(
-                            secondaryStorageHost.getId(), templateId,
+                            secondaryStore.getId(), templateId,
                             now(), 100, Status.DOWNLOADED, null, null,
                             null, installPath, template.getUrl());
                     tmpltHost.setSize(templateS3VO.getSize());

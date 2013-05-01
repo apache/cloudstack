@@ -508,8 +508,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
-        HostVO secHost = findSecondaryStorageHost(dataCenterId);
-        if (secHost == null) {
+        DataStore secStore = this._dataStoreMgr.getImageStore(dataCenterId);
+        if (secStore == null) {
             String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
@@ -1019,8 +1019,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
-        HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dest.getDataCenter().getId());
-        assert (secHost != null);
+        DataStore secStore = this._dataStoreMgr.getImageStore(dest.getDataCenter().getId());
+        assert (secStore != null);
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
@@ -1265,9 +1265,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
                 State.Starting,  State.Stopped, State.Stopping );
         int vmSize = (ssVms == null)? 0 : ssVms.size();
-        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dataCenterId);
-        int hostSize = (ssHosts == null)? 0 : ssHosts.size();
-        if ( hostSize > vmSize ) {
+        List<DataStore> ssStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
+        int storeSize = (ssStores == null)? 0 : ssStores.size();
+        if ( storeSize > vmSize ) {
             s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
             return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
         }
@@ -1356,19 +1356,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return null;
     }
 
-	@Override
-    public HostVO findSecondaryStorageHost(long dcId) {
-		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
-	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-	    List<HostVO> storageHosts = sc.list();
-	    if (storageHosts == null || storageHosts.size() < 1) {
-            return null;
-        } else {
-            Collections.shuffle(storageHosts);
-            return storageHosts.get(0);
-        }
-    }
 
 	@Override
     public List<HostVO> listSecondaryStorageHostsInAllZones() {
@@ -1377,29 +1364,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 	    return sc.list();
     }
 
-	@Override
-    public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
-	    return sc.list();
-    }
 
-	@Override
-    public List<HostVO> listLocalSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.LocalSecondaryStorage);
-	    return sc.list();
-    }
-
-	@Override
-    public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
-	    return sc.list();
-    }
 
 	@Override
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {

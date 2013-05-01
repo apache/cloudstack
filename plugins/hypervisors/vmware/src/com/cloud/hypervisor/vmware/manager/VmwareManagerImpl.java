@@ -35,6 +35,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -97,6 +99,7 @@ import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;;
 
 
 @Local(value = {VmwareManager.class})
@@ -120,6 +123,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject ClusterManager _clusterMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
+    @Inject DataStoreManager _dataStoreMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject ClusterVSMMapDao _vsmMapDao;
     @Inject ConfigurationDao _configDao;
@@ -426,9 +430,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
 
-        List<HostVO> secStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
-        if(secStorageHosts.size() > 0)
-            return secStorageHosts.get(0).getStorageUrl();
+        DataStore secStore = this._dataStoreMgr.getImageStore(dcId);
+        if(secStore != null)
+            return secStore.getUri();
 
         return null;
     }

@@ -18,8 +18,6 @@ package com.cloud.storage.secondary;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
@@ -47,12 +45,7 @@ public interface SecondaryStorageVmManager extends Manager {
 
 	public Pair<HostVO, SecondaryStorageVmVO> assignSecStorageVm(long zoneId, Command cmd);
     boolean generateSetupCommand(Long hostId);
-    //boolean deleteHost(Long hostId);
-    public HostVO findSecondaryStorageHost(long dcId);
     public List<HostVO> listSecondaryStorageHostsInAllZones();
-    public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId);
-    public List<HostVO> listLocalSecondaryStorageHostsInOneZone(long dataCenterId);
-    public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId);
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId);
     public HostVO pickSsvmHost(HostVO ssHost);
 }
