@@ -378,9 +378,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             VlanVO vlan = _vlanDao.findById(addr.getVlanId());
 
             String guestType = vlan.getVlanType().toString();
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
-                    addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
-                    addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+
+            if (!isIpDedicated(addr)) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
+                        addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
+                        addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+            }
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -390,6 +393,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         txn.commit();
     }
 
+    private boolean isIpDedicated(IPAddressVO addr) {
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(addr.getVlanId());
+        if (maps != null && !maps.isEmpty())
+            return true;
+        return false;
+    }
 
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork)
@@ -2905,10 +2914,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 VlanVO vlan = _vlanDao.findById(ip.getVlanId());
 
                 String guestType = vlan.getVlanType().toString();
-
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
-                        ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
-                        ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                if (!isIpDedicated(ip)) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
+                            ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
+                            ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                }
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);

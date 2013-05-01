@@ -43,6 +43,7 @@ import javax.naming.directory.InitialDirContext;
 import com.cloud.dc.*;
 import com.cloud.dc.dao.*;
 import com.cloud.user.*;
+import com.cloud.event.UsageEventUtils;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -338,7 +339,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public String updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
 
-        String validationMsg = validateConfigurationValue(name, value);
+        String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
             s_logger.error("Invalid configuration option, name: " + name + ", value:" + value);
@@ -567,7 +568,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private String validateConfigurationValue(String name, String value) {
+    private String validateConfigurationValue(String name, String value, String scope) {
 
         Config c = Config.getConfig(name);
         if (c == null) {
@@ -575,6 +576,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return "Invalid configuration variable.";
         }
         String configScope = c.getScope();
+        if (scope != null) {
+            if (!configScope.contains(scope)) {
+                s_logger.error("Invalid scope id provided for the parameter " + name);
+                return "Invalid scope id provided for the parameter " + name;
+            }
+            if ((name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) && value == null) {
+                s_logger.error("value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor");
+                return "value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor";
+            }
+        }
 
         Class<?> type = c.getType();
 
@@ -2712,6 +2723,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // This VLAN is account-specific, so create an AccountVlanMapVO entry
             AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
             _accountVlanMapDao.persist(accountVlanMapVO);
+
+            // generate usage event for dedication of every ip address in the range
+            List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
+            for (IPAddressVO ip : ips) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(),
+                        ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
+                        ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+            }
         } else if (podId != null) {
             // This VLAN is pod-wide, so create a PodVlanMapVO entry
             PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -2740,6 +2759,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if the VLAN has any allocated public IPs
         long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
+        List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         boolean success = true;
         if (allocIpCount > 0) {
             if (isAccountSpecific) { 
@@ -2752,8 +2772,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                     }
-                    
-                    List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
                     
                     for (IPAddressVO ip : ips) {
                         if (ip.isOneToOneNat()) {
@@ -2789,6 +2807,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // Delete all public IPs in the VLAN
             if (!deletePublicIPRange(vlanDbId)) {
                 return false;
+            }
+
+            // if ip range is dedicated to an account generate usage events for release of every ip in the range
+            if(isAccountSpecific) {
+                for (IPAddressVO ip : ips) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getId(),
+                            ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
+                            ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                }
             }
 
             // Delete the VLAN
@@ -2875,6 +2902,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         txn.commit();
 
+        // generate usage event for dedication of every ip address in the range
+        for (IPAddressVO ip : ips) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(),
+                    ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
+                    ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+        }
         return vlan;
     }
 
@@ -2904,6 +2937,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if range has any allocated public IPs
         long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
+        List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         boolean success = true;
         if (allocIpCount > 0) {
             try {
@@ -2914,7 +2948,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                 }
-                List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
                 for (IPAddressVO ip : ips) {
                     // Disassociate allocated IP's that are not in use
                     if ( !ip.isOneToOneNat() && !ip.isSourceNat()  && !(_firewallDao.countRulesByIpId(ip.getId()) > 0) ) {
@@ -2936,6 +2969,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // A Public IP range can only be dedicated to one account at a time
         if (_accountVlanMapDao.remove(acctVln.get(0).getId())) {
+            // generate usage events to remove dedication for every ip in the range
+            for (IPAddressVO ip : ips) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getId(),
+                        ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
+                        ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+            }
             return true;
         } else {
             return false;

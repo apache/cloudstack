@@ -1699,6 +1699,8 @@ div.list-view td.state.off span {
   max-height: 407px;
   overflow: auto;
   overflow-x: hidden;
+  width: 100%;
+  /*[empty]padding:;*/
   margin-right: 12px;
 }
 
@@ -1774,6 +1776,23 @@ div.list-view td.state.off span {
 
 .detail-group .main-groups table td.value .view-all:hover {
   background-position: 100% -431px;
+}
+
+.detail-view .detail-group .button.add {
+  clear: both;
+  margin: 0px 21px 13px 0 !important;
+}
+
+.detail-view .details.group-multiple {
+  float: left;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.detail-view .details.group-multiple .main-groups {
+  overflow: visible;
+  width: 98%;
+  margin-bottom: 35px;
 }
 
 /*List-view: subselect dropdown*/
@@ -2000,6 +2019,40 @@ div.detail-group.actions tr {
 div.detail-group.actions td {
   height: 43px;
   vertical-align: middle;
+}
+
+.details.group-multiple div.detail-group.actions {
+  float: right;
+  max-width: 75%;
+  height: 23px;
+  position: relative;
+  margin: -15px 0 -5px;
+}
+
+.details.group-multiple div.detail-group.actions table {
+  background: none;
+}
+
+.details.group-multiple div.detail-group.actions td.detail-actions {
+  background: none;
+  display: block;
+  height: 35px;
+  float: right;
+  padding: 0;
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions .action {
+  float: left;
+  width: 32px;
+  /*+placement:shift 11px 7px;*/
+  position: relative;
+  left: 11px;
+  top: 7px;
+}
+
+.details.group-multiple div.detail-group.actions .detail-actions .action a {
+  background: none;
+  width: 31px;
 }
 
 .detail-group table td.detail-actions {
@@ -2768,7 +2821,8 @@ div.toolbar div.button.add,
 div.toolbar div.button.refresh,
 div.toolbar div.button.add,
 div.toolbar div.button.main-action,
-.toolbar div.button.header-action {
+.toolbar div.button.header-action,
+.detail-group .button.add {
   /*+placement:shift 0px 5px;*/
   position: relative;
   left: 0px;
@@ -2800,7 +2854,8 @@ div.toolbar div.button.main-action,
 div.toolbar div.button.add:hover,
 div.toolbar div.button.refresh:hover,
 div.toolbar div.button.main-action:hover,
-.toolbar div.button.header-action:hover {
+.toolbar div.button.header-action:hover,
+.detail-group .button.add:hover {
   background-position: 0 -132px;
   border-left: 1px solid #585D60;
 }
@@ -2830,7 +2885,8 @@ div.toolbar div.button.refresh span {
   background-repeat: no-repeat;
 }
 
-div.toolbar div.button.add span {
+div.toolbar div.button.add span,
+.detail-group .button.add span.icon {
   padding: 0px 0 0px 18px;
   background: url(../images/icons.png) no-repeat -626px -209px;
   /*+placement:shift 0px 0px;*/
@@ -5647,7 +5703,7 @@ label.error {
 
 /*** Select container*/
 .multi-wizard .select-container {
-  height: 94%;
+  height: 352px;
   overflow: auto;
   overflow-x: hidden;
   border: 1px solid #D9DFE1;
@@ -5658,6 +5714,12 @@ label.error {
   border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   margin: 10px 10px 0px;
+}
+
+.multi-wizard .select-container p {
+  padding: 11px;
+  color: #424242;
+  background: #DFDFDF;
 }
 
 .multi-wizard .select-container .select {

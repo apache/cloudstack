@@ -485,17 +485,26 @@
           'affinity': function($step, formData) {
             return {
               response: {
-                success: function(args) {
-                  $step.find('.select-container').append(
-                    makeSelects('affinity-groups', args.data.affinityGroups, {
-                      name: 'name',
-                      desc: 'description',
-                      id: 'id'
-                    }, {
-                      type: 'checkbox',
-                      'wizard-field': 'affinity-groups'
-                    })
-                  );
+                success: function(args) {                  
+                  if (args.data.affinityGroups && args.data.affinityGroups.length) {
+                    $step.prepend(
+                      $('<div>').addClass('main-desc').append(
+                        $('<p>').html(_l('message.select.affinity.groups'))
+                      )
+                    );
+                    $step.find('.select-container').append(
+                      makeSelects('affinity-groups', args.data.affinityGroups, {
+                        name: 'name',
+                        desc: 'description',
+                        id: 'id'
+                      }, {
+                        type: 'checkbox',
+                        'wizard-field': 'affinity-groups'
+                      })
+                    ); 
+                  } else {
+                    $step.find('.select-container').append($('<p>').html(_l('message.no.affinity.groups')));
+                  }
                 }
               }
             };

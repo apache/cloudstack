@@ -87,6 +87,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
@@ -146,6 +147,7 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject VMTemplateDao _templateDao;
     @Inject ResourceManager _resourceMgr;
+    @Inject ConfigurationServer _configServer;
 
     @Override
     public DomainRouterVO findByName(String name) {
@@ -754,7 +756,26 @@ InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
             HypervisorType hType = iter.next();
             try {
                 s_logger.debug("Allocating the Internal lb with the hypervisor type " + hType);
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
+                String templateName = null;
+                switch (hType) {
+                    case XenServer:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case KVM:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case VMware:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case Hyperv:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case LXC:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    default: break;
+                }
+                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
                     s_logger.debug(hType + " won't support system vm, skip it");

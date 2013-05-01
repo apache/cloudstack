@@ -41,6 +41,7 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
@@ -151,6 +152,11 @@ import com.cloud.vm.dao.NicDao;
             @Bean
             public DataCenterDao dataCenterDao() {
                 return Mockito.mock(DataCenterDao.class);
+            }
+            
+            @Bean
+            public ConfigurationServer configurationServer() {
+                return Mockito.mock(ConfigurationServer.class);
             }
             
             @Override

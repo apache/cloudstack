@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.eventbus;
+package org.apache.cloudstack.framework.messagebus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,27 +24,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class EventDispatcher implements Subscriber {
+public class MessageDispatcher implements MessageSubscriber {
 	private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
 	
-	private static Map<Object, EventDispatcher> s_targetMap = new HashMap<Object, EventDispatcher>();
+	private static Map<Object, MessageDispatcher> s_targetMap = new HashMap<Object, MessageDispatcher>();
 	private Object _targetObject;
 	
-	public EventDispatcher(Object targetObject) {
+	public MessageDispatcher(Object targetObject) {
 		_targetObject = targetObject;
 	}
 	
 	@Override
-	public void onPublishEvent(String senderAddress, String subject, Object args) {
+	public void onPublishMessage(String senderAddress, String subject, Object args) {
 		dispatch(_targetObject, subject, senderAddress, args);
 	}
 	
-	public static EventDispatcher getDispatcher(Object targetObject) {
-		EventDispatcher dispatcher;
+	public static MessageDispatcher getDispatcher(Object targetObject) {
+		MessageDispatcher dispatcher;
 		synchronized(s_targetMap) {
 			dispatcher = s_targetMap.get(targetObject);
 			if(dispatcher == null) {
-				dispatcher = new EventDispatcher(targetObject);
+				dispatcher = new MessageDispatcher(targetObject);
 				s_targetMap.put(targetObject, dispatcher);
 			}
 		}
@@ -85,7 +85,7 @@ public class EventDispatcher implements Subscriber {
 				return handler;
 			
 			for(Method method : handlerClz.getMethods()) {
-				EventHandler annotation = method.getAnnotation(EventHandler.class);
+				MessageHandler annotation = method.getAnnotation(MessageHandler.class);
 				if(annotation != null) {
 					if(match(annotation.topic(), subject)) {
 						s_handlerCache.put(handlerClz, method);

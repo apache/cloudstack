@@ -16,9 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.cloudstack.framework.messagebus;
 
-package org.apache.cloudstack.framework.eventbus;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public enum PublishScope {
-	LOCAL, GLOBAL 
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface MessageHandler {
+	public String topic();
 }
