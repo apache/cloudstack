@@ -2194,6 +2194,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 return false;
             }
         }
+        
+        //can't update from internal LB to public LB
+        if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.Lb) && areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.Lb)) {
+            if (oldNetworkOffering.getPublicLb() != newNetworkOffering.getPublicLb() || oldNetworkOffering.getInternalLb() != newNetworkOffering.getInternalLb()) {
+                throw new InvalidParameterValueException("Original and new offerings support different types of LB - Internal vs Public," +
+                		" can't upgrade");
+            }
+        }
 
         return canIpsUseOffering(publicIps, newNetworkOfferingId);
     }
