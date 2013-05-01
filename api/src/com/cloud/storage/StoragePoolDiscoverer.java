@@ -14,18 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent;
+package com.cloud.storage;
 
-import com.cloud.agent.api.Command;
+import java.net.URI;
+import java.util.Map;
 
-public interface RecoveryHandler {
-    /**
-     * Perform the necessary recovery because the success of this command
-     * is not known.
-     * 
-     * @param agentId agent the commands were sent to.
-     * @param seq sequence number.
-     * @param cmds commands that failed.
-     */
-    public void handle(long agentId, long seq, Command[] cmds);
+import com.cloud.exception.DiscoveryException;
+import com.cloud.utils.component.Adapter;
+
+/**
+ * Discoverer to find new Storage Pools.
+ */
+public interface StoragePoolDiscoverer extends Adapter {
+
+    Map<? extends StoragePool, Map<String, String>> find(long dcId, Long podId, URI uri, Map<String, String> details) throws DiscoveryException;
+
+    Map<? extends StoragePool, Map<String, String>> find(long dcId, Long podId, URI uri, Map<String, String> details, String username, String password) throws DiscoveryException;
 }
