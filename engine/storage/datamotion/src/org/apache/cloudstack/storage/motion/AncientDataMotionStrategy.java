@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -136,6 +137,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         // TODO Auto-generated method stub
         return true;
     }
+    
+    protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
+        DataTO srcTO = srcData.getTO();
+        DataTO destTO = destData.getTO();
+        DataStoreTO srcStoreTO = srcTO.getDataStore();
+        DataStoreTO destStoreTO = destTO.getDataStore();
+        if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache) {
+            return false;
+        }
+        
+        if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
+            return false;
+        }
+        return true;
+    }
 
     @DB
     protected Answer copyVolumeFromImage(DataObject srcData, DataObject destData) {
@@ -143,7 +159,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
-        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+        if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
@@ -162,7 +178,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private Answer copyTemplate(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
-        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+        if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
@@ -330,7 +346,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 Integer.parseInt(Config.CreatePrivateTemplateFromVolumeWait
                         .getDefaultValue()));
        
-        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+        if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _createprivatetemplatefromvolumewait);

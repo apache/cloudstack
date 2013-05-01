@@ -26,6 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -45,6 +46,9 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -59,9 +63,11 @@ public class SnapshotObject implements SnapshotInfo {
     @Inject protected VolumeDataFactory volFactory;
     @Inject protected SnapshotStateMachineManager stateMachineMgr;
     @Inject
+    SnapshotDataFactory snapshotFactory;
+    @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
     @Inject
-    SnapshotDataStoreDao snapshotStore;
+    SnapshotDataStoreDao snapshotStoreDao;
     public SnapshotObject() {
 
     }
@@ -83,15 +89,30 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
+    	SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), this.snapshot.getId());
+    	if (snapStoreVO == null) {
+    	    return null;
+    	}
     	
-        // TODO Auto-generated method stub
-        return null;
+    	long parentId = snapStoreVO.getParentSnapshotId();
+    	if (parentId == 0) {
+    	    return null;
+    	}
+    	
+    	return this.snapshotFactory.getSnapshot(parentId, store);
     }
 
     @Override
     public SnapshotInfo getChild() {
-        // TODO Auto-generated method stub
-        return null;
+        SearchCriteriaService<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = SearchCriteria2.create(SnapshotDataStoreVO.class);
+        sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
+        sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());
+        sc.addAnd(sc.getEntity().getParentSnapshotId(), Op.EQ, this.getId());
+        SnapshotDataStoreVO vo = sc.find();
+        if (vo == null) {
+            return null;
+        }
+        return this.snapshotFactory.getSnapshot(vo.getId(), store);
     }
 
     @Override
@@ -211,37 +232,34 @@ public class SnapshotObject implements SnapshotInfo {
 		stateMachineMgr.processEvent(this.snapshot, event);
 	}
 
-	@Override
-	public Long getPrevSnapshotId() {
-		SnapshotDataStoreVO snapshotStoreVO = this.snapshotStore.findBySnapshot(this.getId(), this.getDataStore().getRole());
-		return snapshotStoreVO.getParentSnapshotId();
-	}
-
 	public SnapshotVO getSnapshotVO(){
 	    return this.snapshot;
 	}
 
     @Override
     public DataTO getTO() {
-        // TODO Auto-generated method stub
-        return null;
+        DataTO to = this.store.getDriver().getTO(this);
+        if (to == null) {
+            return new SnapshotObjectTO(this);
+        }
+        return to;
     }
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-    	SnapshotDataStoreVO snapshotStore = this.snapshotStore.findByStoreSnapshot(this.getDataStore().getRole(), 
+    	SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(), 
     		   this.getDataStore().getId(), this.getId());
     	if (answer instanceof CreateObjectAnswer) {
     		SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer) answer).getData();
     		snapshotStore.setInstallPath(snapshotTO.getPath());
-    		this.snapshotStore.update(snapshotStore.getId(), snapshotStore);
+    		this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
     	} else if (answer instanceof CopyCmdAnswer) {
     	    SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer) answer).getNewData();
     	    snapshotStore.setInstallPath(snapshotTO.getPath());
     	    if (snapshotTO.getParentSnapshotPath() == null) {
     	        snapshotStore.setParentSnapshotId(0L);
     	    }
-    	    this.snapshotStore.update(snapshotStore.getId(), snapshotStore);
+    	    this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
     	} else {
     		throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
     	}
