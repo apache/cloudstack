@@ -37,8 +37,13 @@ public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
 
     public void lockRange(long dcId, long physicalNetworkId, Integer start, Integer end);
 
-    public DataCenterVnetVO take(long physicalNetworkId, long accountId, String reservationId);
+    public DataCenterVnetVO take(long physicalNetworkId, long accountId, String reservationId, List<Long> vlanDbIds);
 
     public void release(String vnet, long physicalNetworkId, long accountId, String reservationId);
 
+    public void releaseDedicatedGuestVlans(Long dedicatedGuestVlanRangeId);
+
+    public int countVnetsAllocatedToAccount(long dcId, long accountId);
+
+    public int countVnetsDedicatedToAccount(long dcId, long accountId);
 }

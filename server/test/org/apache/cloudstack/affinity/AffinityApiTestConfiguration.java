@@ -72,6 +72,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -136,7 +137,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class,
         PhysicalNetworkServiceProviderDaoImpl.class, LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class, AffinityGroupServiceImpl.class,
-        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class
+        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class, AccountGuestVlanMapDaoImpl.class
         }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
 public class AffinityApiTestConfiguration {
 

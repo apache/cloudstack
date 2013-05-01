@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -33,6 +34,8 @@ import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanVO;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -68,6 +71,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Inject protected DataCenterVnetDao _vnetAllocDao = null;
     @Inject protected PodVlanDao _podVlanAllocDao = null;
     @Inject protected DcDetailsDao _detailsDao = null;
+    @Inject protected AccountGuestVlanMapDao _accountGuestVlanMapDao = null;
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
@@ -189,11 +193,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId) {
-        DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId);
+        ArrayList<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
+        for (AccountGuestVlanMapVO map : maps) {
+            dedicatedVlanDbIds.add(map.getId());
+        }
+        if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
+            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, dedicatedVlanDbIds);
+            if (vo != null)
+                return vo.getVnet();
+        }
+        DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, null);
         if (vo == null) {
             return null;
         }
-
         return vo.getVnet();
     }
 
