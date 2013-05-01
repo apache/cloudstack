@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
@@ -292,6 +293,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     SnapshotDataFactory snapshotFactory;
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     @Inject protected ResourceTagDao _resourceTagDao;
 
@@ -327,7 +330,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected int _retry = 2;
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
-    protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
+    //protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _maxVolumeSizeInGb;
     private long _serverId;
 
@@ -335,7 +338,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private int _customDiskOfferingMaxSize = 1024;
     private double _storageUsedThreshold = 1.0d;
     private double _storageAllocatedThreshold = 1.0d;
-    protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
+    //protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
     private Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
     private boolean _recreateSystemVmEnabled;
@@ -535,11 +538,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, String> configs = _configDao.getConfiguration(
                 "management-server", params);
 
-        String overProvisioningFactorStr = configs
+        /*String overProvisioningFactorStr = configs
                 .get("storage.overprovisioning.factor");
         if (overProvisioningFactorStr != null) {
             _overProvisioningFactor = new BigDecimal(overProvisioningFactorStr);
-        }
+        }*/
 
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
@@ -589,10 +592,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     .parseDouble(storageAllocatedThreshold);
         }
 
-        String globalStorageOverprovisioningFactor = configs
+        /*String globalStorageOverprovisioningFactor = configs
                 .get("storage.overprovisioning.factor");
         _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(
                 globalStorageOverprovisioningFactor, 2.0f));
+        */
 
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled
                 + ", interval: " + _storageCleanupInterval
@@ -980,6 +984,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public BigDecimal getStorageOverProvisioningFactor(Long dcId){
+        return new BigDecimal(_configServer.getConfigValue(Config.StorageOverprovisioningFactor.key(), Config.ConfigurationParameterScope.zone.toString(), dcId));
+    }
+
+    @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
@@ -990,7 +999,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            totalOverProvCapacity = _overProvisioningFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+            BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getDataCenterId());
+            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
         } else {
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
@@ -1793,7 +1803,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            totalOverProvCapacity = _storageOverprovisioningFactor.multiply(
+            totalOverProvCapacity = getStorageOverProvisioningFactor(pool.getDataCenterId()).multiply(
                     new BigDecimal(pool.getCapacityBytes())).longValue();
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
