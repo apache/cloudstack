@@ -904,6 +904,9 @@ setup_ilbvm() {
   setup_common eth0 eth1
   #eth0 = guest network, eth1=control network
 
+  sed -i  /$NAME/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
   cp /etc/iptables/iptables-ilbvm /etc/iptables/rules.v4
   cp /etc/iptables/iptables-ilbvm /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
