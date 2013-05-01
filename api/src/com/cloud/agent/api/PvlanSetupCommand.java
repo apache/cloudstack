@@ -26,7 +26,6 @@ public class PvlanSetupCommand extends Command {
 		VM
 	}
 	private String op;
-	private String bridge;
 	private String primary;
 	private String isolated;
 	private String vmMac;
@@ -37,27 +36,26 @@ public class PvlanSetupCommand extends Command {
 
 	protected PvlanSetupCommand() {}
 	
-	protected PvlanSetupCommand(Type type, String op, String bridge, URI uri)
+	protected PvlanSetupCommand(Type type, String op, URI uri)
 	{
 		this.type = type;
 		this.op = op;
-		this.bridge = bridge;
 		this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
 		this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
 	}
 	
-	static public PvlanSetupCommand createDhcpSetup(String op, String bridge, URI uri, String dhcpName, String dhcpMac, String dhcpIp)
+	static public PvlanSetupCommand createDhcpSetup(String op, URI uri, String dhcpName, String dhcpMac, String dhcpIp)
 	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, bridge, uri);
+		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, uri);
 		cmd.setDhcpName(dhcpName);
 		cmd.setDhcpMac(dhcpMac);
 		cmd.setDhcpIp(dhcpIp);
 		return cmd;
 	}
 	
-	static public PvlanSetupCommand createVmSetup(String op, String bridge, URI uri, String vmMac)
+	static public PvlanSetupCommand createVmSetup(String op, URI uri, String vmMac)
 	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, bridge, uri);
+		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, uri);
 		cmd.setVmMac(vmMac);
 		return cmd;
 	}
@@ -69,10 +67,6 @@ public class PvlanSetupCommand extends Command {
 
 	public String getOp() {
 		return op;
-	}
-
-	public String getBridge() {
-		return bridge;
 	}
 
 	public String getPrimary() {

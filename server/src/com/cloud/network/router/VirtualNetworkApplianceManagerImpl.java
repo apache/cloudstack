@@ -2219,7 +2219,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     	if (!add) {
     		op = "delete";
     	}
-    	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, "xenbr0", nic.getBroadcastUri(), router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, nic.getBroadcastUri(), router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
     	Commands cmds = new Commands(cmd);
     	// In fact we send command to the host of router, we're not programming router but the host
     	try {

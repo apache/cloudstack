@@ -2761,7 +2761,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         	// "delete" would remove all the rules(if using ovs) related to this vm
         	op = "delete";
         }
-    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, "xenbr0", nic.getBroadcastUri(), nic.getMacAddress());
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadcastUri(), nic.getMacAddress());
         Answer answer = null;
         try {
             answer = _agentMgr.send(hostId, cmd);

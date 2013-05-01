@@ -1474,12 +1474,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	String primaryPvlan = cmd.getPrimary();
     	String isolatedPvlan = cmd.getIsolated();
     	String op = cmd.getOp();
-    	String bridge = cmd.getBridge();
     	String dhcpName = cmd.getDhcpName();
     	String dhcpMac = cmd.getDhcpMac();
     	String dhcpIp = cmd.getDhcpIp();
     	String vmMac = cmd.getVmMac();
     	
+    	String bridge = "xenbr0";
     	String result = null;
     	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
     		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "bridge", bridge,
