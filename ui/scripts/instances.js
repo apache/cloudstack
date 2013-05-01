@@ -204,13 +204,7 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
-
-        if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
-          $.extend(data, {
-            zonetype: args.context.zoneType
-          });
-	      }
-        
+              
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,
