@@ -119,19 +119,18 @@ CREATE TABLE `cloud`.`load_balancer_healthcheck_policies` (
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');
 
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (165, UUID(), 6, 'Windows 8 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (166, UUID(), 6, 'Windows 8 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (167, UUID(), 6, 'Windows Server 2012 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 8 (64-bit)');
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (32-bit)', 165);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (64-bit)', 166);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows Server 2012 (64-bit)', 167);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows Server 8 (64-bit)', 168);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows 8 (32-bit)', 165);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows 8 (64-bit)', 166);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows Server 2012 (64-bit)', 167);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows Server 8 (64-bit)', 168);
-√
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (165, UUID(), 6, 'Windows 8 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (166, UUID(), 6, 'Windows 8 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (167, UUID(), 6, 'Windows Server 2012 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 8 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (32-bit)', 165);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (64-bit)', 166);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows Server 2012 (64-bit)', 167);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows Server 8 (64-bit)', 168);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows 8 (32-bit)', 165);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows 8 (64-bit)', 166);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows Server 2012 (64-bit)', 167);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Windows Server 8 (64-bit)', 168);
 
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (211, UUID(), 7, 'Apple Mac OS X 10.6 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (212, UUID(), 7, 'Apple Mac OS X 10.6 (64-bit)');
