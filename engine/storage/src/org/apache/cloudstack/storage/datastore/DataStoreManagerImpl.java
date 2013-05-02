@@ -100,4 +100,10 @@ public class DataStoreManagerImpl implements DataStoreManager {
     public List<DataStore> getImageCacheStores(Scope scope) {
     	return imageDataStoreMgr.listImageCacheStores(scope);
     }
+    @Override
+    public List<DataStore> listImageStores() {
+        return imageDataStoreMgr.listImageStores();
+    }
+
+
 }

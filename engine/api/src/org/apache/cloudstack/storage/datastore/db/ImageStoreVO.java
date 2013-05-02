@@ -28,9 +28,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-
-
-
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
@@ -66,20 +63,21 @@ public class ImageStoreVO implements ImageStore {
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     @Column(name = "role")
     @Enumerated(value = EnumType.STRING)
     private DataStoreRole role;
 
-    @Column(name="parent")
+    @Column(name = "parent")
     private String parent;
 
-
+    @Column(name="total_size")
+    private Long totalSize;
 
     public DataStoreRole getRole() {
         return role;
@@ -173,6 +171,13 @@ public class ImageStoreVO implements ImageStore {
         this.parent = parent;
     }
 
+    public Long getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(Long totalSize) {
+        this.totalSize = totalSize;
+    }
 
 
 }

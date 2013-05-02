@@ -1357,14 +1357,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
 
-	@Override
-    public List<HostVO> listSecondaryStorageHostsInAllZones() {
-		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
-	    return sc.list();
-    }
-
-
 
 	@Override
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {

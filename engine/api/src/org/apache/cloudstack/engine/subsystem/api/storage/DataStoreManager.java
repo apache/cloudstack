@@ -33,4 +33,5 @@ public interface DataStoreManager {
     public List<DataStore> getImageStoresByProvider(String provider);
     public List<DataStore> getImageCacheStores(Scope scope);
     public DataStore registerDataStore(Map<String, String> params, String providerUuid);
+    public List<DataStore> listImageStores();
 }

@@ -81,6 +81,7 @@ CREATE TABLE `cloud`.`image_store` (
   `parent` varchar(255) COMMENT 'parent path for the storage server',
   `created` datetime COMMENT 'date the image store first signed on',
   `removed` datetime COMMENT 'date removed if not null',  
+  `total_size` bigint unsigned COMMENT 'storage statistics',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
