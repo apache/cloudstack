@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
@@ -337,6 +338,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 			throw new InvalidParameterValueException("Please specify a valid template.");
 		}
 
+		return new TemplateProfile(userId, template, zoneId);
+	}
+
+	public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd cmd) {
+		Long templateId = cmd.getId();
+		Long userId = UserContext.current().getCallerUserId();
+	        Long zoneId = cmd.getZoneId();
+
+		VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+		if (template == null) {
+			throw new InvalidParameterValueException("unable to find template with id " + templateId);
+		}
 		return new TemplateProfile(userId, template, zoneId);
 	}
 
