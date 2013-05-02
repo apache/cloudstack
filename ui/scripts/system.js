@@ -11032,10 +11032,10 @@
 										}
 									});										
                 }
-              },
-
-              // Granular settings for storage pool
-              settings: {
+              }
+                                             
+              // Granular settings for storage pool for secondary storage is not required
+            /*  settings: {
                 title: 'label.menu.global.settings',
                 custom: cloudStack.uiCustom.granularSettings({
                   dataProvider: function(args) {
@@ -11053,7 +11053,7 @@
                     }
                   }
                 })
-              }
+              } */
             }
           }
         }
