@@ -655,7 +655,7 @@
 
         var itemState=multiRule._itemState ? item[multiRule._itemState] :item.state;
         var $itemState = $('<span>').html(_s(itemState));
-        $tr.append($('<td>').addClass('state').appendTo($tr).append("VM State - ").append($itemState));
+        $tr.append($('<td>').addClass('state').appendTo($tr).append("Application State - ").append($itemState));
 
 
         if (itemActions) {
