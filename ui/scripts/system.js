@@ -5519,6 +5519,27 @@
                         }
                       }
                     }
+                  },
+
+                  // Granular settings for zone
+                  settings: {
+                    title: 'label.menu.global.settings',
+                    custom: cloudStack.uiCustom.granularSettings({
+                      dataProvider: function(args) {
+                        args.response.success({
+                          data: [
+                            { name: 'config.param.1', value: 1 },
+                            { name: 'config.param.2', value: 2 }
+                          ]
+                        });
+                      },
+                      actions: {
+                        edit: function(args) {
+                          // call updateZoneLevelParamter
+                          args.response.success();
+                        }
+                      }
+                    })
                   }
                 }
               }
@@ -9096,6 +9117,27 @@
                     });
                   }
                 }
+              },
+
+              // Granular settings for cluster
+              settings: {
+                title: 'label.menu.global.settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                    args.response.success({
+                      data: [
+                        { name: 'config.param.1', value: 1 },
+                        { name: 'config.param.2', value: 2 }
+                      ]
+                    });
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateClusterLevelParameters
+                      args.response.success();
+                    }
+                  }
+                })
               }
             }
           }
@@ -10531,6 +10573,7 @@
 
           detailView: {
             name: "Primary storage details",
+            isMaximized: true,
             actions: {
 							edit: {
                 label: 'label.edit',
@@ -10715,6 +10758,27 @@
 										}
 									});														
                 }
+              },
+
+              // Granular settings for storage pool
+              settings: {
+                title: 'label.menu.global.settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                    args.response.success({
+                      data: [
+                        { name: 'config.param.1', value: 1 },
+                        { name: 'config.param.2', value: 2 }
+                      ]
+                    });
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateStorageLevelParameters
+                      args.response.success();
+                    }
+                  }
+                })
               }
             }
           }
@@ -10854,6 +10918,7 @@
 
           detailView: {
             name: 'Secondary storage details',
+            isMaximized: true,
             actions: {
               remove: {
                 label: 'label.action.delete.secondary.storage' ,
@@ -10909,6 +10974,27 @@
 										}
 									});										
                 }
+              },
+
+              // Granular settings for storage pool
+              settings: {
+                title: 'label.menu.global.settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                    args.response.success({
+                      data: [
+                        { name: 'config.param.1', value: 1 },
+                        { name: 'config.param.2', value: 2 }
+                      ]
+                    });
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateStorageLevelParameters
+                      args.response.success();
+                    }
+                  }
+                })
               }
             }
           }
