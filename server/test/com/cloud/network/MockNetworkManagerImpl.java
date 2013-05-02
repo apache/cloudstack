@@ -43,16 +43,8 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicSecondaryIp;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
@@ -604,7 +596,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
+                                        String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;

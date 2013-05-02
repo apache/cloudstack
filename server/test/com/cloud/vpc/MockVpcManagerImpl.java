@@ -164,7 +164,7 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
      * @see com.cloud.network.vpc.VpcService#createVpcPrivateGateway(long, java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, long)
      */
     @Override
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException,
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
     ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;

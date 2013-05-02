@@ -1285,8 +1285,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
-            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
+                                                  String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1312,11 +1312,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //1) create private network
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
-                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId);
+                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
         
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId());
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);

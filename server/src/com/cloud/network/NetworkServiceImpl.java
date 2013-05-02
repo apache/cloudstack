@@ -3308,8 +3308,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     
 
     @Override @DB
-    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, 
-            String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId) 
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId,
+                                        String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         
         Account owner = _accountMgr.getAccount(networkOwnerId);
@@ -3377,7 +3377,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long nextMac = mac + 1;
         dc.setMacAddress(nextMac);
 
-        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId);
+        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
         _privateIpDao.persist(privateIp);
         
         _dcDao.update(dc.getId(), dc);

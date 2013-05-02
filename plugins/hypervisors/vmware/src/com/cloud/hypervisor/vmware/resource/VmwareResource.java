@@ -1441,10 +1441,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         String args = "";
+        String snatArgs = "";
+
         if (ip.isAdd()) {
             args += " -A ";
+            snatArgs += " -A ";
         } else {
             args += " -D ";
+            snatArgs += " -D ";
         }
 
         args += " -l ";
@@ -1467,6 +1471,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (!result.first()) {
             throw new InternalErrorException("Unable to assign public IP address");
+        }
+
+        if (ip.isSourceNat()) {
+            snatArgs += " -l ";
+            snatArgs += ip.getPublicIp();
+            snatArgs += " -c ";
+            snatArgs += "eth" + ethDeviceNum;
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_privateGateway.sh " + args);
+
+            if (!result.first()) {
+                throw new InternalErrorException("Unable to assign public IP address");
+            }
+
         }
     }
 
