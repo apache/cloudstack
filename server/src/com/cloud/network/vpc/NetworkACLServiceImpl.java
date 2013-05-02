@@ -20,6 +20,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -166,14 +168,24 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Network is not part of a VPC: "+ network.getUuid());
         }
 
-        Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
-        if(vpc == null){
-            throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
+        if (network.getTrafficType() != Networks.TrafficType.Guest) {
+            throw new InvalidParameterValueException("Network ACL can be created just for networks of type " + Networks.TrafficType.Guest);
         }
-        _accountMgr.checkAccess(caller, null, true, vpc);
-        if(network.getVpcId() != acl.getVpcId()){
-            throw new InvalidParameterValueException("Network: "+networkId+" and ACL: "+aclId+" do not belong to the same VPC");
+
+        if(aclId != NetworkACL.DEFAULT_DENY) {
+            //ACL is not default DENY
+            // ACL should be associated with a VPC
+            Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
+            if(vpc == null){
+                throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
+            }
+
+            _accountMgr.checkAccess(caller, null, true, vpc);
+            if(network.getVpcId() != acl.getVpcId()){
+                throw new InvalidParameterValueException("Network: "+networkId+" and ACL: "+aclId+" do not belong to the same VPC");
+            }
         }
+
         return _networkAclMgr.replaceNetworkACL(acl, network);
     }
 
@@ -207,6 +219,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
         _accountMgr.checkAccess(aclOwner, SecurityChecker.AccessType.ModifyEntry, false, acl);
 
+        if(aclItemCmd.getNumber() != null){
+            if(_networkACLItemDao.findByAclAndNumber(aclId, aclItemCmd.getNumber()) != null){
+                throw new InvalidParameterValueException("ACL item with number "+aclItemCmd.getNumber()+" already exists in ACL: "+acl.getUuid());
+            }
+        }
+
         validateNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getSourceCidrList(),
                 aclItemCmd.getProtocol(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction());
 
@@ -235,6 +253,22 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 if (!NetUtils.isValidCIDR(cidr)){
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
+            }
+        }
+
+        //Validate Protocol
+        //Check if protocol is a number
+        if(StringUtils.isNumeric(protocol)){
+            int protoNumber = Integer.parseInt(protocol);
+            if(protoNumber < 0 || protoNumber > 255){
+                throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
+            }
+        } else {
+            //Protocol is not number
+            //Check for valid protocol strings
+            String supportedProtocols = "tcp,udp,icmp,all";
+            if(!supportedProtocols.contains(protocol.toLowerCase())){
+                throw new InvalidParameterValueException("Invalid protocol: " + protocol);
             }
         }
 

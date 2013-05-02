@@ -268,7 +268,6 @@ CREATE TABLE `cloud`.`networks` (
   `removed` datetime COMMENT 'date removed if not null',
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network provides an ability to define ip ranges',
   `vpc_id` bigint unsigned COMMENT 'vpc this network belongs to',
-  `network_acl_id` bigint unsigned COMMENT 'network acl id',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),  
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,

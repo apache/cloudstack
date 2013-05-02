@@ -244,6 +244,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public void setNetworkACLId(Long networkACLId) {
+        this.networkAclId = networkACLId;
+    }
+
+    @Override
     public void setTrafficType(TrafficType type) {
         this.trafficType = type;
     }

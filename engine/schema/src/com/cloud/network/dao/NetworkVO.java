@@ -544,6 +544,7 @@ public class NetworkVO implements Network {
 		this.ip6Gateway = ip6Gateway;
 	}
 
+    @Override
     public void setNetworkACLId(Long networkACLId) {
         this.networkACLId = networkACLId;
     }

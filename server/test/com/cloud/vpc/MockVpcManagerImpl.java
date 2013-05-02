@@ -303,7 +303,7 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
      */
     @Override
     public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+            long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, long aclId, Account caller) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }

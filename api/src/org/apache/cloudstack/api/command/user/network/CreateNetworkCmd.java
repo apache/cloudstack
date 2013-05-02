@@ -22,13 +22,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -126,6 +120,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
+    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
+            description="Network ACL Id associated for the network")
+    private Long aclId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -245,6 +242,10 @@ public class CreateNetworkCmd extends BaseCmd {
     		return null;
     	}
         return ip6Cidr.toLowerCase();
+    }
+
+    public Long getAclId() {
+        return aclId;
     }
 
     /////////////////////////////////////////////////////
