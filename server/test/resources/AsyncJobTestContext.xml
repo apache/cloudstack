@@ -43,6 +43,10 @@
   <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
     <property name="name" value="ApiAsyncJobDispatcher" />
   </bean>
+  <bean id="asyncJobMonitor" class="com.cloud.async.AsyncJobMonitor">
+    <property name="inactivityWarningThresholdMs" value="5" />
+    <property name="InactivityCheckIntervalMs" value="1" />
+  </bean>
   
   <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
 

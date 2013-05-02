@@ -71,7 +71,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener {
-    public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;

@@ -30,6 +30,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobMonitor;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
@@ -42,6 +43,7 @@ public class TestAsyncJobManager extends TestCase {
     @Inject AsyncJobManager asyncMgr;
     @Inject ClusterManager clusterMgr;
     @Inject MessageBus messageBus;
+    @Inject AsyncJobMonitor jobMonitor;
     
     @Before                                                  
     public void setUp() {
@@ -72,13 +74,17 @@ public class TestAsyncJobManager extends TestCase {
 			}
 		});
 		thread.start();
-    	
+    
+		jobMonitor.registerActiveTask(1, 1, false);
+		
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {
     			System.out.println("Check condition to exit");
     			return false;
     		}
     	});
+    	
+		jobMonitor.unregisterActiveTask(1);
     	
     	try {
     		thread.join();

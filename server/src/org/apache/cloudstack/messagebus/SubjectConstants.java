@@ -17,5 +17,9 @@
 package org.apache.cloudstack.messagebus;
 
 public interface SubjectConstants {
+	// VM power state messages on message bus
 	public static final String VM_POWER_STATE = "vm.powerstate";
+	
+	// job messages on message bus 
+	public static final String JOB_HEARTBEAT = "job.heartbeat";
 }
