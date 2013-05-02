@@ -22,7 +22,7 @@
   <name>Apache CloudStack Console Proxy</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloud-service-console-proxy</artifactId>
+    <artifactId>cloudstack-service-console-proxy</artifactId>
     <version>4.2.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>

@@ -26,7 +26,7 @@
 	<bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
 	
 	  <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
-	  <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+      <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
 	  <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
 	    <property name="Interceptors">
 	        <list>
@@ -35,12 +35,7 @@
 	        </list>
 	    </property>
 	  </bean>
-    
 
-    <bean id="ConfigurationManager" class="com.cloud.configuration.ConfigurationManagerImpl">
-        <property name="name" value="ConfigurationManager"/>
-    </bean>
-  
     <bean class="org.apache.cloudstack.affinity.AffinityApiTestConfiguration" />
     
 

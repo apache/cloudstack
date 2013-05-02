@@ -16,12 +16,19 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -49,15 +56,12 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/affinityContext.xml")
 public class AffinityApiUnitTest {
 
     @Inject
-    AffinityGroupServiceImpl _affinityService;
+    AffinityGroupService _affinityService;
 
     @Inject
     AccountManager _acctMgr;
@@ -82,7 +86,7 @@ public class AffinityApiUnitTest {
 
     @Inject
     AccountDao _accountDao;
-    
+
     @Inject
     EventDao _eventDao;
 
@@ -91,7 +95,6 @@ public class AffinityApiUnitTest {
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
-
     }
 
     @Before
@@ -119,6 +122,7 @@ public class AffinityApiUnitTest {
 
     @Test
     public void createAffinityGroupTest() {
+        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq("group1"))).thenReturn(false);
         AffinityGroup group = _affinityService.createAffinityGroup("user", domainId, "group1", "mock",
                 "affinity group one");
         assertNotNull("Affinity group 'group1' of type 'mock' failed to create ", group);
