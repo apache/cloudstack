@@ -1479,11 +1479,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             snatArgs += " -c ";
             snatArgs += "eth" + ethDeviceNum;
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+            Pair<Boolean, String> result_gateway = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
                     "/opt/cloud/bin/vpc_privateGateway.sh " + args);
 
-            if (!result.first()) {
-                throw new InternalErrorException("Unable to assign public IP address");
+            if (!result_gateway.first()) {
+                throw new InternalErrorException("Unable to configure source NAT for public IP address.");
             }
 
         }
