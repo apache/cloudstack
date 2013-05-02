@@ -169,7 +169,6 @@
     <module>plugins</module>
     <module>patches</module>
     <module>framework</module>
-    <module>services</module>
     <module>test</module>
     <module>client</module>
   </modules>
