@@ -1204,11 +1204,17 @@ CREATE TABLE `cloud`.`network_acl_item` (
   `number` int(10) NOT NULL COMMENT 'priority number of the acl item',
   `action` varchar(10) NOT NULL COMMENT 'rule action, allow or deny',
   PRIMARY KEY  (`id`),
+  UNIQUE KEY (`acl_id`, `number`),
   CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
-INSERT INTO `cloud`.`network_acl` values (1, UUID(), 0, "Default Network ACL", "default");
-INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "tcp", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
-INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "tcp", now(), "Egress", "0.0.0.0/0", 2, "Deny");
+
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (1, UUID(), 0, "Default Network ACL Deny All", "default_deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Deny");
+
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (2, UUID(), 0, "Default Network ACL Allow All", "default_allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (3, UUID(), 2, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (4, UUID(), 2, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Allow");

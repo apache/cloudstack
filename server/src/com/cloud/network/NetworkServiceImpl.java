@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
@@ -42,6 +44,10 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -50,6 +56,10 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.bouncycastle.util.IPAddress;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -301,6 +311,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     DataCenterVnetDao _datacneter_vnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    NetworkACLDao _networkACLDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -930,6 +942,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
+        Long aclId = cmd.getAclId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1211,8 +1224,21 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (!_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
-            network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, caller);
+            if(aclId == null){
+                //Use default deny all ACL, when aclId is not specified
+                aclId = NetworkACL.DEFAULT_DENY;
+            } else {
+                NetworkACL acl = _networkACLDao.findById(aclId);
+                if(acl == null){
+                    throw new InvalidParameterValueException("Unable to find specified NetworkACL");
+                }
+
+                if(vpcId != acl.getVpcId()){
+                    throw new InvalidParameterValueException("ACL: "+aclId+" do not belong to the VPC");
+                }
+            }
+            network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
+                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, aclId, caller);
         } else {
             if (_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");

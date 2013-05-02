@@ -56,7 +56,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description =
-            "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP.")
+            "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")

@@ -45,6 +45,8 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getAclId(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        AllFieldsSearch.and("number", AllFieldsSearch.entity().getNumber(), Op.EQ);
+        AllFieldsSearch.and("action", AllFieldsSearch.entity().getAction(), Op.EQ);
         AllFieldsSearch.done();
 
         NotRevokedSearch = createSearchBuilder();
@@ -101,4 +103,11 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         return (max == null) ? 0 : max;
     }
 
+    @Override
+    public NetworkACLItemVO findByAclAndNumber(long aclId, int number) {
+        SearchCriteria<NetworkACLItemVO> sc = AllFieldsSearch.create();
+        sc.setParameters("aclId", aclId);
+        sc.setParameters("number", number);
+        return findOneBy(sc);
+    }
 }

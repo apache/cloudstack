@@ -77,13 +77,15 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public boolean applyNetworkACL(long aclId) throws ResourceUnavailableException {
-        boolean handled = false;
+        boolean handled = true;
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(aclId);
         //Find all networks using this ACL
         List<NetworkVO> networks = _networkDao.listByAclId(aclId);
         for(NetworkVO network : networks){
-            //Failure case??
-            handled = applyACLItemsToNetwork(network.getId(), rules);
+            if(!applyACLItemsToNetwork(network.getId(), rules)) {
+                handled = false;
+                break;
+            }
         }
         if(handled){
             for (NetworkACLItem rule : rules) {
@@ -115,9 +117,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public boolean replaceNetworkACL(NetworkACL acl, NetworkVO network) throws ResourceUnavailableException {
-        if(network.getVpcId() != acl.getVpcId()){
-            throw new InvalidParameterValueException("Network: "+network.getUuid()+" and ACL: "+acl.getUuid()+" do not belong to the same VPC");
-        }
         network.setNetworkACLId(acl.getId());
         if(_networkDao.update(network.getId(), network)){
             return applyACLToNetwork(network.getId());
@@ -145,9 +144,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, number);
         newRule = _networkACLItemDao.persist(newRule);
-
-        //ToDo: Is this required now with number??
-        //detectNetworkACLConflict(newRule);
 
         if (!_networkACLItemDao.setStateToAdd(newRule)) {
             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
