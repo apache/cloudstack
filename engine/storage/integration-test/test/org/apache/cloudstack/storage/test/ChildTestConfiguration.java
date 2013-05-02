@@ -54,6 +54,7 @@ import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
@@ -77,13 +78,16 @@ import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.s3.S3Manager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.VirtualMachineManager;
@@ -93,6 +97,7 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 @Configuration
@@ -111,7 +116,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         HostPodDaoImpl.class,
         VMTemplateZoneDaoImpl.class,
         VMTemplateDetailsDaoImpl.class,
-        HostDaoImpl.class,
         HostDetailsDaoImpl.class,
         HostTagsDaoImpl.class,
         HostTransferMapDaoImpl.class,
@@ -137,15 +141,29 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         UserDaoImpl.class,
         DataCenterDaoImpl.class,
         StoragePoolDetailsDaoImpl.class,
-        DomainDaoImpl.class
-
+        DomainDaoImpl.class,
+        DownloadMonitorImpl.class,
+        AccountDaoImpl.class
 },
 includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false
 )
 public class ChildTestConfiguration extends TestConfiguration {
 	
+	@Bean
+	public SecondaryStorageVmManager secondaryStoreageMgr() {
+		return Mockito.mock(SecondaryStorageVmManager.class);
+	}
 
+	@Bean
+	public HostDao hostDao() {
+		return Mockito.spy(new HostDaoImpl());
+	}
+	
+	@Bean
+	public EndPointSelector selector() {
+		return Mockito.mock(EndPointSelector.class);
+	}
 	@Bean
 	public AgentManager agentMgr() {
 		return new DirectAgentManagerSimpleImpl();
@@ -159,11 +177,6 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public ResourceLimitService limtServe() {
         return Mockito.mock(ResourceLimitService.class);
-    }
-    
-    @Bean
-    public DownloadMonitor downloadMonitor() {
-        return Mockito.mock(DownloadMonitor.class);
     }
     
     @Bean

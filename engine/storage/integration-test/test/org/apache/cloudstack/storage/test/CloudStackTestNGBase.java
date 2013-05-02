@@ -35,6 +35,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String templateUrl;
     private String localStorageUuid;
     private String primaryStorageUrl;
+    private String secondaryStorage;
     private Transaction txn;
     
     protected void injectMockito() {
@@ -61,10 +62,10 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     @BeforeMethod(alwaysRun = true)
     @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr", 
         "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid", 
-        "primary-storage-want-to-add"})
+        "primary-storage-want-to-add", "devcloud-secondary-storage"})
     protected void setup(String hostuuid, String gateway, String cidr, 
             String hostIp, String templateUrl, String localStorageUuid,
-            String primaryStorage) {
+            String primaryStorage, String secondaryStorage) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
         this.hostCidr = cidr;
@@ -72,6 +73,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.templateUrl = templateUrl;
         this.localStorageUuid = localStorageUuid;
         this.primaryStorageUrl = primaryStorage;
+        this.setSecondaryStorage(secondaryStorage);
     }
     
     protected String getHostGuid() {
@@ -101,4 +103,12 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     protected String getPrimaryStorageUrl() {
         return this.primaryStorageUrl;
     }
+
+	public String getSecondaryStorage() {
+		return secondaryStorage;
+	}
+
+	public void setSecondaryStorage(String secondaryStorage) {
+		this.secondaryStorage = secondaryStorage;
+	}
 }

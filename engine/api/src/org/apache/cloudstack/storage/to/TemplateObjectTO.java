@@ -26,6 +26,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 
 public class TemplateObjectTO implements DataTO {
     private  String path;
+    private String origUrl;
     private  String uuid;
     private  DiskFormat diskType;
     private  DataStoreTO imageDataStore;
@@ -35,8 +36,9 @@ public class TemplateObjectTO implements DataTO {
         
     }
     public TemplateObjectTO(TemplateInfo template) {
-        this.path = template.getUri();
+        this.path = template.getInstallPath();
         this.uuid = template.getUuid();
+        this.origUrl = template.getUri();
         //this.diskType = template.getDiskType();
         this.imageDataStore = template.getDataStore().getTO();
         this.name = template.getUniqueName();
@@ -84,4 +86,10 @@ public class TemplateObjectTO implements DataTO {
     public void setName(String name) {
         this.name = name;
     }
+	public String getOrigUrl() {
+		return origUrl;
+	}
+	public void setOrigUrl(String origUrl) {
+		this.origUrl = origUrl;
+	}
 }

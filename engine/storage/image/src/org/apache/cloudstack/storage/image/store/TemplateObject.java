@@ -108,12 +108,9 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public String getUri() {
         VMTemplateVO image = imageDao.findById(this.imageVO.getId());
-        if (this.dataStore == null) {
+       
             return image.getUrl();
-        } else {
-            DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
-           return obj.getInstallPath();
-        }
+       
     }
 
     @Override
@@ -218,4 +215,10 @@ public class TemplateObject implements TemplateInfo {
 
         return to;
     }
+
+	@Override
+	public String getInstallPath() {
+		 DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
+         return obj.getInstallPath();
+	}
 }

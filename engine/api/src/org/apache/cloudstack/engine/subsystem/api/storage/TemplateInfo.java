@@ -20,4 +20,5 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public interface TemplateInfo extends DataObject {
     public String getUniqueName();
+    public String getInstallPath();
 }

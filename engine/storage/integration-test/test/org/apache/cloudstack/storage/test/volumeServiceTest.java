@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.test;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
@@ -78,6 +81,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
@@ -114,6 +118,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	TemplateDataFactory imageDataFactory;
 	@Inject
 	VolumeDataFactory volumeFactory;
+	@Inject
+	ImageStoreDao imageStoreDao;
+	ImageStoreVO imageStore;
 	Long dcId;
 	Long clusterId;
 	Long podId;
@@ -124,12 +131,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
     @Test(priority = -1)
 	public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-       /* try {
-            dataStoreProviderMgr.configure(null, new HashMap<String, Object>());
-        } catch (ConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
+  
         host = hostDao.findByGuid(this.getHostGuid());
         if (host != null) {
             dcId = host.getDataCenterId();
@@ -171,6 +173,15 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
+		
+		imageStore = new ImageStoreVO();
+		imageStore.setName("test");
+		imageStore.setDataCenterId(dcId);
+		imageStore.setProviderName("CloudStack ImageStore Provider");
+		imageStore.setRole(DataStoreRole.Image);
+		imageStore.setUrl(this.getSecondaryStorage());
+		imageStore.setUuid(UUID.randomUUID().toString());
+		imageStore = imageStoreDao.persist(imageStore);
 
 		//primaryStore = createPrimaryDataStore();
 
@@ -227,8 +238,10 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		image.setCrossZones(true);
 		image.setExtractable(true);
 
+		
 		//image.setImageDataStoreId(storeId);
 		image = imageDataDao.persist(image);
+		
 
 		return image;
 	}

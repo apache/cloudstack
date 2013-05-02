@@ -12,6 +12,7 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.download.DownloadListener;
 import com.cloud.storage.resource.LocalNfsSecondaryStorageResource;
@@ -38,7 +39,7 @@ public class LocalHostEndpoint implements EndPoint {
 
     @Override
 	public Answer sendMessage(Command cmd) {
-		if (cmd instanceof CopyCommand) {
+		if ((cmd instanceof CopyCommand) || (cmd instanceof DownloadCommand)) {
 			return resource.executeRequest(cmd);
 		}
 		// TODO Auto-generated method stub

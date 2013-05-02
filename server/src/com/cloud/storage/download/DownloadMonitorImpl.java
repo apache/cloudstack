@@ -97,14 +97,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
-    AlertManager _alertMgr;
-    @Inject
-    protected SwiftManager _swiftMgr;
-    @Inject
-    SecondaryStorageVmManager _ssvmMgr;
-    @Inject
-    StorageManager _storageMgr;
-    @Inject
     VMTemplateDao _templateDao = null;
     @Inject
     private AgentManager _agentMgr;
@@ -112,18 +104,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     SecondaryStorageVmManager _secMgr;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    UserVmManager _vmMgr;
-
-    @Inject
-    TemplateManager templateMgr;
-
-    @Inject
-    protected ResourceLimitService _resourceLimitMgr;
-    @Inject
-    protected UserVmDao _userVmDao;
-    @Inject
-    protected AccountManager _accountMgr;
     @Inject
     EndPointSelector _epSelector;
     @Inject
@@ -144,9 +124,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
     final Map<VolumeDataStoreVO, DownloadListener> _listenerVolMap = new ConcurrentHashMap<VolumeDataStoreVO, DownloadListener>();
 
-    public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
-        _agentMgr.send(hostId, new Commands(cmd), listener);
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {

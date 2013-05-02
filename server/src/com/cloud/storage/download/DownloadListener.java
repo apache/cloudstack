@@ -183,8 +183,8 @@ public class DownloadListener implements Listener {
 				if (this.object.getType() == DataObjectType.VOLUME) {
 					dcmd.setResourceType(ResourceType.VOLUME);
 				}
-	            _downloadMonitor.send(_ssAgent.getId(), dcmd, this);
-            } catch (AgentUnavailableException e) {
+	            _ssAgent.sendMessageAsyncWithListener(dcmd, this);
+            } catch (Exception e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();
             }
