@@ -24,6 +24,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl;
+import org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -43,12 +46,14 @@ import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.dc.ClusterDetailsDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
+import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
+import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
@@ -61,6 +66,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
+import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.StoragePoolHostDaoImpl;
 import com.cloud.storage.dao.StoragePoolWorkDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
@@ -128,7 +134,10 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         ConsoleProxyDaoImpl.class,
         StoragePoolWorkDaoImpl.class,
         StorageCacheManagerImpl.class,
-        UserDaoImpl.class
+        UserDaoImpl.class,
+        DataCenterDaoImpl.class,
+        StoragePoolDetailsDaoImpl.class,
+        DomainDaoImpl.class
 
 },
 includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
@@ -136,10 +145,6 @@ useDefaultFilters=false
 )
 public class ChildTestConfiguration extends TestConfiguration {
 	
-	@Bean
-	public EndPointSelector selector() {
-	    return Mockito.mock(EndPointSelector.class);
-	}
 
 	@Bean
 	public AgentManager agentMgr() {
