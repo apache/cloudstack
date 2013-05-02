@@ -900,20 +900,49 @@
 
               // Granular settings for account
               settings: {
-                title: 'label.menu.global.settings',
+                title: 'Settings',
                 custom: cloudStack.uiCustom.granularSettings({
                   dataProvider: function(args) {
-                    args.response.success({
-                      data: [
-                        { name: 'config.param.1', value: 1 },
-                        { name: 'config.param.2', value: 2 }
-                      ]
-                    });
+                     $.ajax({
+                            url:createURL('listConfigurations&accountid=' + args.context.accounts[0].id),
+                             data: { page: args.page, pageSize: pageSize, listAll: true },
+                            success:function(json){
+                              args.response.success({
+                                 data:json.listconfigurationsresponse.configuration
+
+                                 });
+
+                             },
+
+                            error:function(json){
+                              args.response.error(parseXMLHttpResponse(json));
+
+                             }
+                       });
+
                   },
                   actions: {
                     edit: function(args) {
                       // call updateAccountLevelParameters
-                      args.response.success();
+                       var data = {
+                                 name: args.data.jsonObj.name,
+                                 value: args.data.value
+                                     };
+
+                          $.ajax({
+                          url:createURL('updateConfiguration&accountid=' + args.context.accounts[0].id),
+                          data:data,
+                          success:function(json){
+                              var item = json.updateconfigurationresponse.configuration;
+                              args.response.success({data:item});
+                            },
+
+                          error: function(json) {
+                             args.response.error(parseXMLHttpResponse(json));
+                            }
+
+                           });
+
                     }
                   }
                 })
