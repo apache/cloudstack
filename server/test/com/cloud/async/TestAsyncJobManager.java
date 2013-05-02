@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.messagebus.SubjectConstants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +81,7 @@ public class TestAsyncJobManager extends TestCase {
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {
     			System.out.println("Check condition to exit");
+    			messageBus.publish(null, SubjectConstants.JOB_HEARTBEAT, PublishScope.LOCAL, 1L);
     			return false;
     		}
     	});
