@@ -258,7 +258,9 @@ public class DownloadListener implements Listener {
 	}
 
 	public void callback(DownloadAnswer answer) {
-		this._callback.complete(answer);
+	    if ( _callback != null ){
+	        this._callback.complete(answer);
+	    }
 	}
 
 	@Override

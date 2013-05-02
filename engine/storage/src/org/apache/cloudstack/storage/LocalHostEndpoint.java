@@ -14,6 +14,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.download.DownloadListener;
 import com.cloud.storage.resource.LocalNfsSecondaryStorageResource;
 import com.cloud.utils.component.ComponentContext;
@@ -69,8 +70,13 @@ public class LocalHostEndpoint implements EndPoint {
 		}
 		@Override
 		public void run() {
-			DownloadAnswer answer = (DownloadAnswer)sendMessage(cmd);
-			callback.complete(answer);
+            try {
+                DownloadAnswer answer = (DownloadAnswer) sendMessage(cmd);
+                callback.complete(answer);
+            } catch (Exception ex) {
+                DownloadAnswer fail = new DownloadAnswer("Error in handling DownloadCommand : " + ex.getMessage(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                callback.complete(fail);
+            }
 		}
 	}
 	@Override

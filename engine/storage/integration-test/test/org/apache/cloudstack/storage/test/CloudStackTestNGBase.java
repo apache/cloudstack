@@ -37,35 +37,42 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String primaryStorageUrl;
     private String secondaryStorage;
     private Transaction txn;
-    
+
+    private String s3AccessKey;
+    private String s3SecretKey;
+    private String s3EndPoint;
+    private String s3TemplateBucket;
+    private boolean s3UseHttps;
+
     protected void injectMockito() {
-        
+
     }
-    
+
     @BeforeMethod(alwaysRun = true)
     protected  void injectDB(Method testMethod) throws Exception {
         txn = Transaction.open(testMethod.getName());
     }
-    
+
     @Test
     protected  void injectMockitoTest() {
         injectMockito();
     }
-    
+
     @AfterMethod(alwaysRun = true)
     protected void closeDB(Method testMethod) throws Exception {
         if (txn != null) {
             txn.close();
         }
     }
-    
+
     @BeforeMethod(alwaysRun = true)
-    @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr", 
-        "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid", 
-        "primary-storage-want-to-add", "devcloud-secondary-storage"})
-    protected void setup(String hostuuid, String gateway, String cidr, 
+    @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr",
+        "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid",
+        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps"})
+    protected void setup(String hostuuid, String gateway, String cidr,
             String hostIp, String templateUrl, String localStorageUuid,
-            String primaryStorage, String secondaryStorage) {
+            String primaryStorage, String secondaryStorage, String s3_accessKey, String s3_secretKey, String s3_endpoint, String s3_template_bucket,
+            String s3_usehttps) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
         this.hostCidr = cidr;
@@ -74,32 +81,38 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.localStorageUuid = localStorageUuid;
         this.primaryStorageUrl = primaryStorage;
         this.setSecondaryStorage(secondaryStorage);
+        // set S3 parameters
+        this.s3AccessKey = s3_accessKey;
+        this.s3SecretKey = s3_secretKey;
+        this.s3EndPoint = s3_endpoint;
+        this.s3TemplateBucket = s3_template_bucket;
+        this.s3UseHttps = Boolean.parseBoolean(s3_usehttps);
     }
-    
+
     protected String getHostGuid() {
         return this.hostGuid;
     }
-    
+
     protected String getHostGateway() {
         return this.hostGateway;
     }
-    
+
     protected String getHostCidr() {
         return this.hostCidr;
     }
-    
+
     protected String getHostIp() {
         return this.hostIp;
     }
-    
+
     protected String getTemplateUrl() {
         return this.templateUrl;
     }
-    
+
     protected String getLocalStorageUuid() {
         return this.localStorageUuid;
     }
-    
+
     protected String getPrimaryStorageUrl() {
         return this.primaryStorageUrl;
     }
@@ -111,4 +124,27 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 	public void setSecondaryStorage(String secondaryStorage) {
 		this.secondaryStorage = secondaryStorage;
 	}
+
+    public String getS3AccessKey() {
+        return s3AccessKey;
+    }
+
+    public String getS3SecretKey() {
+        return s3SecretKey;
+    }
+
+    public String getS3EndPoint() {
+        return s3EndPoint;
+    }
+
+    public String getS3TemplateBucket() {
+        return s3TemplateBucket;
+    }
+
+    public boolean isS3UseHttps() {
+        return s3UseHttps;
+    }
+
+
+
 }

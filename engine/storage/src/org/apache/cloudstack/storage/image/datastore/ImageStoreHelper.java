@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.image.datastore;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -51,7 +52,12 @@ public class ImageStoreHelper {
         store.setProtocol((String)params.get("protocol"));
         store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
-        store.setUuid((String)params.get("uuid"));
+        String uuid = (String)params.get("uuid");
+        if (uuid != null) {
+            store.setUuid(uuid);
+        } else {
+            store.setUuid(UUID.randomUUID().toString());
+        }
         store.setUrl((String)params.get("url"));
         store.setRole(DataStoreRole.getRole((String)params.get("role")));
         store = imageStoreDao.persist(store);
@@ -69,7 +75,12 @@ public class ImageStoreHelper {
         store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
         store.setDataCenterId((Long)params.get("zoneId"));
-        store.setUuid((String)params.get("uuid"));
+        String uuid = (String)params.get("uuid");
+        if (uuid != null) {
+            store.setUuid(uuid);
+        } else {
+            store.setUuid(UUID.randomUUID().toString());
+        }
         store.setUrl((String)params.get("url"));
         store.setRole((DataStoreRole)params.get("role"));
         store = imageStoreDao.persist(store);

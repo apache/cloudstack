@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -54,6 +56,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -136,10 +139,10 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
                 details.get(ApiConstants.S3_SECRET_KEY),
                 details.get(ApiConstants.S3_END_POINT),
                 details.get(ApiConstants.S3_BUCKET_NAME),
-                Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)),
-                Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
-                Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
-                Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)),
+                details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)),
+                details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)),
                 imgStore.getCreated());
 
     }
@@ -167,22 +170,26 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
     @Override
     public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
+
+        CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
+        AsyncCallbackDispatcher<S3ImageStoreDriverImpl, DownloadAnswer> caller =
+                AsyncCallbackDispatcher.create(this);
+        caller.setContext(context);
+        caller.setCallback(caller.getTarget().createAsyncCallback(null, null));
+
+
         if (data.getType() == DataObjectType.TEMPLATE) {
             TemplateObject tData = (TemplateObject)data;
-            _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), null);
+            _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             VolumeObject volInfo = (VolumeObject)data;
             RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
             _downloadMonitor.downloadVolumeToStorage(volInfo, volInfo.getDataStore(), payload.getUrl(),
-                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), null);
+                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), caller);
         }
-
-        CreateCmdResult result = new CreateCmdResult(null, null);
-        callback.complete(result);
     }
 
     private void deleteVolume(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
         VolumeVO vol = volumeDao.findById(data.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunging " + vol);
@@ -217,6 +224,48 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             callback.complete(result);
             return;
         }
+    }
+
+
+    protected Void createAsyncCallback(AsyncCallbackDispatcher<S3ImageStoreDriverImpl, DownloadAnswer> callback,
+            CreateContext<CreateCmdResult> context) {
+        DownloadAnswer answer = callback.getResult();
+        DataObject obj = context.data;
+        DataStore store = obj.getDataStore();
+
+        TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
+        updateBuilder.setDownloadPercent(answer.getDownloadPct());
+        updateBuilder.setDownloadState(answer.getDownloadStatus());
+        updateBuilder.setLastUpdated(new Date());
+        updateBuilder.setErrorString(answer.getErrorString());
+        updateBuilder.setJobId(answer.getJobId());
+        updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+        updateBuilder.setInstallPath(answer.getInstallPath());
+        updateBuilder.setSize(answer.getTemplateSize());
+        updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+        _templateStoreDao.update(store.getId(), updateBuilder);
+
+        AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
+                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
+                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            result.setSucess(false);
+            result.setResult(answer.getErrorString());
+            caller.complete(result);
+        } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            if (answer.getCheckSum() != null) {
+                VMTemplateVO templateDaoBuilder = templateDao.createForUpdate();
+                templateDaoBuilder.setChecksum(answer.getCheckSum());
+                templateDao.update(obj.getId(), templateDaoBuilder);
+            }
+
+
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            caller.complete(result);
+        }
+        return null;
     }
 
     private void deleteTemplate(DataObject data, AsyncCompletionCallback<CommandResult> callback) {

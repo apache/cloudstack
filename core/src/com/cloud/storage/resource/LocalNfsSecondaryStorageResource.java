@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -31,12 +32,17 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class LocalNfsSecondaryStorageResource extends
 		NfsSecondaryStorageResource {
 
+    public LocalNfsSecondaryStorageResource(){
+        _dlMgr = new DownloadManagerImpl();
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadSystemTemplateCommand){
             return execute((DownloadSystemTemplateCommand)cmd);
         } else {
-            return Answer.createUnsupportedCommandAnswer(cmd);
+            //return Answer.createUnsupportedCommandAnswer(cmd);
+            return super.executeRequest(cmd);
         }
     }
 

@@ -154,18 +154,11 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    private class createObjectContext<T> extends AsyncRpcConext<T> {
-    	final DataObject data;
-		public createObjectContext(AsyncCompletionCallback<T> callback, DataObject data) {
-			super(callback);
-			this.data = data;
-		}
 
-    }
     @Override
     public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
-    	createObjectContext<CreateCmdResult> context = new createObjectContext<CreateCmdResult>(callback, data);
+    	CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
         AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller =
         		AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
@@ -184,7 +177,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     protected Void createAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
-    		createObjectContext<CreateCmdResult> context) {
+    		CreateContext<CreateCmdResult> context) {
     	DownloadAnswer answer = callback.getResult();
     	DataObject obj = context.data;
     	DataStore store = obj.getDataStore();

@@ -46,6 +46,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -120,9 +121,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(obj.getId());
                 ts.setDataStoreId(dataStore.getId());
-                if (dataStore.getRole() == DataStoreRole.ImageCache) {
-                	ts.setInstallPath("template/tmpl/" + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
-                }
+                ts.setInstallPath(TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR  + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ts = templateDataStoreDao.persist(ts);
                 break;
@@ -131,9 +130,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
-                if (dataStore.getRole() == DataStoreRole.ImageCache) {
-                	ss.setInstallPath("/snapshots/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
-                }
+                ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
                 break;
@@ -141,9 +138,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
                 vs.setVolumeId(obj.getId());
                 vs.setDataStoreId(dataStore.getId());
-                if (dataStore.getRole() == DataStoreRole.ImageCache) {
-                	vs.setInstallPath("/volumes/" + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
-                }
+                vs.setInstallPath(TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + "/" + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 vs.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 vs = volumeDataStoreDao.persist(vs);
                 break;
