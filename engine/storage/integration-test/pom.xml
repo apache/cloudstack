@@ -46,7 +46,13 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-storage-imagemotion</artifactId>
+      <artifactId>cloud-engine-storage-datamotion</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-cache</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
@@ -56,6 +62,7 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>

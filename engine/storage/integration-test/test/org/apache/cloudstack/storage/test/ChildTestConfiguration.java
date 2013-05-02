@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
+import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -69,11 +70,14 @@ import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
+import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.VirtualMachineManager;
@@ -121,9 +125,9 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         OCFS2ManagerImpl.class,
         ClusterDetailsDaoImpl.class,
         SecondaryStorageVmDaoImpl.class,
-        
         ConsoleProxyDaoImpl.class,
         StoragePoolWorkDaoImpl.class,
+        StorageCacheManagerImpl.class,
         UserDaoImpl.class
 
 },
@@ -147,6 +151,20 @@ public class ChildTestConfiguration extends TestConfiguration {
         return new MockHostEndpointRpcServerDirectCallResource();
     }
     
+    @Bean
+    public ResourceLimitService limtServe() {
+        return Mockito.mock(ResourceLimitService.class);
+    }
+    
+    @Bean
+    public DownloadMonitor downloadMonitor() {
+        return Mockito.mock(DownloadMonitor.class);
+    }
+    
+    @Bean
+    public AccountManager acctMgt() {
+        return Mockito.mock(AccountManager.class);
+    }
     @Bean
     public RpcProvider rpcProvider() {
     	return Mockito.mock(RpcProvider.class);

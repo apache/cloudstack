@@ -711,14 +711,13 @@ public class XenServerStorageResource {
     protected CopyCmdAnswer copyTemplateToPrimaryStorage(DataTO srcData, DataTO destData, int wait) {
         DataStoreTO srcStore = srcData.getDataStore();
         try {
-            if (srcStore.getRole() == DataStoreRole.ImageCache && srcData.getObjectType() == DataObjectType.TEMPLATE) {
-                ImageStoreTO srcImageStore = (ImageStoreTO)srcStore;
+            if ((srcStore instanceof NfsTO) && (srcData.getObjectType() == DataObjectType.TEMPLATE)) {
+                NfsTO srcImageStore = (NfsTO)srcStore;
                 TemplateObjectTO srcTemplate = (TemplateObjectTO)srcData;
-                String storeUrl = srcImageStore.getUri();
-                if (!storeUrl.startsWith("nfs")) {
-                    return new CopyCmdAnswer("only nfs image cache store supported");
-                }
-                String tmplpath = storeUrl + ":" + srcData.getPath();
+                String storeUrl = srcImageStore.getUrl();
+            
+                URI uri = new URI(storeUrl);
+                String tmplpath = uri.getHost() + ":" + uri.getPath() + "/" + srcData.getPath();
                 PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
                 String poolName = destStore.getUuid();
                 Connection conn = hypervisorResource.getConnection();
@@ -749,9 +748,8 @@ public class XenServerStorageResource {
                 } catch (Exception e) {
                 }
 
-                VolumeObjectTO newVol = new VolumeObjectTO();
+                TemplateObjectTO newVol = new TemplateObjectTO();
                 newVol.setUuid(snapshotvdi.getUuid(conn));
-                newVol.setSize(phySize);
                 newVol.setPath(newVol.getUuid());
                 return new CopyCmdAnswer(newVol);
             }
@@ -1214,8 +1212,13 @@ public class XenServerStorageResource {
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
+        DataObjectType srcType = srcData.getObjectType();
+        DataObjectType destType = destData.getObjectType();
+        DataStoreRole destRole = destDataStore.getRole();
+        
+        boolean nfs = (srcDataStore instanceof NfsTO) ? true : false;
 
-        if (srcData.getObjectType() == DataObjectType.TEMPLATE && (srcDataStore instanceof NfsTO)  && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+        if ((srcData.getObjectType() == DataObjectType.TEMPLATE) && (srcDataStore instanceof NfsTO)  && (destData.getDataStore().getRole() == DataStoreRole.Primary)) {
             //copy template to primary storage
             return copyTemplateToPrimaryStorage(srcData, destData, cmd.getWait());
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {

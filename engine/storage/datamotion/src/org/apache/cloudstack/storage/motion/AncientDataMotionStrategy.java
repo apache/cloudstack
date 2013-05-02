@@ -307,7 +307,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             errMsg = e.toString();
         }
         CopyCommandResult result = new CopyCommandResult(null, answer);
-        result.setResult(errMsg);
+        if (!answer.getResult()) {
+            result.setResult(answer.getDetails());
+        }
         callback.complete(result);
 
         return null;

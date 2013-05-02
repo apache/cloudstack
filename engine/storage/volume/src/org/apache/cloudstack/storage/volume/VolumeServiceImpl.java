@@ -103,7 +103,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
-    DownloadMonitor _dlMonitor;
+    DownloadMonitor downloadMonitor;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -111,8 +111,6 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject VMInstanceDao vmDao;
     @Inject
     ConfigurationDao configDao;
-    @Inject
-    SecondaryStorageVmManager _ssvmMgr;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -815,7 +813,7 @@ public class VolumeServiceImpl implements VolumeService {
                 }
                 s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
                 //TODO: pass a callback later
-                _dlMonitor.downloadVolumeToStorage(this.volFactory.getVolume(volumeHost.getVolumeId()), store,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat(), null);
+                downloadMonitor.downloadVolumeToStorage(this.volFactory.getVolume(volumeHost.getVolumeId()), store,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat(), null);
             }
         }
 
