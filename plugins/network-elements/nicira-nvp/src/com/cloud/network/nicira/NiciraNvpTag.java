@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.network.nicira;
 
+import org.apache.log4j.Logger;
+
 public class NiciraNvpTag {
+    private static final Logger s_logger = Logger.getLogger(NiciraNvpTag.class);
     private String scope;
     private String tag;
     
@@ -24,7 +27,12 @@ public class NiciraNvpTag {
     
     public NiciraNvpTag(String scope, String tag) {
         this.scope = scope;
-        this.tag = tag;
+        if (tag.length() > 40) {
+            s_logger.warn("tag \"" + tag + "\" too long, truncating to 40 characters");
+            this.tag = tag.substring(0, 40);
+        } else {
+            this.tag = tag;
+        }
     }
     
     public String getScope() {
@@ -40,7 +48,12 @@ public class NiciraNvpTag {
     }
     
     public void setTag(String tag) {
-        this.tag = tag;
+        if (tag.length() > 40) {
+            s_logger.warn("tag \"" + tag + "\" too long, truncating to 40 characters");
+            this.tag = tag.substring(0, 40);
+        } else {
+            this.tag = tag;
+        }
     }
     
 }
