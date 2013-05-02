@@ -875,7 +875,9 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                         tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
                         tmpltHost.setLastUpdated(new Date());
 
-                        if (tmpltInfo.getSize() > 0) {
+                        // Skipping limit checks for SYSTEM Account and for the templates created from volumes or snapshots
+                        // which already got checked and incremented during createTemplate API call.
+                        if (tmpltInfo.getSize() > 0 && tmplt.getAccountId() != Account.ACCOUNT_ID_SYSTEM && tmplt.getUrl() != null) {
                             long accountId = tmplt.getAccountId();
                             try {
                                 _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
