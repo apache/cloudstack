@@ -76,6 +76,8 @@ public class OvsVifDriver extends VifDriverBase {
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             logicalSwitchUuid = nic.getBroadcastUri().getSchemeSpecificPart();
+        } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) {
+            vlanId = NetUtils.getPrimaryPvlanFromUri(nic.getBroadcastUri());
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
