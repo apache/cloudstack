@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -60,7 +59,6 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
@@ -69,7 +67,6 @@ import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentMethodInterceptable;
 import com.cloud.utils.component.ManagerBase;
@@ -100,7 +97,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 	@Inject private ImageStoreDao _imageStoreDao;
 	@Inject private StorageManager _storageManager;
 	@Inject private StoragePoolHostDao _storagePoolHostDao;
-	@Inject private SecondaryStorageVmManager _ssvmMgr;
 	@Inject private DataStoreManager _dataStoreMgr;
 	@Inject private ResourceManager _resourceMgr;
     @Inject private ConfigurationDao _configDao;

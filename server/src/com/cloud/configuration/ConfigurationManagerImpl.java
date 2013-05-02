@@ -104,7 +104,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -147,7 +146,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.S3Dao;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.s3.S3Manager;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
@@ -231,8 +229,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ResourceLimitService _resourceLimitMgr;
     @Inject
     ProjectManager _projectMgr;
-    @Inject
-    SecondaryStorageVmManager _ssvmMgr;
     @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
