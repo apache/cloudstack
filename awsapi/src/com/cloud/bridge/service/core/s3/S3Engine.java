@@ -1126,7 +1126,7 @@ public class S3Engine {
         SBucketVO sbucket = bucketDao.getByName( bucketName );
         if (sbucket == null) {
             response.setResultCode(404);
-            response.setResultDescription("<Code>Bucket dosen't exists</Code><Message>Bucket " + bucketName + " does not exist</Message>");
+            response.setResultDescription("<Code>Bucket doesn't exists</Code><Message>Bucket " + bucketName + " does not exist</Message>");
             return response;
         }
 

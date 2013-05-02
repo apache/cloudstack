@@ -648,7 +648,7 @@ public class CitrixHelper {
         _xenServer610GuestOsMap.put("Windows 7 (32-bit)", "Windows 7 (32-bit)");
         _xenServer610GuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
         _xenServer610GuestOsMap.put("Windows 8 (32-bit)", "Windows 8 (32-bit) (experimental)");
-        _xenServer610GuestOsMap.put("Windows 8 (64-bit)", "Windows 7 (64-bit) (experimental)");
+        _xenServer610GuestOsMap.put("Windows 8 (64-bit)", "Windows 8 (64-bit) (experimental)");
         _xenServer610GuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003 (32-bit)");
         _xenServer610GuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 (64-bit)");
         _xenServer610GuestOsMap.put("Windows Server 2003 PAE (32-bit)", "Windows Server 2003 PAE (32-bit)");
@@ -661,6 +661,7 @@ public class CitrixHelper {
         _xenServer610GuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008 (32-bit)");
         _xenServer610GuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 (64-bit)");
         _xenServer610GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
+        _xenServer610GuestOsMap.put("Windows Server 2012 (64-bit)", "Windows Server 2012 (64-bit) (experimental)");
         _xenServer610GuestOsMap.put("Windows Server 8 (64-bit)", "Windows Server 2012 (64-bit) (experimental)");
         _xenServer610GuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
         _xenServer610GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");

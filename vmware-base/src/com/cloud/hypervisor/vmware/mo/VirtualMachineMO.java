@@ -1281,6 +1281,7 @@ public class VirtualMachineMO extends BaseMO {
 					long totalBytesDownloaded = 0;
 
 					List<HttpNfcLeaseDeviceUrl> deviceUrls = leaseInfo.getDeviceUrl();
+					s_logger.info("volss: copy vmdk and ovf file starts " + System.currentTimeMillis());
 					if(deviceUrls != null) {
 						OvfFile[] ovfFiles = new OvfFile[deviceUrls.size()];
 						for (int i = 0; i < deviceUrls.size(); i++) {
@@ -1328,7 +1329,7 @@ public class VirtualMachineMO extends BaseMO {
 
 						// tar files into OVA
 						if(packToOva) {
-						    // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+                                                    // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
                             s_logger.info("Sync file system before we package OVA...");
 
 						    Script commandSync = new Script(true, "sync", 0, s_logger);
@@ -1351,8 +1352,11 @@ public class VirtualMachineMO extends BaseMO {
 					        } else {
 					            s_logger.error(exportDir + File.separator + exportName + ".ova is not created as expected");
 					        }
+						} else {
+							success = true;
 						}
 					}
+					s_logger.info("volss: copy vmdk and ovf file finishes " + System.currentTimeMillis());
 				} catch(Throwable e) {
 					s_logger.error("Unexpected exception ", e);
 				} finally {

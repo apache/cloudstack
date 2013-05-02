@@ -231,6 +231,7 @@ public class ApiConstants {
     public static final String VOLUME_ID = "volumeid";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
+    public static final String ZONE_TYPE = "zonetype";
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
@@ -334,6 +335,7 @@ public class ApiConstants {
     public static final String LOAD_BALANCER_DEVICE_STATE = "lbdevicestate";
     public static final String LOAD_BALANCER_DEVICE_CAPACITY = "lbdevicecapacity";
     public static final String LOAD_BALANCER_DEVICE_DEDICATED = "lbdevicededicated";
+    public static final String LOAD_BALANCER_RULE = "loadbalancerrule";
     public static final String LOAD_BALANCER_RULE_LIST = "loadbalancerrulelist";
     public static final String FIREWALL_DEVICE_ID = "fwdeviceid";
     public static final String FIREWALL_DEVICE_NAME = "fwdevicename";
@@ -365,6 +367,8 @@ public class ApiConstants {
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
     public static final String DEFAULT_ZONE_ID = "defaultzoneid";
+    public static final String LIVE_MIGRATE = "livemigrate";
+    public static final String MIGRATE_TO = "migrateto";
     public static final String GUID = "guid";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
@@ -477,6 +481,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
+    public static final String AFFINITY_GROUP_ID = "affinitygroupid";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

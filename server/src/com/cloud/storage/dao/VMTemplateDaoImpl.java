@@ -353,6 +353,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		tmpltTypeHyperSearch2 = createSearchBuilder();
 		tmpltTypeHyperSearch2.and("templateType", tmpltTypeHyperSearch2.entity().getTemplateType(), SearchCriteria.Op.EQ);
 		tmpltTypeHyperSearch2.and("hypervisorType", tmpltTypeHyperSearch2.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        tmpltTypeHyperSearch2.and("templateName", tmpltTypeHyperSearch2.entity().getName(), SearchCriteria.Op.EQ);
 
 
 		tmpltTypeSearch = createSearchBuilder();
@@ -520,7 +521,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter,
 	        boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
 	        Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts,
-	        Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+	        Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
         StringBuilder builder = new StringBuilder();
         if (!permittedAccounts.isEmpty()) {
             for (Account permittedAccount : permittedAccounts) {
@@ -564,7 +565,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
         	}
-
+        	
+        	if (zoneType != null) {
+        	    dataCenterJoin = " INNER JOIN template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)";
+                dataCenterJoin += " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
+            }
+        	
         	if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared ){
         	    lpjoin = " INNER JOIN launch_permission lp ON t.id = lp.template_id ";
         	}
@@ -691,7 +697,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
 
             sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId,
-                    onlyReady, showDomr) + groupByClause + getOrderByLimit(pageSize, startIndex);
+                    onlyReady, showDomr, zoneType) + groupByClause + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -752,7 +758,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return templateZonePairList;
 	}
 
-	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType, Long zoneId, boolean onlyReady, boolean showDomr) {
+	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType, Long zoneId, boolean onlyReady, boolean showDomr, String zoneType) {
 	    String sql = "";
         if (keyword != null) {
             sql += " t.name LIKE \"%" + keyword + "%\" AND";
@@ -782,10 +788,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		sql += " AND h.data_center_id = " +zoneId;
             }
         }else if (zoneId != null){
-        	sql += " AND tzr.zone_id = " +zoneId+ " AND tzr.removed is null" ;
+        	sql += " AND tzr.zone_id = " +zoneId+ " AND tzr.removed is null" ;        	     	
         }else{
         	sql += " AND tzr.removed is null ";
         }
+        
+        if (zoneType != null){            
+            sql += " AND dc.networktype = '" + zoneType + "'";
+        }   
+        
         if (!showDomr){
         	sql += " AND t.type != '" +Storage.TemplateType.SYSTEM.toString() + "'";
         }
@@ -894,10 +905,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public VMTemplateVO findRoutingTemplate(HypervisorType hType) {
+	public VMTemplateVO findRoutingTemplate(HypervisorType hType, String templateName) {
 	    SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
         sc.setParameters("hypervisorType", hType);
+        if (templateName != null) {
+            sc.setParameters("templateName", templateName);
+        }
 
         //order by descending order of id and select the first (this is going to be the latest)
         List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1l));

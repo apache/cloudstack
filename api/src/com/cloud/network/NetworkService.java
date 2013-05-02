@@ -138,6 +138,7 @@ public interface NetworkService {
         ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
 
     /**
+     *
      * @param networkName
      * @param displayText
      * @param physicalNetworkId
@@ -148,17 +149,18 @@ public interface NetworkService {
      * @param netmask
      * @param networkOwnerId
      * @param vpcId TODO
+     * @param sourceNat
      * @return
      * @throws InsufficientCapacityException
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
+                                 String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
-    String allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
+    NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
             Long networkId, String ipaddress) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);

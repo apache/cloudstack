@@ -41,6 +41,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
         super();
         PoolSearch = createSearchBuilder();
         PoolSearch.and("pool", PoolSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        PoolSearch.and("name", PoolSearch.entity().getName(), SearchCriteria.Op.EQ);
         PoolSearch.done();
     }
     
@@ -71,5 +72,14 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
     	}
     	
     	return detailsMap;
+    }
+
+    @Override
+    public StoragePoolDetailVO findDetail(long poolId, String name) {
+        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
+        sc.setParameters("pool", poolId);
+        sc.setParameters("name", name);
+
+        return findOneIncludingRemovedBy(sc);
     }
 }

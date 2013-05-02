@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="non-contiguous-vlan">
+  <title>Non Contiguous VLAN Ranges</title>
+  <para>&PRODUCT; provides you with the flexibility to add non contiguous VLAN ranges to your
+    network. The administrator can either update an existing VLAN range or add multiple non
+    contiguous VLAN ranges while creating a zone. You can also use the UpdatephysicalNetwork API to
+    extend the VLAN range.</para>
+  <section id="add-vlan-range">
+    <title>Adding a New VLAN Range</title>
+    <orderedlist>
+      <listitem><para>Log in to the CloudPlatform UI as an administrator or end user.</para></listitem>
+      <listitem>
+        <para>Ensure that the VLAN range does not already exist.</para>
+      </listitem>
+      <listitem>
+        <para>Check whether the new VLAN range overlaps with any existing ones. If overlaps, extend
+          the existing range. If does not overlap, add the new range.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Infrastructure. On Zones, click View More, then click the zone to
+          which you want to work with.</para>
+      </listitem>
+      <listitem>
+        <para>Click Physical Network.</para>
+      </listitem>
+      <listitem>
+        <para>In the Guest node of the diagram, click Configure.</para>
+      </listitem>
+      <listitem>
+        <para>Click Add VLAN Ranges button <inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/add-vlan-icon.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>add-vlan-ico.png: button to add a VLAN range.</phrase>
+            </textobject>
+          </inlinemediaobject></para>
+        <para>The Add VLAN Ranges dialog is displayed.</para>
+      </listitem>
+      <listitem>
+        <para>Specify the start and end of the VLAN range.</para>
+      </listitem>
+      <listitem>
+      <para>Click OK.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+</section>

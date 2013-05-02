@@ -54,15 +54,19 @@ public class PrivateIpVO implements InternalIdentity {
     
     @Column(name="vpc_id")
     private Long vpcId;
+
+    @Column(name="source_nat")
+    private boolean sourceNat;
     
     public PrivateIpVO() {
-    } 
+    }
 
-    public PrivateIpVO(String ipAddress, long networkId, long macAddress, long vpcId) {
+    public PrivateIpVO(String ipAddress, long networkId, long macAddress, long vpcId, boolean sourceNat) {
         this.ipAddress = ipAddress;
         this.networkId = networkId;
         this.macAddress = macAddress;
         this.vpcId = vpcId;
+        this.sourceNat = sourceNat;
     }
     
     public void setTakenAt(Date takenDate) {
@@ -92,4 +96,8 @@ public class PrivateIpVO implements InternalIdentity {
     public Long getVpcId() {
         return vpcId;
     }
+    public boolean getSourceNat() {
+        return sourceNat;
+    }
+
 }

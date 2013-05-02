@@ -277,6 +277,7 @@
 
           detailView: {
             name: 'Account details',
+            isMaximized: true,
             viewAll: { path: 'accounts.users', label: 'label.users' },
 
             actions: {
@@ -895,6 +896,56 @@
 										}
 									});
                 }
+              },
+
+              // Granular settings for account
+              settings: {
+                title: 'Settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                     $.ajax({
+                            url:createURL('listConfigurations&accountid=' + args.context.accounts[0].id),
+                             data: { page: args.page, pageSize: pageSize, listAll: true },
+                            success:function(json){
+                              args.response.success({
+                                 data:json.listconfigurationsresponse.configuration
+
+                                 });
+
+                             },
+
+                            error:function(json){
+                              args.response.error(parseXMLHttpResponse(json));
+
+                             }
+                       });
+
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateAccountLevelParameters
+                       var data = {
+                                 name: args.data.jsonObj.name,
+                                 value: args.data.value
+                                     };
+
+                          $.ajax({
+                          url:createURL('updateConfiguration&accountid=' + args.context.accounts[0].id),
+                          data:data,
+                          success:function(json){
+                              var item = json.updateconfigurationresponse.configuration;
+                              args.response.success({data:item});
+                            },
+
+                          error: function(json) {
+                             args.response.error(parseXMLHttpResponse(json));
+                            }
+
+                           });
+
+                    }
+                  }
+                })
               }
             }
           }
@@ -1372,6 +1423,9 @@
 
     if (jsonObj.state == 'Destroyed') return [];
 
+    if( isAdmin() && jsonObj.isdefault == false)
+       allowedActions.push("remove");
+
     if(isAdmin()) {
         allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
         if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
@@ -1393,6 +1447,10 @@
   var userActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+   
+    if( isAdmin() && jsonObj.isdefault == false)
+       allowedActions.push("remove");
+
     if(isAdmin()) {
       allowedActions.push("edit");
       allowedActions.push("changePassword");

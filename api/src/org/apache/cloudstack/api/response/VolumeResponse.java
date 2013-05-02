@@ -47,6 +47,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @SerializedName(ApiConstants.ZONE_NAME)
     @Param(description = "name of the availability zone")
     private String zoneName;
+    
+    @SerializedName(ApiConstants.ZONE_TYPE)
+    @Param(description = "network type of the availability zone")
+    private String zoneType;
 
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "type of the disk volume (ROOT or DATADISK)")
@@ -198,6 +202,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.zoneName = zoneName;
     }
 
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
     }

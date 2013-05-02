@@ -129,4 +129,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     public long getCommandHostDelegation(long hostId, Command cmd) {
         return hostId;
     }
+    
+    @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        return null;
+    }
 }

@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.NicTO;
@@ -45,6 +46,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -138,6 +140,14 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
     @Override
     public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
     VirtualMachineMigrationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T migrateWithStorage(T vm, long srcHostId, long destHostId,
+            Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+            ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
     }

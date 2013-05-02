@@ -29,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
@@ -84,7 +83,10 @@ public class VpcGatewayVO implements VpcGateway {
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
-    
+
+    @Column(name="source_nat")
+    boolean sourceNat;
+
     protected VpcGatewayVO(){
         this.uuid = UUID.randomUUID().toString();
     }
@@ -101,9 +103,10 @@ public class VpcGatewayVO implements VpcGateway {
      * @param accountId TODO
      * @param domainId TODO
      * @param account_id
+     * @param sourceNat
      */
     public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, 
-            String gateway, String netmask, long accountId, long domainId) {
+            String gateway, String netmask, long accountId, long domainId, boolean sourceNat) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
@@ -116,6 +119,7 @@ public class VpcGatewayVO implements VpcGateway {
         this.accountId = accountId;
         this.domainId = domainId;
         this.state = State.Creating;
+        this.sourceNat = sourceNat;
     }
 
     @Override
@@ -193,4 +197,10 @@ public class VpcGatewayVO implements VpcGateway {
     public void setState(State state) {
         this.state = state;
     }
+
+    @Override
+    public boolean getSourceNat() {
+        return this.sourceNat;
+    }
+
 }

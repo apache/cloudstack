@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -120,4 +121,5 @@ public interface StorageManager extends StorageService {
 
     DataStore createLocalStorage(Host host, StoragePoolInfo poolInfo) throws ConnectionException;
 
+    BigDecimal getStorageOverProvisioningFactor(Long dcId);
 }

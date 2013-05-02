@@ -17,26 +17,26 @@
  * under the License.
  */
 
-package org.apache.cloudstack.framework.eventbus;
+package org.apache.cloudstack.framework.messagebus;
 
 
-public class EventBusEndpoint {
-	private EventBus _eventBus;
+public class MessageBusEndpoint {
+	private MessageBus _eventBus;
 	private String _sender;
 	private PublishScope _scope;
 	
-	public EventBusEndpoint(EventBus eventBus, String sender, PublishScope scope) {
+	public MessageBusEndpoint(MessageBus eventBus, String sender, PublishScope scope) {
 		_eventBus = eventBus;
 		_sender = sender;
 		_scope = scope;
 	}
 	
-	public EventBusEndpoint setEventBus(EventBus eventBus) {
+	public MessageBusEndpoint setEventBus(MessageBus eventBus) {
 		_eventBus = eventBus;
 		return this;
 	}
 	
-	public EventBusEndpoint setScope(PublishScope scope) {
+	public MessageBusEndpoint setScope(PublishScope scope) {
 		_scope = scope;
 		return this;
 	}
@@ -45,7 +45,7 @@ public class EventBusEndpoint {
 		return _scope;
 	}
 	
-	public EventBusEndpoint setSender(String sender) {
+	public MessageBusEndpoint setSender(String sender) {
 		_sender = sender;
 		return this;
 	}

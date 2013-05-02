@@ -22,71 +22,83 @@
 	under the License.
 -->
 <section id="hypervisor-support-for-primarystorage">
-	<title>Hypervisor Support for Primary Storage</title>
-	<para>The following table shows storage options and parameters for different hypervisors.</para>
-	<informaltable>
-		<tgroup cols="5">
-			<colspec colname="c1" colnum="1" colwidth="34%" />
-			<colspec colname="c2" colnum="2" colwidth="16%" />
-			<colspec colname="c3" colnum="3" colwidth="16%"/>
-			<colspec colname="c4" colnum="4" colwidth="17%"/>
-			<colspec colname="c5" colnum="5" colwidth="17%"/>
-			<thead>
-				<row>
-					<entry></entry>
-					<entry><para>VMware vSphere</para></entry>
-					<entry><para>Citrix XenServer</para></entry>
-					<entry><para>KVM</para></entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry><para><emphasis role="bold"><emphasis role="bold">Format for Disks, Templates, and
-									Snapshots</emphasis></emphasis></para></entry>
-					<entry><para>VMDK</para></entry>
-					<entry><para>VHD</para></entry>
-					<entry><para>QCOW2</para></entry>
-				</row>
-				<row>
-					<entry><para><emphasis role="bold">iSCSI support</emphasis></para></entry>
-					<entry><para>VMFS</para></entry>
-					<entry><para>Clustered LVM</para></entry>
-					<entry><para>Yes, via Shared Mountpoint</para></entry>
-				</row>
-				<row>
-					<entry><para><emphasis role="bold">Fiber Channel support</emphasis></para></entry>
-					<entry><para>VMFS</para></entry>
-					<entry><para>Yes, via Existing SR</para></entry>
-					<entry><para>Yes, via Shared Mountpoint</para></entry>
-				</row>
-				<row>
-					<entry><para><emphasis role="bold">NFS support</emphasis></para></entry>
-					<entry><para>Y</para></entry>
-					<entry><para>Y</para></entry>
-					<entry><para>Y</para></entry>
-				</row>
-				
-				<row>
-					<entry><para><emphasis role="bold">Local storage support</emphasis></para></entry>
-					<entry><para>Y</para></entry>
-					<entry><para>Y</para></entry>
-					<entry><para>Y</para></entry>
-				</row>
-				
-				<row>
-					<entry><para><emphasis role="bold">Storage over-provisioning</emphasis></para></entry>
-					<entry><para>NFS and iSCSI</para></entry>
-					<entry><para>NFS</para></entry>
-					<entry><para>NFS</para></entry>
-				</row>
-					
-			</tbody>
-		</tgroup>
-	</informaltable>
-	<para>XenServer uses a clustered LVM system to store VM images on iSCSI and Fiber Channel volumes and does not support over-provisioning in the hypervisor. The storage server itself, however, can support thin-provisioning.  As a result the &PRODUCT; can still support storage over-provisioning by running on thin-provisioned storage volumes.</para>
-	<para>KVM supports "Shared Mountpoint" storage.  A shared mountpoint is a file system path local to each server in a given cluster.  The path must be the same across all Hosts in the cluster, for example /mnt/primary1.  This shared mountpoint is assumed to be a clustered filesystem such as OCFS2.  In this case the &PRODUCT; does not attempt to mount or unmount the storage as is done with NFS.  The &PRODUCT; requires that the administrator insure that the storage is available</para>
-    <!--    <para>Oracle VM supports both iSCSI and NFS storage. When iSCSI is used with OVM, the &PRODUCT; administrator is responsible for setting up iSCSI on the host, including re-mounting the storage after the host recovers from a failure such as a network outage. With other hypervisors, &PRODUCT; takes care of mounting the iSCSI target on the host whenever it discovers a connection with an iSCSI server and unmounting the target when it discovers the connection is down.</para> -->
-	<para>With NFS storage, &PRODUCT; manages the overprovisioning. In this case the global configuration parameter storage.overprovisioning.factor controls the degree of overprovisioning. This is independent of hypervisor type.</para>
-    <para>Local storage is an option for primary storage for vSphere, XenServer, and KVM. When the local disk option is enabled, a local disk storage pool is automatically created on each host. To use local storage for the System Virtual Machines (such as the Virtual Router), set system.vm.use.local.storage to true in global configuration.</para>
-	<para>&PRODUCT; supports multiple primary storage pools in a Cluster. For example, you could provision 2 NFS servers in primary storage. Or you could provision 1 iSCSI LUN initially and then add a second iSCSI LUN when the first approaches capacity.</para>
-	</section>
+  <title>Hypervisor Support for Primary Storage</title>
+  <para>The following table shows storage options and parameters for different hypervisors.</para>
+  <informaltable>
+    <tgroup cols="5">
+      <colspec colname="c1" colnum="1" colwidth="34%"/>
+      <colspec colname="c2" colnum="2" colwidth="16%"/>
+      <colspec colname="c3" colnum="3" colwidth="16%"/>
+      <colspec colname="c4" colnum="4" colwidth="17%"/>
+      <colspec colname="c5" colnum="5" colwidth="17%"/>
+      <thead>
+        <row>
+          <entry/>
+          <entry><para>VMware vSphere</para></entry>
+          <entry><para>Citrix XenServer</para></entry>
+          <entry><para>KVM</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para><emphasis role="bold"><emphasis role="bold">Format for Disks, Templates, and
+                  Snapshots</emphasis></emphasis></para></entry>
+          <entry><para>VMDK</para></entry>
+          <entry><para>VHD</para></entry>
+          <entry><para>QCOW2</para></entry>
+        </row>
+        <row>
+          <entry><para><emphasis role="bold">iSCSI support</emphasis></para></entry>
+          <entry><para>VMFS</para></entry>
+          <entry><para>Clustered LVM</para></entry>
+          <entry><para>Yes, via Shared Mountpoint</para></entry>
+        </row>
+        <row>
+          <entry><para><emphasis role="bold">Fiber Channel support</emphasis></para></entry>
+          <entry><para>VMFS</para></entry>
+          <entry><para>Yes, via Existing SR</para></entry>
+          <entry><para>Yes, via Shared Mountpoint</para></entry>
+        </row>
+        <row>
+          <entry><para><emphasis role="bold">NFS support</emphasis></para></entry>
+          <entry><para>Y</para></entry>
+          <entry><para>Y</para></entry>
+          <entry><para>Y</para></entry>
+        </row>
+        <row>
+          <entry><para><emphasis role="bold">Local storage support</emphasis></para></entry>
+          <entry><para>Y</para></entry>
+          <entry><para>Y</para></entry>
+          <entry><para>Y</para></entry>
+        </row>
+        <row>
+          <entry><para><emphasis role="bold">Storage over-provisioning</emphasis></para></entry>
+          <entry><para>NFS and iSCSI</para></entry>
+          <entry><para>NFS</para></entry>
+          <entry><para>NFS</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+  <para>XenServer uses a clustered LVM system to store VM images on iSCSI and Fiber Channel volumes
+    and does not support over-provisioning in the hypervisor. The storage server itself, however,
+    can support thin-provisioning. As a result the &PRODUCT; can still support storage
+    over-provisioning by running on thin-provisioned storage volumes.</para>
+  <para>KVM supports "Shared Mountpoint" storage. A shared mountpoint is a file system path local to
+    each server in a given cluster. The path must be the same across all Hosts in the cluster, for
+    example /mnt/primary1. This shared mountpoint is assumed to be a clustered filesystem such as
+    OCFS2. In this case the &PRODUCT; does not attempt to mount or unmount the storage as is done
+    with NFS. The &PRODUCT; requires that the administrator insure that the storage is
+    available</para>
+  <!--    <para>Oracle VM supports both iSCSI and NFS storage. When iSCSI is used with OVM, the &PRODUCT; administrator is responsible for setting up iSCSI on the host, including re-mounting the storage after the host recovers from a failure such as a network outage. With other hypervisors, &PRODUCT; takes care of mounting the iSCSI target on the host whenever it discovers a connection with an iSCSI server and unmounting the target when it discovers the connection is down.</para> -->
+  <para>With NFS storage, &PRODUCT; manages the overprovisioning. In this case the global
+    configuration parameter storage.overprovisioning.factor controls the degree of overprovisioning.
+    This is independent of hypervisor type.</para>
+  <para>Local storage is an option for primary storage for vSphere, XenServer, and KVM. When the
+    local disk option is enabled, a local disk storage pool is automatically created on each host.
+    To use local storage for the System Virtual Machines (such as the Virtual Router), set
+    system.vm.use.local.storage to true in global configuration.</para>
+  <para>&PRODUCT; supports multiple primary storage pools in a Cluster. For example, you could
+    provision 2 NFS servers in primary storage. Or you could provision 1 iSCSI LUN initially and
+    then add a second iSCSI LUN when the first approaches capacity.</para>
+</section>

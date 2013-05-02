@@ -18,10 +18,17 @@ package org.apache.cloudstack.affinity;
 
 import java.io.IOException;
 
+import com.cloud.server.ConfigurationServer;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserContextInitializer;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -38,6 +45,8 @@ import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
@@ -100,10 +109,6 @@ import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
@@ -330,6 +335,22 @@ public class AffinityApiTestConfiguration {
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
     	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
+
+    @Bean
+    public ConfigurationServer configurationServer() {
+        return Mockito.mock(ConfigurationServer.class);
+    }
+
+    @Bean
+    public ClusterDetailsDao clusterDetailsDao() {
+        return Mockito.mock(ClusterDetailsDao.class);
+    }
+
+    @Bean
+    public AccountDetailsDao accountDetailsDao() {
+        return Mockito.mock(AccountDetailsDao.class);
+    }
+
     
     public static class Library implements TypeFilter {
 

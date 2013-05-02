@@ -48,6 +48,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
             description="the Zone ID of the network")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network. Supported values are: Isolated and Shared")
     private String guestIpType;
 
@@ -96,6 +99,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public String getGuestIpType() {
         return guestIpType;
     }
