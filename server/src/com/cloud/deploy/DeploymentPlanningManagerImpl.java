@@ -444,6 +444,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 if (hostResourceType == resourceUsageRequired) {
                     return true;
                 } else {
+                    s_logger.debug("Cannot use this host for usage: " + resourceUsageRequired
+                            + ", since this host has been reserved for planner usage : " + hostResourceType);
                     return false;
                 }
             } else {
@@ -469,6 +471,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         if (lockedEntry.getResourceUsage() == resourceUsageRequired) {
                             return true;
                         } else {
+                            s_logger.debug("Cannot use this host for usage: " + resourceUsageRequired
+                                    + ", since this host has been reserved for planner usage : " + hostResourceType);
                             return false;
                         }
                     }

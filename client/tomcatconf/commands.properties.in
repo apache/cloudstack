@@ -209,6 +209,7 @@ listConfigurations=1
 ldapConfig=1
 ldapRemove=1
 listCapabilities=15
+listDeploymentPlanners=1
 
 #### pod commands
 createPod=1

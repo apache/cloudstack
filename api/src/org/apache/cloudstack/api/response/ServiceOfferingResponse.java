@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -82,6 +84,8 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
+    @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
+    private String deploymentPlanner;
 
     public String getId() {
         return id;
@@ -224,5 +228,13 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setNetworkRate(Integer networkRate) {
         this.networkRate = networkRate;
+    }
+
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
+    }
+
+    public void setDeploymentPlanner(String deploymentPlanner) {
+        this.deploymentPlanner = deploymentPlanner;
     }
 }

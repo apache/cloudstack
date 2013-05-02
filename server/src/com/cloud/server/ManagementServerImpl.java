@@ -196,6 +196,7 @@ import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
@@ -402,7 +403,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private String _hashKey = null;
     private String _encryptionKey = null;
     private String _encryptionIV = null;
-    
+
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
@@ -2544,6 +2545,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
+        cmdList.add(ListDeploymentPlannersCmd.class);
 
         return cmdList;
     }
@@ -3305,7 +3307,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), 
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _hashKey;
@@ -3314,41 +3316,41 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public String getEncryptionKey() {
         if (_encryptionKey == null) {
-            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), 
-            	Config.EncryptionKey.getCategory(), 
+            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(),
+            	Config.EncryptionKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionKey;
     }
-    
+
     @Override
     public String getEncryptionIV() {
         if (_encryptionIV == null) {
-            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), 
-            	Config.EncryptionIV.getCategory(), 
+            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(),
+            	Config.EncryptionIV.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionIV;
     }
-    
+
     @Override
     @DB
     public void resetEncryptionKeyIV() {
-    	
+
     	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
     	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.done();
-    	
+
     	SearchCriteria<ConfigurationVO> sc = sb.create();
     	sc.setParameters("name1", Config.EncryptionKey.key());
     	sc.setParameters("name2", Config.EncryptionIV.key());
-    	
+
     	_configDao.expunge(sc);
     	_encryptionKey = null;
     	_encryptionIV = null;
     }
-    
+
     private static String getBase64EncodedRandomKey(int nBits) {
 		SecureRandom random;
 		try {

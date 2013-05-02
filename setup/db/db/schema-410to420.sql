@@ -934,9 +934,42 @@ CREATE TABLE `cloud`.`op_host_planner_reservation` (
   CONSTRAINT `fk_planner_reservation__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) NOT NULL DEFAULT 'FirstFitPlanner'  COMMENT 'Planner heuristics used to deploy a VM of this offering';
 
--- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
+CREATE VIEW `cloud`.`service_offering_view` AS
+    select 
+        service_offering.id,
+        disk_offering.uuid,
+        disk_offering.name,
+        disk_offering.display_text,
+        disk_offering.created,
+        disk_offering.tags,
+        disk_offering.removed,
+        disk_offering.use_local_storage,
+        disk_offering.system_use,
+        service_offering.cpu,
+        service_offering.speed,
+        service_offering.ram_size,
+        service_offering.nw_rate,
+        service_offering.mc_rate,
+        service_offering.ha_enabled,
+        service_offering.limit_cpu_use,
+        service_offering.host_tag,
+        service_offering.default_use,
+        service_offering.vm_type,
+        service_offering.sort_key,
+        service_offering.deployment_planner,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`service_offering`
+            inner join
+        `cloud`.`disk_offering` ON service_offering.id = disk_offering.id
+            left join
+        `cloud`.`domain` ON disk_offering.domain_id = domain.id;
 
 
 -- Add "default" field to account/user tables
@@ -1143,3 +1176,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 
 alter table cloud.vpc_gateways add column source_nat boolean default false;
 alter table cloud.private_ip_address add column source_nat boolean default false;
+
+-- Re-enable foreign key checking, at the end of the upgrade path
+SET foreign_key_checks = 1;			
