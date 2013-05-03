@@ -248,12 +248,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
         CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0);
-        StoragePool pool = (StoragePool)volume.getDataStore();
-
         try {
-            Answer answer = storageMgr.sendToPool(pool, null, cmd);
+            EndPoint ep = this.selector.select(volume.getDataStore());
+            Answer answer = ep.sendMessage(cmd);
             return answer;
-        } catch (StorageUnavailableException e) {
+        } catch (Exception e) {
             s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
@@ -302,16 +301,17 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             		destData.getType() == DataObjectType.SNAPSHOT) {
             	answer = copySnapshot(srcData, destData);
             }
+            
+            if (answer != null && !answer.getResult()) {
+                errMsg = answer.getDetails();
+            }
         } catch (Exception e) {
             s_logger.debug("copy failed", e);
             errMsg = e.toString();
         }
         CopyCommandResult result = new CopyCommandResult(null, answer);
-        if (!answer.getResult()) {
-            result.setResult(answer.getDetails());
-        }
+        result.setResult(errMsg);
         callback.complete(result);
-
         return null;
     }
 
