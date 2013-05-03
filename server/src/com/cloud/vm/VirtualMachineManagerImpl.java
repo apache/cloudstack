@@ -1414,6 +1414,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
         }
 
+        VirtualMachineProfile<VMInstanceVO> vmSrc = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        for(NicProfile nic: _networkMgr.getNicProfiles(vm)){
+            vmSrc.addNic(nic);
+        }
+        
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
         this.volumeMgr.prepareForMigration(profile, dest);
@@ -1439,6 +1444,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new AgentUnavailableException("Operation timed out", dstHostId);
         } finally {
             if (pfma == null) {
+                _networkMgr.rollbackNicForMigration(vmSrc, profile);
                 work.setStep(Step.Done);
                 _workDao.update(work.getId(), work);
             }
@@ -1447,10 +1453,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vm.setLastHostId(srcHostId);
         try {
             if (vm == null || vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
+                _networkMgr.rollbackNicForMigration(vmSrc, profile);
                 s_logger.info("Migration cancelled because state has changed: " + vm);
                 throw new ConcurrentOperationException("Migration cancelled because state has changed: " + vm);
             }
         } catch (NoTransitionException e1) {
+            _networkMgr.rollbackNicForMigration(vmSrc, profile);
             s_logger.info("Migration cancelled because " + e1.getMessage());
             throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
         }
@@ -1502,6 +1510,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } finally {
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
+                _networkMgr.rollbackNicForMigration(vmSrc, profile);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone "
                         + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
@@ -1516,6 +1525,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
+            }else{
+                _networkMgr.commitNicForMigration(vmSrc, profile);
             }
 
             work.setStep(Step.Done);

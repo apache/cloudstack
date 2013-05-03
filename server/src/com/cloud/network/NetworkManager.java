@@ -123,7 +123,34 @@ public interface NetworkManager  {
     Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException;
 
-    <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
+    /**
+     * prepares vm nic change for migration
+     * 
+     * This method will be called in migration transaction before the vm migration.
+     * @param vm
+     * @param dest
+     */
+    void prepareNicForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest);
+
+    /**
+     * commit vm nic change for migration
+     * 
+     * This method will be called in migration transaction after the successful 
+     * vm migration.
+     * @param src
+     * @param dst
+     */
+    void commitNicForMigration(VirtualMachineProfile<? extends VMInstanceVO> src, VirtualMachineProfile<? extends VMInstanceVO> dst);
+
+    /**
+     * rollback vm nic change for migration
+     * 
+     * This method will be called in migaration transaction after vm migration 
+     * failure.
+     * @param src
+     * @param dst
+     */
+    void rollbackNicForMigration(VirtualMachineProfile<? extends VMInstanceVO> src, VirtualMachineProfile<? extends VMInstanceVO> dst);
 
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 

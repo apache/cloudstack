@@ -278,12 +278,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
 
 
     @Override
-    public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public boolean destroyNetwork(long networkId, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
@@ -966,4 +960,27 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    @Override
+    public void prepareNicForMigration(
+            VirtualMachineProfile<? extends VMInstanceVO> vm,
+            DeployDestination dest) {
+        // TODO Auto-generated method stub
+
+            }
+
+    @Override
+    public void commitNicForMigration(
+            VirtualMachineProfile<? extends VMInstanceVO> src,
+            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+        // TODO Auto-generated method stub
+
+            }
+
+    @Override
+    public void rollbackNicForMigration(
+            VirtualMachineProfile<? extends VMInstanceVO> src,
+            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+        // TODO Auto-generated method stub
+            }
 }

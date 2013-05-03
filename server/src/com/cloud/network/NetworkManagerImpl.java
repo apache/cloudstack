@@ -2000,8 +2000,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
+    public void prepareNicForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
@@ -2009,8 +2010,77 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, 
                     _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+            if(guru instanceof NetworkMigrationResponder){
+                if(!((NetworkMigrationResponder) guru).prepareMigration(profile, network, vm, dest, context)){
+                    s_logger.error("NetworkGuru "+guru+" prepareForMigration failed."); // XXX: Transaction error
+                }
+            }
+            for (NetworkElement element : _networkElements) {
+                if(element instanceof NetworkMigrationResponder){
+                    if(!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)){
+                        s_logger.error("NetworkElement "+element+" prepareForMigration failed."); // XXX: Transaction error
+                    }
+                }
+            }
             guru.updateNicProfile(profile, network);
             vm.addNic(profile);
+        }
+    }
+
+    private NicProfile findNicProfileById(VirtualMachineProfile<? extends VMInstanceVO> vm, long id){
+        for(NicProfile nic: vm.getNics()){
+            if(nic.getId() == id){
+                return nic;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void commitNicForMigration(
+            VirtualMachineProfile<? extends VMInstanceVO> src,
+            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+        for(NicProfile nicSrc: src.getNics()){
+            NetworkVO network = _networksDao.findById(nicSrc.getNetworkId());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+            NicProfile nicDst = findNicProfileById(dst, nicSrc.getId());
+            ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
+            ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
+
+            if(guru instanceof NetworkMigrationResponder){
+                ((NetworkMigrationResponder) guru).commitMigration(nicSrc, network, src, src_context, dst_context);
+            }
+            for (NetworkElement element : _networkElements) {
+                if(element instanceof NetworkMigrationResponder){
+                    ((NetworkMigrationResponder) element).commitMigration(nicSrc, network, src, src_context, dst_context);
+                }
+            }
+            // update the reservation id
+            NicVO nicVo = _nicDao.findById(nicDst.getId());
+            nicVo.setReservationId(nicDst.getReservationId());
+            _nicDao.persist(nicVo);
+        }
+    }
+
+    @Override
+    public void rollbackNicForMigration(
+            VirtualMachineProfile<? extends VMInstanceVO> src,
+            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+        for(NicProfile nicDst: dst.getNics()){
+            NetworkVO network = _networksDao.findById(nicDst.getNetworkId());
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+            NicProfile nicSrc = findNicProfileById(src, nicDst.getId());
+            ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
+            ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
+
+            if(guru instanceof NetworkMigrationResponder){
+                ((NetworkMigrationResponder) guru).rollbackMigration(nicDst, network, dst, src_context, dst_context);
+            }
+            for (NetworkElement element : _networkElements) {
+                if(element instanceof NetworkMigrationResponder){
+                    ((NetworkMigrationResponder) element).rollbackMigration(nicDst, network, dst, src_context, dst_context);
+                }
+            }
         }
     }
 
