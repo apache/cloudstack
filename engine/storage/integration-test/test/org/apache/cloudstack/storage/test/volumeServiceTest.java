@@ -183,22 +183,6 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		imageStore.setUuid(UUID.randomUUID().toString());
 		imageStore = imageStoreDao.persist(imageStore);
 
-		//primaryStore = createPrimaryDataStore();
-
-		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
-
-		/*try {
-			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);
-		} catch (AgentUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (OperationTimedoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-
-
-		//Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);
 	}
 
     @Override

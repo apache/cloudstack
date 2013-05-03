@@ -41,7 +41,7 @@ public class VolumeObjectTO implements DataTO {
 
     public VolumeObjectTO(VolumeInfo volume) {
         this.uuid = volume.getUuid();
-        this.path = volume.getUri();
+        this.path = volume.getPath();
         this.accountId = volume.getAccountId();
         if (volume.getDataStore() != null) {
             this.dataStore = volume.getDataStore().getTO();

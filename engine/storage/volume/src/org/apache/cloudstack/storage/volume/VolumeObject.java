@@ -244,7 +244,12 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String getPath() {
-        return this.volumeVO.getPath();
+        if (this.dataStore.getRole() == DataStoreRole.Primary) {
+            return this.volumeVO.getPath();
+        } else {
+            DataObjectInStore objInStore = this.ojbectInStoreMgr.findObject(this, dataStore);
+            return objInStore.getInstallPath();
+        }
     }
 
     @Override

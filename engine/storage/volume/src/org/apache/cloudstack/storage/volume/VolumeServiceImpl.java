@@ -376,7 +376,7 @@ public class VolumeServiceImpl implements VolumeService {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
-            caller.complete(result);
+            future.complete(result);
         }
         return;
     }

@@ -79,8 +79,16 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 
     @Override
     public Answer easySend(Long hostId, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
+      try {
+        return this.send(hostId, cmd);
+    } catch (AgentUnavailableException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } catch (OperationTimedoutException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+      return null;
     }
 
     protected void loadResource(Long hostId) {
