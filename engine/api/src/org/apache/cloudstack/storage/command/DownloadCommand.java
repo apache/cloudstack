@@ -87,6 +87,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         super(volume.getName(), url, format, volume.getAccountId());
         this.checksum = checkSum;
         this.id = volume.getVolumeId();
+        this.installPath = volume.getPath();
         this._store = volume.getDataStore();
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         this.resourceType = ResourceType.VOLUME;

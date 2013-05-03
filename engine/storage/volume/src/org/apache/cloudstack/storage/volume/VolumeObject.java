@@ -120,11 +120,6 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getSize();
     }
 
-    @Override
-    public String getInstallPath() {
-         DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
-         return obj.getInstallPath();
-    }
 
     public long getVolumeId() {
         return volumeVO.getId();
