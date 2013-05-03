@@ -21,10 +21,6 @@ public class VmWork {
 	long accountId;
 	long vmId;
 
-	// VirtualMachineManagerImpl's method name that the work will be handled in the manager
-	// it should be unique in the implementation class
-	String targetMethodName;
-	
 	public VmWork() {
 	}
 

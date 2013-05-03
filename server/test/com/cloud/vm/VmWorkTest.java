@@ -122,7 +122,7 @@ public class VmWorkTest extends TestCase {
 		workJob.setUserId(2L);
 		workJob.setStep(Step.Starting);
 		workJob.setVmType(VirtualMachine.Type.ConsoleProxy);
-		workJob.setVmInstanceid(1L);
+		workJob.setVmInstanceId(1L);
 		
 		VmWorkStart workInfo = new VmWorkStart();
 		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));

@@ -180,6 +180,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     };
 
     public enum Type {
+    	Instance,
         User,
         DomainRouter,
         ConsoleProxy,

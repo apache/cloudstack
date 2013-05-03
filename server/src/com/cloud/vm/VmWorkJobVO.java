@@ -75,7 +75,7 @@ public class VmWorkJobVO extends AsyncJobVO {
     	return vmInstanceId;
     }
     
-    public void setVmInstanceid(long vmInstanceId) {
+    public void setVmInstanceId(long vmInstanceId) {
     	this.vmInstanceId = vmInstanceId;
     }
 }

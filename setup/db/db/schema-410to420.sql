@@ -432,3 +432,4 @@ CREATE TABLE `cloud`.`vm_work_job` (
   INDEX `i_vm_work_job__vm`(`vm_type`, `vm_instance_id`),
   INDEX `i_vm_work_job__step`(`step`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

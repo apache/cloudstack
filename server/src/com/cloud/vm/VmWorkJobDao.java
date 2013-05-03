@@ -24,5 +24,6 @@ import com.cloud.vm.VmWorkJobVO.Step;
 public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
 	VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);
 	List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId);
+	public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
 	void updateStep(long workJobId, Step step);
 }

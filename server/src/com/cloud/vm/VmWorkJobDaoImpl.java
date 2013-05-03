@@ -31,6 +31,7 @@ import com.cloud.vm.VmWorkJobVO.Step;
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
+    protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
 	
 	public VmWorkJobDaoImpl() {
 	}
@@ -42,6 +43,13 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		PendingWorkJobSearch.and("vmInstanceId", PendingWorkJobSearch.entity().getVmInstanceId(), Op.EQ);
 		PendingWorkJobSearch.and("step", PendingWorkJobSearch.entity().getStep(), Op.NEQ);
 		PendingWorkJobSearch.done();
+
+		PendingWorkJobByCommandSearch = createSearchBuilder();
+		PendingWorkJobByCommandSearch.and("vmType", PendingWorkJobByCommandSearch.entity().getVmType(), Op.EQ);
+		PendingWorkJobByCommandSearch.and("vmInstanceId", PendingWorkJobByCommandSearch.entity().getVmInstanceId(), Op.EQ);
+		PendingWorkJobByCommandSearch.and("step", PendingWorkJobByCommandSearch.entity().getStep(), Op.NEQ);
+		PendingWorkJobByCommandSearch.and("cmd", PendingWorkJobByCommandSearch.entity().getCmd(), Op.EQ);
+		PendingWorkJobByCommandSearch.done();
 	}
 	
 	public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
@@ -65,6 +73,18 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
 		sc.setParameters("step", Step.Done);
+		
+		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
+		return this.listBy(sc, filter);
+	}
+
+	public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd) {
+		
+		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobByCommandSearch.create();
+		sc.setParameters("vmType", type);
+		sc.setParameters("vmInstanceId", instanceId);
+		sc.setParameters("step", Step.Done);
+		sc.setParameters("cmd", jobCmd);
 		
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		return this.listBy(sc, filter);

@@ -18,6 +18,7 @@ package com.cloud.vm.dao;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -147,13 +148,25 @@ public class VmDaoTest extends TestCase {
 	public void testVmWork() {
 		VmWorkJobVO workJob = new VmWorkJobVO();
 		workJob.setAccountId(1);
+		workJob.setUserId(1L);
 		workJob.setCmd("StartVM");
 		workJob.setInitMsid(1L);
 		workJob.setStep(VmWorkJobVO.Step.Prepare);
 		workJob.setVmType(VirtualMachine.Type.ConsoleProxy);
-		workJob.setVmInstanceid(1L);
+		workJob.setVmInstanceId(1L);
 		
 		workJobDao.persist(workJob);
+
+		VmWorkJobVO workJob2 = new VmWorkJobVO();
+		workJob2.setAccountId(1);
+		workJob2.setUserId(1L);
+		workJob2.setCmd("StopVM");
+		workJob2.setInitMsid(1L);
+		workJob2.setStep(VmWorkJobVO.Step.Prepare);
+		workJob2.setVmType(VirtualMachine.Type.ConsoleProxy);
+		workJob2.setVmInstanceId(1L);
+		
+		workJobDao.persist(workJob2);
 		
 		VmWorkJobVO pendingWorkJob = workJobDao.findPendingWorkJob(VirtualMachine.Type.ConsoleProxy, 1L);
 		Assert.assertTrue(pendingWorkJob.getCmd().equals("StartVM"));
@@ -164,7 +177,11 @@ public class VmDaoTest extends TestCase {
 		workJobDao.updateStep(pendingWorkJob.getId(), VmWorkJobVO.Step.Starting);
 		pendingWorkJob = workJobDao.findPendingWorkJob(VirtualMachine.Type.ConsoleProxy, 1L);
 		Assert.assertTrue(pendingWorkJob.getStep() == VmWorkJobVO.Step.Starting);
+	
+		List<VmWorkJobVO> pendingStartJobs = workJobDao.listPendingWorkJobs(VirtualMachine.Type.ConsoleProxy, 1L, "StartVM");
+		Assert.assertTrue(pendingStartJobs.size() == 1);
 		
 		workJobDao.expunge(workJob.getId());
+		workJobDao.expunge(workJob2.getId());
 	}
 }

@@ -14,13 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.messagebus;
+package com.cloud.vm;
 
-public interface SubjectConstants {
-	// VM power state messages on message bus
-	public static final String VM_POWER_STATE = "vm.powerstate";
+public interface VmWorkConstants {
+	// VmWork queue name
+	public static final String VM_WORK_QUEUE = "VmWorkJobQueue";
+	public static final String VM_WORK_JOB_DISPATCHER = "VmWorkJobDispatcher";
 	
-	// job messages on message bus 
-	public static final String JOB_HEARTBEAT = "job.heartbeat";
-	public static final String JOB_STATE = "job.state";
+	// work job commands
+	public static final String VM_WORK_START = "doVmStart";
+	public static final String VM_WORK_STOP = "doVmStop";
 }
