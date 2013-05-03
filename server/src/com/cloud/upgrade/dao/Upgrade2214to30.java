@@ -630,7 +630,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     		//XenServer
     		try {
                //Get 3.0.0 or later xenserer system Vm template Id
-               pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-xenserver-%' and removed is null");
+               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-xenserver-%' and removed is null");
     			rs = pstmt.executeQuery();
     			if(rs.next()){
     				long templateId = rs.getLong(1);
@@ -661,7 +661,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     		s_logger.debug("Updating KVM System Vms");
     		try {
                //Get 3.0.0 or later KVM system Vm template Id
-               pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-kvm-%' and removed is null");
+               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-kvm-%' and removed is null");
     			rs = pstmt.executeQuery();
     			if(rs.next()){
     				long templateId = rs.getLong(1);
@@ -692,7 +692,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     		s_logger.debug("Updating VMware System Vms");
     		try {
                //Get 3.0.0 or later VMware system Vm template Id
-               pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-vmware-%' and removed is null");
+               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-vmware-%' and removed is null");
     			rs = pstmt.executeQuery();
     			if(rs.next()){
     				long templateId = rs.getLong(1);
