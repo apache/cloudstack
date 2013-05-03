@@ -3045,3 +3045,40 @@ class ASA1000V:
         cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listCiscoAsa1000vResources(cmd))
+
+class VmSnapshot:
+    """Manage VM Snapshot life cycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+    @classmethod
+    def create(cls,apiclient,vmid,snapshotmemory="false",name=None,description=None):
+        cmd = createVMSnapshot.createVMSnapshotCmd()
+        cmd.virtualmachineid = vmid
+
+        if snapshotmemory:
+            cmd.snapshotmemory = snapshotmemory
+        if name:
+            cmd.name = name
+        if description:
+            cmd.description = description
+        return VmSnapshot(apiclient.createVMSnapshot(cmd).__dict__)
+    
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listVMSnapshot.listVMSnapshotCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVMSnapshot(cmd))
+    
+    @classmethod
+    def revertToSnapshot(cls, apiclient,vmsnapshotid):
+        cmd = revertToVMSnapshot.revertToVMSnapshotCmd()
+        cmd.vmsnapshotid = vmsnapshotid
+        
+        return apiclient.revertToVMSnapshot(cmd)
+    
+    @classmethod
+    def deleteVMSnapshot(cls,apiclient,vmsnapshotid):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = vmsnapshotid
+        
+        return apiclient.deleteVMSnapshot(cmd)
