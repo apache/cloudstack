@@ -451,6 +451,6 @@ public interface UserVmService {
 
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    UserVm upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    boolean upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
 }
