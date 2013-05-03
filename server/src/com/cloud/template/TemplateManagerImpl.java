@@ -367,6 +367,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
+        VirtualMachineTemplate template = getTemplate(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+        }
+        TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+        TemplateProfile profile = adapter.prepareExtractTemplate(cmd);
+
         // FIXME: async job needs fixing
         Long uploadId = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
         if (uploadId != null){

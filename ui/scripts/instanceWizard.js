@@ -317,7 +317,15 @@
 				  url: createURL('listAffinityGroups'),
 					success: function(json) {					 
 					  var items = json.listaffinitygroupsresponse.affinitygroup;
-						args.response.success({data: {affinityGroups: items}});
+					  var data = { 
+					    affinityGroups: items 
+					  };
+					  if('affinityGroups' in args.context) {
+					    $.extend(data, {
+					      selectedObj: args.context.affinityGroups[0]
+					    });					    
+					  }					  
+						args.response.success({data: data});
 					}
 				});		
       },

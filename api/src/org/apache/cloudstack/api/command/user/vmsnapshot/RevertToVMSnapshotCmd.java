@@ -37,11 +37,11 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "revertToSnapshot",description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since="4.2.0")
-public class RevertToSnapshotCmd extends BaseAsyncCmd {
+@APICommand(name = "revertToVMSnapshot",description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since="4.2.0")
+public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger
-            .getLogger(RevertToSnapshotCmd.class.getName());
-    private static final String s_name = "reverttosnapshotresponse";
+            .getLogger(RevertToVMSnapshotCmd.class.getName());
+    private static final String s_name = "reverttovmsnapshotresponse";
 
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, required = true,entityType=VMSnapshotResponse.class,description = "The ID of the vm snapshot")
     private Long vmSnapShotId;

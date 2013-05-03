@@ -582,7 +582,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         //Convert max storage size from GiB to bytes
-        if (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) {
+        if ((resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) && max >= 0) {
             max = max * ResourceType.bytesToGiB;
         }
 

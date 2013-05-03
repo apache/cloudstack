@@ -562,10 +562,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		sql = SELECT_TEMPLATE_HOST_REF;
                 groupByClause = " GROUP BY t.id, h.data_center_id ";
         	}
-        	if (((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) ||(zoneType != null && zoneId != null)) {
+        	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
         	}
-
+        	
+        	if (zoneType != null) {
+        	    dataCenterJoin = " INNER JOIN template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)";
+                dataCenterJoin += " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
+            }
+        	
         	if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared ){
         	    lpjoin = " INNER JOIN launch_permission lp ON t.id = lp.template_id ";
         	}
@@ -783,13 +788,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		sql += " AND h.data_center_id = " +zoneId;
             }
         }else if (zoneId != null){
-        	sql += " AND tzr.zone_id = " +zoneId+ " AND tzr.removed is null" ;
-        	if (zoneType != null){        	  
-        		sql += " AND dc.networktype = " + zoneType;
-        	}        	
+        	sql += " AND tzr.zone_id = " +zoneId+ " AND tzr.removed is null" ;        	     	
         }else{
         	sql += " AND tzr.removed is null ";
         }
+        
+        if (zoneType != null){            
+            sql += " AND dc.networktype = '" + zoneType + "'";
+        }   
+        
         if (!showDomr){
         	sql += " AND t.type != '" +Storage.TemplateType.SYSTEM.toString() + "'";
         }

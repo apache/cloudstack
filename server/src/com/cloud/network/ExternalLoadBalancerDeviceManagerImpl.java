@@ -270,7 +270,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkDevice.getNetworkServiceProvder(),
                         deviceName, capacity, dedicatedUse, gslbProvider);
                 if (gslbProvider) {
-                    lbDeviceVO.setGslbSitePrivateIP(gslbSitePublicIp);
+                    lbDeviceVO.setGslbSitePublicIP(gslbSitePublicIp);
                     lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
                 }
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);

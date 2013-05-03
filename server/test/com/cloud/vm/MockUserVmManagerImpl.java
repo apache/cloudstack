@@ -407,8 +407,8 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public UserVm upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public boolean upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 

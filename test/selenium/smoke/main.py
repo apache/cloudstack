@@ -21,7 +21,7 @@ import xmlrunner
 
 
 global DRIVER
-
+global MS_ip
 
 # Import test cases
 

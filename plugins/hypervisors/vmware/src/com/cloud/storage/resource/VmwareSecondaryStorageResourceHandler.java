@@ -28,6 +28,9 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
@@ -76,6 +79,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
         } else if(cmd instanceof CopyVolumeCommand) {
             answer = execute((CopyVolumeCommand)cmd);
+        } else if(cmd instanceof CreateVolumeOVACommand) {
+            answer = execute((CreateVolumeOVACommand)cmd);
+        } else if (cmd instanceof PrepareOVAPackingCommand) {
+            answer = execute((PrepareOVAPackingCommand)cmd);
         } else if(cmd instanceof CreateVolumeFromSnapshotCommand) {
             answer = execute((CreateVolumeFromSnapshotCommand)cmd);
         } else {
@@ -136,6 +143,23 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(PrepareOVAPackingCommand cmd) {
+        s_logger.info("Fang: VmwareSecStorageResourceHandler: exec cmd. cmd is  " + cmd.toString());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource PrepareOVAPackingCommand: " + _gson.toJson(cmd));
+        }
+
+        return _storageMgr.execute(this, cmd);
+    }
+
+    private CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));
+        }
+
+        return (CreateVolumeOVAAnswer) _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreateVolumeFromSnapshotCommand cmd) {

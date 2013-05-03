@@ -1050,7 +1050,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
-    public UserVm
+    public boolean
     upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException {
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
@@ -1076,8 +1076,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // Dynamically upgrade the running vms
+        boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
-            boolean success = false;
             int retry = _scaleRetry;
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{
@@ -1095,7 +1095,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     vmInstance = _vmInstanceDao.findById(vmId);
                     vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
                     success = true;
-                    return _vmDao.findById(vmInstance.getId());
+                    return success;
                 }catch(InsufficientCapacityException e ){
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ResourceUnavailableException e) {
@@ -1112,11 +1112,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     }
                 }
             }
-            if (!success)
-                return null;
         }
 
-        return _vmDao.findById(vmInstance.getId());
+        return success;
 
     }
 

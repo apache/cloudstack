@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.ejb.Local;
@@ -490,17 +491,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
 
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
-                    Account caller = UserContext.current().getCaller();
-                    long callerUserId = UserContext.current().getCallerUserId();
-                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                if (zone.getNetworkType() == NetworkType.Advanced) {
+                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                        Account caller = UserContext.current().getCaller();
+                        long callerUserId = UserContext.current().getCallerUserId();
+                        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                        }
+                        return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+                    } else {
+                        throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                                " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
                     }
-                    return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
-                } else {
-                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
-                        " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
                 }
             }
         }
@@ -2128,6 +2131,29 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return getNetwork(network.getId());
     }
 
+
+    protected Set<Long> getAvailableIps(Network network, String requestedIp) {
+        String[] cidr = network.getCidr().split("/");
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        Set<Long> usedIps = new TreeSet<Long>(); 
+
+        for (String ip : ips) {
+            if (requestedIp != null && requestedIp.equals(ip)) {
+                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network" + network);
+                return null;
+            }
+
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+
+        String gateway = network.getGateway();
+        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
+            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
+        return allPossibleIps;
+    }
+
   
     protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
@@ -3379,8 +3405,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     
 
     @Override @DB
-    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, 
-            String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId) 
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId,
+                                        String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         
         Account owner = _accountMgr.getAccount(networkOwnerId);
@@ -3448,7 +3474,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long nextMac = mac + 1;
         dc.setMacAddress(nextMac);
 
-        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId);
+        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac, vpcId, sourceNat);
         _privateIpDao.persist(privateIp);
         
         _dcDao.update(dc.getId(), dc);

@@ -14,36 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc;
 
-public interface PrivateIp {
-
-    /**
-     * @return
-     */
-    String getIpAddress();
-
-    /**
-     * @return
-     */
-    String getVlanTag();
-
-    /**
-     * @return
-     */
-    String getGateway();
-
-    /**
-     * @return
-     */
-    String getNetmask();
-
-    /**
-     * @return
-     */
-    String getMacAddress();
-
-    long getNetworkId();
-    boolean getSourceNat();
-
-}
+(function($, cloudStack) {
+  cloudStack.uiCustom.granularSettings = function(args) {
+    var dataProvider = args.dataProvider;
+    var actions = args.actions;
+    
+    return function(args) {
+      var context = args.context;
+      
+      var listView = {
+        id: 'settings',
+        fields: {
+          name: { label: 'label.name' },
+          value: { label: 'label.value', editable: true }
+        },
+        actions: {
+          edit: {
+            label: 'label.change.value',
+            action: actions.edit
+          }
+        },
+        dataProvider: dataProvider
+      };
+      
+      var $listView = $('<div>').listView({ context: context, listView: listView });
+      
+      return $listView;
+    }
+  };
+}(jQuery, cloudStack));
