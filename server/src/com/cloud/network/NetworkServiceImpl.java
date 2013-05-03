@@ -426,17 +426,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
 
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
-                    Account caller = UserContext.current().getCaller();
-                    long callerUserId = UserContext.current().getCallerUserId();
-                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                if (zone.getNetworkType() == NetworkType.Advanced) {
+                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                        Account caller = UserContext.current().getCaller();
+                        long callerUserId = UserContext.current().getCallerUserId();
+                        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                        }
+                        return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+                    } else {
+                        throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                                " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
                     }
-                    return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
-                } else {
-                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
-                        " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
                 }
             }
         }
