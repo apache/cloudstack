@@ -144,8 +144,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     boolean _inSystemVM = false;
     boolean _sslCopy = false;
 
-    DownloadManager _dlMgr;
-    UploadManager _upldMgr;
+    protected DownloadManager _dlMgr;
+    protected UploadManager _upldMgr;
     private String _configSslScr;
     private String _configAuthScr;
     private String _configIpFirewallScr;

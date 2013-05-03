@@ -18,6 +18,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
+import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -108,8 +109,11 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 		image = templateDao.persist(image);
 		templateId = image.getId();
 
-		Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(new LocalHostEndpoint());
-		Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(new LocalHostEndpoint());
+		// inject mockito
+		LocalHostEndpoint ep = new LocalHostEndpoint();
+		ep.setResource(new MockLocalNfsSecondaryStorageResource());
+		Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
+		Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
 	}
 
 	@Test

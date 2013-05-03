@@ -40,14 +40,18 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
@@ -176,8 +180,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
 				port = 80;
 			}
 
-            URL urlObj = new URL(url);
-            this.fileName = urlObj.getFile();
+            this.fileName = StringUtils.substringAfterLast(url, "/");
 
 			String host = uri.getHost();
 			try {
@@ -199,10 +202,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
 		} catch (URISyntaxException use) {
 			s_logger.warn("Failed uri syntax check: " + use.getMessage());
 			throw new IllegalArgumentException(use.getMessage());
-		} catch (MalformedURLException e) {
-            s_logger.warn("Failed url syntax check: " + e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
-        }
+		}
 	}
 
 	@Override
@@ -215,8 +215,17 @@ public class S3TemplateDownloader implements TemplateDownloader {
 		default:
 
 		}
+
+
         int bytes=0;
 		try {
+	        // execute get method
+	        int responseCode = HttpStatus.SC_OK;
+	        if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
+	            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+	            errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
+	            return 0; //FIXME: retry?
+	        }
 		    // get the total size of file
             Header contentLengthHeader = request.getResponseHeader("Content-Length");
             boolean chunked = false;
@@ -277,14 +286,23 @@ public class S3TemplateDownloader implements TemplateDownloader {
                             if (progressEvent.getEventCode() == ProgressEvent.COMPLETED_EVENT_CODE) {
                                 s_logger.info("download completed");
                                 status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
-                            } else {
+                            } else if (progressEvent.getEventCode() == ProgressEvent.FAILED_EVENT_CODE){
+                                status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+                            } else if (progressEvent.getEventCode() == ProgressEvent.CANCELED_EVENT_CODE){
+                                status = TemplateDownloader.Status.ABORTED;
+                            } else{
                                 status = TemplateDownloader.Status.IN_PROGRESS;
                             }
-
                         }
 
                     });
             S3Utils.putObject(s3, putObjectRequest);
+            while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED &&
+                    status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
+                    status != TemplateDownloader.Status.ABORTED ){
+                // wait for completion
+            }
+            // finished or aborted
             Date finish = new Date();
             String downloaded = "(incomplete download)";
             if (totalBytes >= remoteSize) {
@@ -300,6 +318,9 @@ public class S3TemplateDownloader implements TemplateDownloader {
 		} catch (IOException ioe) {
 			status = TemplateDownloader.Status.UNRECOVERABLE_ERROR; //probably a file write error?
 			errorString = ioe.getMessage();
+		} catch (AmazonClientException ex) {
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR; // S3 api exception
+            errorString = ex.getMessage();
 		} finally {
 		    // close input stream
 			request.releaseConnection();

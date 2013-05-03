@@ -92,5 +92,13 @@ public class LocalHostEndpoint implements EndPoint {
 			executor.schedule(new CmdRunner2(cmd, listener.getCallback()), 10, TimeUnit.SECONDS);
 		}
 	}
+    public ServerResource getResource() {
+        return resource;
+    }
+    public void setResource(ServerResource resource) {
+        this.resource = resource;
+    }
+
+
 
 }

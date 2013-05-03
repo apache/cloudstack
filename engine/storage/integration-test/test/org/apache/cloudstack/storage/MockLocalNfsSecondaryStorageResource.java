@@ -1,7 +1,6 @@
-package com.cloud.storage.resource;
+package org.apache.cloudstack.storage;
 
 import static com.cloud.utils.StringUtils.join;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 import java.io.InputStream;
@@ -10,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.springframework.stereotype.Component;
@@ -23,14 +23,20 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class LocalNfsSecondaryStorageResource extends
+public class MockLocalNfsSecondaryStorageResource extends
 		NfsSecondaryStorageResource {
+
+    public MockLocalNfsSecondaryStorageResource(){
+        _dlMgr = new DownloadManagerImpl();
+        ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
+    }
 
     @Override
     public Answer executeRequest(Command cmd) {
