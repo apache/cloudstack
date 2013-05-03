@@ -76,8 +76,7 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 
 	@Override
 	public boolean enableStaticNat(long ipAddressId, long vmId, long networkId,
-			boolean isSystemVm, String ipAddr) throws NetworkRuleConflictException,
-			ResourceUnavailableException {
+			String ipAddr) throws NetworkRuleConflictException, ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
 	}
