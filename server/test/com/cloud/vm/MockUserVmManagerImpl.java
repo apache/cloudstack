@@ -455,4 +455,10 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

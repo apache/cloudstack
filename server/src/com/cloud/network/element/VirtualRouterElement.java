@@ -47,7 +47,9 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -85,9 +87,13 @@ import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -108,10 +114,12 @@ import java.util.Set;
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
 		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
 		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
-		        PortForwardingServiceProvider.class, IpDeployer.class, RemoteAccessVPNServiceProvider.class} )
+		        PortForwardingServiceProvider.class, IpDeployer.class,
+		        RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class} )
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
-        LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
+        LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
+        NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
 
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -130,6 +138,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     ConfigurationManager _configMgr;
     @Inject
     RulesManager _rulesMgr;
+    @Inject
+    UserVmManager _userVmMgr;
    
     @Inject
     UserVmDao _userVmDao;
@@ -1024,7 +1034,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
 	private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
 	    Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
 	    if (!lbCaps.isEmpty()) {
@@ -1039,5 +1048,60 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 	        }
 	    }
 	    return true;
+        }
+
+	@Override
+	public boolean prepareMigration(NicProfile nic, Network network,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			DeployDestination dest, ReservationContext context) {
+		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
+			return true;
+		}
+		if (vm.getType() == Type.DomainRouter) {
+			assert vm instanceof DomainRouterVO;
+			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+			_routerMgr.setupDhcpForPvlan(false, router, router.getHostId(), nic);
+		} else if (vm.getType() == Type.User){
+			assert vm instanceof UserVmVO;
+			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+			_userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
+		}
+		return true;
+	}
+
+	@Override
+	public void rollbackMigration(NicProfile nic, Network network,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			ReservationContext src, ReservationContext dst) {
+		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
+			return;
+		}
+		if (vm.getType() == Type.DomainRouter) {
+			assert vm instanceof DomainRouterVO;
+			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+			_routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+		} else if (vm.getType() == Type.User){
+			assert vm instanceof UserVmVO;
+			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+			_userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+		}
+	}
+
+	@Override
+	public void commitMigration(NicProfile nic, Network network,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			ReservationContext src, ReservationContext dst) {
+		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
+			return;
+		}
+		if (vm.getType() == Type.DomainRouter) {
+			assert vm instanceof DomainRouterVO;
+			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+			_routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
+		} else if (vm.getType() == Type.User){
+			assert vm instanceof UserVmVO;
+			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+			_userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+		}
 	}
 }
