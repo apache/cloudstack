@@ -10854,7 +10854,7 @@
                           url:createURL('updateConfiguration&storageid=' + args.context.primarystorages[0].id),
                           data:data,
                           success:function(json){
-                              var item = json.updatestoragelevelparameterresponse.configuration;
+                              var item = json.updateconfigurationresponse.configuration;
                               args.response.success({data:item});
                             },
 
