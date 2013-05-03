@@ -137,7 +137,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         
         //4) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(),
-                new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), new Ip(sourceIp));
+                new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIpAddr);
         if (!_lbMgr.validateLbRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
