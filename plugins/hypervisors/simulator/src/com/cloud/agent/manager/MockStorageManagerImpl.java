@@ -48,8 +48,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
@@ -81,6 +79,9 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
+
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import com.cloud.agent.api.to.NfsTO;

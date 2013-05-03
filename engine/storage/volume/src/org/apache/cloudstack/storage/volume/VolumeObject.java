@@ -26,7 +26,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -78,7 +77,8 @@ public class VolumeObject implements VolumeInfo {
         vo.configure(dataStore, volumeVO);
         return vo;
     }
-    
+
+    @Override
     public String getAttachedVmName() {
         Long vmId = this.volumeVO.getInstanceId();
         if (vmId != null) {
@@ -97,14 +97,15 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getUuid();
     }
 
-    public void setPath(String uuid) {
-        volumeVO.setPath(uuid);
+    public void setUuid(String uuid) {
+        volumeVO.setUuid(uuid);
     }
 
     public void setSize(Long size) {
     	volumeVO.setSize(size);
     }
 
+    @Override
     public Volume.State getState() {
         return volumeVO.getState();
     }
@@ -117,6 +118,12 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public Long getSize() {
         return volumeVO.getSize();
+    }
+
+    @Override
+    public String getInstallPath() {
+         DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
+         return obj.getInstallPath();
     }
 
     public long getVolumeId() {
@@ -174,11 +181,6 @@ public class VolumeObject implements VolumeInfo {
         return DataObjectType.VOLUME;
     }
 
-    @Override
-    public DiskFormat getFormat() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public void processEvent(
@@ -388,7 +390,7 @@ public class VolumeObject implements VolumeInfo {
                this.volumeStoreDao.update(volStore.getId(), volStore);
            }
        }
-       
+
        this.processEvent(event);
     }
 }

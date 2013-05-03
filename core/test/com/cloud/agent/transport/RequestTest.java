@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -30,7 +32,6 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -132,7 +133,10 @@ public class RequestTest extends TestCase {
         s_logger.info("Testing Download answer");
         VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
                 HypervisorType.KVM, null);
-        DownloadCommand cmd = new DownloadCommand(new NfsTO("secUrl", DataStoreRole.Image), template, 30000000l);
+        NfsTO nfs = new NfsTO("secUrl", DataStoreRole.Image);
+        TemplateObjectTO to = new TemplateObjectTO(template);
+        to.setImageDataStore(nfs);
+        DownloadCommand cmd = new DownloadCommand(to, 30000000l);
         Request req = new Request(1, 1, cmd, true);
 
         req.logD("Debug for Download");

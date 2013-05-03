@@ -14,32 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.storage;
+package org.apache.cloudstack.storage.command;
+
+
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
+import com.cloud.agent.api.storage.PasswordAuth;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.template.VirtualMachineTemplate;
 
 
 public class DownloadSystemTemplateCommand extends Command {
-	public static class PasswordAuth {
-		String userName;
-		String password;
-		public PasswordAuth() {
-
-		}
-		public PasswordAuth(String user, String password) {
-			this.userName = user;
-			this.password = password;
-		}
-		public String getUserName() {
-			return userName;
-		}
-		public String getPassword() {
-			return password;
-		}
-	}
 
 
 	private PasswordAuth auth;

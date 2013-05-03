@@ -14,91 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.storage;
-
-import java.net.URI;
+package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
+import com.cloud.agent.api.storage.AbstractDownloadCommand;
+import com.cloud.agent.api.storage.PasswordAuth;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate;
 
 
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
-	public static class PasswordAuth {
-		String userName;
-		String password;
-		public PasswordAuth() {
-
-		}
-		public PasswordAuth(String user, String password) {
-			this.userName = user;
-			this.password = password;
-		}
-		public String getUserName() {
-			return userName;
-		}
-		public String getPassword() {
-			return password;
-		}
-	}
 
     public static enum ResourceType {
         VOLUME, TEMPLATE
     }
 
-	public static class Proxy {
-		private String _host;
-		private int _port;
-		private String _userName;
-		private String _password;
-
-		public Proxy() {
-
-		}
-
-		public Proxy(String host, int port, String userName, String password) {
-			this._host = host;
-			this._port = port;
-			this._userName = userName;
-			this._password = password;
-		}
-
-		public Proxy(URI uri) {
-			this._host = uri.getHost();
-			this._port = uri.getPort() == -1 ? 3128 : uri.getPort();
-			String userInfo = uri.getUserInfo();
-			if (userInfo != null) {
-				String[] tokens = userInfo.split(":");
-				if (tokens.length == 1) {
-					this._userName = userInfo;
-					this._password = "";
-				} else if (tokens.length == 2) {
-					this._userName = tokens[0];
-					this._password = tokens[1];
-				}
-			}
-		}
-
-		public String getHost() {
-			return _host;
-		}
-
-		public int getPort() {
-			return _port;
-		}
-
-		public String getUserName() {
-			return _userName;
-		}
-
-		public String getPassword() {
-			return _password;
-		}
-	}
 	private boolean hvm;
 	private String description;
 	private String checksum;
@@ -107,6 +43,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	private Long maxDownloadSizeInBytes = null;
 	private long id;
 	private ResourceType resourceType = ResourceType.TEMPLATE;
+	private String installPath;
 	private DataStoreTO _store;
 
 	protected DownloadCommand() {
@@ -123,46 +60,39 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	    this.setSecUrl(that.getSecUrl());
 	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
 	    this.resourceType = that.resourceType;
+	    this.installPath = that.installPath;
+	    this._store = that._store;
 	}
 
-	public DownloadCommand(DataStoreTO store, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
-	    super(template.getUniqueName(), template.getUrl(), template.getFormat(), template.getAccountId());
-	    this._store = store;
+	public DownloadCommand(TemplateObjectTO template, Long maxDownloadSizeInBytes) {
+	    super(template.getName(), template.getOrigUrl(), template.getFormat(), template.getAccountId());
+	    this._store = template.getDataStore();
+	    this.installPath = template.getPath();
 	    this.hvm = template.isRequiresHvm();
 	    this.checksum = template.getChecksum();
 	    this.id = template.getId();
-	    this.description = template.getDisplayText();
-        if (store instanceof NfsTO) {
-            this.setSecUrl(((NfsTO) store).getUrl());
+	    this.description = template.getDescription();
+        if (_store instanceof NfsTO) {
+            this.setSecUrl(((NfsTO) _store).getUrl());
         }
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	}
 
-	public DownloadCommand(DataStoreTO store, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
-	    super(volume.getName(), url, format, volume.getAccountId());
-	    //this.hvm = volume.isRequiresHvm();
-	    this.checksum = checkSum;
-	    this.id = volume.getId();
-	    this._store = store;
-	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
-	    this.resourceType = ResourceType.VOLUME;
-	}
-
-	public DownloadCommand(DataStoreTO store, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
-	    super(template.getUniqueName(), url, template.getFormat(), template.getAccountId());
-        this._store = store;
-	    this.hvm = template.isRequiresHvm();
-        this.checksum = template.getChecksum();
-        this.id = template.getId();
-        this.description = template.getDisplayText();
-        if (store instanceof NfsTO) {
-            this.setSecUrl(((NfsTO) store).getUrl());
-        }
-        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+	public DownloadCommand(TemplateObjectTO template, String user, String passwd, Long maxDownloadSizeInBytes) {
+	    this(template, maxDownloadSizeInBytes);
 		auth = new PasswordAuth(user, passwd);
 	}
 
-	public long getId() {
+    public DownloadCommand(VolumeObjectTO volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
+        super(volume.getName(), url, format, volume.getAccountId());
+        this.checksum = checkSum;
+        this.id = volume.getVolumeId();
+        this._store = volume.getDataStore();
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.resourceType = ResourceType.VOLUME;
+    }
+	@Override
+    public long getId() {
 	    return id;
 	}
 
@@ -234,6 +164,16 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
     public void setDataStore(DataStoreTO _store) {
         this._store = _store;
+    }
+
+
+    public String getInstallPath() {
+        return installPath;
+    }
+
+
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
     }
 
 

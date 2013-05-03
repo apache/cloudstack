@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import java.util.Date;
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -28,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -38,7 +40,10 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -108,9 +113,9 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public String getUri() {
         VMTemplateVO image = imageDao.findById(this.imageVO.getId());
-       
+
             return image.getUrl();
-       
+
     }
 
     @Override
@@ -153,8 +158,8 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public DiskFormat getFormat() {
-        return DiskFormat.valueOf(this.imageVO.getFormat().toString());
+    public ImageFormat getFormat() {
+        return this.imageVO.getFormat();
     }
 
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
@@ -188,7 +193,7 @@ public class TemplateObject implements TemplateInfo {
         			templatePoolRef.setInstallPath(newTemplate.getPath());
         			templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
         		}
-        	} else if (this.getDataStore().getRole() == DataStoreRole.Image || 
+        	} else if (this.getDataStore().getRole() == DataStoreRole.Image ||
         			this.getDataStore().getRole() == DataStoreRole.ImageCache) {
         		if (answer instanceof CopyCmdAnswer) {
         			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
@@ -221,4 +226,115 @@ public class TemplateObject implements TemplateInfo {
 		 DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
          return obj.getInstallPath();
 	}
+
+    @Override
+    public long getAccountId() {
+        return this.imageVO.getAccountId();
+    }
+
+    @Override
+    public boolean isFeatured() {
+        return this.imageVO.isFeatured();
+    }
+
+    @Override
+    public boolean isPublicTemplate() {
+        return this.imageVO.isPublicTemplate();
+    }
+
+    @Override
+    public boolean isExtractable() {
+        return this.imageVO.isExtractable();
+    }
+
+    @Override
+    public String getName() {
+        return this.imageVO.getName();
+    }
+
+    @Override
+    public boolean isRequiresHvm() {
+        return this.imageVO.isRequiresHvm();
+    }
+
+    @Override
+    public String getDisplayText() {
+        return this.imageVO.getDisplayText();
+    }
+
+    @Override
+    public boolean getEnablePassword() {
+        return this.imageVO.getEnablePassword();
+    }
+
+    @Override
+    public boolean getEnableSshKey() {
+        return this.imageVO.getEnableSshKey();
+    }
+
+    @Override
+    public boolean isCrossZones() {
+        return this.imageVO.isCrossZones();
+    }
+
+    @Override
+    public Date getCreated() {
+        return this.imageVO.getCreated();
+    }
+
+    @Override
+    public long getGuestOSId() {
+        return this.imageVO.getGuestOSId();
+    }
+
+    @Override
+    public boolean isBootable() {
+        return this.imageVO.isBootable();
+    }
+
+    @Override
+    public TemplateType getTemplateType() {
+        return this.imageVO.getTemplateType();
+    }
+
+    @Override
+    public HypervisorType getHypervisorType() {
+        return this.imageVO.getHypervisorType();
+    }
+
+    @Override
+    public int getBits() {
+        return this.imageVO.getBits();
+    }
+
+    @Override
+    public String getUrl() {
+        return this.imageVO.getUrl();
+    }
+
+    @Override
+    public String getChecksum() {
+        return this.imageVO.getChecksum();
+    }
+
+    @Override
+    public Long getSourceTemplateId() {
+        return this.imageVO.getSourceTemplateId();
+    }
+
+    @Override
+    public String getTemplateTag() {
+        return this.imageVO.getTemplateTag();
+    }
+
+    @Override
+    public Map getDetails() {
+        return this.imageVO.getDetails();
+    }
+
+    @Override
+    public long getDomainId() {
+        return this.imageVO.getDomainId();
+    }
+
 }

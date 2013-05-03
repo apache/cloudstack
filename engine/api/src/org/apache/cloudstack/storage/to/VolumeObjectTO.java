@@ -33,16 +33,16 @@ public class VolumeObjectTO implements DataTO {
     private long size;
     private String path;
     private Long volumeId;
-    
+    private long accountId;
+
     public VolumeObjectTO() {
 
     }
-    
+
     public VolumeObjectTO(VolumeInfo volume) {
         this.uuid = volume.getUuid();
         this.path = volume.getUri();
-        //this.volumeType = volume.getType();
-        //this.diskType = volume.getDiskType();
+        this.accountId = volume.getAccountId();
         if (volume.getDataStore() != null) {
             this.dataStore = volume.getDataStore().getTO();
         } else {
@@ -52,39 +52,39 @@ public class VolumeObjectTO implements DataTO {
         this.size = volume.getSize();
         this.setVolumeId(volume.getId());
     }
-    
+
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public String getPath() {
         return this.path;
     }
-    
+
     public VolumeType getVolumeType() {
         return this.volumeType;
     }
-    
+
     public DiskFormat getDiskType() {
         return this.diskType;
     }
-    
+
     public DataStoreTO getDataStore() {
         return this.dataStore;
     }
-    
+
     public void setDataStore(PrimaryDataStoreTO dataStore) {
         this.dataStore = dataStore;
     }
-    
+
     public String getName() {
         return this.name;
     }
-    
+
     public long getSize() {
         return this.size;
     }
-    
+
     public DataObjectType getObjectType() {
         return DataObjectType.VOLUME;
     }
@@ -112,5 +112,14 @@ public class VolumeObjectTO implements DataTO {
     public void setVolumeId(Long volumeId) {
         this.volumeId = volumeId;
     }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
 
 }

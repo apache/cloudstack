@@ -32,6 +32,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
 
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -52,8 +53,7 @@ import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.StorageClass;
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.S3Utils;

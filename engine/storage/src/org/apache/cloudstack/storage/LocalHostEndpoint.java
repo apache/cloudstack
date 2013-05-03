@@ -7,12 +7,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.download.DownloadListener;

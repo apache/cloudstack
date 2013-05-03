@@ -48,7 +48,6 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
-import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -58,26 +57,21 @@ import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -172,13 +166,9 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
 
 
         if (data.getType() == DataObjectType.TEMPLATE) {
-            TemplateObject tData = (TemplateObject)data;
-            _downloadMonitor.downloadTemplateToStorage(tData, tData.getDataStore(), caller);
+            _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
-            VolumeObject volInfo = (VolumeObject)data;
-            RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
-            _downloadMonitor.downloadVolumeToStorage(volInfo, volInfo.getDataStore(), payload.getUrl(),
-                    payload.getChecksum(), ImageFormat.valueOf(payload.getFormat().toUpperCase()), caller);
+            _downloadMonitor.downloadVolumeToStorage(data, caller);
         }
     }
 

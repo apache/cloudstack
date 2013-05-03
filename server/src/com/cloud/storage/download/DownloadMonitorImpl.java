@@ -33,7 +33,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -43,22 +48,12 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.agent.manager.Commands;
-import com.cloud.alert.AlertManager;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.host.HostVO;
+import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -68,20 +63,15 @@ import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
-import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 @Component
 @Local(value = { DownloadMonitor.class })
@@ -175,14 +165,13 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         return (downloadsInProgress.size() == 0);
     }
 
-    private void initiateTemplateDownload(DataObject template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback) {
+    private void initiateTemplateDownload(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
         boolean downloadJobExists = false;
         TemplateDataStoreVO vmTemplateStore = null;
+        DataStore store = template.getDataStore();
 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
-            // This method can be invoked other places, for example,
-            // handleTemplateSync, in that case, vmTemplateStore may be null
             vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
                     VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             _vmTemplateStoreDao.persist(vmTemplateStore);
@@ -194,7 +183,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         if (vmTemplateStore != null) {
             start();
             VirtualMachineTemplate tmpl = this._templateDao.findById(template.getId());
-            DownloadCommand dcmd = new DownloadCommand(store.getTO(), tmpl, maxTemplateSizeInBytes);
+            DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(template.getTO()), maxTemplateSizeInBytes);
             dcmd.setProxy(getHttpProxy());
             if (downloadJobExists) {
                 dcmd = new DownloadProgressCommand(dcmd, vmTemplateStore.getJobId(), RequestType.GET_OR_RESTART);
@@ -238,20 +227,26 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
 
     @Override
-    public void downloadTemplateToStorage(DataObject template, DataStore store, AsyncCompletionCallback<DownloadAnswer> callback) {
+    public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
         long templateId = template.getId();
+        DataStore store = template.getDataStore();
         if (isTemplateUpdateable(templateId, store.getId())) {
             if (template != null && template.getUri() != null) {
-                initiateTemplateDownload(template, store, callback);
+                initiateTemplateDownload(template, callback);
             }
         }
     }
 
     @Override
-    public void downloadVolumeToStorage(DataObject volume, DataStore store, String url, String checkSum, ImageFormat format,
-            AsyncCompletionCallback<DownloadAnswer> callback) {
+    public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback) {
         boolean downloadJobExists = false;
         VolumeDataStoreVO volumeHost = null;
+        DataStore store = volume.getDataStore();
+        VolumeInfo volInfo = (VolumeInfo)volume;
+        RegisterVolumePayload payload = (RegisterVolumePayload)volInfo.getpayload();
+        String url = payload.getUrl();
+        String checkSum = payload.getChecksum();
+        ImageFormat format = ImageFormat.valueOf(payload.getFormat());
 
         volumeHost = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
         if (volumeHost == null) {
@@ -266,7 +261,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         if (volumeHost != null) {
             start();
             Volume vol = this._volumeDao.findById(volume.getId());
-            DownloadCommand dcmd = new DownloadCommand(store.getTO(), vol, maxVolumeSizeInBytes, checkSum, url, format);
+            DownloadCommand dcmd = new DownloadCommand((VolumeObjectTO)(volume.getTO()), maxVolumeSizeInBytes, checkSum, url, format);
             dcmd.setProxy(getHttpProxy());
             if (downloadJobExists) {
                 dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);

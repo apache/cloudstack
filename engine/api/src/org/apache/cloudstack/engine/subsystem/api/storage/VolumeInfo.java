@@ -28,4 +28,5 @@ public interface VolumeInfo extends DataObject, Volume {
 	public HypervisorType getHypervisorType();
 	public Long getLastPoolId();
 	public String getAttachedVmName();
+    public String getInstallPath();
 }

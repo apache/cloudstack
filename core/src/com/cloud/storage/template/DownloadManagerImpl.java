@@ -47,6 +47,10 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
@@ -56,11 +60,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
@@ -649,29 +649,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
-        String installPathPrefix = null;
+        String installPathPrefix = cmd.getInstallPath();
         DataStoreTO dstore = cmd.getDataStore();
-        if (dstore instanceof S3TO) {
-            if (resourceType == ResourceType.TEMPLATE) {
-                // convention is no / in the end for install path based on
-                // S3Utils implementation.
-                // template key is
-                // TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by
-                // adding template_name in the key, I can avoid generating a
-                // template.properties file
-                // for listTemplateCommand.
-                installPathPrefix = join(asList(_templateDir, cmd.getAccountId(), cmd.getId(), cmd.getName()), S3Utils.SEPARATOR);
-            } else {
-                installPathPrefix = join(asList(_volumeDir, cmd.getAccountId(), cmd.getId()), S3Utils.SEPARATOR);
-            }
-        } else {
-            if (ResourceType.TEMPLATE == resourceType) {
-                installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
-            } else {
-                installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
-            }
-        }
-
         String user = null;
         String password = null;
         if (cmd.getAuth() != null) {

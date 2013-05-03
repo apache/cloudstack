@@ -27,6 +27,8 @@ import java.util.Random;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -48,8 +50,6 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.host.Host;

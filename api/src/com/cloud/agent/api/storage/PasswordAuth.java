@@ -14,23 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.download;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.component.Manager;
+package com.cloud.agent.api.storage;
 
 /**
- * Monitor download progress of all templates across all servers
- *
+ * Password authentication
  */
-public interface DownloadMonitor extends Manager{
+public class PasswordAuth {
 
+    String userName;
+    String password;
+    public PasswordAuth() {
 
-    public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback);
-
-	public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
-
+    }
+    public PasswordAuth(String user, String password) {
+        this.userName = user;
+        this.password = password;
+    }
+    public String getUserName() {
+        return userName;
+    }
+    public String getPassword() {
+        return password;
+    }
 }

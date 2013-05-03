@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -93,12 +92,12 @@ public class SnapshotObject implements SnapshotInfo {
     	if (snapStoreVO == null) {
     	    return null;
     	}
-    	
+
     	long parentId = snapStoreVO.getParentSnapshotId();
     	if (parentId == 0) {
     	    return null;
     	}
-    	
+
     	return this.snapshotFactory.getSnapshot(parentId, store);
     }
 
@@ -145,10 +144,6 @@ public class SnapshotObject implements SnapshotInfo {
     	return DataObjectType.SNAPSHOT;
     }
 
-    @Override
-    public DiskFormat getFormat() {
-        return null;
-    }
 
     @Override
     public String getUuid() {
@@ -247,7 +242,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-    	SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(), 
+    	SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(),
     		   this.getDataStore().getId(), this.getId());
     	if (answer instanceof CreateObjectAnswer) {
     		SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer) answer).getData();
@@ -274,7 +269,7 @@ public class SnapshotObject implements SnapshotInfo {
 	@Override
 	public void addPayload(Object data) {
 		// TODO Auto-generated method stub
-		
+
 	}
-    
+
 }

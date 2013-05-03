@@ -18,10 +18,11 @@ package com.cloud.storage.template;
 
 import java.util.Map;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;

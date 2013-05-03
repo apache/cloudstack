@@ -11,13 +11,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 
+import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadSystemTemplateCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;

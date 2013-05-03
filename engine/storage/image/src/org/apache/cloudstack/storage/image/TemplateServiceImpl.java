@@ -187,13 +187,13 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<DataStore> ssHosts = this._storeMgr.getImageStoresByScope(new ZoneScope(dcId));
-        if (ssHosts == null || ssHosts.isEmpty()){
+        List<DataStore> stores = this._storeMgr.getImageStoresByScope(new ZoneScope(dcId));
+        if (stores == null || stores.isEmpty()){
             return;
         }
 
         /*Download all the templates in zone with the same hypervisortype*/
-        for ( DataStore ssHost : ssHosts) {
+        for ( DataStore store : stores) {
             List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
             List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
@@ -211,10 +211,10 @@ public class TemplateServiceImpl implements TemplateService {
             }
 
             for (VMTemplateVO template: toBeDownloaded) {
-                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(ssHost.getId(), template.getId());
+                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                	DataObject tmpl = this._templateFactory.getTemplate(template.getId(), ssHost);
-                    _dlMonitor.downloadTemplateToStorage(tmpl, ssHost, null);
+                    TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId());
+                    this.createTemplateAsync(tmplt, store, null);
                 }
             }
         }
@@ -370,8 +370,8 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
                     //TODO: we should pass a callback here
-                    DataObject tmpl = this._templateFactory.getTemplate(tmplt.getId(), store);
-                    _dlMonitor.downloadTemplateToStorage(tmpl, store, null);
+                    TemplateInfo tmpl = this._templateFactory.getTemplate(tmplt.getId());
+                    this.createTemplateAsync(tmpl, store, null);
                 }
             }
         }

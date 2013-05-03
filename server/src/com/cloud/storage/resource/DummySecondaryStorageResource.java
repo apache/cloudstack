@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -39,8 +41,6 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
