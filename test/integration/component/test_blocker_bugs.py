@@ -136,7 +136,7 @@ class TestSnapshots(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -146,8 +146,8 @@ class TestSnapshots(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["virtual_machine"],
                                 templateid=cls.template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
@@ -204,8 +204,8 @@ class TestSnapshots(cloudstackTestCase):
                                self.apiclient,
                                self.services["volume"],
                                zoneid=self.zone.id,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                diskofferingid=self.disk_offering.id
                                )
         self.debug("Created volume with ID: %s" % volume.id)
@@ -283,8 +283,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume_response.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Created snapshot: %s" % snapshot.id)
         #Create volume from snapshot
@@ -292,8 +292,8 @@ class TestSnapshots(cloudstackTestCase):
                                         self.apiclient,
                                         snapshot.id,
                                         self.services["volume"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.debug("Created Volume: %s from Snapshot: %s" % (
                                             volume_from_snapshot.id,
@@ -323,12 +323,12 @@ class TestSnapshots(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                 )
-        self.debug("Deployed new VM for account: %s" % self.account.account.name)
+        self.debug("Deployed new VM for account: %s" % self.account.name)
         self.cleanup.append(new_virtual_machine)
 
         self.debug("Attaching volume: %s to VM: %s" % (
@@ -434,7 +434,7 @@ class TestTemplate(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls._cleanup = [
                         cls.account,
@@ -471,8 +471,8 @@ class TestTemplate(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["templates"],
                                     zoneid=self.zone.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.debug("Registering template with ID: %s" % template.id)
         try:
@@ -519,8 +519,8 @@ class TestTemplate(cloudstackTestCase):
                                  self.apiclient,
                                  self.services["virtual_machine"],
                                  templateid=template.id,
-                                 accountid=self.account.account.name,
-                                 domainid=self.account.account.domainid,
+                                 accountid=self.account.name,
+                                 domainid=self.account.domainid,
                                  serviceofferingid=self.service_offering.id,
                                  )
         self.debug("Deployed VM with ID: %s " % virtual_machine.id)
@@ -565,15 +565,15 @@ class TestNATRules(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                 )
         cls.public_ip = PublicIPAddress.create(
                                     cls.api_client,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     zoneid=cls.zone.id,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     services=cls.services["virtual_machine"]
                                     )
         cls._cleanup = [
@@ -817,23 +817,23 @@ class TestRouters(cloudstackTestCase):
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.admin_account.account.name,
-                                  domainid=self.admin_account.account.domainid,
+                                  accountid=self.admin_account.name,
+                                  domainid=self.admin_account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM with ID: %s" % vm_1.id)
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.user_account.account.name,
-                                  domainid=self.user_account.account.domainid,
+                                  accountid=self.user_account.name,
+                                  domainid=self.user_account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM with ID: %s" % vm_2.id)
         routers = list_routers(
                                self.apiclient,
-                               account=self.admin_account.account.name,
-                               domainid=self.admin_account.account.domainid,
+                               account=self.admin_account.name,
+                               domainid=self.admin_account.domainid,
                                )
         self.assertEqual(
                             isinstance(routers, list),
@@ -887,8 +887,8 @@ class TestRouterRestart(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -927,8 +927,8 @@ class TestRouterRestart(cloudstackTestCase):
         # Find router associated with user account
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -945,8 +945,8 @@ class TestRouterRestart(cloudstackTestCase):
         while True:
             networks = Network.list(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
             network = networks[0]
             if network.state in ["Implemented", "Setup"]:
@@ -966,8 +966,8 @@ class TestRouterRestart(cloudstackTestCase):
         # Get router details after restart
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -1009,7 +1009,7 @@ class TestTemplates(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -1020,8 +1020,8 @@ class TestTemplates(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
         #Stop virtual machine
@@ -1091,8 +1091,8 @@ class TestTemplates(cloudstackTestCase):
                                    self.apiclient,
                                    self.services["templates"],
                                    self.volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                 )
         self.debug("Creating template with ID: %s" % template.id)
         # Volume and Template Size should be same
@@ -1121,8 +1121,8 @@ class TestTemplates(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    self.volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Created snapshot with ID: %s" % snapshot.id)
         snapshots = Snapshot.list(
@@ -1203,8 +1203,8 @@ class TestTemplates(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    self.volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Created snapshot with ID: %s" % snapshot.id)
         snapshots = Snapshot.list(

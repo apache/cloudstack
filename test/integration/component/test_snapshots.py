@@ -152,7 +152,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -163,8 +163,8 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server_without_disk"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
@@ -220,8 +220,8 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volumes[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Snapshot created: ID - %s" % snapshot.id)
 
@@ -384,7 +384,7 @@ class TestSnapshots(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -395,8 +395,8 @@ class TestSnapshots(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server_with_disk"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
@@ -405,8 +405,8 @@ class TestSnapshots(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["server_without_disk"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -462,8 +462,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         snapshots = list_snapshots(
                                   self.apiclient,
@@ -663,8 +663,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume_response.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Created Snapshot from volume: %s" % volume_response.id)
 
@@ -674,8 +674,8 @@ class TestSnapshots(cloudstackTestCase):
                                         self.apiclient,
                                         snapshot.id,
                                         self.services,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
 
         volumes = list_volumes(
@@ -789,8 +789,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volumes[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         snapshot.delete(self.apiclient)
 
@@ -1079,8 +1079,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
 
         self.debug("Snapshot created from volume ID: %s" % volume.id)
@@ -1118,8 +1118,8 @@ class TestSnapshots(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["server_without_disk"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
@@ -1209,7 +1209,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1269,8 +1269,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
@@ -1359,8 +1359,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["server"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Created VM with ID: %s from template: %s" % (
@@ -1373,8 +1373,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
                                 id=new_virtual_machine.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid
+                                account=self.account.name,
+                                domainid=self.account.domainid
                                 )
         self.assertEqual(
                             isinstance(virtual_machines, list),
@@ -1505,7 +1505,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1515,8 +1515,8 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         # Get the Root disk of VM
@@ -1577,7 +1577,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
         accounts = list_accounts(
                                  self.apiclient,
-                                 id=self.account.account.id
+                                 id=self.account.id
                                  )
         self.assertEqual(
                             isinstance(accounts, list),
@@ -1737,7 +1737,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                         "Check snapshot UUID in secondary storage and database"
                         )
 
-        self.debug("Deleting account: %s" % self.account.account.name)
+        self.debug("Deleting account: %s" % self.account.name)
         # Delete account
         self.account.delete(self.apiclient)
 
@@ -1757,7 +1757,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
         accounts = list_accounts(
                                  self.apiclient,
-                                 id=self.account.account.id
+                                 id=self.account.id
                                  )
 
         self.assertEqual(
@@ -1859,7 +1859,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1869,8 +1869,8 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
@@ -2142,7 +2142,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2152,8 +2152,8 @@ class TestSnapshotLimit(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -2401,7 +2401,7 @@ class TestSnapshotEvents(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2411,8 +2411,8 @@ class TestSnapshotEvents(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
 
@@ -2498,8 +2498,8 @@ class TestSnapshotEvents(cloudstackTestCase):
         time.sleep(self.services["sleep"])
         events = list_events(
                              self.apiclient,
-                             account=self.account.account.name,
-                             domainid=self.account.account.domainid,
+                             account=self.account.name,
+                             domainid=self.account.domainid,
                              type='SNAPSHOT.DELETE'
                              )
         self.assertEqual(

@@ -162,11 +162,11 @@ class TestAccounts(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % account.account.name)
+        self.debug("Created account: %s" % account.name)
         self.cleanup.append(account)
         list_accounts_response = list_accounts(
                                                self.apiclient,
-                                               id=account.account.id
+                                               id=account.id
                                                )
         self.assertEqual(
                          isinstance(list_accounts_response, list),
@@ -181,12 +181,12 @@ class TestAccounts(cloudstackTestCase):
 
         account_response = list_accounts_response[0]
         self.assertEqual(
-                            account.account.accounttype,
+                            account.accounttype,
                             account_response.accounttype,
                             "Check Account Type of Created account"
                             )
         self.assertEqual(
-                            account.account.name,
+                            account.name,
                             account_response.name,
                             "Check Account Name of Created account"
                             )
@@ -194,8 +194,8 @@ class TestAccounts(cloudstackTestCase):
         user = User.create(
                             self.apiclient,
                             self.services["user"],
-                            account=account.account.name,
-                            domainid=account.account.domainid
+                            account=account.name,
+                            domainid=account.domainid
                             )
         self.debug("Created user: %s" % user.id)
         list_users_response = list_users(
@@ -301,15 +301,15 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         user_1 = User.create(
                             self.apiclient,
                             self.services["user"],
-                            account=self.account.account.name,
-                            domainid=self.account.account.domainid
+                            account=self.account.name,
+                            domainid=self.account.domainid
                             )
         self.debug("Created user: %s" % user_1.id)
         user_2 = User.create(
                             self.apiclient,
                             self.services["user"],
-                            account=self.account.account.name,
-                            domainid=self.account.account.domainid
+                            account=self.account.name,
+                            domainid=self.account.domainid
                             )
         self.debug("Created user: %s" % user_2.id)
         self.cleanup.append(user_2)
@@ -317,12 +317,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
-                                                           self.account.account.name,
+                                                           self.account.name,
                                                            vm_1.id
                                                            ))
         self.cleanup.append(vm_1)
@@ -330,12 +330,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
-                                                           self.account.account.name,
+                                                           self.account.name,
                                                            vm_2.id
                                                            ))
         self.cleanup.append(vm_2)
@@ -347,7 +347,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         # Account should exist after deleting user
         accounts_response = list_accounts(
                                           self.apiclient,
-                                          id=self.account.account.id
+                                          id=self.account.id
                                         )
         self.assertEqual(
                          isinstance(accounts_response, list),
@@ -362,8 +362,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             )
         vm_response = list_virtual_machines(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                          isinstance(vm_response, list),
@@ -401,43 +401,43 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         user_1 = User.create(
                             self.apiclient,
                             self.services["user"],
-                            account=self.account.account.name,
-                            domainid=self.account.account.domainid
+                            account=self.account.name,
+                            domainid=self.account.domainid
                             )
         self.debug("Created user: %s" % user_1.id)
         user_2 = User.create(
                             self.apiclient,
                             self.services["user"],
-                            account=self.account.account.name,
-                            domainid=self.account.account.domainid
+                            account=self.account.name,
+                            domainid=self.account.domainid
                             )
         self.debug("Created user: %s" % user_2.id)
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
-                                                           self.account.account.name,
+                                                           self.account.name,
                                                            vm_1.id
                                                            ))
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
-                                                           self.account.account.name,
+                                                           self.account.name,
                                                            vm_2.id
                                                            ))
         # Get users associated with an account
         # (Total 3: 2 - Created & 1 default generated while account creation)
         users = list_users(
                           self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+                          account=self.account.name,
+                          domainid=self.account.domainid
                           )
         self.assertEqual(
                          isinstance(users, list),
@@ -468,7 +468,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         # Account is removed after last user is deleted
         account_response = list_accounts(
                                          self.apiclient,
-                                         id=self.account.account.id
+                                         id=self.account.id
                                          )
         self.assertEqual(
                             account_response,
@@ -478,8 +478,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         # All VMs associated with account are removed.
         vm_response = list_virtual_machines(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             vm_response,
@@ -490,8 +490,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         with self.assertRaises(Exception):
             list_routers(
                           self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+                          account=self.account.name,
+                          domainid=self.account.domainid
                         )
         return
 
@@ -1217,11 +1217,11 @@ class TestUserDetails(cloudstackTestCase):
         # Fetching the user details of account
         self.debug(
                    "Fetching user details for account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
         users = User.list(
                           self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+                          account=self.account.name,
+                          domainid=self.account.domainid
                           )
         self.assertEqual(
                          isinstance(users, list),
@@ -1304,11 +1304,11 @@ class TestUserDetails(cloudstackTestCase):
         # Fetching the user details of account
         self.debug(
                    "Fetching user details for account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
         users = User.list(
                           self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+                          account=self.account.name,
+                          domainid=self.account.domainid
                           )
         self.assertEqual(
                          isinstance(users, list),
@@ -1391,11 +1391,11 @@ class TestUserDetails(cloudstackTestCase):
         # Fetching the user details of account
         self.debug(
                    "Fetching user details for account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
         users = User.list(
                           self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+                          account=self.account.name,
+                          domainid=self.account.domainid
                           )
         self.assertEqual(
                          isinstance(users, list),
@@ -1515,7 +1515,7 @@ class TestUserLogin(cloudstackTestCase):
         self.debug("Logging into the cloudstack with login API")
         respose = User.login(
                              self.apiclient,
-                             username=self.account.account.name,
+                             username=self.account.name,
                              password=self.services["account"]["password"]
                              )
         self.assertEqual(respose, None, "Login response should not be none")
@@ -1572,8 +1572,8 @@ class TestUserLogin(cloudstackTestCase):
 
         accounts = Account.list(
                                 self.apiclient,
-                                name=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                name=self.account.name,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
 
@@ -1586,7 +1586,7 @@ class TestUserLogin(cloudstackTestCase):
         self.debug("Logging into the cloudstack with login API")
         respose = User.login(
                              self.apiclient,
-                             username=self.account.account.name,
+                             username=self.account.name,
                              password=self.services["account"]["password"]
                              )
         self.assertEqual(respose, None, "Login response should not be none")

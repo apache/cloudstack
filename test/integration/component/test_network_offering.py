@@ -256,21 +256,21 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -279,8 +279,8 @@ class TestNOVirtualRouter(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -305,7 +305,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                           self.apiclient,
                                           self.services["lbrule"],
                                           ipaddressid=src_nat.id,
-                                          accountid=self.account.account.name
+                                          accountid=self.account.name
                                        )
         self.debug(
             "Trying to create a port forwarding rule in source NAT: %s" %
@@ -322,18 +322,18 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_nat_rule = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=self.network.id
                                     )
 
         self.debug("Associated %s with network %s" % (
-                                        ip_with_nat_rule.ipaddress.ipaddress,
+                                        ip_with_nat_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating PF rule for IP address: %s" %
-                                        ip_with_nat_rule.ipaddress.ipaddress)
+                                        ip_with_nat_rule.ipaddress)
         NATRule.create(
                          self.apiclient,
                          virtual_machine,
@@ -342,7 +342,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                       )
 
         self.debug("Trying to create LB rule on IP with NAT: %s" %
-                                    ip_with_nat_rule.ipaddress.ipaddress)
+                                    ip_with_nat_rule.ipaddress)
 
         # Create Load Balancer rule on IP already having NAT rule
         with self.assertRaises(Exception):
@@ -350,7 +350,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_nat_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Creating PF rule with public port: 66")
 
@@ -376,27 +376,27 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
-                                        ip_with_lb_rule.ipaddress.ipaddress,
+                                        ip_with_lb_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating LB rule for IP address: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
+                                        ip_with_lb_rule.ipaddress)
 
         LoadBalancerRule.create(
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
 
         self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                ip_with_nat_rule.ipaddress.ipaddress)
+                ip_with_nat_rule.ipaddress)
 
         with self.assertRaises(Exception):
             NATRule.create(
@@ -411,7 +411,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule_port_2221"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
 
         # Check if NAT rule created successfully
@@ -499,21 +499,21 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -522,8 +522,8 @@ class TestNOVirtualRouter(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -547,7 +547,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
         self.debug("Created LB rule on source NAT: %s" % src_nat.ipaddress)
 
@@ -624,18 +624,18 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=self.network.id
                                     )
 
         self.debug("Associated %s with network %s" % (
-                                        public_ip.ipaddress.ipaddress,
+                                        public_ip.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating PF rule for IP address: %s" %
-                                        public_ip.ipaddress.ipaddress)
+                                        public_ip.ipaddress)
         NATRule.create(
                        self.apiclient,
                        virtual_machine,
@@ -644,14 +644,14 @@ class TestNOVirtualRouter(cloudstackTestCase):
                       )
 
         self.debug("Trying to create LB rule on IP with NAT: %s" %
-                                    public_ip.ipaddress.ipaddress)
+                                    public_ip.ipaddress)
 
         # Create Load Balancer rule on IP already having NAT rule
         lb_rule = LoadBalancerRule.create(
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Creating PF rule with public port: 66")
 
@@ -679,7 +679,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule_port_2221"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
 
         # Check if NAT rule created successfully
@@ -700,8 +700,8 @@ class TestNOVirtualRouter(cloudstackTestCase):
         vpn = Vpn.create(
                         self.apiclient,
                         src_nat.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
 
         vpns = Vpn.list(
@@ -834,21 +834,21 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -857,8 +857,8 @@ class TestNOWithNetscaler(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -883,7 +883,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
 
         self.debug(
@@ -930,18 +930,18 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_nat_rule = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=self.network.id
                                     )
 
         self.debug("Associated %s with network %s" % (
-                                        ip_with_nat_rule.ipaddress.ipaddress,
+                                        ip_with_nat_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating PF rule for IP address: %s" %
-                                        ip_with_nat_rule.ipaddress.ipaddress)
+                                        ip_with_nat_rule.ipaddress)
         NATRule.create(
                          self.apiclient,
                          virtual_machine,
@@ -950,7 +950,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                       )
 
         self.debug("Trying to create LB rule on IP with NAT: %s" %
-                                    ip_with_nat_rule.ipaddress.ipaddress)
+                                    ip_with_nat_rule.ipaddress)
 
         # Create Load Balancer rule on IP already having NAT rule
         with self.assertRaises(Exception):
@@ -958,7 +958,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_nat_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Creating PF rule with public port: 66")
 
@@ -984,28 +984,28 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
-                                        ip_with_lb_rule.ipaddress.ipaddress,
+                                        ip_with_lb_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating LB rule for IP address: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
+                                        ip_with_lb_rule.ipaddress)
 
         LoadBalancerRule.create(
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
         self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        ip_with_nat_rule.ipaddress.ipaddress)
+                                        ip_with_nat_rule.ipaddress)
 
         with self.assertRaises(Exception):
             NATRule.create(
@@ -1031,7 +1031,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule_port_2221"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1054,8 +1054,8 @@ class TestNOWithNetscaler(cloudstackTestCase):
             Vpn.create(
                         self.apiclient,
                         src_nat.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
         return
 
@@ -1104,21 +1104,21 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -1127,8 +1127,8 @@ class TestNOWithNetscaler(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -1153,7 +1153,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
 
         self.debug(
@@ -1213,18 +1213,18 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_nat_rule = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=self.network.id
                                     )
 
         self.debug("Associated %s with network %s" % (
-                                        ip_with_nat_rule.ipaddress.ipaddress,
+                                        ip_with_nat_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating PF rule for IP address: %s" %
-                                        ip_with_nat_rule.ipaddress.ipaddress)
+                                        ip_with_nat_rule.ipaddress)
         NATRule.create(
                          self.apiclient,
                          virtual_machine,
@@ -1233,7 +1233,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                       )
 
         self.debug("Trying to create LB rule on IP with NAT: %s" %
-                                    ip_with_nat_rule.ipaddress.ipaddress)
+                                    ip_with_nat_rule.ipaddress)
 
         # Create Load Balancer rule on IP already having NAT rule
         with self.assertRaises(Exception):
@@ -1241,7 +1241,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_nat_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Creating PF rule with public port: 66")
 
@@ -1267,28 +1267,28 @@ class TestNOWithNetscaler(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
-                                        ip_with_lb_rule.ipaddress.ipaddress,
+                                        ip_with_lb_rule.ipaddress,
                                         self.network.id
                                         ))
         self.debug("Creating LB rule for IP address: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
+                                        ip_with_lb_rule.ipaddress)
 
         LoadBalancerRule.create(
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
         self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        ip_with_nat_rule.ipaddress.ipaddress)
+                                        ip_with_nat_rule.ipaddress)
 
         with self.assertRaises(Exception):
             NATRule.create(
@@ -1314,7 +1314,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule_port_2221"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1336,8 +1336,8 @@ class TestNOWithNetscaler(cloudstackTestCase):
         vpn = Vpn.create(
                         self.apiclient,
                         src_nat.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
 
         vpns = Vpn.list(
@@ -1457,21 +1457,21 @@ class TestNetworkUpgrade(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -1480,8 +1480,8 @@ class TestNetworkUpgrade(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -1504,7 +1504,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
         self.debug("Created LB rule on source NAT: %s" % src_nat.ipaddress)
 
@@ -1585,8 +1585,8 @@ class TestNetworkUpgrade(cloudstackTestCase):
         vpn = Vpn.create(
                         self.apiclient,
                         src_nat.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
 
         vpns = Vpn.list(
@@ -1657,21 +1657,21 @@ class TestNetworkUpgrade(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -1680,8 +1680,8 @@ class TestNetworkUpgrade(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid,
                                         listall=True,
                                         issourcenat=True,
                                         )
@@ -1704,7 +1704,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
         self.debug("Created LB rule on source NAT: %s" % src_nat.ipaddress)
 
@@ -1785,8 +1785,8 @@ class TestNetworkUpgrade(cloudstackTestCase):
         vpn = Vpn.create(
                         self.apiclient,
                         src_nat.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
 
         vpns = Vpn.list(
@@ -1921,21 +1921,21 @@ class TestSharedNetworkWithoutIp(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     networkofferingid=shared_nw_off.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         try:
             # Spawn an instance in that network
             VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )

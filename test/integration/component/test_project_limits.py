@@ -505,10 +505,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         # Create Service offering and disk offerings etc
         cls.service_offering = ServiceOffering.create(
@@ -720,7 +720,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               projectid=self.project.id
                               )
 
-        self.debug("Deploying VM for account: %s" % self.account.account.name)
+        self.debug("Deploying VM for account: %s" % self.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -843,7 +843,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               )
         self.debug(
             "Updating template resource limits for domain: %s" %
-                                        self.account.account.domainid)
+                                        self.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -852,7 +852,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               projectid=self.project.id
                               )
 
-        self.debug("Deploying VM for account: %s" % self.account.account.name)
+        self.debug("Deploying VM for account: %s" % self.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -994,13 +994,13 @@ class TestMaxProjectNetworks(cloudstackTestCase):
         # 3. Create network should fail
 
         self.debug("Creating project with '%s' as admin" %
-                                            self.account.account.name)
+                                            self.account.name)
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)

@@ -181,8 +181,8 @@ class TestDeployVM(cloudstackTestCase):
             self.test_network = Network.create(
                                                  self.apiclient,
                                                  self.services["network"],
-                                                 self.account.account.name,
-                                                 self.account.account.domainid,
+                                                 self.account.name,
+                                                 self.account.domainid,
                                                  )
             self.cleanup.insert(0, self.test_network)
         except Exception as ex:
@@ -198,8 +198,8 @@ class TestDeployVM(cloudstackTestCase):
             self.virtual_machine = VirtualMachine.create(
                                         self.apiclient,
                                         self.services["small"],
-                                        accountid=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
                                         serviceofferingid=self.service_offering.id,
                                         mode=self.services['mode']
                                     )
