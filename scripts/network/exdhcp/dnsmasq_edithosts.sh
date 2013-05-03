@@ -35,6 +35,9 @@ wait_for_dnsmasq () {
   return 1
 }
 
+command -v dhcp_release > /dev/null 2>&1
+no_dhcp_release=$?
+
 [ ! -f /etc/dhcphosts.txt ] && touch /etc/dhcphosts.txt
 [ ! -f /var/lib/misc/dnsmasq.leases ] && touch /var/lib/misc/dnsmasq.leases
 
@@ -43,6 +46,12 @@ sed -i  /$2,/d /etc/dhcphosts.txt
 sed -i  /$3,/d /etc/dhcphosts.txt 
 
 echo "$1,$2,$3,infinite" >>/etc/dhcphosts.txt
+
+#release previous dhcp lease if present
+if [ $no_dhcp_release -eq 0 ]
+then
+  dhcp_release lo $2 $(grep $2 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+fi
 
 #delete leases to supplied mac and ip addresses
 sed -i  /$1/d /var/lib/misc/dnsmasq.leases 
@@ -61,9 +70,13 @@ echo "$2 $3" >> /etc/hosts
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
-  # send SIGHUP to dnsmasq to reload /etc/hosts /etc/dhcphosts.txt
-  # this will not reload /etc/dnsmasq.conf
-  kill -s 1 $pid
+  # use SIGHUP to avoid service outage if dhcp_release is available.
+  if [ $no_dhcp_release -eq 0 ]
+  then
+    kill -HUP $pid
+  else
+    service dnsmasq restart
+  fi
 else
   service dnsmasq start
   wait_for_dnsmasq

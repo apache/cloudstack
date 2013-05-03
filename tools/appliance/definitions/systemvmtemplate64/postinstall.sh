@@ -40,7 +40,7 @@ install_packages() {
   # haproxy
   apt-get --no-install-recommends -q -y --force-yes install haproxy
   # dnsmasq
-  apt-get --no-install-recommends -q -y --force-yes install dnsmasq
+  apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
 
