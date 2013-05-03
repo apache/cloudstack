@@ -139,7 +139,7 @@ class TestCreateTemplate(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls._cleanup = [
                         cls.account,
@@ -183,8 +183,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                         self.apiclient,
                                         v,
                                         zoneid=self.zone.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
             self.debug(
                 "Registered a template of format: %s with ID: %s" % (
@@ -205,8 +205,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                     self.services["templatefilter"],
                                     id=template.id,
                                     zoneid=self.zone.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
                 if isinstance(list_template_response, list):
                     break
@@ -240,8 +240,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
@@ -249,8 +249,8 @@ class TestCreateTemplate(cloudstackTestCase):
             vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
             self.assertEqual(
                              isinstance(vm_response, list),
@@ -304,7 +304,7 @@ class TestTemplates(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -315,8 +315,8 @@ class TestTemplates(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
         #Stop virtual machine
@@ -396,8 +396,8 @@ class TestTemplates(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     )
 
@@ -406,8 +406,8 @@ class TestTemplates(cloudstackTestCase):
         vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
@@ -591,8 +591,8 @@ class TestTemplates(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.debug("Creating a template from snapshot: %s" % snapshot.id)
         # Generate template from the snapshot
@@ -626,8 +626,8 @@ class TestTemplates(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     )
         self.cleanup.append(virtual_machine)
@@ -635,8 +635,8 @@ class TestTemplates(cloudstackTestCase):
         vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                         isinstance(vm_response, list),

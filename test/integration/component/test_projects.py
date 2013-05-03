@@ -183,8 +183,8 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         project_1 = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project_1)
@@ -218,8 +218,8 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         project_2 = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project_2)
@@ -398,8 +398,8 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -519,8 +519,8 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -555,7 +555,7 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.account.delete(self.apiclient)
             self.debug("Deleting account %s failed!" %
-                                    self.account.account.name)
+                                    self.account.name)
         return
 
 
@@ -635,8 +635,8 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.debug("Created project with domain admin with ID: %s" %
@@ -1215,8 +1215,8 @@ class TestProjectResources(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1331,8 +1331,8 @@ class TestProjectResources(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.debug("Created project with domain admin with ID: %s" %
@@ -1496,8 +1496,8 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls._cleanup = [

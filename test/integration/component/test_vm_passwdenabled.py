@@ -108,8 +108,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["small"],
-            accountid=cls.account.account.name,
-            domainid=cls.account.account.domainid,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
@@ -159,8 +159,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             cls.api_client,
             cls.services["template"],
             cls.volume.id,
-            account=cls.account.account.name,
-            domainid=cls.account.account.domainid
+            account=cls.account.name,
+            domainid=cls.account.domainid
         )
         # Delete the VM - No longer needed
         cls.virtual_machine.delete(cls.api_client)
@@ -169,8 +169,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cls.vm = VirtualMachine.create(
             cls.api_client,
             cls.services["small"],
-            accountid=cls.account.account.name,
-            domainid=cls.account.account.domainid,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )

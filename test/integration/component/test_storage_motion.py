@@ -126,8 +126,8 @@ class TestStorageMotion(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
                                         cls.services["small"],
-                                        accountid=cls.account.account.name,
-                                        domainid=cls.account.account.domainid,
+                                        accountid=cls.account.name,
+                                        domainid=cls.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
