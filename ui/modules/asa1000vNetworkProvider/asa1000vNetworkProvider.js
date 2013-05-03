@@ -38,6 +38,28 @@
               { name: 'device3', ipaddress: '192.168.1.14', state: 'Enabled' }
             ]
           });
+        },
+
+        detailView: {
+          tabs: {
+            details: {
+              title: 'label.details',
+              fields: [
+                {
+                  name: { label: 'label.name' }
+                },
+                {
+                  ipaddress: { label: 'label.ip.address' },
+                  state: { label: 'label.state' }
+                }
+              ],
+              dataProvider: function(args) {
+                args.response.success({
+                  data: args.context.asa1000vDevices[0]
+                });
+              }
+            }
+          }
         }
       },
       detailView: {
