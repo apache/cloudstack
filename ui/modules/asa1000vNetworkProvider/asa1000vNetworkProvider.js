@@ -43,7 +43,7 @@
       detailView: {
         id: 'asa1000vProvider',
         label: 'label.netScaler',
-        viewAll: { label: 'label.devices', path: '_zone.asa100vDevices' },
+        viewAll: { label: 'label.devices', path: '_zone.asa1000vDevices' },
         tabs: {
           details: {
             title: 'label.details',
