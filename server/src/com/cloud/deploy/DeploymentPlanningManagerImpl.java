@@ -256,7 +256,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     suitableHosts.add(host);
 
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, getPlannerUsage(planner));
+                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(host.getPodId());
                         Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -316,7 +316,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                             suitableHosts.add(host);
 
                             Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                                    suitableHosts, suitableVolumeStoragePools, getPlannerUsage(planner));
+                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
                             if (potentialResources != null) {
                                 Pod pod = _podDao.findById(host.getPodId());
                                 Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -351,10 +351,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 while (true) {
 
                     if (planner instanceof DeploymentClusterPlanner) {
-                        clusterList = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
+
                         ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
                                 avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                                 avoids.getPoolsToAvoid());
+
+                        clusterList = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
 
                         if (clusterList != null && !clusterList.isEmpty()) {
                             // planner refactoring. call allocators to list hosts
@@ -595,7 +597,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 // choose the potential host and pool for the VM
                 if (!suitableVolumeStoragePools.isEmpty()) {
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, resourceUsageRequired);
+                            suitableHosts, suitableVolumeStoragePools, avoid, resourceUsageRequired);
 
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(clusterVO.getPodId());
@@ -641,31 +643,37 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
+        boolean avoidAllHosts = true, avoidAllPools = true;
 
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(),
                 clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
-
         for (HostVO host : allhostsInCluster) {
-            if (!allocatorAvoidOutput.getHostsToAvoid().contains(host.getId())) {
+            if (allocatorAvoidOutput.getHostsToAvoid() == null
+                    || !allocatorAvoidOutput.getHostsToAvoid().contains(host.getId())) {
                 // there's some host in the cluster that is not yet in avoid set
-                return false;
+                avoidAllHosts = false;
             }
         }
 
         List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
                 clusterVO.getPodId(), clusterVO.getId(), null);
         for (StoragePoolVO pool : allPoolsInCluster) {
-            if (!allocatorAvoidOutput.getPoolsToAvoid().contains(pool.getId())) {
+            if (allocatorAvoidOutput.getPoolsToAvoid() == null
+                    || !allocatorAvoidOutput.getPoolsToAvoid().contains(pool.getId())) {
                 // there's some pool in the cluster that is not yet in avoid set
-                return false;
+                avoidAllPools = false;
             }
         }
 
-        return true;
+        if (avoidAllHosts || avoidAllPools) {
+            return true;
+        }
+        return false;
     }
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts,
-            Map<Volume, List<StoragePool>> suitableVolumeStoragePools, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired) {
+            Map<Volume, List<StoragePool>> suitableVolumeStoragePools, ExcludeList avoid,
+            DeploymentPlanner.PlannerResourceUsage resourceUsageRequired) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
@@ -718,13 +726,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     break;
                 }
             }
-            if (hostCanAccessPool && haveEnoughSpace) {
-                // check the planner host reservation
-                if (checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
-                    s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: "
-                            + potentialHost.getName() + " and associated storage pools for this VM");
-                    return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
-                }
+            if (hostCanAccessPool && haveEnoughSpace
+                    && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
+                s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: "
+                        + potentialHost.getName() + " and associated storage pools for this VM");
+                return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
+            } else {
+                avoid.addHost(potentialHost.getId());
             }
         }
         s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");

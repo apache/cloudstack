@@ -129,8 +129,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
             s_logger.debug("Searching resources only under specified Cluster: "+ clusterIdSpecified);
             ClusterVO cluster = _clusterDao.findById(plan.getClusterId());
             if (cluster != null ){
-                clusterList.add(clusterIdSpecified);
-                removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
+                if (avoid.shouldAvoid(cluster)) {
+                    s_logger.debug("The specified cluster is in avoid set, returning.");
+                } else {
+                    clusterList.add(clusterIdSpecified);
+                    removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
+                }
                 return clusterList;
             }else{
                 s_logger.debug("The specified cluster cannot be found, returning.");
@@ -144,9 +148,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
             HostPodVO pod = _podDao.findById(podIdSpecified);
             if (pod != null) {
-                clusterList = scanClustersForDestinationInZoneOrPod(podIdSpecified, false, vmProfile, plan, avoid);
-                if (clusterList == null) {
-                    avoid.addPod(plan.getPodId());
+                if (avoid.shouldAvoid(pod)) {
+                    s_logger.debug("The specified pod is in avoid set, returning.");
+                } else {
+                    clusterList = scanClustersForDestinationInZoneOrPod(podIdSpecified, false, vmProfile, plan, avoid);
+                    if (clusterList == null) {
+                        avoid.addPod(plan.getPodId());
+                    }
                 }
                 return clusterList;
             } else {

@@ -105,10 +105,22 @@ public interface DeploymentPlanner extends Adapter {
         }
 
         public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds) {
-            this._dcIds = _dcIds;
-            this._podIds = _podIds;
-            this._clusterIds = _clusterIds;
-            this._poolIds = _poolIds;
+            if (_dcIds != null) {
+                this._dcIds = new HashSet<Long>(_dcIds);
+            }
+            if (_podIds != null) {
+                this._podIds = new HashSet<Long>(_podIds);
+            }
+            if (_clusterIds != null) {
+                this._clusterIds = new HashSet<Long>(_clusterIds);
+            }
+
+            if (_hostIds != null) {
+                this._hostIds = new HashSet<Long>(_hostIds);
+            }
+            if (_poolIds != null) {
+                this._poolIds = new HashSet<Long>(_poolIds);
+            }
         }
 
         public boolean add(InsufficientCapacityException e) {
