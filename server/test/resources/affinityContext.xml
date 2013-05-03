@@ -35,11 +35,6 @@
 	        </list>
 	    </property>
 	  </bean>
-    
-
-    <bean id="ConfigurationManager" class="com.cloud.configuration.ConfigurationManagerImpl">
-        <property name="name" value="ConfigurationManager"/>
-    </bean>
   
     <bean class="org.apache.cloudstack.affinity.AffinityApiTestConfiguration" />
     
