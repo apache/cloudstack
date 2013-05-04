@@ -1618,7 +1618,16 @@
               }
             ],
             dataProvider: function(args) {
-              args.response.success({data: args.context.instances[0].securitygroup});
+             // args.response.success({data: args.context.instances[0].securitygroup});
+                  $.ajax({
+                   url:createURL("listVirtualMachines&details=secgrp&id=" + args.context.instances[0].id),
+                   dataType: "json",
+                   async:true,	
+                   success:function(json) {
+                     args.response.success({data: json.listvirtualmachinesresponse.virtualmachine[0].securitygroup});	
+                }
+	
+              });
             }
           },
 					
@@ -1634,15 +1643,22 @@
               networkkbswrite: { label: 'label.network.write' }
             },
             dataProvider: function(args) {
-              var jsonObj = args.context.instances[0];
-              args.response.success({
+              $.ajax({
+                url:createURL("listVirtualMachines&details=stats&id=" + args.context.instances[0].id),
+                dataType: "json",	
+                async:true,
+                success:function(json) {
+                var jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
+               args.response.success({
                 data: {
                   totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                   cpuused: jsonObj.cpuused,
                   networkkbsread: (jsonObj.networkkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                   networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
-                }
-              });
+                  }
+                });
+              }
+             });
             }
           }
         }
