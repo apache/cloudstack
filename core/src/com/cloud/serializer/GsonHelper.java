@@ -68,6 +68,8 @@ public class GsonHelper {
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         Gson gson = builder.create();
+        dsAdaptor.initGson(gson);
+        dtAdaptor.initGson(gson);
         cmdAdaptor.initGson(gson);
         ansAdaptor.initGson(gson);
         return gson;

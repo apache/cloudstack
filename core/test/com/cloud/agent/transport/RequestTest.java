@@ -30,6 +30,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.NfsTO;
@@ -127,6 +128,36 @@ public class RequestTest extends TestCase {
         assert sresp != null : "Couldn't get the response back";
 
         compareRequest(cresp, sresp);
+    }
+
+
+    public void testSerDeserTO() {
+        s_logger.info("Testing serializing and deserializing interface TO works as expected");
+
+        NfsTO nfs = new NfsTO("nfs://192.168.56.10/opt/storage/secondary", DataStoreRole.Image);
+        SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
+        Request sreq = new Request(2, 3, cmd, true);
+        sreq.setSequence(892403718);
+
+
+        byte[] bytes = sreq.getBytes();
+
+        assert Request.getSequence(bytes) == 892403718;
+        assert Request.getManagementServerId(bytes) == 3;
+        assert Request.getAgentId(bytes) == 2;
+        assert Request.getViaAgentId(bytes) == 2;
+        Request creq = null;
+        try {
+            creq = Request.parse(bytes);
+        } catch (ClassNotFoundException e) {
+            s_logger.error("Unable to parse bytes: ", e);
+        } catch (UnsupportedVersionException e) {
+            s_logger.error("Unable to parse bytes: ", e);
+        }
+
+        assert creq != null : "Couldn't get the request back";
+
+        compareRequest(creq, sreq);
     }
 
     public void testDownload() {
