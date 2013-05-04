@@ -4928,8 +4928,11 @@
                         async: true,
                         success: function(json) {
                           args.response.success({data:{}});
-                        }
-                      });
+                        },
+                        error:function(json){
+                           args.response.error(parseXMLHttpResponse(json));
+                       }
+                      }); 
                     },
                     notification: {
                       poll: function(args) { args.complete(); }
