@@ -308,8 +308,9 @@ public class S3TemplateDownloader implements TemplateDownloader {
             if (totalBytes >= remoteSize) {
             	status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
             	downloaded = "(download complete remote=" + remoteSize + "bytes)";
+            } else {
+                errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
             }
-            errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
             downloadTime += finish.getTime() - start.getTime();
             return totalBytes;
 		}catch (HttpException hte) {
