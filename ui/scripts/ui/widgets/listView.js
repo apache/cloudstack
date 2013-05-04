@@ -1687,6 +1687,9 @@
       return false;
     });		
 				
+    var tableHeight = $table.height();
+    var endTable = false;
+
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
       if (args.listView && args.listView.disableInfiniteScrolling) return false;
@@ -1697,7 +1700,7 @@
         var loadMoreData = $listView.scrollTop() >= ($table.height() - $listView.height()) - $listView.height() / 4;
         var context = $listView.data('view-args').context;
 
-        if (loadMoreData) {
+        if (loadMoreData && !endTable) {
           page = page + 1;
 					
 					var filterBy = {
@@ -1725,6 +1728,7 @@
             reorder: listViewData.reorder,
             detailView: listViewData.detailView
           });
+          $table.height() == tableHeight ? endTable = true : tableHeight = $table.height();
         }
       }, 500);
 
