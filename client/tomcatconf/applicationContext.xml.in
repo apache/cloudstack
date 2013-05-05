@@ -606,6 +606,7 @@
     <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
 	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
+	<property name="Planners" value="#{deploymentPlanners.Adapters}" />
   </bean>
   
   <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">

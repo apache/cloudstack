@@ -68,6 +68,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name="sort_key")
     int sortKey;
 
+    @Column(name = "deployment_planner")
+    private String deploymentPlanner = "FirstFitPlanner";
+
     protected ServiceOfferingVO() {
         super();
     }
@@ -84,6 +87,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.volatileVm = false;
         this.default_use = defaultUse;
         this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
+        this.deploymentPlanner = "FirstFitPlanner";
     }
 
     public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse, boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId) {
@@ -97,11 +101,26 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.limitCpuUse = limitCpuUse;
         this.volatileVm = volatileVm;
         this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
+        this.deploymentPlanner = "FirstFitPlanner";
     }
 
     public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId, String hostTag) {
         this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, volatileVm, displayText, useLocalStorage, recreatable, tags, systemUse, vm_type, domainId);
         this.hostTag = hostTag;
+        this.deploymentPlanner = "FirstFitPlanner";
+    }
+
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps,
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String displayText, boolean useLocalStorage,
+            boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId,
+            String hostTag, String deploymentPlanner) {
+        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, volatileVm,
+                displayText, useLocalStorage, recreatable, tags, systemUse, vm_type, domainId, hostTag);
+        if (deploymentPlanner != null) {
+            this.deploymentPlanner = deploymentPlanner;
+        } else {
+            this.deploymentPlanner = "FirstFitPlanner";
+        }
     }
 
     @Override

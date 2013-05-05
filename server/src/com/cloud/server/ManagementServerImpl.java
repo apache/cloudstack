@@ -399,6 +399,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
+    protected List<DeploymentPlanner> _planners;
+
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
+
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
     private String _encryptionKey = null;
@@ -629,29 +639,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
-    	
-        
+
+
     	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
-        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();        
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);        
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);  
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+
+        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
-        
-        SearchCriteria<ClusterVO> sc = sb.create();        
+
+
+        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.setParameters("id", id);            
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
@@ -679,9 +689,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-                
+
         if (keyword != null) {
             SearchCriteria<ClusterVO> ssc = _clusterDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1094,26 +1104,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
         String podName = cmd.getPodName();
         Long id = cmd.getId();
-        Long zoneId = cmd.getZoneId();        
+        Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
         String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
-    	
+
     	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();        
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-               
+
         SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
@@ -1126,23 +1136,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (podName != null) {
             sc.setParameters("name", "%" + podName + "%");
         }
-        
+
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        
+
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
-        }        
-    
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
         }
-        
+
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+        }
+
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
@@ -2735,10 +2745,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }        
-        
+        }
+
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
@@ -2780,9 +2790,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-        
+
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }
@@ -3686,4 +3696,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
+    }
+
 }
