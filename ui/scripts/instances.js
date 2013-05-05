@@ -1248,8 +1248,8 @@
                 async: true,
                 success: function(json) {
                   var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
+                  args.response.success();
+                   /* {_custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
@@ -1258,8 +1258,8 @@
                         return vmActionfilter;
                       }
                      }
-                    }
-                  );
+                    } */
+                 
                 },
                  error:function(json){
                      args.response.error(parseXMLHttpResponse(json));
