@@ -2643,7 +2643,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             // other criteria
-            if (keyword != null) {
+            if (templateId != null){
+                sc.addAnd("id", SearchCriteria.Op.EQ, templateId);
+            }
+            else if (keyword != null) {
                 sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             } else if (name != null) {
                 sc.addAnd("name", SearchCriteria.Op.EQ, name);

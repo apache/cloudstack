@@ -16,19 +16,18 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.LogLevel;
-import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.DataStoreTO;
 
 public class ListTemplateCommand extends StorageCommand {
-    @LogLevel(Log4jLevel.Off)
     private DataStoreTO store;
+    private String secUrl;
 
     public ListTemplateCommand() {
     }
 
-	public ListTemplateCommand(DataStoreTO store) {
+	public ListTemplateCommand(DataStoreTO store, String url) {
         this.store = store;
+        this.secUrl = url;
 	}
 
     @Override
@@ -39,6 +38,10 @@ public class ListTemplateCommand extends StorageCommand {
 
     public DataStoreTO getDataStore() {
         return store;
+    }
+
+    public String getSecUrl() {
+        return secUrl;
     }
 
 }

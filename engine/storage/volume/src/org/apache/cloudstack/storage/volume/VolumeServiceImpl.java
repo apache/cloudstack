@@ -428,7 +428,7 @@ public class VolumeServiceImpl implements VolumeService {
     protected void createVolumeFromBaseImageAsync(VolumeInfo volume, DataObject templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
         DataObject volumeOnPrimaryStorage = pd.create(volume);
         volumeOnPrimaryStorage.processEvent(Event.CreateOnlyRequested);
-        
+
         CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volumeOnPrimaryStorage, pd, templateOnPrimaryStore, future, null);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null));
@@ -828,7 +828,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     private Map<Long, TemplateProp> listVolume(DataStore store) {
-        ListVolumeCommand cmd = new ListVolumeCommand(store.getUri());
+        ListVolumeCommand cmd = new ListVolumeCommand(store.getTO(), store.getUri());
         EndPoint ep = _epSelector.select(store);
         Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {

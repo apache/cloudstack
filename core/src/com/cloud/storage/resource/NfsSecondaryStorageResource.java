@@ -328,6 +328,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     @SuppressWarnings("unchecked")
+    protected Long determineS3VolumeIdFromKey(String key) {
+        return Long.parseLong(StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
+    }
+
+    @SuppressWarnings("unchecked")
     private String determineStorageTemplatePath(final String storagePath, String dataPath) {
         return join(asList(getRootDir(storagePath), dataPath), File.separator);
     }
@@ -1121,6 +1126,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
+    Map<Long, TemplateProp> s3ListVolume(S3TO s3) {
+        String bucket = s3.getBucketName();
+        // List the objects in the source directory on S3
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.VOLUME_ROOT_DIR);
+        if (objectSummaries == null)
+            return null;
+        Map<Long, TemplateProp> tmpltInfos = new HashMap<Long, TemplateProp>();
+        for (S3ObjectSummary objectSummary : objectSummaries) {
+            String key = objectSummary.getKey();
+            String installPath = StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR);
+            Long id = this.determineS3VolumeIdFromKey(key);
+            // TODO: how to get volume template name
+            TemplateProp tInfo = new TemplateProp(id.toString(), installPath, objectSummary.getSize(), objectSummary.getSize(), true, false);
+            tmpltInfos.put(id, tInfo);
+        }
+        return tmpltInfos;
+
+    }
+
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM) {
             return new Answer(cmd, true, null);
@@ -1129,9 +1153,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
             NfsTO nfs = (NfsTO) store;
-            String root = getRootDir(nfs.getUrl());
+            String secUrl = cmd.getSecUrl();
+            String root = getRootDir(secUrl);
             Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
-            return new ListTemplateAnswer(nfs.getUrl(), templateInfos);
+            return new ListTemplateAnswer(secUrl, templateInfos);
         } else if (store instanceof SwiftTO) {
             SwiftTO swift = (SwiftTO) store;
             Map<String, TemplateProp> templateInfos = swiftListTemplate(swift);
@@ -1150,9 +1175,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, true, null);
         }
 
-        String root = getRootDir(cmd.getSecUrl());
-        Map<Long, TemplateProp> templateInfos = _dlMgr.gatherVolumeInfo(root);
-        return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
+        DataStoreTO store = cmd.getDataStore();
+        if (store instanceof NfsTO) {
+            NfsTO nfs = (NfsTO)store;
+            String root = getRootDir(cmd.getSecUrl());
+            Map<Long, TemplateProp> templateInfos = _dlMgr.gatherVolumeInfo(root);
+            return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
+        } else if (store instanceof S3TO ){
+            S3TO s3 = (S3TO)store;
+            Map<Long, TemplateProp> templateInfos = s3ListVolume(s3);
+            return new ListVolumeAnswer(s3.getBucketName(), templateInfos);
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + store);
+        }
 
     }
 
