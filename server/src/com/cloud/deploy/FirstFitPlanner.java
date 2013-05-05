@@ -265,7 +265,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
             VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan) {
 
-        Map<Short, Float> capacityThresholdMap = getCapacityThresholdMap();
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
 
@@ -282,10 +281,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
             }
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity,
-                        plan.getDataCenterId(), capacityThresholdMap.get(capacity), cpu_requested);
+                        plan.getDataCenterId(), Config.CPUCapacityDisableThreshold.key(), cpu_requested);
             } else if (capacity == Capacity.CAPACITY_TYPE_MEMORY) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity,
-                        plan.getDataCenterId(), capacityThresholdMap.get(capacity), ram_requested);
+                        plan.getDataCenterId(), Config.MemoryCapacityDisableThreshold.key(), ram_requested);
             }
 
             if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0) {
@@ -294,10 +293,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 // Remove clusters crossing disabled threshold
                 clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
-                s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString()
-                        + " for vm creation since their allocated percentage"
-                        + " crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity)
-                        + " for capacity Type : " + capacity + ", skipping these clusters");
+                s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+                        " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
             }
 
         }
