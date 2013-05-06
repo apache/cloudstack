@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="libcloud-examples">
+    <title>Apache Libcloud</title>
+    <para>There are many tools available to interface with the &PRODUCT; API. Apache Libcloud is one of those. In this section
+          we provide a basic example of how to use Libcloud with &PRODUCT;. It assumes that you have access to a &PRODUCT; endpoint and that you have the API access key and secret key of a user.</para>
+    <para>To install Libcloud refer to the libcloud website. If you are familiar with Pypi simply do:</para>
+    <programlisting>pip install apache-libcloud</programlisting>
+    <para>You should see the following output:</para>
+    <programlisting>
+pip install apache-libcloud
+Downloading/unpacking apache-libcloud
+  Downloading apache-libcloud-0.12.4.tar.bz2 (376kB): 376kB downloaded
+  Running setup.py egg_info for package apache-libcloud
+    
+Installing collected packages: apache-libcloud
+  Running setup.py install for apache-libcloud
+    
+Successfully installed apache-libcloud
+Cleaning up...
+    </programlisting>
+    
+    <para>You can then open a Python interactive shell, create an instance of a &PRODUCT; driver and call the available methods via the libcloud API.</para>
+
+    <programlisting>
+ <![CDATA[
+>>> from libcloud.compute.types import Provider
+>>> from libcloud.compute.providers import get_driver
+>>> Driver = get_driver(Provider.CLOUDSTACK)
+>>> apikey='plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdM-kAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg'
+>>> secretkey='VDaACYb0LV9eNjTetIOElcVQkvJck_J_QljX_FcHRj87ZKiy0z0ty0ZsYBkoXkY9b7eq1EhwJaw7FF3akA3KBQ'
+>>> host='http://localhost:8080'
+>>> path='/client/api'
+>>> conn=Driver(apikey,secretkey,secure='False',host='localhost:8080',path=path)
+>>> conn=Driver(key=apikey,secret=secretkey,secure=False,host='localhost',port='8080',path=path)
+>>> conn.list_images()
+[<NodeImage: id=13ccff62-132b-4caf-b456-e8ef20cbff0e, name=tiny Linux, driver=CloudStack  ...>]
+>>> conn.list_sizes()
+[<NodeSize: id=ef2537ad-c70f-11e1-821b-0800277e749c, name=tinyOffering, ram=100 disk=0 bandwidth=0 price=0 driver=CloudStack ...>, <NodeSize: id=c66c2557-12a7-4b32-94f4-48837da3fa84, name=Small Instance, ram=512 disk=0 bandwidth=0 price=0 driver=CloudStack ...>, <NodeSize: id=3d8b82e5-d8e7-48d5-a554-cf853111bc50, name=Medium Instance, ram=1024 disk=0 bandwidth=0 price=0 driver=CloudStack ...>]
+>>> images=conn.list_images()
+>>> offerings=conn.list_sizes()
+>>> node=conn.create_node(name='toto',image=images[0],size=offerings[0])
+>>> help(node)
+>>> node.get_uuid()
+'b1aa381ba1de7f2d5048e248848993d5a900984f'
+>>> node.name
+u'toto'
+]]>
+    </programlisting>
+   
+    <para>One of the interesting use cases of Libcloud is that you can use multiple Cloud Providers, such as AWS, Rackspace, OpenNebula, vCloud and so on. You can then create Driver instances to each of these clouds and create your own multi cloud application.</para>
+
+ </section>
