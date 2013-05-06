@@ -59,6 +59,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -2079,5 +2080,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public Map<Detail, String> getNtwkOffDetails(long offId) {
         return _ntwkOffDetailsDao.getNtwkOffDetails(offId);
+    }
+    
+    @Override
+    public Networks.IsolationType[] listNetworkIsolationMethods() {
+        return Networks.IsolationType.values();
     }
 }

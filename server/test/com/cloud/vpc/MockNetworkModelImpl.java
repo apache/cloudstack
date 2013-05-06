@@ -37,6 +37,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -878,6 +879,10 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Map<Detail, String> getNtwkOffDetails(long offId) {
+        return null;
+    }
+    
+    public IsolationType[] listNetworkIsolationMethods() {
         // TODO Auto-generated method stub
         return null;
     }

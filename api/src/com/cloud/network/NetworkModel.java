@@ -270,4 +270,6 @@ public interface NetworkModel {
     List<String> getUsedIpsInNetwork(Network network);
 
     Map<Detail, String> getNtwkOffDetails(long offId);
+
+    Networks.IsolationType[] listNetworkIsolationMethods();
 }

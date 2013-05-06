@@ -143,12 +143,11 @@ public abstract class BaseCmd {
     @Inject public DataStoreProviderApiService dataStoreProviderApiService;
     @Inject public VpcProvisioningService _vpcProvSvc;
     @Inject public ApplicationLoadBalancerService _newLbSvc;
-    @Inject public NetworkModel _ntwkModel;
     @Inject public ApplicationLoadBalancerService _appLbService;
     @Inject public AffinityGroupService _affinityGroupService;
     @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject public InternalLoadBalancerVMService _internalLbSvc;
-    
+    @Inject public NetworkModel _ntwkModel;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

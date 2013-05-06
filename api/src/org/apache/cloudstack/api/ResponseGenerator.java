@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
@@ -142,6 +143,8 @@ import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.Counter;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.as.*;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.HealthCheckPolicy;
@@ -428,4 +431,6 @@ public interface ResponseGenerator {
     Long getAffinityGroupId(String name, long entityOwnerId);
 
     InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
+    
+    IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
 }
