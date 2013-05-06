@@ -362,4 +362,9 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return null;
     }
 
+    @Override
+    public List<NetworkVO> listByAclId(long aclId) {
+        return null;
+    }
+
 }

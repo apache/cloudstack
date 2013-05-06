@@ -194,12 +194,44 @@ public class NetworkACLItemVO implements NetworkACLItem {
         return number;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     @Override
     public TrafficType getTrafficType() {
         return trafficType;
+    }
+
+    public void setSourcePortStart(Integer sourcePortStart) {
+        this.sourcePortStart = sourcePortStart;
+    }
+
+    public void setSourcePortEnd(Integer sourcePortEnd) {
+        this.sourcePortEnd = sourcePortEnd;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public void setIcmpCode(Integer icmpCode) {
+        this.icmpCode = icmpCode;
+    }
+
+    public void setIcmpType(Integer icmpType) {
+        this.icmpType = icmpType;
+    }
+
+    public void setTrafficType(TrafficType trafficType) {
+        this.trafficType = trafficType;
+    }
+
+    public void setSourceCidrs(String sourceCidrs) {
+        this.sourceCidrs = sourceCidrs;
+    }
+
+    public void setNumber(int number) {
+        this.number = number;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
     }
 }
