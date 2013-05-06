@@ -116,7 +116,9 @@ public class VirtualMachineManagerImplTest {
             _vmMgr._capacityMgr = _capacityMgr;
             _vmMgr._hostDao = _hostDao;
             _vmMgr._nodeId = 1L;
+/*            
             _vmMgr._workDao = _workDao;
+*/  
             _vmMgr._agentMgr = _agentMgr;
 
             when(_vmMock.getId()).thenReturn(314l);

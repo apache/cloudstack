@@ -40,6 +40,9 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
@@ -136,5 +139,17 @@ public class VmWorkTest extends TestCase {
 				return true;
 			}
 		});
+	}
+	
+	@Test
+	public void testExceptionSerialization() {
+		InsufficientCapacityException exception = new InsufficientStorageCapacityException("foo", VmWorkJobVO.class, 1L);
+		
+		String encodedString = SerializerHelper.toObjectSerializedString(exception);
+		System.out.println(encodedString);
+
+		exception = (InsufficientCapacityException)SerializerHelper.fromObjectSerializedString(encodedString);
+		Assert.assertTrue(exception.getScope() == VmWorkJobVO.class);
+		Assert.assertTrue(exception.getMessage().equals("foo"));
 	}
 }

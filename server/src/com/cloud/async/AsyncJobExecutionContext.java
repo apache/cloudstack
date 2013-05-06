@@ -16,8 +16,12 @@
 // under the License.
 package com.cloud.async;
 
+import javax.inject.Inject;
+
 public class AsyncJobExecutionContext  {
 	private AsyncJob _job;
+	
+	@Inject private  AsyncJobManager _jobMgr; 
 	
 	private static ThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ThreadLocal<AsyncJobExecutionContext>();
 
@@ -38,6 +42,27 @@ public class AsyncJobExecutionContext  {
 	
 	public void setJob(AsyncJob job) {
 		_job = job;
+	}
+	
+    public void completeAsyncJob(int jobStatus, int resultCode, Object resultObject) {
+    	assert(_job != null);
+    	_jobMgr.completeAsyncJob(_job.getId(), jobStatus, resultCode, resultObject);
+    }
+    
+    public void updateAsyncJobStatus(int processStatus, Object resultObject) {
+    	assert(_job != null);
+    	_jobMgr.updateAsyncJobStatus(_job.getId(), processStatus, resultObject);
+    }
+    
+    public void updateAsyncJobAttachment(String instanceType, Long instanceId) {
+    	assert(_job != null);
+    	_jobMgr.updateAsyncJobAttachment(_job.getId(), instanceType, instanceId);
+    }
+	
+	public void logJobJournal(AsyncJob.JournalType journalType, String 
+	    journalText, String journalObjJson) {
+		assert(_job != null);
+		_jobMgr.logJobJournal(_job.getId(), journalType, journalText, journalObjJson);
 	}
 	
 	public static AsyncJobExecutionContext getCurrentExecutionContext() {

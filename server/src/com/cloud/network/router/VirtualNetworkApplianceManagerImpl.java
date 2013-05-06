@@ -228,6 +228,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
@@ -3711,5 +3712,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             }
         }
+    }
+    
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
     }
 }

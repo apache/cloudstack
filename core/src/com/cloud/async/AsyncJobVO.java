@@ -46,9 +46,6 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="id")
     private Long id = null;
 	
-    @Column(name="parent_id")
-    private Long parentId;
-
     @Column(name="job_type", length=32)
     protected String type;
     
@@ -140,15 +137,6 @@ public class AsyncJobVO implements AsyncJob {
 
 	public void setId(Long id) {
 		this.id = id;
-	}
-	
-	@Override
-	public Long getParentId() {
-		return this.parentId;
-	}
-	
-	public void setParentId(Long parentId) {
-		this.parentId = parentId;
 	}
 	
 	@Override

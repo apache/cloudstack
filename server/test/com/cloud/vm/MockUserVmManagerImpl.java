@@ -422,4 +422,12 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         // TODO Auto-generated method stub
         return null;
     }
+    
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
+    }
 }

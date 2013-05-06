@@ -411,7 +411,6 @@ ALTER TABLE `cloud`.`async_job` DROP COLUMN `job_cmd_originator`;
 ALTER TABLE `cloud`.`async_job` DROP COLUMN `callback_type`;
 ALTER TABLE `cloud`.`async_job` DROP COLUMN `callback_address`;
 
-ALTER TABLE `cloud`.`async_job` ADD COLUMN `parent_id` bigint;
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_type` VARCHAR(32);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_dispatcher` VARCHAR(64);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_executing_msid` bigint;
@@ -433,3 +432,13 @@ CREATE TABLE `cloud`.`vm_work_job` (
   INDEX `i_vm_work_job__step`(`step`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`async_job_journal` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `job_id` bigint unsigned NOT NULL,
+  `journal_type` varchar(32),
+  `journal_text` varchar(1024) COMMENT 'journal descriptive informaton',
+  `journal_obj` varchar(1024) COMMENT 'journal strutural information, JSON encoded object',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_async_job_journal__job_id` FOREIGN KEY (`job_id`) REFERENCES `async_job`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

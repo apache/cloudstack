@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.DB;

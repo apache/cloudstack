@@ -23,6 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobDaoImpl;
+import com.cloud.async.dao.AsyncJobJournalDao;
+import com.cloud.async.dao.AsyncJobJournalDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueDaoImpl;
 import com.cloud.async.dao.SyncQueueItemDao;
@@ -97,5 +99,10 @@ public class AsyncJobTestConfiguration {
 	@Bean
 	public VirtualMachineManager virtualMachineManager() {
 		return Mockito.mock(VirtualMachineManager.class);
+	}
+	
+	@Bean
+	public AsyncJobJournalDao asyncJobJournalDao() {
+		return new AsyncJobJournalDaoImpl();
 	}
 }

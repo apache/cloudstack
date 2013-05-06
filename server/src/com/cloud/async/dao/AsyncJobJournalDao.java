@@ -14,13 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.messagebus;
+package com.cloud.async.dao;
 
-public interface SubjectConstants {
-	// VM power state messages on message bus
-	public static final String VM_POWER_STATE = "vm.powerstate";
-	
-	// job messages on message bus 
-	public static final String JOB_HEARTBEAT = "job.heartbeat";
-	public static final String JOB_STATE = "job.state";
+import java.util.List;
+
+import com.cloud.async.AsyncJobJournalVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface AsyncJobJournalDao extends GenericDao<AsyncJobJournalVO, Long> {
+	List<AsyncJobJournalVO> getJobJournal(long jobId);
 }

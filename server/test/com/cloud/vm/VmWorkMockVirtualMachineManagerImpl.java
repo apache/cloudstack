@@ -30,6 +30,8 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.async.AsyncJob.JournalType;
+import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -190,6 +192,11 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+    public <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
+		// TODO Auto-generated method stub
+    	return null;
+    }
 
 	@Override
 	public boolean stateTransitTo(VMInstanceVO vm, Event e, Long hostId)
@@ -383,8 +390,10 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		return null;
 	}
 
-	public Void doVmWorkStart(VmWork work) {
-		_msgBus.publish(null, "Done", PublishScope.GLOBAL, null);
-		return null;
-	}
+	@Override
+    public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    	
+    	return vm;
+    }
 }

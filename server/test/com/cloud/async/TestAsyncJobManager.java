@@ -16,13 +16,18 @@
 // under the License.
 package com.cloud.async;
 
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
 import javax.inject.Inject;
 import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.messagebus.SubjectConstants;
+import org.apache.cloudstack.messagebus.TopicConstants;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,8 +35,10 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.cloud.async.AsyncJobJournalVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobMonitor;
+import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
@@ -45,19 +52,63 @@ public class TestAsyncJobManager extends TestCase {
     @Inject ClusterManager clusterMgr;
     @Inject MessageBus messageBus;
     @Inject AsyncJobMonitor jobMonitor;
+    @Inject AsyncJobJournalDao journalDao;
     
     @Before                                                  
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
     	Mockito.when(clusterMgr.getManagementNodeId()).thenReturn(1L);
     	
-    	Transaction.open("dummy");                           
+    	Transaction.open("dummy");
+    	
+		// drop constraint check in order to do single table test
+		Statement stat = null;
+		try {
+			stat = Transaction.currentTxn().getConnection().createStatement();
+			stat.execute("SET foreign_key_checks = 0;");
+		} catch (SQLException e) {
+		} finally {
+			if(stat != null) {
+				try {
+					stat.close();
+				} catch (SQLException e) {
+				}
+			}
+		}
     }                                                        
                                                              
     @After                                                   
     public void tearDown() {                                 
     	Transaction.currentTxn().close();                    
-    }                                                        
+    }        
+    
+    @Test
+    public void testJobJournal() {
+    	AsyncJobJournalVO journal = new AsyncJobJournalVO();
+    	journal.setJobId(1L);
+    	journal.setJournalType(AsyncJob.JournalType.SUCCESS);
+    	journal.setJournalText("Journal record 1");
+    	
+    	journalDao.persist(journal);
+    	
+    	AsyncJobJournalVO journal2 = new AsyncJobJournalVO();
+    	journal2.setJobId(1L);
+    	journal2.setJournalType(AsyncJob.JournalType.SUCCESS);
+    	journal2.setJournalText("Journal record 2");
+    	
+    	journalDao.persist(journal2);
+    	
+    	List<AsyncJobJournalVO> l = journalDao.getJobJournal(1L);
+    	Assert.assertTrue(l.size() == 2);
+    	journal = l.get(0);
+    	Assert.assertTrue(journal.getJournalText().equals("Journal record 1"));
+    	
+    	journal2 = l.get(1);
+    	Assert.assertTrue(journal2.getJournalText().equals("Journal record 2"));
+    	
+    	journalDao.expunge(journal.getId());
+    	journalDao.expunge(journal2.getId());
+    }
     
     @Test
     public void testWaitAndCheck() {
@@ -81,7 +132,7 @@ public class TestAsyncJobManager extends TestCase {
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {
     			System.out.println("Check condition to exit");
-    			messageBus.publish(null, SubjectConstants.JOB_HEARTBEAT, PublishScope.LOCAL, 1L);
+    			messageBus.publish(null, TopicConstants.JOB_HEARTBEAT, PublishScope.LOCAL, 1L);
     			return false;
     		}
     	});

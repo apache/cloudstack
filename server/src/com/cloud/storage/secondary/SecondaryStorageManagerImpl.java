@@ -129,6 +129,7 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -1471,6 +1472,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
 	@Override
 	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
-		
 	}
+	
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
+    }
+
 }

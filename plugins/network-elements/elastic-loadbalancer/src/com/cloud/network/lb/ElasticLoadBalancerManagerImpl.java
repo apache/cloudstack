@@ -131,6 +131,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
@@ -1001,5 +1002,13 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     @Override
     public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
     } 
+    
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
+    }
 
 }

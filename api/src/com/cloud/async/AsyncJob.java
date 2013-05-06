@@ -22,8 +22,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface AsyncJob extends Identity, InternalIdentity {
-    Long getParentId();
-    
+	
+	public enum JournalType { 
+		SUCCESS, FAILURE 
+	};
+	
     String getType();
     
     String getDispatcher();

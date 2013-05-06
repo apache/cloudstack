@@ -4056,5 +4056,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
     }
+    
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
+    }
 
 }

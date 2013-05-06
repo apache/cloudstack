@@ -25,6 +25,8 @@ import com.cloud.async.SyncQueueManager;
 import com.cloud.async.SyncQueueManagerImpl;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobDaoImpl;
+import com.cloud.async.dao.AsyncJobJournalDao;
+import com.cloud.async.dao.AsyncJobJournalDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueDaoImpl;
 import com.cloud.async.dao.SyncQueueItemDao;
@@ -102,5 +104,10 @@ public class VmWorkTestConfiguration {
 	@Bean
 	public VmWorkJobDao vmworkJobDao() {
 		return new VmWorkJobDaoImpl();
+	}
+	
+	@Bean
+	public AsyncJobJournalDao jobJournalDao() {
+		return new AsyncJobJournalDaoImpl();
 	}
 }

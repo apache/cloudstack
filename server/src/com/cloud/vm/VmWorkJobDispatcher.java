@@ -33,6 +33,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(VmWorkJobDispatcher.class);
@@ -40,6 +41,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
 	@Inject private VirtualMachineManager _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private AccountDao _accountDao;
+    @Inject private VMInstanceDao _instanceDao;
     
     private Map<String, Method> _handlerMap = new HashMap<String, Method>();
 	
@@ -55,11 +57,23 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             AccountVO account = _accountDao.findById(work.getAccountId());
             assert(account != null);
             
+            VMInstanceVO vm = _instanceDao.findById(work.getVmId());
+            assert(vm != null);
+    
+            //
+            // Due to legcy massive generic usage in VirtualMachineManagerImpl, we can't dispatch job handling
+            // directly to VirtualMachineManagerImpl, since most handling method are generic method.
+            //
+            // to solve the problem, we have to go through an instantiated VirtualMachineGuru so that it can carry
+            // down correct type back to VirtualMachineManagerImpl. It is sad that we have to write code like this
+            //
+            VirtualMachineGuru<VMInstanceVO> guru = _vmMgr.getVmGuru(vm);
+            
             UserContext.registerContext(work.getUserId(), account, null, false);
             try {
-            	Method handler = getHandler(cmd);
+            	Method handler = getHandler(guru, cmd);
             	if(handler != null) {
-        			handler.invoke(_vmMgr, work);
+        			handler.invoke(guru, work);
             		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
             	} else {
             		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, null);
@@ -72,14 +86,15 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         }
 	}
 	
-	private Method getHandler(String cmd) {
+	private Method getHandler(VirtualMachineGuru<?> guru, String cmd) {
 		
 		synchronized(_handlerMap) {
-			Method method = _handlerMap.get(cmd);
+			Class<?> clz = guru.getClass();
+			String key = clz.getCanonicalName() + cmd;
+			Method method = _handlerMap.get(key);
 			if(method != null)
 				return method;
 			
-			Class<?> clz = _vmMgr.getClass();
 			try {
 				method = clz.getMethod(cmd, VmWork.class);
 				method.setAccessible(true);
@@ -93,7 +108,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
 				return null;
 			}
 			
-			_handlerMap.put(cmd, method);
+			_handlerMap.put(key, method);
 			return method;
 		}
 	}

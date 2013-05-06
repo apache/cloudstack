@@ -43,6 +43,7 @@ import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.dao.AsyncJobDao;
+import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -58,6 +59,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -82,6 +84,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private ClusterManager _clusterMgr;
     @Inject private AccountManager _accountMgr;
     @Inject private AsyncJobDao _jobDao;
+    @Inject private AsyncJobJournalDao _journalDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
     @Inject private MessageBus _messageBus;
@@ -175,9 +178,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     ", resultCode: " + resultCode + ", result: " + resultObject);
         }
 
-        Transaction txt = Transaction.currentTxn();
+        Transaction txn = Transaction.currentTxn();
         try {
-            txt.start();
+            txn.start();
             AsyncJobVO job = _jobDao.findById(jobId);
             if(job == null) {
                 if(s_logger.isDebugEnabled()) {
@@ -185,8 +188,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             ", resultCode: " + resultCode + ", result: " + resultObject);
                 }
 
-                txt.rollback();
+                txn.rollback();
                 return;
+            }
+            
+            if(job.getStatus() != AsyncJobResult.STATUS_IN_PROGRESS) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("job-" + jobId + " is already completed.");
+                }
+            	
+            	txn.rollback();
+            	return;
             }
 
             job.setCompleteMsid(getMsid());
@@ -203,10 +215,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
-            txt.commit();
+            txn.commit();
         } catch(Exception e) {
             s_logger.error("Unexpected exception while completing async job-" + jobId, e);
-            txt.rollback();
+            txn.rollback();
         }
     }
 
@@ -265,6 +277,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             s_logger.error("Unexpected exception while updating async job-" + jobId + " attachment: ", e);
             txt.rollback();
         }
+    }
+    
+    @Override @DB
+    public void logJobJournal(long jobId, AsyncJob.JournalType journalType, String 
+        journalText, String journalObjJson) {
+    	AsyncJobJournalVO journal = new AsyncJobJournalVO();
+    	journal.setJobId(jobId);
+    	journal.setJournalType(journalType);
+    	journal.setJournalText(journalText);
+    	journal.setJournalObjJsonString(journalObjJson);
+    	
+    	_journalDao.persist(journal);
     }
     
     @Override
@@ -420,7 +444,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.warn("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     }
                     
-                    AsyncJobExecutionContext.setCurrentExecutionContext(new AsyncJobExecutionContext(job));
+                    AsyncJobExecutionContext.setCurrentExecutionContext(
+                    	(AsyncJobExecutionContext)ComponentContext.inject(new AsyncJobExecutionContext(job))
+                    );
                     
                     // execute the job
                     if(s_logger.isDebugEnabled()) {

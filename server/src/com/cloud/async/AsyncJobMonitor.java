@@ -27,7 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
-import org.apache.cloudstack.messagebus.SubjectConstants;
+import org.apache.cloudstack.messagebus.TopicConstants;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
@@ -66,7 +66,7 @@ public class AsyncJobMonitor extends ManagerBase {
 		_inactivityWarningThresholdMs = thresholdMs;
 	}
 	
-	@MessageHandler(topic=SubjectConstants.JOB_HEARTBEAT)
+	@MessageHandler(topic=TopicConstants.JOB_HEARTBEAT)
 	public void onJobHeartbeatNotify(String subject, String senderAddress, Object args) {
 		if(args != null && args instanceof Long) {
 			synchronized(this) {
@@ -93,7 +93,7 @@ public class AsyncJobMonitor extends ManagerBase {
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		
-		_messageBus.subscribe(SubjectConstants.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
+		_messageBus.subscribe(TopicConstants.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
 		_timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override

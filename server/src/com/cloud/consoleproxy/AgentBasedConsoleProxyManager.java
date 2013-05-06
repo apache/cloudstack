@@ -59,6 +59,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -355,5 +356,13 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    }
+    
+    @Override
+    public void vmWorkStart(VmWork work) {
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
     }
 }

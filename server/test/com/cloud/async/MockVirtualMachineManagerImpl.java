@@ -51,6 +51,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineGuru;
@@ -185,6 +186,11 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
+		// TODO Auto-generated method stub
+    	return null;
+    }
 
 	@Override
 	public Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus() {
@@ -383,5 +389,11 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
+	@Override
+    public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    	
+    	return vm;
+    }
 }

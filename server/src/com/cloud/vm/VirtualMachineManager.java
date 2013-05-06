@@ -94,6 +94,8 @@ public interface VirtualMachineManager extends Manager {
     
     Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus();
 
+    <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm);
+    
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
     <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
@@ -201,4 +203,9 @@ public interface VirtualMachineManager extends Manager {
             throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException;
 
+    //
+    // VM work handlers
+    //
+    <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+           throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 }

@@ -55,11 +55,14 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
+import com.cloud.async.AsyncJobExecutionContext;
+import com.cloud.async.AsyncJobResult;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -107,6 +110,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
@@ -121,8 +125,10 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -143,6 +149,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -151,6 +158,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmWorkStart;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -234,6 +242,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     TemplateManager templateMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    
+    @Inject
+    EntityManager _entityMgr;
 
     private ConsoleProxyListener _listener;
 
@@ -2027,5 +2038,28 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    }
+
+    @Override
+    public void vmWorkStart(VmWork work) {
+    	assert(work instanceof VmWorkStart);
+    	
+    	ConsoleProxyVO vm = findById(work.getVmId());
+    	
+    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+    	
+    	try {
+	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
+	    		user, account,  ((VmWorkStart)work).getPlan());
+    	} catch(Exception e) {
+    		String result = SerializerHelper.toObjectSerializedString(e);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobResult.STATUS_FAILED, 0, result);
+    	}
+    }
+    
+    @Override
+    public void vmWorkStop(VmWork work) {
+    	// TODO
     }
 }

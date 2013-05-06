@@ -24,10 +24,11 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.messagebus.SubjectConstants;
+import org.apache.cloudstack.messagebus.TopicConstants;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStateSync {
@@ -48,44 +49,91 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     
     @Override
 	public void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report) {
-    	s_logger.info("Process host VM state report. host: " + hostId);
+    	if(s_logger.isDebugEnabled())
+    		s_logger.debug("Process host VM state report from ping process. host: " + hostId);
     	
     	Map<Long, VirtualMachine.PowerState> translatedInfo = convertToInfos(report);
+    	processReport(hostId, translatedInfo);
+    }
+
+    @Override
+	public void processHostVmStatePingReport(long hostId, Map<String, PowerState> report) {
+    	if(s_logger.isDebugEnabled())
+    		s_logger.debug("Process host VM state report from ping process. host: " + hostId);
+    	
+    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertHostPingInfos(report);
+    	processReport(hostId, translatedInfo);
+    }
+    
+    private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
     	for(Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
+    		
+        	if(s_logger.isDebugEnabled())
+        		s_logger.debug("VM state report. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
+
     		if(_instanceDao.updatePowerState(entry.getKey(), hostId, entry.getValue())) {
-    			_messageBus.publish(null, SubjectConstants.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
+    			
+            	if(s_logger.isDebugEnabled())
+            		s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
+    			
+    			_messageBus.publish(null, TopicConstants.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
     		}
     	}
     }
-    
-    protected Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) { 
+ 
+    private Map<Long, VirtualMachine.PowerState> convertHostPingInfos(Map<String, PowerState> states) {
+        final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<Long, VirtualMachine.PowerState>();
+        if (states == null) {
+            return map;
+        }
+    	
+        for (Map.Entry<String, PowerState> entry : states.entrySet()) {
+        	VMInstanceVO vm = findVM(entry.getKey());
+        	if(vm != null) {
+        		map.put(vm.getId(), entry.getValue());
+        		break;
+        	} else {
+        		s_logger.info("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
+        	}
+        }
+
+        return map;
+    }
+    	    
+    private Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) { 
         final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<Long, VirtualMachine.PowerState>();
         if (states == null) {
             return map;
         }
         
-        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmMgr.getRegisteredGurus();
-
         for (Map.Entry<String, HostVmStateReportEntry> entry : states.entrySet()) {
-            for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
-                String name = entry.getKey();
-                VMInstanceVO vm = vmGuru.findByName(name);
-                if (vm != null) {
-                    map.put(vm.getId(), entry.getValue().getState());
-                    break;
-                }
-                
-                Long id = vmGuru.convertToId(name);
-                if (id != null) {
-                	vm = vmGuru.findById(id);
-                	if(vm != null) {
-	                    map.put(id, entry.getValue().getState());
-	                    break;
-                	}
-                }
-            }
+        	VMInstanceVO vm = findVM(entry.getKey());
+        	if(vm != null) {
+        		map.put(vm.getId(), entry.getValue().getState());
+        		break;
+        	} else {
+        		s_logger.info("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
+        	}
         }
 
         return map;
+    }
+    
+    private VMInstanceVO findVM(String vmName) {
+        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmMgr.getRegisteredGurus();
+
+        for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
+            VMInstanceVO vm = vmGuru.findByName(vmName);
+            if (vm != null)
+                return vm;
+            
+            Long id = vmGuru.convertToId(vmName);
+            if (id != null) {
+            	vm = vmGuru.findById(id);
+            	if(vm != null)
+            		return vm;
+            }
+        }
+        return null;
     }
 }

@@ -116,5 +116,10 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     void prepareStop(VirtualMachineProfile<T> profile);
     
-    void doVmStart(VmWork work);
+    /**
+     * VM work handlers
+     * @param work
+     */
+    void vmWorkStart(VmWork work);
+    void vmWorkStop(VmWork work);
 }

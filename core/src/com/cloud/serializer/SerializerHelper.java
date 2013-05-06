@@ -16,6 +16,12 @@
 // under the License.
 package com.cloud.serializer;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
@@ -37,7 +44,7 @@ public class SerializerHelper {
     public static final Logger s_logger = Logger.getLogger(SerializerHelper.class.getName());
     public static String token = "/";
 
-    public static String toSerializedStringOld(Object result) {
+    public static String toSerializedString(Object result) {
         if(result != null) {
             Class<?> clz = result.getClass();
             Gson gson = GsonHelper.getGson();
@@ -82,6 +89,44 @@ public class SerializerHelper {
             s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
             throw e;
         }
+    }
+    
+    public static String toObjectSerializedString(Serializable object) {
+    	assert(object != null);
+    	
+    	ByteArrayOutputStream bs = new ByteArrayOutputStream();
+    	try {
+    		ObjectOutputStream os = new ObjectOutputStream(bs);
+    		os.writeObject(object);
+    		os.close();
+    		bs.close();
+    		
+    		return Base64.encodeBase64URLSafeString(bs.toByteArray());
+    	} catch(IOException e) {
+    		s_logger.error("Unexpected exception", e);
+    	}
+    	return null;
+    }
+    
+    public static Object fromObjectSerializedString(String base64EncodedString) {
+    	if(base64EncodedString == null)
+    		return null;
+    	
+    	byte[] content = Base64.decodeBase64(base64EncodedString);
+    	ByteArrayInputStream bs = new ByteArrayInputStream(content);
+    	try {
+    		ObjectInputStream is = new ObjectInputStream(bs);
+    		Object obj = is.readObject();
+    		is.close();
+    		bs.close();
+    		return obj;
+    	} catch(IOException e) {
+    		s_logger.error("Unexpected exception", e);
+    	} catch(ClassNotFoundException e) {
+    		s_logger.error("Unexpected exception", e);
+    	}
+    	
+    	return null;
     }
 
     public static List<Pair<String, Object>> toPairList(Object o, String name) {

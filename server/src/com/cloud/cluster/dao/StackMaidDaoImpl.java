@@ -91,7 +91,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<CheckPointVO, Long> impleme
 		delegateItem.setThreadId(Thread.currentThread().getId());
 		delegateItem.setSeq(seq);
 		delegateItem.setDelegate(delegateClzName);
-		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
+		delegateItem.setContext(SerializerHelper.toSerializedString(context));
 		delegateItem.setCreated(DateUtil.currentGMTTime());
 		
 		super.persist(delegateItem);
