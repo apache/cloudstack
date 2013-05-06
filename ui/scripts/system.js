@@ -1375,7 +1375,10 @@
                             label: 'label.vlan.id',
                             docID: 'helpGuestNetworkZoneVLANID'
                           },
-
+                          isolatedpvlanId: {
+                            label: 'Private VLAN ID'                           
+                          },
+                          
                           scope: {
                             label: 'label.scope',
                             docID: 'helpGuestNetworkZoneScope',
@@ -1589,11 +1592,15 @@
 																  if(this.id == selectedNetworkOfferingId) {																		
 																		if(this.specifyvlan == false) {
 																		  $form.find('.form-item[rel=vlanId]').hide();
-																			cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]'));	//make vlanId optional 	 	
+																			cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]'));	//make vlanId optional 	
+																			
+																			$form.find('.form-item[rel=isolatedpvlanId]').hide();
 																		}
 																		else {
 																		  $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');																			
-																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=vlanId]'));		//make vlanId required		
+																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=vlanId]'));		//make vlanId required	
+																			
+																			$form.find('.form-item[rel=isolatedpvlanId]').css('display', 'inline-block');             
 																		}
 																		return false; //break each loop
 																	}
@@ -1679,7 +1686,10 @@
 
 											  if(($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0))
 												  array1.push("&vlan=" + todb(args.data.vlanId));
-
+											  
+											  if(($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0))
+                          array1.push("&isolatedpvlan=" + todb(args.data.isolatedpvlanId));
+											  											  
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
 												  array1.push("&domainId=" + args.data.domainId);
 
