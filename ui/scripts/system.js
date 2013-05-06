@@ -8507,7 +8507,54 @@
                     label: 'label.end.reserved.system.IP',
                     docID: 'helpPodEndIP',
                     validation: { required: false }
+                  },
+
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
+
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                      }
+                   },
+
+                    accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
                   }
+
                 }
               },
 
@@ -9007,8 +9054,55 @@
 
                    },
 
-                  //hypervisor==VMWare begins here
+                  
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
 
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                      }
+                   },
+
+                    accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  },
+
+                  //hypervisor==VMWare begins here
+ 
                   vCenterHost: {
                     label: 'label.vcenter.host',
                     docID: 'helpClustervCenterHost',
@@ -9996,7 +10090,55 @@
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
+                  }, 
+
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
+
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+
+                      }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
                   },
+
                   //input_group="general" ends here
 
                   //input_group="VMWare" starts here
