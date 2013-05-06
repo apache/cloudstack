@@ -42,6 +42,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkUsageService;
 import com.cloud.network.StorageNetworkService;
@@ -139,6 +140,7 @@ public abstract class BaseCmd {
     @Inject public DataStoreProviderApiService dataStoreProviderApiService;
     @Inject public VpcProvisioningService _vpcProvSvc;
     @Inject public AffinityGroupService _affinityGroupService;
+    @Inject public NetworkModel _ntwkModel;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

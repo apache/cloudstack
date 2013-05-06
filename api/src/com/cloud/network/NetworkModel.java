@@ -263,4 +263,6 @@ public interface NetworkModel {
     boolean isProviderEnabledInZone(long zoneId, String provider);
 
     Nic getPlaceholderNicForRouter(Network network, Long podId);
+    
+    Networks.IsolationType[] listNetworkIsolationMethods();
 }

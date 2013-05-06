@@ -2547,6 +2547,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
+        cmdList.add(ListNetworkIsolationMethodsCmd.class);
 
         return cmdList;
     }

@@ -591,3 +591,5 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+### Network Isolation methods listing
+listNetworkIsolationMethods=1
