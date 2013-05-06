@@ -298,11 +298,10 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
 
-        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
-
         if group:
             cmd.group = group
-        virtual_machine = apiclient.deployVirtualMachine(cmd)
+
+        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         if startvm == False:
             virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
@@ -2179,6 +2178,33 @@ class PhysicalNetwork:
         return apiclient.addTrafficType(cmd)
 
     @classmethod
+    def dedicate(cls, apiclient, vlanrange, physicalnetworkid, account=None, domainid=None, projectid=None):
+        """Dedicate guest vlan range"""
+
+        cmd = dedicateGuestVlanRange.dedicateGuestVlanRangeCmd()
+        cmd.vlanrange = vlanrange
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PhysicalNetwork(apiclient.dedicateGuestVlanRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release guest vlan range"""
+
+        cmd = releaseDedicatedGuestVlanRange.releaseDedicatedGuestVlanRangeCmd()
+        cmd.id = self.id
+        return apiclient.releaseDedicatedGuestVlanRange(cmd)
+
+    @classmethod
+    def listDedicated(cls, apiclient, **kwargs):
+        """Lists all dedicated guest vlan ranges"""
+
+        cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return map(lambda pn : PhysicalNetwork(pn.__dict__), apiclient.listDedicatedGuestVlanRanges(cmd))
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists all physical networks"""
 
@@ -3045,3 +3071,40 @@ class ASA1000V:
         cmd = listCiscoAsa1000vResources.listCiscoAsa1000vResourcesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listCiscoAsa1000vResources(cmd))
+
+class VmSnapshot:
+    """Manage VM Snapshot life cycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+    @classmethod
+    def create(cls,apiclient,vmid,snapshotmemory="false",name=None,description=None):
+        cmd = createVMSnapshot.createVMSnapshotCmd()
+        cmd.virtualmachineid = vmid
+
+        if snapshotmemory:
+            cmd.snapshotmemory = snapshotmemory
+        if name:
+            cmd.name = name
+        if description:
+            cmd.description = description
+        return VmSnapshot(apiclient.createVMSnapshot(cmd).__dict__)
+    
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listVMSnapshot.listVMSnapshotCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVMSnapshot(cmd))
+    
+    @classmethod
+    def revertToSnapshot(cls, apiclient,vmsnapshotid):
+        cmd = revertToVMSnapshot.revertToVMSnapshotCmd()
+        cmd.vmsnapshotid = vmsnapshotid
+        
+        return apiclient.revertToVMSnapshot(cmd)
+    
+    @classmethod
+    def deleteVMSnapshot(cls,apiclient,vmsnapshotid):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = vmsnapshotid
+        
+        return apiclient.deleteVMSnapshot(cmd)

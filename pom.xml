@@ -399,7 +399,7 @@
               <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
               <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
               <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf.tmpl</exclude>
               <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>

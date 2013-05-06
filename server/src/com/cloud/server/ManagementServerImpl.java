@@ -256,7 +256,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToSnapshotCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -2258,6 +2258,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateNetworkServiceProviderCmd.class);
         cmdList.add(UpdatePhysicalNetworkCmd.class);
         cmdList.add(UpdateStorageNetworkIpRangeCmd.class);
+        cmdList.add(DedicateGuestVlanRangeCmd.class);
+        cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
+        cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
@@ -2524,7 +2527,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListZonesByCmd.class);
         cmdList.add(ListVMSnapshotCmd.class);
         cmdList.add(CreateVMSnapshotCmd.class);
-        cmdList.add(RevertToSnapshotCmd.class);
+        cmdList.add(RevertToVMSnapshotCmd.class);
         cmdList.add(DeleteVMSnapshotCmd.class);
         cmdList.add(AddIpToVmNicCmd.class);
         cmdList.add(RemoveIpFromVmNicCmd.class);

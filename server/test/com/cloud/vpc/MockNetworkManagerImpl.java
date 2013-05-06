@@ -28,6 +28,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
@@ -50,6 +51,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -338,9 +341,24 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return false;
     }
 
+    @Override
+    public GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
+    @Override
+    public Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
+    @Override
+    public boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId) {
+        // TODO Auto-generated method stub
+        return true;
 
+    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#listNetworkServices(java.lang.String)

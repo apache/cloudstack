@@ -170,7 +170,7 @@
             },
             action: function(args) {
               $.ajax({
-                url: createURL("revertToSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                url: createURL("revertToVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {

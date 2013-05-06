@@ -1618,7 +1618,9 @@ public class NetscalerResource implements ServerResource {
                 String srcIp = rule.getSrcIp();
                 String dstIP = rule.getDstIp();
                 String iNatRuleName = generateInatRuleName(srcIp, dstIP);
+                String rNatRuleName = generateRnatRuleName(srcIp, dstIP);
                 inat iNatRule = null;
+                rnat rnatRule = null;
 
                 if (!rule.revoked()) {
                     try {
@@ -1645,9 +1647,47 @@ public class NetscalerResource implements ServerResource {
                         }
                         s_logger.debug("Created Inat rule on the Netscaler device " + _ip + " to enable static NAT from " +  srcIp + " to " + dstIP);
                     }
+                    try {
+                        rnat[] rnatRules = rnat.get(_netscalerService);
+                        if (rnatRules != null) {
+                            for (rnat rantrule : rnatRules) {
+                                if (rantrule.get_network().equalsIgnoreCase(rNatRuleName)) {
+                                    rnatRule = rantrule;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (nitro_exception e) {
+                        throw e;
+                    }
+
+                    if (rnatRule == null) {
+                        rnatRule = new rnat();
+                        rnatRule.set_natip(srcIp);
+                        rnatRule.set_network(dstIP);
+                        rnatRule.set_netmask("255.255.255.255");
+                        try {
+                            apiCallResult = rnat.update(_netscalerService, rnatRule);
+                        } catch (nitro_exception e) {
+                            if (e.getErrorCode() != NitroError.NS_RESOURCE_EXISTS) {
+                                throw e;
+                            }
+                        }
+                        s_logger.debug("Created Rnat rule on the Netscaler device " + _ip + " to enable revese static NAT from " +  dstIP + " to " + srcIp);
+                    }
                 } else {
                     try {
                         inat.delete(_netscalerService, iNatRuleName);
+                        rnat[] rnatRules = rnat.get(_netscalerService);
+                        if (rnatRules != null) {
+                            for (rnat rantrule : rnatRules) {
+                                if (rantrule.get_network().equalsIgnoreCase(dstIP)) {
+                                    rnatRule = rantrule;
+                                    rnat.clear(_netscalerService, rnatRule);
+                                    break;
+                                }
+                            }
+                        }
                     } catch (nitro_exception e) {
                         if (e.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
                             throw e;
@@ -2257,6 +2297,7 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 csMon.set_interval(hcp.getHealthcheckInterval());
+                csMon.set_retries(Math.max(hcp.getHealthcheckThresshold(), hcp.getUnhealthThresshold()) + 1);
                 csMon.set_resptimeout(hcp.getResponseTime());
                 csMon.set_failureretries(hcp.getUnhealthThresshold());
                 csMon.set_successretries(hcp.getHealthcheckThresshold());
@@ -3088,6 +3129,10 @@ public class NetscalerResource implements ServerResource {
 
     private String generateInatRuleName(String srcIp, String dstIP) {
         return genObjectName("Cloud-Inat", srcIp);
+    }
+
+    private String generateRnatRuleName(String srcIp, String dstIP) {
+        return genObjectName("Cloud-Rnat", srcIp);
     }
 
     private String generateNSVirtualServerName(String srcIp, long srcPort) {

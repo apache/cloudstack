@@ -206,8 +206,8 @@ class TestUserProjectCreation(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -373,8 +373,8 @@ class TestProjectCreationNegative(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -498,8 +498,8 @@ class TestProjectInviteRequired(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -650,8 +650,8 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -819,8 +819,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -945,8 +945,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1076,8 +1076,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1205,8 +1205,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1333,8 +1333,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)

@@ -924,9 +924,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         }
         if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
-            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), vm.getDataCenterId());
+            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
         } else {
-            return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), vm.getDataCenterId());
+            return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), network.getDataCenterId());
         }
     }
 

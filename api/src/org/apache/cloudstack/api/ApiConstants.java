@@ -85,6 +85,7 @@ public class ApiConstants {
     public static final String GSLB_SERVICE_TYPE = "gslbservicetype";
     public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
+    public static final String GUEST_VLAN_RANGE = "guestvlanrange";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
@@ -221,6 +222,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
+    public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String VM_AVAILABLE = "vmavailable";

@@ -126,7 +126,7 @@ class TestCreateVolume(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -134,8 +134,8 @@ class TestCreateVolume(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
@@ -167,8 +167,8 @@ class TestCreateVolume(cloudstackTestCase):
                                    self.apiClient,
                                    v,
                                    zoneid=self.zone.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
             self.debug("Created a volume with ID: %s" % volume.id)
@@ -177,8 +177,8 @@ class TestCreateVolume(cloudstackTestCase):
         volume = Volume.create_custom_disk(
                                     self.apiClient,
                                     self.services,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     )
         self.debug("Created a volume with custom offering: %s" % volume.id)
         self.volumes.append(volume)
@@ -320,7 +320,7 @@ class TestVolumes(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -328,8 +328,8 @@ class TestVolumes(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
@@ -337,8 +337,8 @@ class TestVolumes(cloudstackTestCase):
         cls.volume = Volume.create(
                                    cls.api_client,
                                    cls.services,
-                                   account=cls.account.account.name,
-                                   domainid=cls.account.account.domainid
+                                   account=cls.account.name,
+                                   domainid=cls.account.domainid
                                    )
         cls._cleanup = [
                         cls.resized_disk_offering,

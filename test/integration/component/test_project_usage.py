@@ -142,13 +142,13 @@ class TestVmUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -337,13 +337,13 @@ class TestPublicIPUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -416,7 +416,7 @@ class TestPublicIPUsage(cloudstackTestCase):
         # 3. Delete the newly created account
 
         self.debug("Deleting public IP: %s" %
-                                self.public_ip.ipaddress.ipaddress)
+                                self.public_ip.ipaddress)
 
         # Release one of the IP
         self.public_ip.delete(self.apiclient)
@@ -512,13 +512,13 @@ class TestVolumeUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -689,13 +689,13 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -858,12 +858,12 @@ class TestISOUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.iso = Iso.create(
@@ -1014,13 +1014,13 @@ class TestLBRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1198,13 +1198,13 @@ class TestSnapshotUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1375,13 +1375,13 @@ class TestNatRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1559,13 +1559,13 @@ class TestVpnUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1648,7 +1648,7 @@ class TestVpnUsage(cloudstackTestCase):
                         )
 
         self.debug("Created VPN user for account: %s" %
-                                    self.account.account.name)
+                                    self.account.name)
 
         vpnuser = VpnUser.create(
                                  self.apiclient,

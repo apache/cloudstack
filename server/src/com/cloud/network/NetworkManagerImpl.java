@@ -31,6 +31,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -156,6 +157,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     PodVlanMapDao _podVlanMapDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    DataCenterVnetDao _datacenterVnetDao;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -1998,8 +2003,29 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             // For Isolated networks, don't allow to create network with vlan that already exists in the zone
             if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
-                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
-            }
+                    throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
+                } else {
+                    DataCenterVnetVO dcVnet = _datacenterVnetDao.findVnet(zoneId, vlanId.toString()).get(0);
+                    // Fail network creation if specified vlan is dedicated to a different account
+                    if (dcVnet.getAccountGuestVlanMapId() != null) {
+                        Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
+                        AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
+                        if (map.getAccountId() != owner.getAccountId()) {
+                            throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
+                        }
+                    // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
+                    } else {
+                        List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
+                        if (maps != null && !maps.isEmpty()) {
+                            int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
+                            int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
+                            if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
+                                throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" +
+                                        " to the vlan range dedicated to the owner "+ owner.getAccountName());
+                            }
+                        }
+                    }
+                }
             } else {
                 // don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
                 // shared network with same Vlan ID in the zone
@@ -2008,7 +2034,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     throw new InvalidParameterValueException("There is a isolated/shared network with vlan id: " +
                             vlanId + " already exists " + "in zone " + zoneId);
                 }
-        }
+            }
+
+
+
         }
 
         // If networkDomain is not specified, take it from the global configuration

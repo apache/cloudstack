@@ -22,11 +22,12 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 
-@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=UserVmResponse.class)
+@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=SuccessResponse.class)
 public class ScaleVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
@@ -83,7 +84,7 @@ public class ScaleVMCmd extends BaseCmd {
     @Override
     public void execute(){
         //UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = null;
+        boolean result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
@@ -99,9 +100,8 @@ public class ScaleVMCmd extends BaseCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-        if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
-            response.setResponseName(getCommandName());
+        if (result){
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale vm");
