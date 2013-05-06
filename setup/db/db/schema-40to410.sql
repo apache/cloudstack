@@ -443,6 +443,10 @@ ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns1` varchar(255);
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns2` varchar(255);
 
+UPDATE `cloud`.`networks` INNER JOIN `cloud`.`vlan` ON networks.id = vlan.network_id 
+SET networks.gateway = vlan.vlan_gateway, networks.ip6_gateway = vlan.ip6_gateway, networks.ip6_cidr = vlan.ip6_cidr 
+WHERE networks.data_center_id = vlan.data_center_id AND networks.physical_network_id = vlan.physical_network_id;
+
 -- DB views for list api
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
