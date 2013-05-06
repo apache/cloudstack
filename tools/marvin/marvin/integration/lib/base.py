@@ -298,11 +298,10 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
 
-        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
-
         if group:
             cmd.group = group
-        virtual_machine = apiclient.deployVirtualMachine(cmd)
+
+        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         if startvm == False:
             virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
