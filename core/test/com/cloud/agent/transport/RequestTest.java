@@ -33,6 +33,7 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -135,7 +136,8 @@ public class RequestTest extends TestCase {
         s_logger.info("Testing serializing and deserializing interface TO works as expected");
 
         NfsTO nfs = new NfsTO("nfs://192.168.56.10/opt/storage/secondary", DataStoreRole.Image);
-        SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
+       // SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
+        ListTemplateCommand cmd = new ListTemplateCommand(nfs);
         Request sreq = new Request(2, 3, cmd, true);
         sreq.setSequence(892403718);
 
@@ -158,6 +160,7 @@ public class RequestTest extends TestCase {
         assert creq != null : "Couldn't get the request back";
 
         compareRequest(creq, sreq);
+        assertEquals("nfs://192.168.56.10/opt/storage/secondary", ((NfsTO)((ListTemplateCommand)creq.getCommand()).getDataStore()).getUrl());
     }
 
     public void testDownload() {

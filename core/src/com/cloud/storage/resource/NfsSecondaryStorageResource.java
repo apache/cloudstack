@@ -1153,7 +1153,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
             NfsTO nfs = (NfsTO) store;
-            String secUrl = cmd.getSecUrl();
+            String secUrl = nfs.getUrl();
             String root = getRootDir(secUrl);
             Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
             return new ListTemplateAnswer(secUrl, templateInfos);
