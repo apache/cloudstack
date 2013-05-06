@@ -48,6 +48,7 @@ public class MockSecStorageVO implements InternalIdentity {
 
     }
 
+    @Override
     public long getId() {
         return this.id;
     }
@@ -57,7 +58,7 @@ public class MockSecStorageVO implements InternalIdentity {
     }
 
     public void setMountPoint(String mountPoint) {
-        this.mountPoint = mountPoint;
+        this.mountPoint = mountPoint.replace('\\', '/');
     }
 
     public String getUrl() {

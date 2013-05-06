@@ -221,6 +221,26 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>setproperty</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>
+                    pom.properties['resolved.userdir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                    pom.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
+                  </source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.2.1</version>
@@ -237,11 +257,11 @@
                   <arguments>
                     <argument>--with-marvin</argument>
                     <argument>--marvin-config</argument>
-                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>${resolved.user.dir}/${resolved.marvin.config}</argument>
                     <argument>--load</argument>
                     <argument>-a</argument>
                     <argument>tags=${tag}</argument>
-                    <argument>${user.dir}/${test}</argument>
+                    <argument>${resolved.user.dir}/${test}</argument>
                     <argument>-v</argument>
                   </arguments>
                 </configuration>

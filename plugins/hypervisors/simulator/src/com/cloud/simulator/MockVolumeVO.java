@@ -66,6 +66,7 @@ public class MockVolumeVO implements InternalIdentity {
     @Enumerated(value=EnumType.STRING)
     private VMTemplateStorageResourceAssoc.Status status;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -90,7 +91,7 @@ public class MockVolumeVO implements InternalIdentity {
     }
 
     public void setPath(String path) {
-        this.path = path;
+        this.path = path.replace('\\', '/');
     }
 
     public long getPoolId() {
