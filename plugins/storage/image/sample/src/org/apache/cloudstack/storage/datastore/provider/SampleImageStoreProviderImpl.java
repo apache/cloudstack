@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.storage.datastore.driver.SampleImageStoreDriverImpl;
@@ -38,7 +39,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.utils.component.ComponentContext;
 
 public class SampleImageStoreProviderImpl implements ImageStoreProvider {
-    private final String name = "sample image data store provider";
+    private final String name = DataStoreProvider.SAMPLE_IMAGE;
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject

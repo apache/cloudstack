@@ -75,7 +75,7 @@ public class AddImageStoreCmd extends BaseCmd {
 
      public Map<String, String> getDetails() {
          Map<String, String> detailsMap = null;
-         if (!details.isEmpty()) {
+         if (details != null && !details.isEmpty()) {
              detailsMap = new HashMap<String, String>();
              Collection<?> props = details.values();
              Iterator<?> iter = props.iterator();

@@ -18,16 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.storage.datastore.driver.SwiftImageStoreDriverImpl;
@@ -44,7 +42,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class SwiftImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "Swift";
+    private final String providerName = DataStoreProvider.SWIFT_IMAGE;
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject

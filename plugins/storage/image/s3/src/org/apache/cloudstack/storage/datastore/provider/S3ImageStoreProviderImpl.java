@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.storage.datastore.driver.S3ImageStoreDriverImpl;
@@ -44,7 +45,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class S3ImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "S3";
+    private final String providerName = DataStoreProvider.S3_IMAGE;
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject

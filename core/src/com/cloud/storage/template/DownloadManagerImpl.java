@@ -505,12 +505,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
-        String tmpDir = "";
-        if (resourceType == ResourceType.TEMPLATE) {
-            tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
-        } else {
-            tmpDir = installPathPrefix + File.separator + id;
-        }
+        String tmpDir = installPathPrefix;
 
         try {
 

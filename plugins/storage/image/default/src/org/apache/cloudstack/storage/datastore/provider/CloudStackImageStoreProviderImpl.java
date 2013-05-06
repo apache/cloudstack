@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.storage.datastore.driver.CloudStackImageStoreDriverImpl;
@@ -41,7 +42,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = "CloudStack ImageStore Provider";
+    private final String providerName = DataStoreProvider.NFS_IMAGE;
     protected ImageStoreLifeCycle lifeCycle;
     protected ImageStoreDriver driver;
     @Inject

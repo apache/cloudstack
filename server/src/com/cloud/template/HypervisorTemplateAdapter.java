@@ -175,7 +175,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
         	TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
         	CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
         	AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
-        	caller.setCallback(this.createTemplateAsyncCallBack(null, null));
+        	caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
         	caller.setContext(context);
            this.imageService
                     .createTemplateAsync(tmpl, imageStore, caller);

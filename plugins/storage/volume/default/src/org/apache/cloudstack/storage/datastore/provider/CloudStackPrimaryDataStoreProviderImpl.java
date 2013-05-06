@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
@@ -34,7 +35,7 @@ import com.cloud.utils.component.ComponentContext;
 public class CloudStackPrimaryDataStoreProviderImpl implements
         PrimaryDataStoreProvider {
 
-    private final String providerName = "cloudstack primary data store provider";
+    private final String providerName = DataStoreProvider.DEFAULT_PRIMARY;
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecyle;

@@ -25,6 +25,14 @@ import java.util.Set;
 
 
 public interface DataStoreProvider {
+    // constants for provider names
+    public static final String NFS_IMAGE = "NFS";
+    public static final String S3_IMAGE = "S3";
+    public static final String SWIFT_IMAGE = "Swift";
+    public static final String SAMPLE_IMAGE = "Sample";
+
+    public static final String DEFAULT_PRIMARY = "DefaultPrimary";
+
     public static enum DataStoreProviderType {
         PRIMARY,
         IMAGE,

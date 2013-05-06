@@ -62,6 +62,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
@@ -381,9 +382,19 @@ public class TemplateServiceImpl implements TemplateService {
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                deleteTemplateAsync(_templateFactory.getTemplate(tInfo.getId(), store));
-                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId;
-                s_logger.info(description);
+                //TODO: we cannot directly call deleteTemplateSync here to reuse delete logic since in this case, our db does not have this template at all.
+                VMTemplateVO template = _templateDao.findById(tInfo.getId());
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(), template.getId(), template.getAccountId());
+                EndPoint ep = _epSelector.select(store);
+                Answer answer = ep.sendMessage(dtCommand);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.info("Failed to deleted template at store: " + store.getName());
+
+                } else {
+                    String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId;
+                    s_logger.info(description);
+                }
+
             }
         }
 

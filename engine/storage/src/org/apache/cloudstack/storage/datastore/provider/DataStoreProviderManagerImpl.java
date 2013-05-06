@@ -31,9 +31,7 @@ import org.apache.cloudstack.api.response.StorageProviderResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
@@ -90,7 +88,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         }
         return providers;
     }
-    
+
     public List<StorageProviderResponse> getCacheDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {
@@ -147,18 +145,18 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
-        return this.getDataStoreProvider("cloudstack primary data store provider");
+        return this.getDataStoreProvider(DataStoreProvider.DEFAULT_PRIMARY);
     }
 
 
     @Override
     public DataStoreProvider getDefaultImageDataStoreProvider() {
-        return this.getDataStoreProvider("CloudStack ImageStore Provider");
+        return this.getDataStoreProvider(DataStoreProvider.NFS_IMAGE);
     }
-    
+
     @Override
     public DataStoreProvider getDefaultCacheDataStoreProvider() {
-        return this.getDataStoreProvider("cloudstack image store provider");
+        return this.getDataStoreProvider(DataStoreProvider.NFS_IMAGE);
     }
 
     @Override
