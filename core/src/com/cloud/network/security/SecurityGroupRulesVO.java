@@ -54,6 +54,9 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Column(name = "id", table = "security_group_rule", insertable = false, updatable = false)
     private Long ruleId;
 
+    @Column(name = "uuid", table = "security_group_rule", insertable = false, updatable = false)
+    private String ruleUuid;
+
     @Column(name = "start_port", table = "security_group_rule", insertable = false, updatable = false)
     private int startPort;
 
@@ -75,7 +78,11 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     public SecurityGroupRulesVO() {
     }
 
-    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId,
+    public SecurityGroupRulesVO(long id) {
+        this.id = id;
+    }
+
+    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, String ruleUuid, int startPort, int endPort, String protocol, Long allowedNetworkId,
             String allowedSourceIpCidr) {
         this.id = id;
         this.name = name;
@@ -83,6 +90,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
         this.domainId = domainId;
         this.accountId = accountId;
         this.ruleId = ruleId;
+        this.ruleUuid = ruleUuid;
         this.startPort = startPort;
         this.endPort = endPort;
         this.protocol = protocol;
@@ -118,6 +126,11 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Override
     public Long getRuleId() {
         return ruleId;
+    }
+
+    @Override
+    public String getRuleUuid() {
+        return ruleUuid;
     }
 
     @Override
