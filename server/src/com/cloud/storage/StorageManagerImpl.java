@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -147,6 +148,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
@@ -221,6 +223,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected AlertManager _alertMgr;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
+    @Inject
+    protected VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
     protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
     @Inject
@@ -1925,7 +1929,39 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             this._imageSrv.addSystemVMTemplatesToSecondary(store);
         }
 
+        // associate builtin template with zones associated with this image store
+        this.associateCrosszoneTemplatesToZone(dcId);
+
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+    }
+
+    private void associateCrosszoneTemplatesToZone(Long zoneId){
+        VMTemplateZoneVO tmpltZone;
+
+        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
+        List<Long> dcIds = new ArrayList<Long>();
+        if (zoneId != null) {
+            dcIds.add(zoneId);
+        } else {
+            List<DataCenterVO> dcs = _dcDao.listAll();
+            if (dcs != null) {
+                for (DataCenterVO dc : dcs) {
+                    dcIds.add(dc.getId());
+                }
+            }
+        }
+
+        for (VMTemplateVO vt : allTemplates) {
+            if (vt.isCrossZones()) {
+                for (Long dcId : dcIds) {
+                    tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
+                    if (tmpltZone == null) {
+                        VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
+                        _vmTemplateZoneDao.persist(vmTemplateZone);
+                    }
+                }
+            }
+        }
     }
 
     @Override
