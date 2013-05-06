@@ -10367,7 +10367,108 @@
 
               createForm: {
                 title: 'label.add.secondary.storage',
-                fields: {
+                fields: {                  
+                  provider: {
+                    label: "Storage Provider",
+                    select: function(args){                  
+                      $.ajax({
+                        url: createURL('listStorageProviders'),
+                        data: {
+                          type: 'image'
+                        },
+                        success: function(json){                  
+                          var objs = json.liststorageprovidersresponse.dataStoreProvider;                  
+                          var items = [];
+                          if(objs != null) {
+                            for(var i = 0; i < objs.length; i++){
+                              if(objs[i].name == 'CloudStack ImageStore Provider')
+                                items.unshift({id: objs[i].name, description: objs[i].name}); 
+                              else
+                                items.push({id: objs[i].name, description: objs[i].name}); 
+                            }                    
+                          }                  
+                          args.response.success({
+                            data: items            
+                          });
+                                            
+                          args.$select.change(function() {                           
+                            var $form = $(this).closest('form');
+                            if($(this).val() == "CloudStack ImageStore Provider") {
+                              //CloudStack ImageStore Provider
+                              $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=path]').css('display', 'inline-block');
+
+                              //S3
+                              $form.find('.form-item[rel=accesskey]').hide();
+                              $form.find('.form-item[rel=secretkey]').hide();
+                              $form.find('.form-item[rel=bucket]').hide();
+                              $form.find('.form-item[rel=endpoint]').hide();
+                              $form.find('.form-item[rel=usehttps]').hide();
+                              $form.find('.form-item[rel=connectiontimeout]').hide();
+                              $form.find('.form-item[rel=maxerrorretry]').hide();
+                              $form.find('.form-item[rel=sockettimeout]').hide();
+
+                              //Swift
+                              $form.find('.form-item[rel=url]').hide();
+                              $form.find('.form-item[rel=account]').hide();
+                              $form.find('.form-item[rel=username]').hide();
+                              $form.find('.form-item[rel=key]').hide();
+                            }
+                            else if ($(this).val() == "S3") {
+                              //CloudStack ImageStore Provider
+                              $form.find('.form-item[rel=zoneid]').hide();
+                              $form.find('.form-item[rel=nfsServer]').hide();
+                              $form.find('.form-item[rel=path]').hide();
+
+                              //S3
+                              $form.find('.form-item[rel=accesskey]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=secretkey]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=bucket]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=endpoint]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=usehttps]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=connectiontimeout]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=maxerrorretry]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
+
+                              //Swift
+                              $form.find('.form-item[rel=url]').hide();
+                              $form.find('.form-item[rel=account]').hide();
+                              $form.find('.form-item[rel=username]').hide();
+                              $form.find('.form-item[rel=key]').hide();
+                            }
+                            else if($(this).val() == "Swift") {
+                              //CloudStack ImageStore Provider
+                              $form.find('.form-item[rel=zoneid]').hide();
+                              $form.find('.form-item[rel=nfsServer]').hide();
+                              $form.find('.form-item[rel=path]').hide();
+
+                              //S3
+                              $form.find('.form-item[rel=accesskey]').hide();
+                              $form.find('.form-item[rel=secretkey]').hide();
+                              $form.find('.form-item[rel=bucket]').hide();
+                              $form.find('.form-item[rel=endpoint]').hide();
+                              $form.find('.form-item[rel=usehttps]').hide();
+                              $form.find('.form-item[rel=connectiontimeout]').hide();
+                              $form.find('.form-item[rel=maxerrorretry]').hide();
+                              $form.find('.form-item[rel=sockettimeout]').hide();
+
+                              //Swift
+                              $form.find('.form-item[rel=url]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=username]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=key]').css('display', 'inline-block');
+                            }                    
+                          });     
+                          
+                          args.$select.change();
+                        }
+                      });             
+                    }            
+                  },
+                  
+                  
+                  //CloudStack ImageStore Provider (begin)
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpSecondaryStorageZone',
@@ -10403,30 +10504,115 @@
                     label: 'label.path',
                     docID: 'helpSecondaryStoragePath',
                     validation: { required: true }
-                  }
+                  },
+                  //CloudStack ImageStore Provider (end)
+                  
+                  
+                  //S3 (begin)
+                  accesskey: { label: 'label.s3.access_key', validation: { required: true } },
+                  secretkey: { label: 'label.s3.secret_key', validation: { required: true} },
+                  bucket: { label: 'label.s3.bucket', validation: { required: true} },
+                  endpoint: { label: 'label.s3.endpoint' },
+                  usehttps: { 
+                    label: 'label.s3.use_https', 
+                    isEditable: true,
+                    isBoolean: true,
+                    isChecked: true,
+                    converter:cloudStack.converters.toBooleanText 
+                  },
+                  connectiontimeout: { label: 'label.s3.connection_timeout' },
+                  maxerrorretry: { label: 'label.s3.max_error_retry' },
+                  sockettimeout: { label: 'label.s3.socket_timeout' },
+                  //S3 (end)
+                  
+                  
+                  //Swift (begin)
+                  url: { label: 'label.url', validation: { required: true } },
+                  account: { label: 'label.account' },
+                  username: { label: 'label.username' },
+                  key: { label: 'label.key' }
+                  //Swift (end)          
                 }
               },
 
               action: function(args) {
-                var zoneId = args.data.zoneid;
-                var nfs_server = args.data.nfsServer;
-                var path = args.data.path;
-                var url = nfsURL(nfs_server, path);
-
-                $.ajax({
-                  url: createURL("addSecondaryStorage&zoneId=" + zoneId + "&url=" + todb(url)),
-                  dataType: "json",
-                  success: function(json) {
-                    var item = json.addsecondarystorageresponse.secondarystorage;
-                    args.response.success({
-										  data:item
-										});
-                  },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
-                  }
-                });
+                if(args.data.provider == 'CloudStack ImageStore Provider') {
+                  var zoneid = args.data.zoneid;
+                  var nfs_server = args.data.nfsServer;
+                  var path = args.data.path;
+                  var url = nfsURL(nfs_server, path);
+                  
+                  var data = {
+                    provider: args.data.provider,
+                    zoneid: zoneid,
+                    url: url                    
+                  };
+                    
+                  $.ajax({
+                    url: createURL('addImageStore'),
+                    data: data,
+                    success: function(json) {
+                      var item = json.addimagestoreresponse.secondarystorage;
+                      args.response.success({
+  										  data:item
+  										});
+                    },
+                    error: function(XMLHttpResponse) {
+                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                      args.response.error(errorMsg);
+                    }
+                  });
+                }
+                else if(args.data.provider == 'S3') {                  
+                  $.ajax({
+                    url: createURL('addS3'),
+                    data: {
+                      provider: args.data.provider,
+                      accesskey: args.data.accesskey,
+                      secretkey: args.data.secretkey,
+                      bucket: args.data.bucket,
+                      endpoint: args.data.endpoint,
+                      usehttps: (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),
+                      connectiontimeout: args.data.connectiontimeout,
+                      maxerrorretry: args.data.maxerrorretry,
+                      sockettimeout: args.data.sockettimeout
+                    },
+                    success: function(json) {
+                      havingS3 = true;
+                      var item = json.adds3response.secondarystorage;
+                      args.response.success({
+                        data:item
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                }
+                else if(args.data.provider == 'Swift') {
+                  $.ajax({
+                    url: createURL('addSwift'),
+                    data: {
+                      provider: args.data.provider,
+                      url: args.data.url,
+                      account: args.data.account,
+                      username: args.data.username,
+                      key: args.data.key
+                    },
+                    success: function(json) {
+                      havingSwift = true;
+                      var item = json.addswiftresponse.secondarystorage;
+                      args.response.success({
+                        data:item
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                }  
+                
+                
               },
 
               notification: {
