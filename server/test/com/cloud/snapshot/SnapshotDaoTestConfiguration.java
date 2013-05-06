@@ -19,6 +19,7 @@ package com.cloud.snapshot;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +37,6 @@ import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
@@ -65,7 +65,7 @@ public class SnapshotDaoTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = SnapshotDaoTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

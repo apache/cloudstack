@@ -50,11 +50,11 @@ public class StoragePoolHostVO implements StoragePoolHostAssoc {
 	private String localPath;
 
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private final Date created = null;
+    private Date created = null;
 
 	@Column(name="last_updated")
 	@Temporal(value=TemporalType.TIMESTAMP)
-	private final Date lastUpdated = null;
+    private Date lastUpdated = null;
 
 
 	public StoragePoolHostVO() {

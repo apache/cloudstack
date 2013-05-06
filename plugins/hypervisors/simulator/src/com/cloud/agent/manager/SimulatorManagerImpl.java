@@ -16,12 +16,74 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import com.cloud.agent.api.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterSyncCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.SecStorageVMSetupCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.*;
-import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
@@ -34,14 +96,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @Local(value = { SimulatorManager.class })
@@ -256,7 +310,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch(Exception e) {
-            s_logger.error("Failed execute cmd: " + e.toString());
+            s_logger.error("Failed execute cmd: ", e);
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {

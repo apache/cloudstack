@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -75,7 +76,6 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.dao.UserDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -222,7 +222,7 @@ public class ChildTestConfiguration extends TestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

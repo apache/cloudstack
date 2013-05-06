@@ -23,9 +23,9 @@
   <packaging>pom</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloudstack-services</artifactId>
     <version>4.2.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
