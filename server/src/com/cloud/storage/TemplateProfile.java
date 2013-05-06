@@ -46,6 +46,7 @@ public class TemplateProfile {
 	VMTemplateVO template;
 	String templateTag;
 	Map details;
+	
 
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
 			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,

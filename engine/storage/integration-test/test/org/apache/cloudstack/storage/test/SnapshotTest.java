@@ -16,37 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.test;
 
-public class CommandResult {
-    private boolean success;
-    private String result;
-    public CommandResult() {
-        this.success = true;
-        this.result = "";
-    }
-   
-    public boolean isSuccess() {
-        return this.success;
-    }
-    
-    public boolean isFailed() {
-        return !this.success;
-    }
-    
-    public void setSucess(boolean success) {
-        this.success = success;
-    }
-    
-    public String getResult() {
-        return this.result;
-    }
-    
-    public void setResult(String result) {
-        this.result = result;
-        if (result != null) {
-            this.success = false;
-        }
-    }
+public class SnapshotTest {
+
 }
- 

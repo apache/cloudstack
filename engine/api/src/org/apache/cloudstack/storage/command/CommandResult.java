@@ -18,22 +18,35 @@
  */
 package org.apache.cloudstack.storage.command;
 
-
-import com.cloud.agent.api.Command;
-
-public class AttachPrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
-    private final String dataStore;
-    public AttachPrimaryDataStoreCmd(String uri) {
-        this.dataStore = uri;
+public class CommandResult {
+    private boolean success;
+    private String result;
+    public CommandResult() {
+        this.success = true;
+        this.result = "";
+    }
+   
+    public boolean isSuccess() {
+        return this.success;
     }
     
-    public String getDataStore() {
-        return this.dataStore;
+    public boolean isFailed() {
+        return !this.success;
     }
-
-    @Override
-    public boolean executeInSequence() {
-        // TODO Auto-generated method stub
-        return false;
+    
+    public void setSucess(boolean success) {
+        this.success = success;
+    }
+    
+    public String getResult() {
+        return this.result;
+    }
+    
+    public void setResult(String result) {
+        this.result = result;
+        if (result != null) {
+            this.success = false;
+        }
     }
 }
+ 

@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
@@ -50,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;

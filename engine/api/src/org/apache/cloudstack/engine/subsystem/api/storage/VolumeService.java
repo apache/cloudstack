@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.exception.ConcurrentOperationException;
 

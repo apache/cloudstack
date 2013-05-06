@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -30,11 +29,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -80,6 +82,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	@Inject SnapshotDao snapshotDao;
 	@Inject PrimaryDataStoreDao primaryStoreDao;
 	@Inject SnapshotManager snapshotMgr;
+	@Inject EndPointSelector epSelecotor;
 	@Override
 	public String grantAccess(DataObject data, EndPoint ep) {
 		// TODO Auto-generated method stub
@@ -117,7 +120,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		}
 		
 		CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
-		Answer answer = storageMgr.sendToPool((StoragePool)volume.getDataStore(), null, cmd);
+		EndPoint ep = epSelecotor.select(volume);
+		Answer answer = ep.sendMessage(cmd);
 		return answer;
 	}
 
@@ -149,28 +153,17 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	@Override
 	public void deleteAsync(DataObject data,
 			AsyncCompletionCallback<CommandResult> callback) {
-
-		String vmName = null;
-		VolumeVO vol = this.volumeDao.findById(data.getId());
-
-
-		StoragePool pool = (StoragePool)data.getDataStore();
-
-		DestroyCommand cmd = new DestroyCommand(pool, vol, vmName);
+		DeleteCommand cmd = new DeleteCommand(data.getTO());
 
 		CommandResult result = new CommandResult();
 		try {
-			Answer answer = this.storageMgr.sendToPool(pool, cmd);
+		    EndPoint ep = epSelecotor.select(data);
+			Answer answer = ep.sendMessage(cmd);
 			if (answer != null && !answer.getResult()) {
 				result.setResult(answer.getDetails());
-				s_logger.info("Will retry delete of " + vol + " from " + pool.getId());
 			}
-		} catch (StorageUnavailableException e) {
-			s_logger.error("Storage is unavailable currently.  Will retry delete of "
-					+ vol + " from " + pool.getId(), e);
-			result.setResult(e.toString());
 		} catch (Exception ex) {
-			s_logger.debug("Unable to destoy volume" + vol + " from " + pool.getId(), ex);
+			s_logger.debug("Unable to destoy volume" + data.getId(), ex);
 			result.setResult(ex.toString());
 		}
 		callback.complete(result);

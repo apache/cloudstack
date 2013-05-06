@@ -26,7 +26,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -44,6 +43,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
@@ -165,7 +165,7 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject vo = context.getVolume();
         String errMsg = null;
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
             vo.processEvent(Event.OperationFailed);
             errMsg = result.getResult();

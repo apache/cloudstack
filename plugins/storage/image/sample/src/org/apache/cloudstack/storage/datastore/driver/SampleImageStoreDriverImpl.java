@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -32,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;

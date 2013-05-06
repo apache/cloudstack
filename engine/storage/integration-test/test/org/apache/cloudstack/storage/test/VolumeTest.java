@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -37,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
@@ -44,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -58,6 +61,7 @@ import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
+import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
@@ -68,6 +72,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -78,9 +83,12 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
@@ -255,7 +263,7 @@ public class VolumeTest extends CloudStackTestNGBase {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());
             }
             
-            DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("cloudstack primary data store provider");
+            /*DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("cloudstack primary data store provider");
             Map<String, Object> params = new HashMap<String, Object>();
             URI uri = new URI(this.getPrimaryStorageUrl());
             params.put("url", this.getPrimaryStorageUrl());
@@ -274,7 +282,24 @@ public class VolumeTest extends CloudStackTestNGBase {
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             DataStore store = lifeCycle.initialize(params);
             ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
-            lifeCycle.attachCluster(store, scope);
+            lifeCycle.attachCluster(store, scope);*/
+            
+            StoragePoolVO pool = new StoragePoolVO();
+            pool.setClusterId(clusterId);
+            pool.setDataCenterId(dcId);
+            URI uri = new URI(this.getPrimaryStorageUrl());
+            pool.setHostAddress(uri.getHost());
+            pool.setPath(uri.getPath());
+            pool.setPort(0);
+            pool.setName(this.primaryName);
+            pool.setUuid(this.getPrimaryStorageUuid());
+            pool.setStatus(StoragePoolStatus.Up);
+            pool.setPoolType(StoragePoolType.NetworkFilesystem);
+            pool.setPodId(podId);
+            pool.setScope(ScopeType.CLUSTER);
+            pool.setStorageProviderName("cloudstack primary data store provider");
+            pool = this.primaryStoreDao.persist(pool);
+            DataStore store = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
             return store;
         } catch (Exception e) {
             return null;
@@ -283,18 +308,75 @@ public class VolumeTest extends CloudStackTestNGBase {
     
     private VolumeVO createVolume(Long templateId, long dataStoreId) {
         VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
-        //volume.setPoolId(dataStoreId);
+        volume.setPoolId(dataStoreId);
         volume = volumeDao.persist(volume);
         return volume;
     }
     
-    @Test
+    //@Test
     public void testCopyBaseImage() {
         DataStore primaryStore = createPrimaryDataStore();
         primaryStoreId = primaryStore.getId();
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId()));
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId()));
+        try {
+            VolumeApiResult result = future.get();
+        
+            AssertJUnit.assertTrue(result.isSuccess());
+          
+            VolumeInfo newVol = result.getVolume();
+            this.volumeService.destroyVolume(newVol.getId());
+            VolumeInfo vol = this.volFactory.getVolume(volume.getId());
+            this.volumeService.expungeVolumeAsync(vol);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ConcurrentOperationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testCreateDataDisk() {
+        DataStore primaryStore = createPrimaryDataStore();
+        primaryStoreId = primaryStore.getId();
+        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
+        VolumeVO volume = createVolume(null, primaryStore.getId());
+        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
+        this.volumeService.createVolumeAsync(volInfo, primaryStore);
+    }
+    
+    @Test
+    public void testDeleteDisk() {
+        DataStore primaryStore = createPrimaryDataStore();
+        primaryStoreId = primaryStore.getId();
+        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
+        VolumeVO volume = createVolume(null, primaryStore.getId());
+        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeAsync(volInfo, primaryStore);
+        try {
+            VolumeApiResult result = future.get();
+            VolumeInfo vol = result.getVolume();
+            
+            this.volumeService.destroyVolume(volInfo.getId());
+            volInfo = this.volFactory.getVolume(vol.getId());
+            this.volumeService.expungeVolumeAsync(volInfo);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ConcurrentOperationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
     }
 }

@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 
 import com.cloud.agent.api.Command;
 
 public class DeleteCommand extends Command implements StorageSubSystemCommand {
-    private String uri;
-    public DeleteCommand(String uri) {
-        this.uri = uri;
+    private  DataTO data;
+    public DeleteCommand(DataTO data) {
+        this.data = data;
     }
     
     protected DeleteCommand() {
@@ -37,8 +37,8 @@ public class DeleteCommand extends Command implements StorageSubSystemCommand {
         return false;
     }
     
-    public String getUri() {
-        return this.uri;
+    public DataTO getData() {
+        return this.data;
     }
 
 }

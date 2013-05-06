@@ -29,7 +29,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -51,6 +50,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -377,7 +377,7 @@ public class TemplateServiceImpl implements TemplateService {
             }
         }
 
-        for (String uniqueName : templateInfos.keySet()) {
+       /* for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
@@ -396,7 +396,7 @@ public class TemplateServiceImpl implements TemplateService {
                 }
 
             }
-        }
+        }*/
 
     }
 

@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import org.apache.cloudstack.storage.command.CommandResult;
+
 import com.cloud.agent.api.Answer;
 
 public class CreateCmdResult extends CommandResult {
@@ -26,6 +28,7 @@ public class CreateCmdResult extends CommandResult {
     public CreateCmdResult(String path, Answer answer) {
         super();
         this.path = path;
+        this.answer = answer;
     }
     
     public String getPath() {
