@@ -15,9 +15,30 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  cloudStack.modules = [
-    'infrastructure',
-    'vnmcNetworkProvider',
-    'vnmcAsa1000v'
-  ];
+  cloudStack.modules.vnmcAsa1000v = function(module) {
+    module.vnmcNetworkProvider.addDevice({
+      id: 'asa1000v',
+      title: 'ASA 1000v',
+      listView: {
+        id: 'asa1000vDevices',
+        fields: {
+          name: { label: 'label.name' },
+          ipaddress: { label: 'label.ip.address' },
+          state: { label: 'label.state', indicator: {
+            'Enabled': 'on',
+            'Disabled': 'off'
+          }}
+        },
+        dataProvider: function(args) {
+          args.response.success({
+            data: [
+              { name: 'asadevice1', ipaddress: '192.168.1.12', state: 'Enabled' },
+              { name: 'asadevice2', ipaddress: '192.168.1.13', state: 'Disabled' },
+              { name: 'asadevice3', ipaddress: '192.168.1.14', state: 'Enabled' }
+            ]
+          });
+        }
+      }
+    });
+  };
 }(jQuery, cloudStack));
