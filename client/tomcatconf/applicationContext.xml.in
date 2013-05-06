@@ -780,6 +780,8 @@
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
   <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl" />
 
+  <bean id="VirtualMachinePowerStateSyncImpl" class="com.cloud.vm.VirtualMachinePowerStateSyncImpl" />
+
 
 <!--=======================================================================================================-->
 <!--                                                                                                       -->
@@ -791,6 +793,7 @@
   <!-- Async management -->
   <bean id="asyncJobDaoImpl" class="com.cloud.async.dao.AsyncJobDaoImpl" />
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
+  <bean id="asyncJobJournalDaoImpl" class="com.cloud.async.dao.AsyncJobJournalDaoImpl" />
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl">
     <property name="defaultDispatcher" value="ApiAsyncJobDispatcher" />
   </bean>
@@ -804,6 +807,8 @@
   <bean id="VmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
     <property name="name" value="VmWorkJobDispatcher" />
   </bean>
+
+  <bean id="vmWorkJobDaoImpl" class="com.cloud.vm.VmWorkJobDaoImpl" />  
 
   <!--
     Baremetal components

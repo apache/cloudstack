@@ -51,6 +51,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.async.AsyncJobExecutionContext;
+import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
@@ -58,6 +60,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.dao.EntityManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -93,6 +96,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
@@ -109,8 +113,10 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -137,6 +143,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmWorkStart;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -250,6 +257,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private SystemVmLoadScanner<Long> _loadScanner;
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
 
+    @Inject
+    EntityManager _entityMgr;
+    
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     public SecondaryStorageManagerImpl() {
@@ -1476,10 +1486,25 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 	
     @Override
     public void vmWorkStart(VmWork work) {
+    	assert(work instanceof VmWorkStart);
+    	
+    	SecondaryStorageVmVO vm = findById(work.getVmId());
+    	
+    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+    	
+    	try {
+	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
+	    		user, account, ((VmWorkStart)work).getPlan());
+    	} catch(Exception e) {
+    		s_logger.error("Exception in process VM-start work", e);
+    		String result = SerializerHelper.toObjectSerializedString(e);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobResult.STATUS_FAILED, 0, result);
+    	}
     }
     
     @Override
     public void vmWorkStop(VmWork work) {
+    	// TODO
     }
-
 }

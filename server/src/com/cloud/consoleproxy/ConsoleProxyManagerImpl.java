@@ -2053,6 +2053,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
 	    		user, account,  ((VmWorkStart)work).getPlan());
     	} catch(Exception e) {
+    		s_logger.error("Exception in process VM-start work", e);
     		String result = SerializerHelper.toObjectSerializedString(e);
     		AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobResult.STATUS_FAILED, 0, result);
     	}
