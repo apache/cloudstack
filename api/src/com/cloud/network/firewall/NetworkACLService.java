@@ -112,5 +112,7 @@ public interface NetworkACLService {
     boolean revokeNetworkACLItem(long ruleId);
 
 
-
+    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
+                                        String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
+                                        Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
 }

@@ -114,4 +114,7 @@ public interface NetworkACLManager{
 
     boolean applyACLToNetwork(long networkId) throws ResourceUnavailableException;
 
+    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
+                                        String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
+                                        Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
 }

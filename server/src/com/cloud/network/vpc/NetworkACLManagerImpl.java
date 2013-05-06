@@ -131,7 +131,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                                                   Integer icmpCode, Integer icmpType, NetworkACLItem.TrafficType trafficType, Long aclId,
                                                   String action, Integer number) {
         NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-        if("deny".equals(action)){
+        if("deny".equalsIgnoreCase(action)){
             ruleAction = NetworkACLItem.Action.Deny;
         }
         // If number is null, set it to currentMax + 1
@@ -238,6 +238,63 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         Network network = _networkDao.findById(networkId);
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
         return applyACLItemsToNetwork(networkId, rules);
+    }
+
+    @Override
+    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
+                                               String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode,
+                                               Integer icmpType) throws ResourceUnavailableException {
+        NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
+        aclItem.setState(State.Add);
+
+        if(protocol != null){
+            aclItem.setProtocol(protocol);
+        }
+
+        if(sourceCidrList != null){
+            aclItem.setSourceCidrList(sourceCidrList);
+        }
+
+        if(trafficType != null){
+            aclItem.setTrafficType(trafficType);
+        }
+
+        if(action != null){
+            NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
+            if("deny".equalsIgnoreCase(action)){
+                ruleAction = NetworkACLItem.Action.Deny;
+            }
+            aclItem.setAction(ruleAction);
+        }
+
+        if(number != null){
+            aclItem.setNumber(number);
+        }
+
+        if(sourcePortStart != null){
+            aclItem.setSourcePortStart(sourcePortStart);
+        }
+
+        if(sourcePortEnd != null){
+            aclItem.setSourcePortEnd(sourcePortEnd);
+        }
+
+        if(icmpCode != null){
+            aclItem.setIcmpCode(icmpCode);
+        }
+
+        if(icmpType != null){
+            aclItem.setIcmpType(icmpType);
+        }
+
+        if(_networkACLItemDao.update(id, aclItem)){
+            if(applyNetworkACL(aclItem.getAclId())){
+                return aclItem;
+            } else {
+                throw new CloudRuntimeException("Failed to apply Network ACL Item: "+aclItem.getUuid());
+            }
+        }
+        return null;
     }
 
     public boolean applyACLItemsToNetwork(long networkId, List<NetworkACLItemVO> rules) throws ResourceUnavailableException {

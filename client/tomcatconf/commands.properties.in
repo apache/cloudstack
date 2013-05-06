@@ -433,6 +433,7 @@ deletePrivateGateway=1
 
 #### Network ACL commands
 createNetworkACL=15
+updateNetworkACLItem=15
 deleteNetworkACL=15
 listNetworkACLs=15
 createNetworkACLList=15

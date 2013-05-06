@@ -142,6 +142,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if(acl == null) {
             throw new InvalidParameterValueException("Unable to find specified ACL");
         }
+
+        if(acl.getId() == NetworkACL.DEFAULT_ALLOW || acl.getId() == NetworkACL.DEFAULT_DENY){
+            throw new InvalidParameterValueException("Default ACL cannot be removed");
+        }
+
         Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
         if(vpc == null){
             throw new InvalidParameterValueException("Unable to find specified VPC associated with the ACL");
@@ -298,7 +303,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             try {
                 NetworkACLItem.Action.valueOf(action);
             } catch (IllegalArgumentException ex) {
-                throw new InvalidParameterValueException("Invalid action. Allowed actions are Aloow and Deny");
+                throw new InvalidParameterValueException("Invalid action. Allowed actions are Allow and Deny");
             }
         }
     }
@@ -400,7 +405,52 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public boolean revokeNetworkACLItem(long ruleId) {
+        NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
+        if(aclItem != null){
+            if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
+                throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
+            }
+        }
         return _networkAclMgr.revokeNetworkACLItem(ruleId);
+    }
+
+    @Override
+    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
+                                               String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode,
+                                               Integer icmpType) throws ResourceUnavailableException {
+        NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
+        if(aclItem == null){
+            throw new InvalidParameterValueException("Unable to find ACL Item cannot be found");
+        }
+
+        if(aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY){
+            throw new InvalidParameterValueException("Default ACL Items cannot be updated");
+        }
+
+        NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+
+        Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
+
+        Account caller = UserContext.current().getCaller();
+
+        _accountMgr.checkAccess(caller, null, true, vpc);
+
+        Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
+        _accountMgr.checkAccess(aclOwner, SecurityChecker.AccessType.ModifyEntry, false, acl);
+
+        if(number != null){
+            //Check if ACL Item with specified number already exists
+            NetworkACLItemVO aclNumber = _networkACLItemDao.findByAclAndNumber(acl.getId(), number);
+            if((aclNumber != null) && (aclNumber.getId() != id)){
+                throw new InvalidParameterValueException("ACL item with number "+number+" already exists in ACL: "+acl.getUuid());
+            }
+        }
+
+        validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd() : sourcePortEnd,
+                sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action);
+
+        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart,
+                sourcePortEnd, icmpCode, icmpType);
     }
 
 }
