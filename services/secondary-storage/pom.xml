@@ -18,13 +18,13 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloudstack-service-secondary-storage</artifactId>
+  <artifactId>cloud-secondary-storage</artifactId>
   <name>Apache CloudStack Secondary Storage Service</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloudstack-services</artifactId>
     <version>4.2.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
