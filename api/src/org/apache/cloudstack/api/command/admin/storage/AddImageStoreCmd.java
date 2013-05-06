@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
@@ -53,7 +56,7 @@ public class AddImageStoreCmd extends BaseCmd {
     private String providerName;
 
 
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the image store")
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the image store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
     private Map<String, String> details;
 
 
@@ -71,7 +74,19 @@ public class AddImageStoreCmd extends BaseCmd {
     }
 
      public Map<String, String> getDetails() {
-        return details;
+         Map<String, String> detailsMap = null;
+         if (!details.isEmpty()) {
+             detailsMap = new HashMap<String, String>();
+             Collection<?> props = details.values();
+             Iterator<?> iter = props.iterator();
+             while (iter.hasNext()) {
+                 HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                 String key = detail.get("key");
+                 String value = detail.get("value");
+                 detailsMap.put(key, value);
+             }
+         }
+        return detailsMap;
     }
 
     public String getProviderName() {
