@@ -44,15 +44,15 @@ class Services:
                                     "password": "password",
                          },
                         "name": "testphysicalnetwork",
-                        "vlan": "2118-2120",
+                        "vlan": "118-120",
                     }
 
 
-class TesDedicateGuestVlanRange(cloudstackTestCase):
+class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TesDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(TestDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain
         cls.domain = get_domain(cls.api_client, cls.services)
