@@ -21,6 +21,8 @@
 }
 
 .vpc-network-chart .tiers {
+  width: 362px;
+  float: right;
 }
 
 .vpc-network-chart .tier-item {
@@ -79,8 +81,61 @@
   height: 117px;
 }
 
+.vpc-network-chart .tier-item .content .dashboard-item {
+  width: 145px;
+  height: 54px;
+  margin: 7px 9px 0;
+  background: #C1E0FE;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  float: left;
+  cursor: pointer;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item:hover {
+  background-color: #DBEDFE;
+  /*+box-shadow:inset 0px 1px 2px #000000;*/
+  -moz-box-shadow: inset 0px 1px 2px #000000;
+  -webkit-box-shadow: inset 0px 1px 2px #000000;
+  -o-box-shadow: inset 0px 1px 2px #000000;
+  box-shadow: inset 0px 1px 2px #000000;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .total {
+  font-size: 28px;
+  /*+placement:shift 7px 5px;*/
+  position: relative;
+  left: 7px;
+  top: 5px;
+  color: #145CA1;
+  font-weight: 100;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .name {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #0861B7;
+  /*+placement:shift 8px 7px;*/
+  position: relative;
+  left: 8px;
+  top: 7px;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+}
+
 .vpc-network-chart .tier-item .content .info {
-  padding: 7px 0 10px 9px;
+  padding: 9px 0 10px 10px;
 }
 
 .vpc-network-chart .tier-item .content .info .cidr-label {
