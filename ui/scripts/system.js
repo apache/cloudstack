@@ -265,8 +265,7 @@
           secondaryStorageCount: function(data) {
             $.ajax({
               url: createURL('listImageStores'),
-              data: {
-                type: 'image',
+              data: {                
 								page: 1,
 								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
@@ -5455,7 +5454,7 @@
 
                   $.ajax({
                     url: createURL('listImageStores' + searchByArgs),
-                    data: { type: 'image', page: args.page, pageSize: pageSize, listAll: true },
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
                       args.response.success({ data: json.listimagestoreresponse.imagestore });
                     },
@@ -10321,7 +10320,7 @@
 							}
 						}            
             $.ajax({
-              url: createURL("listImageStores&type=image&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listImageStores&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {

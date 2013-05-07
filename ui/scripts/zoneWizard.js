@@ -1502,7 +1502,108 @@
         }
       },
       secondaryStorage: {
-        fields: {
+        fields: {       
+          provider: {
+            label: 'Provider',
+            select: function(args){                  
+              $.ajax({
+                url: createURL('listStorageProviders'),
+                data: {
+                  type: 'image'
+                },
+                success: function(json){                  
+                  var objs = json.liststorageprovidersresponse.dataStoreProvider;                  
+                  var items = [];
+                  if(objs != null) {
+                    for(var i = 0; i < objs.length; i++){
+                      if(objs[i].name == 'NFS')
+                        items.unshift({id: objs[i].name, description: objs[i].name}); 
+                      else
+                        items.push({id: objs[i].name, description: objs[i].name}); 
+                    }                    
+                  }                  
+                  args.response.success({
+                    data: items            
+                  });
+                                    
+                  args.$select.change(function() {                           
+                    var $form = $(this).closest('form');
+                    if($(this).val() == "NFS") {
+                      //NFS
+                      $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=path]').css('display', 'inline-block');
+
+                      //S3
+                      $form.find('.form-item[rel=accesskey]').hide();
+                      $form.find('.form-item[rel=secretkey]').hide();
+                      $form.find('.form-item[rel=bucket]').hide();
+                      $form.find('.form-item[rel=endpoint]').hide();
+                      $form.find('.form-item[rel=usehttps]').hide();
+                      $form.find('.form-item[rel=connectiontimeout]').hide();
+                      $form.find('.form-item[rel=maxerrorretry]').hide();
+                      $form.find('.form-item[rel=sockettimeout]').hide();
+
+                      //Swift
+                      $form.find('.form-item[rel=url]').hide();
+                      $form.find('.form-item[rel=account]').hide();
+                      $form.find('.form-item[rel=username]').hide();
+                      $form.find('.form-item[rel=key]').hide();
+                    }
+                    else if ($(this).val() == "S3") {
+                      //NFS
+                      $form.find('.form-item[rel=zoneid]').hide();
+                      $form.find('.form-item[rel=nfsServer]').hide();
+                      $form.find('.form-item[rel=path]').hide();
+
+                      //S3
+                      $form.find('.form-item[rel=accesskey]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=secretkey]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=bucket]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=endpoint]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=usehttps]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=connectiontimeout]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=maxerrorretry]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
+
+                      //Swift
+                      $form.find('.form-item[rel=url]').hide();
+                      $form.find('.form-item[rel=account]').hide();
+                      $form.find('.form-item[rel=username]').hide();
+                      $form.find('.form-item[rel=key]').hide();
+                    }
+                    else if($(this).val() == "Swift") {
+                      //NFS
+                      $form.find('.form-item[rel=zoneid]').hide();
+                      $form.find('.form-item[rel=nfsServer]').hide();
+                      $form.find('.form-item[rel=path]').hide();
+
+                      //S3
+                      $form.find('.form-item[rel=accesskey]').hide();
+                      $form.find('.form-item[rel=secretkey]').hide();
+                      $form.find('.form-item[rel=bucket]').hide();
+                      $form.find('.form-item[rel=endpoint]').hide();
+                      $form.find('.form-item[rel=usehttps]').hide();
+                      $form.find('.form-item[rel=connectiontimeout]').hide();
+                      $form.find('.form-item[rel=maxerrorretry]').hide();
+                      $form.find('.form-item[rel=sockettimeout]').hide();
+
+                      //Swift
+                      $form.find('.form-item[rel=url]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=username]').css('display', 'inline-block');
+                      $form.find('.form-item[rel=key]').css('display', 'inline-block');
+                    }                    
+                  });     
+                  
+                  args.$select.change();
+                }
+              });             
+            }            
+          },
+          
+          
+          //NFS (begin)
           nfsServer: {
             label: 'label.nfs.server',
             validation: { required: true }
@@ -1510,7 +1611,34 @@
           path: {
             label: 'label.path',
             validation: { required: true }
-          }
+          },
+          //NFS (end)
+          
+          
+          //S3 (begin)
+          accesskey: { label: 'label.s3.access_key', validation: { required: true } },
+          secretkey: { label: 'label.s3.secret_key', validation: { required: true} },
+          bucket: { label: 'label.s3.bucket', validation: { required: true} },
+          endpoint: { label: 'label.s3.endpoint' },
+          usehttps: { 
+            label: 'label.s3.use_https', 
+            isEditable: true,
+            isBoolean: true,
+            isChecked: true,
+            converter:cloudStack.converters.toBooleanText 
+          },
+          connectiontimeout: { label: 'label.s3.connection_timeout' },
+          maxerrorretry: { label: 'label.s3.max_error_retry' },
+          sockettimeout: { label: 'label.s3.socket_timeout' },
+          //S3 (end)
+          
+          
+          //Swift (begin)
+          url: { label: 'label.url', validation: { required: true } },
+          account: { label: 'label.account' },
+          username: { label: 'label.username' },
+          key: { label: 'label.key' }
+          //Swift (end)                    
         }
       }
     },
@@ -3380,31 +3508,94 @@
         addSecondaryStorage: function(args) {
           message(dictionary['message.creating.secondary.storage']);
 
-          var nfs_server = args.data.secondaryStorage.nfsServer;
-          var path = args.data.secondaryStorage.path;
-          var url = nfsURL(nfs_server, path);
-
-          var data = {
-            provider: 'NFS',
-            zoneid: args.data.returnedZone.id,
-            url: url                   
-          };
-          
-          $.ajax({
-            url: createURL('addImageStore'),
-            data: data,
-            success: function(json) {
-              complete({
-                data: $.extend(args.data, {
-                  returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                })
-              });
-            },
-            error: function(XMLHttpResponse) {
-              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-              error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
-            }
-          });
+          if(args.data.secondaryStorage.provider == 'NFS') {
+            var nfs_server = args.data.secondaryStorage.nfsServer;
+            var path = args.data.secondaryStorage.path;
+            var url = nfsURL(nfs_server, path);
+  
+            var data = {
+              provider: 'NFS',
+              zoneid: args.data.returnedZone.id,
+              url: url                   
+            };
+            
+            $.ajax({
+              url: createURL('addImageStore'),
+              data: data,
+              success: function(json) {
+                complete({
+                  data: $.extend(args.data, {
+                    returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                  })
+                });
+              },
+              error: function(XMLHttpResponse) {
+                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
+              }
+            });
+          }  
+          else if(args.data.secondaryStorage.provider == 'S3') {                  
+            $.ajax({
+              url: createURL('addImageStore'),
+              data: {
+                provider: args.data.secondaryStorage.provider,                                           
+                'details[0].key': 'accesskey',
+                'details[0].value': args.data.secondaryStorage.accesskey,                                            
+                'details[1].key': 'secretkey',
+                'details[1].value': args.data.secondaryStorage.secretkey,                                            
+                'details[2].key': 'bucket',
+                'details[2].value': args.data.secondaryStorage.bucket,                                            
+                'details[3].key': 'endpoint',
+                'details[3].value': args.data.secondaryStorage.endpoint,                                          
+                'details[4].key': 'usehttps',
+                'details[4].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false'),    
+                'details[5].key': 'connectiontimeout',
+                'details[5].value': args.data.secondaryStorage.connectiontimeout,                                          
+                'details[6].key': 'maxerrorretry',
+                'details[6].value': args.data.secondaryStorage.maxerrorretry,                                           
+                'details[7].key': 'sockettimeout',
+                'details[7].value': args.data.secondaryStorage.sockettimeout
+              },
+              success: function(json) {
+                complete({
+                  data: $.extend(args.data, {
+                    returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                  })
+                });
+              },
+              error: function(json) {
+                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
+              }
+            });
+          }
+          else if(args.data.secondaryStorage.provider == 'Swift') {
+            $.ajax({
+              url: createURL('addImageStore'),
+              data: {
+                provider: args.data.secondaryStorage.provider,
+                url: args.data.secondaryStorage.url,
+                'details[0].key': 'account',
+                'details[0].value': args.data.secondaryStorage.account,
+                'details[1].key': 'username',
+                'details[1].value': args.data.secondaryStorage.username,
+                'details[2].key': 'key',
+                'details[2].value': args.data.secondaryStorage.key                      
+              },
+              success: function(json) {
+                complete({
+                  data: $.extend(args.data, {
+                    returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                  })
+                });
+              },
+              error: function(json) {
+                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
+              }
+            });
+          }    
         }
       };
 
