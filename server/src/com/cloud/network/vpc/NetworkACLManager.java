@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.List;
-
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
-import com.cloud.utils.db.DB;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
+
+import java.util.List;
 
 
 public interface NetworkACLManager{
@@ -108,11 +105,37 @@ public interface NetworkACLManager{
      * @throws ResourceUnavailableException
      */
     boolean revokeACLItemsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
-    
+
+    /**
+     * List network ACL items by network
+     * @param guestNtwkId
+     * @return
+     */
     List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId);
 
+    /**
+     * Applies asscociated ACL to specified network
+     * @param networkId
+     * @return
+     * @throws ResourceUnavailableException
+     */
     boolean applyACLToNetwork(long networkId) throws ResourceUnavailableException;
 
+    /**
+     * Updates and existing network ACL Item
+     * @param id
+     * @param protocol
+     * @param sourceCidrList
+     * @param trafficType
+     * @param action
+     * @param number
+     * @param sourcePortStart
+     * @param sourcePortEnd
+     * @param icmpCode
+     * @param icmpType
+     * @return
+     * @throws ResourceUnavailableException
+     */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
                                         String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
                                         Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;

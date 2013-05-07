@@ -23,7 +23,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -41,7 +40,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -140,6 +138,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified ACL");
         }
 
+        //Do not allow deletion of default ACLs
         if(acl.getId() == NetworkACL.DEFAULT_ALLOW || acl.getId() == NetworkACL.DEFAULT_DENY){
             throw new InvalidParameterValueException("Default ACL cannot be removed");
         }
@@ -218,6 +217,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         _accountMgr.checkAccess(caller, null, true, vpc);
 
+        //Ensure that number is unique within the ACL
         if(aclItemCmd.getNumber() != null){
             if(_networkACLItemDao.findByAclAndNumber(aclId, aclItemCmd.getNumber()) != null){
                 throw new InvalidParameterValueException("ACL item with number "+aclItemCmd.getNumber()+" already exists in ACL: "+acl.getUuid());
@@ -293,6 +293,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
         }
 
+        //Check ofr valid action Allow/Deny
         if(action != null){
             try {
                 NetworkACLItem.Action.valueOf(action);
