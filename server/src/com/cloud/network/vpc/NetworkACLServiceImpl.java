@@ -76,8 +76,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Inject
     NetworkACLItemDao _networkACLItemDao;
     @Inject
-    List<NetworkACLServiceProvider> _networkAclElements;
-    @Inject
     NetworkModel _networkModel;
     @Inject
     NetworkDao _networkDao;
@@ -220,9 +218,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
         }
         _accountMgr.checkAccess(caller, null, true, vpc);
-
-        Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
-        _accountMgr.checkAccess(aclOwner, SecurityChecker.AccessType.ModifyEntry, false, acl);
 
         if(aclItemCmd.getNumber() != null){
             if(_networkACLItemDao.findByAclAndNumber(aclId, aclItemCmd.getNumber()) != null){
@@ -434,9 +429,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Account caller = UserContext.current().getCaller();
 
         _accountMgr.checkAccess(caller, null, true, vpc);
-
-        Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
-        _accountMgr.checkAccess(aclOwner, SecurityChecker.AccessType.ModifyEntry, false, acl);
 
         if(number != null){
             //Check if ACL Item with specified number already exists
