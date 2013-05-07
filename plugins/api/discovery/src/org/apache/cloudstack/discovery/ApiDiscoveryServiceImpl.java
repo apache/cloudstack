@@ -83,6 +83,9 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             }
 
             String apiName = apiCmdAnnotation.name();
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Found api: " + apiName);
+            }
             ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
 
             String responseName = apiCmdAnnotation.responseObject().getName();
