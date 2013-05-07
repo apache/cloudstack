@@ -363,18 +363,17 @@ public class VolumeServiceImpl implements VolumeService {
         	    s_logger.debug("wait for template:" + template.getId() + " downloading finished, but failed");
         	    VolumeApiResult result = new VolumeApiResult(volume);
         	    result.setResult(e1.toString());
-        	    caller.complete(result);
+        	    future.complete(result);
         	    return;
         	}
         	if (templateOnPrimaryStoreObj == null) {
         	    VolumeApiResult result = new VolumeApiResult(volume);
                 result.setResult("wait for template:" + template.getId() + " downloading finished, but failed");
-                caller.complete(result);
+                future.complete(result);
                 return;
         	} else {
         	    s_logger.debug("waiting for template:" + template.getId() + " downloading finished, success");
-        	    VolumeApiResult result = new VolumeApiResult(volume);
-        	    future.complete(result);
+        	    createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
         	    return;
         	}
         }
