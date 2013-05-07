@@ -43,6 +43,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String s3SecretKey;
     private String s3EndPoint;
     private String s3TemplateBucket;
+    private String primaryStorageUuid;
     private boolean s3UseHttps;
 
     protected void injectMockito() {
@@ -70,11 +71,11 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 
     @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr",
         "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid",
-        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps", "image-install-path"})
+        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps", "image-install-path", "primary-storage-uuid-want-to-add"})
     protected void setup(String hostuuid, String gateway, String cidr,
             String hostIp, String templateUrl, String localStorageUuid,
             String primaryStorage, String secondaryStorage, String s3_accessKey, String s3_secretKey, String s3_endpoint, String s3_template_bucket,
-            String s3_usehttps, String imageInstallPath) {
+            String s3_usehttps, String imageInstallPath, String primaryStorageUuid) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
         this.hostCidr = cidr;
@@ -82,6 +83,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.templateUrl = templateUrl;
         this.localStorageUuid = localStorageUuid;
         this.primaryStorageUrl = primaryStorage;
+        this.primaryStorageUuid = primaryStorageUuid;
         this.imageInstallPath = imageInstallPath;
         this.setSecondaryStorage(secondaryStorage);
         // set S3 parameters
@@ -155,6 +157,14 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 
     public void setImageInstallPath(String imageInstallPath) {
         this.imageInstallPath = imageInstallPath;
+    }
+
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 
 }

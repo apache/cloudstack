@@ -30,11 +30,14 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.download.DownloadMonitorImpl;
+import com.cloud.template.HypervisorTemplateAdapter;
+import com.cloud.template.TemplateAdapter;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
@@ -57,6 +60,8 @@ public class TemplateTest extends CloudStackTestNGBase {
 	EndPointSelector epSelector;
 	@Inject
 	DownloadMonitorImpl downloadMonitor;
+
+	
 	long dcId;
 	long templateId;
 

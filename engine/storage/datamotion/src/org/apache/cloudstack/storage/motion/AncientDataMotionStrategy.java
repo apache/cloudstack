@@ -370,7 +370,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         DataObject cacheData = null;
         try {
-        if (destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+        if (needCacheStorage(srcData, destData)) {
             cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
         
             CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);

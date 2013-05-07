@@ -21,7 +21,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -34,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -105,14 +105,14 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     @Override
     public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
-        DeleteCommand cmd = new DeleteCommand(vo.getUri());
+        /*DeleteCommand cmd = new DeleteCommand(vo.getUri());
 
         EndPoint ep = selector.select(vo);
         AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
         AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteCallback(null, null))
             .setContext(context);
-        ep.sendMessageAsync(cmd, caller);
+        ep.sendMessageAsync(cmd, caller);*/
     }
 
     public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {

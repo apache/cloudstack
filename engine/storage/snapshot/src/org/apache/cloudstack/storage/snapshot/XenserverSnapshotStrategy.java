@@ -56,7 +56,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 	@Override
 	public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
 		SnapshotInfo parentSnapshot = snapshot.getParent();
-		if (parentSnapshot.getPath().equalsIgnoreCase(snapshot.getPath())) {
+		if (parentSnapshot != null && parentSnapshot.getPath().equalsIgnoreCase(snapshot.getPath())) {
 			s_logger.debug("backup an empty snapshot");
 			//don't need to backup this snapshot
 			SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);

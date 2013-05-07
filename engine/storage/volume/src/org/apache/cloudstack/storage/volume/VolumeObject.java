@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -379,6 +380,15 @@ public class VolumeObject implements VolumeInfo {
                VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                vol.setPath(newVol.getPath());
                vol.setSize(newVol.getSize());
+               vol.setPoolId(this.getDataStore().getId());
+               volumeDao.update(vol.getId(), vol);
+           } else if (answer instanceof CreateObjectAnswer) {
+               CreateObjectAnswer createAnswer =(CreateObjectAnswer)answer;
+               VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
+               VolumeVO vol = this.volumeDao.findById(this.getId());
+               vol.setPath(newVol.getPath());
+               vol.setSize(newVol.getSize());
+               vol.setPoolId(this.getDataStore().getId());
                volumeDao.update(vol.getId(), vol);
            }
        } else if (this.dataStore.getRole() == DataStoreRole.Image) {

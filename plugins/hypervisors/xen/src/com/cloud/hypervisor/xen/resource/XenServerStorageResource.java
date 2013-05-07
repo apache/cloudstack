@@ -42,11 +42,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
@@ -113,8 +114,8 @@ public class XenServerStorageResource {
             return execute((CreatePrimaryDataStoreCmd) command);
         } else if (command instanceof CreateObjectCommand) {
             return execute((CreateObjectCommand) command);
-        } else if (command instanceof DeleteVolumeCommand) {
-            return execute((DeleteVolumeCommand)command);
+        } else if (command instanceof DeleteCommand) {
+            return execute((DeleteCommand)command);
         }
         return new Answer((Command)command, false, "not implemented yet");
     }
@@ -169,35 +170,35 @@ public class XenServerStorageResource {
         String snapshotUUID = null;
 
         try {
-                String volumeUUID = snapshotTO.getVolume().getPath();
-                VDI volume = VDI.getByUuid(conn, volumeUUID);
+            String volumeUUID = snapshotTO.getVolume().getPath();
+            VDI volume = VDI.getByUuid(conn, volumeUUID);
 
-                VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
+            VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
 
-                if (snapshotName != null) {
-                    snapshot.setNameLabel(conn, snapshotName);
+            if (snapshotName != null) {
+                snapshot.setNameLabel(conn, snapshotName);
+            }
+
+            snapshotUUID = snapshot.getUuid(conn);
+            String preSnapshotUUID = snapshotTO.getParentSnapshotPath();
+            //check if it is a empty snapshot
+            if( preSnapshotUUID != null) {
+                SR sr = volume.getSR(conn);
+                String srUUID = sr.getUuid(conn);
+                String type = sr.getType(conn);
+                Boolean isISCSI = IsISCSI(type);
+                String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
+
+                String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
+                if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                    // this is empty snapshot, remove it
+                    snapshot.destroy(conn);
+                    snapshotUUID = preSnapshotUUID;
                 }
-
-                snapshotUUID = snapshot.getUuid(conn);
-                String preSnapshotUUID = snapshotTO.getPath();
-                //check if it is a empty snapshot
-                if( preSnapshotUUID != null) {
-                    SR sr = volume.getSR(conn);
-                    String srUUID = sr.getUuid(conn);
-                    String type = sr.getType(conn);
-                    Boolean isISCSI = IsISCSI(type);
-                    String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
-
-                    String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
-                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
-                        // this is empty snapshot, remove it
-                        snapshot.destroy(conn);
-                        snapshotUUID = preSnapshotUUID;
-                    }
-                }
-                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-                newSnapshot.setPath(snapshotUUID);
-                return new CreateObjectAnswer(newSnapshot);
+            }
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            newSnapshot.setPath(snapshotUUID);
+            return new CreateObjectAnswer(newSnapshot);
         } catch (XenAPIException e) {
             details += ", reason: " + e.toString();
             s_logger.warn(details, e);
@@ -222,15 +223,14 @@ public class XenServerStorageResource {
            return new CreateObjectAnswer(e.toString());
        }
     }
-
-    protected Answer execute(DeleteVolumeCommand cmd) {
-        VolumeObjectTO volume = null;
+    
+    protected Answer deleteVolume(VolumeObjectTO volume) {
         Connection conn = hypervisorResource.getConnection();
         String errorMsg = null;
         try {
-            VDI vdi = VDI.getByUuid(conn, volume.getUuid());
+            VDI vdi = VDI.getByUuid(conn, volume.getPath());
             deleteVDI(conn, vdi);
-            return new Answer(cmd);
+            return new Answer(null);
         } catch (BadServerResponse e) {
             s_logger.debug("Failed to delete volume", e);
             errorMsg = e.toString();
@@ -241,8 +241,19 @@ public class XenServerStorageResource {
             s_logger.debug("Failed to delete volume", e);
             errorMsg = e.toString();
         }
+        return new Answer(null, false, errorMsg);
+    }
 
-        return new Answer(cmd, false, errorMsg);
+    protected Answer execute(DeleteCommand cmd) {
+        DataTO data = cmd.getData();
+        Answer answer = null;
+        if (data.getObjectType() == DataObjectType.VOLUME) {
+            answer = deleteVolume((VolumeObjectTO)data);
+        } else {
+            answer = new Answer(cmd, false, "unsupported type");
+        }
+
+        return answer;
     }
 
    /* protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {

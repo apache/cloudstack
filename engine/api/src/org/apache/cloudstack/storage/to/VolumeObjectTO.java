@@ -33,6 +33,7 @@ public class VolumeObjectTO implements DataTO {
     private long size;
     private String path;
     private Long volumeId;
+    private String vmName;
     private long accountId;
 
     public VolumeObjectTO() {
@@ -48,7 +49,7 @@ public class VolumeObjectTO implements DataTO {
         } else {
             this.dataStore = null;
         }
-        //this.name = volume.getName();
+        this.vmName = volume.getAttachedVmName();
         this.size = volume.getSize();
         this.setVolumeId(volume.getId());
     }
@@ -119,6 +120,14 @@ public class VolumeObjectTO implements DataTO {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
     }
 
 
