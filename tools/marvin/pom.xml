@@ -232,9 +232,13 @@
                   <goal>execute</goal>
                 </goals>
                 <configuration>
+                  <properties>
+                    <resolved.user.dir>${user.dir}</resolved.user.dir>
+                    <resolved.marvin.config>${marvin.config}</resolved.marvin.config>
+                  </properties>
                   <source>
-                    pom.properties['resolved.userdir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
-                    pom.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
+                    project.properties['resolved.user.dir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                    project.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
                   </source>
                 </configuration>
               </execution>
