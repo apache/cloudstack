@@ -32,11 +32,8 @@
     <property name="Interceptors">
         <list>
             <ref bean="transactionContextBuilder" />
-            <ref bean="actionEventInterceptor" />
         </list>
-    </property>
-  </bean>
-
+    </property> </bean> 
     <bean id="ApplicationLoadBalancerManager" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl">
         <property name="name" value="ApplicationLoadBalancerManager"/>
     </bean>
