@@ -2689,8 +2689,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (uri != null) {
                 String[] vlan = uri.toString().split("vlan:\\/\\/");
                 networkVlanId = vlan[1];
-                //For pvlan
-                networkVlanId = networkVlanId.split("-")[0];
+                if (network.getBroadcastDomainType() == BroadcastDomainType.Pvlan) {
+                	networkVlanId = networkVlanId.split("-")[0];
+                }
             }
 
             if (vlanId != null) {
