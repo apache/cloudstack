@@ -151,8 +151,8 @@ class TestPublicIP(cloudstackTestCase):
         cls.user_network = Network.create(
                                              cls.api_client,
                                              cls.services["network"],
-                                             cls.user.account.name,
-                                             cls.user.account.domainid
+                                             cls.user.name,
+                                             cls.user.domainid
                                              )
 
         # Create Source NAT IP addresses
@@ -164,9 +164,9 @@ class TestPublicIP(cloudstackTestCase):
                                             )
         user_src_nat_ip = PublicIPAddress.create(
                                             cls.api_client,
-                                            cls.user.account.name,
+                                            cls.user.name,
                                             cls.zone.id,
-                                            cls.user.account.domainid
+                                            cls.user.domainid
                                             )
         cls._cleanup = [
                         cls.account_network,
@@ -248,9 +248,9 @@ class TestPublicIP(cloudstackTestCase):
 
         ip_address = PublicIPAddress.create(
                                             self.apiclient,
-                                            self.user.account.name,
+                                            self.user.name,
                                             self.zone.id,
-                                            self.user.account.domainid
+                                            self.user.domainid
                                             )
 
         #listPublicIpAddresses should return newly created public IP

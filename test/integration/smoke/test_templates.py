@@ -752,8 +752,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),
@@ -784,8 +784,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),
