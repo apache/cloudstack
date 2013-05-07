@@ -219,6 +219,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
+                    s_logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
                     return null;
                 }
             }
