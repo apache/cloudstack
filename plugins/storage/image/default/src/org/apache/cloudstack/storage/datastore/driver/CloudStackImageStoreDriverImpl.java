@@ -175,17 +175,20 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     	DataObject obj = context.data;
     	DataStore store = obj.getDataStore();
 
-    	TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
-    	updateBuilder.setDownloadPercent(answer.getDownloadPct());
-    	updateBuilder.setDownloadState(answer.getDownloadStatus());
-    	updateBuilder.setLastUpdated(new Date());
-    	updateBuilder.setErrorString(answer.getErrorString());
-    	updateBuilder.setJobId(answer.getJobId());
-    	updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
-    	updateBuilder.setInstallPath(answer.getInstallPath());
-    	updateBuilder.setSize(answer.getTemplateSize());
-    	updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-    	_templateStoreDao.update(store.getId(), updateBuilder);
+    	TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(),obj.getId());
+        if (tmpltStoreVO != null) {
+            TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
+            updateBuilder.setDownloadPercent(answer.getDownloadPct());
+            updateBuilder.setDownloadState(answer.getDownloadStatus());
+            updateBuilder.setLastUpdated(new Date());
+            updateBuilder.setErrorString(answer.getErrorString());
+            updateBuilder.setJobId(answer.getJobId());
+            updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+            updateBuilder.setInstallPath(answer.getInstallPath());
+            updateBuilder.setSize(answer.getTemplateSize());
+            updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+            _templateStoreDao.update(tmpltStoreVO.getId(), updateBuilder);
+        }
 
     	AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
