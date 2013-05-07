@@ -224,16 +224,7 @@
 								dataFns.hostCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
-                }));
-																
-								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
-								
-								/*
-								dataFns.primaryStorageCount($.extend(data, {
-                  clusterCount: json.listclustersresponse.count ?
-                    json.listclustersresponse.count : 0
-                }));
-								*/
+                }));								
               }
             });
           },
@@ -266,16 +257,7 @@
 								dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
-                }));
-																
-								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
-								
-								/*
-								dataFns.systemVmCount($.extend(data, {
-                  primaryStorageCount: json.liststoragepoolsresponse.count ?
-                    json.liststoragepoolsresponse.count : 0
-                }));
-								*/
+                }));								
               }
             });
           },
@@ -9282,8 +9264,7 @@
                     url: createURL("deleteHost&id=" + args.context.hosts[0].id + array1.join("")),
                     dataType: "json",
                     async: true,
-                    success: function(json) {
-                      //{ "deletehostresponse" : { "success" : "true"}  }
+                    success: function(json) {                     
                       args.response.success({data:{}});
                     }
                   });
@@ -10651,9 +10632,10 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteHost&id=" + args.context.secondarystorages[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteImageStore'),
+                    data: {
+                      id: args.context.secondarystorages[0].id
+                    },                    
                     success: function(json) {
                       args.response.success();
                     }
@@ -10681,7 +10663,7 @@
 
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listImageStores&type=image&id=" + args.context.secondarystorages[0].id),
+										url: createURL("listImageStores&id=" + args.context.secondarystorages[0].id),
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
