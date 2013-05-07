@@ -55,6 +55,7 @@ def describeResources(config):
     pn = physical_network()
     pn.name = "Sandbox-pnet"
     pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+    pn.isolationmethods = ["L3"]
     pn.providers.append(sgprovider)
     
     z.physical_networks.append(pn)
