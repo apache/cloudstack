@@ -3384,13 +3384,19 @@
           var path = args.data.secondaryStorage.path;
           var url = nfsURL(nfs_server, path);
 
+          var data = {
+            provider: 'NFS',
+            zoneid: args.data.returnedZone.id,
+            url: url                   
+          };
+          
           $.ajax({
-            url: createURL("addSecondaryStorage&zoneId=" + args.data.returnedZone.id + "&url=" + todb(url)),
-            dataType: "json",
+            url: createURL('addImageStore'),
+            data: data,
             success: function(json) {
               complete({
                 data: $.extend(args.data, {
-                  returnedSecondaryStorage: json.addsecondarystorageresponse.secondarystorage
+                  returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                 })
               });
             },
