@@ -61,7 +61,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 	@Inject
 	DownloadMonitorImpl downloadMonitor;
 
-	
+
 	long dcId;
 	long templateId;
 
@@ -134,4 +134,23 @@ public class TemplateTest extends CloudStackTestNGBase {
         }
 	}
 
+   // @Test
+    public void deleteTemplate() {
+        TemplateInfo template = templateFactory.getTemplate(templateId);
+        DataStore store = dataStoreMgr.getImageStore(dcId);
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        templateSvr.deleteTemplateAsync(template);
+        try {
+            TemplateApiResult result = future.get();
+            assertTrue(result.isSuccess(), "failed to delete template: " + result.getResult());
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false, e.getMessage());
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+             assertTrue(false, e.getMessage());
+        }
+    }
 }

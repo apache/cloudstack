@@ -193,13 +193,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 		}
 	}
 
-	protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter,
-			TemplateApiResult> callback, CreateTemplateContext<TemplateApiResult> context) {
-		TemplateInfo template = context.template;
-		VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
-		long accountId = tmplt.getAccountId();
-        if (template.getSize() != null) {
-            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+    protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback,
+            CreateTemplateContext<TemplateApiResult> context) {
+        TemplateApiResult result = callback.getResult();
+        TemplateInfo template = context.template;
+        if (result.isFailed()) {
+            // failed in creating template, we need to remove those already
+            // populated template entry
+            _tmpltDao.remove(template.getId());
+        } else {
+            VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
+            long accountId = tmplt.getAccountId();
+            if (template.getSize() != null) {
+                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+            }
         }
 
 		return null;
