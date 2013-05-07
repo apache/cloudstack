@@ -20,15 +20,20 @@
   }
 
   var loadCSS = function(path) {
-    var $link = $('<link>');
+    if (document.createStyleSheet) {
+      // IE-compatible CSS loading
+      document.createStyleSheet(path);
+    } else {
+      var $link = $('<link>');
 
-    $link.attr({
-      rel: 'stylesheet',
-      type: 'text/css',
-      href: path
-    });
+      $link.attr({
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: path
+      });
 
-    $('head').append($link);
+      $('html head').append($link);
+    }
   };
 
   $.extend(cloudStack.pluginAPI, {
