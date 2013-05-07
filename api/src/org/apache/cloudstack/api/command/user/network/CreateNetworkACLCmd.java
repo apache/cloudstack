@@ -179,7 +179,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public Integer getIcmpCode() {
         if (icmpCode != null) {
             return icmpCode;
-        } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
+        } else if (getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
             return -1;
         }
         return null;
@@ -188,7 +188,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public Integer getIcmpType() {
         if (icmpType != null) {
             return icmpType;
-        } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
+        } else if (getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
                 return -1;
 
         }

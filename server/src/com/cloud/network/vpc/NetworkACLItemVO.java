@@ -74,7 +74,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value=EnumType.STRING)
     Action action;
 
-    protected NetworkACLItemVO() {
+    public NetworkACLItemVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 

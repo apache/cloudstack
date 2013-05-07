@@ -52,7 +52,7 @@ import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.firewall.NetworkACLService;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;

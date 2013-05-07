@@ -71,8 +71,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
         NetworkACLVO acl = new NetworkACLVO(name, description, vpcId);
-        _networkACLDao.persist(acl);
-        return acl;
+        return _networkACLDao.persist(acl);
     }
 
     @Override
@@ -195,6 +194,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean revokeACLItemsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
+        if(network.getNetworkACLId() == null){
+            return true;
+        }
         List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(network.getNetworkACLId());
         if (aclItems.isEmpty()) {
             s_logger.debug("Found no network ACL Items for network id=" + networkId);
@@ -236,6 +238,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean applyACLToNetwork(long networkId) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
+        if(network.getNetworkACLId() == null){
+            return true;
+        }
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
         return applyACLItemsToNetwork(networkId, rules);
     }

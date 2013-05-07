@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
