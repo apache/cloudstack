@@ -21,6 +21,7 @@
 }
 
 .vpc-network-chart .tiers {
+  margin: 40px 46px 0 0;
   width: 362px;
   float: right;
 }
@@ -151,5 +152,49 @@
   -webkit-text-shadow: 0px 1px #C7D8E9;
   -o-text-shadow: 0px 1px #C7D8E9;
   text-shadow: 0px 1px #C7D8E9;
+}
+
+.vpc-network-chart .tier-placeholder {
+  cursor: pointer;
+  background: #EFEFEF;
+  border: 4px dotted #B1B1B1;
+  /*+border-radius:8px;*/
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -khtml-border-radius: 8px;
+  border-radius: 8px;
+  width: 325px;
+  text-align: center;
+  padding: 57px 0 55px;
+  margin: 0 0 0 18px;
+}
+
+.vpc-network-chart .tier-placeholder:hover {
+  background: #DCDCDC;
+  /*+border-radius:8px;*/
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -khtml-border-radius: 8px;
+  border-radius: 8px;
+  /*+box-shadow:inset 0px 1px 4px #000000;*/
+  -moz-box-shadow: inset 0px 1px 4px #000000;
+  -webkit-box-shadow: inset 0px 1px 4px #000000;
+  -o-box-shadow: inset 0px 1px 4px #000000;
+  box-shadow: inset 0px 1px 4px #000000;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-placeholder:hover span {
+  color: #535353;
+}
+
+.vpc-network-chart .tier-placeholder span {
+  color: #AFAFAF;
+  font-size: 24px;
+  font-weight: 200;
 }
 

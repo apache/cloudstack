@@ -25,6 +25,14 @@
       return $tier;
     },
 
+    tierPlaceholder: function() {
+      var $placeholder = $('<div>').addClass('tier-placeholder');
+
+      $placeholder.append($('<span>').append('Create network'));
+      
+      return $placeholder;
+    },
+
     dashboard: function(args) {
       var $dashboard = $('<div>').addClass('dashboard');
 
@@ -89,6 +97,9 @@
 
               $tier.appendTo($tiers);
             });
+
+            // Add placeholder tier
+            $tiers.append(elems.tierPlaceholder());
           }
         }
       });
