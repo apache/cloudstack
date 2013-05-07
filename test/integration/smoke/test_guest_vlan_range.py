@@ -44,7 +44,7 @@ class Services:
                                     "password": "password",
                          },
                         "name": "testphysicalnetwork",
-                        "vlan": "118-120",
+                        "vlan": "2118-2120",
                     }
 
 
