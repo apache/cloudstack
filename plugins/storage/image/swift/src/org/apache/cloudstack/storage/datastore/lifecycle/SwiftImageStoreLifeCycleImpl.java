@@ -90,7 +90,6 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         // just need to insert an entry in DB
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
-        imageStoreParameters.put("name", url);
         imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
         imageStoreParameters.put("protocol", "http");

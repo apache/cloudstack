@@ -70,7 +70,6 @@ public class ImageStoreHelper {
             return store;
         }
         store = new ImageStoreVO();
-        store.setName((String)params.get("name"));
         store.setProtocol((String)params.get("protocol"));
         store.setProviderName((String)params.get("providerName"));
         store.setScope((ScopeType)params.get("scope"));
@@ -82,6 +81,10 @@ public class ImageStoreHelper {
             store.setUuid(UUID.randomUUID().toString());
         }
         store.setUrl((String)params.get("url"));
+        store.setName((String)params.get("name"));
+        if ( store.getName() == null ){
+            store.setName(store.getUuid());
+        }
         store.setRole((DataStoreRole)params.get("role"));
         store = imageStoreDao.persist(store);
 

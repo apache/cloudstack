@@ -258,10 +258,10 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                 params.get(ApiConstants.S3_SECRET_KEY),
                 params.get(ApiConstants.S3_END_POINT),
                 params.get(ApiConstants.S3_BUCKET_NAME),
-                Boolean.valueOf(params.get(ApiConstants.S3_HTTPS_FLAG)),
-                Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
-                Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
-                Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
+                params.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.valueOf(params.get(ApiConstants.S3_HTTPS_FLAG)),
+                params.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                params.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                params.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
 
         this.validateFields(s3VO);
 

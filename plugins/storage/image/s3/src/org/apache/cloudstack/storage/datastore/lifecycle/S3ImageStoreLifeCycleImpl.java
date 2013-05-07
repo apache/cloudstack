@@ -91,6 +91,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         s_logger.info("Trying to add a S3 store in data center " + dcId);
 
+        /*
         try{
         // verify S3 parameters
         _s3Mgr.verifyS3Fields(details);
@@ -98,6 +99,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         catch (DiscoveryException ex){
             throw new InvalidParameterValueException("failed to verify S3 parameters!");
         }
+        */
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
         imageStoreParameters.put("name", url);
