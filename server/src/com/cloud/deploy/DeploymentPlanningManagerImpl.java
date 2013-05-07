@@ -34,6 +34,8 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -89,6 +91,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
@@ -121,6 +124,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     DataCenterDao _dcDao;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
+
+    @Inject
+    MessageBus _messageBus;
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -488,6 +494,59 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return false;
     }
 
+    @DB
+    public void checkHostReservationRelease(VMInstanceVO vm) {
+        s_logger.debug("MessageBus message: host reserved capacity released for VM: " + vm.getLastHostId()
+                + ", checking if host reservation can be released for host:" + vm.getLastHostId());
+
+        Long hostId = vm.getLastHostId();
+
+        if (hostId != null) {
+            List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(hostId);
+            if (vms.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cannot release reservation, Found " + vms.size() + " VMs Running on host " + hostId);
+                }
+            }
+
+            List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
+            if (vmsByLastHostId.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cannot release reservation, Found " + vmsByLastHostId.size()
+                            + " VMs Stopped but reserved on host " + hostId);
+                }
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host has no VMs, releasing the planner reservation");
+            }
+
+            PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
+            if (reservationEntry != null) {
+                long id = reservationEntry.getId();
+
+                final Transaction txn = Transaction.currentTxn();
+
+                try {
+                    txn.start();
+
+                    final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
+                    if (lockedEntry == null) {
+                        s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
+                    }
+                    // check before updating
+                    if (lockedEntry.getResourceUsage() != null) {
+                        lockedEntry.setResourceUsage(null);
+                        _plannerHostReserveDao.persist(lockedEntry);
+                    }
+                } finally {
+                    txn.commit();
+                }
+            }
+
+        }
+    }
+
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         // TODO Auto-generated method stub
@@ -549,6 +608,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _agentMgr.registerForHostEvents(this, true, false, true);
+        _messageBus.subscribe("VM_ReservedCapacity_Free", new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object vm) {
+                checkHostReservationRelease((VMInstanceVO) vm);
+            }
+        });
+
         return super.configure(name, params);
     }
 
