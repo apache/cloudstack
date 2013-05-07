@@ -1,0 +1,235 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="gslb">
+  <title>Global Server Load Balancing Support</title>
+  <para>&PRODUCT; supports Global Server Load Balancing (GSLB) functionalities to provide business
+    continuity, and enable seamless resource movement within a &PRODUCT; environment. &PRODUCT;
+    achieve this by extending its functionality of integrating with NetScaler Application Delivery
+    Controller (ADC), which also provides various GSLB capabilities, such as disaster recovery and
+    load balancing. The DNS redirection technique is used to achieve GSLB in &PRODUCT;. </para>
+  <para>In order to support his functionality, region level services and service provider are
+    introduced. A new service 'GSLB' is introduced as a region level service. The GSLB service
+    provider is introduced that will provider the GSLB service. Currently, NetScaler is the
+    supported GSLB provider in &PRODUCT;. GSLB functionality works in an Active-Active data center
+    environment. </para>
+  <section id="about-gslb">
+    <title>About Global Server Load Balancing</title>
+    <para>Global Server Load Balancing (GSLB) is an extension of load balancing functionality, which
+      is highly efficient in avoiding downtime. Based on the nature of deployment, GSLB represents a
+      set of technologies that is used for various purposes, such as load sharing, disaster
+      recovery, performance, and legal obligations. With GSLB, workloads can be distributed across
+      multiple data centers situated at geographically separated locations. GSLB can also provide an
+      alternate location for accessing a resource in the event of a failure, or to provide a means
+      of shifting traffic easily to simplify maintenance, or both.</para>
+  </section>
+  <section id="prereq-gslb">
+    <title>Prerequisites and Guidelines</title>
+    <itemizedlist>
+      <listitem>
+        <para>The GSLB functionality is supported both Basic and Advanced zones.</para>
+      </listitem>
+      <listitem>
+        <para>GSLB is added as a new network service.</para>
+      </listitem>
+      <listitem>
+        <para>GSLB service provider can be added to a physical network in a zone.</para>
+      </listitem>
+      <listitem>
+        <para>The admin is allowed to enable or disable GSLB functionality at region level.</para>
+      </listitem>
+      <listitem>
+        <para>The admin is allowed to configure a zone as GSLB capable or enabled. </para>
+        <para>A zone shall be considered as GSLB capable only if a GSLB service provider is
+          provisioned in the zone.</para>
+      </listitem>
+      <listitem>
+        <para>When users have VMs deployed in multiple availability zones which are GSLB enabled,
+          user is allowed to use the GSLB functionality to load balance traffic across the VMs in
+          multiple zones.</para>
+      </listitem>
+      <listitem>
+        <para>The users are allowed to use GSLB to load balance across the VMs across zones in a
+          region only if the admin has enabled GSLB in that region. </para>
+      </listitem>
+      <listitem>
+        <para>The users are allowed to load balance traffic across the availability zones in the
+          same region or different regions.</para>
+      </listitem>
+      <listitem>
+        <para>The admin is allowed to configure DNS name for the entire cloud.</para>
+      </listitem>
+      <listitem>
+        <para>The users can specify an unique name, across the cloud, for a globally load balanced
+          service. The provided name will be used as the domain under the DNS name associated with
+          the cloud.</para>
+        <para>The user-provided name along with the admin-provided DNS name is used to produce a
+          globally resolvable FQDN for the globally load balanced service of the user. For example,
+          if the admin has configured xyztelco.com as the DNS name for the cloud, and user specifies
+          'foo' for the GSLB virtual service, then the FQDN name of the GSLB virtual service is
+          foo.xyztelco.com.</para>
+      </listitem>
+      <listitem>
+        <para>While setting up GSLB, users can select a load balancing method, such as round robin
+          or least RTT, that would be the load balance traffic used across the zones that are part
+          of GSLB.</para>
+      </listitem>
+      <listitem>
+        <para>The user shall be able to set weight to zone-level virtual server. Weight shall be
+          considered by the load balancing method is distributing the traffic.</para>
+      </listitem>
+      <listitem>
+        <para>The GSLB functionality shall support session persistence, where series of client
+          requests for particular domain name is sent to a virtual server on the same zone. </para>
+        <para>Statistics is collected from each GSLB virtual server.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="gslb-add">
+    <title>Adding a GSLB Rule</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI as administrator.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation pane, click Region.</para>
+      </listitem>
+      <listitem>
+        <para>Select the region for which you want to create a GSLB rule.</para>
+      </listitem>
+      <listitem>
+        <para>In the Details tab, click View GSLB.</para>
+      </listitem>
+      <listitem>
+        <para>Click Add GSLB.</para>
+        <para>The Add GSLB page is displayed as follows:</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="./images/add-gslb.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>gslb-add.png: adding a gslb rule</phrase>
+          </textobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para>Specify the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">Name</emphasis>: Name for the GSLB rule.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Description</emphasis>: (Optional) A short description of
+              the GSLB rule that can be displayed to users.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">GSLB Domain Name</emphasis>: A preferred domain name for the
+              service.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Algorithm</emphasis>: (Optional) The algorithm to use to
+              load balance the traffic across the zones. The options are Round Robin, Least
+              Connection, and Proximity.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Service Type</emphasis>: The transport protocol to use for
+              GSLB. The options are TCP and UDP.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Domain</emphasis>: (Optional) The domain for which you want
+              to create the GSLB rule.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Account</emphasis>: (Optional) The account on which you want
+              to apply the GSLB rule.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>Click OK to confirm.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="assign-lb-gslb">
+    <title>Assigning Load Balancing Rules to GSLB</title>
+    <para/>
+  </section>
+  <section id="concept-gslb">
+    <title>How Does GSLB Works in &PRODUCT;?</title>
+    <para>The following is an illustrated conceptual model of how GLSB functionality is provided in
+      &PRODUCT;: An organization, xyztelco, has set up a public cloud that spans two zones, Zone-1
+      and Zone-2, across geographically separated data centers that are managed by &PRODUCT;.
+      Tenant-A of the cloud launches a highly available solution by using xyztelco cloud. For that
+      purpose, they launch two instances each in both the zones: VM1 and VM2 in Zone-1 and VM5 and
+      VM6 in Zone-2. Tenant-A acquires a public IP, IP-1 in Zone-1, and configures a load balancer
+      rule to load balance the traffic between VM1 and VM2 instances. &PRODUCT; orchestrates setting
+      up a virtual server on the LB service provider in Zone-1. Virtual server 1 that is set up on
+      the LB service provider in Zone-1 represents a publicly accessible virtual server that client
+      reaches at IP-1. The client traffic to virtual server 1 at IP-1 will be load balanced across
+      VM1 and VM2 instances. </para>
+    <para>Tenant-A acquires another public IP, IP-2 in Zone-2 and sets up a load balancer rule to
+      load balance the traffic between VM5 and VM6 instances. Similarly in Zone-2, &PRODUCT;
+      orchestrates setting up a virtual server on the LB service provider. Virtual server 2 that is
+      setup on the LB service provider in Zone-2 represents a publicly accessible virtual server
+      that client reaches at IP-2. The client traffic that reaches virtual server 2 at IP-2 is load
+      balanced across VM5 and VM6 instances. At this point Tenant-A has the service enabled in both
+      the zones, but has no means to set up a disaster recovery plan if one of the zone fails.
+      Additionally, there is no way for Tenant-A to load balance the traffic intelligently to one of
+      the zones based on load, proximity and so on. The cloud administrator of xyztelco provisions a
+      GSLB service provider to both the zones. A GSLB provider is typically an ADC that has the
+      ability to act as an ADNS (Authoritative Domain Name Server) and has the mechanism to monitor
+      health of virtual servers both at local and remote sites. The cloud admin enables GSLB as a
+      service to the tenants that use zones 1 and 2. </para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/gslb.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>gslb.png: GSLB architecture</phrase>
+      </textobject>
+    </mediaobject>
+    <para>Tenant-A wishes to leverage the GSLB service provided by the xyztelco cloud. Tenant-A
+      configures a GSLB rule to load balance traffic across virtual server 1 at Zone-1 and virtual
+      server 2 at Zone-2. The domain name is provided as A.xyztelco.com. &PRODUCT; orchestrates
+      setting up GSLB virtual server 1 on the GSLB service provider at Zone-1. &PRODUCT; binds
+      virtual server 1 of Zone-1 and virtual server 2 of Zone-2 to GLSB virtual server 1. GSLB
+      virtual server 1 is configured to start monitoring the health of virtual server 1 and 2 in
+      Zone-1. &PRODUCT; will also orchestrate setting up GSLB virtual server 2 on GSLB service
+      provider at Zone-2. &PRODUCT; will bind virtual server 1 of Zone-1 and virtual server 2 of
+      Zone-2 to GLSB virtual server 2. GSLB virtual server 2 is configured to start monitoring the
+      health of virtual server 1 and 2. &PRODUCT; will bind the domain A.xyztelco.com to both the
+      GSLB virtual server 1 and 2. At this point, Tenant-A service will be globally reachable at
+      A.xyztelco.com. The private DNS server for the domain xyztelcom.com is configured by the admin
+      out-of-band to resolve the domain A.xyztelco.com to the GSLB providers at both the zones,
+      which are configured as ADNS for the domain A.xyztelco.com. A client when sends a DNS request
+      to resolve A.xyztelcom.com, will eventually get DNS delegation to the address of GSLB
+      providers at Zone 1 and 2. A client DNS request will be received by the GSLB provider. The
+      GSLB provider, depending on the domain for which it needs to resolve, will pick up the GSLB
+      virtual server associated with the domain. Depending on the health of the virtual servers
+      being load balanced, DNS request for the domain will be resolved to the public IP associated
+      with the selected virtual server.</para>
+  </section>
+  <section id="limitation-gslb">
+    <title>Known Limitation</title>
+    <para>Currently, &PRODUCT; does not support orchestration of services across the zones. The
+      notion of services and service providers in region are to be introduced.</para>
+  </section>
+</section>
