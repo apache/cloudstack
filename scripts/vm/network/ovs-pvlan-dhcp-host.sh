@@ -114,12 +114,10 @@ if [ "$op" == "add" ]
 then
     dhcp_port=`ovs-ofctl show $br | grep $iface | cut -d '(' -f 1|tr -d ' '`
     ovs-ofctl add-flow $br priority=200,arp,dl_vlan=$sec_iso_vlan,nw_dst=$dhcp_ip,actions=strip_vlan,output:$dhcp_port
-    ovs-ofctl add-flow $br priority=180,arp,nw_dst=$dhcp_ip,actions=strip_vlan,output:$dhcp_port
     ovs-ofctl add-flow $br priority=150,dl_vlan=$sec_iso_vlan,dl_dst=$dhcp_mac,actions=strip_vlan,output:$dhcp_port
     ovs-ofctl add-flow $br priority=100,udp,dl_vlan=$sec_iso_vlan,nw_dst=255.255.255.255,tp_dst=67,actions=strip_vlan,output:$dhcp_port
 else
     ovs-ofctl del-flows --strict $br priority=200,arp,dl_vlan=$sec_iso_vlan,nw_dst=$dhcp_ip
-    ovs-ofctl del-flows --strict $br priority=180,arp,nw_dst=$dhcp_ip
     ovs-ofctl del-flows --strict $br priority=150,dl_vlan=$sec_iso_vlan,dl_dst=$dhcp_mac
     ovs-ofctl del-flows --strict $br priority=100,udp,dl_vlan=$sec_iso_vlan,nw_dst=255.255.255.255,tp_dst=67
 fi
