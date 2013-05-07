@@ -68,6 +68,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 	@Test(priority = -1)
 	public void setUp() {
 		ComponentContext.initComponentsLifeCycle();
+	      System.setProperty("paths.script", this.getScriptPath());
 		//create data center
 		DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
 				null, null, NetworkType.Basic, null, null, true,  true, null, null);

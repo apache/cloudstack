@@ -37,6 +37,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String primaryStorageUrl;
     private String secondaryStorage;
     private String imageInstallPath;
+    private String scriptPath;
     private Transaction txn;
 
     private String s3AccessKey;
@@ -71,11 +72,11 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 
     @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr",
         "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid",
-        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps", "image-install-path", "primary-storage-uuid-want-to-add"})
+        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps", "image-install-path", "primary-storage-uuid-want-to-add", "script-path"})
     protected void setup(String hostuuid, String gateway, String cidr,
             String hostIp, String templateUrl, String localStorageUuid,
             String primaryStorage, String secondaryStorage, String s3_accessKey, String s3_secretKey, String s3_endpoint, String s3_template_bucket,
-            String s3_usehttps, String imageInstallPath, String primaryStorageUuid) {
+            String s3_usehttps, String imageInstallPath, String primaryStorageUuid, String scriptPath) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
         this.hostCidr = cidr;
@@ -92,6 +93,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.s3EndPoint = s3_endpoint;
         this.s3TemplateBucket = s3_template_bucket;
         this.s3UseHttps = Boolean.parseBoolean(s3_usehttps);
+        this.scriptPath = scriptPath;
     }
 
     protected String getHostGuid() {
@@ -166,5 +168,14 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
+
+    public String getScriptPath() {
+        return scriptPath;
+    }
+
+    public void setScriptPath(String scriptPath) {
+        this.scriptPath = scriptPath;
+    }
+
 
 }

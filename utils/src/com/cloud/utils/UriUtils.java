@@ -137,8 +137,8 @@ public class UriUtils {
                 throw new IllegalArgumentException("Unsupported scheme for url");
             }
             int port = uri.getPort();
-            if (!(port == 80 || port == 443 || port == -1)) {
-                throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+            if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
+                throw new IllegalArgumentException("Only ports 80, 8080 and 443 are allowed");
             }
 
             if (port == -1 && uri.getScheme().equalsIgnoreCase("https")) {

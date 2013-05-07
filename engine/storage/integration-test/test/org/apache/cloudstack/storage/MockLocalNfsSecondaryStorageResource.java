@@ -8,8 +8,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
+
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,7 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.storage.template.DownloadManagerImpl;
@@ -37,10 +41,21 @@ public class MockLocalNfsSecondaryStorageResource extends
 
     public MockLocalNfsSecondaryStorageResource(){
         _dlMgr = new DownloadManagerImpl();
+        _storage = new JavaStorageLayer();
+        HashMap<String, Object> params = new HashMap<String, Object>();
+        params.put(StorageLayer.InstanceConfigKey, _storage);
+        try {
+            _dlMgr.configure("downloadMgr", params);
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
+        /*
         _storage = new JavaStorageLayer();
         ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         ((DownloadManagerImpl)_dlMgr).setStorageLayer(_storage);
+        */
 
     }
 

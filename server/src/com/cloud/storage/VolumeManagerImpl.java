@@ -2380,9 +2380,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             int port = uri.getPort();
-            if (!(port == 80 || port == 443 || port == -1)) {
+            if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
                 throw new IllegalArgumentException(
-                        "Only ports 80 and 443 are allowed");
+                        "Only ports 80, 8080 and 443 are allowed");
             }
             String host = uri.getHost();
             try {
@@ -2468,21 +2468,21 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);
         }
     }
-    
-    
-    
-    
+
+
+
+
     @Override
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account) throws ResourceAllocationException {
         VolumeInfo volume = this.volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
-        
+
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
-       
+
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
         payload.setSnapshotId(snapshotId);
         payload.setSnapshotPolicyId(policyId);
@@ -2523,7 +2523,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (storagePool == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
-        
+
         return this.snapshotMgr.allocSnapshot(volumeId, policyId);
     }
 

@@ -44,7 +44,7 @@ public interface DownloadManager extends Manager {
 	 * @param resourceType signifying the type of resource like template, volume etc.
 	 * @return job-id that can be used to interrogate the status of the download.
 	 */
-	public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String userName, String passwd, long maxDownloadSizeInBytes, Proxy proxy, ResourceType resourceType);
+	public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String templatePath, String userName, String passwd, long maxDownloadSizeInBytes, Proxy proxy, ResourceType resourceType);
 
     public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType);
 
