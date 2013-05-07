@@ -10381,7 +10381,7 @@
                           var items = [];
                           if(objs != null) {
                             for(var i = 0; i < objs.length; i++){
-                              if(objs[i].name == 'CloudStack ImageStore Provider')
+                              if(objs[i].name == 'NFS')
                                 items.unshift({id: objs[i].name, description: objs[i].name}); 
                               else
                                 items.push({id: objs[i].name, description: objs[i].name}); 
@@ -10393,8 +10393,8 @@
                                             
                           args.$select.change(function() {                           
                             var $form = $(this).closest('form');
-                            if($(this).val() == "CloudStack ImageStore Provider") {
-                              //CloudStack ImageStore Provider
+                            if($(this).val() == "NFS") {
+                              //NFS
                               $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
                               $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
                               $form.find('.form-item[rel=path]').css('display', 'inline-block');
@@ -10416,7 +10416,7 @@
                               $form.find('.form-item[rel=key]').hide();
                             }
                             else if ($(this).val() == "S3") {
-                              //CloudStack ImageStore Provider
+                              //NFS
                               $form.find('.form-item[rel=zoneid]').hide();
                               $form.find('.form-item[rel=nfsServer]').hide();
                               $form.find('.form-item[rel=path]').hide();
@@ -10438,7 +10438,7 @@
                               $form.find('.form-item[rel=key]').hide();
                             }
                             else if($(this).val() == "Swift") {
-                              //CloudStack ImageStore Provider
+                              //NFS
                               $form.find('.form-item[rel=zoneid]').hide();
                               $form.find('.form-item[rel=nfsServer]').hide();
                               $form.find('.form-item[rel=path]').hide();
@@ -10468,7 +10468,7 @@
                   },
                   
                   
-                  //CloudStack ImageStore Provider (begin)
+                  //NFS (begin)
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpSecondaryStorageZone',
@@ -10483,14 +10483,19 @@
                         success: function(json) {
                           var zones = json.listzonesresponse.zone;
 
-                          args.response.success({
-                            data: $.map(zones, function(zone) {
-                              return {
-                                id: zone.id,
-                                description: zone.name
-                              };
-                            })
-                          });
+                          if(zones != null){ //$.map(items, fn) - items can not be null
+                            args.response.success({
+                              data: $.map(zones, function(zone) {
+                                return {
+                                  id: zone.id,
+                                  description: zone.name
+                                };
+                              })
+                            });
+                          }
+                          else {
+                            args.response.success({data: null});
+                          }                          
                         }
                       });
                     }
@@ -10505,7 +10510,7 @@
                     docID: 'helpSecondaryStoragePath',
                     validation: { required: true }
                   },
-                  //CloudStack ImageStore Provider (end)
+                  //NFS (end)
                   
                   
                   //S3 (begin)
@@ -10536,7 +10541,7 @@
               },
 
               action: function(args) {
-                if(args.data.provider == 'CloudStack ImageStore Provider') {
+                if(args.data.provider == 'NFS') {
                   var zoneid = args.data.zoneid;
                   var nfs_server = args.data.nfsServer;
                   var path = args.data.path;
