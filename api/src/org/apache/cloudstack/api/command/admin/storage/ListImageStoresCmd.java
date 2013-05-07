@@ -53,7 +53,7 @@ public class ListImageStoresCmd extends BaseListCmd {
             description="the Zone ID for the image store")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = ImageStoreResponse.class,
             description="the ID of the storage pool")
     private Long id;
 
