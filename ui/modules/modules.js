@@ -16,5 +16,6 @@
 // under the License.
 (function($, cloudStack) {
   cloudStack.modules = [
+    'vpc'
   ];
 }(jQuery, cloudStack));
