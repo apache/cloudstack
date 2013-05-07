@@ -41,7 +41,10 @@
 }
 
 .vpc-network-chart .tier-item .header {
+  width: 100%;
+  float: left;
   padding: 7px 0 6px;
+  position: relative;
   /*+box-shadow:inset 0px 1px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 1px 1px #FFFFFF;
   -webkit-box-shadow: inset 0px 1px 1px #FFFFFF;
@@ -51,9 +54,37 @@
   border-bottom: 1px solid #40639E;
 }
 
+.vpc-network-chart .tier-item .header .detail-link {
+  cursor: pointer;
+  background: #435667 url(../../images/sprites.png) -428px -83px;
+  /*+box-shadow:inset 0px 1px 4px #2F2F2F;*/
+  -moz-box-shadow: inset 0px 1px 4px #2F2F2F;
+  -webkit-box-shadow: inset 0px 1px 4px #2F2F2F;
+  -o-box-shadow: inset 0px 1px 4px #2F2F2F;
+  box-shadow: inset 0px 1px 4px #2F2F2F;
+  width: 16px;
+  height: 16px;
+  float: right;
+  /*+placement:shift -8px 2px;*/
+  position: relative;
+  left: -8px;
+  top: 2px;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.vpc-network-chart .tier-item .header .detail-link:hover {
+  background-color: #454545;
+}
+
 .vpc-network-chart .tier-item .header .title {
   margin-left: 9px;
-  max-width: 268px;
+  width: 268px;
+  height: 20px;
+  float: left;
   overflow: hidden;
 }
 
@@ -69,7 +100,7 @@
 
 .vpc-network-chart .tier-item .content {
   width: 100%;
-  height: 83%;
+  height: 100%;
   /*+box-shadow:inset 0px 1px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 1px 1px #FFFFFF;
   -webkit-box-shadow: inset 0px 1px 1px #FFFFFF;
@@ -136,7 +167,10 @@
 }
 
 .vpc-network-chart .tier-item .content .info {
-  padding: 9px 0 10px 10px;
+  /*+placement:shift 10px 5px;*/
+  position: relative;
+  left: 10px;
+  top: 5px;
 }
 
 .vpc-network-chart .tier-item .content .info .cidr-label {

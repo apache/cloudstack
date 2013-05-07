@@ -10,6 +10,7 @@
       var $dashboard = elems.dashboard({
         dashboardItems: dashboardItems
       });
+      var $detailLink = $('<div>').addClass('detail-link');
       var $info = $('<div>').addClass('info');
       var $cidrLabel = $('<span>').addClass('cidr-label');
       var $cidr = $('<span>').addClass('cidr');
@@ -17,7 +18,7 @@
       $cidrLabel.html('CIDR: ');
       $cidr.html(tier.cidr);
       $title.find('span').html(tier.displayname ? tier.displayname : tier.name);
-      $header.append($title);
+      $header.append($title, $detailLink);
       $info.append($cidrLabel, $cidr);
       $content.append($dashboard, $info);
       $tier.append($header, $content);
