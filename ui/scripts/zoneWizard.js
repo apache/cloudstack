@@ -1526,73 +1526,75 @@
                     data: items            
                   });
                                     
-                  args.$select.change(function() {                           
+                  args.$select.change(function() {
                     var $form = $(this).closest('form');
+                    var $fields = $form.find('.field');
+
                     if($(this).val() == "NFS") {
                       //NFS
-                      $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=path]').css('display', 'inline-block');
+                      $fields.filter('[rel=zoneid]').css('display', 'inline-block');
+                      $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
+                      $fields.filter('[rel=path]').css('display', 'inline-block');
 
                       //S3
-                      $form.find('.form-item[rel=accesskey]').hide();
-                      $form.find('.form-item[rel=secretkey]').hide();
-                      $form.find('.form-item[rel=bucket]').hide();
-                      $form.find('.form-item[rel=endpoint]').hide();
-                      $form.find('.form-item[rel=usehttps]').hide();
-                      $form.find('.form-item[rel=connectiontimeout]').hide();
-                      $form.find('.form-item[rel=maxerrorretry]').hide();
-                      $form.find('.form-item[rel=sockettimeout]').hide();
+                      $fields.filter('[rel=accesskey]').hide();
+                      $fields.filter('[rel=secretkey]').hide();
+                      $fields.filter('[rel=bucket]').hide();
+                      $fields.filter('[rel=endpoint]').hide();
+                      $fields.filter('[rel=usehttps]').hide();
+                      $fields.filter('[rel=connectiontimeout]').hide();
+                      $fields.filter('[rel=maxerrorretry]').hide();
+                      $fields.filter('[rel=sockettimeout]').hide();
 
                       //Swift
-                      $form.find('.form-item[rel=url]').hide();
-                      $form.find('.form-item[rel=account]').hide();
-                      $form.find('.form-item[rel=username]').hide();
-                      $form.find('.form-item[rel=key]').hide();
+                      $fields.filter('[rel=url]').hide();
+                      $fields.filter('[rel=account]').hide();
+                      $fields.filter('[rel=username]').hide();
+                      $fields.filter('[rel=key]').hide();
                     }
                     else if ($(this).val() == "S3") {
                       //NFS
-                      $form.find('.form-item[rel=zoneid]').hide();
-                      $form.find('.form-item[rel=nfsServer]').hide();
-                      $form.find('.form-item[rel=path]').hide();
+                      $fields.filter('[rel=zoneid]').hide();
+                      $fields.filter('[rel=nfsServer]').hide();
+                      $fields.filter('[rel=path]').hide();
 
                       //S3
-                      $form.find('.form-item[rel=accesskey]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=secretkey]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=bucket]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=endpoint]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=usehttps]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=connectiontimeout]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=maxerrorretry]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
+                      $fields.filter('[rel=accesskey]').css('display', 'inline-block');
+                      $fields.filter('[rel=secretkey]').css('display', 'inline-block');
+                      $fields.filter('[rel=bucket]').css('display', 'inline-block');
+                      $fields.filter('[rel=endpoint]').css('display', 'inline-block');
+                      $fields.filter('[rel=usehttps]').css('display', 'inline-block');
+                      $fields.filter('[rel=connectiontimeout]').css('display', 'inline-block');
+                      $fields.filter('[rel=maxerrorretry]').css('display', 'inline-block');
+                      $fields.filter('[rel=sockettimeout]').css('display', 'inline-block');
 
                       //Swift
-                      $form.find('.form-item[rel=url]').hide();
-                      $form.find('.form-item[rel=account]').hide();
-                      $form.find('.form-item[rel=username]').hide();
-                      $form.find('.form-item[rel=key]').hide();
+                      $fields.filter('[rel=url]').hide();
+                      $fields.filter('[rel=account]').hide();
+                      $fields.filter('[rel=username]').hide();
+                      $fields.filter('[rel=key]').hide();
                     }
                     else if($(this).val() == "Swift") {
                       //NFS
-                      $form.find('.form-item[rel=zoneid]').hide();
-                      $form.find('.form-item[rel=nfsServer]').hide();
-                      $form.find('.form-item[rel=path]').hide();
+                      $fields.filter('[rel=zoneid]').hide();
+                      $fields.filter('[rel=nfsServer]').hide();
+                      $fields.filter('[rel=path]').hide();
 
                       //S3
-                      $form.find('.form-item[rel=accesskey]').hide();
-                      $form.find('.form-item[rel=secretkey]').hide();
-                      $form.find('.form-item[rel=bucket]').hide();
-                      $form.find('.form-item[rel=endpoint]').hide();
-                      $form.find('.form-item[rel=usehttps]').hide();
-                      $form.find('.form-item[rel=connectiontimeout]').hide();
-                      $form.find('.form-item[rel=maxerrorretry]').hide();
-                      $form.find('.form-item[rel=sockettimeout]').hide();
+                      $fields.filter('[rel=accesskey]').hide();
+                      $fields.filter('[rel=secretkey]').hide();
+                      $fields.filter('[rel=bucket]').hide();
+                      $fields.filter('[rel=endpoint]').hide();
+                      $fields.filter('[rel=usehttps]').hide();
+                      $fields.filter('[rel=connectiontimeout]').hide();
+                      $fields.filter('[rel=maxerrorretry]').hide();
+                      $fields.filter('[rel=sockettimeout]').hide();
 
                       //Swift
-                      $form.find('.form-item[rel=url]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=username]').css('display', 'inline-block');
-                      $form.find('.form-item[rel=key]').css('display', 'inline-block');
+                      $fields.filter('[rel=url]').css('display', 'inline-block');
+                      $fields.filter('[rel=account]').css('display', 'inline-block');
+                      $fields.filter('[rel=username]').css('display', 'inline-block');
+                      $fields.filter('[rel=key]').css('display', 'inline-block');
                     }                    
                   });     
                   
