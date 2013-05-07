@@ -2005,23 +2005,28 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
                     throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
                 } else {
-                    DataCenterVnetVO dcVnet = _datacenterVnetDao.findVnet(zoneId, vlanId.toString()).get(0);
-                    // Fail network creation if specified vlan is dedicated to a different account
-                    if (dcVnet.getAccountGuestVlanMapId() != null) {
-                        Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
-                        AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
-                        if (map.getAccountId() != owner.getAccountId()) {
-                            throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
-                        }
-                    // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
-                    } else {
-                        List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
-                        if (maps != null && !maps.isEmpty()) {
-                            int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
-                            int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
-                            if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
-                                throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" +
-                                        " to the vlan range dedicated to the owner "+ owner.getAccountName());
+                    List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, vlanId.toString());
+                    //for the network that is created as part of private gateway,
+                    //the vnet is not coming from the data center vnet table, so the list can be empty
+                    if (!dcVnets.isEmpty()) {
+                        DataCenterVnetVO dcVnet = dcVnets.get(0);
+                        // Fail network creation if specified vlan is dedicated to a different account
+                        if (dcVnet.getAccountGuestVlanMapId() != null) {
+                            Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
+                            AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
+                            if (map.getAccountId() != owner.getAccountId()) {
+                                throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
+                            }
+                        // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
+                        } else {
+                            List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
+                            if (maps != null && !maps.isEmpty()) {
+                                int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
+                                int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
+                                if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
+                                    throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" +
+                                            " to the vlan range dedicated to the owner "+ owner.getAccountName());
+                                }
                             }
                         }
                     }
