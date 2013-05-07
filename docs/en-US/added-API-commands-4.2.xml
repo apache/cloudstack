@@ -63,5 +63,48 @@
         more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
       <para>The response parameters are: true, false </para>
     </listitem>
+    <listitem>
+      <para>createGlobalLoadBalancerRule</para>
+      <para>Creates a GSLB rule. The request parameters are name (the name of the global load
+        balancer rule); domain name ( the preferred domain name for the service); lb algorithm (the
+        algorithm used to load balance the traffic across the zones); session persistence (source IP
+        and HTTP cookie); account name; and domain Id.</para>
+    </listitem>
+    <listitem>
+      <para>assignToGlobalLoadBalancerRule</para>
+      <para>Assigns a load balancing rule or list of load balancing rules to GSLB. The request
+        parameters are: id (the UUID of global load balancer rule); loadbalancerrulelist (the list
+        load balancer rules that will be assigned to global load balancer rule. These are second
+        tier load balancing rules created with createLoadBalancerRule API. Weight is optional, the
+        default is 1).</para>
+    </listitem>
+    <listitem>
+      <para>removeFromGlobalLoadBalancerRule</para>
+      <para>Removes a load balancer rule association with global load balancer rule. The request
+        parameters are id (the UUID of global load balancer rule); loadbalancerrulelist (the list
+        load balancer rules that will be assigned to global load balancer rule).</para>
+    </listitem>
+    <listitem>
+      <para>deleteGlobalLoadBalancerRule</para>
+      <para>Deletes a global load balancer rule. The request parameters is: id (the unique ID of the
+        global load balancer rule).</para>
+    </listitem>
+    <listitem>
+      <para>listGlobalLoadBalancerRule</para>
+      <para>Lists load balancer rules. account (lists resources by account. Use with the domainId
+        parameter); domainid (lists only resources belonging to the domain specified) id (the unique
+        ID of the global load balancer rule) isrecursive (defaults to false, but if true, lists all
+        resources from the parent specified by the domainId till leaves); keyword (List by keyword);
+        listall (if set to false, list only resources belonging to the command's caller; if set to
+        true - list resources that the caller is authorized to see. Default value is false); page;
+        pagesize; projectid (lists objects by project); regionid (region ID); tags (lists resources
+        by tags: key/value pairs). </para>
+    </listitem>
+    <listitem>
+      <para>updateGlobalLoadBalancerRule</para>
+      <para>Archives the specified events. The request parameters are: ids (allowed to pass one or
+        more IDs separated by comma); type (string); olderthan (yyyy-mm-dd format).</para>
+      <para>The response parameters are: true, false </para>
+    </listitem>
   </itemizedlist>
 </section>
