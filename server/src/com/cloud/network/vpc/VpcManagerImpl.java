@@ -1037,22 +1037,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         pr + " is not supported by VPC " + vpc);
             }
         }
-
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
-            List<? extends Network> networks = getVpcNetworks(vpc.getId());
-            for (Network network : networks) {
-                if (networkId != null && network.getId() == networkId.longValue()) {
-                    //skip my own network
-                    continue;
-                } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
-                        		"by network " + network + " in VPC " + vpc);
-                    }
-                }
-            }
-        }
     }
 
     @Override

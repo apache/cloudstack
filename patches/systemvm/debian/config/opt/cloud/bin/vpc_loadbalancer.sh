@@ -54,8 +54,8 @@ fw_remove() {
 
 fw_backup() {
   fw_remove_backup
-  sudo iptables -E load_balancer back_load_balancer 2> /dev/null
-  sudo iptables -E lb_stats back_lb_stats 2> /dev/null
+  iptables -S load_balancer | sed 's/load_balancer/back_load_balancer/g'|xargs -i /bin/bash -c "/sbin/iptables {} 2>/dev/null"
+  iptables -S lb_stats | sed 's/lb_stats/back_lb_stats/g'|xargs -i /bin/bash -c "/sbin/iptables {} 2>/dev/null"
 }
 
 fw_restore() {
@@ -65,7 +65,6 @@ fw_restore() {
 }
 
 fw_chain_create () {
-  fw_backup
   sudo iptables -N load_balancer 2> /dev/null
   sudo iptables -A INPUT -p tcp  -j load_balancer 2> /dev/null
   sudo iptables -N lb_stats 2> /dev/null
@@ -87,26 +86,45 @@ fw_entry() {
   fi
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
-  fw_chain_create
+  fw_backup
+  sudo iptables -L load_balancer >/dev/null 2>&1 || fw_chain_create
   success=0
   while [ 1 ]
   do
     for i in $a
     do
       local pubIp=$(echo $i | cut -d: -f1)
-      local dport=$(echo $i | cut -d: -f2)    
-      sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
-      success=$?
-      if [ $success -gt 0 ]
+      local dport=$(echo $i | cut -d: -f2)
+      if ! sudo iptables -C load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null 
       then
-        break
+        sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
+        success=$?
+        if [ $success -gt 0 ]
+        then
+          break
+        fi
+      fi
+    done
+    for i in $r
+    do
+      local pubIp=$(echo $i | cut -d: -f1)
+      local dport=$(echo $i | cut -d: -f2)
+      if sudo iptables -C load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
+      then
+        sudo iptables -D load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
+        success=$?
+        if [ $success -gt 0 ]
+        then
+          break
+        fi
       fi
     done
     if [ "$stats" != "none" ]
     then
       local pubIp=$(echo $stats | cut -d: -f1)
-      local dport=$(echo $stats | cut -d: -f2)    
+      local dport=$(echo $stats | cut -d: -f2)
       local cidrs=$(echo $stats | cut -d: -f3 | sed 's/-/,/')
+      sudo iptables -F lb_stats
       sudo iptables -A lb_stats -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
       success=$?
     fi
@@ -117,13 +135,14 @@ fw_entry() {
     fw_restore
   else
     fw_remove_backup
-  fi  
+  fi
   return $success
 }
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
-  /root/reconfigLB.sh
+  logger -t cloud "running reconfigLB.sh -d $1"
+  /root/reconfigLB_vpc -d $1
   return $?
 }
 
@@ -131,12 +150,12 @@ reconfig_lb() {
 restore_lb() {
   logger -t cloud "Restoring HA Proxy to previous state"
   # Copy the old version of haproxy.cfg into the file that reconfigLB.sh uses
-  cp /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg.new
-   
+  # cp /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg.new
+
   if [ $? -eq 0 ]
   then
     # Run reconfigLB.sh again
-    /root/reconfigLB.sh
+    /root/reconfigLB_vpc -R
   fi
 }
 
@@ -166,6 +185,7 @@ do
   esac
 done
 
+logger -t cloud "haproxy: i=$ip a=$addedIps d=$removedIps s=$statsIp"
 
 dev=$(getEthByIp $ip)
 
@@ -180,7 +200,7 @@ then
 fi
 
 # hot reconfigure haproxy
-reconfig_lb
+reconfig_lb $removedIps
 
 if [ $? -gt 0 ]
 then
@@ -190,12 +210,12 @@ fi
 
 # iptables entry to ensure that haproxy receives traffic
 fw_entry $addedIps $removedIps $statsIp
-result=$?  	
+result=$?
 if [ $result -gt 0 ]
 then
   logger -t cloud "Failed to apply firewall rules for load balancing, reverting HA Proxy config"
   # Restore the LB
   restore_lb
 fi
- 
+
 unlock_exit $result $lock $locked
