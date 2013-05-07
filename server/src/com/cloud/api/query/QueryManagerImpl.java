@@ -2681,6 +2681,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
             }
 
+            // don't return removed template
+            sc.addAnd("removed", SearchCriteria.Op.NULL);
+
             // search unique templates and find details by Ids
             Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
             Integer count = uniqueTmplPair.second();
