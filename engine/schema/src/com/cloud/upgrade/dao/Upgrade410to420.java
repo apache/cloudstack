@@ -402,15 +402,20 @@ public class Upgrade410to420 implements DbUpgrade {
         //Fetch all VPC Tiers
         //For each tier create a network ACL and move all the acl_items to network_acl_item table
         // If there are no acl_items for a tier, associate it with default ACL
+
         s_logger.debug("Updating network ACLs");
+
         PreparedStatement pstmt = null;
         PreparedStatement pstmtDelete = null;
         ResultSet rs = null;
         ResultSet rsAcls = null;
         ResultSet rsCidr = null;
-        //1,2 are default acl Ids, start Ids from 3
+
+        //1,2 are default acl Ids, start acl Ids from 3
         long nextAclId = 3;
+
         try {
+            //Get all VPC tiers
             pstmt = conn.prepareStatement("SELECT id, vpc_id, uuid FROM `cloud`.`networks` where vpc_id is not null and removed is null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -428,7 +433,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     if(!hasAcls){
                         hasAcls = true;
                         aclId = nextAclId++;
-                        //create ACL
+                        //create ACL for the tier
                         s_logger.debug("Creating network ACL for tier: "+tierUuid);
                         pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (?, UUID(), ? , ?, ?)");
                         pstmt.setLong(1, aclId);
@@ -440,7 +445,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
                     Long fwRuleId = rsAcls.getLong(1);
                     String cidr = null;
-                    //get cidr
+                    //get cidr from firewall_rules_cidrs
                     pstmt = conn.prepareStatement("SELECT id, source_cidr FROM `cloud`.`firewall_rules_cidrs` where firewall_rule_id = ?");
                     pstmt.setLong(1, fwRuleId);
                     rsCidr = pstmt.executeQuery();

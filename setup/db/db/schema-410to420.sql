@@ -1211,10 +1211,12 @@ CREATE TABLE `cloud`.`network_acl_item` (
 
 ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
 
+-- Add Default ACL deny_all
 INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (1, UUID(), 0, "Default Network ACL Deny All", "default_deny");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Deny");
 
+-- Add Default ACL allow_all
 INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (2, UUID(), 0, "Default Network ACL Allow All", "default_allow");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (3, UUID(), 2, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Allow");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (4, UUID(), 2, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Allow");

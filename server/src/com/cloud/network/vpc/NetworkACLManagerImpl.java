@@ -18,7 +18,6 @@ package com.cloud.network.vpc;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
@@ -78,7 +77,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     public boolean applyNetworkACL(long aclId) throws ResourceUnavailableException {
         boolean handled = true;
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(aclId);
-        //Find all networks using this ACL
+        //Find all networks using this ACL and apply the ACL
         List<NetworkVO> networks = _networkDao.listByAclId(aclId);
         for(NetworkVO network : networks){
             if(!applyACLItemsToNetwork(network.getId(), rules)) {
@@ -117,7 +116,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean replaceNetworkACL(NetworkACL acl, NetworkVO network) throws ResourceUnavailableException {
         network.setNetworkACLId(acl.getId());
+        //Update Network ACL
         if(_networkDao.update(network.getId(), network)){
+            //Apply ACL to network
             return applyACLToNetwork(network.getId());
         }
         return false;
@@ -133,7 +134,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if("deny".equalsIgnoreCase(action)){
             ruleAction = NetworkACLItem.Action.Deny;
         }
-        // If number is null, set it to currentMax + 1
+        // If number is null, set it to currentMax + 1 (for backward compatibility)
         if(number == null){
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
         }

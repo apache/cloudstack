@@ -17,19 +17,12 @@
 package com.cloud.network.vpc;
 
 
-import java.util.List;
-
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import java.util.List;
 
 public interface NetworkACLService {
     /**
@@ -49,7 +42,7 @@ public interface NetworkACLService {
     NetworkACL getNetworkACL(long id);
 
     /**
-     * List NeetworkACLs by Id/Name/Network or Vpc it belongs to
+     * List NetworkACLs by Id/Name/Network or Vpc it belongs to
      * @param id
      * @param name
      * @param networkId
@@ -111,7 +104,21 @@ public interface NetworkACLService {
      */
     boolean revokeNetworkACLItem(long ruleId);
 
-
+    /**
+     * Updates existing aclItem applies to associated networks
+     * @param id
+     * @param protocol
+     * @param sourceCidrList
+     * @param trafficType
+     * @param action
+     * @param number
+     * @param sourcePortStart
+     * @param sourcePortEnd
+     * @param icmpCode
+     * @param icmpType
+     * @return
+     * @throws ResourceUnavailableException
+     */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
                                         String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
                                         Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
