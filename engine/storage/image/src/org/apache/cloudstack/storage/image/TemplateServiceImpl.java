@@ -377,7 +377,7 @@ public class TemplateServiceImpl implements TemplateService {
             }
         }
 
-       /* for (String uniqueName : templateInfos.keySet()) {
+       for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
             List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
@@ -396,7 +396,7 @@ public class TemplateServiceImpl implements TemplateService {
                 }
 
             }
-        }*/
+        }
 
     }
 
