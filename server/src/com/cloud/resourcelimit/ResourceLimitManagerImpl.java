@@ -227,6 +227,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             s_logger.trace("Not incrementing resource count for system accounts, returning");
             return;
         }
+
         long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
         if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {

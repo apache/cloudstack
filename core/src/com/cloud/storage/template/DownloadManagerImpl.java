@@ -62,6 +62,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -243,6 +244,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     public void setThreadPool(ExecutorService threadPool) {
         this.threadPool = threadPool;
+    }
+
+    public void setStorageLayer(StorageLayer storage){
+        this._storage = storage;
     }
 
     /**
@@ -656,8 +661,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
-        String installPathPrefix = cmd.getInstallPath();
         DataStoreTO dstore = cmd.getDataStore();
+        String installPathPrefix = cmd.getInstallPath();
+        // for NFS, we need to get mounted path
+        if (dstore instanceof NfsTO) {
+            if (ResourceType.TEMPLATE == resourceType) {
+                installPathPrefix = resource.getRootDir(cmd) + File.separator + installPathPrefix;
+            } else {
+                installPathPrefix = resource.getRootDir(cmd) + File.separator + installPathPrefix;
+            }
+        }
         String user = null;
         String password = null;
         if (cmd.getAuth() != null) {

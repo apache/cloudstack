@@ -140,7 +140,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     String _guid;
     String _role;
     Map<String, Object> _params;
-    StorageLayer _storage;
+    protected StorageLayer _storage;
     boolean _inSystemVM = false;
     boolean _sslCopy = false;
 

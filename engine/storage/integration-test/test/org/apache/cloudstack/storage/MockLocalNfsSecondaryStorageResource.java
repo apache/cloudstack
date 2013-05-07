@@ -18,10 +18,12 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.storage.template.DownloadManagerImpl;
@@ -35,7 +37,17 @@ public class MockLocalNfsSecondaryStorageResource extends
 
     public MockLocalNfsSecondaryStorageResource(){
         _dlMgr = new DownloadManagerImpl();
+
+        _storage = new JavaStorageLayer();
         ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
+        ((DownloadManagerImpl)_dlMgr).setStorageLayer(_storage);
+
+    }
+
+    @Override
+    public String getRootDir(ssCommand cmd) {
+        return "/mnt";
+
     }
 
     @Override

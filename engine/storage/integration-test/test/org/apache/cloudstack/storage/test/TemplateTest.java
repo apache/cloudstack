@@ -1,5 +1,7 @@
 package org.apache.cloudstack.storage.test;
 
+import static org.testng.Assert.assertTrue;
+
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -8,6 +10,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -15,6 +18,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
+import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.mockito.Mockito;
@@ -34,7 +38,7 @@ import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
- 
+
 public class TemplateTest extends CloudStackTestNGBase {
 	@Inject
 	DataCenterDao dcDao;
@@ -55,7 +59,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 	DownloadMonitorImpl downloadMonitor;
 	long dcId;
 	long templateId;
-	
+
 	@Test(priority = -1)
 	public void setUp() {
 		ComponentContext.initComponentsLifeCycle();
@@ -64,17 +68,17 @@ public class TemplateTest extends CloudStackTestNGBase {
 				null, null, NetworkType.Basic, null, null, true,  true, null, null);
 		dc = dcDao.persist(dc);
 		dcId = dc.getId();
-		
+
 		imageStore = new ImageStoreVO();
 		imageStore.setName("test");
 		imageStore.setDataCenterId(dcId);
-		imageStore.setProviderName("CloudStack ImageStore Provider");
+		imageStore.setProviderName(DataStoreProvider.NFS_IMAGE);
 		imageStore.setRole(DataStoreRole.Image);
 		imageStore.setUrl(this.getSecondaryStorage());
 		imageStore.setUuid(UUID.randomUUID().toString());
 		imageStore.setProtocol("nfs");
 		imageStore = imageStoreDao.persist(imageStore);
-		
+
 		VMTemplateVO image = new VMTemplateVO();
 		image.setTemplateType(TemplateType.USER);
 		image.setUrl(this.getTemplateUrl());
@@ -93,30 +97,36 @@ public class TemplateTest extends CloudStackTestNGBase {
 		image.setCrossZones(true);
 		image.setExtractable(true);
 
-		
+
 		//image.setImageDataStoreId(storeId);
 		image = templateDao.persist(image);
 		templateId = image.getId();
-		
-		Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(new LocalHostEndpoint());
-		//Mockito.when(downloadMonitor.isTemplateUpdateable(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
+
+        // inject mockito
+        LocalHostEndpoint ep = new LocalHostEndpoint();
+        ep.setResource(new MockLocalNfsSecondaryStorageResource());
+        Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
 	}
-	
+
 	@Test
 	public void registerTemplate() {
 		TemplateInfo template = templateFactory.getTemplate(templateId);
 		DataStore store = dataStoreMgr.getImageStore(dcId);
 		AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 		templateSvr.createTemplateAsync(template, store, future);
-		try {
-			future.get();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        try {
+            TemplateApiResult result = future.get();
+            assertTrue(result.isSuccess(), "failed to register template: " + result.getResult());
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false, e.getMessage());
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+             assertTrue(false, e.getMessage());
+        }
 	}
 
 }

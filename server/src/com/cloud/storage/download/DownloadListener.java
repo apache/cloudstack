@@ -99,7 +99,7 @@ public class DownloadListener implements Listener {
 
 	public static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
 	public static final int SMALL_DELAY = 100;
-    public static final long STATUS_POLL_INTERVAL = 10000L;
+    public static final long STATUS_POLL_INTERVAL = 300000L; //10000L;
 
 	public static final String DOWNLOADED=Status.DOWNLOADED.toString();
 	public static final String NOT_DOWNLOADED=Status.NOT_DOWNLOADED.toString();

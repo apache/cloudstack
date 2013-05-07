@@ -198,8 +198,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 		TemplateInfo template = context.template;
 		VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
 		long accountId = tmplt.getAccountId();
-		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage,
-		              	template.getSize());
+        if (template.getSize() != null) {
+            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+        }
 
 		return null;
 	}
