@@ -41,7 +41,7 @@ public class NetworkACLVO implements NetworkACL{
     @Column(name="description")
     private String description;
 
-    protected NetworkACLVO(){
+    public NetworkACLVO(){
     }
 
     protected NetworkACLVO(String name, String description, long vpcId){
@@ -76,13 +76,4 @@ public class NetworkACLVO implements NetworkACL{
         return name;
     }
 
-    @Override
-    public long getAccountId() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public long getDomainId() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 }
