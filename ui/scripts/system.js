@@ -1340,6 +1340,7 @@
                     name: { label: 'label.name' },
                     type: { label: 'label.type' },
                     vlan: { label: 'label.vlan.id' },
+                    broadcasturi: { label: 'broadcast URI' },
                     cidr: { label: 'IPv4 CIDR' },
                     ip6cidr: { label: 'IPv6 CIDR'}
                     //scope: { label: 'label.scope' }
@@ -2057,6 +2058,7 @@
                               }
                             },
                             vlan: { label: 'label.vlan.id' },
+                            broadcasturi: { label: 'broadcast URI' },
                             scope: { label: 'label.scope' },
                             networkofferingdisplaytext: { label: 'label.network.offering' },
                             networkofferingid: {
