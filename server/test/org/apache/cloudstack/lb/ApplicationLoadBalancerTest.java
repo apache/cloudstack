@@ -184,7 +184,6 @@ public class ApplicationLoadBalancerTest extends TestCase{
     //Positive test - delete existing lb
     public void deleteExistingLoadBalancer() {
         boolean result = false; 
-        
         try {
             result = _appLbSvc.deleteApplicationLoadBalancer(existingLbId);
         } finally {
@@ -206,185 +205,73 @@ public class ApplicationLoadBalancerTest extends TestCase{
     
     /**
      * TESTS FOR .createApplicationLoadBalancer
+     * @throws NetworkRuleConflictException 
+     * @throws InsufficientVirtualNetworkCapcityException 
+     * @throws InsufficientAddressCapacityException 
      */
     
-    @Test
+    @Test (expected = CloudRuntimeException.class)
     //Positive test
-    public void createValidLoadBalancer() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
-                            22, 22, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (CloudRuntimeException e) {
-            expectedExcText = e.getMessage();
-        } finally {
-            //expect the exception happen because persistlLbRule() method coudln't be mocked properly due to unability to mock static vars in UsageEventUtils class
-            assertEquals("Test failed. The rule wasn't created" + expectedExcText, expectedExcText, "Unable to add lb rule for ip address null");
-        }
+    public void createValidLoadBalancer() throws InsufficientAddressCapacityException,
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {    
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
+                            22, 22, "roundrobin", validGuestNetworkId, validAccountId); 
     }
     
     
     @Test(expected = UnsupportedServiceException.class)
     //Negative test - only internal scheme value is supported in the current release
-    public void createPublicLoadBalancer() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Public, validGuestNetworkId, validRequestedIp,
+    public void createPublicLoadBalancer() throws InsufficientAddressCapacityException,
+    InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Public, validGuestNetworkId, validRequestedIp,
                             22, 22, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (UnsupportedServiceException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The Public lb rule was created, which shouldn't be supported"
-        + expectedExcText, expectedExcText, "Only scheme of type " + Scheme.Internal + " is supported");
-        }
     }
     
     
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid SourcePort
-    public void createWithInvalidSourcePort() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
+    public void createWithInvalidSourcePort() throws InsufficientAddressCapacityException,
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {        
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
                     65536, 22, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The rule with invalid source port was created"
-        + expectedExcText, expectedExcText, "Invalid value for source port: 65536");
-        }
     }
     
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid instancePort
-    public void createWithInvalidInstandePort() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
-                    22, 65536, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The rule with invalid instance port was created"
-        + expectedExcText, expectedExcText, "Invalid value for instance port: 65536");
-        }
+    public void createWithInvalidInstandePort() throws InsufficientAddressCapacityException,
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
+                22, 65536, "roundrobin", validGuestNetworkId, validAccountId);
+        
     }
     
     
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid algorithm
-    public void createWithInvalidAlgorithm() {
+    public void createWithInvalidAlgorithm() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
-                    22, 22, "invalidalgorithm", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The rule with invalid algorithm was created"
-        + expectedExcText, expectedExcText, "Invalid algorithm: invalidalgorithm");
-        }
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
+                22, 22, "invalidalgorithm", validGuestNetworkId, validAccountId);
+        
     }
     
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid sourceNetworkId (of Public type, which is not supported)
-    public void createWithInvalidSourceIpNtwk() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validPublicNetworkId, validRequestedIp,
-                    22, 22, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The rule with invalid source ip network id was created"
-        + expectedExcText, expectedExcText, "Only traffic type Guest is supported");
-        }
+    public void createWithInvalidSourceIpNtwk() throws InsufficientAddressCapacityException,
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validPublicNetworkId, validRequestedIp,
+                22, 22, "roundrobin", validGuestNetworkId, validAccountId);
+        
     }
     
     
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid requested IP (outside of guest network cidr range)
-    public void createWithInvalidRequestedIp() {
-        String expectedExcText = null;
-        try {
-            _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, "10.2.1.1",
+    public void createWithInvalidRequestedIp() throws InsufficientAddressCapacityException,
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
+       
+        _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, "10.2.1.1",
                     22, 22, "roundrobin", validGuestNetworkId, validAccountId);
-        } catch (InsufficientAddressCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InsufficientVirtualNetworkCapcityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NetworkRuleConflictException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The rule with invalid requested ip was created"
-        + expectedExcText, expectedExcText, "The requested IP is not in the network's CIDR subnet.");
-        }
     }
     
     
