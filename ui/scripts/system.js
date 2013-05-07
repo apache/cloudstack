@@ -282,9 +282,9 @@
 
           secondaryStorageCount: function(data) {
             $.ajax({
-              url: createURL('listHosts'),
+              url: createURL('listImageStores'),
               data: {
-                type: 'SecondaryStorage',
+                type: 'image',
 								page: 1,
 								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
@@ -10322,16 +10322,9 @@
           id: 'secondarystorages',
           section: 'seconary-storage',
           fields: {
-            name: { label: 'label.name' },
-						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
-            resourcestate: {
-              label: 'label.state',
-              indicator: {
-                'Enabled': 'on',
-                'Disabled': 'off',
-                'Destroyed': 'off'
-              }              
-            }
+            providername: { label: 'Provider' },
+            scope: { label: 'Scope' },
+            url: { label: 'URL' }             
           },
 
           dataProvider: function(args) {
@@ -10345,10 +10338,9 @@
 									break;
 								}
 							}
-						}
-            array1.push("&zoneid=" + args.context.zones[0].id);
+						}            
             $.ajax({
-              url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listImageStores&type=image&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -10369,7 +10361,7 @@
                 title: 'label.add.secondary.storage',
                 fields: {                  
                   provider: {
-                    label: "Storage Provider",
+                    label: 'Provider',
                     select: function(args){                  
                       $.ajax({
                         url: createURL('listStorageProviders'),
@@ -10473,13 +10465,12 @@
                     label: 'Zone',
                     docID: 'helpSecondaryStorageZone',
                     validation: { required: true },
-                    select: function(args) {
-                      var data = args.context.zones ?
-                      { id: args.context.zones[0].id } : { listAll: true };
-
+                    select: function(args) {                      
                       $.ajax({
                         url: createURL('listZones'),
-                        data: data,
+                        data: { 
+                          listAll: true 
+                        },
                         success: function(json) {
                           var zones = json.listzonesresponse.zone;
 
@@ -10570,7 +10561,7 @@
                 }
                 else if(args.data.provider == 'S3') {                  
                   $.ajax({
-                    url: createURL('addS3'),
+                    url: createURL('addImageStore'),
                     data: {
                       provider: args.data.provider,
                       accesskey: args.data.accesskey,
@@ -10584,7 +10575,7 @@
                     },
                     success: function(json) {
                       havingS3 = true;
-                      var item = json.adds3response.secondarystorage;
+                      var item = json.addimagestoreresponse.secondarystorage;
                       args.response.success({
                         data:item
                       });
@@ -10596,17 +10587,20 @@
                 }
                 else if(args.data.provider == 'Swift') {
                   $.ajax({
-                    url: createURL('addSwift'),
+                    url: createURL('addImageStore'),
                     data: {
                       provider: args.data.provider,
                       url: args.data.url,
-                      account: args.data.account,
-                      username: args.data.username,
-                      key: args.data.key
+                      'details[0].key': 'account',
+                      'details[0].value': args.data.account,
+                      'details[1].key': 'username',
+                      'details[1].value': args.data.username,
+                      'details[2].key': 'key',
+                      'details[2].value': args.data.key                      
                     },
                     success: function(json) {
                       havingSwift = true;
-                      var item = json.addswiftresponse.secondarystorage;
+                      var item = json.addimagestoreresponse.secondarystorage;
                       args.response.success({
                         data:item
                       });
@@ -10615,9 +10609,7 @@
                       args.response.error(parseXMLHttpResponse(json));
                     }
                   });
-                }  
-                
-                
+                }   
               },
 
               notification: {
