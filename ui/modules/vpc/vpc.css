@@ -18,6 +18,9 @@
 * under the License.
 */
 .vpc-network-chart {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }
 
 .vpc-network-chart .tiers {
@@ -230,5 +233,48 @@
   color: #AFAFAF;
   font-size: 24px;
   font-weight: 200;
+}
+
+.vpc-network-chart .tier-item.router {
+  width: 258px;
+  height: 218px;
+  background: #BDBDBD;
+  border: 1px solid #808080;
+  float: left;
+  /*+placement:shift 10px 176px;*/
+  position: relative;
+  left: 10px;
+  top: 176px;
+}
+
+.vpc-network-chart .tier-item.router .header {
+  background: #908F8F;
+  padding: 15px 0 14px;
+  border-bottom: 1px solid #808080;
+}
+
+.vpc-network-chart .tier-item.router .header .title {
+  width: 212px;
+}
+
+.vpc-network-chart .tier-item.router .header .title span {
+  padding: 0 0 0 32px;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item {
+  width: 100px;
+  /*[empty]margin:;*/
+  padding: 0px 2px 0px 6px;
+  height: 73px;
+  background: #A7A7A7;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item span {
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px #000000;*/
+  -moz-text-shadow: 0px 1px #000000;
+  -webkit-text-shadow: 0px 1px #000000;
+  -o-text-shadow: 0px 1px #000000;
+  text-shadow: 0px 1px #000000;
 }
 

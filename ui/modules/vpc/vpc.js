@@ -26,6 +26,19 @@
       return $tier;
     },
 
+    router: function(args) {
+      var $router = elems.tier({
+        tier: {
+          name: 'Router',
+        },
+        dashboardItems: args.dashboardItems
+      }).addClass('router');
+      
+      $router.find('.info').remove();
+      
+      return $router;
+    },
+
     tierPlaceholder: function() {
       var $placeholder = $('<div>').addClass('tier-placeholder');
 
@@ -104,6 +117,28 @@
           }
         }
       });
+
+      // Router
+      $router = elems.router({
+        dashboardItems: [
+          {
+            name: 'Private gateways',
+            total: 1
+          },
+          {
+            name: 'Public IP addresses',
+            total: 2
+          },
+          {
+            name: 'Site-to-site VPNs',
+            total: 3
+          },
+          {
+            name: 'Network ACL lists',
+            total: 2
+          }
+        ]
+      }).appendTo($chart);
       
       $('#browser .container').cloudBrowser('addPanel', {
         title: vpcItem.displaytext ? vpcItem.displaytext : vpcItem.name,
