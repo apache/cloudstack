@@ -24,6 +24,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -98,6 +100,14 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 State.Ready);
         stateMachines.addTransition(State.Copying, Event.OperationFailed,
                 State.Ready);
+        stateMachines.addTransition(State.Ready, Event.DestroyRequested,
+                State.Destroying);
+        stateMachines.addTransition(State.Destroying, Event.DestroyRequested,
+                State.Destroying);
+        stateMachines.addTransition(State.Destroying, Event.OperationSuccessed,
+                State.Destroyed);
+        stateMachines.addTransition(State.Destroying, Event.OperationFailed,
+                State.Destroying);
     }
 
     @Override

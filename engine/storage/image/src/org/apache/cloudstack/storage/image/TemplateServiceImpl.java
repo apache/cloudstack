@@ -154,9 +154,21 @@ public class TemplateServiceImpl implements TemplateService {
     public void createTemplateAsync(
             TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback) {
         // persist template_store_ref entry
-        DataObject templateOnStore = store.create(template);
-        // update template_store_ref state
-        templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+        TemplateObject templateOnStore = (TemplateObject)store.create(template);
+        // update template_store_ref and template state
+        try {
+            templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+            templateOnStore.stateTransit(TemplateEvent.CreateRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to transit state", e);
+            TemplateApiResult result = new TemplateApiResult(templateOnStore);
+            result.setResult(e.toString());
+            result.setSucess(false);
+            if ( callback != null ){
+                callback.complete(result);
+            }
+            return;
+        }
 
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(callback,
                 (TemplateObject)templateOnStore, null);
@@ -482,6 +494,14 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateObject to = (TemplateObject) template;
         // update template_store_ref status
         to.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+        try {
+            to.stateTransit(TemplateEvent.DestroyRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to transit state", e);
+            //TODO: not fatal right now, still continue
+        }
+
+
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, to, future);
