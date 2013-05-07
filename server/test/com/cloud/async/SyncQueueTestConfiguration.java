@@ -20,6 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.cloud.async.dao.AsyncJobJoinMapDao;
+import com.cloud.async.dao.AsyncJobJoinMapDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueDaoImpl;
 import com.cloud.async.dao.SyncQueueItemDao;
@@ -53,6 +55,11 @@ public class SyncQueueTestConfiguration {
 	@Bean
 	public ConfigurationManager configurationManager() {
 		return Mockito.mock(ConfigurationManager.class);
+	}
+	
+	@Bean
+	public AsyncJobJoinMapDao joinMapDao() {
+		return new AsyncJobJoinMapDaoImpl();
 	}
 }
 

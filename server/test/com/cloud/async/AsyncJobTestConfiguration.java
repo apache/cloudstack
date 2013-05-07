@@ -23,6 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobDaoImpl;
+import com.cloud.async.dao.AsyncJobJoinMapDao;
+import com.cloud.async.dao.AsyncJobJoinMapDaoImpl;
 import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.async.dao.AsyncJobJournalDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
@@ -104,5 +106,10 @@ public class AsyncJobTestConfiguration {
 	@Bean
 	public AsyncJobJournalDao asyncJobJournalDao() {
 		return new AsyncJobJournalDaoImpl();
+	}
+	
+	@Bean
+	public AsyncJobJoinMapDao asyncJobJoinMapDao() {
+		return new AsyncJobJoinMapDaoImpl();
 	}
 }

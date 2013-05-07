@@ -38,6 +38,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.cloud.async.AsyncJobJournalVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobMonitor;
+import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.utils.Predicate;
@@ -53,6 +54,7 @@ public class TestAsyncJobManager extends TestCase {
     @Inject MessageBus messageBus;
     @Inject AsyncJobMonitor jobMonitor;
     @Inject AsyncJobJournalDao journalDao;
+    @Inject AsyncJobJoinMapDao joinMapDao;
     
     @Before                                                  
     public void setUp() {
@@ -108,6 +110,36 @@ public class TestAsyncJobManager extends TestCase {
     	
     	journalDao.expunge(journal.getId());
     	journalDao.expunge(journal2.getId());
+    }
+    
+    @Test
+    public void testJoinMapDao() {
+    	joinMapDao.joinJob(2, 1, 100);
+    	joinMapDao.joinJob(3, 1, 100);
+  
+    	AsyncJobJoinMapVO record = joinMapDao.getJoinRecord(2, 1);
+    	Assert.assertTrue(record != null);
+    	Assert.assertTrue(record.getJoinMsid() == 100);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_IN_PROGRESS);
+    	
+    	joinMapDao.completeJoin(1, AsyncJobResult.STATUS_SUCCEEDED, "Done", 101);
+    	
+    	record = joinMapDao.getJoinRecord(2, 1);
+    	Assert.assertTrue(record != null);
+    	Assert.assertTrue(record.getJoinMsid() == 100);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinResult().equals("Done"));
+    	Assert.assertTrue(record.getCompleteMsid() == 101);
+    	
+    	record = joinMapDao.getJoinRecord(3, 1);
+    	Assert.assertTrue(record != null);
+    	Assert.assertTrue(record.getJoinMsid() == 100);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinResult().equals("Done"));
+    	Assert.assertTrue(record.getCompleteMsid() == 101);
+    	
+    	joinMapDao.disjoinJob(2, 1);
+    	joinMapDao.disjoinJob(3, 1);
     }
     
     @Test

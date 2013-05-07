@@ -442,3 +442,23 @@ CREATE TABLE `cloud`.`async_job_journal` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_async_job_journal__job_id` FOREIGN KEY (`job_id`) REFERENCES `async_job`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`async_job_join_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `job_id` bigint unsigned NOT NULL,
+  `join_job_id` bigint unsigned NOT NULL,
+  `join_status` int NOT NULL,
+  `join_result` varchar(1024),
+  `join_msid` bigint,
+  `complete_msid` bigint,
+  `created` datetime NOT NULL,
+  `last_updated` datetime,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_async_job_join_map__job_id` FOREIGN KEY (`job_id`) REFERENCES `async_job`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_async_job_join_map__join_job_id` FOREIGN KEY (`join_job_id`) REFERENCES `async_job`(`id`),
+  CONSTRAINT `fk_async_job_join_map__join` UNIQUE (`job_id`, `join_job_id`),
+  INDEX `i_async_job_join_map__join_job_id`(`join_job_id`),
+  INDEX `i_async_job_join_map__created`(`created`),
+  INDEX `i_async_job_join_map__last_updated`(`last_updated`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
