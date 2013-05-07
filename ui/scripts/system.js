@@ -290,8 +290,8 @@
               },
               success: function(json) {
                 dataFns.systemVmCount($.extend(data, {
-                  secondaryStorageCount: json.listhostsresponse.count ?
-                    json.listhostsresponse.count : 0
+                  secondaryStorageCount: json.listimagestoreresponse.imagestore ?
+                    json.listimagestoreresponse.count : 0
                 }));
               }
             });
@@ -5472,10 +5472,10 @@
                     '&name=' + args.filterBy.search.value : '';
 
                   $.ajax({
-                    url: createURL('listHosts' + searchByArgs),
-                    data: { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true },
+                    url: createURL('listImageStores' + searchByArgs),
+                    data: { type: 'image', page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
-                      args.response.success({ data: json.listhostsresponse.host });
+                      args.response.success({ data: json.listimagestoreresponse.imagestore });
                     },
                     error: function (json) {
                       args.response.error(parseXMLHttpResponse(json));
@@ -10344,7 +10344,7 @@
               dataType: "json",
               async: true,
               success: function(json) {
-                var items = json.listhostsresponse.host;
+                var items = json.listimagestoreresponse.imagestore;
                 args.response.success({
                   actionFilter: secondarystorageActionfilter,
                   data:items
@@ -10563,15 +10563,23 @@
                   $.ajax({
                     url: createURL('addImageStore'),
                     data: {
-                      provider: args.data.provider,
-                      accesskey: args.data.accesskey,
-                      secretkey: args.data.secretkey,
-                      bucket: args.data.bucket,
-                      endpoint: args.data.endpoint,
-                      usehttps: (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),
-                      connectiontimeout: args.data.connectiontimeout,
-                      maxerrorretry: args.data.maxerrorretry,
-                      sockettimeout: args.data.sockettimeout
+                      provider: args.data.provider,                                           
+                      'details[0].key': 'accesskey',
+                      'details[0].value': args.data.accesskey,                                            
+                      'details[1].key': 'secretkey',
+                      'details[1].value': args.data.secretkey,                                            
+                      'details[2].key': 'bucket',
+                      'details[2].value': args.data.bucket,                                            
+                      'details[3].key': 'endpoint',
+                      'details[3].value': args.data.endpoint,                                          
+                      'details[4].key': 'usehttps',
+                      'details[4].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),    
+                      'details[5].key': 'connectiontimeout',
+                      'details[5].value': args.data.connectiontimeout,                                          
+                      'details[6].key': 'maxerrorretry',
+                      'details[6].value': args.data.maxerrorretry,                                           
+                      'details[7].key': 'sockettimeout',
+                      'details[7].value': args.data.sockettimeout
                     },
                     success: function(json) {
                       havingS3 = true;
@@ -10673,11 +10681,11 @@
 
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listHosts&type=SecondaryStorage&id=" + args.context.secondarystorages[0].id),
+										url: createURL("listImageStores&type=image&id=" + args.context.secondarystorages[0].id),
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
-											var item = json.listhostsresponse.host[0];
+											var item = json.listimagestoreresponse.imagestore[0];
 											args.response.success({
 												actionFilter: secondarystorageActionfilter,
 												data:item
