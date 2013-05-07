@@ -18,7 +18,8 @@ package org.apache.cloudstack.lb;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,7 +38,6 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.component.SpringComponentScanUtils;
 
 @Configuration
 @ComponentScan(
@@ -96,7 +96,7 @@ import com.cloud.utils.component.SpringComponentScanUtils;
             public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
                 mdr.getClassMetadata().getClassName();
                 ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
-                return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+                return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
             }
     
         }

@@ -25,7 +25,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -119,7 +120,7 @@ import com.cloud.vm.dao.NicDao;
 @Component
 @Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
-InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
+    InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
             .getLogger(InternalLoadBalancerVMManagerImpl.class);
     static final private String _internalLbVmNamePrefix = "b";

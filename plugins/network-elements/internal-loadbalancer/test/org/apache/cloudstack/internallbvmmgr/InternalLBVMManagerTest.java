@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
 import org.junit.Test;

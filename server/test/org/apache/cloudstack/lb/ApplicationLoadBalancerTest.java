@@ -24,10 +24,9 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
-import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

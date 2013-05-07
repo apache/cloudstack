@@ -30,8 +30,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
-import org.apache.cloudstack.network.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;

@@ -3823,6 +3823,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setEnabled(result.isEnabled());
 
         response.setObjectName("internalloadbalancerelement");
+        return response;
     }
 
     

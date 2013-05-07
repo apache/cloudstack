@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.network.lb;
+package org.apache.cloudstack.lb;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
@@ -24,6 +24,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.net.Ip;

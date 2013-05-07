@@ -15,13 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.network.lb.dao;
+package org.apache.cloudstack.lb.dao;
 
 import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.rules.FirewallRule;

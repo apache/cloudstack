@@ -171,7 +171,6 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-<<<<<<< HEAD
 import com.cloud.vm.*;
 import com.cloud.vm.dao.*;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
