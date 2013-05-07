@@ -105,14 +105,14 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     @Override
     public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
-        DeleteCommand cmd = new DeleteCommand(vo.getUri());
+        /*DeleteCommand cmd = new DeleteCommand(vo.getUri());
 
         EndPoint ep = selector.select(vo);
         AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
         AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteCallback(null, null))
             .setContext(context);
-        ep.sendMessageAsync(cmd, caller);
+        ep.sendMessageAsync(cmd, caller);*/
     }
 
     public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {

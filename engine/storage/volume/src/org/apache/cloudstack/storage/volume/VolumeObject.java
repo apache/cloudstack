@@ -380,6 +380,7 @@ public class VolumeObject implements VolumeInfo {
                VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                vol.setPath(newVol.getPath());
                vol.setSize(newVol.getSize());
+               vol.setPoolId(this.getDataStore().getId());
                volumeDao.update(vol.getId(), vol);
            } else if (answer instanceof CreateObjectAnswer) {
                CreateObjectAnswer createAnswer =(CreateObjectAnswer)answer;
@@ -387,6 +388,7 @@ public class VolumeObject implements VolumeInfo {
                VolumeVO vol = this.volumeDao.findById(this.getId());
                vol.setPath(newVol.getPath());
                vol.setSize(newVol.getSize());
+               vol.setPoolId(this.getDataStore().getId());
                volumeDao.update(vol.getId(), vol);
            }
        } else if (this.dataStore.getRole() == DataStoreRole.Image) {

@@ -42,6 +42,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -170,6 +171,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 		try {
 			snapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+			snapshot.processEvent(Snapshot.Event.OperationSucceeded);
 		} catch (Exception e) {
 			s_logger.debug("Failed to create snapshot: ", e);
 			snapResult.setResult(e.toString());
@@ -323,12 +325,8 @@ public class SnapshotServiceImpl implements SnapshotService {
 		}
 
 		try {
-			BackupSnapshotAnswer answer = (BackupSnapshotAnswer)result.getAnswer();
-
-			DataObjectInStore dataInStore =  objInStoreMgr.findObject(destSnapshot, destSnapshot.getDataStore());
-			dataInStore.setInstallPath(answer.getBackupSnapshotName());
-			objInStoreMgr.update(destSnapshot, Event.OperationSuccessed);
-
+		    CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
+		    destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
 			srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
 			snapResult = new SnapshotResult(this.snapshotfactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
 			future.complete(snapResult);

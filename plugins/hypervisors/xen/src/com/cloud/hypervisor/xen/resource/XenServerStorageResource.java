@@ -170,35 +170,35 @@ public class XenServerStorageResource {
         String snapshotUUID = null;
 
         try {
-                String volumeUUID = snapshotTO.getVolume().getPath();
-                VDI volume = VDI.getByUuid(conn, volumeUUID);
+            String volumeUUID = snapshotTO.getVolume().getPath();
+            VDI volume = VDI.getByUuid(conn, volumeUUID);
 
-                VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
+            VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
 
-                if (snapshotName != null) {
-                    snapshot.setNameLabel(conn, snapshotName);
+            if (snapshotName != null) {
+                snapshot.setNameLabel(conn, snapshotName);
+            }
+
+            snapshotUUID = snapshot.getUuid(conn);
+            String preSnapshotUUID = snapshotTO.getParentSnapshotPath();
+            //check if it is a empty snapshot
+            if( preSnapshotUUID != null) {
+                SR sr = volume.getSR(conn);
+                String srUUID = sr.getUuid(conn);
+                String type = sr.getType(conn);
+                Boolean isISCSI = IsISCSI(type);
+                String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
+
+                String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
+                if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                    // this is empty snapshot, remove it
+                    snapshot.destroy(conn);
+                    snapshotUUID = preSnapshotUUID;
                 }
-
-                snapshotUUID = snapshot.getUuid(conn);
-                String preSnapshotUUID = snapshotTO.getPath();
-                //check if it is a empty snapshot
-                if( preSnapshotUUID != null) {
-                    SR sr = volume.getSR(conn);
-                    String srUUID = sr.getUuid(conn);
-                    String type = sr.getType(conn);
-                    Boolean isISCSI = IsISCSI(type);
-                    String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
-
-                    String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
-                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
-                        // this is empty snapshot, remove it
-                        snapshot.destroy(conn);
-                        snapshotUUID = preSnapshotUUID;
-                    }
-                }
-                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-                newSnapshot.setPath(snapshotUUID);
-                return new CreateObjectAnswer(newSnapshot);
+            }
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            newSnapshot.setPath(snapshotUUID);
+            return new CreateObjectAnswer(newSnapshot);
         } catch (XenAPIException e) {
             details += ", reason: " + e.toString();
             s_logger.warn(details, e);

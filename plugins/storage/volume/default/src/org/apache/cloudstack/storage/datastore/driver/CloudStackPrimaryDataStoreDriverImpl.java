@@ -190,7 +190,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	        DataTO snapshotTO = snapshot.getTO();
 	        
 	        CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-	        Answer answer = storageMgr.sendToPool((StoragePool)snapshot.getDataStore(), null, cmd);
+	        EndPoint ep = this.epSelecotor.select(snapshot);
+	        Answer answer = ep.sendMessage(cmd);
 	
 	        result = new CreateCmdResult(null, answer);
 	        if (answer != null && !answer.getResult()) {
@@ -198,6 +199,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	        }
 
 	        callback.complete(result);
+	        return;
 	    } catch (Exception e) {
 	        s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
 	        result = new CreateCmdResult(null, null);

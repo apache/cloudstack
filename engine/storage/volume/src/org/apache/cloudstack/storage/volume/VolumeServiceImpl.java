@@ -358,16 +358,27 @@ public class VolumeServiceImpl implements VolumeService {
          	templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
         	try {
-        		templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
-        	} finally {
-        		if (templateOnPrimaryStoreObj == null) {
-        			VolumeApiResult result = new VolumeApiResult(volume);
-        			result.setResult(e.toString());
-        			caller.complete(result);
-        			return;
-        		}
+        	    templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
+        	} catch(Exception e1) {
+        	    s_logger.debug("wait for template:" + template.getId() + " downloading finished, but failed");
+        	    VolumeApiResult result = new VolumeApiResult(volume);
+        	    result.setResult(e1.toString());
+        	    caller.complete(result);
+        	    return;
+        	}
+        	if (templateOnPrimaryStoreObj == null) {
+        	    VolumeApiResult result = new VolumeApiResult(volume);
+                result.setResult("wait for template:" + template.getId() + " downloading finished, but failed");
+                caller.complete(result);
+                return;
+        	} else {
+        	    s_logger.debug("waiting for template:" + template.getId() + " downloading finished, success");
+        	    VolumeApiResult result = new VolumeApiResult(volume);
+        	    future.complete(result);
+        	    return;
         	}
         }
+
 
         try {
             motionSrv.copyAsync(template, templateOnPrimaryStoreObj, caller);

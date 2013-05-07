@@ -227,6 +227,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         	this.stateMachines.transitTo(obj, event, null,
         			templatePoolDao);
 
+        } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
+            this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
         } else {
             throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " " + data.getDataStore().getRole());
         }
@@ -270,6 +272,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
+        } else if (type == DataObjectType.SNAPSHOT && role == DataStoreRole.Primary) {
+            vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
         } else {
             s_logger.debug("Invalid data or store type: " + type + " " + role);
             throw new CloudRuntimeException("Invalid data or store type: " + type + " " + role);

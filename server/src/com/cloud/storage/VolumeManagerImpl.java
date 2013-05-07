@@ -2487,6 +2487,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         payload.setSnapshotId(snapshotId);
         payload.setSnapshotPolicyId(policyId);
         payload.setAccount(account);
+        volume.addPayload(payload);
         return this.volService.takeSnapshot(volume);
     }
 

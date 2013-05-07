@@ -63,19 +63,31 @@ public class LocalHostEndpoint implements EndPoint {
 
 	private class CmdRunner2 implements Runnable {
 		final Command cmd;
-		final AsyncCompletionCallback<DownloadAnswer> callback;
-		public CmdRunner2(Command cmd, AsyncCompletionCallback<DownloadAnswer> callback) {
+		final Listener listener;
+		public CmdRunner2(Command cmd, Listener listener) {
 			this.cmd = cmd;
-			this.callback = callback;
+			this.listener = listener;
 		}
 		@Override
 		public void run() {
             try {
                 DownloadAnswer answer = (DownloadAnswer) sendMessage(cmd);
-                callback.complete(answer);
+                Answer[] answers = new Answer[1];
+                answers[0] = answer;
+                listener.processAnswers(getId(), 0, answers);
+                if (listener instanceof DownloadListener) {
+                    DownloadListener dwldListener = (DownloadListener)listener;
+                    dwldListener.getCallback().complete(answer);
+                }
             } catch (Exception ex) {
                 DownloadAnswer fail = new DownloadAnswer("Error in handling DownloadCommand : " + ex.getMessage(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
-                callback.complete(fail);
+                Answer[] answers = new Answer[1];
+                answers[0] = fail;
+                listener.processAnswers(getId(), 0, answers);
+                if (listener instanceof DownloadListener) {
+                    DownloadListener dwldListener = (DownloadListener)listener;
+                    dwldListener.getCallback().complete(fail);
+                }
             }
 		}
 	}
@@ -89,7 +101,7 @@ public class LocalHostEndpoint implements EndPoint {
 	public void sendMessageAsyncWithListener(Command cmd, Listener listner) {
 		if (listner instanceof DownloadListener) {
 			DownloadListener listener = (DownloadListener)listner;
-			executor.schedule(new CmdRunner2(cmd, listener.getCallback()), 10, TimeUnit.SECONDS);
+			executor.schedule(new CmdRunner2(cmd, listener), 10, TimeUnit.SECONDS);
 		}
 	}
     public ServerResource getResource() {
