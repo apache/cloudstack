@@ -2202,7 +2202,7 @@ class PhysicalNetwork:
 
         cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return map(lambda pn : PhysicalNetwork(pn.__dict__), apiclient.listDedicatedGuestVlanRanges(cmd))
+        return apiclient.listDedicatedGuestVlanRanges(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):

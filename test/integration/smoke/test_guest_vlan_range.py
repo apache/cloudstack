@@ -149,15 +149,12 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                         )
 
         self.debug("Releasing guest vlan range");
-        dedicated_guest_vlan_response.release(self.apiclient)
-        list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(
-                                                self.apiclient,
-                                                id=dedicate_guest_vlan_range_response.id
-                                        )
-        dedicated_guest_vlan_response = list_dedicated_guest_vlan_range_response[0]
+        dedicate_guest_vlan_range_response.release(self.apiclient)
+        list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(self.apiclient)
         self.assertEqual(
-                            dedicated_guest_vlan_response.account,
-                            "system",
-                            "Check account name is system account in listDedicatedGuestVlanRanges"
-                        )
+                        list_dedicated_guest_vlan_range_response,
+                        None,
+                        "Check vlan range is not available in listDedicatedGuestVlanRanges"
+
+                        )                    
         
