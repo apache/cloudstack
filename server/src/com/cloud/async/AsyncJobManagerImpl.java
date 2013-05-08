@@ -44,7 +44,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.async.dao.AsyncJobJournalDao;
@@ -118,6 +117,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId) {
         return _jobDao.findInstancePendingAsyncJobs(instanceType, accountId);
+    }
+    
+    @Override @DB
+	public AsyncJob getPseudoJob() {
+    	AsyncJobVO job = _jobDao.findPseudoJob(Thread.currentThread().getId(), this.getMsid());
+    	if(job == null) {
+	    	job = new AsyncJobVO();
+	    	job.setAccountId(_accountMgr.getSystemAccount().getId());
+	    	job.setUserId(_accountMgr.getSystemUser().getId());
+	    	job.setInitMsid(this.getMsid());
+	    	job.setDispatcher(AsyncJobConstants.JOB_DISPATCHER_PSEUDO);
+	    	job.setInstanceType(AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE);
+	    	job.setInstanceId(Thread.currentThread().getId());
+	    	_jobDao.persist(job);
+    	}
+    	return job;
     }
 
     @Override

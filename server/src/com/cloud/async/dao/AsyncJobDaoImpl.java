@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJobConstants;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -32,13 +31,15 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
     private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
 	
 	private final SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;	
 	private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
-	private final SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;		
+	private final SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;	
+	private final SearchBuilder<AsyncJobVO> pseudoJobSearch;
 	
 	public AsyncJobDaoImpl() {
 		pendingAsyncJobSearch = createSearchBuilder();
@@ -63,6 +64,12 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		expiringAsyncJobSearch.and("created", expiringAsyncJobSearch.entity().getCreated(), 
 			SearchCriteria.Op.LTEQ);
 		expiringAsyncJobSearch.done();
+		
+		pseudoJobSearch = createSearchBuilder();
+		pseudoJobSearch.and("jobDispatcher", pseudoJobSearch.entity().getDispatcher(), Op.EQ);
+		pseudoJobSearch.and("instanceType", pseudoJobSearch.entity().getInstanceType(), Op.EQ);
+		pseudoJobSearch.and("instanceId", pseudoJobSearch.entity().getInstanceId(), Op.EQ);
+		pseudoJobSearch.done();
 	}
 	
 	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -92,6 +99,21 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("status", AsyncJobConstants.STATUS_IN_PROGRESS);
         
         return listBy(sc);
+	}
+	
+	public AsyncJobVO findPseudoJob(long threadId, long msid) {
+		SearchCriteria<AsyncJobVO> sc = pseudoJobSearch.create();
+		sc.setParameters("jobDispatcher", AsyncJobConstants.JOB_DISPATCHER_PSEUDO);
+		sc.setParameters("instanceType", AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE);
+		sc.setParameters("instanceId", threadId);
+		
+		List<AsyncJobVO> result = listBy(sc);
+		if(result != null && result.size() > 0) {
+			assert(result.size() == 1);
+			return result.get(0);
+		}
+		
+		return null;
 	}
 	
 	public List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit) {

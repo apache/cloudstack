@@ -41,6 +41,9 @@ import com.cloud.async.AsyncJobMonitor;
 import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
@@ -55,11 +58,17 @@ public class TestAsyncJobManager extends TestCase {
     @Inject AsyncJobMonitor jobMonitor;
     @Inject AsyncJobJournalDao journalDao;
     @Inject AsyncJobJoinMapDao joinMapDao;
+    @Inject AccountManager accountMgr;
     
     @Before                                                  
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
     	Mockito.when(clusterMgr.getManagementNodeId()).thenReturn(1L);
+    	
+    	AccountVO account = new AccountVO();
+    	Mockito.when(accountMgr.getSystemAccount()).thenReturn(account);
+    	UserVO user = new UserVO();
+    	Mockito.when(accountMgr.getSystemUser()).thenReturn(user);
     	
     	Transaction.open("dummy");
     	
@@ -120,26 +129,33 @@ public class TestAsyncJobManager extends TestCase {
     	AsyncJobJoinMapVO record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_IN_PROGRESS);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_IN_PROGRESS);
     	
-    	joinMapDao.completeJoin(1, AsyncJobResult.STATUS_SUCCEEDED, "Done", 101);
+    	joinMapDao.completeJoin(1, AsyncJobConstants.STATUS_SUCCEEDED, "Done", 101);
     	
     	record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_SUCCEEDED);
     	Assert.assertTrue(record.getJoinResult().equals("Done"));
     	Assert.assertTrue(record.getCompleteMsid() == 101);
     	
     	record = joinMapDao.getJoinRecord(3, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobResult.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_SUCCEEDED);
     	Assert.assertTrue(record.getJoinResult().equals("Done"));
     	Assert.assertTrue(record.getCompleteMsid() == 101);
     	
     	joinMapDao.disjoinJob(2, 1);
     	joinMapDao.disjoinJob(3, 1);
+    }
+    
+    @Test
+    public void testPseudoJob() {
+    	AsyncJob job = asyncMgr.getPseudoJob();
+    	Assert.assertTrue(job.getInstanceType().equals(AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE));
+    	Assert.assertTrue(job.getInstanceId().longValue() == Thread.currentThread().getId());
     }
     
     @Test

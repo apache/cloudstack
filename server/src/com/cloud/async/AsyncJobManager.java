@@ -32,7 +32,15 @@ public interface AsyncJobManager extends Manager {
 	long submitAsyncJob(AsyncJob job);
 	long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
 	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
-	AsyncJobResult queryAsyncJobResult(long jobId);    
+	AsyncJobResult queryAsyncJobResult(long jobId);
+
+	/**
+	 * A running thread inside management server can have a 1:1 linked pseudo job.
+	 * This is to help make some legacy code work without too dramastic changes
+	 *
+	 * @return pseudo job for the thread
+	 */
+	AsyncJob getPseudoJob();
 	
     void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
     void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);

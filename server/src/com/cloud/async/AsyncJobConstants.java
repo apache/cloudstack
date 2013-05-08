@@ -20,5 +20,7 @@ public interface AsyncJobConstants {
 	public static final int STATUS_IN_PROGRESS = 0;
 	public static final int STATUS_SUCCEEDED = 1;
 	public static final int STATUS_FAILED = 2;
-
+	
+	public static final String JOB_DISPATCHER_PSEUDO = "pseudoJobDispatcher";
+	public static final String PSEUDO_JOB_INSTANCE_TYPE = "Thread";
 }

@@ -23,6 +23,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.serializer.SerializerHelper;
+import com.cloud.utils.component.ComponentContext;
 
 public class AsyncJobExecutionContext  {
 	private AsyncJob _job;
@@ -44,6 +45,10 @@ public class AsyncJobExecutionContext  {
 	}
 	
 	public AsyncJob getJob() {
+		if(_job == null) {
+			_job = _jobMgr.getPseudoJob();
+		}
+		
 		return _job;
 	}
 	
@@ -115,7 +120,14 @@ public class AsyncJobExecutionContext  {
     }
 
 	public static AsyncJobExecutionContext getCurrentExecutionContext() {
-		return s_currentExectionContext.get();
+		AsyncJobExecutionContext context = s_currentExectionContext.get();
+		if(context == null) {
+			context = new AsyncJobExecutionContext();
+			context = ComponentContext.inject(context);
+			setCurrentExecutionContext(context);
+		}
+		
+		return context;
 	}
 	
 	public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {

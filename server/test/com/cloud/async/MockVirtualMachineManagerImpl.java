@@ -396,4 +396,11 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     	
     	return vm;
     }
+	
+	@Override
+    public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) 
+        	throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+		
+		return true;
+	}
 }
