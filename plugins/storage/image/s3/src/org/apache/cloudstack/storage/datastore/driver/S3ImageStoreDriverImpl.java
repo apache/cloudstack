@@ -311,7 +311,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
                 } else {
                     s_logger.debug("Deleted template at: " + installPath);
                     CommandResult result = new CommandResult();
-                    result.setSucess(false);
+                    result.setSucess(true);
                     callback.complete(result);
                 }
 
