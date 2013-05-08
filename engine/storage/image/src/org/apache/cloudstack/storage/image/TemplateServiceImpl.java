@@ -511,8 +511,8 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
-    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, TemplateApiResult> callback, TemplateOpContext<TemplateApiResult> context) {
-        TemplateApiResult result = callback.getResult();
+    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
+        CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         // we can only update state in template_store_ref table
          if (result.isSuccess()) {
@@ -520,7 +520,10 @@ public class TemplateServiceImpl implements TemplateService {
         } else {
             vo.processEvent(Event.OperationFailed);
          }
-        context.future.complete(result);
+        TemplateApiResult apiResult = new TemplateApiResult(vo);
+        apiResult.setResult(result.getResult());
+        apiResult.setSucess(result.isSuccess());
+        context.future.complete(apiResult);
         return null;
     }
 
