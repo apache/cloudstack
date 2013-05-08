@@ -40,8 +40,8 @@ class Domain:
 
         cmd = createDomain.createDomainCmd()
 
-   if "domainUUID" in services:
-            cmd.domainid = "-".join([services["domainUUID"],random_gen()])
+        if "domainUUID" in services:
+            cmd.domainid = "-".join([services["domainUUID"], random_gen()])
 
         if name:
             cmd.name = "-".join([name, random_gen()])
@@ -3151,9 +3151,9 @@ class Region:
         cmd = updateRegion.updateRegionCmd()
         cmd.id = self.id
         if services["regionendpoint"]:
-                cmd.endpoint = services["regionendpoint"]
+            cmd.endpoint = services["regionendpoint"]
         if services["regionname"]:
-                cmd.name = services["regionname"]
+            cmd.name = services["regionname"]
         region = apiclient.updateRegion(cmd)
         return region
 
