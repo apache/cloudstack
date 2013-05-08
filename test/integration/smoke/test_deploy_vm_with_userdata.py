@@ -111,6 +111,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         vm = vms[0]
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.cleanup.append(deployVmResponse)
 
     @attr(tags=["simulator", "devcloud", "basic", "advanced"])
     def test_deployvm_userdata(self):
@@ -134,6 +135,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         vm = vms[0]
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.cleanup.append(deployVmResponse)
 
     @classmethod
     def tearDownClass(cls):

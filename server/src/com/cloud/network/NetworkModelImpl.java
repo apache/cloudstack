@@ -2066,6 +2066,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
     
+
     @Override
     public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
         List<? extends Network> networks = _networksDao.listByZoneAndTrafficType(zoneId, TrafficType.Public);
@@ -2080,6 +2081,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public Map<Detail, String> getNtwkOffDetails(long offId) {
         return _ntwkOffDetailsDao.getNtwkOffDetails(offId);
     }
+
     
     @Override
     public Networks.IsolationType[] listNetworkIsolationMethods() {

@@ -198,6 +198,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+
 /**
  * NetworkServiceImpl implements NetworkService.
  */
@@ -2184,6 +2185,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         return allPossibleIps;
     }
+
 
     protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);

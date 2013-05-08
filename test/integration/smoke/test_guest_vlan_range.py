@@ -44,7 +44,8 @@ class Services:
                                     "password": "password",
                          },
                         "name": "testphysicalnetwork",
-                        "vlan": "118-120",
+
+                        "vlan": "2118-2120",
                     }
 
 
@@ -149,6 +150,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                         )
 
         self.debug("Releasing guest vlan range");
+<<<<<<< HEAD
         dedicated_guest_vlan_response.release(self.apiclient)
         list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(
                                                 self.apiclient,
@@ -160,4 +162,14 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                             "system",
                             "Check account name is system account in listDedicatedGuestVlanRanges"
                         )
+=======
+        dedicate_guest_vlan_range_response.release(self.apiclient)
+        list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(self.apiclient)
+        self.assertEqual(
+                        list_dedicated_guest_vlan_range_response,
+                        None,
+                        "Check vlan range is not available in listDedicatedGuestVlanRanges"
+
+                        )                    
+>>>>>>> master
         
