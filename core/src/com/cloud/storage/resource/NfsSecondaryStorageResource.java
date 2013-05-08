@@ -107,6 +107,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.DownloadManager;
@@ -298,9 +299,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             snapshotName = snapshotName + ".vhd";
         }
         snapshotPath = snapshotPath.substring(0, index);
-        snapshotPath = srcMountPoint + snapshotPath;
+        snapshotPath = srcMountPoint + File.separator + snapshotPath;
         String destMountPoint = this.getRootDir(destDataStore.getUrl());
-        String destPath = destMountPoint + destData.getPath();
+        String destPath = destMountPoint + File.separator + destData.getPath();
 
         String errMsg = null;
         try {
@@ -329,7 +330,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             loc.save();
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(destData.getPath() + File.separator + templateUuid); 
+            newTemplate.setPath(destData.getPath() + File.separator + templateName); 
+            newTemplate.setFormat(ImageFormat.VHD);
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
             s_logger.debug("Failed to create template from snapshot: " + e.toString());

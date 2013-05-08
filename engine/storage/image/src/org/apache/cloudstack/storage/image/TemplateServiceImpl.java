@@ -396,7 +396,7 @@ public class TemplateServiceImpl implements TemplateService {
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
                 //TODO: we cannot directly call deleteTemplateSync here to reuse delete logic since in this case, our db does not have this template at all.
                 VMTemplateVO template = _templateDao.findById(tInfo.getId());
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(), template.getId(), template.getAccountId());
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(), null, null);
                 EndPoint ep = _epSelector.select(store);
                 Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
@@ -574,7 +574,7 @@ public class TemplateServiceImpl implements TemplateService {
                 // remove entry from template_store_ref
                 destTemplate.getDataStore().delete(destTemplate);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed);
+                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {

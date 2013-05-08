@@ -163,6 +163,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
+        this.imageVO = imageDao.findById(this.imageVO.getId());
         boolean result= imageMgr.getStateMachine().transitTo(this.imageVO, e, null,
                 imageDao);
         this.imageVO = imageDao.findById(this.imageVO.getId());
@@ -172,6 +173,22 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(Event event) {
         try {
+            if (this.getDataStore().getRole() == DataStoreRole.Image ||
+                    this.getDataStore().getRole() == DataStoreRole.ImageCache) {
+                TemplateEvent templEvent = null;
+                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+                    templEvent = TemplateEvent.CreateRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
+                    templEvent = TemplateEvent.OperationSucceeded;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                    templEvent = TemplateEvent.OperationFailed;
+                }
+                
+                if (templEvent != null) {
+                    this.stateTransit(templEvent);
+                }
+            }
+                
             ojbectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
@@ -201,7 +218,25 @@ public class TemplateObject implements TemplateInfo {
         			TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this.getDataStore().getId(),
         					this.getId());
         			templateStoreRef.setInstallPath(newTemplate.getPath());
+        			templateStoreRef.setDownloadPercent(100);
+        			templateStoreRef.setDownloadState(Status.DOWNLOADED);
         			templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
+        			VMTemplateVO templateVO = this.imageDao.findById(this.getId());
+        			templateVO.setFormat(newTemplate.getFormat());
+        			this.imageDao.update(templateVO.getId(), templateVO);
+        		}
+        		
+        		TemplateEvent templEvent = null;
+        		if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+        		    templEvent = TemplateEvent.CreateRequested;
+        		} else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
+        		    templEvent = TemplateEvent.OperationSucceeded;
+        		} else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+        		    templEvent = TemplateEvent.OperationFailed;
+        		}
+        		
+        		if (templEvent != null) {
+        		    this.stateTransit(templEvent);
         		}
         	}
             ojbectInStoreMgr.update(this, event);

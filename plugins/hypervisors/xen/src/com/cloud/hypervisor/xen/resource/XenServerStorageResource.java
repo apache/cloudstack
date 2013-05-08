@@ -1275,6 +1275,7 @@ public class XenServerStorageResource {
             tmpltSR = null;
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(installPath);
+            newTemplate.setFormat(ImageFormat.VHD);
             CopyCmdAnswer answer = new CopyCmdAnswer(newTemplate);
             return answer;
         } catch (Exception e) {

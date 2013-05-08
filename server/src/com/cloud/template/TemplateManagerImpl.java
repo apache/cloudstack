@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -127,6 +128,7 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
+import com.cloud.storage.VMTemplateZoneVO;
 
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -1347,8 +1349,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         try {
             TemplateInfo tmplInfo = this._tmplFactory.getTemplate(templateId);
-            snapshot = _snapshotDao.findById(snapshotId);
-            ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
+            Long zoneId = null;
+            if (snapshotId != null) {
+                snapshot = _snapshotDao.findById(snapshotId);
+                zoneId = snapshot.getDataCenterId();
+
+            } else if (volumeId != null) {
+                volume = _volumeDao.findById(volumeId);
+                zoneId = volume.getDataCenterId();
+            }
+            ZoneScope scope = new ZoneScope(zoneId);
             List<DataStore> store = this._dataStoreMgr.getImageStoresByScope(scope);
             if (store.size() > 1) {
                 throw new CloudRuntimeException("muliple image data store, don't know which one to use");
@@ -1374,12 +1384,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     s_logger.debug("Failed to create template" + result.getResult());
                     throw new CloudRuntimeException("Failed to create template" + result.getResult());
                 }
+                
+                VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                this._tmpltZoneDao.persist(templateZone);
 
                 privateTemplate = this._tmpltDao.findById(templateId);
                 UsageEventVO usageEvent = new UsageEventVO(
                         EventTypes.EVENT_TEMPLATE_CREATE,
                         privateTemplate.getAccountId(),
-                        snapshot.getDataCenterId(),
+                        zoneId,
                         privateTemplate.getId(), privateTemplate.getName(),
                         null, privateTemplate.getSourceTemplateId(),
                         privateTemplate.getSize());
