@@ -248,17 +248,42 @@
 }
 
 .vpc-network-chart .tier-item.router .header {
-  background: #908F8F;
   padding: 15px 0 14px;
   border-bottom: 1px solid #808080;
+  background: #C3C6C9;
+/*Old browsers*/
+  background: -moz-linear-gradient(top, #c3c6c9 0%, #909497 100%);
+/*FF3.6+*/
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#c3c6c9), color-stop(100%,#909497));
+/*Chrome,Safari4+*/
+  background: -webkit-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+/*Chrome10+,Safari5.1+*/
+  background: -o-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+/*Opera 11.10+*/
+  background: -ms-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+/*IE10+*/
+  background: linear-gradient(to bottom, #c3c6c9 0%,#909497 100%);
+/*W3C*/
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#c3c6c9', endColorstr='#909497',GradientType=0 );
+/*IE6-8*/
 }
 
 .vpc-network-chart .tier-item.router .header .title {
   width: 212px;
+  margin-top: 3px;
 }
 
 .vpc-network-chart .tier-item.router .header .title span {
-  padding: 0 0 0 32px;
+  padding: 0 0 0 50px;
+}
+
+.vpc-network-chart .tier-item.router .header span.icon {
+  background: url(../../images/sprites.png) -589px -1175px;
+  padding: 10px 10px 10px 20px;
+  float: left;
+  position: absolute;
+  top: 7px;
+  left: 10px;
 }
 
 .vpc-network-chart .tier-item.router .dashboard-item {
@@ -276,5 +301,9 @@
   -webkit-text-shadow: 0px 1px #000000;
   -o-text-shadow: 0px 1px #000000;
   text-shadow: 0px 1px #000000;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item:hover {
+  background-color: #818181;
 }
 

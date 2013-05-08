@@ -35,6 +35,7 @@
       }).addClass('router');
       
       $router.find('.info, .detail-link').remove();
+      $router.find('.header').prepend($('<span></span>').addClass('icon').html('&nbsp;'));
       
       return $router;
     },
