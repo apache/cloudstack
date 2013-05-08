@@ -178,17 +178,19 @@ public class TemplateObject implements TemplateInfo {
                 TemplateEvent templEvent = null;
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     templEvent = TemplateEvent.CreateRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested){
+                    templEvent = TemplateEvent.DestroyRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
                     templEvent = TemplateEvent.OperationSucceeded;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                     templEvent = TemplateEvent.OperationFailed;
                 }
-                
+
                 if (templEvent != null) {
                     this.stateTransit(templEvent);
                 }
             }
-                
+
             ojbectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
@@ -225,16 +227,18 @@ public class TemplateObject implements TemplateInfo {
         			templateVO.setFormat(newTemplate.getFormat());
         			this.imageDao.update(templateVO.getId(), templateVO);
         		}
-        		
+
         		TemplateEvent templEvent = null;
         		if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
         		    templEvent = TemplateEvent.CreateRequested;
-        		} else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
+        		} else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested){
+                    templEvent = TemplateEvent.DestroyRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
         		    templEvent = TemplateEvent.OperationSucceeded;
         		} else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
         		    templEvent = TemplateEvent.OperationFailed;
         		}
-        		
+
         		if (templEvent != null) {
         		    this.stateTransit(templEvent);
         		}

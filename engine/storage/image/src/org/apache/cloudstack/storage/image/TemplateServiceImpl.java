@@ -156,11 +156,9 @@ public class TemplateServiceImpl implements TemplateService {
         // persist template_store_ref entry
         TemplateObject templateOnStore = (TemplateObject)store.create(template);
         // update template_store_ref and template state
-        try {
+        try{
             templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
-            templateOnStore.stateTransit(TemplateEvent.CreateRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to transit state", e);
+        } catch (Exception e) {
             TemplateApiResult result = new TemplateApiResult(templateOnStore);
             result.setResult(e.toString());
             result.setSucess(false);
@@ -463,12 +461,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult result = new TemplateApiResult(template);
         CreateCmdResult callbackResult = callback.getResult();
         if (callbackResult.isFailed()) {
-            try {
-                template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
-                template.stateTransit(TemplateEvent.OperationFailed);
-            } catch (NoTransitionException e) {
-               s_logger.debug("Failed to update template state", e);
-            }
+            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             result.setResult(callbackResult.getResult());
             parentCallback.complete(result);
             return null;
@@ -476,9 +469,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         try {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
-            template.stateTransit(TemplateEvent.OperationSucceeded);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to transit state", e);
+        } catch (Exception e) {
             result.setResult(e.toString());
             parentCallback.complete(result);
             return null;
@@ -494,13 +485,6 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateObject to = (TemplateObject) template;
         // update template_store_ref status
         to.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
-        try {
-            to.stateTransit(TemplateEvent.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Failed to transit state", e);
-            //TODO: not fatal right now, still continue
-        }
-
 
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 
@@ -514,7 +498,6 @@ public class TemplateServiceImpl implements TemplateService {
     public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
-        // we can only update state in template_store_ref table
          if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed);
         } else {

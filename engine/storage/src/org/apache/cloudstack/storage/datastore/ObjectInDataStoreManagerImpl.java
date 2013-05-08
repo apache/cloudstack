@@ -108,6 +108,9 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 State.Destroyed);
         stateMachines.addTransition(State.Destroying, Event.OperationFailed,
                 State.Destroying);
+        //TODO: further investigate why an extra event is sent when it is alreay Ready
+        stateMachines.addTransition(State.Ready, Event.OperationSuccessed,
+                State.Ready);
     }
 
     @Override

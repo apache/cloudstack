@@ -27,9 +27,9 @@ import com.cloud.utils.fsm.StateMachine2;
 
 @Component
 public class ImageDataManagerImpl implements ImageDataManager {
-    private final StateMachine2<TemplateState, TemplateEvent, VMTemplateVO> 
+    private final StateMachine2<TemplateState, TemplateEvent, VMTemplateVO>
         stateMachine = new StateMachine2<TemplateState, TemplateEvent, VMTemplateVO>();
-    
+
     public ImageDataManagerImpl() {
         stateMachine.addTransition(TemplateState.Allocated, TemplateEvent.CreateRequested, TemplateState.Creating);
         stateMachine.addTransition(TemplateState.Creating, TemplateEvent.CreateRequested, TemplateState.Creating);
@@ -41,8 +41,10 @@ public class ImageDataManagerImpl implements ImageDataManager {
         stateMachine.addTransition(TemplateState.Destroying, TemplateEvent.DestroyRequested, TemplateState.Destroying);
         stateMachine.addTransition(TemplateState.Destroying, TemplateEvent.OperationFailed, TemplateState.Destroying);
         stateMachine.addTransition(TemplateState.Destroying, TemplateEvent.OperationSucceeded, TemplateState.Destroyed);
+        //TODO: this should not be needed, but it happened during testing where multiple success event is sent to callback
+        stateMachine.addTransition(TemplateState.Ready, TemplateEvent.OperationSucceeded, TemplateState.Ready);
     }
-    
+
     @Override
     public StateMachine2<TemplateState, TemplateEvent, VMTemplateVO> getStateMachine() {
         return stateMachine;
