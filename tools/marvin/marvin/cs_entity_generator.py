@@ -243,9 +243,10 @@ def write_entity_classes(entities, module=None):
                 body.append(tabspace * 2 + 'if factory:')
                 body.append(
                     tabspace * 3 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in factory.__dict__.iteritems()]')
-                body.append(tabspace * 2 + 'else:')
-                for arg in details["args"]:
-                    body.append(tabspace * 3 + "cmd.%s = %s" % (arg, arg))
+                if len(details["args"]) > 0:
+                    body.append(tabspace * 2 + 'else:')
+                    for arg in details["args"]:
+                        body.append(tabspace * 3 + "cmd.%s = %s" % (arg, arg))
                 body.append(tabspace * 2 + '[setattr(cmd, key, value) for key, value in kwargs.iteritems()]')
                 body.append(tabspace * 2 + '%s = apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
                 body.append(
