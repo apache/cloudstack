@@ -188,6 +188,10 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
             updateBuilder.setSize(answer.getTemplateSize());
             updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
             _templateStoreDao.update(tmpltStoreVO.getId(), updateBuilder);
+            // update size in vm_template table
+            VMTemplateVO tmlptUpdater = templateDao.createForUpdate();
+            tmlptUpdater.setSize(answer.getTemplateSize());
+            templateDao.update(obj.getId(), tmlptUpdater);
         }
 
     	AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
