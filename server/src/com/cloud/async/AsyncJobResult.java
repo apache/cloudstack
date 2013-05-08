@@ -19,9 +19,6 @@ package com.cloud.async;
 import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {
-	public static final int STATUS_IN_PROGRESS = 0;
-	public static final int STATUS_SUCCEEDED = 1;
-	public static final int STATUS_FAILED = 2;
 	
 	private long jobId;
 	private int jobStatus;
@@ -32,7 +29,7 @@ public class AsyncJobResult {
 
 	public AsyncJobResult(long jobId) {
 		this.jobId = jobId;
-		jobStatus = STATUS_IN_PROGRESS;
+		jobStatus = AsyncJobConstants.STATUS_IN_PROGRESS;
 		processStatus = 0;
 		resultCode = 0;
 		result = "";

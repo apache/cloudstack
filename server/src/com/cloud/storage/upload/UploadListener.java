@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.exception.AgentUnavailableException;
@@ -364,7 +365,7 @@ public class UploadListener implements Listener {
 		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobConstants.STATUS_IN_PROGRESS, resultObj);
 
 		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
@@ -377,7 +378,7 @@ public class UploadListener implements Listener {
 		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobConstants.STATUS_IN_PROGRESS, resultObj);
 
 
 		UploadVO vo = uploadDao.createForUpdate();
@@ -406,12 +407,12 @@ public class UploadListener implements Listener {
 
 		if (answer.getUploadStatus() == Status.UPLOAD_IN_PROGRESS){
 			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-			asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+			asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobConstants.STATUS_IN_PROGRESS, resultObj);
 		}else if(answer.getUploadStatus() == Status.UPLOADED){
 		    resultObj.setResultString("Success");
-			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_SUCCEEDED, 1, resultObj);
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobConstants.STATUS_SUCCEEDED, 1, resultObj);
 		}else{
-			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 2, resultObj);
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobConstants.STATUS_FAILED, 2, resultObj);
 		}
         UploadVO updateBuilder = uploadDao.createForUpdate();
 		updateBuilder.setUploadPercent(answer.getUploadPct());

@@ -56,6 +56,7 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJob;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -712,7 +713,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 						return true;
 			
 					VmWorkJobVO workJob = _workJobDao.findById(jobId);
-					if(workJob.getStatus() != AsyncJobResult.STATUS_IN_PROGRESS)
+					if(workJob.getStatus() != AsyncJobConstants.STATUS_IN_PROGRESS)
 						return true;
 					
 					return false;
@@ -1152,7 +1153,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 						return true;
 			
 					VmWorkJobVO workJob = _workJobDao.findById(jobId);
-					if(workJob.getStatus() != AsyncJobResult.STATUS_IN_PROGRESS)
+					if(workJob.getStatus() != AsyncJobConstants.STATUS_IN_PROGRESS)
 						return true;
 					
 					return false;

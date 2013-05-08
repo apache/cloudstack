@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJob;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -74,15 +75,15 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             	Method handler = getHandler(guru, cmd);
             	if(handler != null) {
         			handler.invoke(guru, work);
-            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
+            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
             	} else {
-            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, null);
+            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, null);
             	}
             } finally {
                 UserContext.unregisterContext();
             }
         } catch(Throwable e) {
-            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, null);
+            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, null);
         }
 	}
 	

@@ -28,9 +28,9 @@ import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -84,7 +84,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 _dispatcher.dispatch(cmdObj, params);
 
                 // serialize this to the async job table
-                _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
+                _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
             } finally {
                 UserContext.unregisterContext();
             }
@@ -107,7 +107,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
 
             // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
             //         and we need to preserve that as much as possible here
-            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
+            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
         }
 	}
 }

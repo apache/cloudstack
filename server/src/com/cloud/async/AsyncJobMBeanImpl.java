@@ -51,13 +51,13 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 	public String getStatus() {
 		int jobStatus = _job.getStatus();
 		switch(jobStatus) {
-		case AsyncJobResult.STATUS_SUCCEEDED :
+		case AsyncJobConstants.STATUS_SUCCEEDED :
 			return "Completed";
 		
-		case AsyncJobResult.STATUS_IN_PROGRESS:
+		case AsyncJobConstants.STATUS_IN_PROGRESS:
 			return "In preogress";
 			
-		case AsyncJobResult.STATUS_FAILED:
+		case AsyncJobConstants.STATUS_FAILED:
 			return "failed";
 		}
 		

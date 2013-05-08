@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.user.Account;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
@@ -141,14 +142,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             Long asyncJobId = snapshotSchedule.getAsyncJobId();
             AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
             switch (asyncJob.getStatus()) {
-            case AsyncJobResult.STATUS_SUCCEEDED:
+            case AsyncJobConstants.STATUS_SUCCEEDED:
                 // The snapshot has been successfully backed up.
                 // The snapshot state has also been cleaned up.
                 // We can schedule the next job for this snapshot.
                 // Remove the existing entry in the snapshot_schedule table.
                 scheduleNextSnapshotJob(snapshotSchedule);
                 break;
-            case AsyncJobResult.STATUS_FAILED:
+            case AsyncJobConstants.STATUS_FAILED:
                 // Check the snapshot status.
                 Long snapshotId = snapshotSchedule.getSnapshotId();
                 if (snapshotId == null) {
@@ -186,7 +187,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 }
 
                 break;
-            case AsyncJobResult.STATUS_IN_PROGRESS:
+            case AsyncJobConstants.STATUS_IN_PROGRESS:
                 // There is no way of knowing from here whether
                 // 1) Another management server is processing this snapshot job
                 // 2) The management server has crashed and this snapshot is lying

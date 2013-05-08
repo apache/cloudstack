@@ -197,7 +197,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 return;
             }
             
-            if(job.getStatus() != AsyncJobResult.STATUS_IN_PROGRESS) {
+            if(job.getStatus() != AsyncJobConstants.STATUS_IN_PROGRESS) {
                 if(s_logger.isDebugEnabled()) {
                     s_logger.debug("job-" + jobId + " is already completed.");
                 }
@@ -387,8 +387,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 jobResult.setResultCode(job.getResultCode());
                 jobResult.setUuid(job.getUuid());
 
-                if(job.getStatus() == AsyncJobResult.STATUS_SUCCEEDED ||
-                        job.getStatus() == AsyncJobResult.STATUS_FAILED) {
+                if(job.getStatus() == AsyncJobConstants.STATUS_SUCCEEDED ||
+                        job.getStatus() == AsyncJobConstants.STATUS_FAILED) {
 
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("Async job-" + jobId + " completed");
@@ -402,14 +402,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     s_logger.debug("Async job-" + jobId + " does not exist, invalid job id?");
                 }
 
-                jobResult.setJobStatus(AsyncJobResult.STATUS_FAILED);
+                jobResult.setJobStatus(AsyncJobConstants.STATUS_FAILED);
                 jobResult.setResult("job-" + jobId + " does not exist");
             }
             txt.commit();
         } catch(Exception e) {
             s_logger.error("Unexpected exception while querying async job-" + jobId + " status: ", e);
 
-            jobResult.setJobStatus(AsyncJobResult.STATUS_FAILED);
+            jobResult.setJobStatus(AsyncJobConstants.STATUS_FAILED);
             jobResult.setResult("Exception: " + e.toString());
             txt.rollback();
         }
@@ -480,7 +480,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     	jobDispatcher.RunJob(job);
                     } else {
                     	s_logger.error("Unable to find job dispatcher, job will be cancelled");
-                        completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+                        completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
                     }
                     
                     if (s_logger.isDebugEnabled()) {
@@ -489,7 +489,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                    
             	} catch (Throwable e) {
             		s_logger.error("Unexpected exception", e);
-                    completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+                    completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
             	} finally {
             		// guard final clause as well
                     try {
@@ -676,7 +676,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     if(blockItems != null && blockItems.size() > 0) {
                         for(SyncQueueItemVO item : blockItems) {
                             if(item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
-                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0,
+                                completeAsyncJob(item.getContentId(), AsyncJobConstants.STATUS_FAILED, 0,
                                         getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
                             }
 
@@ -725,7 +725,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     Long jobId = item.getContentId();
                     if(jobId != null) {
                         s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
-                        completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
+                        completeAsyncJob(jobId, AsyncJobConstants.STATUS_FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
                     }
                 }
                 _queueMgr.purgeItem(item.getId());

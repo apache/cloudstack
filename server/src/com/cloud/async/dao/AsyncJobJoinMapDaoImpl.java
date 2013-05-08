@@ -18,6 +18,7 @@ package com.cloud.async.dao;
 
 import java.util.List;
 
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobJoinMapVO;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.utils.DateUtil;
@@ -48,7 +49,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		record.setJobId(jobId);
 		record.setJoinJobId(joinJobId);
 		record.setJoinMsid(joinMsid);
-		record.setJoinStatus(AsyncJobResult.STATUS_IN_PROGRESS);
+		record.setJoinStatus(AsyncJobConstants.STATUS_IN_PROGRESS);
 		
 		this.persist(record);
 		return record.getId();

@@ -51,6 +51,7 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.dao.CapacityDao;
@@ -1498,11 +1499,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
 	    		user, account,  ((VmWorkStart)work).getPlan());
 	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_SUCCEEDED, null);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
     	} catch(Exception e) {
     		s_logger.error("Exception in process VM-start work", e);
     		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_FAILED, result);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
     	}
     }
     
@@ -1518,11 +1519,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     	try {
 	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
 	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_SUCCEEDED, null);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
     	} catch(Exception e) {
     		s_logger.error("Exception in process VM-stop work", e);
     		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_FAILED, result);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
     	}
     }
 }

@@ -86,7 +86,7 @@ public class AsyncJobExecutionContext  {
     	assert(_job != null);
     	
     	AsyncJobJoinMapVO record = _joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
-    	if(record.getJoinStatus() == AsyncJobResult.STATUS_FAILED && record.getJoinResult() != null) {
+    	if(record.getJoinStatus() == AsyncJobConstants.STATUS_FAILED && record.getJoinResult() != null) {
     		Object exception = SerializerHelper.fromObjectSerializedString(record.getJoinResult());
     		if(exception != null && exception instanceof Exception) {
     			if(exception instanceof InsufficientCapacityException)

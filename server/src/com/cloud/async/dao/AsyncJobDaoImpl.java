@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.DB;
@@ -68,7 +69,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<AsyncJobVO> sc = pendingAsyncJobSearch.create();
         sc.setParameters("instanceType", instanceType);
         sc.setParameters("instanceId", instanceId);
-        sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
+        sc.setParameters("status", AsyncJobConstants.STATUS_IN_PROGRESS);
         
         List<AsyncJobVO> l = listIncludingRemovedBy(sc);
         if(l != null && l.size() > 0) {
@@ -88,7 +89,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         }
-        sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
+        sc.setParameters("status", AsyncJobConstants.STATUS_IN_PROGRESS);
         
         return listBy(sc);
 	}
@@ -102,7 +103,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 
 	@DB
 	public void resetJobProcess(long msid, int jobResultCode, String jobResultMessage) {
-		String sql = "UPDATE async_job SET job_status=" + AsyncJobResult.STATUS_FAILED + ", job_result_code=" + jobResultCode 
+		String sql = "UPDATE async_job SET job_status=" + AsyncJobConstants.STATUS_FAILED + ", job_result_code=" + jobResultCode 
 			+ ", job_result='" + jobResultMessage + "' where job_status=0 AND (job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?))";
 		
         Transaction txn = Transaction.currentTxn();

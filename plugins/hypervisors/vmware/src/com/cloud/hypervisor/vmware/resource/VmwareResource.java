@@ -3914,7 +3914,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return true;
     }
 
-
     @Override
     public synchronized CreateAnswer execute(CreateCommand cmd) {
         if (s_logger.isInfoEnabled()) {
