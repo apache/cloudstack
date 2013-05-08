@@ -694,7 +694,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     	final long jobId = workJob.getId();
     	
-    	// TODO : will refactor to fully-asynchronized way in the future
+    	//
+    	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
+    	// to wait here. The reason we do it synchronized here is that callers of advanceStart is expecting
+    	// synchronized semantics
+    	// 
+    	//
+    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
     	_jobMgr.waitAndCheck(
     		new String[] { TopicConstants.VM_POWER_STATE, TopicConstants.JOB_STATE }, 
     		3000L, 600000L, new Predicate() {
@@ -712,6 +718,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 					return false;
 				}
     		});
+    	AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(jobId);
     	
     	return vm;
     }
@@ -719,9 +726,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        long vmId = vm.getId();
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-
         vm = vmGuru.findById(vm.getId());
   
         Ternary<T, ReservationContext, VmWorkJobVO> start = changeToStartState(vmGuru, vm, caller, account);
@@ -984,283 +989,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return startedVm;
     }
     
- /*   
-    @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        long vmId = vm.getId();
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-
-        vm = vmGuru.findById(vm.getId());
-        Ternary<T, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
-        if (start == null) {
-            return vmGuru.findById(vmId);
-        }
-
-        vm = start.first();
-        ReservationContext ctx = start.second();
-        ItWorkVO work = start.third();
-
-        T startedVm = null;
-        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
-        }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
-        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
-                        + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
-            }
-            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId(), ctx);
-        }
-
-        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-
-        boolean canRetry = true;
-        try {
-            Journal journal = start.second().getJournal();
-
-            ExcludeList avoids = null;
-            if (planToDeploy != null) {
-                avoids = planToDeploy.getAvoids();
-            }
-            if (avoids == null) {
-                avoids = new ExcludeList();
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
-            }
-
-
-            boolean planChangedByVolume = false;
-            boolean reuseVolume = true;
-            DataCenterDeployment originalPlan = plan;
-
-            int retry = _retry;
-            while (retry-- != 0) { // It's != so that it can match -1.
-
-                if(reuseVolume){
-                    // edit plan if this vm's ROOT volume is in READY state already
-                    List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
-                    for (VolumeVO vol : vols) {
-                        // make sure if the templateId is unchanged. If it is changed,
-                        // let planner
-                        // reassign pool for the volume even if it ready.
-                        Long volTemplateId = vol.getTemplateId();
-                        if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
-                            }
-                            continue;
-                        }
-
-                        StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
-                        if (!pool.isInMaintenance()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Root volume is ready, need to place VM in volume's cluster");
-                            }
-                            long rootVolDcId = pool.getDataCenterId();
-                            Long rootVolPodId = pool.getPodId();
-                            Long rootVolClusterId = pool.getClusterId();
-                            if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-                                Long clusterIdSpecified = planToDeploy.getClusterId();
-                                if (clusterIdSpecified != null && rootVolClusterId != null) {
-                                    if (rootVolClusterId.longValue() != clusterIdSpecified.longValue()) {
-                                        // cannot satisfy the plan passed in to the
-                                        // planner
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: " + rootVolClusterId
-                                                    + ", cluster specified: " + clusterIdSpecified);
-                                        }
-                                        throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for "
-                                                + vm, Cluster.class, clusterIdSpecified);
-                                    }
-                                }
-                                plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null, ctx);
-                            }else{
-                                plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null, ctx);
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
-                                }
-                                planChangedByVolume = true;
-                            }
-                        }
-                    }
-                }
-
-                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
-                DeployDestination dest = null;
-                for (DeploymentPlanner planner : _planners) {
-                    if (planner.canHandle(vmProfile, plan, avoids)) {
-                        dest = planner.plan(vmProfile, plan, avoids);
-                    } else {
-                        continue;
-                    }
-                    if (dest != null) {
-                        avoids.addHost(dest.getHost().getId());
-                        journal.record("Deployment found ", vmProfile, dest);
-                        break;
-                    }
-                }
-
-                if (dest == null) {
-                    if (planChangedByVolume) {
-                        plan = originalPlan;
-                        planChangedByVolume = false;
-                        //do not enter volume reuse for next retry, since we want to look for resorces outside the volume's cluster
-                        reuseVolume = false;
-                        continue;
-                    }
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
-                }
-
-                long destHostId = dest.getHost().getId();
-                vm.setPodId(dest.getPod().getId());
-                Long cluster_id = dest.getCluster().getId();
-                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
-                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
-                vmProfile.setcpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
-                vmProfile.setramOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
-
-                try {
-                    if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
-                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
-                    }
-                } catch (NoTransitionException e1) {
-                    throw new ConcurrentOperationException(e1.getMessage());
-                }
-
-                try {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
-                    }
-                    _networkMgr.prepare(vmProfile, dest, ctx); 
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        this.volumeMgr.prepare(vmProfile, dest);
-                    }
-                    //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
-                    if(!reuseVolume){
-                        reuseVolume = true;
-                    }
-
-                    Commands cmds = null;
-                    vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
-
-                    VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-
-                    cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
-
-                    vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
-
-
-                    work = _workDao.findById(work.getId());
-                    if (work == null || work.getStep() != Step.Prepare) {
-                        throw new ConcurrentOperationException("Work steps have been changed: " + work);
-                    }
-                    _workDao.updateStep(work, Step.Starting);
-
-                    _agentMgr.send(destHostId, cmds);
-
-                    _workDao.updateStep(work, Step.Started);
-
-
-                    StartAnswer startAnswer = cmds.getAnswer(StartAnswer.class);
-                    if (startAnswer != null && startAnswer.getResult()) {
-                        String host_guid = startAnswer.getHost_guid();
-                        if( host_guid != null ) {
-                            HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
-                            if (finalHost == null ) {
-                                throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
-                            }
-                            destHostId = finalHost.getId();
-                        }
-                        if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, ctx)) {
-                            if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
-                                throw new ConcurrentOperationException("Unable to transition to a new state.");
-                            }
-                            startedVm = vm;
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Start completed for VM " + vm);
-                            }
-                            return startedVm;
-                        } else {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.info("The guru did not like the answers so stopping " + vm);
-                            }
-
-                            StopCommand cmd = new StopCommand(vm);
-                            StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
-                            if (answer == null || !answer.getResult()) {
-                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers")); 
-                                _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
-                                throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
-                            }
-                            throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
-                        }
-                    }
-                    s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
-
-                } catch (OperationTimedoutException e) {
-                    s_logger.debug("Unable to send the start command to host " + dest.getHost());
-                    if (e.isActive()) {
-                        _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);
-                    }
-                    canRetry = false;
-                    throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
-                } catch (ResourceUnavailableException e) {
-                    s_logger.info("Unable to contact resource.", e);
-                    if (!avoids.add(e)) {
-                        if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
-                            throw e;
-                        } else {
-                            s_logger.warn("unexpected ResourceUnavailableException : " + e.getScope().getName(), e);
-                            throw e;
-                        }
-                    }
-                } catch (InsufficientCapacityException e) {
-                    s_logger.info("Insufficient capacity ", e);
-                    if (!avoids.add(e)) {
-                        if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
-                            throw e;
-                        } else {
-                            s_logger.warn("unexpected InsufficientCapacityException : " + e.getScope().getName(), e);
-                        }
-                    }
-                } catch (Exception e) {
-                    s_logger.error("Failed to start instance " + vm, e);
-                    throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
-                } finally {
-                    if (startedVm == null && canRetry) {
-                        Step prevStep = work.getStep();
-                        _workDao.updateStep(work, Step.Release);
-                        if (prevStep == Step.Started || prevStep == Step.Starting) {
-                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
-                        } else {
-                            //if step is not starting/started, send cleanup command with force=true
-                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, true, caller, account);
-                        }
-                    }
-                }
-            }
-        } finally {
-            if (startedVm == null) {
-                if (canRetry) {
-                    try {
-                        changeState(vm, Event.OperationFailed, null, work, Step.Done);
-                    } catch (NoTransitionException e) {
-                        throw new ConcurrentOperationException(e.getMessage());
-                    }
-                }
-            }
-        }
-
-        return startedVm;
-    }
-*/
     @Override
     public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws ResourceUnavailableException {
         try {
@@ -1360,11 +1088,87 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-    	// ???
+    public <T extends VMInstanceVO> boolean advanceStop(final T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    	VmWorkJobVO workJob = null;
+    	Transaction txn = Transaction.currentTxn();
+    	try {
+        	txn.start();
+        	
+        	_vmDao.lockRow(vm.getId(), true);
+        	
+        	List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+        		VirtualMachine.Type.Instance, vm.getId(), VmWorkConstants.VM_WORK_STOP);
+        	
+        	if(pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        		assert(pendingWorkJobs.size() == 1);
+        		workJob = pendingWorkJobs.get(0);
+        	} else {
+        		workJob = new VmWorkJobVO();
+        	
+        		workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+        		workJob.setCmd(VmWorkConstants.VM_WORK_STOP);
+        		
+        		workJob.setAccountId(account.getId());
+        		workJob.setUserId(user.getId());
+        		workJob.setStep(VmWorkJobVO.Step.Prepare);
+        		workJob.setVmType(vm.getType());
+        		workJob.setVmInstanceId(vm.getId());
+
+        		// save work context info (there are some duplications)
+        		VmWorkStop workInfo = new VmWorkStop();
+        		workInfo.setAccountId(account.getId());
+        		workInfo.setUserId(user.getId());
+        		workInfo.setVmId(vm.getId());
+        		workInfo.setForceStop(forced);
+        		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
+        		
+        		_jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+        	}
+    	
+        	txn.commit();
+    	} catch(Throwable e) {
+    		s_logger.error("Unexpected exception", e);
+    		txn.rollback();
+    		throw new ConcurrentOperationException("Unhandled exception, converted to ConcurrentOperationException");
+    	}
+
+    	final long jobId = workJob.getId();
+    	
+    	//
+    	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
+    	// to wait here. The reason we do it synchronized here is that callers of advanceStart is expecting
+    	// synchronized semantics
+    	// 
+    	//
+    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+    	_jobMgr.waitAndCheck(
+    		new String[] { TopicConstants.VM_POWER_STATE, TopicConstants.JOB_STATE }, 
+    		3000L, 600000L, new Predicate() {
+
+				@Override
+				public boolean checkCondition() {
+					VMInstanceVO instance = _vmDao.findById(vm.getId());
+					if(instance.getPowerState() == VirtualMachine.PowerState.PowerOff)
+						return true;
+			
+					VmWorkJobVO workJob = _workJobDao.findById(jobId);
+					if(workJob.getStatus() != AsyncJobResult.STATUS_IN_PROGRESS)
+						return true;
+					
+					return false;
+				}
+    		});
+    	
+    	try {
+    		AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(jobId);
+    	} catch(Exception e) {
+    		s_logger.error("Unexpected exception", e);
+    		return false;
+    	}
     	return true;
     }
-    
+
+    @Override
     public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         VmWorkJobVO work = _workJobDao.findById(AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
 

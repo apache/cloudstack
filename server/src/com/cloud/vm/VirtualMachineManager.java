@@ -208,4 +208,7 @@ public interface VirtualMachineManager extends Manager {
     //
     <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+
+    <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) 
+    	throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

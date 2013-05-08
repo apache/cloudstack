@@ -159,6 +159,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmWorkStart;
+import com.cloud.vm.VmWorkStop;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -2052,15 +2053,32 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     	try {
 	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
 	    		user, account,  ((VmWorkStart)work).getPlan());
+	    	
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_SUCCEEDED, null);
     	} catch(Exception e) {
     		s_logger.error("Exception in process VM-start work", e);
     		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobResult.STATUS_FAILED, 0, result);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_FAILED, result);
     	}
     }
     
     @Override
     public void vmWorkStop(VmWork work) {
-    	// TODO
+    	assert(work instanceof VmWorkStop);
+    	
+    	ConsoleProxyVO vm = findById(work.getVmId());
+    	
+    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+    	
+    	try {
+	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
+	    	
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_SUCCEEDED, null);
+    	} catch(Exception e) {
+    		s_logger.error("Exception in process VM-stop work", e);
+    		String result = SerializerHelper.toObjectSerializedString(e);
+    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobResult.STATUS_FAILED, result);
+    	}
     }
 }

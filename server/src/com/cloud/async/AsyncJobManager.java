@@ -25,25 +25,29 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
     
-	public AsyncJobVO getAsyncJob(long jobId);
+	AsyncJobVO getAsyncJob(long jobId);
 	
-	public List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
+	List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
 	
-	public long submitAsyncJob(AsyncJob job);
-	public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
-	public long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
-	public AsyncJobResult queryAsyncJobResult(long jobId);    
+	long submitAsyncJob(AsyncJob job);
+	long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
+	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
+	AsyncJobResult queryAsyncJobResult(long jobId);    
 	
-    public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
-    public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
-    public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-    public void logJobJournal(long jobId, AsyncJob.JournalType journalType, String 
+    void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
+    void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
+    void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
+    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String 
     	journalText, String journalObjJson);
-   
-    public void releaseSyncSource();
-    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
     
-    public boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 
+    void joinJob(long jobId, long joinJobId);
+    void disjoinJob(long jobId, long joinedJobId);
+    void completeJoin(long joinJobId, int joinStatus, String joinResult);
+   
+    void releaseSyncSource();
+    void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
+    
+    boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 
     	long timeoutInMiliseconds, Predicate predicate);
     
     /**
@@ -51,5 +55,5 @@ public interface AsyncJobManager extends Manager {
      * @param cmd the command that specifies the job id
      * @return an async-call result object
      */
-    public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
+    AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
 }

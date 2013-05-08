@@ -38,11 +38,15 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.messagebus.TopicConstants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiSerializerHelper;
+import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.async.dao.AsyncJobDao;
+import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -86,6 +90,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private AsyncJobDao _jobDao;
     @Inject private AsyncJobJournalDao _journalDao;
     @Inject private ConfigurationDao _configDao;
+    @Inject private AsyncJobJoinMapDao _joinMapDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
     @Inject private MessageBus _messageBus;
 
@@ -216,6 +221,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
             txn.commit();
+            
+            _messageBus.publish(null, TopicConstants.JOB_STATE, PublishScope.GLOBAL, (Long)jobId);
         } catch(Exception e) {
             s_logger.error("Unexpected exception while completing async job-" + jobId, e);
             txn.rollback();
@@ -289,6 +296,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	journal.setJournalObjJsonString(journalObjJson);
     	
     	_journalDao.persist(journal);
+    }
+    
+    @DB
+    public void joinJob(long jobId, long joinJobId) {
+    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid());
+    }
+    
+    @DB
+    public void disjoinJob(long jobId, long joinedJobId) {
+    	_joinMapDao.disjoinJob(jobId, joinedJobId);
+    }
+    
+    @DB
+    public void completeJoin(long joinJobId, int joinStatus, String joinResult) {
+    	_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, this.getMsid());
     }
     
     @Override
