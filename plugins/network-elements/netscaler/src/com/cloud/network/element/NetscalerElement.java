@@ -842,16 +842,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return null;
     }
 
-    public List<LoadBalancerTO> getElasticLBRulesHealthCheck(Network network, List<? extends FirewallRule> rules)
+    public List<LoadBalancerTO> getElasticLBRulesHealthCheck(Network network, List<LoadBalancingRule> loadBalancingRules)
             throws ResourceUnavailableException {
 
         HealthCheckLBConfigAnswer answer = null;
-        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
-        for (FirewallRule rule : rules) {
-            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
-                loadBalancingRules.add((LoadBalancingRule) rule);
-            }
-        }
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return null;
@@ -878,7 +872,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String lbUuid = rule.getUuid();
-            String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
