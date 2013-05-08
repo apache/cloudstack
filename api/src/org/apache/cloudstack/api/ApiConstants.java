@@ -79,6 +79,7 @@ public class ApiConstants {
     public static final String END_IP = "endip";
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
+    public static final String ENTITY = "entity";
     public static final String ENTRY_TIME = "entrytime";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";

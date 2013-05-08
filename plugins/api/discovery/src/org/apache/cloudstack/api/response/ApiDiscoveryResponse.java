@@ -50,6 +50,9 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.TYPE) @Param(description="response field type")
     private String type;
 
+    @SerializedName(ApiConstants.ENTITY) @Param(description="the entity/resource the API operates on")
+    private String entity;
+
     public ApiDiscoveryResponse(){
         params = new HashSet<ApiParameterResponse>();
         apiResponse = new HashSet<ApiResponseResponse>();
@@ -84,7 +87,6 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.isAsync = isAsync;
     }
 
-
     public boolean getAsync() {
         return isAsync;
     }
@@ -111,5 +113,13 @@ public class ApiDiscoveryResponse extends BaseResponse {
 
     public void addApiResponse(ApiResponseResponse apiResponse) {
         this.apiResponse.add(apiResponse);
+    }
+
+    public String getEntity() {
+        return entity;
+    }
+
+    public void setEntity(String entity) {
+        this.entity = entity;
     }
 }
