@@ -286,6 +286,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
+            } else{
+                // for s3 and swift, we skip post download step and just set status to trigger callback.
+                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
             }
             dj.cleanup();
             break;

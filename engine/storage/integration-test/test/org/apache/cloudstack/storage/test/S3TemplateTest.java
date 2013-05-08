@@ -1,5 +1,6 @@
 package org.apache.cloudstack.storage.test;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,10 +31,12 @@ import static org.testng.Assert.assertTrue;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitorImpl;
@@ -89,6 +92,7 @@ public class S3TemplateTest extends CloudStackTestNGBase {
         sDetails.put(ApiConstants.S3_END_POINT, this.getS3EndPoint());
         this.imageStoreHelper.createImageStore(sParams, sDetails);
 
+
 		VMTemplateVO image = new VMTemplateVO();
 		image.setTemplateType(TemplateType.SYSTEM);
 		image.setUrl(this.getTemplateUrl());
@@ -106,6 +110,7 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 		image.setPrepopulate(true);
 		image.setCrossZones(true);
 		image.setExtractable(true);
+		image.setAccountId(2);
 		image = templateDao.persist(image);
 		templateId = image.getId();
 

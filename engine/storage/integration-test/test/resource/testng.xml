@@ -35,7 +35,7 @@
   <parameter name="s3-accesskey" value="OYAZXCAFUC1DAFOXNJWI"/>
   <parameter name="s3-secretkey" value="YHpRtzNDwl12DtrQmwRvdpnf2xK2AeVM30rXxQ=="/>
   <parameter name="s3-endpoint"  value="10.223.89.7:8080" />
-  <parameter name="s3-template-bucket" value="cstemplates"/>
+  <parameter name="s3-template-bucket" value="cloudstack"/>
   <parameter name="s3-usehttps"  value="false" />
 
   <parameter name="image-install-path" value="template/tmpl/1/5/"/>
