@@ -1066,10 +1066,7 @@
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
-                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
-                      updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
-                      });
                    },
 
                    error:function(json){
