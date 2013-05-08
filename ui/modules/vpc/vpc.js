@@ -34,7 +34,7 @@
         dashboardItems: args.dashboardItems
       }).addClass('router');
       
-      $router.find('.info').remove();
+      $router.find('.info, .detail-link').remove();
       
       return $router;
     },
