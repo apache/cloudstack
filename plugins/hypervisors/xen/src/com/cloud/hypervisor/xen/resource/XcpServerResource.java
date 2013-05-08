@@ -39,9 +39,10 @@ import com.xensource.xenapi.Types.XenAPIException;
 @Local(value=ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
 	  private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
-	  
-    public XcpServerResource() {
+	  private String version;
+    public XcpServerResource(String version) {
         super();
+        this.version = version;
     }
     
     @Override
@@ -55,7 +56,11 @@ public class XcpServerResource extends CitrixResourceBase {
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXcpGuestOsType(stdType);
+    	if (version.equalsIgnoreCase("1.6")) {
+    		return CitrixHelper.getXcp160GuestOsType(stdType);
+    	} else {
+    		return CitrixHelper.getXcpGuestOsType(stdType);
+    	}
     }
 
     @Override
