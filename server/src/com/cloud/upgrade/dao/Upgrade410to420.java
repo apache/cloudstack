@@ -67,7 +67,7 @@ public class Upgrade410to420 implements DbUpgrade {
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
-        updateServiceOfferingDeploymentPlanner(conn);
+        updateGlobalDeploymentPlanner(conn);
     }
 
     private void updateSystemVmTemplates(Connection conn) {
@@ -402,7 +402,7 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private void updateServiceOfferingDeploymentPlanner(Connection conn) {
+    private void updateGlobalDeploymentPlanner(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
@@ -429,13 +429,13 @@ public class Upgrade410to420 implements DbUpgrade {
                         plannerName = "UserDispersingPlanner";
                     }
                 }
-                // update service offering with the planner name
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` set deployment_planner=?");
+                // update vm.deployment.planner global config
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` set value=? where name = 'vm.deployment.planner'");
                 pstmt.setString(1, plannerName);
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to set deployment_planner for service offerings", e);
+            throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
         } finally {
             try {
                 if (rs != null) {

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.deploy.dao;
 
+import java.util.List;
+
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import com.cloud.deploy.PlannerHostReservationVO;
@@ -28,6 +30,7 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
         PlannerHostReservationDao {
 
     private SearchBuilder<PlannerHostReservationVO> _hostIdSearch;
+    private SearchBuilder<PlannerHostReservationVO> _reservedHostSearch;
 
     public PlannerHostReservationDaoImpl() {
 
@@ -38,6 +41,10 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
         _hostIdSearch = createSearchBuilder();
         _hostIdSearch.and("hostId", _hostIdSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         _hostIdSearch.done();
+
+        _reservedHostSearch = createSearchBuilder();
+        _reservedHostSearch.and("usage", _reservedHostSearch.entity().getResourceUsage(), SearchCriteria.Op.NNULL);
+        _reservedHostSearch.done();
     }
 
     @Override
@@ -45,6 +52,12 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
         SearchCriteria<PlannerHostReservationVO> sc = _hostIdSearch.create();
         sc.setParameters("hostId", hostId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<PlannerHostReservationVO> listAllReservedHosts() {
+        SearchCriteria<PlannerHostReservationVO> sc = _reservedHostSearch.create();
+        return listBy(sc);
     }
 
 }

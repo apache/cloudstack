@@ -82,11 +82,14 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -126,6 +129,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected UserVmDao _userVMDao;
+    @Inject
+    protected UserVmDetailsDao _userVmDetailsDao;
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
@@ -139,6 +144,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Inject
     MessageBus _messageBus;
+
+    private static final String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -561,9 +568,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 reservedMemory += so.getRamSize() * 1024L * 1024L;
                 reservedCpu += so.getCpu() * so.getSpeed();
             } else {
-                // signal that the VM has been stopped for skip.counting.hours,
+                // signal if not done already, that the VM has been stopped for skip.counting.hours,
                 // hence capacity will not be reserved anymore.
-                _messageBus.publish(_name, "VM_ReservedCapacity_Free", PublishScope.LOCAL, vm);
+                UserVmDetailVO messageSentFlag = _userVmDetailsDao.findDetail(vm.getId(), MESSAGE_RESERVED_CAPACITY_FREED_FLAG);
+                if (messageSentFlag == null || !Boolean.valueOf(messageSentFlag.getValue())) {
+                    _messageBus.publish(_name, "VM_ReservedCapacity_Free", PublishScope.LOCAL, vm);
+
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        UserVmVO userVM = _userVMDao.findById(vm.getId());
+                        _userVMDao.loadDetails(userVM);
+                        userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "true");
+                        _userVMDao.saveDetails(userVM);
+                    }
+                }
             }
         }
 
@@ -698,6 +715,18 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 fromLastHost = true;
             }
             allocateVmCapacity(vm, fromLastHost);
+        }
+
+        if (newState == State.Stopped) {
+            if (vm.getType() == VirtualMachine.Type.User) {
+
+                UserVmVO userVM = _userVMDao.findById(vm.getId());
+                _userVMDao.loadDetails(userVM);
+                // free the message sent flag if it exists
+                userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
+                _userVMDao.saveDetails(userVM);
+
+            }
         }
 
         return true;

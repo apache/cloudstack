@@ -259,6 +259,7 @@ listHosts=3
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
+releaseHostReservation=1
 
 #### volume commands
 attachVolume=15

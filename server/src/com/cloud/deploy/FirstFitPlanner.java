@@ -106,6 +106,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
 
 	protected String _allocationAlgorithm = "random";
+    protected String _globalDeploymentPlanner = "FirstFitPlanner";
 
 
     @Override
@@ -483,10 +484,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
     @Override
     public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
-        // check what the ServiceOffering says
+        // check what the ServiceOffering says. If null, check the global config
         ServiceOffering offering = vm.getServiceOffering();
         if (offering != null && offering.getDeploymentPlanner() != null) {
             if (offering.getDeploymentPlanner().equals(this.getName())) {
+                return true;
+            }
+        } else {
+            if (_globalDeploymentPlanner != null && _globalDeploymentPlanner.equals(this._name)) {
                 return true;
             }
         }
@@ -497,6 +502,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
+        _globalDeploymentPlanner = _configDao.getValue(Config.VmDeploymentPlanner.key());
         return true;
     }
 

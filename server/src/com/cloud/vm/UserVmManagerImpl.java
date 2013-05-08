@@ -3066,6 +3066,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // Get serviceOffering for Virtual Machine
         ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         String plannerName = offering.getDeploymentPlanner();
+        if (plannerName == null) {
+            plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        }
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
         vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString(), params);

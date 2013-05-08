@@ -21,7 +21,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
@@ -29,7 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -41,9 +42,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
-import com.cloud.capacity.Capacity;
+
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -65,7 +67,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -82,6 +83,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -94,6 +96,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.agent.AgentManager;
@@ -105,6 +108,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
+
 
 @Local(value = { DeploymentPlanningManager.class })
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener {
@@ -124,9 +128,14 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     DataCenterDao _dcDao;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
-
+    private int _vmCapacityReleaseInterval;
     @Inject
     MessageBus _messageBus;
+    private Timer _timer = null;
+    private long _hostReservationReleasePeriod = 60L * 60L * 1000L; // one hour by default
+
+    private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
+    protected long _nodeId = -1;
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -212,7 +221,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
 
         ServiceOffering offering = vmProfile.getServiceOffering();
-        DeploymentPlanner planner = ComponentContext.getComponent(offering.getDeploymentPlanner());
+        String plannerName = offering.getDeploymentPlanner();
+        if (plannerName == null) {
+            plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        }
+        DeploymentPlanner planner = ComponentContext.getComponent(plannerName);
 
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
@@ -352,57 +365,57 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         DeployDestination dest = null;
         List<Long> clusterList = null;
 
-        if (offering != null && offering.getDeploymentPlanner() != null) {
-            if (planner != null && planner.canHandle(vmProfile, plan, avoids)) {
-                while (true) {
+        if (planner != null && planner.canHandle(vmProfile, plan, avoids)) {
+            while (true) {
 
-                    if (planner instanceof DeploymentClusterPlanner) {
+                if (planner instanceof DeploymentClusterPlanner) {
 
-                        ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                    ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                            avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
+                            avoids.getPoolsToAvoid());
+
+                    clusterList = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
+
+                    if (clusterList != null && !clusterList.isEmpty()) {
+                        // planner refactoring. call allocators to list hosts
+                        ExcludeList PlannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
                                 avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                                 avoids.getPoolsToAvoid());
 
-                        clusterList = ((DeploymentClusterPlanner) planner).orderClusters(vmProfile, plan, avoids);
+                        resetAvoidSet(PlannerAvoidOutput, PlannerAvoidInput);
 
-                        if (clusterList != null && !clusterList.isEmpty()) {
-                            // planner refactoring. call allocators to list hosts
-                            ExcludeList PlannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
-                                    avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
-                                    avoids.getPoolsToAvoid());
+                        dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
+                                getPlannerUsage(planner), PlannerAvoidOutput);
+                        if (dest != null) {
+                            return dest;
+                        }
+                        // reset the avoid input to the planners
+                        resetAvoidSet(avoids, PlannerAvoidOutput);
 
-                            resetAvoidSet(PlannerAvoidOutput, PlannerAvoidInput);
+                    } else {
+                        return null;
+                    }
+                } else {
+                    dest = planner.plan(vmProfile, plan, avoids);
+                    if (dest != null) {
+                        long hostId = dest.getHost().getId();
+                        avoids.addHost(dest.getHost().getId());
 
-                            dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
-                                    getPlannerUsage(planner), PlannerAvoidOutput);
-                            if(dest != null){
-                                return dest;
-                            }
-                            // reset the avoid input to the planners
-                            resetAvoidSet(avoids, PlannerAvoidOutput);
-
+                        if (checkIfHostFitsPlannerUsage(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
+                            // found destination
+                            return dest;
                         } else {
-                            return null;
+                            // find another host - seems some concurrent
+                            // deployment picked it up for dedicated access
+                            continue;
                         }
                     } else {
-                        dest = planner.plan(vmProfile, plan, avoids);
-                        if (dest != null) {
-                            long hostId = dest.getHost().getId();
-                            avoids.addHost(dest.getHost().getId());
-
-                            if (checkIfHostFitsPlannerUsage(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
-                                // found destination
-                                return dest;
-                            } else {
-                                // find another host - seems some concurrent deployment picked it up for dedicated access
-                                continue;
-                            }
-                        }else{
-                            return null;
-                        }
+                        return null;
                     }
                 }
             }
         }
+
 
         return dest;
     }
@@ -495,36 +508,69 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @DB
-    public void checkHostReservationRelease(VMInstanceVO vm) {
-        s_logger.debug("MessageBus message: host reserved capacity released for VM: " + vm.getLastHostId()
-                + ", checking if host reservation can be released for host:" + vm.getLastHostId());
-
-        Long hostId = vm.getLastHostId();
+    public boolean checkHostReservationRelease(Long hostId) {
 
         if (hostId != null) {
-            List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(hostId);
-            if (vms.size() > 0) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cannot release reservation, Found " + vms.size() + " VMs Running on host " + hostId);
-                }
-            }
-
-            List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
-            if (vmsByLastHostId.size() > 0) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cannot release reservation, Found " + vmsByLastHostId.size()
-                            + " VMs Stopped but reserved on host " + hostId);
-                }
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host has no VMs, releasing the planner reservation");
-            }
-
             PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
-            if (reservationEntry != null) {
-                long id = reservationEntry.getId();
+            if (reservationEntry != null && reservationEntry.getResourceUsage() != null) {
 
+                // check if any VMs are starting or running on this host
+                List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(hostId);
+                if (vms.size() > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot release reservation, Found " + vms.size() + " VMs Running on host "
+                                + hostId);
+                    }
+                    return false;
+                }
+
+                List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
+                if (vmsByLastHostId.size() > 0) {
+                    // check if any VMs are within skip.counting.hours, if yes
+                    // we
+                    // cannot release the host
+                    for (VMInstanceVO stoppedVM : vmsByLastHostId) {
+                        long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - stoppedVM.getUpdateTime()
+                                .getTime()) / 1000;
+                        if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Cannot release reservation, Found VM: " + stoppedVM
+                                        + " Stopped but reserved on host " + hostId);
+                            }
+                            return false;
+                        }
+                    }
+                }
+
+                // check if any VMs are stopping on or migrating to this host
+                List<VMInstanceVO> vmsStoppingMigratingByHostId = _vmInstanceDao.findByHostInStates(hostId,
+                        State.Stopping, State.Migrating, State.Starting);
+                if (vmsStoppingMigratingByHostId.size() > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot release reservation, Found " + vms.size()
+                                + " VMs stopping/migrating on host " + hostId);
+                    }
+                    return false;
+                }
+
+                // check if any VMs are in starting state with no hostId set yet
+                // -
+                // just ignore host release to avoid race condition
+                List<VMInstanceVO> vmsStartingNoHost = _vmInstanceDao.listStartingWithNoHostId();
+
+                if (vmsStartingNoHost.size() > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot release reservation, Found " + vms.size()
+                                + " VMs starting as of now and no hostId yet stored");
+                    }
+                    return false;
+                }
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host has no VMs associated, releasing the planner reservation for host " + hostId);
+                }
+
+                long id = reservationEntry.getId();
                 final Transaction txn = Transaction.currentTxn();
 
                 try {
@@ -533,11 +579,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
                     if (lockedEntry == null) {
                         s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
+                        return false;
                     }
                     // check before updating
                     if (lockedEntry.getResourceUsage() != null) {
                         lockedEntry.setResourceUsage(null);
                         _plannerHostReserveDao.persist(lockedEntry);
+                        return true;
                     }
                 } finally {
                     txn.commit();
@@ -545,6 +593,32 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
 
         }
+        return false;
+    }
+
+    class HostReservationReleaseChecker extends TimerTask {
+        @Override
+        public void run() {
+            try {
+                s_logger.debug("Checking if any host reservation can be released ... ");
+                checkHostReservations();
+                s_logger.debug("Done running HostReservationReleaseChecker ... ");
+            } catch (Throwable t) {
+                s_logger.error("Exception in HostReservationReleaseChecker", t);
+            }
+        }
+    }
+
+    private void checkHostReservations() {
+        List<PlannerHostReservationVO> reservedHosts = _plannerHostReserveDao.listAllReservedHosts();
+
+        for (PlannerHostReservationVO hostReservation : reservedHosts) {
+            HostVO host = _hostDao.findById(hostReservation.getHostId());
+            if (host != null && host.getManagementServerId() != null && host.getManagementServerId() == _nodeId) {
+                checkHostReservationRelease(hostReservation.getHostId());
+            }
+        }
+
     }
 
     @Override
@@ -610,12 +684,43 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         _agentMgr.registerForHostEvents(this, true, false, true);
         _messageBus.subscribe("VM_ReservedCapacity_Free", new MessageSubscriber() {
             @Override
-            public void onPublishMessage(String senderAddress, String subject, Object vm) {
-                checkHostReservationRelease((VMInstanceVO) vm);
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                VMInstanceVO vm = ((VMInstanceVO) obj);
+                s_logger.debug("MessageBus message: host reserved capacity released for VM: " + vm.getLastHostId()
+                        + ", checking if host reservation can be released for host:" + vm.getLastHostId());
+                Long hostId = vm.getLastHostId();
+                checkHostReservationRelease(hostId);
             }
         });
 
+        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()),
+                3600);
+
+        String hostReservationReleasePeriod = _configDao.getValue(Config.HostReservationReleasePeriod.key());
+        if (hostReservationReleasePeriod != null) {
+            _hostReservationReleasePeriod = Long.parseLong(hostReservationReleasePeriod);
+            if (_hostReservationReleasePeriod <= 0)
+                _hostReservationReleasePeriod = Long.parseLong(Config.HostReservationReleasePeriod.getDefaultValue());
+        }
+
+        _timer = new Timer("HostReservationReleaseChecker");
+
+        _nodeId = ManagementServerNode.getManagementServerId();
+
         return super.configure(name, params);
+    }
+
+    @Override
+    public boolean start() {
+        _timer.schedule(new HostReservationReleaseChecker(), INITIAL_RESERVATION_RELEASE_CHECKER_DELAY,
+                _hostReservationReleasePeriod);
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        _timer.cancel();
+        return true;
     }
 
     // /refactoring planner methods

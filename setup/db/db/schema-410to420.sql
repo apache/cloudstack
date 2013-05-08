@@ -934,7 +934,10 @@ CREATE TABLE `cloud`.`op_host_planner_reservation` (
   CONSTRAINT `fk_planner_reservation__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) NOT NULL DEFAULT 'FirstFitPlanner'  COMMENT 'Planner heuristics used to deploy a VM of this offering';
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) COMMENT 'Planner heuristics used to deploy a VM of this offering; if null global config vm.deployment.planner is used';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.deployment.planner', 'FirstFitPlanner', '[''FirstFitPlanner'', ''UserDispersingPlanner'', ''UserConcentratedPodPlanner'']: DeploymentPlanner heuristic that will be used for VM deployment.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'host.reservation.release.period', '300000', 'The interval in milliseconds between host reservation release checks');
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
