@@ -38,12 +38,7 @@
         add: {
           label: 'Add VNMC device',
 
-          messages: {
-            /*
-            confirm: function(args) {
-              return 'Add VNMC device';
-            },
-            */
+          messages: {           
             notification: function(args) {
               return 'Add VNMC device';
             }

@@ -22,22 +22,95 @@
       listView: {
         id: 'asa1000vDevices',
         fields: {
-          name: { label: 'label.name' },
-          ipaddress: { label: 'label.ip.address' },
-          state: { label: 'label.state', indicator: {
-            'Enabled': 'on',
-            'Disabled': 'off'
-          }}
+          hostname: { label: 'label.host' },
+          insideportprofile: { label: 'Inside Port Profile' }
         },
-        dataProvider: function(args) {
-          args.response.success({
-            data: [
-              { name: 'asadevice1', ipaddress: '192.168.1.12', state: 'Enabled' },
-              { name: 'asadevice2', ipaddress: '192.168.1.13', state: 'Disabled' },
-              { name: 'asadevice3', ipaddress: '192.168.1.14', state: 'Enabled' }
-            ]
-          });
-        }
+        dataProvider: function(args) {          
+          $.ajax({
+            url: createURL('listCiscoAsa1000vResources'),
+            data: {
+              physicalnetworkid: args.context.physicalNetworks[0].id
+            },
+            success: function(json){   
+              var items = json.listCiscoAsa1000vResources["null"]; //waiting for Koushik to fix object name to be "CiscoAsa1000vResource" instead of "null"
+              //var items = json.listCiscoAsa1000vResources.CiscoAsa1000vResource;   
+              args.response.success({ data: items });            
+            }
+          }); 
+        },
+        
+        actions: {
+          add: {
+            label: 'Add CiscoASA1000v',
+            messages: {             
+              notification: function(args) {
+                return 'Add CiscoASA1000v';
+              }
+            },
+            createForm: {
+              title: 'Add CiscoASA1000v',
+              fields: {
+                hostname: {
+                  label: 'label.host',                
+                  validation: { required: true }
+                },
+                insideportprofile: {
+                  label: 'Inside Port Profile',                
+                  validation: { required: true },
+                  defaultValue: 'in-asa'
+                },
+                clusterid: {
+                  label: 'label.cluster',                   
+                  validation: { required: true },
+                  select: function(args){                    
+                    $.ajax({
+                      url: createURL('listClusters'),
+                      data: {
+                        zoneid: args.context.zones[0].id
+                      },                      
+                      success: function(json) {                        
+                        var objs = json.listclustersresponse.cluster;
+                        var items = [];
+                        if(objs != null) {
+                          for(var i = 0; i < objs.length; i++){
+                            items.push({id: objs[i].id, description: objs[i].name});
+                          }
+                        }     
+                        args.response.success({data: items});
+                      }
+                    });
+                  }
+                }            
+              }
+            },
+            action: function(args) {              
+              var data = {
+                physicalnetworkid: args.context.physicalNetworks[0].id,
+                hostname: args.data.hostname,
+                insideportprofile: args.data.insideportprofile,
+                clusterid: args.data.clusterid
+              };
+              
+              $.ajax({
+                url: createURL('addCiscoAsa1000vResource'),
+                data: data,
+                success: function(json){
+                  var item = json.addCiscoAsa1000vResource.CiscoAsa1000vResource;
+                  args.response.success({data: item});
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+                }               
+              });
+              
+            },            
+            notification: {
+              poll: function(args) {
+                args.complete();
+              }
+            }
+          }
+        }        
       }
     });
   };
