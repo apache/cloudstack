@@ -41,14 +41,14 @@
         
         actions: {
           add: {
-            label: 'Add CiscoASA1000v',
+            label: 'Add CiscoASA1000v Resource',
             messages: {             
               notification: function(args) {
-                return 'Add CiscoASA1000v';
+                return 'Add CiscoASA1000v Resource';
               }
             },
             createForm: {
-              title: 'Add CiscoASA1000v',
+              title: 'Add CiscoASA1000v Resource',
               fields: {
                 hostname: {
                   label: 'label.host',                
@@ -56,8 +56,7 @@
                 },
                 insideportprofile: {
                   label: 'Inside Port Profile',                
-                  validation: { required: true },
-                  defaultValue: 'in-asa'
+                  validation: { required: true }
                 },
                 clusterid: {
                   label: 'label.cluster',                   
@@ -110,7 +109,78 @@
               }
             }
           }
-        }        
+        },   
+                
+        detailView: {
+          name: 'CiscoASA1000v details',
+          actions: {    
+            remove: {
+              label: 'delete CiscoASA1000v',
+              messages: {
+                confirm: function(args) {
+                  return 'Please confirm you want to delete CiscoASA1000v';
+                },
+                notification: function(args) {
+                  return 'delete CiscoASA1000v';
+                }
+              },
+              action: function(args) {
+                debugger;                     
+                $.ajax({
+                  url: createURL('deleteCiscoAsa1000vResource'),
+                  data: {
+                    resourceid: args.context.asa1000vDevices[0].resourceid
+                  },                   
+                  success: function(json) {
+                    args.response.success();
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
+                  }
+                });
+              },
+              notification: {
+                poll: function(args) {
+                  args.complete();
+                }
+              }
+            }
+          },
+
+          tabs: {
+            details: {
+              title: 'label.details',
+
+              fields: [
+                {
+                  hostname: {
+                    label: 'label.host'                    
+                  }
+                },
+                {
+                  insideportprofile: { label: 'Inside Port Profile' },
+                  RESOURCE_NAME: { label: 'Resource Name' },
+                  resourceid: { label: 'Resource ID' }                    
+                }
+              ],
+
+              dataProvider: function(args) {    
+                debugger;
+                $.ajax({
+                  url: createURL('listCiscoAsa1000vResources'),
+                  data: {
+                    resourceid: args.context.asa1000vDevices[0].resourceid
+                  },  
+                  success: function(json) {                     
+                    var item = json.listCiscoAsa1000vResources["null"][0]; //waiting for Koushik to fix object name to be "CiscoAsa1000vResource" instead of "null"
+                    //var item = json.listCiscoAsa1000vResources.CiscoAsa1000vResource[0];   
+                    args.response.success({ data: item });            
+                  }
+                });                 
+              }
+            }
+          }
+        }              
       }
     });
   };
