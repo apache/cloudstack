@@ -95,7 +95,7 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_EXTERNAL_LB_DEVICE_DELETE;
+		return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_DELETE;
 	}
 
 	@Override
