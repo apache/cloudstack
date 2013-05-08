@@ -167,7 +167,6 @@
   <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />
   <bean id="accountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
   <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
-  <bean id="agentUpgradeDaoImpl" class="com.cloud.maint.dao.AgentUpgradeDaoImpl" />
   <bean id="alertDaoImpl" class="com.cloud.alert.dao.AlertDaoImpl" />
   <bean id="asyncJobDaoImpl" class="com.cloud.async.dao.AsyncJobDaoImpl" />
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
@@ -303,7 +302,6 @@
   <bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
   <bean id="snapshotPolicyDaoImpl" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" />
   <bean id="snapshotScheduleDaoImpl" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl" />
-  <bean id="stackMaidDaoImpl" class="com.cloud.cluster.dao.StackMaidDaoImpl" />
   <bean id="staticRouteDaoImpl" class="com.cloud.network.vpc.dao.StaticRouteDaoImpl" />
   <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
@@ -705,7 +703,6 @@
   <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
   <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
   <bean id="templateManagerImpl" class="com.cloud.template.TemplateManagerImpl" />
-  <bean id="upgradeManagerImpl" class="com.cloud.maint.UpgradeManagerImpl" />
   <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
   <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
   <bean id="virtualNetworkApplianceManagerImpl" class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />

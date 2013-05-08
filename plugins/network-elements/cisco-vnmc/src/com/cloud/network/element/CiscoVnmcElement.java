@@ -434,16 +434,14 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean shutdownProviderInstances(
             PhysicalNetworkServiceProvider provider, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override

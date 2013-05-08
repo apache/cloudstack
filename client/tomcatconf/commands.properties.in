@@ -127,6 +127,9 @@ deleteVlanIpRange=1
 listVlanIpRanges=1
 dedicatePublicIpRange=1
 releasePublicIpRange=1
+dedicateGuestVlanRange=1
+releaseDedicatedGuestVlanRange=1
+listDedicatedGuestVlanRanges=1
 
 #### address commands
 associateIpAddress=15
@@ -591,3 +594,5 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+### Network Isolation methods listing
+listNetworkIsolationMethods=1

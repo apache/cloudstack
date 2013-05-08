@@ -46,6 +46,7 @@ def describeResources(config):
     z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
+    z.securitygroupenabled = 'false'
     
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
@@ -57,6 +58,7 @@ def describeResources(config):
     pn.traffictypes = [traffictype("Guest"),
             traffictype("Management", {"simulator" : "cloud-simulator-mgmt"}),
             traffictype("Public", {"simulator":"cloud-simulator-public"})]
+    pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
 
     pn2 = physical_network()
@@ -64,6 +66,7 @@ def describeResources(config):
     pn2.vlan = config.get('cloudstack', 'pnet2.vlan')
     pn2.tags = ["cloud-simulator-guest"]
     pn2.traffictypes = [traffictype('Guest', {'simulator': 'cloud-simulator-guest'})]
+    pn2.isolationmethods = ["VLAN"]
     pn2.providers.append(vpcprovider)
     
     z.physical_networks.append(pn)

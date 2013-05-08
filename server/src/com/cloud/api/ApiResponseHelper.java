@@ -34,9 +34,10 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
@@ -65,12 +66,14 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -180,14 +183,14 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.network.dao.AccountGuestVlanMapVO;
-import com.cloud.network.IpAddress;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -267,38 +270,17 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.InstanceGroup;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-import com.cloud.vm.dao.UserVmData;
-import com.cloud.vm.dao.UserVmData.NicData;
-import com.cloud.vm.dao.UserVmData.SecurityGroupData;
-import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.response.VMSnapshotResponse;
-import org.apache.log4j.Logger;
-
-import java.text.DecimalFormat;
-import java.util.*;
-
-import javax.inject.Inject;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 @Component
 public class ApiResponseHelper implements ResponseGenerator {
@@ -3735,5 +3717,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return ag.getId();
         }
+    }
+
+
+
+    @Override
+    public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {
+        IsolationMethodResponse response = new IsolationMethodResponse();
+        response.setIsolationMethodName(method.toString());
+        response.setObjectName("isolationmethod");
+        return response;
     }
 }

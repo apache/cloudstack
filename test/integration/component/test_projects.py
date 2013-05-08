@@ -78,7 +78,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "virtual_machine": {
                                     "displayname": "Test VM",
@@ -248,15 +248,15 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         # Add user to the project
         project_1.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project_1.id,
-                                            account=self.user.account.name,
+                                            account=self.user.name,
                                             )
         self.debug(accounts_reponse)
         self.assertEqual(
@@ -280,15 +280,15 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         # Add user to the project
         project_2.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project_2.id,
-                                            account=self.user.account.name,
+                                            account=self.user.name,
                                             )
         self.debug(accounts_reponse)
         self.assertEqual(
@@ -432,15 +432,15 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
                             )
 
         self.debug("Adding user: %s from domain: %s to project: %s" % (
-                                                    self.user.account.name,
-                                                    self.user.account.domainid,
+                                                    self.user.name,
+                                                    self.user.domainid,
                                                     project.id
                                                     ))
         with self.assertRaises(Exception):
             # Add user to the project from different domain
             project.addAccount(
                            self.apiclient,
-                           self.user.account.name
+                           self.user.name
                            )
             self.debug("User add to project failed!")
         return
@@ -938,7 +938,7 @@ class TestProjectOwners(cloudstackTestCase):
                               )
         self.cleanup.append(self.user)
         self.debug("Created account with ID: %s" %
-                                                self.user.account.name)
+                                                self.user.name)
 
         list_projects_reponse = Project.list(
                                              self.apiclient,
@@ -1033,20 +1033,20 @@ class TestProjectOwners(cloudstackTestCase):
                             )
 
         self.debug("Adding %s user to project: %s" % (
-                                                self.user.account.name,
+                                                self.user.name,
                                                 project.name
                                                 ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
+                           self.user.name,
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                         self.apiclient,
                                         projectid=project.id,
-                                        account=self.user.account.name,
+                                        account=self.user.name,
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1068,19 +1068,19 @@ class TestProjectOwners(cloudstackTestCase):
                             )
 
         self.debug("Updating project with new Admin: %s" %
-                                                self.user.account.name)
+                                                self.user.name)
 
         # Update the project with new admin
         project.update(
                        self.apiclient,
-                       account=self.user.account.name
+                       account=self.user.name
                        )
 
         # listProjectAccount to verify the user is new admin of the project
         accounts_reponse = Project.listAccounts(
                                         self.apiclient,
                                         projectid=project.id,
-                                        account=self.user.account.name,
+                                        account=self.user.name,
                                         )
         self.debug(accounts_reponse)
         self.assertEqual(
@@ -1248,20 +1248,20 @@ class TestProjectResources(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                self.user.account.name,
+                                                self.user.name,
                                                 project.name
                                                 ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
+                           self.user.name,
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                         self.apiclient,
                                         projectid=project.id,
-                                        account=self.user.account.name,
+                                        account=self.user.name,
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1370,20 +1370,20 @@ class TestProjectResources(cloudstackTestCase):
                                    )
         self.cleanup.append(self.user)
         self.debug("Adding %s user to project: %s" % (
-                                                self.user.account.name,
+                                                self.user.name,
                                                 project.name
                                                 ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name
+                           self.user.name
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                         self.apiclient,
                                         projectid=project.id,
-                                        account=self.user.account.name,
+                                        account=self.user.name,
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1543,20 +1543,20 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         #    account deletion.
 
         self.debug("Adding %s user to project: %s" % (
-                                                self.user.account.name,
+                                                self.user.name,
                                                 self.project.name
                                                 ))
         # Add user to the project
         self.project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
+                           self.user.name,
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                         self.apiclient,
                                         projectid=self.project.id,
-                                        account=self.user.account.name,
+                                        account=self.user.name,
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),

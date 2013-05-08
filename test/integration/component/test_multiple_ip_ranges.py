@@ -368,3 +368,61 @@ class TestMultipleIpRanges(cloudstackTestCase):
         #Test will reach here there is a bug in overlap ip range checking
         self.fail("CS should not accept overlapped ip ranges in guest traffic, but it allowed")
         return
+
+    @attr(tags=["advanced_sg", "sg"])
+    def test_06_add_ip_range_overlapped_with_two_ranges(self):
+        """Test adding overlapped ip range in existing cidr
+
+            1.Add ip range in new cidr e.g:10.147.40.2-10.147.40.10
+            2.Add another ip range in the same cidr e.g:10.147.40.20-10.147.40.30
+            2.Add ip range overlapped with both the ip ranges e.g.10.147.40.10-20
+        """
+        #call increment_cidr function to get exiting cidr from the setup and increment it
+        ip2 = self.increment_cidr()
+        test_nw = ip2.network
+        ip = IPAddress(test_nw)
+        #Add IP range in the new CIDR
+        test_gateway = ip.__add__(1)
+        test_startIp = ip.__add__(2)
+        test_endIp = ip.__add__(10)
+        test_startIp2 = ip.__add__(20)
+        test_endIp2 = ip.__add__(30)
+        test_startIp3 = ip.__add__(10)
+        test_endIp3 = ip.__add__(20)
+        #Populating services with new IP range
+        self.services["vlan_ip_range"]["startip"] = test_startIp
+        self.services["vlan_ip_range"]["endip"] = test_endIp
+        self.services["vlan_ip_range"]["gateway"] = test_gateway
+        self.services["vlan_ip_range"]["netmask"] = self.netmask
+        self.services["vlan_ip_range"]["zoneid"] = self.zone.id
+        self.services["vlan_ip_range"]["podid"] = self.pod.id
+        #create new vlan ip range
+        new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
+        self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
+        self.cleanup.append(new_vlan)
+        new_vlan_res = new_vlan.list(self.apiclient,id=new_vlan.vlan.id)
+        #Compare list output with configured values
+        self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
+        #Add 2nd IP range in the same CIDR
+        self.services["vlan_ip_range"]["startip"] = test_startIp2
+        self.services["vlan_ip_range"]["endip"] = test_endIp2
+        new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
+        self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp2,test_endIp2))
+        self.cleanup.append(new_vlan)
+        new_vlan_res = new_vlan.list(self.apiclient,id=new_vlan.vlan.id)
+        #Compare list output with configured values
+        self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
+        #Add ip range which will overlap with two existing ip ranges in the same CIDR
+        #Populating services with new IP range
+        self.services["vlan_ip_range"]["startip"] = test_startIp3
+        self.services["vlan_ip_range"]["endip"] = test_endIp3
+        #Try to create ip range overlapped with exiting ip range
+        try:
+            PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
+        except cloudstackAPIException as cs:
+            self.debug(cs.errorMsg)
+            self.assertTrue(cs.errorMsg.find("already has IPs that overlap with the new range")>0, msg="Fail:CS allowed adding overlapped ip ranges in guest cidr")
+            return
+        #Test will reach here there is a bug in overlap ip range checking
+        self.fail("CS should not accept overlapped ip ranges in guest traffic, but it allowed")
+        return

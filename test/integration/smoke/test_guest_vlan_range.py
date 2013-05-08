@@ -43,15 +43,16 @@ class Services:
                                     "username": "test",
                                     "password": "password",
                          },
-                        "name": "testphysicalnetwork"
+                        "name": "testphysicalnetwork",
+                        "vlan": "2118-2120",
                     }
 
 
-class TesDedicateGuestVlanRange(cloudstackTestCase):
+class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TesDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(TestDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -64,7 +65,7 @@ class TesDedicateGuestVlanRange(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls._cleanup = [
-                        #cls.account,
+                        cls.account,
                         ]
         return
 
@@ -72,6 +73,13 @@ class TesDedicateGuestVlanRange(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
+            list_physical_network_response = PhysicalNetwork.list(cls.api_client)
+            if list_physical_network_response is not None and len(list_physical_network_response) > 0:
+                physical_network = list_physical_network_response[0]
+                removeGuestVlanRangeResponse = \
+                physical_network.update(cls.api_client,
+                        id=physical_network.id,
+                        removevlan=cls.services["vlan"])
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -119,12 +127,12 @@ class TesDedicateGuestVlanRange(cloudstackTestCase):
         physical_network_response = list_physical_network_response[0]
 
         self.debug("Adding guest vlan range")
-        addGuestVlanRangeResponse = physical_network_response.update(self.apiclient, id=physical_network_response.id, vlan="387-390")
+        addGuestVlanRangeResponse = physical_network_response.update(self.apiclient, id=physical_network_response.id, vlan=self.services["vlan"])
 
         self.debug("Dedicating guest vlan range");
         dedicate_guest_vlan_range_response = PhysicalNetwork.dedicate(
                                                 self.apiclient,
-                                                "387-390",
+                                                self.services["vlan"],
                                                 physicalnetworkid=physical_network_response.id,
                                                 account=self.account.name,
                                                 domainid=self.account.domainid
@@ -141,17 +149,12 @@ class TesDedicateGuestVlanRange(cloudstackTestCase):
                         )
 
         self.debug("Releasing guest vlan range");
-        dedicated_guest_vlan_response.release(self.apiclient)
-        list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(
-                                                self.apiclient,
-                                                id=dedicate_guest_vlan_range_response.id
-                                        )
-        dedicated_guest_vlan_response = list_dedicated_guest_vlan_range_response[0]
+        dedicate_guest_vlan_range_response.release(self.apiclient)
+        list_dedicated_guest_vlan_range_response = PhysicalNetwork.listDedicated(self.apiclient)
         self.assertEqual(
-                            dedicated_guest_vlan_response.account,
-                            "system",
-                            "Check account name is system account in listDedicatedGuestVlanRanges"
-                        )
+                        list_dedicated_guest_vlan_range_response,
+                        None,
+                        "Check vlan range is not available in listDedicatedGuestVlanRanges"
+
+                        )                    
         
-        self.debug("Removing guest vlan range")
-        removeGuestVlanRangeResponse = physical_network_response.update(self.apiclient, id=physical_network_response.id, removevlan="387-390")

@@ -63,7 +63,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "memory": 128, # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -429,14 +429,14 @@ class TestProjectLimits(cloudstackTestCase):
                          )
 
         self.debug("Adding %s user to project: %s" % (
-                                                self.user.account.name,
+                                                self.user.name,
                                                 project.name
                                                 ))
 
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
+                           self.user.name,
                            )
 
         # Get the resource limits for domain
@@ -459,14 +459,14 @@ class TestProjectLimits(cloudstackTestCase):
             #with self.assertRaises(Exception):
             self.debug(
                     "Attempting to update resource limit by user: %s" % (
-                                                        self.user.account.name
+                                                        self.user.name
                                                         ))
             # Update project resource limits to 3
             update_resource_limit(
                                     self.apiclient,
                                     resource.resourcetype,
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid,
+                                    account=self.user.name,
+                                    domainid=self.user.domainid,
                                     max=3,
                                     projectid=project.id
                                 )

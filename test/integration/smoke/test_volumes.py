@@ -287,6 +287,7 @@ class TestVolumes(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]

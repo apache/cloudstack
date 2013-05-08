@@ -546,10 +546,15 @@ public class VsmCommand {
         vmware.appendChild(portgroup);
         portProf.appendChild(vmware);
 
-        // org root/%vdc%
+        // org %vdc%
         // vservice node <Node Name> profile <Edge Security Profile Name in VNMC>
+        Element vdcValue = doc.createElement(s_paramvalue);
+        vdcValue.setAttribute("isKey", "true");
+        vdcValue.setTextContent(vdc);
+
         Element org = doc.createElement("org");
-        org.appendChild(doc.createElement(vdc));
+        org.appendChild(doc.createElement("orgname"))
+                .appendChild(vdcValue);
         portProf.appendChild(org);
 
         String asaNodeName = "ASA_" + vlanid;
