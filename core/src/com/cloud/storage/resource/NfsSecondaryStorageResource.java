@@ -53,6 +53,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -103,6 +104,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageLayer;
@@ -110,10 +112,14 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
+import com.cloud.storage.template.VhdProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
@@ -161,6 +167,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     final private String _parent = "/mnt/SecStorage";
     final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
+    private String createTemplateFromSnapshotXenScript;
 
     @Override
     public void disconnected() {
@@ -280,11 +287,90 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CopyCmdAnswer(errMsg);
         }
     }
+    
+   
+    protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
+        String srcMountPoint = this.getRootDir(srcDataStore.getUrl());
+        String snapshotPath = srcData.getPath();
+        int index = snapshotPath.lastIndexOf("/");
+        String snapshotName = snapshotPath.substring(index + 1);
+        if (!snapshotName.startsWith("VHD-") && !snapshotName.endsWith(".vhd")) {
+            snapshotName = snapshotName + ".vhd";
+        }
+        snapshotPath = snapshotPath.substring(0, index);
+        snapshotPath = srcMountPoint + snapshotPath;
+        String destMountPoint = this.getRootDir(destDataStore.getUrl());
+        String destPath = destMountPoint + destData.getPath();
 
-    protected Answer copyFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO srcImageStore,
+        String errMsg = null;
+        try {
+            this._storage.mkdir(destPath);
 
-    DataTO destData, NfsTO destImageStore) {
-        return Answer.createUnsupportedCommandAnswer(cmd);
+            String templateUuid = UUID.randomUUID().toString();
+            String templateName = templateUuid + ".vhd";
+            Script command = new Script(this.createTemplateFromSnapshotXenScript, cmd.getWait(), s_logger);
+            command.add("-p", snapshotPath);
+            command.add("-s", snapshotName);
+            command.add("-n", templateName);
+            command.add("-t", destPath);
+            command.execute();
+
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            Processor processor = new VhdProcessor();
+
+            processor.configure("Vhd Processor", params);
+            FormatInfo info = processor.process(destPath, null,
+                    templateUuid);
+
+            TemplateLocation loc = new TemplateLocation(_storage, destPath);
+            loc.create(1, true, templateName);
+            loc.addFormat(info);
+            loc.save();
+
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(destData.getPath() + File.separator + templateUuid); 
+            return new CopyCmdAnswer(newTemplate);
+        } catch (ConfigurationException e) {
+            s_logger.debug("Failed to create template from snapshot: " + e.toString());
+            errMsg = e.toString();
+        } catch (InternalErrorException e) {
+            s_logger.debug("Failed to create template from snapshot: " + e.toString());
+            errMsg = e.toString();
+        } catch (IOException e) {
+            s_logger.debug("Failed to create template from snapshot: " + e.toString());
+            errMsg = e.toString();
+        }
+
+        return new CopyCmdAnswer(errMsg);
+    }
+    
+    protected Answer copySnapshotToTemplateFromNfsToNfs(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
+        
+        if (srcData.getHypervisorType() == HypervisorType.XenServer) {
+            return copySnapshotToTemplateFromNfsToNfsXenserver(cmd, srcData, srcDataStore, destData, destDataStore);
+        }
+
+        return new CopyCmdAnswer("");
+    }
+    
+    protected Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO srcDataStore = srcData.getDataStore();
+        DataStoreTO destDataStore = destData.getDataStore();
+        if (srcDataStore.getRole() == DataStoreRole.Image || srcDataStore.getRole() == DataStoreRole.ImageCache) {
+            if (!(srcDataStore instanceof NfsTO)) {
+                s_logger.debug("only support nfs storage as src, when create template from snapshot");
+                return Answer.createUnsupportedCommandAnswer(cmd);
+            }
+        
+            if (destDataStore instanceof NfsTO){
+                return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData, (NfsTO)destDataStore);
+            }
+
+        }
+        return new CopyCmdAnswer("");
     }
 
     protected Answer execute(CopyCommand cmd) {
@@ -292,23 +378,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-
-        if (srcDataStore.getRole() == DataStoreRole.Image && destDataStore.getRole() == DataStoreRole.ImageCache) {
-
-            if (!(destDataStore instanceof NfsTO)) {
-                s_logger.debug("only support nfs as cache storage");
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
-
-            if (srcDataStore instanceof S3TO) {
-                return copyFromS3ToNfs(cmd, srcData, (S3TO) srcDataStore, destData, (NfsTO) destDataStore);
-            } else if (srcDataStore instanceof SwiftTO) {
-                return copyFromSwiftToNfs(cmd, srcData, (SwiftTO) srcDataStore, destData, (NfsTO) destDataStore);
-            } else {
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
-
+        
+        if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
+            return createTemplateFromSnapshot(cmd);
         }
+
+     
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -1651,6 +1726,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         _configIpFirewallScr = Script.findScript(getDefaultScriptsDir(), "ipfirewall.sh");
         if (_configIpFirewallScr != null) {
             s_logger.info("_configIpFirewallScr found in " + _configIpFirewallScr);
+        }
+        
+        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(), "create_privatetemplate_from_snapshot_xen.sh");
+        if (createTemplateFromSnapshotXenScript == null) {
+            throw new ConfigurationException("create_privatetemplate_from_snapshot_xen.sh not found in " + getDefaultScriptsDir());
         }
 
         _role = (String) params.get("role");

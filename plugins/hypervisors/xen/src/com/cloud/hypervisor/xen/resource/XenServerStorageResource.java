@@ -70,6 +70,7 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CreateAnswer;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -81,6 +82,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1200,7 +1202,7 @@ public class XenServerStorageResource {
             destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-            newSnapshot.setPath(snapshotBackupUuid);
+            newSnapshot.setPath(folder + File.separator + snapshotBackupUuid);
             if (fullbackup) {
                 newSnapshot.setParentSnapshotPath(null);
             } else {
@@ -1215,6 +1217,76 @@ public class XenServerStorageResource {
             s_logger.warn(details, e);
         }
 
+        return new CopyCmdAnswer(details);
+    }
+    
+    protected CopyCmdAnswer createTemplateFromVolume(DataTO srcData, DataTO destData, int wait) {
+        Connection conn = this.hypervisorResource.getConnection();
+        VolumeObjectTO volume = (VolumeObjectTO)srcData;
+        TemplateObjectTO template = (TemplateObjectTO)destData;
+        NfsTO destStore = (NfsTO)destData.getDataStore();
+        
+        String secondaryStoragePoolURL = destStore.getUrl();
+        String volumeUUID = volume.getPath();
+       
+        String userSpecifiedName = template.getName();
+      
+     
+        String details = null;
+        SR tmpltSR = null;
+        boolean result = false;
+        String secondaryStorageMountPath = null;
+        String installPath = null;
+        try {
+            URI uri = new URI(secondaryStoragePoolURL);
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            installPath = template.getPath();
+            if( !this.hypervisorResource.createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
+                details = " Filed to create folder " + installPath + " in secondary storage";
+                s_logger.warn(details);
+                return new CopyCmdAnswer(details);
+            }
+
+            VDI vol = getVDIbyUuid(conn, volumeUUID);
+            // create template SR
+            URI tmpltURI = new URI(secondaryStoragePoolURL + "/" + installPath);
+            tmpltSR = this.hypervisorResource.createNfsSRbyURI(conn, tmpltURI, false);
+
+            // copy volume to template SR
+            VDI tmpltVDI = this.hypervisorResource.cloudVDIcopy(conn, vol, tmpltSR, wait);
+            // scan makes XenServer pick up VDI physicalSize
+            tmpltSR.scan(conn);
+            if (userSpecifiedName != null) {
+                tmpltVDI.setNameLabel(conn, userSpecifiedName);
+            }
+
+            String tmpltUUID = tmpltVDI.getUuid(conn);
+            String tmpltFilename = tmpltUUID + ".vhd";
+            long virtualSize = tmpltVDI.getVirtualSize(conn);
+            long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
+            // create the template.properties file
+            String templatePath = secondaryStorageMountPath + "/" + installPath;
+            result = this.hypervisorResource.postCreatePrivateTemplate(conn, templatePath, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, template.getId());
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
+            }
+            installPath = installPath + "/" + tmpltFilename;
+            this.hypervisorResource.removeSR(conn, tmpltSR);
+            tmpltSR = null;
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(installPath);
+            CopyCmdAnswer answer = new CopyCmdAnswer(newTemplate);
+            return answer;
+        } catch (Exception e) {
+            if (tmpltSR != null) {
+                this.hypervisorResource.removeSR(conn, tmpltSR);
+            }
+            if ( secondaryStorageMountPath != null) {
+                this.hypervisorResource.deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath);
+            }
+            details = "Creating template from volume " + volumeUUID + " failed due to " + e.toString();
+            s_logger.error(details, e);
+        }
         return new CopyCmdAnswer(details);
     }
 
@@ -1235,11 +1307,15 @@ public class XenServerStorageResource {
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
             //clone template to a volume
             return cloneVolumeFromBaseTemplate(srcData, destData);
-        } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.ImageCache) {
+        } else if (srcData.getObjectType() == DataObjectType.VOLUME && (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {
             //copy volume from image cache to primary
             return copyVolumeFromImageCacheToPrimary(srcData, destData, cmd.getWait());
         } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-            return copyVolumeFromPrimaryToSecondary(srcData, destData, cmd.getWait());
+            if (destData.getObjectType() == DataObjectType.VOLUME) {
+                return copyVolumeFromPrimaryToSecondary(srcData, destData, cmd.getWait());
+            } else if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                return createTemplateFromVolume(srcData, destData, cmd.getWait());
+            }
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             DataTO cacheData = cmd.getCacheTO();
             return backupSnasphot(srcData, destData, cacheData, cmd.getWait());

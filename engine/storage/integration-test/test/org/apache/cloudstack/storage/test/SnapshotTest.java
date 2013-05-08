@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -45,6 +46,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.LocalHostEndpoint;
+import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -144,6 +147,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
     SnapshotDao snapshotDao;
     @Inject
     EndPointSelector epSelector;
+
     long primaryStoreId;
     VMTemplateVO image;
     String imageStoreName = "testImageStore";
@@ -196,7 +200,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
             imageStore = new ImageStoreVO();
             imageStore.setName(imageStoreName);
             imageStore.setDataCenterId(dcId);
-            imageStore.setProviderName("CloudStack ImageStore Provider");
+            imageStore.setProviderName(DataStoreProvider.NFS_IMAGE);
             imageStore.setRole(DataStoreRole.Image);
             imageStore.setUrl(this.getSecondaryStorage());
             imageStore.setUuid(UUID.randomUUID().toString());
@@ -301,7 +305,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
             pool.setPoolType(StoragePoolType.NetworkFilesystem);
             pool.setPodId(podId);
             pool.setScope(ScopeType.CLUSTER);
-            pool.setStorageProviderName("cloudstack primary data store provider");
+            pool.setStorageProviderName(DataStoreProvider.DEFAULT_PRIMARY);
             pool = this.primaryStoreDao.persist(pool);
             DataStore store = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
             return store;
@@ -359,15 +363,49 @@ public class SnapshotTest extends CloudStackTestNGBase {
             }
         }
     }
-
-    //@Test
-    public void testCreateDataDisk() {
-        DataStore primaryStore = createPrimaryDataStore();
-        primaryStoreId = primaryStore.getId();
-        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
-        VolumeVO volume = createVolume(null, primaryStore.getId());
-        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        this.volumeService.createVolumeAsync(volInfo, primaryStore);
+    
+    private VMTemplateVO createTemplateInDb() {
+        image = new VMTemplateVO();
+        image.setTemplateType(TemplateType.USER);
+      
+        image.setUniqueName(UUID.randomUUID().toString());
+        image.setName(UUID.randomUUID().toString());
+        image.setPublicTemplate(true);
+        image.setFeatured(true);
+        image.setRequiresHvm(true);
+        image.setBits(64);
+        image.setFormat(Storage.ImageFormat.VHD);
+        image.setEnablePassword(true);
+        image.setEnableSshKey(true);
+        image.setGuestOSId(1);
+        image.setBootable(true);
+        image.setPrepopulate(true);
+        image.setCrossZones(true);
+        image.setExtractable(true);
+        image = imageDataDao.persist(image);
+        return image;
     }
-
+    
+    @Test
+    public void createTemplateFromSnapshot() {
+        VolumeInfo vol = createCopyBaseImage();
+        SnapshotVO snapshotVO = createSnapshotInDb(vol);
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        boolean result = false;
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+                snapshot = strategy.takeSnapshot(snapshot);
+                result = true;
+            }
+        }
+        
+        AssertJUnit.assertTrue(result);
+        LocalHostEndpoint ep = new LocalHostEndpoint();
+        ep.setResource(new MockLocalNfsSecondaryStorageResource());
+        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
+        VMTemplateVO templateVO = createTemplateInDb();
+        TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId());
+        DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
+        this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
+    }
 }

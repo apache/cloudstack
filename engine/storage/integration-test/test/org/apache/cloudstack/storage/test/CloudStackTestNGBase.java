@@ -94,6 +94,9 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.s3TemplateBucket = s3_template_bucket;
         this.s3UseHttps = Boolean.parseBoolean(s3_usehttps);
         this.scriptPath = scriptPath;
+        if (this.scriptPath != null) {
+            System.setProperty("paths.script", this.getScriptPath());
+        }
     }
 
     protected String getHostGuid() {

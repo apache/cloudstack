@@ -5,6 +5,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class SnapshotObjectTO implements DataTO {
 	private String path;
@@ -13,6 +14,7 @@ public class SnapshotObjectTO implements DataTO {
 	private DataStoreTO dataStore;
 	private String vmName;
 	private String name;
+	private HypervisorType hypervisorType;
 	private long id;
 	
 	public SnapshotObjectTO() {
@@ -29,6 +31,7 @@ public class SnapshotObjectTO implements DataTO {
 	    }
 	    this.dataStore = snapshot.getDataStore().getTO();
 	    this.setName(snapshot.getName());
+	    this.hypervisorType = snapshot.getHypervisorType();
 	}
 	
 	@Override
@@ -88,5 +91,13 @@ public class SnapshotObjectTO implements DataTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
 }

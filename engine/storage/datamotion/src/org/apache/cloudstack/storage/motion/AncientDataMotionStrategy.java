@@ -327,7 +327,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                         .parseInt(Config.CreatePrivateTemplateFromSnapshotWait
                                 .getDefaultValue()));
 
-        if (srcData.getDataStore().getRole() != DataStoreRole.ImageCache && destData.getDataStore().getRole() != DataStoreRole.ImageCache) {
+        if (needCacheStorage(srcData, destData)) {
             SnapshotInfo snapshot = (SnapshotInfo)srcData;
             srcData = cacheSnapshotChain(snapshot);
         }

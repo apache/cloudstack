@@ -83,6 +83,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
         	  return false;
           }
     }
+    
+    protected boolean moveBetweenImages(DataStore srcStore, DataStore destStore) {
+        DataStoreRole srcRole = srcStore.getRole();
+        DataStoreRole destRole = destStore.getRole();
+        if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.Image) {
+            return true;
+        } else {
+            return false;
+        }
+  }
 
     @DB
     protected EndPoint findEndPointInScope(Scope scope, String sqlBase) {
@@ -162,12 +172,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
-        	EndPoint ep = findEndPointForImageMove(srcStore, destStore);
-        	if (ep == null) {
-        		//if there is no ssvm agent running, use mgt server
-        		ep = new LocalHostEndpoint();
-        	}
+        	EndPoint ep = findEndpointForImageStorage(destStore);
         	return ep;
+        } else if (moveBetweenImages(srcStore, destStore)) {
+            EndPoint ep = findEndpointForImageStorage(destStore);
+            return ep;
         }
         // TODO Auto-generated method stub
         return null;

@@ -379,4 +379,55 @@ public class VolumeTest extends CloudStackTestNGBase {
         }
         
     }
+    
+    private VMTemplateVO createTemplateInDb() {
+        image = new VMTemplateVO();
+        image.setTemplateType(TemplateType.USER);
+      
+        image.setUniqueName(UUID.randomUUID().toString());
+        image.setName(UUID.randomUUID().toString());
+        image.setPublicTemplate(true);
+        image.setFeatured(true);
+        image.setRequiresHvm(true);
+        image.setBits(64);
+        image.setFormat(Storage.ImageFormat.VHD);
+        image.setEnablePassword(true);
+        image.setEnableSshKey(true);
+        image.setGuestOSId(1);
+        image.setBootable(true);
+        image.setPrepopulate(true);
+        image.setCrossZones(true);
+        image.setExtractable(true);
+        image = imageDataDao.persist(image);
+        return image;
+    }
+    
+    @Test
+    public void testCreateTemplateFromVolume() {
+        DataStore primaryStore = createPrimaryDataStore();
+        primaryStoreId = primaryStore.getId();
+        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
+        VolumeVO volume = createVolume(null, primaryStore.getId());
+        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeAsync(volInfo, primaryStore);
+        try {
+            VolumeApiResult result = future.get();
+            
+            AssertJUnit.assertTrue(result.isSuccess());
+            volInfo = result.getVolume();
+            VMTemplateVO templateVO = createTemplateInDb();
+            TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId());
+            DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
+            
+            this.imageService.createTemplateFromVolumeAsync(volInfo, tmpl, imageStore);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+    }
 }
