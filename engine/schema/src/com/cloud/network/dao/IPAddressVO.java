@@ -31,12 +31,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
-
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.State;
 import com.cloud.utils.net.Ip;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * A bean representing a public IP Address
@@ -303,5 +299,10 @@ public class IPAddressVO implements IpAddress {
 
     public void setVmIp(String vmIp) {
         this.vmIp = vmIp;
+    }
+
+    @Override
+    public Long getNetworkId() {
+        return sourceNetworkId;
     }
 }

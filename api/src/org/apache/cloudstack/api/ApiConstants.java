@@ -480,6 +480,12 @@ public class ApiConstants {
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
     public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
+    public static final String SOURCE_PORT = "sourceport";
+    public static final String INSTANCE_PORT = "instanceport";
+    public static final String SOURCE_IP = "sourceipaddress";
+    public static final String SOURCE_IP_NETWORK_ID = "sourceipaddressnetworkid";
+    public static final String SCHEME = "scheme";
+    public static final String PROVIDER_TYPE = "providertype";
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";

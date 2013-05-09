@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine.State;
@@ -238,12 +239,14 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
     private GuestType guestType;
+    
+    @Column(name="role")
+    @Enumerated(value=EnumType.STRING)
+    private VirtualRouter.Role role;
 
 
     public DomainRouterJoinVO() {
     }
-
-
 
 
     @Override
@@ -1003,4 +1006,14 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 	public void setIp6Dns2(String ip6Dns2) {
 		this.ip6Dns2 = ip6Dns2;
 	}
+
+
+    public VirtualRouter.Role getRole() {
+        return role;
+    }
+
+
+    public void setRole(VirtualRouter.Role role) {
+        this.role = role;
+    }
 }

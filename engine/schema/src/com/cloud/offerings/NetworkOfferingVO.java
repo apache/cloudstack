@@ -16,14 +16,22 @@
 // under the License.
 package com.cloud.offerings;
 
+import java.util.Date;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
-
-import javax.persistence.*;
-import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table(name = "network_offerings")
@@ -126,6 +134,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     public String getDisplayText() {
         return displayText;
     }
+    
+    @Column(name = "internal_lb")
+    boolean internalLb;
+    
+    @Column(name = "public_lb")
+    boolean publicLb;
 
     @Override
     public long getId() {
@@ -262,7 +276,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent) {
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -286,12 +300,14 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.inline = false;
         this.specifyIpRanges = specifyIpRanges;
         this.isPersistent=isPersistent;
+        this.publicLb = publicLb;
+        this.internalLb = internalLb;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP) {
-        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges, isPersistent);
+            boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP, boolean publicLb, boolean internalLb) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges, isPersistent, internalLb, publicLb);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -313,13 +329,13 @@ public class NetworkOfferingVO implements NetworkOffering {
      *            TODO
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, boolean specifyIpRanges) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges, false);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges, false, false, false);
         this.state = State.Enabled;
     }
 
     public NetworkOfferingVO(String name, Network.GuestType guestType) {
         this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional,
-                null, Network.GuestType.Isolated, true, false, false);
+                null, Network.GuestType.Isolated, true, false, false, false, false);
         this.state = State.Enabled;
     }
 
@@ -386,6 +402,16 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public boolean getIsPersistent() {
         return isPersistent;
+    }
+
+    @Override
+    public boolean getInternalLb() {
+        return internalLb;
+    }
+
+    @Override
+    public boolean getPublicLb() {
+        return publicLb;
     }
 
 }

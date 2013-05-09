@@ -2376,6 +2376,110 @@
                             });
 														// ***** Virtual Router ***** (end) *****
 														
+							// ***** Internal LB ***** (begin) *****
+							var internalLbProviderId;
+							$.ajax({
+								url: createURL("listNetworkServiceProviders&name=Internallbvm&physicalNetworkId=" + thisPhysicalNetwork.id),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+									if(items != null && items.length > 0) {
+										internalLbProviderId = items[0].id;
+									}
+								}
+							});
+							if(internalLbProviderId == null) {
+								alert("error: listNetworkServiceProviders API doesn't return internalLb provider ID");
+								return;
+							}
+
+							var internalLbElementId;
+							$.ajax({
+								url: createURL("listInternalLoadBalancerElements&nspid=" + internalLbProviderId),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var items = json.listinternalloadbalancerelementsresponse.internalloadbalancerelement;
+									if(items != null && items.length > 0) {
+										internalLbElementId = items[0].id;
+									}
+								}
+							});
+							if(internalLbElementId == null) {
+								alert("error: listInternalLoadBalancerElements API doesn't return Internal LB Element Id");
+								return;
+							}
+
+							$.ajax({
+								url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var jobId = json.configureinternalloadbalancerelementresponse.jobid;                                
+									var enableInternalLbElementIntervalID = setInterval(function() { 	
+										$.ajax({
+											url: createURL("queryAsyncJobResult&jobId="+jobId),
+											dataType: "json",
+											success: function(json) {
+												var result = json.queryasyncjobresultresponse;
+												if (result.jobstatus == 0) {
+													return; //Job has not completed
+												}
+												else {                                        
+													clearInterval(enableInternalLbElementIntervalID); 
+													
+													if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+														$.ajax({
+															url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + internalLbProviderId),
+															dataType: "json",
+															async: false,
+															success: function(json) {
+																var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
+																var enableInternalLbProviderIntervalID = setInterval(function() { 	
+																	$.ajax({
+																		url: createURL("queryAsyncJobResult&jobId="+jobId),
+																		dataType: "json",
+																		success: function(json) {
+																			var result = json.queryasyncjobresultresponse;
+																			if (result.jobstatus == 0) {
+																				return; //Job has not completed
+																			}
+																			else {                                                      
+																				clearInterval(enableInternalLbProviderIntervalID); 
+																				
+																				if (result.jobstatus == 1) { //Internal LB has been enabled successfully
+																					//don't need to do anything here
+																				}
+																				else if (result.jobstatus == 2) {
+																					alert("failed to enable Internal LB Provider. Error: " + _s(result.jobresult.errortext));
+																				}
+																			}
+																		},
+																		error: function(XMLHttpResponse) {
+																			var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																			alert("failed to enable Internal LB Provider. Error: " + errorMsg);
+																		}
+																	});                                              
+																}, g_queryAsyncJobResultInterval); 	
+															}
+														});
+													}
+													else if (result.jobstatus == 2) {
+														alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+													}
+												}
+											},
+											error: function(XMLHttpResponse) {
+												var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+												alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+											}
+										});                                
+									}, g_queryAsyncJobResultInterval); 	
+								}
+							});
+							// ***** Internal LB ***** (end) *****
+                            
 														if(args.data.zone.sgEnabled != true) { //Advanced SG-disabled zone
 															// ***** VPC Virtual Router ***** (begin) *****
 															var vpcVirtualRouterProviderId;

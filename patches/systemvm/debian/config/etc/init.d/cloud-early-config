@@ -901,6 +901,28 @@ setup_elbvm() {
   chkconfig portmap off
 }
 
+setup_ilbvm() {
+  log_it "Setting up Internal Load Balancer system vm"
+  local hyp=$1
+  setup_common eth0 eth1
+  #eth0 = guest network, eth1=control network
+
+  sed -i  /$NAME/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  cp /etc/iptables/iptables-ilbvm /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-ilbvm /etc/iptables/rules
+  setup_sshd $ETH1_IP "eth1"
+  
+  enable_fwding 0
+  enable_svc haproxy 1
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 0
+  chkconfig nfs-common off
+  chkconfig portmap off
+}
+
 setup_default() {
   cat > /etc/network/interfaces << EOF
 auto lo
@@ -950,6 +972,10 @@ start() {
      elbvm)
          [ "$NAME" == "" ] && NAME=elb
          setup_elbvm
+	  ;;
+     ilbvm)
+         [ "$NAME" == "" ] && NAME=ilb
+         setup_ilbvm
 	  ;;
      unknown)
          [ "$NAME" == "" ] && NAME=systemvm

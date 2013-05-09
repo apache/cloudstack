@@ -148,7 +148,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
 
 
-    public Long getNetworkId() {
+    public long getNetworkId() {
         if (networkId != null) {
             return networkId;
         }
@@ -278,7 +278,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
         try {
-            LoadBalancer result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
+            LoadBalancer result = _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), 
+                    getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(), getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(),
+                    getNetworkId(), getEntityOwnerId(), getOpenFirewall());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {

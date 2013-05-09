@@ -408,7 +408,10 @@ public enum Config {
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null),
 	
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
-	           "routes", ConfigurationParameterScope.zone.toString());
+	           "routes", ConfigurationParameterScope.zone.toString()),
+	
+    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null);
+ 
     
 	
 	private final String _category;

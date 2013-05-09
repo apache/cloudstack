@@ -32,6 +32,7 @@ import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -156,6 +157,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setIp6Dns2(router.getIp6Dns2());
 
         routerResponse.setVpcId(router.getVpcUuid());
+        
+        routerResponse.setRole(router.getRole().toString());
 
         // set async job
         if (router.getJobId() != null) {
@@ -163,7 +166,11 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             routerResponse.setJobStatus(router.getJobStatus());
         }
 
-        routerResponse.setObjectName("router");
+        if (router.getRole() == Role.INTERNAL_LB_VM) {
+            routerResponse.setObjectName("internalloadbalancervm");
+        } else {
+            routerResponse.setObjectName("router");
+        }
 
         return routerResponse;
     }
