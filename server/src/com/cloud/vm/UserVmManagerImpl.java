@@ -831,6 +831,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
+        List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
+        for(NicVO nic : allNics){
+            if(nic.getNetworkId() == network.getId())
+                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
+        }
+
         NicProfile profile = new NicProfile(null, null);
         if(ipAddress != null) {
             profile = new NicProfile(ipAddress, null);
