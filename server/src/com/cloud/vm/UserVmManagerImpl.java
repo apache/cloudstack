@@ -4248,7 +4248,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for " + vmVO);
+                    s_logger.warn("Unable to plug nic for " + vmVO + " due to: " + " due to: " + plugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {
@@ -4276,7 +4276,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic for " + vmVO);
+                    s_logger.warn("Unable to unplug nic for " + vmVO + " due to: " + unplugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {
