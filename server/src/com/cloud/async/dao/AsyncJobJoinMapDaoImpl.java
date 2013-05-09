@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobJoinMapVO;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,6 +30,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Long> implements AsyncJobJoinMapDao {
 	
 	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearch;	
+	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearchByOwner;	
 	private final SearchBuilder<AsyncJobJoinMapVO> CompleteJoinSearch;	
 	
 	public AsyncJobJoinMapDaoImpl() {
@@ -38,6 +38,10 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		RecordSearch.and("jobId", RecordSearch.entity().getJobId(), Op.EQ);
 		RecordSearch.and("joinJobId", RecordSearch.entity().getJoinJobId(), Op.EQ);
 		RecordSearch.done();
+
+		RecordSearchByOwner = createSearchBuilder();
+		RecordSearchByOwner.and("jobId", RecordSearchByOwner.entity().getJobId(), Op.EQ);
+		RecordSearchByOwner.done();
 		
 		CompleteJoinSearch = createSearchBuilder();
 		CompleteJoinSearch.and("joinJobId", CompleteJoinSearch.entity().getJoinJobId(), Op.EQ);
@@ -80,6 +84,13 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		}
 		
 		return null;
+	}
+	
+	public List<AsyncJobJoinMapVO> listJoinRecords(long jobId) {
+		SearchCriteria<AsyncJobJoinMapVO> sc = RecordSearchByOwner.create();
+		sc.setParameters("jobId", jobId);
+		
+		return this.listBy(sc);
 	}
 	
 	public void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid) {

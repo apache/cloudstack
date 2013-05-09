@@ -29,7 +29,6 @@ import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
