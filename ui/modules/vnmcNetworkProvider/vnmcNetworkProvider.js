@@ -26,12 +26,8 @@
     var vnmcListView = {
       id: 'vnmcDevices',
       fields: {
-        name: { label: 'label.name' },
-        ipaddress: { label: 'label.ip.address' },
-        state: { label: 'label.state', indicator: {
-          'Enabled': 'on',
-          'Disabled': 'off'
-        }}
+        resourcename: { label: 'Resource Name' },
+        provider: { label: 'Provider' }
       },
           
       actions: {
@@ -63,16 +59,14 @@
             }
           },
 
-          action: function(args) {
-            //debugger;
+          action: function(args) {            
             $.ajax({
               url: createURL('listNetworkServiceProviders'),
               data: {
                 name: 'CiscoVnmc',
                 physicalnetworkid: args.context.physicalNetworks[0].id      
               },
-              success: function(json){
-                //debugger;
+              success: function(json){                
                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                 if(items != null && items.length > 0) {
                   var ciscoVnmcProvider = items[0];
@@ -97,8 +91,7 @@
                           url: createURL("queryAsyncJobResult&jobId="+jobId),
                           dataType: "json",
                           success: function(json) {
-                            var result = json.queryasyncjobresultresponse;
-                            //debugger;
+                            var result = json.queryasyncjobresultresponse;                            
                             if (result.jobstatus == 0) {
                               return; //Job has not completed
                             }
@@ -124,8 +117,7 @@
                 }
               }
             });
-            //debugger;      
-            
+                       
             var enableCiscoVnmcProviderFn = function(ciscoVnmcProvider){              
               $.ajax({
                 url: createURL('updateNetworkServiceProvider'),
@@ -162,8 +154,7 @@
               });              
             }                        
             
-            var addCiscoVnmcResourceFn = function(){
-              //debugger;
+            var addCiscoVnmcResourceFn = function(){              
               var data = {
                 physicalnetworkid: args.context.physicalNetworks[0].id,
                 hostname: args.data.hostname,
@@ -174,9 +165,8 @@
               $.ajax({
                 url: createURL('addCiscoVnmcResource'),
                 data: data,                 
-                success: function(json) {
-                  //debugger;
-                  var item = json.addciscovnmcresourceresponse.ciscovnmcresource;
+                success: function(json) {    
+                  var item = json.addCiscoVnmcResource.CiscoVnmcResource;
                   args.response.success({data: item});
                 },
                 error: function(data) {
@@ -201,12 +191,9 @@
             physicalnetworkid: args.context.physicalNetworks[0].id
           },
           success: function(json){   
+            var items = json.listCiscoVnmcResources["null"]; //change it after API is fixed.
             args.response.success({
-              data: [
-                { name: 'device1', ipaddress: '192.168.1.12', state: 'Enabled' },
-                { name: 'device2', ipaddress: '192.168.1.13', state: 'Disabled' },
-                { name: 'device3', ipaddress: '192.168.1.14', state: 'Enabled' }
-              ]
+              data: items
             });            
           }
         });  
