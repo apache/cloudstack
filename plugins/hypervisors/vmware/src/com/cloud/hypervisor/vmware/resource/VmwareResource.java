@@ -237,6 +237,7 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
@@ -1326,6 +1327,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
+            if(!isVMWareToolsInstalled(vmMo)){
+                String errMsg = "vmware tools is not installed or not running, cannot add nic to vm " + vmName;
+                s_logger.debug(errMsg);
+                return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg); 
+            }
+
             // TODO need a way to specify the control of NIC device type
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
 
@@ -1398,6 +1405,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String msg = "VM " + vmName + " no longer exists to execute UnPlugNic command";
                 s_logger.error(msg);
                 throw new Exception(msg);
+            }
+
+            if(!isVMWareToolsInstalled(vmMo)){
+                String errMsg = "vmware tools not installed or not running, cannot remove nic from vm " + vmName;
+                s_logger.debug(errMsg);
+                return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + errMsg);
             }
 
             VirtualDevice nic = findVirtualNicDevice(vmMo, cmd.getNic().getMac());
@@ -5237,4 +5250,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 		// TODO Auto-generated method stub
 
 	}
+
+    private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
+        GuestInfo guestInfo = vmMo.getVmGuestInfo();
+        return (guestInfo != null && guestInfo.getGuestState() != null && guestInfo.getGuestState().equalsIgnoreCase("running"));
+    }	
 }

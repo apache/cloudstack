@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -86,5 +87,7 @@ public interface RulesManager extends RulesService {
      * @return
      */
     boolean applyStaticNatForNetwork(long networkId, boolean continueOnError, Account caller, boolean forRevoke);
+
+    List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic);
 
 }
