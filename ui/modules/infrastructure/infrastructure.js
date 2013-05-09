@@ -33,12 +33,29 @@
 
         $(window).bind('cloudStack.system.serviceProviders.makeHarcodedArray', function(event, data) {
           var nspHardcodingArray = data.nspHardcodingArray;
-          var selectedZoneObj = data.selectedZoneObj;          
-          if(selectedZoneObj.networktype == "Advanced"){
+          var selectedZoneObj = data.selectedZoneObj;   
+          var selectedPhysicalNetworkObj = data.selectedPhysicalNetworkObj;
+          if(selectedZoneObj.networktype == "Advanced"){      
+            var selectedProviderObj = {};
+            $.ajax({
+              url: createURL('listNetworkServiceProviders'),
+              data: {
+                name: id, //e.g. 'CiscoVnmc'
+                physicalnetworkid: selectedPhysicalNetworkObj.id      
+              },
+              async: false,
+              success: function(json){  
+                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                if(items != null && items.length > 0) {
+                  selectedProviderObj = items[0];
+                }
+              }
+            });
+           
             nspHardcodingArray.push({
               id: id,
               name: name,
-              state: state
+              state: selectedProviderObj.state
             });
           } 
         });

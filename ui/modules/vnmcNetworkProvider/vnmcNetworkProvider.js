@@ -274,16 +274,30 @@
               name: { label: 'label.name' }
             },
             {
-              state: { label: 'label.state' }
+              state: { label: 'label.state' }, 
+              id: { label: 'label.id' },
+              servicelist: {
+                label: 'Services',
+                converter: function(args){                  
+                  return args.join(', ');
+                }
+              }
             }
           ],
-          dataProvider: function(args) {
-            args.response.success({
+          dataProvider: function(args) {            
+            $.ajax({
+              url: createURL('listNetworkServiceProviders'),
               data: {
-                name: 'VNMC Devices',
-                state: 'Disabled'
+                name: 'CiscoVnmc',
+                physicalnetworkid: args.context.physicalNetworks[0].id   
+              },              
+              success: function(json){                  
+                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                if(items != null && items.length > 0) {   
+                  args.response.success({ data: items[0] });                  
+                }
               }
-            });
+            });                 
           }
         }
       }
@@ -297,9 +311,9 @@
     });
     
     module.infrastructure.networkServiceProvider({
-      id: 'vnmc',
+      id: 'CiscoVnmc',
       name: 'Cisco VNMC',
-      state: 'Disabled',
+      //state: 'Disabled', //don't know state until log in and visit Infrastructure menu > zone detail > physical network > network service providers
       listView: vnmcListView,
 
       detailView: vnmcProviderDetailView
