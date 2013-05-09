@@ -169,6 +169,7 @@ class deployDataCenters():
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
         phynet.name = net.name
+        phynet.isolationmethods = net.isolationmethods
         phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
         self.addTrafficTypes(phynetwrk.id, net.traffictypes)
         return phynetwrk

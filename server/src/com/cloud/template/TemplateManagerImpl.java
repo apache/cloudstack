@@ -75,8 +75,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
-import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
+import com.cloud.agent.api.DownloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -579,7 +579,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return errMsg;
         }
 
-        downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
+        DownloadTemplateFromSwiftToSecondaryStorageCommand cmd = new DownloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
                 tmpltSwift.getPath(), _primaryStorageDownloadWait);
         try {
             Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
@@ -628,7 +628,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return errMsg;
         }
 
-        uploadTemplateToSwiftFromSecondaryStorageCommand cmd = new uploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
+        UploadTemplateToSwiftFromSecondaryStorageCommand cmd = new UploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
                 templateId, _primaryStorageDownloadWait);
         Answer answer = null;
         try {

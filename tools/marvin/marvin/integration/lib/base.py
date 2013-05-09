@@ -40,6 +40,9 @@ class Domain:
 
         cmd = createDomain.createDomainCmd()
 
+        if "domainUUID" in services:
+            cmd.domainid = "-".join([services["domainUUID"], random_gen()])
+
         if name:
             cmd.name = "-".join([name, random_gen()])
         elif "name" in services:
@@ -97,6 +100,13 @@ class Account:
         cmd.password = services["password"]
         cmd.username = "-".join([services["username"], random_gen()])
 
+        if "accountUUID" in services:
+            cmd.accountid =  "-".join([services["accountUUID"],random_gen()])
+
+        if "userUUID" in services:
+            cmd.userid = "-".join([services["userUUID"],random_gen()])
+
+
         if domainid:
             cmd.domainid = domainid
         account = apiclient.createAccount(cmd)
@@ -134,6 +144,9 @@ class User:
         cmd.email = services["email"]
         cmd.firstname = services["firstname"]
         cmd.lastname = services["lastname"]
+
+        if "userUUID" in services:
+            cmd.userid = "-".join([services["userUUID"],random_gen()])
 
         # Password Encoding
         mdf = hashlib.md5()
@@ -298,11 +311,10 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
 
-        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
-
         if group:
             cmd.group = group
-        virtual_machine = apiclient.deployVirtualMachine(cmd)
+
+        virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
         if startvm == False:
             virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
@@ -2179,6 +2191,33 @@ class PhysicalNetwork:
         return apiclient.addTrafficType(cmd)
 
     @classmethod
+    def dedicate(cls, apiclient, vlanrange, physicalnetworkid, account=None, domainid=None, projectid=None):
+        """Dedicate guest vlan range"""
+
+        cmd = dedicateGuestVlanRange.dedicateGuestVlanRangeCmd()
+        cmd.vlanrange = vlanrange
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return PhysicalNetwork(apiclient.dedicateGuestVlanRange(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release guest vlan range"""
+
+        cmd = releaseDedicatedGuestVlanRange.releaseDedicatedGuestVlanRangeCmd()
+        cmd.id = self.id
+        return apiclient.releaseDedicatedGuestVlanRange(cmd)
+
+    @classmethod
+    def listDedicated(cls, apiclient, **kwargs):
+        """Lists all dedicated guest vlan ranges"""
+
+        cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listDedicatedGuestVlanRanges(cmd)
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists all physical networks"""
 
@@ -3082,3 +3121,44 @@ class VmSnapshot:
         cmd.vmsnapshotid = vmsnapshotid
         
         return apiclient.deleteVMSnapshot(cmd)
+
+class Region:
+    """ Regions related Api """
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services):
+        cmd = addRegion.addRegionCmd()
+        cmd.id = services["regionid"]
+        cmd.endpoint = services["regionendpoint"]
+        cmd.name = services["regionname"]
+        try:
+            region = apiclient.addRegion(cmd)
+            if region is not None:
+                return Region(region.__dict__)
+        except Exception as e:
+            raise e
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listRegions.listRegionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        region = apiclient.listRegions(cmd)
+        return region
+
+    def update(self, apiclient, services):
+        cmd = updateRegion.updateRegionCmd()
+        cmd.id = self.id
+        if services["regionendpoint"]:
+            cmd.endpoint = services["regionendpoint"]
+        if services["regionname"]:
+            cmd.name = services["regionname"]
+        region = apiclient.updateRegion(cmd)
+        return region
+
+    def delete(self, apiclient):
+        cmd = removeRegion.removeRegionCmd()
+        cmd.id = self.id
+        region = apiclient.removeRegion(cmd)
+        return region

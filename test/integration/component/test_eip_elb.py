@@ -49,7 +49,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "memory": 128, # In MBs
                                     },
                          "lbrule": {
                                     "name": "SSH",
@@ -119,8 +119,8 @@ class TestEIP(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id
                                   )
         networks = Network.list(
@@ -140,8 +140,8 @@ class TestEIP(cloudstackTestCase):
                                     cls.api_client,
                                     associatednetworkid=cls.guest_network.id,
                                     isstaticnat=True,
-                                    account=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    account=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     listall=True
                                     )
         if isinstance(ip_addrs, list):
@@ -240,8 +240,8 @@ class TestEIP(cloudstackTestCase):
         # Verify listSecurity groups response
         security_groups = SecurityGroup.list(
                                         self.apiclient,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                          isinstance(security_groups, list),
@@ -262,8 +262,8 @@ class TestEIP(cloudstackTestCase):
             "Creating Ingress rule to allow SSH on default security group")
 
         cmd = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
-        cmd.domainid = self.account.account.domainid
-        cmd.account = self.account.account.name
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.securitygroupid = security_group.id
         cmd.protocol = 'TCP'
         cmd.startport = 22
@@ -370,16 +370,16 @@ class TestEIP(cloudstackTestCase):
 
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     services=self.services["virtual_machine"]
                                     )
         self.debug("IP address: %s is acquired by network: %s" % (
-                                                public_ip.ipaddress.ipaddress,
+                                                public_ip.ipaddress,
                                                 self.guest_network.id))
         self.debug("Enabling static NAT for IP Address: %s" %
-                                                public_ip.ipaddress.ipaddress)
+                                                public_ip.ipaddress)
 
         StaticNATRule.enable(
                              self.apiclient,
@@ -390,11 +390,11 @@ class TestEIP(cloudstackTestCase):
         # Fetch details from user_ip_address table in database
         self.debug(
             "select is_system, one_to_one_nat from user_ip_address where public_ip_address='%s';" \
-                        % public_ip.ipaddress.ipaddress)
+                        % public_ip.ipaddress)
 
         qresultset = self.dbclient.execute(
                         "select is_system, one_to_one_nat from user_ip_address where public_ip_address='%s';" \
-                        % public_ip.ipaddress.ipaddress
+                        % public_ip.ipaddress
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -449,12 +449,12 @@ class TestEIP(cloudstackTestCase):
                 )
 
 #        try:
-#            self.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
+#            self.debug("SSH into VM: %s" % public_ip.ipaddress)
 #            ssh = self.virtual_machine.get_ssh_client(
-#                                    ipaddress=public_ip.ipaddress.ipaddress)
+#                                    ipaddress=public_ip.ipaddress)
 #        except Exception as e:
 #            self.fail("SSH Access failed for %s: %s" % \
-#                      (public_ip.ipaddress.ipaddress, e)
+#                      (public_ip.ipaddress, e)
 #                      )
 
         self.debug("SSH into netscaler: %s" %
@@ -472,7 +472,7 @@ class TestEIP(cloudstackTestCase):
             self.debug("Output: %s" % result)
 
             self.assertEqual(
-                    result.count(public_ip.ipaddress.ipaddress),
+                    result.count(public_ip.ipaddress),
                     1,
                     "One IP from EIP pool should be taken and configured on NS"
                     )
@@ -484,7 +484,7 @@ class TestEIP(cloudstackTestCase):
             self.debug("Output: %s" % result)
 
             self.assertEqual(
-                    result.count("NAME: Cloud-Inat-%s" % public_ip.ipaddress.ipaddress),
+                    result.count("NAME: Cloud-Inat-%s" % public_ip.ipaddress),
                     1,
                     "User source IP should be enabled for INAT service"
                     )
@@ -517,8 +517,8 @@ class TestEIP(cloudstackTestCase):
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     listall=True
                                     )
         self.assertEqual(
@@ -602,8 +602,8 @@ class TestEIP(cloudstackTestCase):
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     listall=True
                                     )
         self.assertEqual(
@@ -711,8 +711,8 @@ class TestEIP(cloudstackTestCase):
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     listall=True
                                     )
         self.assertEqual(
@@ -784,8 +784,8 @@ class TestEIP(cloudstackTestCase):
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     listall=True
                                     )
         self.assertEqual(
@@ -942,15 +942,15 @@ class TestELB(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id
                                   )
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id
                                   )
         networks = Network.list(
@@ -968,9 +968,9 @@ class TestELB(cloudstackTestCase):
         cls.lb_rule = LoadBalancerRule.create(
                                         cls.api_client,
                                         cls.services["lbrule"],
-                                        accountid=cls.account.account.name,
+                                        accountid=cls.account.name,
                                         networkid=cls.guest_network.id,
-                                        domainid=cls.account.account.domainid
+                                        domainid=cls.account.domainid
                                         )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
 
@@ -1024,8 +1024,8 @@ class TestELB(cloudstackTestCase):
         # Verify listSecurity groups response
         security_groups = SecurityGroup.list(
                                         self.apiclient,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                          isinstance(security_groups, list),
@@ -1046,8 +1046,8 @@ class TestELB(cloudstackTestCase):
             "Creating Ingress rule to allow SSH on default security group")
 
         cmd = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
-        cmd.domainid = self.account.account.domainid
-        cmd.account = self.account.account.name
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.securitygroupid = security_group.id
         cmd.protocol = 'TCP'
         cmd.startport = 22
@@ -1056,12 +1056,12 @@ class TestELB(cloudstackTestCase):
         self.apiclient.authorizeSecurityGroupIngress(cmd)
 
         self.debug(
-            "Fetching LB IP for account: %s" % self.account.account.name)
+            "Fetching LB IP for account: %s" % self.account.name)
         ip_addrs = PublicIPAddress.list(
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     forloadbalancing=True,
                                     listall=True
                                     )
@@ -1073,7 +1073,7 @@ class TestELB(cloudstackTestCase):
 
         lb_ip = ip_addrs[0]
         self.debug("LB IP generated for account: %s is: %s" % (
-                                            self.account.account.name,
+                                            self.account.name,
                                             lb_ip.ipaddress
                                             ))
 #TODO: uncomment this after ssh issue is resolved
@@ -1199,24 +1199,24 @@ class TestELB(cloudstackTestCase):
 
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     services=self.services["virtual_machine"]
                                     )
         self.debug("IP address: %s is acquired by network: %s" % (
-                                                public_ip.ipaddress.ipaddress,
+                                                public_ip.ipaddress,
                                                 self.guest_network.id))
 
         self.debug("Creating LB rule for public IP: %s" %
-                                            public_ip.ipaddress.ipaddress)
+                                            public_ip.ipaddress)
         lb_rule = LoadBalancerRule.create(
                                         self.apiclient,
                                         self.services["lbrule"],
-                                        accountid=self.account.account.name,
+                                        accountid=self.account.name,
                                         ipaddressid=public_ip.ipaddress.id,
                                         networkid=self.guest_network.id,
-                                        domainid=self.account.account.domaind
+                                        domainid=self.account.domaind
                                         )
         self.debug("Assigning VMs (%s, %s) to LB rule: %s" % (self.vm_1.name,
                                                               self.vm_2.name,
@@ -1225,10 +1225,10 @@ class TestELB(cloudstackTestCase):
 #TODO: workaround : add route in the guest VM for SNIP
 #
 #        self.debug("SSHing into VMs using ELB IP: %s" %
-#                                                public_ip.ipaddress.ipaddress)
+#                                                public_ip.ipaddress)
 #        try:
 #            ssh_1 = self.vm_1.get_ssh_client(
-#                                    ipaddress=public_ip.ipaddress.ipaddress)
+#                                    ipaddress=public_ip.ipaddress)
 #            self.debug("Command: hostname")
 #            result = ssh_1.execute("hostname")
 #            self.debug("Result: %s" % result)
@@ -1244,7 +1244,7 @@ class TestELB(cloudstackTestCase):
 #                          )
 #
 #            ssh_2 = self.vm_2.get_ssh_client(
-#                                    ipaddress=public_ip.ipaddress.ipaddress)
+#                                    ipaddress=public_ip.ipaddress)
 #            self.debug("Command: hostname")
 #            result = ssh_2.execute("hostname")
 #            self.debug("Result: %s" % result)
@@ -1265,11 +1265,11 @@ class TestELB(cloudstackTestCase):
 ##         Fetch details from user_ip_address table in database
         self.debug(
             "select is_system from user_ip_address where public_ip_address='%s';" \
-                                            % public_ip.ipaddress.ipaddress)
+                                            % public_ip.ipaddress)
 
         qresultset = self.dbclient.execute(
                         "select is_system from user_ip_address where public_ip_address='%s';" \
-                        % public_ip.ipaddress.ipaddress)
+                        % public_ip.ipaddress)
 
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -1304,7 +1304,7 @@ class TestELB(cloudstackTestCase):
             self.debug("Output: %s" % result)
 
             self.assertEqual(
-                    result.count(public_ip.ipaddress.ipaddress),
+                    result.count(public_ip.ipaddress),
                     1,
                     "One IP from EIP pool should be taken and configured on NS"
                     )
@@ -1316,7 +1316,7 @@ class TestELB(cloudstackTestCase):
             self.debug("Output: %s" % result)
 
             self.assertEqual(
-                    result.count("Cloud-VirtualServer-%s-22 (%s:22) - TCP" % (public_ip.ipaddress.ipaddress, public_ip.ipaddress.ipaddress)),
+                    result.count("Cloud-VirtualServer-%s-22 (%s:22) - TCP" % (public_ip.ipaddress, public_ip.ipaddress)),
                     1,
                     "User subnet IP should be enabled for LB service"
                     )
@@ -1342,12 +1342,12 @@ class TestELB(cloudstackTestCase):
         #    running and USNIP : ON
 
         self.debug(
-            "Fetching LB IP for account: %s" % self.account.account.name)
+            "Fetching LB IP for account: %s" % self.account.name)
         ip_addrs = PublicIPAddress.list(
                                     self.api_client,
                                     associatednetworkid=self.guest_network.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     forloadbalancing=True,
                                     listall=True
                                     )
@@ -1359,7 +1359,7 @@ class TestELB(cloudstackTestCase):
 
         lb_ip = ip_addrs[0]
         self.debug("LB IP generated for account: %s is: %s" % (
-                                            self.account.account.name,
+                                            self.account.name,
                                             lb_ip.ipaddress
                                             ))
 
@@ -1424,11 +1424,11 @@ class TestELB(cloudstackTestCase):
          # Fetch details from account_id table in database
         self.debug(
             "select id from account where account_name='%s';" \
-                                            % self.account.account.name)
+                                            % self.account.name)
 
         qresultset = self.dbclient.execute(
                         "select id from account where account_name='%s';" \
-                                            % self.account.account.name)
+                                            % self.account.name)
 
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -1467,7 +1467,7 @@ class TestELB(cloudstackTestCase):
         public_ip = qresult[0]
 
         self.debug(
-            "Fetching public IP for account: %s" % self.account.account.name)
+            "Fetching public IP for account: %s" % self.account.name)
         ip_addrs = PublicIPAddress.list(
                                     self.api_client,
                                     ipaddress=public_ip,

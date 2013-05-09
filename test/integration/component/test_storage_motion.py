@@ -98,16 +98,16 @@ class TestStorageMotion(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
-                            zone.id,
+                            cls.zone.id,
                             cls.services["ostype"]
                             )
         # Set Zones and disk offerings
-        cls.services["small"]["zoneid"] = zone.id
+        cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
@@ -126,8 +126,8 @@ class TestStorageMotion(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
                                         cls.services["small"],
-                                        accountid=cls.account.account.name,
-                                        domainid=cls.account.account.domainid,
+                                        accountid=cls.account.name,
+                                        domainid=cls.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
@@ -258,6 +258,17 @@ class TestStorageMotion(cloudstackTestCase):
                               self.apiclient,
                               id=volume.id
                               )
+            self.assertEqual(
+                         isinstance(pools, list),
+                         True,
+                         "Check list storage pools response for valid list"
+                        )
+            self.assertNotEqual(
+                        pools,
+                        None,
+                        "Check if pools  exists in ListStoragePools"
+                        )
+
             pool = pools[0]
             self.debug("Migrating Volume-ID: %s to Pool: %s" % (
                                 volume.id,

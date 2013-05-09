@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
@@ -120,6 +121,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.*;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.as.*;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
@@ -197,6 +199,8 @@ public interface ResponseGenerator {
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
+
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
@@ -396,4 +400,6 @@ public interface ResponseGenerator {
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
     Long getAffinityGroupId(String name, long entityOwnerId);
+
+    IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
 }

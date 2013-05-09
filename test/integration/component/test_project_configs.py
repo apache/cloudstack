@@ -70,7 +70,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                          "virtual_machine": {
                                     "displayname": "Test VM",
@@ -206,8 +206,8 @@ class TestUserProjectCreation(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -242,8 +242,8 @@ class TestUserProjectCreation(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.user.account.name,
-                                 domainid=self.user.account.domainid
+                                 account=self.user.name,
+                                 domainid=self.user.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -373,8 +373,8 @@ class TestProjectCreationNegative(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -409,11 +409,11 @@ class TestProjectCreationNegative(cloudstackTestCase):
             project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.user.account.name,
-                                 domainid=self.user.account.domainid
+                                 account=self.user.name,
+                                 domainid=self.user.domainid
                                  )
             self.debug("Project creation with domain user: %s failed" %
-                                                    self.user.account.name)
+                                                    self.user.name)
         return
 
 
@@ -498,8 +498,8 @@ class TestProjectInviteRequired(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -531,21 +531,21 @@ class TestProjectInviteRequired(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
          # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
-                                            account=self.user.account.name,
+                                            account=self.user.name,
                                             )
         self.debug(accounts_reponse)
         self.assertEqual(
@@ -650,8 +650,8 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -684,22 +684,22 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
          # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -819,8 +819,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -853,22 +853,22 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
          # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -894,18 +894,18 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                  self.apiclient,
                                  projectid=project.id,
                                  accept=True,
-                                 account=self.user.account.name
+                                 account=self.user.name
                                  )
         self.debug(
             "Accepting project invitation for project: %s user: %s" % (
                                                       project.name,
-                                                      self.user.account.name
+                                                      self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
-                                            account=self.user.account.name,
+                                            account=self.user.name,
                                             )
 
         self.assertEqual(
@@ -945,8 +945,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -979,22 +979,22 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
          # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1025,18 +1025,18 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                  self.apiclient,
                                  projectid=project.id,
                                  accept=True,
-                                 account=self.user.account.name
+                                 account=self.user.name
                                  )
             self.debug(
                 "Accepting invitation after expiry project: %s user: %s" % (
                                                       project.name,
-                                                      self.user.account.name
+                                                      self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
 
         self.assertEqual(
@@ -1076,8 +1076,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1110,22 +1110,22 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1151,22 +1151,22 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         time.sleep(int(self.config.value) * 2)
 
         self.debug("Adding %s user again to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1205,8 +1205,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1239,22 +1239,22 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding %s user to project: %s" % (
-                                                      self.user.account.name,
+                                                      self.user.name,
                                                       project.name
                                                       ))
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           self.user.account.name,
-                           self.user.account.email
+                           self.user.name,
+                           self.user.email
                            )
 
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
-                                        account=self.user.account.name,
-                                        domainid=self.user.account.domainid
+                                        account=self.user.name,
+                                        domainid=self.user.domainid
                                         )
         self.assertEqual(
                             isinstance(accounts_reponse, list),
@@ -1279,18 +1279,18 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                  self.apiclient,
                                  projectid=project.id,
                                  accept=False,
-                                 account=self.user.account.name
+                                 account=self.user.name
                                  )
         self.debug(
                 "Declining invitation for project: %s user: %s" % (
                                                       project.name,
-                                                      self.user.account.name
+                                                      self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
         accounts_reponse = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
-                                            account=self.user.account.name,
+                                            account=self.user.name,
                                             )
         self.assertEqual(
                             accounts_reponse,
@@ -1333,8 +1333,8 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1367,19 +1367,19 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             "Check project name from list response"
                             )
         self.debug("Adding user with email: %s to project: %s" % (
-                                                      self.user.account.email,
+                                                      self.user.email,
                                                       project.name
                                                       ))
 
         # Add user to the project
         project.addAccount(
                            self.apiclient,
-                           email=self.user.account.user[0].email
+                           email=self.user.user[0].email
                            )
 
         # Fetch the latest mail sent to user
         mail_content = fetch_latest_mail(
                                          self.services["mail_account"],
-                                         from_mail=self.user.account.user[0].email
+                                         from_mail=self.user.user[0].email
                                          )
         return

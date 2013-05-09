@@ -163,6 +163,8 @@ class TestDeployVM(cloudstackTestCase):
             cls.services["account"],
             domainid=domain.id
         )
+        cls.debug(str("============" ))
+        cls.debug(cls.account.id)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,

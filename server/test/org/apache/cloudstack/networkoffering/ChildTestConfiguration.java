@@ -27,6 +27,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -53,6 +54,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -94,7 +96,6 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
@@ -147,7 +148,8 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         LoadBalancerDaoImpl.class,
         NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class,
- StoragePoolDetailsDaoImpl.class,
+        StoragePoolDetailsDaoImpl.class,
+        AccountGuestVlanMapDaoImpl.class
     },
 includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false
@@ -342,7 +344,7 @@ public class ChildTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }
