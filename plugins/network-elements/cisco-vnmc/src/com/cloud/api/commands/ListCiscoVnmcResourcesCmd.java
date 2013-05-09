@@ -84,7 +84,7 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
             if (ciscoVnmcResources != null && !ciscoVnmcResources.isEmpty()) {
                 for (CiscoVnmcController ciscoVnmcResourceVO : ciscoVnmcResources) {
                     CiscoVnmcResourceResponse ciscoVnmcResourceResponse = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(ciscoVnmcResourceVO);
-                    ciscoVnmcResourceResponse.setObjectName("vnmc");
+                    ciscoVnmcResourceResponse.setObjectName("CiscoVnmcResource");
                     ciscoVnmcResourcesResponse.add(ciscoVnmcResourceResponse);
                 }
             }
