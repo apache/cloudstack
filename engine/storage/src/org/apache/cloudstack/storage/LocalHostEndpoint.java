@@ -23,7 +23,7 @@ public class LocalHostEndpoint implements EndPoint {
 	private ScheduledExecutorService executor;
 	ServerResource resource;
 	public LocalHostEndpoint() {
-		resource = ComponentContext.inject(LocalNfsSecondaryStorageResource.class);
+		resource = new LocalNfsSecondaryStorageResource();
 		executor = Executors.newScheduledThreadPool(10);
 	}
 	@Override

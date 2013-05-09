@@ -2153,6 +2153,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddImageStoreCmd.class);
         cmdList.add(ListImageStoresCmd.class);
         cmdList.add(DeleteImageStoreCmd.class);
+        cmdList.add(CreateCacheStoreCmd.class);
         return cmdList;
     }
 

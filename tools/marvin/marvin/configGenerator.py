@@ -70,6 +70,7 @@ class zone():
         self.physical_networks = []
         self.pods = []
         self.secondaryStorages = []
+        self.cacheStorages = []
 
         
 class traffictype():
@@ -182,6 +183,12 @@ class secondaryStorage():
         self.providerName = None
         self.details = None
 
+class cacheStorage():
+    def __init__(self):
+        self.url = None
+        self.providerName = None
+        self.details = None
+        
 class s3():
     def __init__(self):
         self.accesskey = None

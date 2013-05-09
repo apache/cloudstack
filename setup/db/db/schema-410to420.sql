@@ -115,7 +115,8 @@ CREATE VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
-        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id
+    where image_store.role = 'Image';
             
 -- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
 -- FK also commented out due to this            

@@ -141,10 +141,26 @@ class deployDataCenters():
             secondarycmd = addImageStore.addImageStoreCmd()
             secondarycmd.url = secondary.url
             secondarycmd.provider = secondary.providerName
-            """if secondary.provider == "CloudStack ImageStore Provider":"""
-            secondarycmd.zoneid = zoneId
+            secondarycmd.details = []
+            for item in secondary.details:
+                secondarycmd.details.append(item.__dict__)
+            if secondarycmd.provider == "NFS":
+                secondarycmd.zoneid = zoneId
             self.apiClient.addImageStore(secondarycmd)
 
+    def createCacheStorages(self, cacheStorages, zoneId):
+        if cacheStorages is None:
+            return
+        for cache in cacheStorages:
+            cachecmd = createCacheStore.createCacheStoreCmd()
+            cachecmd.url = cache.url
+            cachecmd.provider = cache.providerName
+            cachecmd.zoneid = zoneId
+            cachecmd.details = []
+            for item in cache.details:
+                cachecmd.details.append(item.__dict__)            
+            self.apiClient.createCacheStore(cachecmd)
+            
     def createnetworks(self, networks, zoneId):
         if networks is None:
             return
@@ -322,6 +338,7 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
+            self.createCacheStorages(zone.cacheStorages, zoneId)
             self.enableZone(zoneId, "Enabled")
         return
     

@@ -32,6 +32,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class LocalNfsSecondaryStorageResource extends
 		NfsSecondaryStorageResource {
 
+    public LocalNfsSecondaryStorageResource(){
+        this._dlMgr = new DownloadManagerImpl();
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadSystemTemplateCommand){
