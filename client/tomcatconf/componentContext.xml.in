@@ -198,6 +198,7 @@
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp"/>
+          <ref bean="InternalLbVm"/>
       </list>
     </property>
   </bean>
