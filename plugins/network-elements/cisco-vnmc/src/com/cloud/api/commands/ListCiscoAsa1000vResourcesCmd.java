@@ -89,6 +89,7 @@ public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
             if (ciscoAsa1000vDevices != null && !ciscoAsa1000vDevices.isEmpty()) {
                 for (CiscoAsa1000vDevice ciscoAsa1000vDeviceVO : ciscoAsa1000vDevices) {
                     CiscoAsa1000vResourceResponse ciscoAsa1000vResourceResponse = _ciscoAsa1000vService.createCiscoAsa1000vResourceResponse(ciscoAsa1000vDeviceVO);
+                    ciscoAsa1000vResourceResponse.setObjectName("asa1000v");
                     ciscoAsa1000vResourcesResponse.add(ciscoAsa1000vResourceResponse);
                 }
             }
