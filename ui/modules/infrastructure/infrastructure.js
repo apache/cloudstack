@@ -33,12 +33,14 @@
 
         $(window).bind('cloudStack.system.serviceProviders.makeHarcodedArray', function(event, data) {
           var nspHardcodingArray = data.nspHardcodingArray;
-
-          nspHardcodingArray.push({
-            id: id,
-            name: name,
-            state: state
-          });
+          var selectedZoneObj = data.selectedZoneObj;          
+          if(selectedZoneObj.networktype == "Advanced"){
+            nspHardcodingArray.push({
+              id: id,
+              name: name,
+              state: state
+            });
+          } 
         });
       },
 
