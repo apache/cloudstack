@@ -50,6 +50,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
@@ -86,7 +87,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -225,7 +225,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         if (plannerName == null) {
             plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
         }
-        DeploymentPlanner planner = ComponentContext.getComponent(plannerName);
+        DeploymentPlanner planner = null;
+        for (DeploymentPlanner plannerInList : _planners) {
+            if (plannerName.equals(plannerInList.getName())) {
+                planner = plannerInList;
+                break;
+            }
+        }
 
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
@@ -439,7 +445,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner) {
-        if (planner instanceof DeploymentClusterPlanner) {
+        if (planner != null && planner instanceof DeploymentClusterPlanner) {
             return ((DeploymentClusterPlanner) planner).getResourceUsage();
         } else {
             return DeploymentPlanner.PlannerResourceUsage.Shared;
@@ -733,7 +739,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         for (Long clusterId : clusterList) {
-            Cluster clusterVO = _clusterDao.findById(clusterId);
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
 
             if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
                 s_logger.debug("Cluster: " + clusterId
