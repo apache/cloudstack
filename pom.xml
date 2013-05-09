@@ -437,6 +437,7 @@
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
+              <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
             </excludes>
           </configuration>
         </plugin>
