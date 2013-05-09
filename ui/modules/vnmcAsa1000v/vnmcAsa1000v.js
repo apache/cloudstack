@@ -32,8 +32,7 @@
               physicalnetworkid: args.context.physicalNetworks[0].id
             },
             success: function(json){   
-              var items = json.listCiscoAsa1000vResources["null"]; //waiting for Koushik to fix object name to be "CiscoAsa1000vResource" instead of "null"
-              //var items = json.listCiscoAsa1000vResources.CiscoAsa1000vResource;   
+              var items = json.listCiscoAsa1000vResources.CiscoAsa1000vResource; 
               args.response.success({ data: items });            
             }
           }); 
@@ -124,8 +123,7 @@
                   return 'delete CiscoASA1000v';
                 }
               },
-              action: function(args) {
-                debugger;                     
+              action: function(args) {                               
                 $.ajax({
                   url: createURL('deleteCiscoAsa1000vResource'),
                   data: {
@@ -164,16 +162,14 @@
                 }
               ],
 
-              dataProvider: function(args) {    
-                debugger;
+              dataProvider: function(args) {               
                 $.ajax({
                   url: createURL('listCiscoAsa1000vResources'),
                   data: {
                     resourceid: args.context.asa1000vDevices[0].resourceid
                   },  
                   success: function(json) {                     
-                    var item = json.listCiscoAsa1000vResources["null"][0]; //waiting for Koushik to fix object name to be "CiscoAsa1000vResource" instead of "null"
-                    //var item = json.listCiscoAsa1000vResources.CiscoAsa1000vResource[0];   
+                    var item = json.listCiscoAsa1000vResources.CiscoAsa1000vResource[0];  
                     args.response.success({ data: item });            
                   }
                 });                 

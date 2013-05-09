@@ -28,8 +28,21 @@
       fields: {
         resourcename: { label: 'Resource Name' },
         provider: { label: 'Provider' }
-      },
-          
+      },      
+      dataProvider: function(args) {        
+        $.ajax({
+          url: createURL('listCiscoVnmcResources'),
+          data: {
+            physicalnetworkid: args.context.physicalNetworks[0].id
+          },
+          success: function(json){   
+            var items = json.listCiscoVnmcResources.CiscoVnmcResource; 
+            args.response.success({
+              data: items
+            });            
+          }
+        });  
+      },    
       actions: {
         add: {
           label: 'Add VNMC device',
@@ -182,21 +195,6 @@
             }
           }
         }
-      },
-           
-      dataProvider: function(args) {        
-        $.ajax({
-          url: createURL('listCiscoVnmcResources'),
-          data: {
-            physicalnetworkid: args.context.physicalNetworks[0].id
-          },
-          success: function(json){   
-            var items = json.listCiscoVnmcResources["null"]; //change it after API is fixed.
-            args.response.success({
-              data: items
-            });            
-          }
-        });  
       }
     };
 
@@ -233,14 +231,29 @@
           title: 'label.details',
           fields: [
             {
-              name: { label: 'label.name' }
+              resourcename: { label: 'Resource Name' }
             },
-            {
-              ipaddress: { label: 'label.ip.address' },
-              state: { label: 'label.state' }
+            {   
+              resourceid: { label: 'Resource ID'},
+              provider: { label: 'Provider' },
+              RESOURCE_NAME: { label: 'Resource Name'}
             }
           ],
-          dataProvider: function(args) {
+          dataProvider: function(args) {           
+            $.ajax({
+              url: createURL('listCiscoVnmcResources'),
+              data: {
+                resourceid: args.context.vnmcDevices[0].id
+              },
+              success: function(json){   
+                var item = json.listCiscoVnmcResources.CiscoVnmcResource[0]; 
+                args.response.success({
+                  data: item
+                });            
+              }
+            });  
+            
+            
             args.response.success({
               data: args.context.vnmcDevices[0]
             });
