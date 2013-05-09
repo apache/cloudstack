@@ -85,8 +85,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public DataStoreRole getRole() {
-        // TODO Auto-generated method stub
-        return DataStoreRole.Image;
+         return this.imageDataStoreVO.getRole();
     }
     @Override
     public long getId() {

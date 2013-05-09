@@ -1,6 +1,5 @@
 package org.apache.cloudstack.storage.test;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -12,11 +11,14 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
@@ -28,15 +30,14 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitorImpl;
@@ -65,6 +66,8 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 	DownloadMonitorImpl downloadMonitor;
 	@Inject
 	ImageStoreHelper imageStoreHelper;
+	@Inject
+	StorageCacheManager cacheMgr;
 	long dcId;
 	long templateId;
 
@@ -76,7 +79,6 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 				null, null, NetworkType.Basic, null, null, true,  true, null, null);
 		dc = dcDao.persist(dc);
 		dcId = dc.getId();
-
 
         // add s3 image store
         Map<String, Object> sParams = new HashMap<String, Object>();
@@ -91,6 +93,17 @@ public class S3TemplateTest extends CloudStackTestNGBase {
         sDetails.put(ApiConstants.S3_BUCKET_NAME, this.getS3TemplateBucket());
         sDetails.put(ApiConstants.S3_END_POINT, this.getS3EndPoint());
         this.imageStoreHelper.createImageStore(sParams, sDetails);
+
+        // add nfs cache storage
+        Map<String, Object> cParams = new HashMap<String, Object>();
+        cParams.put("name", "testCache");
+        cParams.put("protocol", "nfs");
+        cParams.put("providerName", DataStoreProvider.NFS_IMAGE);
+        cParams.put("scope", ScopeType.ZONE);
+        cParams.put("role", DataStoreRole.ImageCache);
+        cParams.put("url", this.getSecondaryStorage());
+        cParams.put("zoneId", dcId);
+        this.imageStoreHelper.createImageStore(cParams);
 
 
 		VMTemplateVO image = new VMTemplateVO();
@@ -119,9 +132,10 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 		ep.setResource(new MockLocalNfsSecondaryStorageResource());
 		Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
 		Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
 	}
 
-	@Test
+	@Test(priority = 1)
 	public void registerTemplate() {
 		TemplateInfo template = templateFactory.getTemplate(templateId);
 		DataStore store = dataStoreMgr.getImageStore(dcId);
@@ -140,5 +154,12 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 	         assertTrue(false, e.getMessage());
 		}
 	}
+
+    @Test(priority = 2)
+    public void copyTemplateToCache() {
+        TemplateInfo template = templateFactory.getTemplate(templateId);
+        DataObject cacheObj = this.cacheMgr.createCacheObject(template, new ZoneScope(dcId));
+        assertNotNull(cacheObj, "failed to create cache object");
+    }
 
 }

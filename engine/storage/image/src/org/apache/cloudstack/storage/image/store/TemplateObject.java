@@ -186,7 +186,7 @@ public class TemplateObject implements TemplateInfo {
                     templEvent = TemplateEvent.OperationFailed;
                 }
 
-                if (templEvent != null) {
+                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
                     this.stateTransit(templEvent);
                 }
             }
@@ -223,9 +223,11 @@ public class TemplateObject implements TemplateInfo {
         			templateStoreRef.setDownloadPercent(100);
         			templateStoreRef.setDownloadState(Status.DOWNLOADED);
         			templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
-        			VMTemplateVO templateVO = this.imageDao.findById(this.getId());
-        			templateVO.setFormat(newTemplate.getFormat());
-        			this.imageDao.update(templateVO.getId(), templateVO);
+                    if (this.getDataStore().getRole() == DataStoreRole.Image) {
+                        VMTemplateVO templateVO = this.imageDao.findById(this.getId());
+                        templateVO.setFormat(newTemplate.getFormat());
+                        this.imageDao.update(templateVO.getId(), templateVO);
+                    }
         		}
 
         		TemplateEvent templEvent = null;
@@ -239,7 +241,7 @@ public class TemplateObject implements TemplateInfo {
         		    templEvent = TemplateEvent.OperationFailed;
         		}
 
-        		if (templEvent != null) {
+        		if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
         		    this.stateTransit(templEvent);
         		}
         	}

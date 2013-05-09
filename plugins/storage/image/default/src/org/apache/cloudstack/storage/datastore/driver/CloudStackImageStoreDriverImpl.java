@@ -126,7 +126,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl nfsStore = (ImageStoreImpl)store;
         NfsTO nfsTO = new NfsTO();
-        nfsTO.setRole(DataStoreRole.Image);
+        nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
         return nfsTO;
     }

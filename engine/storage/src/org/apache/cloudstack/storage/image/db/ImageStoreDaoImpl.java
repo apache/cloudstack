@@ -87,5 +87,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         return listBy(sc);
     }
 
+    @Override
+    public List<ImageStoreVO> findImageCacheByScope(ZoneScope scope) {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
+        sc.addAnd("scope", SearchCriteria.Op.EQ, ScopeType.ZONE);
+        sc.addAnd("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
+        return listBy(sc);
+    }
 
 }

@@ -231,9 +231,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3,
-
-    DataTO destData, NfsTO destImageStore) {
+    protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3, DataTO destData, NfsTO destImageStore) {
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
 
@@ -288,8 +286,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CopyCmdAnswer(errMsg);
         }
     }
-    
-   
+
+
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
         String srcMountPoint = this.getRootDir(srcDataStore.getUrl());
         String snapshotPath = srcData.getPath();
@@ -330,7 +328,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             loc.save();
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(destData.getPath() + File.separator + templateName); 
+            newTemplate.setPath(destData.getPath() + File.separator + templateName);
             newTemplate.setFormat(ImageFormat.VHD);
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
@@ -346,16 +344,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         return new CopyCmdAnswer(errMsg);
     }
-    
+
     protected Answer copySnapshotToTemplateFromNfsToNfs(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
-        
+
         if (srcData.getHypervisorType() == HypervisorType.XenServer) {
             return copySnapshotToTemplateFromNfsToNfsXenserver(cmd, srcData, srcDataStore, destData, destDataStore);
         }
 
         return new CopyCmdAnswer("");
     }
-    
+
     protected Answer createTemplateFromSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
@@ -366,7 +364,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.debug("only support nfs storage as src, when create template from snapshot");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
-        
+
             if (destDataStore instanceof NfsTO){
                 return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData, (NfsTO)destDataStore);
             }
@@ -380,12 +378,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-        
+
         if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
             return createTemplateFromSnapshot(cmd);
         }
 
-     
+        if (srcDataStore instanceof S3TO && destDataStore instanceof NfsTO && destDataStore.getRole() == DataStoreRole.ImageCache){
+            S3TO s3 = (S3TO)srcDataStore;
+            NfsTO destImageStore = (NfsTO)destDataStore;
+            return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+        }
+
+
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -1729,7 +1733,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_configIpFirewallScr != null) {
             s_logger.info("_configIpFirewallScr found in " + _configIpFirewallScr);
         }
-        
+
         createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(), "create_privatetemplate_from_snapshot_xen.sh");
         if (createTemplateFromSnapshotXenScript == null) {
             throw new ConfigurationException("create_privatetemplate_from_snapshot_xen.sh not found in " + getDefaultScriptsDir());

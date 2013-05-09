@@ -124,17 +124,13 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public List<DataStore> listImageCacheStores(Scope scope) {
-        List<DataStore> imageStores = new ArrayList<DataStore>();
         if (scope.getScopeType() != ScopeType.ZONE) {
             s_logger.debug("only support zone wide image cache stores");
-            return imageStores;
+            return null;
         }
-        SearchCriteriaService<ImageStoreVO, ImageStoreVO> sc = SearchCriteria2.create(ImageStoreVO.class);
-        sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, scope.getScopeId());
-        sc.addAnd(sc.getEntity().getRole(), Op.EQ, DataStoreRole.ImageCache);
-        List<ImageStoreVO> cacheStores = sc.list();
-        for (ImageStoreVO store : cacheStores) {
+        List<ImageStoreVO> stores = dataStoreDao.findImageCacheByScope(new ZoneScope(scope.getScopeId()));
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));
         }
         return imageStores;

@@ -66,6 +66,11 @@ public class MockLocalNfsSecondaryStorageResource extends
     }
 
     @Override
+    public String getRootDir(String secUrl){
+        return "/mnt";
+    }
+
+    @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadSystemTemplateCommand){
             return execute((DownloadSystemTemplateCommand)cmd);
