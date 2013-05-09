@@ -195,10 +195,74 @@
             }
           }
         }
-      }
+      },
+      
+      detailView: {
+        name: 'CiscoVNMC resource details',
+        actions: {    
+          remove: {
+            label: 'delete CiscoVNMC resource',
+            messages: {
+              confirm: function(args) {
+                return 'Please confirm you want to delete CiscoVNMC resource';
+              },
+              notification: function(args) {
+                return 'delete CiscoVNMC resource';
+              }
+            },
+            action: function(args) {                               
+              $.ajax({
+                url: createURL('deleteCiscoVnmcResource'),
+                data: {
+                  resourceid: args.context.vnmcDevices[0].resourceid
+                },                   
+                success: function(json) {
+                  args.response.success();
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+                }
+              });
+            },
+            notification: {
+              poll: function(args) {
+                args.complete();
+              }
+            }
+          }
+        },
+
+        tabs: {
+          details: {
+            title: 'label.details',            
+            fields: [
+             {
+               resourcename: { label: 'Resource Name' }
+             },
+             {   
+               resourceid: { label: 'Resource ID'},
+               provider: { label: 'Provider' },
+               RESOURCE_NAME: { label: 'Resource Name'}
+             }
+           ],
+           dataProvider: function(args) {   
+             $.ajax({
+               url: createURL('listCiscoVnmcResources'),
+               data: {
+                 resourceid: args.context.vnmcDevices[0].resourceid
+               },
+               success: function(json){                    
+                 var item = json.listCiscoVnmcResources.CiscoVnmcResource[0]; 
+                 args.response.success({ data: item });            
+               }
+             });   
+            }    
+          }
+        }
+      }       
     };
 
-    var vnmcProviderDetailView = vnmcListView.detailView = {
+    var vnmcProviderDetailView = {
       id: 'vnmcProvider',
       label: 'VNMC',
       viewAll: vnmcDeviceViewAll,
@@ -224,44 +288,7 @@
         }
       }
     };
-
-    var vnmcDeviceDetailView = {
-      tabs: {
-        details: {
-          title: 'label.details',
-          fields: [
-            {
-              resourcename: { label: 'Resource Name' }
-            },
-            {   
-              resourceid: { label: 'Resource ID'},
-              provider: { label: 'Provider' },
-              RESOURCE_NAME: { label: 'Resource Name'}
-            }
-          ],
-          dataProvider: function(args) {           
-            $.ajax({
-              url: createURL('listCiscoVnmcResources'),
-              data: {
-                resourceid: args.context.vnmcDevices[0].id
-              },
-              success: function(json){   
-                var item = json.listCiscoVnmcResources.CiscoVnmcResource[0]; 
-                args.response.success({
-                  data: item
-                });            
-              }
-            });  
-            
-            
-            args.response.success({
-              data: args.context.vnmcDevices[0]
-            });
-          }
-        }
-      }
-    };
-    
+   
     module.pluginAPI.extend({
       addDevice: function(device) {
         cloudStack.sections.system.subsections[device.id] = device;
