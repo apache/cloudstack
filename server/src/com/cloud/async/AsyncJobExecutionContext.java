@@ -76,10 +76,17 @@ public class AsyncJobExecutionContext  {
 		assert(_job != null);
 		_jobMgr.logJobJournal(_job.getId(), journalType, journalText, journalObjJson);
 	}
-	
+
     public void joinJob(long joinJobId) {
     	assert(_job != null);
     	_jobMgr.joinJob(_job.getId(), joinJobId);
+    }
+	
+    public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher,
+    		String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds) {
+    	assert(_job != null);
+    	_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus, 
+    		wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
     }
     
     //

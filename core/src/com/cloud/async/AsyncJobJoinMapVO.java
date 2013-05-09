@@ -55,6 +55,15 @@ public class AsyncJobJoinMapVO {
 
     @Column(name="complete_msid")
     private Long completeMsid;
+    
+    @Column(name="sync_source_id")
+    private Long syncSourceId;
+    
+    @Column(name="wakeup_handler")
+    private String wakeupHandler;
+
+    @Column(name="wakeup_dispatcher")
+    private String wakeupDispatcher;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -137,5 +146,29 @@ public class AsyncJobJoinMapVO {
 
 	public void setLastUpdated(Date lastUpdated) {
 		this.lastUpdated = lastUpdated;
+	}
+
+	public Long getSyncSourceId() {
+		return syncSourceId;
+	}
+
+	public void setSyncSourceId(Long syncSourceId) {
+		this.syncSourceId = syncSourceId;
+	}
+
+	public String getWakeupHandler() {
+		return wakeupHandler;
+	}
+
+	public void setWakeupHandler(String wakeupHandler) {
+		this.wakeupHandler = wakeupHandler;
+	}
+
+	public String getWakeupDispatcher() {
+		return wakeupDispatcher;
+	}
+
+	public void setWakeupDispatcher(String wakeupDispatcher) {
+		this.wakeupDispatcher = wakeupDispatcher;
 	}
 }

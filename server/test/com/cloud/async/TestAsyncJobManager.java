@@ -123,8 +123,8 @@ public class TestAsyncJobManager extends TestCase {
     
     @Test
     public void testJoinMapDao() {
-    	joinMapDao.joinJob(2, 1, 100);
-    	joinMapDao.joinJob(3, 1, 100);
+    	joinMapDao.joinJob(2, 1, 100, null, null, null);
+    	joinMapDao.joinJob(3, 1, 100, null, null, null);
   
     	AsyncJobJoinMapVO record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);

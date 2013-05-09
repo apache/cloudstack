@@ -20,14 +20,10 @@ package com.cloud.vm;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +55,6 @@ import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -695,13 +690,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     	final long jobId = workJob.getId();
     	
+    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId); 
+
     	//
     	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
     	// to wait here. The reason we do it synchronized here is that callers of advanceStart is expecting
     	// synchronized semantics
     	// 
     	//
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
     	_jobMgr.waitAndCheck(
     		new String[] { TopicConstants.VM_POWER_STATE, TopicConstants.JOB_STATE }, 
     		3000L, 600000L, new Predicate() {
@@ -1134,6 +1130,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
 
     	final long jobId = workJob.getId();
+    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
     	
     	//
     	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
@@ -1141,7 +1138,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	// synchronized semantics
     	// 
     	//
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
     	_jobMgr.waitAndCheck(
     		new String[] { TopicConstants.VM_POWER_STATE, TopicConstants.JOB_STATE }, 
     		3000L, 600000L, new Predicate() {

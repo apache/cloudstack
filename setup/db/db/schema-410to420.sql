@@ -414,6 +414,7 @@ ALTER TABLE `cloud`.`async_job` DROP COLUMN `callback_address`;
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_type` VARCHAR(32);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_dispatcher` VARCHAR(64);
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_executing_msid` bigint;
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `job_pending_signals` int(10) NOT NULL DEFAULT 0;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state` VARCHAR(74) DEFAULT 'PowerUnknown';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_time` DATETIME;
@@ -451,6 +452,9 @@ CREATE TABLE `cloud`.`async_job_join_map` (
   `join_result` varchar(1024),
   `join_msid` bigint,
   `complete_msid` bigint,
+  `sync_source_id` bigint COMMENT 'upper-level job sync source info before join',
+  `wakeup_handler` varchar(64),
+  `wakeup_dispatcher` varchar(64),
   `created` datetime NOT NULL,
   `last_updated` datetime,
   PRIMARY KEY (`id`),

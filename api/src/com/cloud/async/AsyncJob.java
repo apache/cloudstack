@@ -30,6 +30,8 @@ public interface AsyncJob extends Identity, InternalIdentity {
     String getType();
     
     String getDispatcher();
+
+    int getPendingSignals();
     
     long getUserId();
 

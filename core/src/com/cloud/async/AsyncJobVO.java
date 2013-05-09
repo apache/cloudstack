@@ -52,6 +52,9 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="job_dispatcher", length=64)
     protected String dispatcher;
     
+    @Column(name="job_pending_signals")
+    protected int pendingSignals;
+    
     @Column(name="user_id")
     private long userId;
     
@@ -93,7 +96,7 @@ public class AsyncJobVO implements AsyncJob {
     
     @Column(name="job_executing_msid")
     private Long executingMsid;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
@@ -109,7 +112,7 @@ public class AsyncJobVO implements AsyncJob {
     private Date removed;
     
     @Column(name="uuid")
-    private String uuid;
+    private String uuid;    
 
     @Transient
     private SyncQueueItem syncSource = null;
@@ -155,6 +158,15 @@ public class AsyncJobVO implements AsyncJob {
 	
 	public void setDispatcher(String dispatcher) {
 		this.dispatcher = dispatcher;
+	}
+	
+	@Override
+	public int getPendingSignals() {
+		return this.pendingSignals;
+	}
+	
+	public void setPendingSignals(int signals) {
+		this.pendingSignals = signals;
 	}
 
 	@Override

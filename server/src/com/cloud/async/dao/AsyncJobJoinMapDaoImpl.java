@@ -44,12 +44,17 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		CompleteJoinSearch.done();
 	}
 	
-	public Long joinJob(long jobId, long joinJobId, long joinMsid) {
+	public Long joinJob(long jobId, long joinJobId, long joinMsid, 
+		Long syncSourceId, String wakeupHandler, String wakeupDispatcher) {
+		
 		AsyncJobJoinMapVO record = new AsyncJobJoinMapVO();
 		record.setJobId(jobId);
 		record.setJoinJobId(joinJobId);
 		record.setJoinMsid(joinMsid);
 		record.setJoinStatus(AsyncJobConstants.STATUS_IN_PROGRESS);
+		record.setSyncSourceId(syncSourceId);
+		record.setWakeupHandler(wakeupHandler);
+		record.setWakeupHandler(wakeupHandler);
 		
 		this.persist(record);
 		return record.getId();

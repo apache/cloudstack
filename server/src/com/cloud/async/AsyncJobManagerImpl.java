@@ -313,17 +313,31 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	_journalDao.persist(journal);
     }
     
-    @DB
-    public void joinJob(long jobId, long joinJobId) {
-    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid());
+    @Override @DB
+	public void joinJob(long jobId, long joinJobId) {
+    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), null, null, null);
     }
     
-    @DB
+    @Override @DB
+    public void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakeupDispatcher,
+    		String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds) {
+    	
+    	Long syncSourceId = null;
+    	AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+    	assert(context.getJob() != null);
+    	if(context.getJob().getSyncSource() != null) {
+    		syncSourceId = context.getJob().getSyncSource().getQueueId();
+    	}
+    	
+    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), syncSourceId, wakeupHandler, wakeupDispatcher);
+    }
+    
+    @Override @DB
     public void disjoinJob(long jobId, long joinedJobId) {
     	_joinMapDao.disjoinJob(jobId, joinedJobId);
     }
     
-    @DB
+    @Override @DB
     public void completeJoin(long joinJobId, int joinStatus, String joinResult) {
     	_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, this.getMsid());
     }
@@ -585,11 +599,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	}
     }
     
-    public boolean waitAndCheck(String[] wakupSubjects, long checkIntervalInMilliSeconds, 
+    public boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, 
         long timeoutInMiliseconds, Predicate predicate) {
     	
     	MessageDetector msgDetector = new MessageDetector();
-    	msgDetector.open(_messageBus, wakupSubjects);
+    	msgDetector.open(_messageBus, wakupTopicsOnMessageBus);
     	try {
     		long startTick = System.currentTimeMillis();
     		while(System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
