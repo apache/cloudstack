@@ -118,7 +118,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
             return null;
         }
-        
+
         if (!_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);
         }
@@ -145,24 +145,30 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setBroadcastUri(config.getBroadcastUri());
         }
 
-        // Determine the offset from the lowest vlan tag
-        int offset = getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
-
         // Determine the new gateway and CIDR
         String[] oldCidr = config.getCidr().split("/");
         String oldCidrAddress = oldCidr[0];
-        int cidrSize = getGloballyConfiguredCidrSize();
-
-        // If the offset has more bits than there is room for, return null
-        long bitsInOffset = 32 - Integer.numberOfLeadingZeros(offset);
-        if (bitsInOffset > (cidrSize - 8)) {
-            throw new CloudRuntimeException("The offset " + offset + " needs " + bitsInOffset + " bits, but only have " + (cidrSize - 8) + " bits to work with.");
+        int cidrSize = Integer.parseInt(oldCidr[1]);
+        long newCidrAddress = (NetUtils.ip2Long(oldCidrAddress));
+        // if the implementing network is for vpc, no need to generate newcidr, use the cidr that came from super cidr
+        if (config.getVpcId() != null) {
+            implemented.setGateway(config.getGateway());
+            implemented.setCidr(config.getCidr());
+            implemented.setState(State.Implemented);
+        } else {
+            // Determine the offset from the lowest vlan tag
+            int offset = getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
+            cidrSize = getGloballyConfiguredCidrSize();
+            // If the offset has more bits than there is room for, return null
+            long bitsInOffset = 32 - Integer.numberOfLeadingZeros(offset);
+            if (bitsInOffset > (cidrSize - 8)) {
+                throw new CloudRuntimeException("The offset " + offset + " needs " + bitsInOffset + " bits, but only have " + (cidrSize - 8) + " bits to work with.");
+            }
+            newCidrAddress = (NetUtils.ip2Long(oldCidrAddress) & 0xff000000) | (offset << (32 - cidrSize));
+            implemented.setGateway(NetUtils.long2Ip(newCidrAddress + 1));
+            implemented.setCidr(NetUtils.long2Ip(newCidrAddress) + "/" + cidrSize);
+            implemented.setState(State.Implemented);
         }
-
-        long newCidrAddress = (NetUtils.ip2Long(oldCidrAddress) & 0xff000000) | (offset << (32 - cidrSize));
-        implemented.setGateway(NetUtils.long2Ip(newCidrAddress + 1));
-        implemented.setCidr(NetUtils.long2Ip(newCidrAddress) + "/" + cidrSize);
-        implemented.setState(State.Implemented);
 
         // Mask the Ipv4 address of all nics that use this network with the new guest VLAN offset
         List<NicVO> nicsInNetwork = _nicDao.listByNetworkId(config.getId());
@@ -172,8 +178,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 nic.setIp4Address(NetUtils.long2Ip(newCidrAddress | ipMask));
                 _nicDao.persist(nic);
             }
-        }       
-        
+        }
+
         // Mask the destination address of all port forwarding rules in this network with the new guest VLAN offset
         List<PortForwardingRuleVO> pfRulesInNetwork = _pfRulesDao.listByNetwork(config.getId());
         for (PortForwardingRuleVO pfRule : pfRulesInNetwork) {

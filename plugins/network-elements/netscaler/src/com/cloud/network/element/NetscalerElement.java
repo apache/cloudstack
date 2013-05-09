@@ -61,6 +61,9 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
@@ -85,7 +88,7 @@ import java.util.*;
 @Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class, GslbServiceProvider.class})
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider,
         NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider,
-        GslbServiceProvider {
+        GslbServiceProvider, VpcProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -956,5 +959,34 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return nsGslbProvider.getGslbSitePrivateIP();
         }
         return null;
+    }
+
+    @Override
+    public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return true;
+    }
+
+    @Override
+    public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean createPrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean deletePrivateGateway(PrivateGateway privateGateway) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException {
+        return true;
     }
 }

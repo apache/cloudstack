@@ -1121,7 +1121,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 // validate if CIDR specified overlaps with any of the CIDR's allocated for isolated networks and shared networks in the zone
                 checkSharedNetworkCidrOverlap(zoneId, pNtwk.getId(), cidr);
             } else {
-                throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
+                // if the guest network is for the VPC, if any External Provider are supported in VPC
+                // cidr will not be null as it is generated from the super cidr of vpc.
+                // if cidr is not null and network is not part of vpc then throw the exception
+                if (vpcId == null)
+                    throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
             }
         }
 

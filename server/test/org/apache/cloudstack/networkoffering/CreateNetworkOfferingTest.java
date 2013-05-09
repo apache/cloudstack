@@ -41,6 +41,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -72,6 +73,9 @@ public class CreateNetworkOfferingTest extends TestCase{
     @Inject
     AccountManager accountMgr;
     
+    @Inject
+    VpcManager vpcMgr;
+
     @Before
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
@@ -180,4 +184,43 @@ public class CreateNetworkOfferingTest extends TestCase{
         assertNotNull("Isolated network offering with specifyIpRanges=true and with no sourceNatService, failed to create", off);
         
     }
+
+    @Test
+    public void createVpcNtwkOff() {
+        Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
+        vrProvider.add(Provider.VPCVirtualRouter);
+        serviceProviderMap.put(Network.Service.Dhcp , vrProvider);
+        serviceProviderMap.put(Network.Service.Dns , vrProvider);
+        serviceProviderMap.put(Network.Service.Lb , vrProvider);
+        serviceProviderMap.put(Network.Service.SourceNat , vrProvider);
+        serviceProviderMap.put(Network.Service.Gateway , vrProvider);
+        serviceProviderMap.put(Network.Service.Lb , vrProvider);
+        NetworkOfferingVO off = configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true,
+                Availability.Optional, 200, serviceProviderMap, false, Network.GuestType.Isolated, false,
+                null, false, null, false, false);
+        // System.out.println("Creating Vpc Network Offering");
+        assertNotNull("Vpc Isolated network offering with Vpc provider ", off);
+    }
+
+    @Test
+    public void createVpcNtwkOffWithNetscaler() {
+        Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
+        Set<Network.Provider> lbProvider = new HashSet<Network.Provider>();
+        vrProvider.add(Provider.VPCVirtualRouter);
+        lbProvider.add(Provider.Netscaler);
+        serviceProviderMap.put(Network.Service.Dhcp, vrProvider);
+        serviceProviderMap.put(Network.Service.Dns, vrProvider);
+        serviceProviderMap.put(Network.Service.Lb, vrProvider);
+        serviceProviderMap.put(Network.Service.SourceNat, vrProvider);
+        serviceProviderMap.put(Network.Service.Gateway, vrProvider);
+        serviceProviderMap.put(Network.Service.Lb, lbProvider);
+        NetworkOfferingVO off = configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true,
+                Availability.Optional, 200, serviceProviderMap, false, Network.GuestType.Isolated, false, null, false,
+                null, false, false);
+        // System.out.println("Creating Vpc Network Offering");
+        assertNotNull("Vpc Isolated network offering with Vpc and Netscaler provider ", off);
+    }
+
 }
