@@ -735,7 +735,7 @@
                         var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
                         var items = [];
                         $(serviceofferings).each(function() {
-                          items.push({id: this.id, description: this.displaytext});
+                          items.push({id: this.id, description: this.name});
                         });
                         args.response.success({data: items});
                       }
