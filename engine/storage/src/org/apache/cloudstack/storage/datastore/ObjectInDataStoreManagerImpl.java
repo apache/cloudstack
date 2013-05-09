@@ -303,7 +303,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             DataObjectInStore vo = null;
             switch (type){
             case TEMPLATE:
-                vo = templateDataStoreDao.findByTemplate(objId);
+                vo = templateDataStoreDao.findByTemplate(objId, role);
                 break;
             case SNAPSHOT:
                 vo = snapshotDataStoreDao.findBySnapshot(objId, role);
@@ -313,7 +313,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 break;
             }
             if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreId(), DataStoreRole.Image);
+                store = this.storeMgr.getDataStore(vo.getDataStoreId(), role);
             }
         }
         return store;

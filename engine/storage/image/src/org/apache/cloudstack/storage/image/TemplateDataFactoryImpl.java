@@ -78,19 +78,30 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         return tmpl;
     }
 
-    // NOTE that this method can only be used for get template information stored in secondary storage
-    //TODO: this method is problematic, since one template can be stored in multiple image stores.
-    // need to see if we can get rid of this method or change to plural format, or restrict to 1:1 mapping
+
     @Override
-    public TemplateInfo getTemplate(long templateId) {
+    public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
-        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplate(templateId);
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplate(templateId, storeRole);
         DataStore store = null;
         if ( tmplStore != null ){
-            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
+            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
     }
+
+
+    @Override
+    public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId) {
+        VMTemplateVO templ = imageDataDao.findById(templateId);
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZone(templateId, zoneId, storeRole);
+        DataStore store = null;
+        if ( tmplStore != null ){
+            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
+        }
+        return this.getTemplate(templateId, store);
+    }
+
 
     @Override
     public TemplateInfo getTemplate(DataObject obj, DataStore store) {

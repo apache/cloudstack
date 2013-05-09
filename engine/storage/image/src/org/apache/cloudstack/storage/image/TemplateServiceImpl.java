@@ -73,6 +73,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -189,7 +190,7 @@ public class TemplateServiceImpl implements TemplateService {
         for (VMTemplateVO template : toBeDownloaded) {
             TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
             if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            	TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId());
+            	TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                 this.createTemplateAsync(tmplt, store, null);
             }
         }
@@ -224,7 +225,7 @@ public class TemplateServiceImpl implements TemplateService {
             for (VMTemplateVO template: toBeDownloaded) {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId());
+                    TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                     this.createTemplateAsync(tmplt, store, null);
                 }
             }
@@ -328,6 +329,7 @@ public class TemplateServiceImpl implements TemplateService {
                     tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
                     tmpltStore.setSize(tmpltInfo.getSize());
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                    tmpltStore.setDataStoreRole(store.getRole());
                     _vmTemplateStoreDao.persist(tmpltStore);
                     this.associateTemplateToZone(tmplt.getId(), zoneId);
                 }
@@ -381,7 +383,7 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
                     //TODO: we should pass a callback here
-                    TemplateInfo tmpl = this._templateFactory.getTemplate(tmplt.getId());
+                    TemplateInfo tmpl = this._templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     this.createTemplateAsync(tmpl, store, null);
                 }
             }
@@ -580,6 +582,7 @@ public class TemplateServiceImpl implements TemplateService {
                 tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
                 tmpltStore.setSize(0);
                 tmpltStore.setPhysicalSize(0); // no size information for pre-seeded system vm templates
+                tmpltStore.setDataStoreRole(store.getRole());
                 _vmTemplateStoreDao.persist(tmpltStore);
             }
         }

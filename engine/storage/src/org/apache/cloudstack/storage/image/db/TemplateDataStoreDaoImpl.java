@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -51,6 +52,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeSearch;
     private SearchBuilder<TemplateDataStoreVO> templateSearch;
+    private SearchBuilder<TemplateDataStoreVO> templateRoleSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
@@ -72,6 +74,12 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         templateSearch.and("template_id", templateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         templateSearch.and("destroyed", templateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         templateSearch.done();
+
+        templateRoleSearch = createSearchBuilder();
+        templateRoleSearch.and("template_id", templateRoleSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        templateRoleSearch.and("store_role", templateRoleSearch.entity().getDataStoreRole(), SearchCriteria.Op.EQ);
+        templateRoleSearch.and("destroyed", templateRoleSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        templateRoleSearch.done();
 
 
     	updateStateSearch = this.createSearchBuilder();
@@ -263,10 +271,12 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             return lockOneRandomRow(sc, true);
     }
 
+
     @Override
-    public TemplateDataStoreVO findByTemplate(long templateId) {
-        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+    public TemplateDataStoreVO findByTemplate(long templateId, DataStoreRole role) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
         sc.setParameters("template_id", templateId);
+        sc.setParameters("store_role", role);
         sc.setParameters("destroyed", false);
         return findOneIncludingRemovedBy(sc);
     }
@@ -279,6 +289,24 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return search(sc, null);
     }
 
-
+    @Override
+    public TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role) {
+        // get all elgible image stores
+        List<DataStore> imgStores = null;
+        if ( role == DataStoreRole.Image){
+            imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        } else if (role == DataStoreRole.ImageCache){
+            imgStores = this._storeMgr.getImageCacheStores(new ZoneScope(zoneId));
+        }
+        if ( imgStores != null ){
+            for (DataStore store : imgStores){
+                List<TemplateDataStoreVO> sRes = this.listByTemplateStore(templateId, store.getId());
+                if ( sRes != null && sRes.size() > 0){
+                    return sRes.get(0);
+                }
+            }
+        }
+        return null;
+    }
 
 }

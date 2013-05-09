@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
@@ -50,7 +51,9 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId, boolean lock);
 
-    TemplateDataStoreVO findByTemplate(long templateId);
+    TemplateDataStoreVO findByTemplate(long templateId, DataStoreRole role);
+
+    TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role);
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
 }

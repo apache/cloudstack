@@ -68,7 +68,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 	@Test(priority = -1)
 	public void setUp() {
 		ComponentContext.initComponentsLifeCycle();
-	     
+
 		//create data center
 		DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
 				null, null, NetworkType.Basic, null, null, true,  true, null, null);
@@ -117,7 +117,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 
 	@Test
 	public void registerTemplate() {
-		TemplateInfo template = templateFactory.getTemplate(templateId);
+		TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
 		DataStore store = dataStoreMgr.getImageStore(dcId);
 		AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 		templateSvr.createTemplateAsync(template, store, future);
@@ -137,7 +137,7 @@ public class TemplateTest extends CloudStackTestNGBase {
 
    // @Test
     public void deleteTemplate() {
-        TemplateInfo template = templateFactory.getTemplate(templateId);
+        TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
         DataStore store = dataStoreMgr.getImageStore(dcId);
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         templateSvr.deleteTemplateAsync(template);

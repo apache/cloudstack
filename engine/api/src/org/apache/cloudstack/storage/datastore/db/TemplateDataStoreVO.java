@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -54,6 +55,10 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 	@Column(name="template_id")
 	private long templateId;
+
+    @Column(name="store_role")
+    @Enumerated(EnumType.STRING)
+    private DataStoreRole dataStoreRole;
 
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
@@ -108,65 +113,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     ObjectInDataStoreStateMachine.State state;
 
 
-	@Override
-    public String getInstallPath() {
-		return installPath;
-	}
 
-
-	@Override
-	public long getDataStoreId() {
-		return dataStoreId;
-	}
-
-	public void setDataStoreId(long storeId) {
-		this.dataStoreId = storeId;
-	}
-
-    public long getTemplateId() {
-		return templateId;
-	}
-
-    public void setTemplateId(long templateId) {
-		this.templateId = templateId;
-	}
-
-    public int getDownloadPercent() {
-		return downloadPercent;
-	}
-
-    public void setDownloadPercent(int downloadPercent) {
-		this.downloadPercent = downloadPercent;
-	}
-
-    public void setDownloadState(Status downloadState) {
-		this.downloadState = downloadState;
-	}
-
-    public long getId() {
-		return id;
-	}
-
-    public Date getCreated() {
-		return created;
-	}
-
-    public Date getLastUpdated() {
-		return lastUpdated;
-	}
-
-    public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
-
-    @Override
-    public void setInstallPath(String installPath) {
-	    this.installPath = installPath;
-	}
-
-    public Status getDownloadState() {
-		return downloadState;
-	}
 
 	public TemplateDataStoreVO(Long hostId, long templateId) {
 		super();
@@ -216,6 +163,65 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
 	}
 
+    @Override
+    public String getInstallPath() {
+        return installPath;
+    }
+
+
+    @Override
+    public long getDataStoreId() {
+        return dataStoreId;
+    }
+
+    public void setDataStoreId(long storeId) {
+        this.dataStoreId = storeId;
+    }
+
+    public long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(long templateId) {
+        this.templateId = templateId;
+    }
+
+    public int getDownloadPercent() {
+        return downloadPercent;
+    }
+
+    public void setDownloadPercent(int downloadPercent) {
+        this.downloadPercent = downloadPercent;
+    }
+
+    public void setDownloadState(Status downloadState) {
+        this.downloadState = downloadState;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Date date) {
+        lastUpdated = date;
+    }
+
+    @Override
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
+    }
+
+    public Status getDownloadState() {
+        return downloadState;
+    }
 
     public void setLocalDownloadPath(String localPath) {
 		this.localDownloadPath = localPath;
@@ -345,4 +351,15 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public State getObjectInStoreState() {
        return this.state;
     }
+
+    public DataStoreRole getDataStoreRole() {
+        return dataStoreRole;
+    }
+
+    public void setDataStoreRole(DataStoreRole dataStoreRole) {
+        this.dataStoreRole = dataStoreRole;
+    }
+
+
+
 }

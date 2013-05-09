@@ -128,6 +128,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `job_id` varchar(255),
   `download_pct` int(10) unsigned,
   `size` bigint unsigned,
+  `store_role` varchar(255),  
   `physical_size` bigint unsigned DEFAULT 0,
   `download_state` varchar(255),
   `error_str` varchar(255),

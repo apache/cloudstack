@@ -1348,7 +1348,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VolumeVO volume = null;
 
         try {
-            TemplateInfo tmplInfo = this._tmplFactory.getTemplate(templateId);
+            TemplateInfo tmplInfo = this._tmplFactory.getTemplate(templateId, DataStoreRole.Image);
             Long zoneId = null;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
@@ -1384,7 +1384,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     s_logger.debug("Failed to create template" + result.getResult());
                     throw new CloudRuntimeException("Failed to create template" + result.getResult());
                 }
-                
+
                 VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
                 this._tmpltZoneDao.persist(templateZone);
 

@@ -671,7 +671,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (isNotCreatedFromTemplate) {
             future = this.volService.createVolumeAsync(volume, store);
         } else {
-            TemplateInfo templ = this.tmplFactory.getTemplate(template.getId());
+            TemplateInfo templ = this.tmplFactory.getTemplate(template.getId(), DataStoreRole.Image);
             future = this.volService.createVolumeFromTemplateAsync(volume, store.getId(), templ);
         }
         try {
@@ -2266,7 +2266,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (templateId == null) {
             future = this.volService.createVolumeAsync(volume, destPool);
         } else {
-            TemplateInfo templ = this.tmplFactory.getTemplate(templateId);
+            TemplateInfo templ = this.tmplFactory.getTemplate(templateId, DataStoreRole.Image);
             future = this.volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
         }
         VolumeApiResult result = null;

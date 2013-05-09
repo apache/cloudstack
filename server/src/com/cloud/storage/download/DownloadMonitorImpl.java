@@ -174,6 +174,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         if (vmTemplateStore == null) {
             vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
                     VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
+            vmTemplateStore.setDataStoreRole(store.getRole());
             _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
             downloadJobExists = true;

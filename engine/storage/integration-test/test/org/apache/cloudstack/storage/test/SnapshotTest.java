@@ -240,7 +240,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
 
         DataStore store = this.dataStoreMgr.getDataStore(imageStore.getId(), DataStoreRole.Image);
-        TemplateInfo template = templateFactory.getTemplate(image.getId());
+        TemplateInfo template = templateFactory.getTemplate(image.getId(), DataStoreRole.Image);
         DataObject templateOnStore = store.create(template);
         TemplateObjectTO to = new TemplateObjectTO();
         to.setPath(this.getImageInstallPath());
@@ -313,7 +313,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
             return null;
         }
     }
-    
+
     private SnapshotVO createSnapshotInDb(VolumeInfo volume) {
         Snapshot.Type snapshotType = Snapshot.Type.MANUAL;
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), 2, 1, volume.getId(), 1L, UUID.randomUUID().toString(),
@@ -336,7 +336,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId()));
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
 
         VolumeApiResult result;
         try {
@@ -351,7 +351,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         }
         return null;
     }
-    
+
     @Test
     public void createSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
@@ -363,11 +363,11 @@ public class SnapshotTest extends CloudStackTestNGBase {
             }
         }
     }
-    
+
     private VMTemplateVO createTemplateInDb() {
         image = new VMTemplateVO();
         image.setTemplateType(TemplateType.USER);
-      
+
         image.setUniqueName(UUID.randomUUID().toString());
         image.setName(UUID.randomUUID().toString());
         image.setPublicTemplate(true);
@@ -385,7 +385,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         image = imageDataDao.persist(image);
         return image;
     }
-    
+
     @Test
     public void createTemplateFromSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
@@ -398,13 +398,13 @@ public class SnapshotTest extends CloudStackTestNGBase {
                 result = true;
             }
         }
-        
+
         AssertJUnit.assertTrue(result);
         LocalHostEndpoint ep = new LocalHostEndpoint();
         ep.setResource(new MockLocalNfsSecondaryStorageResource());
         Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
         VMTemplateVO templateVO = createTemplateInDb();
-        TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId());
+        TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
         DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
         this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
     }

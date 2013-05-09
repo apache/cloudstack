@@ -137,7 +137,7 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 
 	@Test(priority = 1)
 	public void registerTemplate() {
-		TemplateInfo template = templateFactory.getTemplate(templateId);
+		TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
 		DataStore store = dataStoreMgr.getImageStore(dcId);
 		AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
 		templateSvr.createTemplateAsync(template, store, future);
@@ -157,7 +157,7 @@ public class S3TemplateTest extends CloudStackTestNGBase {
 
     @Test(priority = 2)
     public void copyTemplateToCache() {
-        TemplateInfo template = templateFactory.getTemplate(templateId);
+        TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
         DataObject cacheObj = this.cacheMgr.createCacheObject(template, new ZoneScope(dcId));
         assertNotNull(cacheObj, "failed to create cache object");
     }
