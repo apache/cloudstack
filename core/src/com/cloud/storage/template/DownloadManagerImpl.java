@@ -491,6 +491,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
         DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
+        dj.setTmpltPath(installPathPrefix);
         jobs.put(jobId, dj);
         threadPool.execute(td);
 
@@ -665,6 +666,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             } else {
                 installPathPrefix = resource.getRootDir(cmd) + File.separator + installPathPrefix;
             }
+        } else if (dstore instanceof S3TO ){
+            // S3 key has template name inside to help template sync
+            installPathPrefix = installPathPrefix + File.separator + cmd.getName();
         }
         String user = null;
         String password = null;
