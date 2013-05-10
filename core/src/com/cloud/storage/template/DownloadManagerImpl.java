@@ -45,6 +45,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -226,12 +227,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private int installTimeoutPerGig = 180 * 60 * 1000;
     private boolean _sslCopy;
 
-
     public void setThreadPool(ExecutorService threadPool) {
         this.threadPool = threadPool;
     }
 
-    public void setStorageLayer(StorageLayer storage){
+    public void setStorageLayer(StorageLayer storage) {
         this._storage = storage;
     }
 
@@ -286,9 +286,17 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
-            } else{
-                // for s3 and swift, we skip post download step and just set status to trigger callback.
+            } else {
+                // for s3 and swift, we skip post download step and just set
+                // status to trigger callback.
                 td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+                // set template size for S3
+                if (td instanceof S3TemplateDownloader){
+                    long size = ((S3TemplateDownloader)td).totalBytes;
+                    DownloadJob dnld = jobs.get(jobId);
+                    dnld.setTemplatesize(size);
+                    dnld.setTemplatePhysicalSize(size);
+                }
             }
             dj.cleanup();
             break;
@@ -336,8 +344,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String postDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String resourcePath = dnld.getInstallPathPrefix(); // path with mount directory
-        String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
+        String resourcePath = dnld.getInstallPathPrefix(); // path with mount
+                                                           // directory
+        String finalResourcePath = dnld.getTmpltPath(); // template download
+                                                        // path on secondary
+                                                        // storage
         ResourceType resourceType = dnld.getResourceType();
 
         /*
@@ -387,13 +398,15 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             templateName = java.util.UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes()).toString();
         }
 
-        // run script to mv the temporary template file to the final template file
+        // run script to mv the temporary template file to the final template
+        // file
         String templateFilename = templateName + "." + extension;
         dnld.setTmpltPath(finalResourcePath + "/" + templateFilename);
         scr.add("-n", templateFilename);
 
         scr.add("-t", resourcePath);
-        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary template file downloaded
+        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary
+                                                  // template file downloaded
         if (dnld.getChecksum() != null && dnld.getChecksum().length() > 1) {
             scr.add("-c", dnld.getChecksum());
         }
@@ -500,7 +513,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     @Override
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr,
-            String cksum, String installPathPrefix, String templatePath,  String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+            String cksum, String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy,
+            ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix;
@@ -548,8 +562,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             } else {
                 throw new CloudRuntimeException("Unable to download from URL: " + url);
             }
-            // NOTE the difference between installPathPrefix and templatePath here. instalPathPrefix is the absolute path for template including mount directory
-            // on ssvm, while templatePath is the final relative path on secondary storage.
+            // NOTE the difference between installPathPrefix and templatePath
+            // here. instalPathPrefix is the absolute path for template
+            // including mount directory
+            // on ssvm, while templatePath is the final relative path on
+            // secondary storage.
             DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
             dj.setTmpltPath(templatePath);
             jobs.put(jobId, dj);
@@ -666,7 +683,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             } else {
                 installPathPrefix = resource.getRootDir(cmd) + File.separator + installPathPrefix;
             }
-        } else if (dstore instanceof S3TO ){
+        } else if (dstore instanceof S3TO) {
             // S3 key has template name inside to help template sync
             installPathPrefix = installPathPrefix + File.separator + cmd.getName();
         }
@@ -685,7 +702,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
         } else {
             jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(),
-                    cmd.getDescription(), cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    cmd.getDescription(), cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes,
+                    cmd.getProxy(), resourceType);
         }
         sleep();
         if (jobId == null) {
