@@ -282,7 +282,10 @@
       // Private gateways
       privateGateways: function() {
         return cloudStack.vpc.gateways.listView()
-      }
+      },
+      publicIPs: function() {
+        return cloudStack.vpc.ipAddresses.listView()
+      }      
     },
     
     routerDetailView: function() {
