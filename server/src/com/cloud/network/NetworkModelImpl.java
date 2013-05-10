@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -52,13 +53,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -86,11 +85,14 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
@@ -183,9 +185,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     @Inject
-    NicSecondaryIpDao _nicSecondaryIpDao;;
+    NicSecondaryIpDao _nicSecondaryIpDao;
+    @Inject
+    ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    NetworkOfferingDetailsDao _ntwkOffDetailsDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     static Long _privateOfferingId = null;
@@ -604,7 +610,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             NetworkElement element = getElementImplementingProvider(instance.getProvider());
             if (element != null) {
                 Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
-                ;
                 if (elementCapabilities != null) {
                     networkCapabilities.put(service, elementCapabilities.get(service));
                 }
@@ -917,7 +922,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         boolean isUserVmsDefaultNetwork = false;
         boolean isDomRGuestOrPublicNetwork = false;
         if (vm != null) {
-            Nic nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+            Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
             if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true;
             } else if (vm.getType() == Type.DomainRouter && ntwkOff != null && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
@@ -1465,10 +1470,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" + element.getName() + " implementing Provider="
                             + provider.getName());
                 }
-    
-                capValue = capValue.toLowerCase();
-    
-                if (!value.contains(capValue)) {
+        
+                if (!value.toLowerCase().contains(capValue.toLowerCase())) {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't support value " + capValue + " for capability " + cap.getName() + " for element=" + element.getName()
                             + " implementing Provider=" + provider.getName());
                 }
@@ -1664,9 +1667,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
-        ips.addAll(secondaryIps);
+        List<String> ips = getUsedIpsInNetwork(network);
         Set<Long> usedIps = new TreeSet<Long>(); 
 
         for (String ip : ips) {
@@ -1677,6 +1678,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
             usedIps.add(NetUtils.ip2Long(ip));
         }
+
         Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
 
         String gateway = network.getGateway();
@@ -1684,6 +1686,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             allPossibleIps.remove(NetUtils.ip2Long(gateway));
 
         return allPossibleIps;
+    }
+    
+    @Override
+    public List<String> getUsedIpsInNetwork(Network network) {
+        //Get all ips used by vms nics
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        //Get all secondary ips for nics
+        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
+        ips.addAll(secondaryIps);
+        //Get ips used by load balancers
+        List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
+        ips.addAll(lbIps);
+        return ips;
     }
 
     @Override
@@ -1792,7 +1807,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (broadcastUri != null) {
             nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(networkId, vm.getId(), broadcastUri);
         } else {
-           nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+           nic =  _nicDao.findByNtwkIdAndInstanceId(networkId, vm.getId());
         }
         if (nic == null) {
            return null;
@@ -2051,6 +2066,22 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
     
+
+    @Override
+    public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
+        List<? extends Network> networks = _networksDao.listByZoneAndTrafficType(zoneId, TrafficType.Public);
+        if (networks.isEmpty() || networks.size() > 1) {
+            throw new CloudRuntimeException("Can't find public network in the zone specified");
+        }
+        
+        return _ipAddressDao.findByIpAndSourceNetworkId(networks.get(0).getId(), ipAddress);
+    }
+    
+    @Override
+    public Map<Detail, String> getNtwkOffDetails(long offId) {
+        return _ntwkOffDetailsDao.getNtwkOffDetails(offId);
+    }
+
     
     @Override
     public Networks.IsolationType[] listNetworkIsolationMethods() {

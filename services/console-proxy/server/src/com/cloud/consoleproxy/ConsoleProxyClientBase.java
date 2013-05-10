@@ -329,6 +329,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                     "</a>", 
                     "<ul>",
                         "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
+                        "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
                         "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>",
                     "</ul>",
                 "</li>",

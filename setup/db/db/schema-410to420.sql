@@ -339,7 +339,7 @@ CREATE TABLE `cloud`.`vm_snapshots` (
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `vm_snapshot_enabled` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'Whether VM snapshot is supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hypervisor_type` in ('VMware', 'XenServer');
 
-			
+      
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select 
@@ -450,7 +450,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         async_job.uuid job_uuid,
         async_job.job_status job_status,
         async_job.account_id job_account_id,
-		affinity_group.id affinity_group_id,
+    affinity_group.id affinity_group_id,
         affinity_group.uuid affinity_group_uuid,
         affinity_group.name affinity_group_name,
         affinity_group.description affinity_group_description
@@ -515,7 +515,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             and async_job.job_status = 0
             left join
         `cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
-			left join
+      left join
         `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
 
 DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
@@ -844,7 +844,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         domain_router.scripts_version scripts_version,
         domain_router.is_redundant_router is_redundant_router,
         domain_router.redundant_state redundant_state,
-        domain_router.stop_pending stop_pending
+        domain_router.stop_pending stop_pending,
+        domain_router.role role
     from
         `cloud`.`domain_router`
             inner join
@@ -919,7 +920,7 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;     
 
 
 -- Add "default" field to account/user tables
@@ -1114,6 +1115,40 @@ CREATE VIEW `cloud`.`account_view` AS
         `cloud`.`async_job` ON async_job.instance_id = account.id
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
+
+
+
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address` varchar(40) COMMENT 'source ip address for the load balancer rule';
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address_network_id` bigint unsigned COMMENT 'the id of the network where source ip belongs to';
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `scheme` varchar(40) NOT NULL COMMENT 'load balancer scheme; can be Internal or Public';
+UPDATE `cloud`.`load_balancing_rules` SET `scheme`='Public';
+
+
+
+-- Add details talbe for the network offering
+CREATE TABLE `cloud`.`network_offering_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_offering_details__network_offering_id` FOREIGN KEY `fk_network_offering_details__network_offering_id`(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Change the constraint for the network service map table. Now we support multiple provider for the same service
+ALTER TABLE `cloud`.`ntwk_service_map` DROP FOREIGN KEY `fk_ntwk_service_map__network_id`;
+ALTER TABLE `cloud`.`ntwk_service_map` DROP INDEX `network_id`;
+
+ALTER TABLE `cloud`.`ntwk_service_map` ADD UNIQUE `network_id` (`network_id`,`service`,`provider`);
+ALTER TABLE `cloud`.`ntwk_service_map` ADD  CONSTRAINT `fk_ntwk_service_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
+
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `internal_lb` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering supports Internal lb service';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `public_lb` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering supports Public lb service';
+UPDATE `cloud`.`network_offerings` SET public_lb=1 where id IN (SELECT DISTINCT network_offering_id FROM `cloud`.`ntwk_offering_service_map` WHERE service='Lb');
+
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'internallbvm.service.offering', null, 'Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used');
 
 
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;

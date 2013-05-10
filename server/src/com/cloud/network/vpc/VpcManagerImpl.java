@@ -184,8 +184,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
-     
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
+ 
+
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -207,6 +208,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (svc == Service.Lb) {
                     Set<Provider> lbProviders = new HashSet<Provider>();
                     lbProviders.add(Provider.VPCVirtualRouter);
+                    lbProviders.add(Provider.InternalLbVm);
                     svcProviderMap.put(svc, lbProviders);
                 } else {
                     svcProviderMap.put(svc, defaultProviders);
@@ -215,7 +217,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
                     true, State.Enabled);
         }
-                
+
+        //configure default vpc offering with Netscaler as LB Provider
+        if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSOfferingName ) == null) {
+            s_logger.debug("Creating default VPC offering with Netscaler as LB Provider" + VpcOffering.defaultVPCNSOfferingName);
+            Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+            Set<Provider> defaultProviders = new HashSet<Provider>();
+            defaultProviders.add(Provider.VPCVirtualRouter);
+            for (Service svc : getSupportedServices()) {
+                if (svc == Service.Lb) {
+                    Set<Provider> lbProviders = new HashSet<Provider>();
+                    lbProviders.add(Provider.Netscaler);
+                    lbProviders.add(Provider.InternalLbVm);
+                    svcProviderMap.put(svc, lbProviders);
+                } else {
+                    svcProviderMap.put(svc, defaultProviders);
+                }
+            }
+            createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
+                    svcProviderMap, false, State.Enabled);
+        }
+
         txn.commit();
         
         Map<String, String> configs = _configDao.getConfiguration(params);
@@ -1038,16 +1060,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        //4) Only one network in the VPC can support public LB inside the VPC. Internal LB can be supported on multiple VPC tiers
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
+                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                        throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1084,6 +1107,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (guestNtwkOff.isConserveMode()) {
             throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
         }
+
+       //5) If Netscaler is LB provider make sure it is in dedicated mode
+        if ( providers.contains(Provider.Netscaler)  && !guestNtwkOff.getDedicatedLB() ) {
+            throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
+        }
+        return ;
     }
 
     @DB

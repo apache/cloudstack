@@ -27,6 +27,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -94,7 +95,6 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
@@ -338,7 +338,7 @@ public class ChildTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

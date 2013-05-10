@@ -831,6 +831,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
+        List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
+        for(NicVO nic : allNics){
+            if(nic.getNetworkId() == network.getId())
+                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
+        }
+
         NicProfile profile = new NicProfile(null, null);
         if(ipAddress != null) {
             profile = new NicProfile(ipAddress, null);
@@ -1058,7 +1064,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if(vmInstance.getHypervisorType() != HypervisorType.XenServer){
+        if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
 
@@ -3719,19 +3725,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        // make sure the accounts are under same domain
-        if (oldAccount.getDomainId() != newAccount.getDomainId()) {
-            throw new InvalidParameterValueException(
-                    "The account should be under same domain for moving VM between two accounts. Old owner domain ="
-                            + oldAccount.getDomainId()
-                            + " New owner domain="
-                            + newAccount.getDomainId());
-        }
+        //check caller has access to both the old and new account 
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
 
         // make sure the accounts are not same
         if (oldAccount.getAccountId() == newAccount.getAccountId()) {
             throw new InvalidParameterValueException(
-                    "The account should be same domain for moving VM between two accounts. Account id ="
+                    "The new account is the same as the old account. Account id ="
                             + oldAccount.getAccountId());
         }
 
@@ -3823,6 +3824,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
                     new Long(volume.getSize()));
             volume.setAccountId(newAccount.getAccountId());
+            volume.setDomainId(newAccount.getDomainId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,
@@ -4242,7 +4244,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for " + vmVO);
+                    s_logger.warn("Unable to plug nic for " + vmVO + " due to: " + " due to: " + plugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {
@@ -4270,7 +4272,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic for " + vmVO);
+                    s_logger.warn("Unable to unplug nic for " + vmVO + " due to: " + unplugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {

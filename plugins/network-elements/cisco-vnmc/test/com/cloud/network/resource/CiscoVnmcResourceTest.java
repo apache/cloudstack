@@ -171,11 +171,11 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCIngressAclRule(
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
+                anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCEgressAclRule(
                 anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
+                anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);

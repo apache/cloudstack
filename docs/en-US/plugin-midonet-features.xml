@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+<!ENTITY % xinclude SYSTEM "http://www.docbook.org/xml/4.4/xinclude.mod">
+%xinclude;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="Features-of-the-MidoNet-Plugin">
+    <title>Features of the MidoNet Plugin</title>
+
+    <note>
+        <para>
+        In &PRODUCT; 4.2.0 only the KVM hypervisor is supported for use in combination with MidoNet.
+        </para>
+    </note>
+
+    <para>In &PRODUCT; release 4.2.0 this plugin supports several services in the Advanced Isolated network mode.
+    </para>
+
+    <para>
+    When tenants create new isolated layer 3 networks, instead of spinning up extra Virtual Router VMs, the relevant L3 elements (routers etc) are created in the MidoNet virtual topology by making the appropriate calls to the MidoNet API. Instead of using VLANs, isolation is provided by MidoNet.
+    </para>
+
+    <para>
+    Aside from the above service (Connectivity), several extra features are supported in the 4.2.0 release:
+    </para>
+
+    <itemizedlist>
+    <listitem><para>DHCP</para></listitem>
+    <listitem><para>Firewall (ingress)</para></listitem>
+    <listitem><para>Source NAT</para></listitem>
+    <listitem><para>Static NAT</para></listitem>
+    <listitem><para>Port Forwarding</para></listitem>
+    </itemizedlist>
+
+    <para>
+    The plugin has been tested with MidoNet version 12.12. (Caddo).
+    </para>
+
+
+
+</section>

@@ -169,6 +169,7 @@ class deployDataCenters():
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
         phynet.name = net.name
+        phynet.isolationmethods = net.isolationmethods
         phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
         self.addTrafficTypes(phynetwrk.id, net.traffictypes)
         return phynetwrk
@@ -214,6 +215,18 @@ class deployDataCenters():
                     vrconfig.enabled = "true"
                     vrconfig.id = vrprovid
                     self.apiClient.configureVirtualRouterElement(vrconfig)
+                    self.enableProvider(pnetprovres[0].id)
+                elif provider.name == 'InternalLbVm':
+                    internallbprov = listInternalLoadBalancerElements.listInternalLoadBalancerElementsCmd() 
+                    internallbprov.nspid = pnetprovres[0].id
+                    internallbresponse = self.apiClient.listInternalLoadBalancerElements(internallbprov)
+                    internallbid = internallbresponse[0].id
+
+                    internallbconfig = \
+                            configureInternalLoadBalancerElement.configureInternalLoadBalancerElementCmd()
+                    internallbconfig.enabled = "true"
+                    internallbconfig.id = internallbid
+                    self.apiClient.configureInternalLoadBalancerElement(internallbconfig)
                     self.enableProvider(pnetprovres[0].id)
                 elif provider.name == 'SecurityGroupProvider':
                     self.enableProvider(pnetprovres[0].id)

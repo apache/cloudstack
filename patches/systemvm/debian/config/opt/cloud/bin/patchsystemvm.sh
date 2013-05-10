@@ -135,6 +135,19 @@ elbvm_svcs() {
    echo "cloud dnsmasq cloud-passwd-srvr apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
+
+ilbvm_svcs() {
+   chkconfig cloud off
+   chkconfig haproxy on ; 
+   chkconfig ssh on
+   chkconfig nfs-common off
+   chkconfig portmap off
+   chkconfig keepalived off
+   chkconfig conntrackd off
+   echo "ssh haproxy" > /var/cache/cloud/enabled_svcs
+   echo "cloud dnsmasq cloud-passwd-srvr apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
+}
+
 enable_pcihotplug() {
    sed -i -e "/acpiphp/d" /etc/modules
    sed -i -e "/pci_hotplug/d" /etc/modules
@@ -249,6 +262,16 @@ then
   if [ $? -gt 0 ]
   then
     printf "Failed to execute elbvm svcs\n" >$logfile
+    exit 9
+  fi
+fi
+
+if [ "$TYPE" == "ilbvm" ]
+then
+  ilbvm_svcs
+  if [ $? -gt 0 ]
+  then
+    printf "Failed to execute ilbvm svcs\n" >$logfile
     exit 9
   fi
 fi

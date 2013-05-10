@@ -292,6 +292,7 @@ class TestTemplates(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
         zones = cls.api_client.listZones(cmd)
@@ -751,8 +752,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),
@@ -783,8 +784,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),

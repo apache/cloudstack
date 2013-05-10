@@ -44,6 +44,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -72,6 +75,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
@@ -130,6 +134,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
@@ -189,6 +194,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -216,6 +222,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -229,6 +236,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Cluster;
@@ -269,6 +277,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
@@ -289,6 +298,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
     @Inject private EntityManager _entityMgr = null;
     @Inject private UsageService _usageSvc = null;
+    @Inject NetworkModel _ntwkModel;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -750,7 +760,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, loadBalancer.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, loadBalancer.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
@@ -2263,6 +2273,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setForVpc(ApiDBUtils.isOfferingForVpc(offering));
 
         response.setServices(serviceResponses);
+        
+        //set network offering details
+        Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
+        if (details != null && !details.isEmpty()) {
+            response.setDetails(details);
+        }
+        
         response.setObjectName("networkoffering");
         return response;
     }
@@ -2826,6 +2843,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
+        //generate only response of the VR/VPCVR provider type
+        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter
+                || result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
+            return null;
+        }
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
         response.setId(result.getUuid());
         PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
@@ -3689,6 +3711,73 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    
+    @Override
+    public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances) {
+
+        ApplicationLoadBalancerResponse lbResponse = new ApplicationLoadBalancerResponse();
+        lbResponse.setId(lb.getUuid());
+        lbResponse.setName(lb.getName());
+        lbResponse.setDescription(lb.getDescription());
+        lbResponse.setAlgorithm(lb.getAlgorithm());
+        Network nw = ApiDBUtils.findNetworkById(lb.getNetworkId());
+        lbResponse.setNetworkId(nw.getUuid());
+        populateOwner(lbResponse, lb);
+        
+        if (lb.getScheme() == Scheme.Internal) {
+            lbResponse.setSourceIp(lb.getSourceIp().addr());
+            //TODO - create the view for the load balancer rule to reflect the network uuid
+            Network network = ApiDBUtils.findNetworkById(lb.getNetworkId());
+            lbResponse.setSourceIpNetworkId(network.getUuid());
+        } else {
+            //for public, populate the ip information from the ip address
+            IpAddress publicIp = ApiDBUtils.findIpAddressById(lb.getSourceIpAddressId());
+            lbResponse.setSourceIp(publicIp.getAddress().addr());
+            Network ntwk = ApiDBUtils.findNetworkById(publicIp.getNetworkId());
+            lbResponse.setSourceIpNetworkId(ntwk.getUuid());
+        }
+        
+        //set load balancer rules information (only one rule per load balancer in this release)
+        List<ApplicationLoadBalancerRuleResponse> ruleResponses = new ArrayList<ApplicationLoadBalancerRuleResponse>();
+        ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
+        ruleResponse.setInstancePort(lb.getDefaultPortStart());
+        ruleResponse.setSourcePort(lb.getSourcePortStart());
+        String stateToSet = lb.getState().toString();
+        if (stateToSet.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        ruleResponse.setState(stateToSet);
+        ruleResponse.setObjectName("loadbalancerrule");
+        ruleResponses.add(ruleResponse);
+        lbResponse.setLbRules(ruleResponses);
+        
+        //set Lb instances information
+        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
+        for (Ip ip : lbInstances.keySet()) {
+            ApplicationLoadBalancerInstanceResponse instanceResponse = new ApplicationLoadBalancerInstanceResponse();
+            instanceResponse.setIpAddress(ip.addr());
+            UserVm vm = lbInstances.get(ip);
+            instanceResponse.setId(vm.getUuid());
+            instanceResponse.setName(vm.getInstanceName());
+            instanceResponse.setObjectName("loadbalancerinstance");
+            instanceResponses.add(instanceResponse);
+        }
+        
+        lbResponse.setLbInstances(instanceResponses);
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, lb.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        lbResponse.setTags(tagResponses);
+
+        lbResponse.setObjectName("loadbalancer");
+        return lbResponse;
+    }
+
     @Override
     public AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group) {
 
@@ -3719,8 +3808,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    
+    @Override
+    public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
+        if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
+            return null;
+        }
+        InternalLoadBalancerElementResponse response = new InternalLoadBalancerElementResponse();
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
+        response.setEnabled(result.isEnabled());
 
+        response.setObjectName("internalloadbalancerelement");
+        return response;
+    }
 
+    
     @Override
     public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {
         IsolationMethodResponse response = new IsolationMethodResponse();

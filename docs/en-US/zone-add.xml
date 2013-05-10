@@ -42,7 +42,7 @@
                 </para>
                 </listitem>
                 <listitem><para>Restart the Management Server.</para>
-                    <programlisting># service cloud-management restart</programlisting>
+                    <programlisting># service cloudstack-management restart</programlisting>
                 </listitem>
                 <listitem><para>Refresh the &PRODUCT; UI browser tab and log back in.</para></listitem>
             </orderedlist>
