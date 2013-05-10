@@ -7980,6 +7980,7 @@
 
               action: function(args) {
                 var array1 = [];
+                var appendData = args.data.append ? args.data.append : {};
                 
                 array1.push("&zoneId=" + args.data.zoneid);
                 array1.push("&name=" + todb(args.data.podname));
@@ -7993,6 +7994,7 @@
 
                 $.ajax({
                   url: createURL("createPod" + array1.join("")),
+                  data: appendData,
                   dataType: "json",
                   success: function(json) {
                     var item = json.createpodresponse.pod;
@@ -12140,6 +12142,12 @@
                                 state: nspMap.bigswitchVns ? nspMap.bigswitchVns.state : 'Disabled'
                         }
 		];
+
+    $(window).trigger('cloudStack.system.serviceProviders.makeHarcodedArray', {
+      nspHardcodingArray: nspHardcodingArray,
+      selectedZoneObj: selectedZoneObj,
+      selectedPhysicalNetworkObj: selectedPhysicalNetworkObj
+    });
 
 		if(selectedZoneObj.networktype == "Basic") {
 			nspHardcodingArray.push(
