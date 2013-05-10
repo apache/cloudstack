@@ -92,7 +92,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public List<DataStore> listImageStores() {
-        List<ImageStoreVO> stores = dataStoreDao.listAll();
+        List<ImageStoreVO> stores = dataStoreDao.listImageStores();
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));

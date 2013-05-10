@@ -16,28 +16,45 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.command;
+package com.cloud.agent.api.to;
 
+import com.cloud.storage.Volume;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
-
-public class CreateObjectAnswer extends Answer {
+public class DiskTO {
     private DataTO data;
-    protected CreateObjectAnswer() {
-        super();
+    private Long diskSeq;
+    private Volume.Type type;
+    public DiskTO() {
+        
+    }
+    
+    public DiskTO(DataTO data, Long diskSeq, Volume.Type type) {
+        this.data = data;
+        this.diskSeq = diskSeq;
+        this.type = type;
     }
 
-    public CreateObjectAnswer(DataTO data) {
-        super();
+    public DataTO getData() {
+        return data;
+    }
+
+    public void setData(DataTO data) {
         this.data = data;
     }
-    
-    public DataTO getData() {
-        return this.data;
+
+    public Long getDiskSeq() {
+        return diskSeq;
     }
-    
-    public CreateObjectAnswer(String errMsg) {
-        super(null, false, errMsg);
-    } 
+
+    public void setDiskSeq(Long diskSeq) {
+        this.diskSeq = diskSeq;
+    }
+
+    public Volume.Type getType() {
+        return type;
+    }
+
+    public void setType(Volume.Type type) {
+        this.type = type;
+    }
 }

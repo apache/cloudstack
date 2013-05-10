@@ -23,6 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.api.Identity;
@@ -58,6 +59,10 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name="scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
+
+    @Column(name = "role")
+    @Enumerated(value = EnumType.STRING)
+    private DataStoreRole role;
 
     @Column(name="data_center_id")
     private long zoneId;
@@ -176,6 +181,12 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
         this.detailValue = detailValue;
     }
 
+    public DataStoreRole getRole() {
+        return role;
+    }
 
+    public void setRole(DataStoreRole role) {
+        this.role = role;
+    }
 
 }

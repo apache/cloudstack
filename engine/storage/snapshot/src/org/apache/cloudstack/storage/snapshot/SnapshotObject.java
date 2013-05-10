@@ -22,9 +22,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -39,6 +37,8 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;

@@ -354,7 +354,7 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
-        enum deviceType {
+        public enum deviceType {
             FLOPPY("floppy"), DISK("disk"), CDROM("cdrom");
             String _type;
 
@@ -396,7 +396,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum diskBus {
+        public enum diskBus {
             IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML(
                     "uml"), FDC("fdc");
             String _bus;
@@ -411,7 +411,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum diskFmtType {
+        public enum diskFmtType {
             RAW("raw"), QCOW2("qcow2");
             String _fmtType;
 

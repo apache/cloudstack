@@ -18,9 +18,9 @@
  */
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataTO;
 
 public class CreateObjectCommand extends Command implements StorageSubSystemCommand {
     private DataTO data;

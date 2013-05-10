@@ -18,26 +18,27 @@
  */
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 
-public class CreateObjectAnswer extends Answer {
-    private DataTO data;
-    protected CreateObjectAnswer() {
-        super();
-    }
-
-    public CreateObjectAnswer(DataTO data) {
-        super();
-        this.data = data;
+public class DettachAnswer extends Answer {
+    private DiskTO disk;
+    public DettachAnswer() {
+        super(null);
     }
     
-    public DataTO getData() {
-        return this.data;
+    public DettachAnswer(DiskTO disk) {
+        this.setDisk(disk);
     }
-    
-    public CreateObjectAnswer(String errMsg) {
+    public DettachAnswer(String errMsg) {
         super(null, false, errMsg);
-    } 
+    }
+
+    public DiskTO getDisk() {
+        return disk;
+    }
+
+    public void setDisk(DiskTO disk) {
+        this.disk = disk;
+    }
 }

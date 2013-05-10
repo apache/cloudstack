@@ -107,6 +107,7 @@ CREATE VIEW `cloud`.`image_store_view` AS
         image_store.protocol,
         image_store.url,
         image_store.scope,
+        image_store.role,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
@@ -117,8 +118,8 @@ CREATE VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
-        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id
-    where image_store.role = 'Image';
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+
             
 -- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
 -- FK also commented out due to this            
@@ -1471,3 +1472,6 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
+            
+ update  `cloud`.`vm_template` set state='Allocated' where state is NULL;
+ update  `cloud`.`vm_template` set update_count=0 where update_count is NULL;

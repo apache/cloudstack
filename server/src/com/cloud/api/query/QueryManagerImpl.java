@@ -145,6 +145,7 @@ import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -2019,9 +2020,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
         sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
+        sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
 
 
         SearchCriteria<ImageStoreJoinVO> sc = sb.create();
+        sc.setParameters("role", DataStoreRole.Image);
 
 
         if (keyword != null) {

@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -38,6 +38,7 @@ public class TemplateObjectTO implements DataTO {
     private String displayText;
     private  DataStoreTO imageDataStore;
     private  String name;
+    private String guestOsType;
 
     public TemplateObjectTO() {
 
@@ -151,5 +152,11 @@ public class TemplateObjectTO implements DataTO {
         this.imageDataStore = imageDataStore;
     }
 
+    public String getGuestOsType() {
+        return guestOsType;
+    }
 
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
 }

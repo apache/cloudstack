@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -42,6 +41,7 @@ import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;

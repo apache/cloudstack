@@ -279,9 +279,9 @@ public class S3TemplateDownloader implements TemplateDownloader {
                         @Override
                         public void progressChanged(
                                 ProgressEvent progressEvent) {
-                            s_logger.info(progressEvent.getBytesTransfered()
-                                    + " number of byte transferd "
-                                    + new Date());
+                           // s_logger.debug(progressEvent.getBytesTransfered()
+                           //         + " number of byte transferd "
+                           //         + new Date());
                             totalBytes += progressEvent.getBytesTransfered();
                             if (progressEvent.getEventCode() == ProgressEvent.COMPLETED_EVENT_CODE) {
                                 s_logger.info("download completed");

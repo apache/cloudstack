@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -89,7 +90,6 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         }
         return this.getTemplate(templateId, store);
     }
-
 
     @Override
     public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId) {

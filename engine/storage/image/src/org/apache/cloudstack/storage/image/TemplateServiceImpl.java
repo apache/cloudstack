@@ -475,7 +475,9 @@ public class TemplateServiceImpl implements TemplateService {
             return null;
         }
 
-        parentCallback.complete(result);
+        if (parentCallback != null){
+            parentCallback.complete(result);
+        }
         return null;
     }
 

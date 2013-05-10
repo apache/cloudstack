@@ -65,7 +65,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -79,9 +81,12 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -1035,27 +1040,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else if (vm.getState() != State.Running) {
             return true;
         }
-        String isoPath;
-        VMTemplateVO tmplt = this._tmpltDao.findById(isoId);
+        //FIXME: if it's s3, need to download into cache store
+        TemplateInfo tmplt = this._tmplFactory.getTemplate(isoId, DataStoreRole.Image, vm.getDataCenterId());
         if (tmplt == null) {
             s_logger.warn("ISO: " + isoId + " does not exist");
             return false;
         }
-        // Get the path of the ISO
-        Pair<String, String> isoPathPair = null;
-        if (tmplt.getTemplateType() == TemplateType.PERHOST) {
-            isoPath = tmplt.getName();
-        } else {
-            isoPathPair = getAbsoluteIsoPath(isoId,
-                    vm.getDataCenterId());
-            if (isoPathPair == null) {
-                s_logger.warn("Couldn't get absolute iso path");
-                return false;
-            } else {
-                isoPath = isoPathPair.first();
-            }
-        }
-
+      
         String vmName = vm.getInstanceName();
 
         HostVO host = _hostDao.findById(vm.getHostId());
@@ -1063,12 +1054,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             s_logger.warn("Host: " + vm.getHostId() + " does not exist");
             return false;
         }
-        AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
-        if (isoPathPair != null) {
-            cmd.setStoreUrl(isoPathPair.second());
+        
+        DataTO isoTO = tmplt.getTO();
+        DiskTO disk = new DiskTO(isoTO, null, Volume.Type.ISO);
+        Command cmd = null;
+        if (attach) {
+            cmd = new AttachCommand(disk, vmName);
+        } else {
+            cmd = new DettachCommand(disk, vmName);
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
-
         return (a != null && a.getResult());
     }
 

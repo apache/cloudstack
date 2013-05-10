@@ -16,28 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.command;
+package com.cloud.agent.api.to;
 
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
-
-public class CreateObjectAnswer extends Answer {
-    private DataTO data;
-    protected CreateObjectAnswer() {
-        super();
-    }
-
-    public CreateObjectAnswer(DataTO data) {
-        super();
-        this.data = data;
-    }
-    
-    public DataTO getData() {
-        return this.data;
-    }
-    
-    public CreateObjectAnswer(String errMsg) {
-        super(null, false, errMsg);
-    } 
+public interface DataTO {
+    public DataObjectType getObjectType();
+    public DataStoreTO getDataStore();
+    /**
+     * @return
+     */
+    String getPath();
 }

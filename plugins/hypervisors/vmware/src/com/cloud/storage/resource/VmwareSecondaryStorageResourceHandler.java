@@ -18,8 +18,13 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -45,8 +50,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
-import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
@@ -55,6 +58,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private final VmwareStorageManager _storageMgr;
 
     private final Gson _gson;
+    private final StorageSubsystemCommandHandler storageSubsystemHandler;
 
     /*
 	private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
@@ -64,6 +68,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this);
         _gson = GsonHelper.getGsonLogger();
+      
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this,
+        		null, null, null
+        		);
+        storageSubsystemHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
     }
 
     @Override
@@ -85,6 +94,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((PrepareOVAPackingCommand)cmd);
         } else if(cmd instanceof CreateVolumeFromSnapshotCommand) {
             answer = execute((CreateVolumeFromSnapshotCommand)cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+        	answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else {
             answer =  _resource.defaultAction(cmd);
         }
