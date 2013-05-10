@@ -30,6 +30,7 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     public static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
     public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
     public static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
+    public static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
 
     public enum StorageType {
         local,

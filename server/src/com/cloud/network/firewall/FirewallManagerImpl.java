@@ -27,17 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import com.cloud.network.dao.*;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.mysql.jdbc.ConnectionPropertiesImpl;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
-import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
@@ -53,7 +48,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
@@ -61,10 +55,15 @@ import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
-import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -83,8 +82,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
@@ -438,22 +437,28 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             return;
         }
 
-        if (ipAddress!=null){
-        if (ipAddress.getAssociatedWithNetworkId() == null) {
-                throw new InvalidParameterValueException("Unable to create firewall rule ; ip with specified id is not associated with any network");
-        } else {
-            networkId = ipAddress.getAssociatedWithNetworkId();
-        }
-
+        if (ipAddress != null){
+            if (ipAddress.getAssociatedWithNetworkId() == null) {
+                    throw new InvalidParameterValueException("Unable to create firewall rule ; ip with specified id is not associated with any network");
+            } else {
+                networkId = ipAddress.getAssociatedWithNetworkId();
+            }
+    
             // Validate ip address
             _accountMgr.checkAccess(caller, null, true, ipAddress);
-
+        }
+        
+        //network id either has to be passed explicitly, or implicitly as a part of ipAddress object 
+        if (networkId == null) {
+            throw new InvalidParameterValueException("Unable to retrieve network id to validate the rule");
+        }
+    
         Network network = _networkModel.getNetwork(networkId);
-        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
+        assert network != null : "Can't create rule as network associated with public ip address is null?";
 
-            if (trafficType == FirewallRule.TrafficType.Egress) {
-                _accountMgr.checkAccess(caller, null, true, network);
-            }
+        if (trafficType == FirewallRule.TrafficType.Egress) {
+            _accountMgr.checkAccess(caller, null, true, network);
+        }
 
         // Verify that the network guru supports the protocol specified
         Map<Network.Capability, String> caps = null;
@@ -464,32 +469,32 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
         } else if (purpose == Purpose.PortForwarding) {
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
-            }else if (purpose == Purpose.Firewall){
-                caps = _networkModel.getNetworkServiceCapabilities(network.getId(),Service.Firewall);
+        } else if (purpose == Purpose.Firewall){
+            caps = _networkModel.getNetworkServiceCapabilities(network.getId(),Service.Firewall);
         }
 
         if (caps != null) {
-                String supportedProtocols;
-                String supportedTrafficTypes = null;
-                if (purpose == FirewallRule.Purpose.Firewall) {
-                    supportedTrafficTypes = caps.get(Capability.SupportedTrafficDirection).toLowerCase();
-                }
+            String supportedProtocols;
+            String supportedTrafficTypes = null;
+            if (purpose == FirewallRule.Purpose.Firewall) {
+                supportedTrafficTypes = caps.get(Capability.SupportedTrafficDirection).toLowerCase();
+            }
 
-                if (purpose == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) {
-                    supportedProtocols = caps.get(Capability.SupportedEgressProtocols).toLowerCase();
-                } else {
-                    supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
-                }
+            if (purpose == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) {
+                supportedProtocols = caps.get(Capability.SupportedEgressProtocols).toLowerCase();
+            } else {
+                supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
+            }
 
             if (!supportedProtocols.contains(proto.toLowerCase())) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
             } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
-                } else if (purpose == Purpose.Firewall && !supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
-                    throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);
-                }
+            } else if (purpose == Purpose.Firewall && !supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
+                throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);
             }
         }
+        
     }
 
     @Override

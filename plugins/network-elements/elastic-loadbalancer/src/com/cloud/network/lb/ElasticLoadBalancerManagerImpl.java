@@ -102,7 +102,6 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -118,7 +117,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -126,6 +124,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -297,8 +296,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
 
-            String elbIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress()
-                    .addr();
+            String elbIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             String uuid = rule.getUuid();
             List<LbDestination> destinations = rule.getDestinations();
@@ -331,8 +329,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         return sendCommandsToRouter(elbVm, cmds);
     }
     
-    protected DomainRouterVO findElbVmForLb(FirewallRule lb) {//TODO: use a table to lookup
-        ElasticLbVmMapVO map = _elbVmMapDao.findOneByIp(lb.getSourceIpAddressId());
+    protected DomainRouterVO findElbVmForLb(LoadBalancingRule lb) {//TODO: use a table to lookup
+        Network ntwk = _networkModel.getNetwork(lb.getNetworkId());
+        long sourceIpId = _networkModel.getPublicIpAddress(lb.getSourceIp().addr(), ntwk.getDataCenterId()).getId();
+        ElasticLbVmMapVO map = _elbVmMapDao.findOneByIp(sourceIpId);
         if (map == null) {
             return null;
         }
@@ -342,14 +342,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
     @Override
     public boolean applyLoadBalancerRules(Network network,
-            List<? extends FirewallRule> rules)
+            List<LoadBalancingRule> rules)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             return true;
-        }
-        if (rules.get(0).getPurpose() != Purpose.LoadBalancing) {
-            s_logger.warn("ELB: Not handling non-LB firewall rules");
-            return false;
         }
         
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
@@ -363,14 +359,16 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
 
         if (elbVm.getState() == State.Running) {
             //resend all rules for the public ip
-            List<LoadBalancerVO> lbs = _lbDao.listByIpAddress(rules.get(0).getSourceIpAddressId());
+            long sourceIpId = _networkModel.getPublicIpAddress(rules.get(0).getSourceIp().addr(), network.getDataCenterId()).getId();
+            List<LoadBalancerVO> lbs = _lbDao.listByIpAddress(sourceIpId);
             List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
             for (LoadBalancerVO lb : lbs) {
                 List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                 List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                 List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
                 LoadBalancingRule loadBalancing = new LoadBalancingRule(
-                        lb, dstList, policyList, hcPolicyList);
+                        lb, dstList, policyList, hcPolicyList, sourceIp);
                 lbRules.add(loadBalancing);
             }
             return applyLBRules(elbVm, lbRules, network.getId());
@@ -656,7 +654,10 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             LoadBalancer result = null;
             try {
                 lb.setSourceIpAddressId(ipId);
-                result = _lbMgr.createLoadBalancer(lb, false);
+                
+                result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(), 
+                        lb.getSourcePortStart(), lb.getDefaultPortStart(), ipId.longValue(), lb.getProtocol(),
+                        lb.getAlgorithm(), false, UserContext.current());
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {
@@ -943,7 +944,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
             List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
             List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
+            Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
             lbRules.add(loadBalancing);
         }
 

@@ -440,7 +440,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             defaultDns2 = guestNic.getDns2();
         }
         
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
         String networkDomain = network.getNetworkDomain();
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         

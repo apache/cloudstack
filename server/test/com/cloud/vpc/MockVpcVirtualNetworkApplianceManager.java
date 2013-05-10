@@ -36,6 +36,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
@@ -46,7 +47,6 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -398,6 +398,18 @@ VpcVirtualNetworkApplianceService {
 
     @Override
     public List<DomainRouterVO> getVpcRouters(long vpcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public VirtualRouter findRouter(long routerId) {
         // TODO Auto-generated method stub
         return null;
     }

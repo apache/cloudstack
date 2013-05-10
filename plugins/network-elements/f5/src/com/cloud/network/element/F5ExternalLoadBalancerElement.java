@@ -16,9 +16,30 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.*;
+import com.cloud.api.commands.AddExternalLoadBalancerCmd;
+import com.cloud.api.commands.AddF5LoadBalancerCmd;
+import com.cloud.api.commands.ConfigureF5LoadBalancerCmd;
+import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
+import com.cloud.api.commands.DeleteF5LoadBalancerCmd;
+import com.cloud.api.commands.ListExternalLoadBalancersCmd;
+import com.cloud.api.commands.ListF5LoadBalancerNetworksCmd;
+import com.cloud.api.commands.ListF5LoadBalancersCmd;
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -27,22 +48,41 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.*;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.*;
+import com.cloud.network.ExternalLoadBalancerDeviceManager;
+import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.*;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
+import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -51,13 +91,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.*;
 
 @Local(value = {NetworkElement.class, LoadBalancingServiceProvider.class, IpDeployer.class})
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, IpDeployer, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
@@ -87,10 +120,24 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Inject
     ConfigurationDao _configDao;
 
-    private boolean canHandle(Network config) {
+    private boolean canHandle(Network config, List<LoadBalancingRule> rules) {
         if ((config.getGuestType() != Network.GuestType.Isolated && config.getGuestType() != Network.GuestType.Shared) || config.getTrafficType() != TrafficType.Guest) {
+
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
+        }
+        
+        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+        if (!lbCaps.isEmpty()) {
+            String schemeCaps = lbCaps.get(Capability.LbSchemes);
+            if (schemeCaps != null && rules != null && !rules.isEmpty()) {
+                for (LoadBalancingRule rule : rules) {
+                    if (!schemeCaps.contains(rule.getScheme().toString())) {
+                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                        return false;
+                    }
+                }
+            }
         }
 
         return (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.F5BigIp));
@@ -100,7 +147,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
     InsufficientNetworkCapacityException {
 
-        if (!canHandle(guestConfig)) {
+        if (!canHandle(guestConfig, null)) {
             return false;
         }
 
@@ -124,7 +171,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
-        if (!canHandle(guestConfig)) {
+        if (!canHandle(guestConfig, null)) {
             return false;
         }
 
@@ -143,13 +190,16 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        String algo = rule.getAlgorithm();
-        return (algo.equals("roundrobin") || algo.equals("leastconn"));
+        if (canHandle(network, new ArrayList<LoadBalancingRule>(Arrays.asList(rule)))) {
+            String algo = rule.getAlgorithm();
+            return (algo.equals("roundrobin") || algo.equals("leastconn"));
+        }
+        return true;
     }
 
     @Override
     public boolean applyLBRules(Network config, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        if (!canHandle(config)) {
+        if (!canHandle(config, rules)) {
             return false;
         }
 
@@ -180,6 +230,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         // Support inline mode with firewall
         lbCapabilities.put(Capability.InlineMode, "true");
+        
+        //support only for public lb
+        lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
 
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();

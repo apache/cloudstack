@@ -77,18 +77,19 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<CiscoVnmcControllerVO> CiscoVnmcResources = _ciscoVnmcElementService.listCiscoVnmcResources(this);
+            List<CiscoVnmcControllerVO> ciscoVnmcResources = _ciscoVnmcElementService.listCiscoVnmcResources(this);
             ListResponse<CiscoVnmcResourceResponse> response = new ListResponse<CiscoVnmcResourceResponse>();
-            List<CiscoVnmcResourceResponse> CiscoVnmcResourcesResponse = new ArrayList<CiscoVnmcResourceResponse>();
+            List<CiscoVnmcResourceResponse> ciscoVnmcResourcesResponse = new ArrayList<CiscoVnmcResourceResponse>();
 
-            if (CiscoVnmcResources != null && !CiscoVnmcResources.isEmpty()) {
-                for (CiscoVnmcController CiscoVnmcResourceVO : CiscoVnmcResources) {
-                    CiscoVnmcResourceResponse CiscoVnmcResourceResponse = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(CiscoVnmcResourceVO);
-                    CiscoVnmcResourcesResponse.add(CiscoVnmcResourceResponse);
+            if (ciscoVnmcResources != null && !ciscoVnmcResources.isEmpty()) {
+                for (CiscoVnmcController ciscoVnmcResourceVO : ciscoVnmcResources) {
+                    CiscoVnmcResourceResponse ciscoVnmcResourceResponse = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(ciscoVnmcResourceVO);
+                    ciscoVnmcResourceResponse.setObjectName("CiscoVnmcResource");
+                    ciscoVnmcResourcesResponse.add(ciscoVnmcResourceResponse);
                 }
             }
 
-            response.setResponses(CiscoVnmcResourcesResponse);
+            response.setResponses(ciscoVnmcResourcesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
