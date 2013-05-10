@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -88,6 +89,16 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
+    }
+    
+    @Override
+    public TemplateInfo getTemplate(long templateId, long zoneId) {
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZoneDownloadStatus(templateId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        if (tmplStore != null) {
+            DataStore store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
+            return this.getTemplate(templateId, store);
+        }
+        return null;
     }
 
 

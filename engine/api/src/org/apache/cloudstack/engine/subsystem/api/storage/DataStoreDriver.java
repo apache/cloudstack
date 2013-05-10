@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 
 public interface DataStoreDriver {
     public String grantAccess(DataObject data, EndPoint ep);

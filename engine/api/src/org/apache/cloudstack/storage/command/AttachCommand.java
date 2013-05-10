@@ -19,25 +19,34 @@
 package org.apache.cloudstack.storage.command;
 
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DiskTO;
 
-public class CreateObjectAnswer extends Answer {
-    private DataTO data;
-    protected CreateObjectAnswer() {
-        super();
-    }
-
-    public CreateObjectAnswer(DataTO data) {
-        super();
-        this.data = data;
+public class AttachCommand extends Command implements StorageSubSystemCommand {
+    private DiskTO disk;
+    private String vmName;
+    
+    public AttachCommand(DiskTO disk, String vmName) {
+        this.disk = disk;
+        this.vmName = vmName;
     }
     
-    public DataTO getData() {
-        return this.data;
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return false;
     }
-    
-    public CreateObjectAnswer(String errMsg) {
-        super(null, false, errMsg);
-    } 
+    public DiskTO getDisk() {
+        return disk;
+    }
+    public void setDisk(DiskTO disk) {
+        this.disk = disk;
+    }
+    public String getVmName() {
+        return vmName;
+    }
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
+
 }

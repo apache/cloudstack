@@ -16,15 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DiskTO;
 
-public interface DataTO {
-    public DataObjectType getObjectType();
-    public DataStoreTO getDataStore();
-    /**
-     * @return
-     */
-    String getPath();
+public class AttachAnswer extends Answer {
+    private DiskTO disk;
+    public AttachAnswer() {
+        super(null);
+    }
+    
+    public AttachAnswer(DiskTO disk) {
+        this.setDisk(disk);
+    }
+    public AttachAnswer(String errMsg) {
+        super(null, false, errMsg);
+    }
+
+    public DiskTO getDisk() {
+        return disk;
+    }
+
+    public void setDisk(DiskTO disk) {
+        this.disk = disk;
+    }
 }

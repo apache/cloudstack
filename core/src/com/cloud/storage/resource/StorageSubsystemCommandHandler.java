@@ -16,10 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package com.cloud.storage.resource;
 
-public enum DataObjectType {
-    VOLUME,
-    SNAPSHOT,
-    TEMPLATE
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
+import com.cloud.agent.api.Answer;
+
+public interface StorageSubsystemCommandHandler {
+    public Answer handleStorageCommands(StorageSubSystemCommand command);
 }

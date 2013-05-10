@@ -20,13 +20,13 @@ package com.cloud.serializer;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.transport.ArrayTypeAdaptor;
 import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;

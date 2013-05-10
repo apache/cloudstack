@@ -45,18 +45,22 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.DettachAnswer;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -69,8 +73,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobExecutor;
@@ -117,7 +121,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -168,7 +171,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -1514,7 +1516,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         String errorMsg = "Failed to attach volume: " + volume.getName()
                 + " to VM: " + vm.getHostName();
         boolean sendCommand = (vm.getState() == State.Running);
-        AttachVolumeAnswer answer = null;
+        AttachAnswer answer = null;
         Long hostId = vm.getHostId();
         if (hostId == null) {
             hostId = vm.getLastHostId();
@@ -1526,16 +1528,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (sendCommand) {
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            AttachVolumeCommand cmd = new AttachVolumeCommand(true,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    deviceId, volume.getChainInfo());
-            cmd.setPoolUuid(volumePool.getUuid());
-
+            DataTO volTO = this.volFactory.getVolume(volume.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, deviceId, volume.getVolumeType());
+            AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
             try {
-                answer = (AttachVolumeAnswer) _agentMgr.send(hostId, cmd);
+                answer = (AttachAnswer) _agentMgr.send(hostId, cmd);
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: "
                         + e.getMessage());
@@ -1545,8 +1542,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as attached
             if (sendCommand) {
+                DiskTO disk = answer.getDisk();
                 _volsDao.attachVolume(volume.getId(), vm.getId(),
-                        answer.getDeviceId());
+                        disk.getDiskSeq());
             } else {
                 _volsDao.attachVolume(volume.getId(), vm.getId(), deviceId);
             }
@@ -1858,16 +1856,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Answer answer = null;
 
         if (sendCommand) {
-            AttachVolumeCommand cmd = new AttachVolumeCommand(false,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume
-                            .getDeviceId(), volume.getChainInfo());
-
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            cmd.setPoolUuid(volumePool.getUuid());
-
+            DataTO volTO = this.volFactory.getVolume(volume.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getVolumeType());
+            DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
             try {
                 answer = _agentMgr.send(vm.getHostId(), cmd);
             } catch (Exception e) {
@@ -1879,12 +1870,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
-            if (answer != null && answer instanceof AttachVolumeAnswer) {
-                volume.setChainInfo(((AttachVolumeAnswer) answer)
-                        .getChainInfo());
-                _volsDao.update(volume.getId(), volume);
-            }
-
             return _volsDao.findById(volumeId);
         } else {
 
@@ -2097,22 +2082,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         for (VolumeVO vol : vols) {
-            PrimaryDataStoreInfo pool = (PrimaryDataStoreInfo)this.dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
-            vm.addDisk(new VolumeTO(vol, pool));
+            DataTO volTO = this.volFactory.getVolume(vol.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), vol.getVolumeType());
+            vm.addDisk(disk);
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
             if (userVM.getIsoId() != null) {
-                Pair<String, String> isoPathPair = this._tmpltMgr.getAbsoluteIsoPath(
-                        userVM.getIsoId(), userVM.getDataCenterId());
-                if (isoPathPair != null) {
-                    String isoPath = isoPathPair.first();
-                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO,
-                            StoragePoolType.ISO, null, null, null, isoPath, 0,
-                            null, null);
-                    vm.addDisk(iso);
-                }
+                DataTO dataTO = this.tmplFactory.getTemplate(userVM.getIsoId(), DataStoreRole.Image, userVM.getDataCenterId()).getTO();
+                DiskTO iso = new DiskTO(dataTO, 3L, Volume.Type.ISO);
+                vm.addDisk(iso);
             }
         }
     }
@@ -2328,7 +2308,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
-            vm.addDisk(new VolumeTO(vol, pool));
+            DataTO volumeTO = this.volFactory.getVolume(vol.getId()).getTO();
+            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getVolumeType());
+            vm.addDisk(disk);
         }
     }
 

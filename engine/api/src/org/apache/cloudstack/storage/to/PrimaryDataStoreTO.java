@@ -20,17 +20,26 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.StoragePoolType;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
     private final String uuid;
     private final String name;
     private  String type;
     private final long id;
+    private StoragePoolType poolType;
+    private String host;
+    private String path;
+    private int port;
     public PrimaryDataStoreTO(PrimaryDataStoreInfo dataStore) {
         this.uuid = dataStore.getUuid();
         this.name = dataStore.getName();
       //  this.type = dataStore.getType();
         this.id = dataStore.getId();
+        this.setPoolType(dataStore.getPoolType());
+        this.setHost(dataStore.getHostAddress());
+        this.setPath(dataStore.getPath());
+        this.setPort(dataStore.getPort());
     }
     
     public long getId() {
@@ -52,5 +61,37 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     @Override
     public DataStoreRole getRole() {
         return DataStoreRole.Primary;
+    }
+
+    public StoragePoolType getPoolType() {
+        return poolType;
+    }
+
+    public void setPoolType(StoragePoolType poolType) {
+        this.poolType = poolType;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 }

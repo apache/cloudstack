@@ -18,6 +18,7 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -29,6 +30,7 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
@@ -51,6 +53,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private final VmwareStorageManager _storageMgr;
 
     private final Gson _gson;
+    private StorageSubsystemCommandHandler storageSubsystemHandler;
 
     /*
 	private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
@@ -60,6 +63,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this);
         _gson = GsonHelper.getGsonLogger();
+      
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, true, (VmwareStorageMount)this,
+        		null, null, null
+        		);
+        storageSubsystemHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
     }
 
     @Override
@@ -77,6 +85,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((CopyVolumeCommand)cmd);
         } else if(cmd instanceof CreateVolumeFromSnapshotCommand) {
             answer = execute((CreateVolumeFromSnapshotCommand)cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+        	answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else {
             answer =  _resource.defaultAction(cmd);
         }

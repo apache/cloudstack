@@ -19,6 +19,8 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
@@ -111,11 +113,11 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
 
     List<NicProfile> getNics();
 
-    List<VolumeTO> getDisks();
+    List<DiskTO> getDisks();
 
     void addNic(int index, NicProfile nic);
 
-    void addDisk(int index, VolumeTO disk);
+    void addDisk(int index, DiskTO disk);
 
     StringBuilder getBootArgsBuilder();
 
@@ -125,7 +127,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
 
     void addNic(NicProfile nic);
 
-    void addDisk(VolumeTO disk);
+    void addDisk(DiskTO disk);
 
     VirtualMachine.Type getType();
 

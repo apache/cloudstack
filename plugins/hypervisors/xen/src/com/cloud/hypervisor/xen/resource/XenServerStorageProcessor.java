@@ -22,13 +22,9 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,89 +34,315 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.DettachAnswer;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
-import com.cloud.vm.DiskProfile;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
 
-public class XenServerStorageResource {
-    private static final Logger s_logger = Logger.getLogger(XenServerStorageResource.class);
+public class XenServerStorageProcessor implements StorageProcessor {
+    private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
     protected CitrixResourceBase hypervisorResource;
 
-    public XenServerStorageResource(CitrixResourceBase resource) {
+    public XenServerStorageProcessor(CitrixResourceBase resource) {
         this.hypervisorResource = resource;
     }
+    
+    @Override
+    public AttachAnswer attachIso(AttachCommand cmd) {
+        DiskTO disk = cmd.getDisk();
+        DataTO data = disk.getData();
+        DataStoreTO store = data.getDataStore();
 
-    public Answer handleStorageCommands(StorageSubSystemCommand command) {
-        if (command instanceof CopyCommand) {
-            return this.execute((CopyCommand)command);
-        } else if (command instanceof AttachPrimaryDataStoreCmd) {
-            return this.execute((AttachPrimaryDataStoreCmd)command);
-        } else if (command instanceof CreatePrimaryDataStoreCmd) {
-            return execute((CreatePrimaryDataStoreCmd) command);
-        } else if (command instanceof CreateObjectCommand) {
-            return execute((CreateObjectCommand) command);
-        } else if (command instanceof DeleteCommand) {
-            return execute((DeleteCommand)command);
+        if (!(store instanceof NfsTO)) {
+            s_logger.debug("Can't attach a iso which is not created on nfs: ");
+            return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
         }
-        return new Answer((Command)command, false, "not implemented yet");
+        NfsTO nfsStore = (NfsTO)store;
+        String isoURL = nfsStore.getUrl() + File.separator + data.getPath();
+
+        String vmName = cmd.getVmName();
+        try {
+            Connection conn = this.hypervisorResource.getConnection();
+
+            VBD isoVBD = null;
+
+            // Find the VM
+            VM vm = this.hypervisorResource.getVM(conn, vmName);
+            // Find the ISO VDI
+            VDI isoVDI = this.hypervisorResource.getIsoVDIByURL(conn, vmName, isoURL);
+
+            // Find the VM's CD-ROM VBD
+            Set<VBD> vbds = vm.getVBDs(conn);
+            for (VBD vbd : vbds) {
+                String userDevice = vbd.getUserdevice(conn);
+                Types.VbdType type = vbd.getType(conn);
+
+                if (userDevice.equals("3") && type == Types.VbdType.CD) {
+                    isoVBD = vbd;
+                    break;
+                }
+            }
+
+            if (isoVBD == null) {
+                throw new CloudRuntimeException("Unable to find CD-ROM VBD for VM: " + vmName);
+            } else {
+                // If an ISO is already inserted, eject it
+                if (isoVBD.getEmpty(conn) == false) {
+                    isoVBD.eject(conn);
+                }
+
+                // Insert the new ISO
+                isoVBD.insert(conn, isoVDI);
+            }
+
+            return new AttachAnswer(disk);
+
+        } catch (XenAPIException e) {
+            s_logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            return new AttachAnswer(e.toString());
+        } catch (Exception e) {
+            s_logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            return new AttachAnswer(e.toString());
+        }
     }
+    
+    @Override
+    public AttachAnswer attachVolume(AttachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        DataTO data = disk.getData();
+
+        try {
+            Connection conn = this.hypervisorResource.getConnection();
+            // Look up the VDI
+            VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            // Look up the VM
+            VM vm = this.hypervisorResource.getVM(conn, vmName);
+            /* For HVM guest, if no pv driver installed, no attach/detach */
+            boolean isHVM;
+            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
+                isHVM = true;
+            } else {
+                isHVM = false;
+            }
+            VMGuestMetrics vgm = vm.getGuestMetrics(conn);
+            boolean pvDrvInstalled = false;
+            if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
+                pvDrvInstalled = true;
+            }
+            if (isHVM && !pvDrvInstalled) {
+                s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
+                return new AttachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
+            }
+
+            // Figure out the disk number to attach the VM to
+            String diskNumber = null;
+            Long deviceId = disk.getDiskSeq();
+            if( deviceId != null ) {
+                if( deviceId.longValue() == 3 ) {
+                    String msg = "Device 3 is reserved for CD-ROM, choose other device";
+                    return new AttachAnswer(msg);
+                }
+                if(this.hypervisorResource.isDeviceUsed(conn, vm, deviceId)) {
+                    String msg = "Device " + deviceId + " is used in VM " + vmName;
+                    return new AttachAnswer(msg);
+                }
+                diskNumber = deviceId.toString();
+            } else {
+                diskNumber = this.hypervisorResource.getUnusedDeviceNum(conn, vm);
+            }
+            // Create a new VBD
+            VBD.Record vbdr = new VBD.Record();
+            vbdr.VM = vm;
+            vbdr.VDI = vdi;
+            vbdr.bootable = false;
+            vbdr.userdevice = diskNumber;
+            vbdr.mode = Types.VbdMode.RW;
+            vbdr.type = Types.VbdType.DISK;
+            vbdr.unpluggable = true;
+            VBD vbd = VBD.create(conn, vbdr);
+
+            // Attach the VBD to the VM
+            vbd.plug(conn);
+
+            // Update the VDI's label to include the VM name
+            vdi.setNameLabel(conn, vmName + "-DATA");
+            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), disk.getType());
+            return new AttachAnswer(newDisk);
+
+        } catch (XenAPIException e) {
+            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new AttachAnswer(msg);
+        } catch (Exception e) {
+            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to "  + e.getMessage();
+            s_logger.warn(msg, e);
+            return new AttachAnswer(msg);
+        }
+    }
+    
+    @Override
+    public Answer dettachIso(DettachCommand cmd) {
+        DiskTO disk = cmd.getDisk();
+        DataTO data = disk.getData();
+        DataStoreTO store = data.getDataStore();
+
+        if (!(store instanceof NfsTO)) {
+            s_logger.debug("Can't attach a iso which is not created on nfs: ");
+            return new DettachAnswer("Can't attach a iso which is not created on nfs: ");
+        }
+        NfsTO nfsStore = (NfsTO)store;
+        String isoURL = nfsStore.getUrl() + File.separator + data.getPath();
+
+        try {
+            Connection conn = this.hypervisorResource.getConnection();
+            // Find the VM
+            VM vm = this.hypervisorResource.getVM(conn, cmd.getVmName());
+            String vmUUID = vm.getUuid(conn);
+
+            // Find the ISO VDI
+            VDI isoVDI = this.hypervisorResource.getIsoVDIByURL(conn, cmd.getVmName(), isoURL);
+
+            SR sr = isoVDI.getSR(conn);
+
+            // Look up all VBDs for this VDI
+            Set<VBD> vbds = isoVDI.getVBDs(conn);
+
+            // Iterate through VBDs, and if the VBD belongs the VM, eject
+            // the ISO from it
+            for (VBD vbd : vbds) {
+                VM vbdVM = vbd.getVM(conn);
+                String vbdVmUUID = vbdVM.getUuid(conn);
+
+                if (vbdVmUUID.equals(vmUUID)) {
+                    // If an ISO is already inserted, eject it
+                    if (!vbd.getEmpty(conn)) {
+                        vbd.eject(conn);
+                    }
+                    break;
+                }
+            }
+
+            if (!sr.getNameLabel(conn).startsWith("XenServer Tools")) {
+                this.hypervisorResource.removeSR(conn, sr);
+            }
+
+            return new DettachAnswer(disk);
+        } catch (XenAPIException e) {
+            String msg = "Failed to dettach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new DettachAnswer(msg);
+        } catch (Exception e) {
+            String msg = "Failed to dettach volume" + " for uuid: " + data.getPath() + "  due to "  + e.getMessage();
+            s_logger.warn(msg, e);
+            return new DettachAnswer(msg);
+        } 
+    }
+
+
+    @Override
+    public Answer dettachVolume(DettachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        DataTO data = disk.getData();
+        try {
+            Connection conn = this.hypervisorResource.getConnection();
+            // Look up the VDI
+            VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            // Look up the VM
+            VM vm = this.hypervisorResource.getVM(conn, vmName);
+            /* For HVM guest, if no pv driver installed, no attach/detach */
+            boolean isHVM;
+            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
+                isHVM = true;
+            } else {
+                isHVM = false;
+            }
+            VMGuestMetrics vgm = vm.getGuestMetrics(conn);
+            boolean pvDrvInstalled = false;
+            if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
+                pvDrvInstalled = true;
+            }
+            if (isHVM && !pvDrvInstalled) {
+                s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
+                return new DettachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
+            }
+
+            
+            // Look up all VBDs for this VDI
+            Set<VBD> vbds = vdi.getVBDs(conn);
+
+            // Detach each VBD from its VM, and then destroy it
+            for (VBD vbd : vbds) {
+                VBD.Record vbdr = vbd.getRecord(conn);
+
+                if (vbdr.currentlyAttached) {
+                    vbd.unplug(conn);
+                }
+
+                vbd.destroy(conn);
+            }
+
+            // Update the VDI's label to be "detached"
+            vdi.setNameLabel(conn, "detached");
+
+            this.hypervisorResource.umount(conn, vdi);
+
+            return new DettachAnswer(disk);
+        } catch(Exception e) {
+            s_logger.warn("Failed dettach volume: " + data.getPath());
+            return new DettachAnswer("Failed dettach volume: " + data.getPath() + ", due to " + e.toString());
+        }
+    }
+    
 
     protected SR getSRByNameLabel(Connection conn, String nameLabel) throws BadServerResponse, XenAPIException, XmlRpcException {
         Set<SR> srs = SR.getByNameLabel(conn, nameLabel);
@@ -146,26 +368,10 @@ public class XenServerStorageResource {
         vdi.destroy(conn);
     }
 
-    private Map<String, String> getParameters(URI uri) {
-        String parameters = uri.getQuery();
-        Map<String, String> params = new HashMap<String, String>();
-        List<String> paraLists = Arrays.asList(parameters.split("&"));
-        for (String para : paraLists) {
-            String[] pair = para.split("=");
-            params.put(pair[0], pair[1]);
-        }
-        return params;
-    }
-
-    protected CreateObjectAnswer getTemplateSize(CreateObjectCommand cmd, String templateUrl) {
-        /*Connection conn = hypervisorResource.getConnection();
-        long size = this.getTemplateSize(conn, templateUrl);
-        return new CreateObjectAnswer(cmd, templateUrl, size);*/
-        return null;
-    }
-
-    protected CreateObjectAnswer createSnapshot(SnapshotObjectTO snapshotTO) {
+    @Override
+    public Answer createSnapshot(CreateObjectCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+        SnapshotObjectTO snapshotTO = (SnapshotObjectTO)cmd.getData();
         long snapshotId = snapshotTO.getId();
         String snapshotName = snapshotTO.getName();
         String details = "create snapshot operation Failed for snapshotId: " + snapshotId;
@@ -211,22 +417,10 @@ public class XenServerStorageResource {
 
         return new CreateObjectAnswer(details);
     }
-    protected CreateObjectAnswer execute(CreateObjectCommand cmd) {
-       DataTO data = cmd.getData();
-       try {
-           if (data.getObjectType() == DataObjectType.VOLUME) {
-               return createVolume(data);
-           } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
-               return createSnapshot((SnapshotObjectTO)data);
-           }
-           return new CreateObjectAnswer("not supported type");
-       } catch (Exception e) {
-           s_logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
-           return new CreateObjectAnswer(e.toString());
-       }
-    }
     
-    protected Answer deleteVolume(VolumeObjectTO volume) {
+    @Override
+    public Answer deleteVolume(DeleteCommand cmd) {
+    	DataTO volume = cmd.getData();
         Connection conn = hypervisorResource.getConnection();
         String errorMsg = null;
         try {
@@ -246,46 +440,12 @@ public class XenServerStorageResource {
         return new Answer(null, false, errorMsg);
     }
 
-    protected Answer execute(DeleteCommand cmd) {
-        DataTO data = cmd.getData();
-        Answer answer = null;
-        if (data.getObjectType() == DataObjectType.VOLUME) {
-            answer = deleteVolume((VolumeObjectTO)data);
-        } else {
-            answer = new Answer(cmd, false, "unsupported type");
-        }
 
-        return answer;
-    }
-
-   /* protected Answer execute(CreateVolumeFromBaseImageCommand cmd) {
-        VolumeObjectTO volume = cmd.getVolume();
-        ImageOnPrimayDataStoreTO baseImage = cmd.getImage();
-        Connection conn = hypervisorResource.getConnection();
-
-        try {
-            VDI baseVdi = VDI.getByUuid(conn, baseImage.getPathOnPrimaryDataStore());
-            VDI newVol = baseVdi.createClone(conn, new HashMap<String, String>());
-            newVol.setNameLabel(conn, volume.getName());
-            return new CreateObjectAnswer(cmd, newVol.getUuid(conn), newVol.getVirtualSize(conn));
-        } catch (BadServerResponse e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (XenAPIException e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (XmlRpcException e) {
-            return new Answer(cmd, false, e.toString());
-        }
-    }*/
-
-    protected SR getNfsSR(Connection conn, DecodedDataStore store) {
-
+    protected SR getNfsSR(Connection conn, StorageFilerTO pool) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
-
-        String uuid = store.getUuid();
         try {
-            String server = store.getServer();
-            String serverpath = store.getPath();
-
+            String server = pool.getHost();
+            String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
             for (SR sr : srs) {
@@ -316,25 +476,25 @@ public class XenServerStorageResource {
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:"
-                            + dc.get("serverpath") + " for pool " + uuid + "on host:" + hypervisorResource.getHost().uuid);
+                            + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + hypervisorResource.getHost().uuid);
                 }
 
             }
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), uuid, uuid, SRType.NFS.toString(), "user", true,
+            SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true,
                     new HashMap<String, String>());
             sr.scan(conn);
             return sr;
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + uuid, e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
         } catch (XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + uuid, e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
         }
     }
-    /*
-    protected SR getIscsiSR(Connection conn, PrimaryDataStoreTO pool) {
+    
+    protected SR getIscsiSR(Connection conn, StorageFilerTO pool) {
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
@@ -379,13 +539,13 @@ public class XenServerStorageResource {
                     }
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
                         throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") +  ",  targetIQN:"
-                                + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
+                                + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + this.hypervisorResource.getHost().uuid);
                     }
                 }
                 deviceConfig.put("target", target);
                 deviceConfig.put("targetIQN", targetiqn);
 
-                Host host = Host.getByUuid(conn, _host.uuid);
+                Host host = Host.getByUuid(conn, this.hypervisorResource.getHost().uuid);
                 Map<String, String> smConfig = new HashMap<String, String>();
                 String type = SRType.LVMOISCSI.toString();
                 String poolId = Long.toString(pool.getId());
@@ -456,99 +616,24 @@ public class XenServerStorageResource {
                 throw new CloudRuntimeException(msg, e);
             }
         }
-    }*/
-
-    protected Answer execute(CreatePrimaryDataStoreCmd cmd) {
-        Connection conn = hypervisorResource.getConnection();
-        String storeUrl = cmd.getDataStore();
-
+    }
+    protected Answer execute(CreateStoragePoolCommand cmd) {
+        Connection conn = this.hypervisorResource.getConnection();
+        StorageFilerTO pool = cmd.getPool();
         try {
-            DecodedDataObject obj = Decoder.decode(storeUrl);
-            DecodedDataStore store = obj.getStore();
-
-            if (store.getScheme().equalsIgnoreCase("nfs")) {
-                SR sr = getNfsSR(conn, store);
-            } else if (store.getScheme().equalsIgnoreCase("iscsi")) {
-                //getIscsiSR(conn, dataStore);
-            } else if (store.getScheme().equalsIgnoreCase("presetup")) {
+            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                getNfsSR(conn, pool);
+            } else if (pool.getType() == StoragePoolType.IscsiLUN) {
+                getIscsiSR(conn, pool);
+            } else if (pool.getType() == StoragePoolType.PreSetup) {
             } else {
-                return new Answer(cmd, false, "The pool type: " + store.getScheme() + " is not supported.");
+                return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
             }
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
-           // String msg = "Catch Exception " + e.getClass().getName() + ", create StoragePool failed due to " + e.toString() + " on host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
-            //s_logger.warn(msg, e);
-            return new Answer(cmd, false, null);
-        }
-    }
-
-    private long getTemplateSize(Connection conn, String url) {
-        String size = hypervisorResource.callHostPlugin(conn, "storagePlugin", "getTemplateSize", "srcUrl", url);
-        if (size.equalsIgnoreCase("") || size == null) {
-            throw new CloudRuntimeException("Can't get template size");
-        }
-
-        try {
-            return Long.parseLong(size);
-        } catch (NumberFormatException e) {
-            throw new CloudRuntimeException("Failed to get template lenght", e);
-        }
-
-        /*
-        HttpHead method = new HttpHead(url);
-        DefaultHttpClient client = new DefaultHttpClient();
-        try {
-            HttpResponse response = client.execute(method);
-            Header header = response.getFirstHeader("Content-Length");
-            if (header == null) {
-                throw new CloudRuntimeException("Can't get content-lenght header from :" + url);
-            }
-            Long length = Long.parseLong(header.getValue());
-            return length;
-        } catch (HttpException e) {
-            throw new CloudRuntimeException("Failed to get template lenght", e);
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Failed to get template lenght", e);
-        } catch (NumberFormatException e) {
-            throw new CloudRuntimeException("Failed to get template lenght", e);
-        }*/
-    }
-
-    private void downloadHttpToLocalFile(String destFilePath, String url) {
-        File destFile = new File(destFilePath);
-        if (!destFile.exists()) {
-            throw new CloudRuntimeException("dest file doesn't exist: " + destFilePath);
-        }
-
-        DefaultHttpClient client = new DefaultHttpClient();
-        HttpGet getMethod = new HttpGet(url);
-        HttpResponse response;
-        BufferedOutputStream output = null;
-        long length = 0;
-        try {
-            response = client.execute(getMethod);
-            HttpEntity entity = response.getEntity();
-            length = entity.getContentLength();
-            output = new BufferedOutputStream(new FileOutputStream(destFile));
-            entity.writeTo(output);
-        } catch (ClientProtocolException e) {
-           throw new CloudRuntimeException("Failed to download template", e);
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Failed to download template", e);
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    throw new CloudRuntimeException("Failed to download template", e);
-                }
-            }
-        }
-
-        //double check the length
-        destFile = new File(destFilePath);
-        if (destFile.length() != length) {
-            throw new CloudRuntimeException("Download file length doesn't match: expected: " + length + ", actual: " + destFile.length());
+            String msg = "Catch Exception " + e.getClass().getName() + ", create StoragePool failed due to " + e.toString() + " on host:" + this.hypervisorResource.getHost().uuid + " pool: " + pool.getHost() + pool.getPath();
+            s_logger.warn(msg, e);
+            return new Answer(cmd, false, msg);
         }
 
     }
@@ -721,7 +806,11 @@ public class XenServerStorageResource {
         return parentUuid;
     }
 
-    protected CopyCmdAnswer copyTemplateToPrimaryStorage(DataTO srcData, DataTO destData, int wait) {
+    @Override
+    public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
+    	DataTO srcData = cmd.getSrcTO();
+    	DataTO destData = cmd.getDestTO();
+    	int wait = cmd.getWait();
         DataStoreTO srcStore = srcData.getDataStore();
         try {
             if ((srcStore instanceof NfsTO) && (srcData.getObjectType() == DataObjectType.TEMPLATE)) {
@@ -774,32 +863,42 @@ public class XenServerStorageResource {
         return new CopyCmdAnswer("not implemented yet");
     }
 
-    protected CreateObjectAnswer createVolume(DataTO data) throws BadServerResponse, XenAPIException, XmlRpcException {
-        VolumeObjectTO volume = (VolumeObjectTO)data;
+    @Override
+    public Answer createVolume(CreateObjectCommand cmd) {
+    	DataTO data = cmd.getData();
+    	VolumeObjectTO volume = (VolumeObjectTO)data;
 
-        Connection conn = hypervisorResource.getConnection();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
-        SR poolSr = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
-        VDI.Record vdir = new VDI.Record();
-        vdir.nameLabel = volume.getName();
-        vdir.SR = poolSr;
-        vdir.type = Types.VdiType.USER;
+    	try {
+    		Connection conn = hypervisorResource.getConnection();
+    		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
+    		SR poolSr = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
+    		VDI.Record vdir = new VDI.Record();
+    		vdir.nameLabel = volume.getName();
+    		vdir.SR = poolSr;
+    		vdir.type = Types.VdiType.USER;
 
-        vdir.virtualSize = volume.getSize();
-        VDI vdi;
+    		vdir.virtualSize = volume.getSize();
+    		VDI vdi;
 
-        vdi = VDI.create(conn, vdir);
-        vdir = vdi.getRecord(conn);
-        VolumeObjectTO newVol = new VolumeObjectTO();
-        newVol.setName(vdir.nameLabel);
-        newVol.setSize(vdir.virtualSize);
-        newVol.setPath(vdir.uuid);
+    		vdi = VDI.create(conn, vdir);
+    		vdir = vdi.getRecord(conn);
+    		VolumeObjectTO newVol = new VolumeObjectTO();
+    		newVol.setName(vdir.nameLabel);
+    		newVol.setSize(vdir.virtualSize);
+    		newVol.setPath(vdir.uuid);
 
-        return new CreateObjectAnswer(newVol);
+    		return new CreateObjectAnswer(newVol);
+    	} catch (Exception e) {
+    		s_logger.debug("create volume failed: " + e.toString());
+    		return new CreateObjectAnswer(e.toString());
+    	}
     }
 
-    protected CopyCmdAnswer cloneVolumeFromBaseTemplate(DataTO srcData, DataTO destData) {
+    @Override
+    public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
         PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
         VolumeObjectTO volume = (VolumeObjectTO)destData;
         VDI vdi = null;
@@ -827,9 +926,12 @@ public class XenServerStorageResource {
         }
     }
 
-
-    protected Answer copyVolumeFromImageCacheToPrimary(DataTO srcData, DataTO destData, int wait) {
+    @Override
+    public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        int wait = cmd.getWait();
         VolumeObjectTO srcVolume = (VolumeObjectTO)srcData;
         VolumeObjectTO destVolume = (VolumeObjectTO)destData;
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destVolume.getDataStore();
@@ -858,10 +960,12 @@ public class XenServerStorageResource {
         return new CopyCmdAnswer("unsupported protocol");
     }
 
-    protected Answer copyVolumeFromPrimaryToSecondary(DataTO srcData, DataTO destData, int wait) {
+    @Override
+    public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
-        VolumeObjectTO srcVolume = (VolumeObjectTO)srcData;
-        VolumeObjectTO destVolume = (VolumeObjectTO)destData;
+        VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
+        VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
+        int wait = cmd.getWait();
         DataStoreTO destStore = destVolume.getDataStore();
 
         if (destStore instanceof NfsTO) {
@@ -1088,8 +1192,13 @@ public class XenServerStorageResource {
         return false;
     }
 
-    protected Answer backupSnasphot(DataTO srcData, DataTO destData, DataTO cacheData, int wait) {
+    @Override
+    public Answer backupSnasphot(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+        DataTO srcData = cmd.getSrcTO();
+        DataTO cacheData = cmd.getCacheTO();
+        DataTO destData = cmd.getDestTO();
+        int wait = cmd.getWait();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
         String primaryStorageNameLabel = primaryStore.getUuid();
         String secondaryStorageUrl = null;
@@ -1220,11 +1329,13 @@ public class XenServerStorageResource {
         return new CopyCmdAnswer(details);
     }
     
-    protected CopyCmdAnswer createTemplateFromVolume(DataTO srcData, DataTO destData, int wait) {
+    @Override
+    public Answer createTemplateFromVolume(CopyCommand cmd) {
         Connection conn = this.hypervisorResource.getConnection();
-        VolumeObjectTO volume = (VolumeObjectTO)srcData;
-        TemplateObjectTO template = (TemplateObjectTO)destData;
-        NfsTO destStore = (NfsTO)destData.getDataStore();
+        VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
+        TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
+        NfsTO destStore = (NfsTO)cmd.getDestTO().getDataStore();
+        int wait = cmd.getWait();
         
         String secondaryStoragePoolURL = destStore.getUrl();
         String volumeUUID = volume.getPath();
@@ -1289,39 +1400,5 @@ public class XenServerStorageResource {
             s_logger.error(details, e);
         }
         return new CopyCmdAnswer(details);
-    }
-
-    protected Answer execute(CopyCommand cmd) {
-        DataTO srcData = cmd.getSrcTO();
-        DataTO destData = cmd.getDestTO();
-        DataStoreTO srcDataStore = srcData.getDataStore();
-        DataStoreTO destDataStore = destData.getDataStore();
-        DataObjectType srcType = srcData.getObjectType();
-        DataObjectType destType = destData.getObjectType();
-        DataStoreRole destRole = destDataStore.getRole();
-        
-        boolean nfs = (srcDataStore instanceof NfsTO) ? true : false;
-
-        if ((srcData.getObjectType() == DataObjectType.TEMPLATE) && (srcDataStore instanceof NfsTO)  && (destData.getDataStore().getRole() == DataStoreRole.Primary)) {
-            //copy template to primary storage
-            return copyTemplateToPrimaryStorage(srcData, destData, cmd.getWait());
-        } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
-            //clone template to a volume
-            return cloneVolumeFromBaseTemplate(srcData, destData);
-        } else if (srcData.getObjectType() == DataObjectType.VOLUME && (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {
-            //copy volume from image cache to primary
-            return copyVolumeFromImageCacheToPrimary(srcData, destData, cmd.getWait());
-        } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-            if (destData.getObjectType() == DataObjectType.VOLUME) {
-                return copyVolumeFromPrimaryToSecondary(srcData, destData, cmd.getWait());
-            } else if (destData.getObjectType() == DataObjectType.TEMPLATE) {
-                return createTemplateFromVolume(srcData, destData, cmd.getWait());
-            }
-        } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-            DataTO cacheData = cmd.getCacheTO();
-            return backupSnasphot(srcData, destData, cacheData, cmd.getWait());
-        }
-
-        return new Answer(cmd, false, "not implemented yet");
     }
 }
