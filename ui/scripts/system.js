@@ -10633,6 +10633,30 @@
                       args.response.error(parseXMLHttpResponse(json));
                     }
                   });
+                              
+                  if(args.data.createNfsCache == 'on') {
+                    var zoneid = args.data.nfsCacheZoneid;
+                    var nfs_server = args.data.nfsCacheNfsServer;
+                    var path = args.data.nfsCachePath;
+                    var url = nfsURL(nfs_server, path);
+                    
+                    var nfsCacheData = {
+                      provider: 'NFS',
+                      zoneid: zoneid,
+                      url: url                    
+                    };        
+                    
+                    $.ajax({
+                      url: createURL('createCacheStore'),
+                      data: nfsCacheData,
+                      success: function(json) {
+                        //do nothing                        
+                      },
+                      error: function(json) {
+                        args.response.error(parseXMLHttpResponse(json));
+                      }
+                    }); 
+                  }   
                 }
                 else if(args.data.provider == 'Swift') {
                   $.ajax({
