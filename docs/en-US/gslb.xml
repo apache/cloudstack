@@ -41,6 +41,60 @@
       alternate location for accessing a resource in the event of a failure, or to provide a means
       of shifting traffic easily to simplify maintenance, or both.</para>
   </section>
+  <section id="gslb-comp">
+    <title>Components of GSLB</title>
+    <para>A typical GSLB environment is comprised of the following components:</para>
+    <itemizedlist>
+      <listitem>
+        <para><emphasis role="bold">GSLB Site</emphasis>: In &PRODUCT;terminology, GSLB sites are
+          represented by zones that are mapped to data centers, each of which has various network
+          appliances. Each GSLB site is managed by a NetScaler appliance that is local to that site.
+          Each of these appliances treats its own site as the local site and all other sites,
+          managed by other appliances, as remote sites.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">GSLB Services</emphasis>: A GSLB service is typically
+          represented by a load balancing or content switching virtual server. In a GSLB
+          environment, you can have a local as well as remote GSLB services. A local GSLB service
+          represents a local load balancing or content switching virtual server. A remote GSLB
+          service is the one configured at one of the other sites in the GSLB setup. At each site in
+          the GSLB setup, you can create one local GSLB service and any number of remote GSLB
+          services.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">GSLB Virtual Servers</emphasis>: A GSLB virtual server refers to
+          one or more GSLB services and balances traffic between traffic across the VMs in multiple
+          zones by using the &PRODUCT; functionality. It evaluates the configured GSLB methods or
+          algorithms to select a GSLB service to which to send the client requests. One or more
+          virtual servers from different zones are bound to the GSLB virtual server. GSLB virtual
+          server does not have a public IP associated with it, instead it will have a FQDN DNS
+          name.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Load Balancing or Content Switching Virtual Servers</emphasis>:
+          According to Citrix NetScaler terminology, a load balancing or content switching virtual
+          server represents one or many servers on the local network. Clients send their requests to
+          the load balancing or content switching virtual server’s virtual IP (VIP) address, and the
+          virtual server balances the load across the local servers. After a GSLB virtual server
+          selects a GSLB service representing either a local or a remote load balancing or content
+          switching virtual server, the client sends the request to that virtual server’s VIP
+          address.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">DNS VIPs</emphasis>: DNS virtual IP represents a load balancing
+          DNS virtual server on the GSLB service provider. The DNS requests for domains for which
+          the GSLB service provider is authoritative can be sent to a DNS VIP.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">ADNS</emphasis>: ADNS (Authoritative Domain Name Server) is a
+          service that provides actual answer to DNS queries, such as web site IP address. In a GSLB
+          environment, an ADNS service responds only to DNS requests for domains for which the GSLB
+          service provider is authoritative. When an ADNS service is configured, the service
+          provider owns that IP address and advertises it. When you create an ADNS service, the
+          NetScaler responds to DNS queries on the configured ADNS service IP and port.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
   <section id="prereq-gslb">
     <title>Prerequisites and Guidelines</title>
     <itemizedlist>
@@ -63,23 +117,23 @@
       </listitem>
       <listitem>
         <para>When users have VMs deployed in multiple availability zones which are GSLB enabled,
-          user is allowed to use the GSLB functionality to load balance traffic across the VMs in
-          multiple zones.</para>
+          they can use the GSLB functionality to load balance traffic across the VMs in multiple
+          zones.</para>
       </listitem>
       <listitem>
-        <para>The users are allowed to use GSLB to load balance across the VMs across zones in a
-          region only if the admin has enabled GSLB in that region. </para>
+        <para>The users can use GSLB to load balance across the VMs across zones in a region only if
+          the admin has enabled GSLB in that region. </para>
       </listitem>
       <listitem>
-        <para>The users are allowed to load balance traffic across the availability zones in the
-          same region or different regions.</para>
+        <para>The users can load balance traffic across the availability zones in the same region or
+          different regions.</para>
       </listitem>
       <listitem>
-        <para>The admin is allowed to configure DNS name for the entire cloud.</para>
+        <para>The admin can configure DNS name for the entire cloud.</para>
       </listitem>
       <listitem>
-        <para>The users can specify an unique name, across the cloud, for a globally load balanced
-          service. The provided name will be used as the domain under the DNS name associated with
+        <para>The users can specify an unique name across the cloud for a globally load balanced
+          service. The provided name is used as the domain name under the DNS name associated with
           the cloud.</para>
         <para>The user-provided name along with the admin-provided DNS name is used to produce a
           globally resolvable FQDN for the globally load balanced service of the user. For example,
@@ -88,13 +142,12 @@
           foo.xyztelco.com.</para>
       </listitem>
       <listitem>
-        <para>While setting up GSLB, users can select a load balancing method, such as round robin
-          or least RTT, that would be the load balance traffic used across the zones that are part
-          of GSLB.</para>
+        <para>While setting up GSLB, users can select a load balancing method, such as round robin,
+          for using across the zones that are part of GSLB.</para>
       </listitem>
       <listitem>
         <para>The user shall be able to set weight to zone-level virtual server. Weight shall be
-          considered by the load balancing method is distributing the traffic.</para>
+          considered by the load balancing method for distributing the traffic.</para>
       </listitem>
       <listitem>
         <para>The GSLB functionality shall support session persistence, where series of client
@@ -102,6 +155,24 @@
         <para>Statistics is collected from each GSLB virtual server.</para>
       </listitem>
     </itemizedlist>
+  </section>
+  <section id="gslb-workflow">
+    <title>Configuring GSLB</title>
+    <para>To configure GSLB in your cloud environment, as a cloud administrator you must perform the
+      following.</para>
+    <para>To configure such a GSLB setup, you must first configure a standard load balancing setup
+      for each server farm or data center. This enables you to balance load across the different
+      servers in each server farm. Then, configure both NetScaler appliances as authoritative DNS
+      (ADNS) servers. Next, create a GSLB site for each server farm, configure GSLB virtual servers
+      for each site, create GLSB services, and bind the GSLB services to the GSLB virtual servers.
+      Finally, bind the domain to the GSLB virtual servers. The GSLB configurations on the two
+      appliances at the two different sites are identical, although each sites load-balancing
+      configuration is specific to that site.</para>
+    <orderedlist>
+      <listitem>
+        <para/>
+      </listitem>
+    </orderedlist>
   </section>
   <section id="gslb-add">
     <title>Adding a GSLB Rule</title>
@@ -174,17 +245,18 @@
   </section>
   <section id="concept-gslb">
     <title>How Does GSLB Works in &PRODUCT;?</title>
-    <para>The following is an illustrated conceptual model of how GLSB functionality is provided in
-      &PRODUCT;: An organization, xyztelco, has set up a public cloud that spans two zones, Zone-1
-      and Zone-2, across geographically separated data centers that are managed by &PRODUCT;.
-      Tenant-A of the cloud launches a highly available solution by using xyztelco cloud. For that
-      purpose, they launch two instances each in both the zones: VM1 and VM2 in Zone-1 and VM5 and
-      VM6 in Zone-2. Tenant-A acquires a public IP, IP-1 in Zone-1, and configures a load balancer
-      rule to load balance the traffic between VM1 and VM2 instances. &PRODUCT; orchestrates setting
-      up a virtual server on the LB service provider in Zone-1. Virtual server 1 that is set up on
-      the LB service provider in Zone-1 represents a publicly accessible virtual server that client
-      reaches at IP-1. The client traffic to virtual server 1 at IP-1 will be load balanced across
-      VM1 and VM2 instances. </para>
+    <para>Global server load balancing is used to manage traffic flow to a web site hosted on two
+      separate zones that ideally are in different geographic locations. The following is an
+      illustration of how GLSB functionality is provided in &PRODUCT;: An organization, xyztelco,
+      has set up a public cloud that spans two zones, Zone-1 and Zone-2, across geographically
+      separated data centers that are managed by &PRODUCT;. Tenant-A of the cloud launches a highly
+      available solution by using xyztelco cloud. For that purpose, they launch two instances each
+      in both the zones: VM1 and VM2 in Zone-1 and VM5 and VM6 in Zone-2. Tenant-A acquires a public
+      IP, IP-1 in Zone-1, and configures a load balancer rule to load balance the traffic between
+      VM1 and VM2 instances. &PRODUCT; orchestrates setting up a virtual server on the LB service
+      provider in Zone-1. Virtual server 1 that is set up on the LB service provider in Zone-1
+      represents a publicly accessible virtual server that client reaches at IP-1. The client
+      traffic to virtual server 1 at IP-1 will be load balanced across VM1 and VM2 instances. </para>
     <para>Tenant-A acquires another public IP, IP-2 in Zone-2 and sets up a load balancer rule to
       load balance the traffic between VM5 and VM6 instances. Similarly in Zone-2, &PRODUCT;
       orchestrates setting up a virtual server on the LB service provider. Virtual server 2 that is
