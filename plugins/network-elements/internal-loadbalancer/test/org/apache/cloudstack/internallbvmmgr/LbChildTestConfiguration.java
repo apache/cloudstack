@@ -46,14 +46,16 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+
 @Configuration
 @ComponentScan(
     basePackageClasses={
-        AccountVlanMapDaoImpl.class
+            NetUtils.class,
     },
     includeFilters={@Filter(value=LbChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false
