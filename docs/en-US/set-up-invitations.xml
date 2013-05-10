@@ -89,7 +89,7 @@
             </informaltable>
         </listitem>
         <listitem><para>Restart the Management Server:</para>
-        <programlisting>service cloud-management restart</programlisting></listitem>
+        <programlisting>service cloudstack-management restart</programlisting></listitem>
     </orderedlist>
     
 </section>
