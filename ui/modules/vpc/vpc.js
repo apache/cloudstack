@@ -55,11 +55,29 @@
         var $dashboardItem = $('<div>').addClass('dashboard-item');
         var $name = $('<div>').addClass('name').append($('<span>'));
         var $total = $('<div>').addClass('total').append($('<span>'));
+        var id = dashboardItem.id;
 
         $name.find('span').html(dashboardItem.name);
         $total.find('span').html(dashboardItem.total);
         $dashboardItem.append($total, $name);
         $dashboardItem.appendTo($dashboard);
+
+        $dashboardItem.click(function() {
+          $('#browser .container').cloudBrowser('addPanel', {
+            title: dashboardItem.name,
+            maximizeIfSelected: true,
+            complete: function($panel) {
+              var section = cloudStack.vpc.sections[id];
+              var $section = $('<div>');
+
+              if (section.listView) {
+                $section.listView(section);
+              }
+
+              $section.appendTo($panel);
+            }
+          });
+        });
       });
 
       return $dashboard;
@@ -92,18 +110,22 @@
                 tier: tier,
                 dashboardItems: [
                   {
+                    id: 'tierLoadBalancers',
                     name: 'Load balancers',
                     total: 5
                   },
                   {
+                    id: 'tierPortForwarders',
                     name: 'Port forwarders',
                     total: 4
                   },
                   {
+                    id: 'tierStaticNATs',
                     name: 'Static NATs',
                     total: 3
                   },
                   {
+                    id: 'tierVMs',
                     name: 'Virtual Machines',
                     total: 300
                   }
@@ -123,18 +145,22 @@
       $router = elems.router({
         dashboardItems: [
           {
+            id: 'privateGateways',
             name: 'Private gateways',
             total: 1
           },
           {
+            id: 'publicIPs',
             name: 'Public IP addresses',
             total: 2
           },
           {
+            id: 'siteToSiteVPNs',
             name: 'Site-to-site VPNs',
             total: 3
           },
           {
+            id: 'networkACLLists',
             name: 'Network ACL lists',
             total: 2
           }
