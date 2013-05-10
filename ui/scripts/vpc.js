@@ -48,6 +48,22 @@
               return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
             });
 
+            var $protocolinput = args.$form.find('th,td');
+            var $protocolFields = $protocolinput.filter(function(){
+             var name = $(this).attr('rel');
+
+             return  $.inArray(name,['protocolnumber']) > -1;
+            });
+
+           if($(this).val() == 'protocolnumber' ){
+
+             $protocolFields.show();
+            }
+            else{
+             $protocolFields.hide();
+            }
+
+
             if ($(this).val() == 'icmp') {
               $icmpFields.show();
               $icmpFields.attr('disabled', false);
@@ -68,11 +84,16 @@
             data: [
               { name: 'tcp', description: 'TCP' },
               { name: 'udp', description: 'UDP' },
-              { name: 'icmp', description: 'ICMP' }
+              { name: 'icmp', description: 'ICMP' },
+              { name: 'all', description: 'ALL'},
+              { name: 'protocolnumber', description: 'Protocol Number'}
+
             ]
           });
         }
       },
+
+      'protocolnumber': {label:'Protocol Number',isDisabled:true,isHidden:true,edit:true},
       'startport': { edit: true, label: 'label.start.port' },
       'endport': { edit: true, label: 'label.end.port' },
       'networkid': {
@@ -136,7 +157,15 @@
       label: 'label.add',
       action: function(args) {
         var $multi = args.$multi;
-        
+        //Support for Protocol Number between 0 to 255
+        if(args.data.protocol == 'protocolnumber'){
+            $.extend(args.data,{protocol:args.data.protocolnumber});
+            delete args.data.protocolnumber;
+        }
+        else
+          delete args.data.protocolnumber;
+
+       
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
