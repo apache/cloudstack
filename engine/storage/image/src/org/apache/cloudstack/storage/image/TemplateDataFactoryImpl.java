@@ -90,17 +90,6 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         }
         return this.getTemplate(templateId, store);
     }
-    
-    @Override
-    public TemplateInfo getTemplate(long templateId, long zoneId) {
-        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZoneDownloadStatus(templateId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        if (tmplStore != null) {
-            DataStore store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
-            return this.getTemplate(templateId, store);
-        }
-        return null;
-    }
-
 
     @Override
     public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId) {
