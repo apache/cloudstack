@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,7 @@ public class LocalNfsSecondaryStorageResource extends
 
     public LocalNfsSecondaryStorageResource(){
         this._dlMgr = new DownloadManagerImpl();
+        ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
     }
 
     @Override

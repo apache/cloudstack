@@ -105,6 +105,7 @@ CREATE VIEW `cloud`.`image_store_view` AS
         image_store.protocol,
         image_store.url,
         image_store.scope,
+        image_store.role,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
@@ -115,8 +116,8 @@ CREATE VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`data_center` ON image_store.data_center_id = data_center.id
             left join
-        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id
-    where image_store.role = 'Image';
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+
             
 -- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
 -- FK also commented out due to this            
@@ -732,3 +733,6 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;     
+            
+ update  `cloud`.`vm_template` set state='Allocated' where state is NULL;
+ update  `cloud`.`vm_template` set update_count=0 where update_count is NULL;
