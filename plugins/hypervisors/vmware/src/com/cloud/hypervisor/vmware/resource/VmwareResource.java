@@ -111,6 +111,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -485,6 +487,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (clz == ScaleVmCommand.class) {
+                return execute((ScaleVmCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -2088,6 +2092,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return validatedDisks.toArray(new VolumeTO[0]);
     }
 
+    protected ScaleVmAnswer execute(ScaleVmCommand cmd) {
+
+        VmwareContext context = getServiceContext();
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        try{
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            int ramMb = (int) (vmSpec.getMinRam());
+
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Unable to execute ScaleVmCommand");
+            }
+        }catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new ScaleVmAnswer(cmd, false, "Unable to execute ScaleVmCommand due to " + e.toString());
+        }
+        return new ScaleVmAnswer(cmd, true, null);
+    }
+
     protected StartAnswer execute(StartCommand cmd) {
 
         if (s_logger.isInfoEnabled()) {
@@ -2191,7 +2217,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
-           
+
+            vmConfigSpec.setMemoryHotAddEnabled(true);
+            vmConfigSpec.setCpuHotAddEnabled(true);
+
             if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
                 s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
                 ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
