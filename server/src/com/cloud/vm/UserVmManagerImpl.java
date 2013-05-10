@@ -1064,7 +1064,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if(vmInstance.getHypervisorType() != HypervisorType.XenServer){
+        if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
 
@@ -3725,19 +3725,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        // make sure the accounts are under same domain
-        if (oldAccount.getDomainId() != newAccount.getDomainId()) {
-            throw new InvalidParameterValueException(
-                    "The account should be under same domain for moving VM between two accounts. Old owner domain ="
-                            + oldAccount.getDomainId()
-                            + " New owner domain="
-                            + newAccount.getDomainId());
-        }
+        //check caller has access to both the old and new account 
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
 
         // make sure the accounts are not same
         if (oldAccount.getAccountId() == newAccount.getAccountId()) {
             throw new InvalidParameterValueException(
-                    "The account should be same domain for moving VM between two accounts. Account id ="
+                    "The new account is the same as the old account. Account id ="
                             + oldAccount.getAccountId());
         }
 
@@ -3829,6 +3824,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
                     new Long(volume.getSize()));
             volume.setAccountId(newAccount.getAccountId());
+            volume.setDomainId(newAccount.getDomainId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,

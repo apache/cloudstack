@@ -40,6 +40,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
@@ -853,6 +854,22 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<String> getUsedIpsInNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Map<Detail, String> getNtwkOffDetails(long offId) {
+        return null;
+    }
+    
     public IsolationType[] listNetworkIsolationMethods() {
         // TODO Auto-generated method stub
         return null;

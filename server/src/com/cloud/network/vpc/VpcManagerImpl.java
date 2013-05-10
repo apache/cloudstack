@@ -184,7 +184,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.Netscaler);
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
+ 
+
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -206,6 +208,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (svc == Service.Lb) {
                     Set<Provider> lbProviders = new HashSet<Provider>();
                     lbProviders.add(Provider.VPCVirtualRouter);
+                    lbProviders.add(Provider.InternalLbVm);
                     svcProviderMap.put(svc, lbProviders);
                 } else {
                     svcProviderMap.put(svc, defaultProviders);
@@ -1057,16 +1060,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        //4) Only one network in the VPC can support public LB inside the VPC. Internal LB can be supported on multiple VPC tiers
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
+                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                        throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1181,6 +1185,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             vpcElements = new ArrayList<VpcProvider>();
             vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
             vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.Netscaler.getName()));
+            vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.InternalLbVm.getName()));
         }
 
         if (vpcElements == null) {

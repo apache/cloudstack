@@ -17,8 +17,10 @@
 package com.cloud.offerings.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
 import org.springframework.stereotype.Component;
@@ -27,6 +29,8 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
+import com.cloud.offering.NetworkOffering.Detail;
+import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -45,6 +49,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
+    @Inject NetworkOfferingDetailsDao _detailsDao;
 
     protected NetworkOfferingDaoImpl() {
         super();
@@ -164,6 +169,25 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.setParameters("guestType", type);
         sc.setParameters("state", state);
         return listBy(sc, null);
+    }
+    
+    @Override
+    @DB
+    public NetworkOfferingVO persist(NetworkOfferingVO off, Map<Detail, String> details) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //1) persist the offering
+        NetworkOfferingVO vo = super.persist(off);
+        
+        //2) persist the details
+        if (details != null && !details.isEmpty()) {
+            for (NetworkOffering.Detail detail : details.keySet()) {
+                _detailsDao.persist(new NetworkOfferingDetailsVO(off.getId(), detail, details.get(detail)));
+            }
+        }
+       
+        txn.commit();
+        return vo;
     }
 
 }

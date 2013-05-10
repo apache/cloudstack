@@ -17,10 +17,10 @@
 package com.cloud.network.lb;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
@@ -30,12 +30,13 @@ import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRul
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.Ip;
 
 
 public interface LoadBalancingRulesService {
@@ -49,7 +50,9 @@ public interface LoadBalancingRulesService {
      * @return the newly created LoadBalancerVO if successful, null otherwise
      * @throws InsufficientAddressCapacityException
      */
-    LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException, InsufficientAddressCapacityException;
+    LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, 
+            int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd, Long ipAddrId, String protocol, String algorithm,
+            long networkId, long lbOwnerId, boolean openFirewall) throws NetworkRuleConflictException, InsufficientAddressCapacityException;
 
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
@@ -134,8 +137,9 @@ public interface LoadBalancingRulesService {
 
     List<? extends HealthCheckPolicy> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd);
 
-    List<LoadBalancingRule> listByNetworkId(long networkId);
-
     LoadBalancer findById(long LoadBalancer);
-   public void updateLBHealthChecks() throws ResourceUnavailableException;
+    
+    public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
+
+    Map<Ip, UserVm> getLbInstances(long lbId);
 }

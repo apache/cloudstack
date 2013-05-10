@@ -67,7 +67,7 @@ getVMPassword=15
 restoreVirtualMachine=15
 changeServiceForVirtualMachine=15
 scaleVirtualMachine=15
-assignVirtualMachine=1
+assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
@@ -577,6 +577,17 @@ revertToVMSnapshot=15
 #### Baremetal commands
 addBaremetalHost=1
 
+#### New Load Balancer commands
+createLoadBalancer=15
+listLoadBalancers=15
+deleteLoadBalancer=15
+
+#Internal Load Balancer Element commands
+configureInternalLoadBalancerElement=1
+createInternalLoadBalancerElement=1
+listInternalLoadBalancerElements=1
+
+
 #### Affinity group commands
 createAffinityGroup=15
 deleteAffinityGroup=15
@@ -593,6 +604,11 @@ listCiscoVnmcResources=1
 addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
+
+#### Internal LB VM commands
+stopInternalLoadBalancerVM=1
+startInternalLoadBalancerVM=1
+listInternalLoadBalancerVMs=1
 
 ### Network Isolation methods listing
 listNetworkIsolationMethods=1

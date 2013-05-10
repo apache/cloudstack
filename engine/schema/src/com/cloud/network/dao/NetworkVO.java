@@ -32,9 +32,6 @@ import javax.persistence.Transient;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 import com.cloud.network.Network;
-import com.cloud.network.Networks;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;

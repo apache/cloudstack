@@ -43,6 +43,7 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -333,7 +334,7 @@ public interface NetworkManager  {
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
-    LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
+    LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme);
 
 
     boolean isSecondaryIpSetForNic(long nicId);

@@ -1210,7 +1210,7 @@
 												}
 											}																					
 										});   
-										if(havingVpcVirtualRouterForAtLeastOneService == true || $guestTypeField.val() == 'Shared') {			
+										if(havingVpcVirtualRouterForAtLeastOneService == true ) {			
 										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); 
                       $conservemode.find("input[type=checkbox]").attr('checked', false);	
 										

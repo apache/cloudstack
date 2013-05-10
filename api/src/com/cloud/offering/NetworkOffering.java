@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.offering;
 
+import java.util.Map;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -37,6 +39,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public enum State {
         Disabled,
         Enabled
+    }
+    
+    public enum Detail {
+        InternalLbProvider,
+        PublicLbProvider
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
@@ -116,5 +123,9 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isInline();
 
     boolean getIsPersistent();
+    
+    boolean getInternalLb();
+
+    boolean getPublicLb();
 
 }

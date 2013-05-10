@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.configuration.Configuration;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -23,8 +26,18 @@ import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
 import com.cloud.host.Host;
-import com.cloud.network.*;
-import com.cloud.network.as.*;
+import com.cloud.network.GuestVlan;
+import com.cloud.network.Network;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.Condition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StaticNat;
@@ -42,9 +55,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.VirtualMachine;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class EventTypes {
 
@@ -389,10 +399,14 @@ public class EventTypes {
     public static final String EVENT_AFFINITY_GROUP_ASSIGN = "AG.ASSIGN";
     public static final String EVENT_AFFINITY_GROUP_REMOVE = "AG.REMOVE";
     public static final String EVENT_VM_AFFINITY_GROUP_UPDATE = "VM.AG.UPDATE";
+    
+    public static final String EVENT_INTERNAL_LB_VM_START = "INTERNALLBVM.START";
+    public static final String EVENT_INTERNAL_LB_VM_STOP = "INTERNALLBVM.STOP";
 
     // Dedicated guest vlan range
     public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
     public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
+
 
     static {
 

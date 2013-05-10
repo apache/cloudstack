@@ -39,6 +39,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+
 import com.cloud.dc.*;
 import com.cloud.dc.dao.*;
 import com.cloud.user.*;
@@ -81,6 +82,17 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
+import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.PodVlanMapDao;
+import com.cloud.dc.dao.VlanDao;
+
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -115,10 +127,12 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -1919,6 +1933,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 vmType = VirtualMachine.Type.ConsoleProxy;
             } else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.SecondaryStorageVm;
+            } else if (VirtualMachine.Type.InternalLoadBalancerVm.toString().toLowerCase().equals(vmTypeString)) {
+                vmType = VirtualMachine.Type.InternalLoadBalancerVm;
             } else {
                 throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy + ", "
                         + VirtualMachine.Type.SecondaryStorageVm);
@@ -3340,6 +3356,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Network.GuestType guestType = null;
         boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         boolean isPersistent = cmd.getIsPersistent();
+        Map<String, String> detailsStr = cmd.getDetails();
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3432,10 +3449,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 Network.Service service = Network.Service.getService(serviceStr);
                 if (serviceProviderMap.containsKey(service)) {
                     Set<Provider> providers = new HashSet<Provider>();
-                    // in Acton, don't allow to specify more than 1 provider per service
-                    if (svcPrv.get(serviceStr) != null && svcPrv.get(serviceStr).size() > 1) {
+                    // Allow to specify more than 1 provider per service only if the service is LB
+                    if (!serviceStr.equalsIgnoreCase(Service.Lb.getName()) && svcPrv.get(serviceStr) != null && svcPrv.get(serviceStr).size() > 1) {
                         throw new InvalidParameterValueException("In the current release only one provider can be " +
-                        		"specified for the service");
+                        		"specified for the service if the service is not LB");
                     }
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
@@ -3508,9 +3525,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
         }
+        
+        Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>();
+        if (detailsStr != null) {
+            for (String detailStr : detailsStr.keySet()) {
+                NetworkOffering.Detail offDetail = null;
+                for (NetworkOffering.Detail supportedDetail: NetworkOffering.Detail.values()) {
+                    if (detailStr.equalsIgnoreCase(supportedDetail.toString())) {
+                        offDetail = supportedDetail;
+                        break;
+                    }
+                }
+                if (offDetail == null) {
+                    throw new InvalidParameterValueException("Unsupported detail " + detailStr);
+                }
+                details.put(offDetail, detailsStr.get(detailStr));
+            }
+        }
 
         return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3539,8 +3573,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.InlineMode.getName());
                     }
+                } else if (cap == Capability.LbSchemes) {
+                    boolean internalLb = value.contains("internal");
+                    boolean publicLb = value.contains("public");
+                    if (!internalLb && !publicLb) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.LbSchemes.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + 
+                            ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName()
+                            + ", " + Capability.LbSchemes.getName() + " capabilities can be sepcified for LB service");
                 }
             }
         }
@@ -3612,7 +3654,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
-            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent) {
+            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3666,6 +3708,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean elasticIp = false;
         boolean associatePublicIp = false;
         boolean inline = false;
+        boolean publicLb = false;
+        boolean internalLb = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
             
@@ -3690,6 +3734,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     inline = false;
                 }
+                
+                String publicLbStr = lbServiceCapabilityMap.get(Capability.LbSchemes);
+                if (serviceProviderMap.containsKey(Service.Lb)) {
+                    if (publicLbStr != null) {
+                        _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.LbSchemes, publicLbStr);
+                        internalLb = publicLbStr.contains("internal");
+                        publicLb = publicLbStr.contains("public");
+                    } else {
+                        //if not specified, default public lb to true
+                        publicLb = true;
+                    }
+                }
+            }
+            
+            //in the current version of the code, publicLb and specificLb can't both be set to true for the same network offering
+            if (publicLb && internalLb) {
+                throw new InvalidParameterValueException("Public lb and internal lb can't be enabled at the same time on the offering");
             }
 
             Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
@@ -3724,18 +3785,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb, internalLb);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
         }
+        
+        //validate the details
+        if (details != null) {
+            validateNtwkOffDetails(details, serviceProviderMap);
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // create network offering object
+        //1) create network offering object
         s_logger.debug("Adding network offering " + offering);
-        offering = _networkOfferingDao.persist(offering);
-        // populate services and providers
+        offering = _networkOfferingDao.persist(offering, details);
+        //2) populate services and providers
         if (serviceProviderMap != null) {
             for (Network.Service service : serviceProviderMap.keySet()) {
                 Set<Provider> providers = serviceProviderMap.get(service);
@@ -3767,6 +3833,42 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
+    }
+
+    protected void validateNtwkOffDetails(Map<Detail, String> details, Map<Service, Set<Provider>> serviceProviderMap) {
+        for (Detail detail : details.keySet()) {
+            
+            Provider lbProvider = null;
+            if (detail == NetworkOffering.Detail.InternalLbProvider || detail == NetworkOffering.Detail.PublicLbProvider) {
+                //1) Vaidate the detail values - have to match the lb provider name
+                String providerStr = details.get(detail);
+                if (Network.Provider.getProvider(providerStr) == null) {
+                    throw new InvalidParameterValueException("Invalid value " + providerStr + " for the detail " + detail);
+                }
+                if (serviceProviderMap.get(Service.Lb) != null) {
+                    for (Provider provider : serviceProviderMap.get(Service.Lb)) {
+                        if (provider.getName().equalsIgnoreCase(providerStr)) {
+                            lbProvider = provider;
+                            break;
+                        }
+                    }
+                } 
+                
+                if (lbProvider == null) {
+                    throw new InvalidParameterValueException("Invalid value " + details.get(detail)
+                            + " for the detail " + detail + ". The provider is not supported by the network offering");
+                }
+                
+                //2) validate if the provider supports the scheme
+                Set<Provider> lbProviders = new HashSet<Provider>();
+                lbProviders.add(lbProvider);
+                if (detail == NetworkOffering.Detail.InternalLbProvider) {
+                    _networkModel.checkCapabilityForProvider(lbProviders, Service.Lb, Capability.LbSchemes, Scheme.Internal.toString());
+                } else if (detail == NetworkOffering.Detail.PublicLbProvider){
+                    _networkModel.checkCapabilityForProvider(lbProviders, Service.Lb, Capability.LbSchemes, Scheme.Public.toString());
+                }
+            }
+        }
     }
 
 
@@ -3994,6 +4096,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(),
                 Provider.VPCVirtualRouter);
+        boolean internalLb = offering.getInternalLb();
         return vpcProvider;
     }
 

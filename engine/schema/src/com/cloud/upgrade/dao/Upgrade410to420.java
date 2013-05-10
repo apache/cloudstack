@@ -17,16 +17,17 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -66,6 +67,8 @@ public class Upgrade410to420 implements DbUpgrade {
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
+        upgradeDefaultVpcOffering(conn);
+        upgradePhysicalNtwksWithInternalLbProvider(conn);
     }
 	
 	private void updateSystemVmTemplates(Connection conn) {
@@ -398,5 +401,89 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+    
+    
+    private void upgradeDefaultVpcOffering(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select distinct map.vpc_offering_id from `cloud`.`vpc_offering_service_map` map, `cloud`.`vpc_offerings` off where off.id=map.vpc_offering_id AND service='Lb'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                //Add internal LB vm as a supported provider for the load balancer service
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vpc_offering_service_map` (vpc_offering_id, service, provider) VALUES (?,?,?)");
+                pstmt.setLong(1, id);
+                pstmt.setString(2, "Lb");
+                pstmt.setString(3, "InternalLbVm");
+                pstmt.executeUpdate();
+            }
+            
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where removed is null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long pNtwkId = rs.getLong(1);
+                String uuid = UUID.randomUUID().toString();
+                //Add internal LB VM to the list of physical network service providers
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` " +
+                		"(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
+                		" VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
+                pstmt.setString(1, uuid);
+                pstmt.setLong(2, pNtwkId);
+                pstmt.executeUpdate();
+                
+                //Add internal lb vm to the list of physical network elements
+                PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
+                		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                ResultSet rs1 = pstmt1.executeQuery();
+                while (rs1.next()) {
+                    long providerId = rs1.getLong(1);
+                    uuid = UUID.randomUUID().toString();
+                    pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`virtual_router_providers` (nsp_id, uuid, type, enabled) VALUES (?, ?, 'InternalLbVm', 1)");
+                    pstmt1.setLong(1, providerId);
+                    pstmt1.setString(2, uuid);
+                    pstmt1.executeUpdate();
+                }
+            }
+            
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        
     }
 }

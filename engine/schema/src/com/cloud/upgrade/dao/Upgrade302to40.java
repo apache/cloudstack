@@ -63,6 +63,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateVmWareSystemVms(conn);
         correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
         addHostDetailsUniqueKey(conn);
@@ -82,7 +83,55 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
 
         return new File[] { new File(script) };
     }
-    
+
+    private void updateVmWareSystemVms(Connection conn){
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean VMware = false;
+        try {
+            pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
+            rs = pstmt.executeQuery();
+            while(rs.next()){
+                if("VMware".equals(rs.getString(1))){
+                    VMware = true;
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error while iterating through list of hypervisors in use", e);
+        }
+        // Just update the VMware system template. Other hypervisor templates are unchanged from previous 3.0.x versions.
+        s_logger.debug("Updating VMware System Vms");
+        try {
+            //Get 4.0 VMware system Vm template Id
+            pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-4.0' and removed is null");
+            rs = pstmt.executeQuery();
+            if(rs.next()){
+                long templateId = rs.getLong(1);
+                rs.close();
+                pstmt.close();
+                // change template type to SYSTEM
+                pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                pstmt.setLong(1, templateId);
+                pstmt.executeUpdate();
+                pstmt.close();
+                // update templete ID of system Vms
+                pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
+                pstmt.setLong(1, templateId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            } else {
+                if (VMware){
+                    throw new CloudRuntimeException("4.0 VMware SystemVm template not found. Cannot upgrade system Vms");
+                } else {
+                    s_logger.warn("4.0 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
+        }
+        s_logger.debug("Updating System Vm Template IDs Complete");
+    }
+
     private void correctVRProviders(Connection conn) {
         PreparedStatement pstmtVR = null;
         ResultSet rsVR = null;
