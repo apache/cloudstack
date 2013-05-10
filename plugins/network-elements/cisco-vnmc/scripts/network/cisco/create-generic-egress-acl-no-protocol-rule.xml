@@ -49,57 +49,31 @@ under the License.
       <policyNetworkExpression
         dn="%aclruledn%/rule-cond-2/nw-expr2"
         id="2"
-        opr="eq"
-        status="created"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-protocol-2">
-      <policyProtocol
-        dataType="string"
-        descr=""
-        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-protocol-2"
-        id="2"
-        name=""
-        placement="none"
-        status="created"
-        value="%protocolvalue%"/>
-    </pair>
-
-    <pair key="%aclruledn%/rule-cond-3">
-      <policyRuleCondition
-        dn="%aclruledn%/rule-cond-3"
-        id="3"
-        order="unspecified"
-        status="created"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-3/nw-expr2">
-      <policyNetworkExpression
-        dn="%aclruledn%/rule-cond-3/nw-expr2"
-        id="2"
         opr="range"
         status="created"/>
     </pair>
-    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
         attrEp="destination"
-        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
-    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-2">
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-2">
       <policyIPAddress
         dataType="string"
         descr=""
-        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-2"
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-2"
         id="2"
         name=""
         placement="begin"
         status="created"
         value="%deststartip%"/>
     </pair>
-    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-3">
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-3">
       <policyIPAddress
         dataType="string"
         descr=""
-        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-3"
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-3"
         id="3"
         name=""
         placement="end"
@@ -115,7 +89,6 @@ under the License.
     aclrulename="dummy"
     descr=value
     actiontype="drop" or "permit"
-    protocolvalue = "TCP" or "UDP" or "ICMP"
     deststartip="destination start ip"
     destendip="destination end ip"
 --!>

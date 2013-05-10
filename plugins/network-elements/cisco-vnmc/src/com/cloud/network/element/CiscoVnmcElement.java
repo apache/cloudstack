@@ -105,6 +105,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.resource.CiscoVnmcResource;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -677,8 +678,12 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         for (FirewallRule rule : rules) {
-            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getPurpose(), rule.getTrafficType());
+            String address = "0.0.0.0";
+            if (rule.getTrafficType() == TrafficType.Ingress) {
+                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                address = sourceIp.getAddress().addr();
+            }
+            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, address, rule.getPurpose(), rule.getTrafficType());
             rulesTO.add(ruleTO);
         }
 
