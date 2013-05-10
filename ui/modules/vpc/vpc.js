@@ -2,19 +2,39 @@
   var elems = {
     tier: function(args) {
       var tier = args.tier;
+      var context = args.context;
       var dashboardItems = args.dashboardItems;
       var $tier = $('<div>').addClass('tier-item');
       var $header = $('<div>').addClass('header');
       var $title = $('<div>').addClass('title').append($('<span>'));
       var $content = $('<div>').addClass('content');
+      var $browser = $('#browser .container');
       var $dashboard = elems.dashboard({
-        context: args.context,
+        context: context,
         dashboardItems: dashboardItems
       });
       var $detailLink = $('<div>').addClass('detail-link');
       var $info = $('<div>').addClass('info');
       var $cidrLabel = $('<span>').addClass('cidr-label');
       var $cidr = $('<span>').addClass('cidr');
+
+      $detailLink.click(function() {
+        $browser.cloudBrowser('addPanel', {
+          title: tier.displayname ? tier.displayname : tier.name,
+          complete: function($panel) {
+            var $detailView = $('<div>').detailView(
+              $.extend(true, {}, cloudStack.vpc.tiers.detailView, {
+                $browser: $browser,
+                context: $.extend(true, {}, context, {
+                  networks: [tier]
+                })
+              })
+            );
+
+            $detailView.appendTo($panel);
+          }
+        });
+      });
 
       $cidrLabel.html('CIDR: ');
       $cidr.html(tier.cidr);
@@ -104,7 +124,9 @@
       var vpcItem = context.vpc[0];
       var $chart = $('<div>').addClass('vpc-network-chart');
       var $tiers = $('<div>').addClass('tiers');
+      var $toolbar = $('<div>').addClass('toolbar');
 
+      $toolbar.appendTo($chart);
       $tiers.appendTo($chart);
       
       // Get tiers
